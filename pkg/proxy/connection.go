@@ -38,7 +38,7 @@ type sessionHandler interface {
 type minecraftConn struct {
 	proxy *Proxy // convenient backreference
 
-	c net.Conn // Underlying connection: use rw for reads & writes.
+	c net.Conn // Underlying connection
 
 	// readLoop owns these fields
 	readBuf *bufio.Reader
@@ -47,7 +47,7 @@ type minecraftConn struct {
 	writeBuf *bufio.Writer
 	encoder  *codec.Encoder
 
-	closed          chan struct{} // ends readLoop & writeLoop
+	closed          chan struct{} // indicates connection is closed
 	closeOnce       sync.Once     // Makes sure the connection is closed once, while blocking proceeding calls.
 	knownDisconnect atomic.Bool   // Silences disconnect (any error is known)
 

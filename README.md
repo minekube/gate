@@ -58,7 +58,7 @@ Checkout the `/server` command
 ## Known Bugs / Limitations
 
 Remember that Gate is in a very early stage and there are many
-more thins planned (e.g. command system, more events, stability etc.).
+more things planned (e.g. command system, more events, stability etc.).
 
 - Can't login sometime in online mode.
   - _Dev note: Is this due to Mojang API database latencies when

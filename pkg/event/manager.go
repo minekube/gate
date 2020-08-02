@@ -90,7 +90,7 @@ func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubsc
 	}
 }
 
-// Fire fires an event in a new goroutine and returns immediately.
+// FireParallel fires an event in a new goroutine and returns immediately.
 // It optionally runs handlers after all subscribers are done and passes
 // the potentially modified version of the fired event.
 // If an after handler panics no further handlers in the slice will be run.
