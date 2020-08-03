@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/valyala/fasthttp"
-	"io"
 	"net/url"
 	"time"
 )
@@ -21,12 +20,8 @@ type Authenticator struct {
 }
 
 func NewAuthenticator() *Authenticator {
-	serverId := make([]byte, 8)
-	_, _ = io.ReadFull(rand.Reader, serverId)
-
 	serverKey, _ := rsa.GenerateKey(rand.Reader, 1024)
 	serverKey.Precompute()
-
 	publicKey, _ := x509.MarshalPKIXPublicKey(serverKey.Public())
 
 	return &Authenticator{
@@ -64,38 +59,4 @@ func (a *Authenticator) GenerateServerId(sharedSecret []byte) string {
 	s.Write(sharedSecret)
 	s.Write(a.PublicKey)
 	return hex.EncodeToString(s.Sum(nil))
-}
-
-//func twosComplementHexdigest(digest []byte) string {
-//	h := sha1.New()
-//	h.Write(serverId)
-//	h.Write(secret)
-//	h.Write(publicKey)
-//	hash := h.Sum(nil)
-//
-//	// Check for negative hashes
-//	negative := (hash[0] & 0x80) == 0x80
-//	if negative {
-//		hash = twosComplement(hash)
-//	}
-//
-//	// Trim away zeroes
-//	res := strings.TrimLeft(hex.EncodeToString(hash), "0")
-//	if negative {
-//		res = "-" + res
-//	}
-//
-//	return res
-//}
-//
-func twosComplement(p []byte) []byte {
-	carry := true
-	for i := len(p) - 1; i >= 0; i-- {
-		p[i] = ^p[i]
-		if carry {
-			carry = p[i] == 0xff
-			p[i]++
-		}
-	}
-	return p
 }

@@ -39,8 +39,6 @@ func (l *loginSessionHandler) handlePacket(p proto.Packet) {
 	switch t := p.(type) {
 	case *packet.ServerLogin:
 		l.handleServerLogin(t)
-	case *packet.LoginPluginResponse:
-		l.handleLoginPluginResponse(t)
 	case *packet.EncryptionResponse:
 		l.handleEncryptionResponse(t)
 	default:
@@ -48,21 +46,9 @@ func (l *loginSessionHandler) handlePacket(p proto.Packet) {
 	}
 }
 
-func (l *loginSessionHandler) handleServerLogin(packet *packet.ServerLogin) {
-	l.login = packet
-	l.beginPreLogin()
-}
+func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
+	l.login = login
 
-func (l *loginSessionHandler) handleLoginPluginResponse(p *packet.LoginPluginResponse) {
-	panic("todo")
-}
-
-func (l *loginSessionHandler) beginPreLogin() {
-	if l.login == nil {
-		// No ServerLogin packet received yet
-		l.conn.close()
-		return
-	}
 	e := newPreLoginEvent(l.inbound, l.login.Username)
 	l.event().Fire(e)
 
@@ -75,16 +61,13 @@ func (l *loginSessionHandler) beginPreLogin() {
 		return
 	}
 
-	//e.ForceOfflineMode()
-	if e.Result() != ForceOfflineModePreLogin &&
-		(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
-		// Online mode login, request encryption
+	if e.Result() != ForceOfflineModePreLogin && (e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
+		// Online mode login, send encryption request
 		request := l.generateEncryptionRequest()
 		l.verify = make([]byte, len(request.VerifyToken))
 		copy(l.verify, request.VerifyToken)
-		if l.conn.WritePacket(request) != nil {
-			return
-		}
+		_ = l.conn.WritePacket(request)
+
 		// Wait for EncryptionResponse packet
 		return
 	}
@@ -106,7 +89,7 @@ var unableAuthWithMojang = &component.Text{
 	S:       component.Style{Color: color.Red},
 }
 
-func (l *loginSessionHandler) handleEncryptionResponse(p *packet.EncryptionResponse) {
+func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionResponse) {
 	if l.login == nil || // No ServerLogin packet received yet
 		len(l.verify) == 0 { // No EncryptionRequest packet sent yet
 		_ = l.conn.close()
@@ -114,7 +97,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(p *packet.EncryptionRespo
 	}
 
 	authenticator := l.auth()
-	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, p.VerifiedToken)
+	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifiedToken)
 	if err != nil {
 		zap.L().Error("Could not decrypt verification token", zap.Error(err))
 		_ = l.conn.close()
@@ -126,7 +109,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(p *packet.EncryptionRespo
 		return
 	}
 
-	decryptedSharedSecret, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, p.SharedSecret)
+	decryptedSharedSecret, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.SharedSecret)
 	if err != nil {
 		zap.L().Error("Could not decrypt verify token", zap.Error(err))
 		_ = l.conn.close()

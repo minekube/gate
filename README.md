@@ -21,9 +21,13 @@ The whole point of a Minecraft proxy is to be able to
 move players between servers without fully disconnecting them,
 like switching the world but server-wise.
 
-Similar to the proxies Velocity, BungeeCord, Waterfall etc. Gate
-delivers rich interfaces to interact with connected players on a
-network of Minecraft servers.
+Similar to the proxies
+[Velocity](https://github.com/VelocityPowered/Velocity)
+_(where much of the knowledge and ideas for this proxy comes from)_,
+[BungeeCord](https://github.com/SpigotMC/BungeeCord),
+[Waterfall](https://github.com/PaperMC/Waterfall) etc.
+Gate delivers rich interfaces to interact with connected players
+on a network of Minecraft servers.
 
 Therefore, Gate reads all packets send between
 players (Minecraft client) and servers (e.g. Minecraft spigot, paper, sponge, ...),
@@ -90,14 +94,13 @@ create a `proxy.New(...)`, register servers and event subscribers and start
 To simplify and accelerate customization of Gate there
 will be added support for scripting languages such as
 [Tango](https://github.com/d5/tengo) and
-[Lua](https://github.com/yuin/gopher-lua)
-to extend Gate.
+[Lua](https://github.com/yuin/gopher-lua).
 
 > This feature will be added when highly requested.
 
 ## Anticipated future of Gate
 
-- Gate will be a high performance & cloud native Minecraft Proxy
+- Gate will be a high performance & cloud native Minecraft proxy
 ready for massive scale in the cloud!
 
 - Players can always join and will never be kicked if there is
