@@ -67,8 +67,6 @@ more things planned (e.g. command system, more events, stability etc.).
 - Can't login sometime in online mode.
   - _Dev note: Is this due to Mojang API database latencies when
  replicating data for the `hasJoined` entpoint?_
-- Login hangs (`Started bridging backend server to player`)
-  - Please just restart the proxy. (A fix is on the way...)
 
 ## Extending Gate with custom code
 
@@ -93,7 +91,7 @@ create a `proxy.New(...)`, register servers and event subscribers and start
 
 To simplify and accelerate customization of Gate there
 will be added support for scripting languages such as
-[Tango](https://github.com/d5/tengo) and
+[Tengo](https://github.com/d5/tengo) and
 [Lua](https://github.com/yuin/gopher-lua).
 
 > This feature will be added when highly requested.

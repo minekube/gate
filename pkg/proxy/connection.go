@@ -91,10 +91,6 @@ func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool, connDetails 
 // reads from underlying connection.
 func (c *minecraftConn) nextPacket() (p *proto.PacketContext, err error) {
 	p, err = c.decoder.ReadPacket()
-	//fmt.Println(p == nil, err)
-	//if p != nil {
-	//	fmt.Println(p.PacketId, p.Direction, len(p.Payload),reflect.TypeOf(p.Packet))
-	//}
 	return
 }
 
@@ -119,7 +115,7 @@ func (c *minecraftConn) readLoop() {
 		// Read next packet.
 		packetCtx, err := c.nextPacket()
 		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
-			fmt.Println(c.RemoteAddr(), err)
+			zap.L().Debug("Error reading packet", zap.Error(err))
 			if handleReadErr(err) {
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
@@ -395,6 +391,7 @@ func (c *minecraftConn) setSessionHandler0(handler sessionHandler) {
 // Sets the compression threshold on the connection.
 // You are responsible for sending packet.SetCompression beforehand.
 func (c *minecraftConn) SetCompressionThreshold(threshold int) error {
+	zap.S().Debugf("Set compression threshold %d", threshold)
 	c.decoder.SetCompressionThreshold(threshold)
 	return c.encoder.SetCompression(threshold, c.config().Compression.Level)
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"fmt"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/auth"
@@ -272,6 +273,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 	if cfg.Forwarding.Mode == config.NoneForwardingMode {
 		playerId = uuid.OfflinePlayerUuid(player.Username())
 	}
+	fmt.Println("write login success")
 	if player.WritePacket(&packet.ServerLoginSuccess{
 		UUID:     playerId,
 		Username: player.Username(),

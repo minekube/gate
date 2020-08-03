@@ -17,6 +17,7 @@ var (
 func init() {
 	Handshake.ServerBound.Register(&p.Handshake{},
 		m(0x00, Minecraft_1_7_2))
+
 	Status.ServerBound.Register(&p.StatusRequest{},
 		m(0x00, Minecraft_1_7_2))
 	Status.ServerBound.Register(&p.StatusPing{},
@@ -33,6 +34,7 @@ func init() {
 		m(0x01, Minecraft_1_7_2))
 	Login.ServerBound.Register(&p.LoginPluginResponse{},
 		m(0x02, Minecraft_1_7_2))
+
 	Login.ClientBound.Register(&p.Disconnect{},
 		m(0x00, Minecraft_1_7_2))
 	Login.ClientBound.Register(&p.EncryptionRequest{},
@@ -78,6 +80,9 @@ func init() {
 		m(0x02, Minecraft_1_12_1),
 		m(0x03, Minecraft_1_14),
 	)
+	// coming soon...
+	// TabCompleteRequest
+	// ResourcePackResponse
 
 	Play.ClientBound.Register(&p.KeepAlive{},
 		m(0x00, Minecraft_1_7_2),
@@ -114,7 +119,6 @@ func init() {
 		m(0x1A, Minecraft_1_16),
 	)
 	Play.ClientBound.Register(&p.Chat{},
-
 		m(0x02, Minecraft_1_7_2),
 		m(0x0F, Minecraft_1_9),
 		m(0x0E, Minecraft_1_13),
@@ -131,4 +135,28 @@ func init() {
 		m(0x50, Minecraft_1_15),
 		m(0x4F, Minecraft_1_16),
 	)
+	Play.ClientBound.Register(&plugin.Message{},
+		m(0x3F, Minecraft_1_7_2),
+		m(0x18, Minecraft_1_9),
+		m(0x19, Minecraft_1_13),
+		m(0x18, Minecraft_1_14),
+		m(0x19, Minecraft_1_15),
+		m(0x18, Minecraft_1_16),
+	)
+	Play.ClientBound.Register(&p.ResourcePackRequest{},
+		m(0x48, Minecraft_1_8),
+		m(0x32, Minecraft_1_9),
+		m(0x33, Minecraft_1_12),
+		m(0x34, Minecraft_1_12_1),
+		m(0x37, Minecraft_1_13),
+		m(0x39, Minecraft_1_14),
+		m(0x3A, Minecraft_1_15),
+		m(0x39, Minecraft_1_16),
+	)
+	// coming soon...
+	// BossBar
+	// TabCompleteResponse
+	// AvailableCommands
+	// HeaderAndFooter
+	// PlayerListItem
 }

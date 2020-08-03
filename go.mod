@@ -6,7 +6,9 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
 	github.com/google/uuid v1.1.1
+	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/sandertv/gophertunnel v1.7.11
+	github.com/sasha-s/go-deadlock v0.2.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1

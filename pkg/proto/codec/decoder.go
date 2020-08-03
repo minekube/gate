@@ -5,7 +5,6 @@ import (
 	"compress/zlib"
 	"errors"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/state"
 	"go.minekube.com/gate/pkg/proto/util"
@@ -77,10 +76,9 @@ func (d *Decoder) SetReader(rd io.Reader) {
 }
 
 func (d *Decoder) SetCompressionThreshold(threshold int) {
-	fmt.Println("set compression", threshold)
 	d.mu.Lock()
 	d.compressionThreshold = threshold
-	d.compression = threshold > 0
+	d.compression = threshold >= 0
 	d.mu.Unlock()
 }
 
@@ -109,18 +107,28 @@ func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 
 // can eventually receive an empty payload which packet should be skipped
 func (d *Decoder) readPayload() (payload []byte, err error) {
+	payload, err = readVarIntFrame(d.rd)
+	if err != nil {
+		return
+	}
+	if len(payload) == 0 {
+		return
+	}
+	fmt.Println("reading compressed", d.compression)
 	if d.compression { // Decoder expects compressed payload
-		claimedUncompressedSize, err := util.ReadVarInt(d.rd)
+		// buf contains: claimedUncompressedSize + (compressed packet id & data)
+		buf := bytes.NewBuffer(payload)
+		claimedUncompressedSize, err := util.ReadVarInt(buf)
 		if err != nil {
 			return nil, err
 		}
 		if claimedUncompressedSize <= 0 {
 			// This message is not compressed
-			return readVarIntFrame(d.rd)
+			return buf.Bytes(), nil
 		}
-		return d.decompress(claimedUncompressedSize)
+		return d.decompress(claimedUncompressedSize, buf)
 	}
-	return readVarIntFrame(d.rd)
+	return
 }
 
 func readVarIntFrame(rd io.Reader) (payload []byte, err error) {
@@ -143,7 +151,7 @@ func readVarIntFrame(rd io.Reader) (payload []byte, err error) {
 	return payload, nil
 }
 
-func (d *Decoder) decompress(claimedUncompressedSize int) (decompressed []byte, err error) {
+func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompressed []byte, err error) {
 	if claimedUncompressedSize < d.compressionThreshold {
 		return nil, errs.NewSilentErr("uncompressed size %d is less than set threshold %d",
 			claimedUncompressedSize, d.compressionThreshold)
@@ -153,7 +161,7 @@ func (d *Decoder) decompress(claimedUncompressedSize int) (decompressed []byte, 
 			claimedUncompressedSize, UncompressedCap)
 	}
 
-	z, err := zlib.NewReader(d.rd)
+	z, err := zlib.NewReader(rd)
 	if err != nil {
 		return nil, err
 	}
@@ -164,11 +172,7 @@ func (d *Decoder) decompress(claimedUncompressedSize int) (decompressed []byte, 
 	if err != nil {
 		return nil, err
 	}
-	if err = z.Close(); err != nil {
-		return nil, err
-	}
-	spew.Dump(decompressed, len(decompressed))
-	return decompressed, nil
+	return decompressed, z.Close()
 }
 
 // Indicates a packet was known and successfully decoded by it's registered decoder,

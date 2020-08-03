@@ -8,11 +8,6 @@ import (
 // Config is the configuration of the proxy.
 type Config struct {
 	File
-
-	//Encryption struct { replaced by auth.Authenticator
-	//	PrivateKey    *rsa.PrivateKey
-	//	PublicKeyASN1 []byte
-	//}
 }
 
 // File is for reading a config file into this struct.
@@ -53,6 +48,7 @@ type File struct {
 	BungeePluginChannelEnabled          bool
 	ProxyProtocol                       bool // ha-proxy compatibility
 	ConfigAutoUpdate                    bool
+	Debug                               bool
 }
 
 func init() {
@@ -64,9 +60,9 @@ func init() {
 	viper.SetDefault("status.maxplayers", 1000)
 	viper.SetDefault("status.faviconfile", "server-icon.png")
 	viper.SetDefault("status.showPingRequests", false)
-	viper.SetDefault("compression.threshold", -1)
-	//viper.SetDefault("compression.threshold", 256) // TODO de/compression doesn't work yet
-	viper.SetDefault("compression.level", -1)
+	//viper.SetDefault("compression.threshold", -1)
+	viper.SetDefault("compression.threshold", 256) // TODO de/compression doesn't work yet
+	viper.SetDefault("compression.level", 1)
 	viper.SetDefault("query.enabled", false)
 	viper.SetDefault("query.port", 25577)
 	viper.SetDefault("query.showplugins", false)

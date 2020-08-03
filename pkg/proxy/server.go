@@ -241,9 +241,10 @@ func (s *serverConnection) phase() backendConnectionPhase {
 func (s *serverConnection) connect(ctx context.Context, resultFn internalConnectionResultFn) {
 	addr := s.server.ServerInfo().Addr().String()
 
+	// Connect proxy -> server
 	zap.L().Debug("Proxy connecting to server to bridge player...", zap.String("addr", addr))
 	var d net.Dialer
-	c, err := d.DialContext(ctx, "tcp", addr)
+	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		resultFn(nil, fmt.Errorf("error connecting to server %s: %w", addr, err))
 		return
@@ -252,10 +253,8 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 		zap.String("name", s.server.ServerInfo().Name()),
 		zap.String("addr", addr))
 
-	// Kick off the connection process
-	// connection from proxy -> server (backend)
-	s.mu.Lock()
-	s.connection = newMinecraftConn(c, s.player.proxy, false, func() []zap.Field {
+	// Wrap server connection
+	serverMc := newMinecraftConn(conn, s.player.proxy, false, func() []zap.Field {
 		return []zap.Field{
 			zap.Bool("isBackendServerConnection", true),
 			zap.String("serverName", s.Server().ServerInfo().Name()),
@@ -264,23 +263,17 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 			zap.Stringer("forPlayerUuid", s.player.Id()),
 		}
 	})
+
+	s.mu.Lock()
+	s.connection = serverMc
 	s.connection.setSessionHandler0(newBackendLoginSessionHandler(s, resultFn))
-	s.connPhase = s.connection.connType.initialBackendPhase()
+	s.connPhase = serverMc.connType.initialBackendPhase()
+	s.mu.Unlock()
+
 	zap.L().Debug("Started bridging backend server to player",
 		zap.String("addr", addr),
 		zap.String("server", s.server.ServerInfo().Name()))
 	zap.String("player", s.player.Username())
-	go s.connection.readLoop() // Start reading from backend
-	s.mu.Unlock()
-
-	s.startHandshake()
-}
-
-func (s *serverConnection) startHandshake() {
-	mc, ok := s.ensureConnected()
-	if !ok {
-		return
-	}
 
 	// Initiate the handshake.
 	protocol := s.player.Protocol()
@@ -302,12 +295,21 @@ func (s *serverConnection) startHandshake() {
 	p, _ := strconv.Atoi(port)
 	handshake.Port = int16(p)
 
-	if mc.BufferPacket(handshake) != nil {
+	if serverMc.BufferPacket(handshake) != nil {
 		return
 	}
-	mc.SetProtocol(protocol)
-	mc.SetState(state.Login)
-	_ = mc.WritePacket(&packet.ServerLogin{Username: s.player.Username()})
+
+	// Set server's protocol & state
+	// after writing handshake, but before writing ServerLogin
+	serverMc.SetProtocol(protocol)
+	serverMc.SetState(state.Login)
+
+	// Kick off the connection process
+	// connection from proxy -> server (backend)
+	if serverMc.WritePacket(&packet.ServerLogin{Username: s.player.Username()}) != nil {
+		return
+	}
+	go serverMc.readLoop()
 }
 
 func (s *serverConnection) createLegacyForwardingAddress() string {

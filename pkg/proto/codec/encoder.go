@@ -76,7 +76,7 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		return
 	}
 
-	return e.writeBuf(buf)
+	return e.writeBuf(buf) // packet id + data
 }
 
 // Write encodes payload (uncompressed and unencrypted) (containing packed id + data)
@@ -87,19 +87,32 @@ func (e *Encoder) WriteBuf(payload *bytes.Buffer) (n int, err error) {
 	return e.writeBuf(payload)
 }
 
+// see https://wiki.vg/Protocol#Packet_format for details
 func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
+	fmt.Println("writing compressed", e.compression.enabled)
 	if e.compression.enabled {
-		payload, err = e.compress(payload.Bytes())
-		if err != nil {
-			return
+		compressed := new(bytes.Buffer)
+		uncompressedSize := payload.Len()
+		if uncompressedSize <= e.compression.threshold {
+			// Under the threshold, there is nothing to do.
+			_ = util.WriteVarInt(compressed, 0)
+			_, _ = payload.WriteTo(compressed)
+		} else {
+			_ = util.WriteVarInt(compressed, uncompressedSize)
+			if err = e.compress(payload.Bytes(), compressed); err != nil {
+				return 0, err
+			}
 		}
+		// uncompressed length + packet id + data
+		payload = compressed
 	}
 
-	p := bytes.NewBuffer(make([]byte, 0, payload.Len()+5)) // capacity = buf + 5 as padding for possible size of next VarInt
-	_ = util.WriteVarInt(p, payload.Len())                 // packet length
-	_, _ = payload.WriteTo(p)
+	frame := bytes.NewBuffer(make([]byte, 0, payload.Len()+5))
+	_ = util.WriteVarInt(frame, payload.Len())
+	_, _ = payload.WriteTo(frame)
 
-	_, err = p.WriteTo(e.wr)
+	n = frame.Len()
+	_, err = frame.WriteTo(e.wr)
 	return
 }
 
@@ -108,24 +121,10 @@ func (e *Encoder) Write(payload []byte) (n int, err error) {
 	return e.WriteBuf(bytes.NewBuffer(payload))
 }
 
-func (e *Encoder) compress(payload []byte) (compressed *bytes.Buffer, err error) {
-	uncompressed := len(payload) // length of uncompressed packet id + data
-	b := new(bytes.Buffer)
-
-	if uncompressed <= e.compression.threshold {
-		// Under the threshold, there is nothing to do.
-		_ = util.WriteVarInt(b, 0)
-		_, _ = b.Write(payload)
-		return b, nil
-	}
-
-	_ = util.WriteVarInt(b, uncompressed)
-	e.compression.writer.Reset(b)
-	// Compress
-	if _, err = e.compression.writer.Write(payload); err != nil {
-		return nil, err
-	}
-	return b, nil
+func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {
+	e.compression.writer.Reset(w)
+	_, err = e.compression.writer.Write(payload)
+	return
 }
 
 func (e *Encoder) SetProtocol(protocol proto.Protocol) {

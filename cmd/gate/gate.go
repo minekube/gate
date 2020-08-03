@@ -23,17 +23,16 @@ import (
 	"go.uber.org/zap"
 )
 
-var DevMode bool = true
-
 func Run() (err error) {
-	if err := InitLogger(); err != nil {
-		return fmt.Errorf("error initializing global logger: %w", err)
-	}
-
 	var file config.File
 	if err := viper.Unmarshal(&file); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
+
+	if err := initLogger(file.Debug); err != nil {
+		return fmt.Errorf("error initializing global logger: %w", err)
+	}
+
 	cfg, err := config.NewValid(&file)
 	if err != nil {
 		return fmt.Errorf("error validating config: %w", err)
@@ -42,9 +41,9 @@ func Run() (err error) {
 	return proxy.NewProxy(cfg).Run()
 }
 
-func InitLogger() (err error) {
+func initLogger(debug bool) (err error) {
 	var l *zap.Logger
-	if DevMode {
+	if debug {
 		l, err = zap.NewDevelopment()
 	} else {
 		l, err = zap.NewProduction()

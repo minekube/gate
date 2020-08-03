@@ -108,6 +108,8 @@ func (s *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	}
 	rs := newRegisteredServer(info)
 	s.servers[name] = rs
+
+	zap.S().Debugf("Registered server %q (%s)", info.Name(), info.Addr())
 	return rs, true
 }
 
@@ -122,6 +124,8 @@ func (s *Proxy) Unregister(info ServerInfo) bool {
 		return false
 	}
 	delete(s.servers, name)
+
+	zap.S().Debugf("Unregistered server %q (%s)", info.Name(), info.Addr())
 	return true
 }
 

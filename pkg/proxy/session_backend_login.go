@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
@@ -153,6 +154,7 @@ func (b *backendLoginSessionHandler) handleSetCompression(packet *packet.SetComp
 			b.resultFn(nil, err)
 			b.serverConn.disconnect()
 		}
+		fmt.Println("set server compression")
 	}
 }
 

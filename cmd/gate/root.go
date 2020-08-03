@@ -49,15 +49,18 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringP("bind", "b", "0.0.0.0:25565", "The address to bind to")
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	_ = viper.BindPFlag("bind", rootCmd.Flags().Lookup("bind"))
+	_ = viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
 
 	viper.SetEnvPrefix("GATE")
 	viper.AutomaticEnv() // read in environment variables that match
 
+	viper.SetConfigFile("config.yml")
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())

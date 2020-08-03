@@ -30,7 +30,7 @@ type PacketContext struct {
 	// The unencrypted and uncompressed form of packet id + data.
 	// It contains the actual received payload (may be longer than what the Packet's Decode read).
 	// This can be used to skip encoding Packet.
-	Payload []byte
+	Payload []byte // Empty when encoding.
 }
 
 // Direction is the direction a packet is meant to go to/come from.
