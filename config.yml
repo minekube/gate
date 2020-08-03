@@ -1,7 +1,7 @@
 # This is a simplified config where the rest of the
 # settings are omitted and will be set by default.
 bind: 0.0.0.0:25565
-onlineMode: false
+onlineMode: true
 compression:
   threshold: 256
 servers:
