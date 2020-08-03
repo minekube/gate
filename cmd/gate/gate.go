@@ -1,4 +1,19 @@
-package main
+/*
+Copyright © 2020 NAME HERE <EMAIL ADDRESS>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+package gate
 
 import (
 	"fmt"
@@ -8,31 +23,23 @@ import (
 	"go.uber.org/zap"
 )
 
-func main() {
-	if err := Main(); err != nil {
-		zap.S().Errorf("Error initializing Gate Proxy: %v", err)
-	}
-}
-
 var DevMode bool = true
 
-func init() {
-	viper.AddConfigPath(".")
-}
-
-func Main() (err error) {
+func Run() (err error) {
 	if err := InitLogger(); err != nil {
 		return fmt.Errorf("error initializing global logger: %w", err)
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
+	var file config.File
+	if err := viper.Unmarshal(&file); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
-	server := proxy.NewProxy(cfg)
+	cfg, err := config.NewValid(&file)
+	if err != nil {
+		return fmt.Errorf("error validating config: %w", err)
+	}
 
-	//stopChan := make(chan struct{})
-	return server.Run()
+	return proxy.NewProxy(cfg).Run()
 }
 
 func InitLogger() (err error) {

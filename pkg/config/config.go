@@ -63,20 +63,7 @@ func init() {
 	viper.SetDefault("status.motd", "§bA Gate Proxy Server!")
 	viper.SetDefault("status.maxplayers", 1000)
 	viper.SetDefault("status.faviconfile", "server-icon.png")
-	viper.SetDefault("status.showPingRequests", true)
-	//viper.SetDefault("status.showPingRequests", false)
-	viper.SetDefault("servers", map[string]string{
-		"lobby1":   "localhost:25566",
-		"lobby2":   "localhost:25567",
-		"survival": "localhost:25568",
-		"skywars":  "localhost:25569",
-	})
-	viper.SetDefault("try", []string{"lobby1", "lobby2"})
-	viper.SetDefault("forcedhosts", map[string][]string{
-		"lobby.example.net":    {"lobby1", "lobby2"},
-		"survival.example.net": {"survival"},
-		"sw.example.net":       {"skywars"},
-	})
+	viper.SetDefault("status.showPingRequests", false)
 	viper.SetDefault("compression.threshold", -1)
 	//viper.SetDefault("compression.threshold", 256) // TODO de/compression doesn't work yet
 	viper.SetDefault("compression.level", -1)
@@ -101,17 +88,6 @@ func NewValid(f *File) (c *Config, err error) {
 	return &Config{
 		File: *f,
 	}, nil
-}
-
-func Load() (*Config, error) {
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-	}
-	var file File
-	if err := viper.Unmarshal(&file); err != nil {
-		return nil, err
-	}
-	return NewValid(&file)
 }
 
 func (c *Config) AttemptConnectionOrder() []string {

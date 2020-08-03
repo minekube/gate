@@ -92,7 +92,6 @@ type connectedPlayer struct {
 	settings         player.Settings
 	modInfo          *modinfo.ModInfo
 	connPhase        clientConnectionPhase
-	// TODO tear down future?!
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
