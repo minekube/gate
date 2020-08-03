@@ -114,7 +114,6 @@ func (d *Decoder) readPayload() (payload []byte, err error) {
 	if len(payload) == 0 {
 		return
 	}
-	fmt.Println("reading compressed", d.compression)
 	if d.compression { // Decoder expects compressed payload
 		// buf contains: claimedUncompressedSize + (compressed packet id & data)
 		buf := bytes.NewBuffer(payload)

@@ -89,7 +89,6 @@ func (e *Encoder) WriteBuf(payload *bytes.Buffer) (n int, err error) {
 
 // see https://wiki.vg/Protocol#Packet_format for details
 func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
-	fmt.Println("writing compressed", e.compression.enabled)
 	if e.compression.enabled {
 		compressed := new(bytes.Buffer)
 		uncompressedSize := payload.Len()

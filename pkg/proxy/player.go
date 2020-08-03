@@ -293,7 +293,9 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 		}
 
 		p.tryIndex = i
-		return p.proxy.Server(toTry)
+		if s := p.proxy.Server(toTry); s != nil {
+			return s
+		}
 	}
 	return nil
 }

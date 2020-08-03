@@ -117,7 +117,7 @@ func (i *serverInfo) Equals(o ServerInfo) bool {
 	return i == nil && o == nil || (i != nil && o != nil &&
 		i.Name() == o.Name() &&
 		i.Addr().String() == o.Addr().String() &&
-		i.Addr().Network() == o.Addr().String())
+		i.Addr().Network() == o.Addr().Network())
 }
 
 func NewServerInfo(name string, addr net.Addr) ServerInfo {
@@ -356,7 +356,9 @@ func (s *serverConnection) disconnect() {
 	defer s.mu.Unlock()
 	if s.connection != nil {
 		s.gracefulDisconnect.Store(true)
-		s.connection.closeKnown(false)
+		if !s.connection.Closed() { // only close if not already closing to prevent deadlock
+			s.connection.closeKnown(false)
+		}
 		s.connection = nil // nil means not connected
 	}
 }
