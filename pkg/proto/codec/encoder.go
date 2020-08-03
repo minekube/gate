@@ -123,7 +123,10 @@ func (e *Encoder) Write(payload []byte) (n int, err error) {
 func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {
 	e.compression.writer.Reset(w)
 	_, err = e.compression.writer.Write(payload)
-	return
+	if err != nil {
+		return err
+	}
+	return e.compression.writer.Flush()
 }
 
 func (e *Encoder) SetProtocol(protocol proto.Protocol) {

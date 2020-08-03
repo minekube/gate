@@ -3,7 +3,6 @@ package proxy
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/codec"
@@ -165,7 +164,6 @@ func handleReadErr(err error) (recoverable bool) {
 		errors.Is(err, io.ErrNoProgress) || errors.Is(err, io.ErrClosedPipe) ||
 		errors.Is(err, io.ErrShortBuffer) || errors.Is(err, syscall.EBADF) ||
 		strings.Contains(err.Error(), "use of closed file") {
-		fmt.Println("unrecoverable", err)
 		return false
 	}
 	zap.L().Error("error reading next packet, unrecoverable and closing connection", zap.Error(err))

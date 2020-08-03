@@ -66,7 +66,7 @@ more things planned (e.g. command system, more events, stability etc.).
 
 - Can't login sometime in online mode.
   - _Dev note: Is this due to Mojang API database latencies when
- replicating data for the `hasJoined` entpoint?_
+ replicating data for the `hasJoined` endpoint?_
 
 ## Extending Gate with custom code
 
