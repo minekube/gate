@@ -231,11 +231,16 @@ func (l *loginSessionHandler) initPlayer(profile *gameprofile.GameProfile, onlin
 	zap.S().Infof("%s has connected", player)
 
 	// Setup permissions
-	permSetup := &PermissionSetupEvent{
-		player: player,
-		// TODO permission.Provider default perms
+	permSetup := &PermissionsSetupEvent{
+		subject:     player,
+		defaultFunc: player.permFunc,
 	}
 	player.proxy.event.Fire(permSetup)
+	if l.conn.Closed() {
+		return // Player disconnected
+	}
+	player.permFunc = permSetup.Func()
+
 	//e := r.(*PermissionSetupEvent)
 	if player.Active() {
 		// Wait for permissions to load, then set the players permission function

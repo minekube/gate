@@ -10,9 +10,9 @@
 > there is a "stable enough" release.
 
 ### Target audiences
-- simple Minecraft network admins and
-- advanced networks wanting performance while
-operating at a massive scale
+- advanced networks wanting performance while operating at a high scale
+- simple Minecraft network admins when [scripting languages](#script-languages)
+are supported
 
 
 ## What Gate does

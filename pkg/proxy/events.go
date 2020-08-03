@@ -3,6 +3,7 @@ package proxy
 import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/proxy/message"
+	"go.minekube.com/gate/pkg/proxy/permission"
 	"go.minekube.com/gate/pkg/proxy/player"
 	"go.minekube.com/gate/pkg/util/gameprofile"
 )
@@ -60,6 +61,45 @@ func (e *GameProfileRequestEvent) GameProfile() *gameprofile.GameProfile {
 }
 
 //
+//
+//
+//
+//
+//
+//
+//
+
+// PermissionsSetupEvent is fired once a permission.Subject's
+// permissions are being initialized.
+type PermissionsSetupEvent struct {
+	subject     permission.Subject
+	defaultFunc permission.Func
+
+	fn permission.Func
+}
+
+// Subject returns the subject the permissions are setup for.
+func (p *PermissionsSetupEvent) Subject() permission.Subject {
+	return p.subject
+}
+
+// Func returns the permission.Func used for the subject.
+func (p *PermissionsSetupEvent) Func() permission.Func {
+	if p.fn == nil {
+		return p.defaultFunc
+	}
+	return p.fn
+}
+
+// SetFunc sets the permission.Func use for the subject.
+// If fn is nil, the default Func fill be used.
+func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
+	if fn == nil {
+		return
+	}
+	p.fn = fn
+}
+
 //
 //
 //
@@ -133,22 +173,6 @@ func (e *PreLoginEvent) ForceOfflineMode() {
 
 //
 //
-//
-//
-//
-//
-//
-//
-
-type PermissionSetupEvent struct {
-	player Player
-	// TODO
-}
-
-func (e *PermissionSetupEvent) Player() Player {
-	return e.player
-}
-
 //
 //
 //

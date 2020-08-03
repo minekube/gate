@@ -7,6 +7,10 @@ import (
 	"io"
 )
 
+const (
+	MaxServerBoundMessageLength = 256
+)
+
 type Chat struct {
 	Message string
 	Type    MessagePosition

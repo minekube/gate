@@ -3,7 +3,9 @@ package proxy
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
@@ -27,17 +29,19 @@ import (
 	"time"
 )
 
+// Player is a connected Minecraft player.
 type Player interface {
 	Inbound
 	CommandSource
 	message.ChannelMessageSource
 	message.ChannelMessageSink
-	Username() string
-	Id() uuid.UUID
-	// May be nil, if no connection!
+
+	Username() string // The username of the player.
+	Id() uuid.UUID    // The Minecraft UUID of the player.
+	// May be nil, if no backend server connection!
 	CurrentServer() ServerConnection // Returns the current server connection of the player.
 	Ping() time.Duration             // The player's ping or -1 if currently unknown.
-	OnlineMode() bool                // Whether the player is authenticated with Mojang servers.
+	OnlineMode() bool                // Whether the player was authenticated with Mojang's session servers.
 	// Creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() *gameprofile.GameProfile // Returns the player's game profile.
@@ -48,19 +52,19 @@ type Player interface {
 	Disconnect(reason component.Component)
 	// Sends chats input onto the player's current server as if
 	// they typed it into the client chat box.
-	SpoofChatInput(input string)
+	SpoofChatInput(input string) error
 	// Sends the specified resource pack from url to the user. If at all possible, send the
-	// resource pack using sendResourcePack(string, []byte). To monitor the status of the
+	// resource pack with a sha1 hash using SendResourcePackWithHash. To monitor the status of the
 	// sent resource pack, subscribe to PlayerResourcePackStatusEvent.
-	SendResourcePack(url string)
+	SendResourcePack(url string) error
 	// Sends the specified resource pack from url to the user, using the specified 20-byte
 	// SHA-1 hash of the resource pack file. To monitor the status of the sent resource pack,
 	// subscribe to PlayerResourcePackStatusEvent.
-	SendResourcePackWithHash(url string, sha1Hash []byte)
+	SendResourcePackWithHash(url string, sha1Hash []byte) error
 	// TODO
 }
 
-// CommandSource can run a Command.
+// CommandSource is the source that ran a command.
 type CommandSource interface {
 	permission.Subject
 	// Sends a message component to the invoker.
@@ -73,6 +77,7 @@ type connectedPlayer struct {
 	onlineMode  bool
 	profile     *gameprofile.GameProfile
 	ping        atomic.Duration
+	permFunc    permission.Func
 
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
@@ -111,6 +116,7 @@ func newConnectedPlayer(
 		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
 		connPhase:      conn.Type().initialClientPhase(),
 		ping:           ping,
+		permFunc:       func(string) permission.TriState { return permission.Undefined },
 	}
 }
 
@@ -126,12 +132,12 @@ func (p *connectedPlayer) phase() clientConnectionPhase {
 	return p.connPhase
 }
 
-func (p *connectedPlayer) HasPermission(permission string) {
-	panic("implement me")
+func (p *connectedPlayer) HasPermission(permission string) bool {
+	return p.PermissionValue(permission).Bool()
 }
 
 func (p *connectedPlayer) PermissionValue(permission string) permission.TriState {
-	panic("implement me")
+	return p.permFunc(permission)
 }
 
 func (p *connectedPlayer) Ping() time.Duration {
@@ -139,23 +145,63 @@ func (p *connectedPlayer) Ping() time.Duration {
 }
 
 func (p *connectedPlayer) OnlineMode() bool {
-	panic("implement me")
+	return p.onlineMode
 }
 
 func (p *connectedPlayer) GameProfile() *gameprofile.GameProfile {
 	return p.profile
 }
 
-func (p *connectedPlayer) SpoofChatInput(input string) {
-	panic("implement me")
+var (
+	ErrNoBackendConnection = errors.New("player has no backend server connection yet")
+	ErrTooLongChatMessage  = errors.New("server bound chat message can not exceed 256 characters")
+)
+
+func (p *connectedPlayer) SpoofChatInput(input string) error {
+	if len(input) > packet.MaxServerBoundMessageLength {
+		return ErrTooLongChatMessage
+	}
+
+	serverMc, ok := p.ensureBackendConnection()
+	if !ok {
+		return ErrNoBackendConnection
+	}
+	return serverMc.WritePacket(&packet.Chat{
+		Message: input,
+		Type:    packet.ChatMessage,
+	})
 }
 
-func (p *connectedPlayer) SendResourcePack(url string) {
-	panic("implement me")
+func (p *connectedPlayer) ensureBackendConnection() (*minecraftConn, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.connectedServer_ == nil {
+		// Player has no backend connection.
+		return nil, false
+	}
+	serverMc := p.connectedServer_.conn()
+	if serverMc == nil {
+		// Player's backend connection is not yet connected to a server.
+		return nil, false
+	}
+	return serverMc, true
 }
 
-func (p *connectedPlayer) SendResourcePackWithHash(url string, sha1Hash []byte) {
-	panic("implement me")
+func (p *connectedPlayer) SendResourcePack(url string) error {
+	return p.WritePacket(&packet.ResourcePackRequest{
+		Url:  url,
+		Hash: "",
+	})
+}
+
+func (p *connectedPlayer) SendResourcePackWithHash(url string, sha1Hash []byte) error {
+	if len(sha1Hash) != 20 {
+		return errors.New("hash length must be 20")
+	}
+	return p.WritePacket(&packet.ResourcePackRequest{
+		Url:  url,
+		Hash: hex.EncodeToString(sha1Hash),
+	})
 }
 
 func (p *connectedPlayer) VirtualHost() net.Addr {
@@ -207,13 +253,18 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 	return p.WritePacket(&packet.Chat{
 		Message: messageJson,
 		Type:    packet.ChatMessage,
-		Sender:  p.Id(),
+		Sender:  uuid.Nil,
 	})
 }
 
-func (p *connectedPlayer) SendPluginMessage(id message.ChannelIdentifier, data []byte) error {
-	panic("implement me") // TODO
+func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier, data []byte) error {
+	return p.WritePacket(&plugin.Message{
+		Channel: identifier.Id(),
+		Data:    data,
+	})
 }
+
+// TODO add header/footer, action bar, title & boss bar methods
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.
@@ -350,7 +401,7 @@ func (p *connectedPlayer) SetModInfo(modInfo *modinfo.ModInfo) {
 	p.modInfo = modInfo
 }
 
-// NOTE: the returned set is not thread-safe and must not be modified,
+// NOTE: the returned set is not goroutine-safe and must not be modified,
 // it is only for reading!!!
 func (p *connectedPlayer) knownChannels() sets.String {
 	p.pluginChannelsMu.RLock()
