@@ -40,16 +40,17 @@ func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		return err
 	}
 	if c.Direction == proto.ClientBound && c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
-		type_, err := util.ReadByte(rd)
+		var pos byte
+		pos, err = util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
-		ch.Type = MessagePosition(type_)
+		ch.Type = MessagePosition(pos)
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
 			ch.Sender, err = util.ReadUuid(rd)
 		}
 	}
-	return err
+	return
 }
 
 // MessagePosition is the position a chat message is going to be sent.

@@ -39,8 +39,9 @@ func TypeOf(e Event) Type {
 
 type Event interface{}
 
+// Wait blocks until no event subscribers are running.
 func (m *Manager) Wait() {
-	m.Wait()
+	m.activeSubscribers.Wait()
 }
 
 func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubscribe func()) {
@@ -62,7 +63,7 @@ func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubsc
 	list = append(list, sub)
 	// Sort subscribers by priority
 	sort.SliceStable(list, func(i, j int) bool {
-		return list[i].priority < list[i].priority
+		return list[i].priority < list[j].priority
 	})
 
 	// Unsubscribe func

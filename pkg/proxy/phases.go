@@ -25,18 +25,10 @@ var vanillaClientPhase clientConnectionPhase = &noOpClientPhase{}
 
 type noOpClientPhase struct{}
 
-func (noOpClientPhase) handle(*serverConnection, *plugin.Message) bool {
-	return false
-}
-func (noOpClientPhase) resetConnectionPhase(*connectedPlayer) {
-	return
-}
-func (noOpClientPhase) onFirstJoin(*connectedPlayer) {
-	return
-}
-func (noOpClientPhase) consideredComplete() bool {
-	return true
-}
+func (noOpClientPhase) handle(*serverConnection, *plugin.Message) bool { return false }
+func (noOpClientPhase) resetConnectionPhase(*connectedPlayer)          {}
+func (noOpClientPhase) onFirstJoin(*connectedPlayer)                   {}
+func (noOpClientPhase) consideredComplete() bool                       { return true }
 
 type legacyForgeHandshakeClientPhase struct {
 	packetToAdvanceOn     *int                                                                           // nil-able
@@ -191,13 +183,6 @@ func (l *legacyForgeHandshakeClientPhase) onFirstJoin(p *connectedPlayer) {
 
 func (l *legacyForgeHandshakeClientPhase) consideredComplete() bool {
 	return l.consideredComplete_
-}
-
-func (l *legacyForgeHandshakeClientPhase) nextPhase() *legacyForgeHandshakeClientPhase {
-	if l.nextPhase_ != nil {
-		return l.nextPhase_
-	}
-	return l
 }
 
 // Get the phase to act on, depending on the packet that has been sent.

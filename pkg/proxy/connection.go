@@ -98,7 +98,7 @@ func (c *minecraftConn) nextPacket() (p *proto.PacketContext, err error) {
 // close will be called on method return.
 func (c *minecraftConn) readLoop() {
 	// Make sure to close connection on return, if not already
-	defer c.closeKnown(false)
+	defer func() { _ = c.closeKnown(false) }()
 
 	for !c.Closed() && func() bool {
 		defer func() { // Catch any panics

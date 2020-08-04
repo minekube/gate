@@ -56,7 +56,7 @@ func (a *Authenticator) HasJoined(username, optionalUserIp string, serverId stri
 
 func (a *Authenticator) GenerateServerId(sharedSecret []byte) string {
 	s := sha1.New()
-	s.Write(sharedSecret)
-	s.Write(a.PublicKey)
+	_, _ = s.Write(sharedSecret)
+	_, _ = s.Write(a.PublicKey)
 	return hex.EncodeToString(s.Sum(nil))
 }

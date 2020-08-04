@@ -162,16 +162,19 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		} else {
 			uuidString, err = util.ReadStringMax(rd, 32)
 		}
+		if err != nil {
+			return
+		}
 		s.UUID, err = uuid.Parse(uuidString)
 		if err != nil {
 			return fmt.Errorf("error parsing uuid: %v", err)
 		}
 	}
 	if err != nil {
-		return err
+		return
 	}
 	s.Username, err = util.ReadStringMax(rd, maxUsernameLen)
-	return err
+	return
 }
 
 type SetCompression struct {

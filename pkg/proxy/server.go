@@ -357,7 +357,7 @@ func (s *serverConnection) disconnect() {
 	if s.connection != nil {
 		s.gracefulDisconnect.Store(true)
 		if !s.connection.Closed() { // only close if not already closing to prevent deadlock
-			s.connection.closeKnown(false)
+			_ = s.connection.closeKnown(false)
 		}
 		s.connection = nil // nil means not connected
 	}

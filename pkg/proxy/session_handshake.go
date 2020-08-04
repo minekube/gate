@@ -71,7 +71,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbound) {
 	// Check for supported client version.
 	if !proto.Protocol(p.ProtocolVersion).Supported() {
-		h.conn.closeWith(packet.DisconnectWith(&component.Translation{
+		_ = h.conn.closeWith(packet.DisconnectWith(&component.Translation{
 			Key: "multiplayer.disconnect.outdated_client",
 		}))
 		return
@@ -85,7 +85,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 	// and lower, otherwise IP information will never get forwarded.
 	if h.conn.proxy.Config().Forwarding.Mode == config.VelocityForwardingMode &&
 		p.ProtocolVersion < int(proto.Minecraft_1_13.Protocol) {
-		h.conn.closeWith(packet.DisconnectWith(&component.Text{
+		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
 		}))
 		return

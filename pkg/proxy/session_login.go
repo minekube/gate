@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -201,9 +202,9 @@ var (
 	internalServerConnectionError = &component.Text{
 		Content: "Internal server connection error",
 	}
-	unexpectedDisconnect = &component.Text{
-		Content: "Unexpectedly disconnected from remote server - crash?",
-	}
+	//unexpectedDisconnect = &component.Text{
+	//	Content: "Unexpectedly disconnected from remote server - crash?",
+	//}
 	movedToNewServer = &component.Text{
 		Content: "The server you were on kicked you: ",
 		S:       component.Style{Color: color.Red},
@@ -319,7 +320,7 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		player.Disconnect(noAvailableServers) // Will call disconnected() in InitialConnectSessionHandler
 		return
 	}
-	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(nil, nil)
+	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(context.Background(), nil)
 }
 
 func (l *loginSessionHandler) event() *event.Manager {

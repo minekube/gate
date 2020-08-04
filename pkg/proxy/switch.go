@@ -131,9 +131,9 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context, resultFn 
 
 		switch result.Status() {
 		case AlreadyConnectedConnectionStatus:
-			c.player.SendMessage(alreadyConnected)
+			_ = c.player.SendMessage(alreadyConnected)
 		case InProgressConnectionStatus:
-			c.player.SendMessage(alreadyInProgress)
+			_ = c.player.SendMessage(alreadyInProgress)
 		case CanceledConnectionStatus:
 			// Ignore, event subscriber probably handled this.
 		case ServerDisconnectedConnectionStatus:
@@ -266,9 +266,9 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 			ConnectWithIndication(context.Background(), func(successful bool) {
 				if successful {
 					if result.Message == nil {
-						p.SendMessage(movedToNewServer)
+						_ = p.SendMessage(movedToNewServer)
 					} else {
-						p.SendMessage(result.Message)
+						_ = p.SendMessage(result.Message)
 					}
 				} else {
 					p.Disconnect(friendlyReason)
@@ -276,7 +276,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 			})
 	case *NotifyKickResult:
 		if e.KickedDuringServerConnect() {
-			p.SendMessage(result.Message)
+			_ = p.SendMessage(result.Message)
 		} else {
 			p.Disconnect(result.Message)
 		}

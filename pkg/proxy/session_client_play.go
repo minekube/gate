@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"github.com/gammazero/deque"
 	"go.minekube.com/common/minecraft/color"
@@ -320,7 +321,7 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 	if len(args) != 0 && strings.HasPrefix(args[0], "/server") {
 		if len(args) > 1 {
 			// switch server
-			c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(nil, func(successful bool) {
+			c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background(), func(successful bool) {
 				if successful {
 					_ = c.player.SendMessage(&component.Text{
 						Content: "Connected to server " + args[1],

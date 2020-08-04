@@ -79,8 +79,7 @@ func (s *Proxy) Server(name string) RegisteredServer {
 	name = strings.ToLower(name)
 	s.smu.RLock()
 	defer s.smu.RUnlock()
-	rs, _ := s.servers[name]
-	return rs // may be nil
+	return s.servers[name] // may be nil
 }
 
 // Servers gets all registered servers.
