@@ -1,6 +1,15 @@
-# Gate _(alpha)_
+![Logo](docs/images/cover3.png)
 
-**Gate is an extensible Minecraft proxy written in Go.**
+# The Minecraft Proxy _(alpha)_
+
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/minekube/gate?sort=semver)
+[![Doc](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/go.minekube.com/gate)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/minekube/gate?logo=go)
+[![Go Report Card](https://goreportcard.com/badge/go.minekube.com/gate)](https://goreportcard.com/report/go.minekube.com/gate)
+![test](https://github.com/minekube/gate/workflows/test/badge.svg)
+![Discord](https://img.shields.io/discord/633708750032863232?logo=discord)
+
+**Gate is an extensible Minecraft proxy written in Go**
 
 > This project is in its early stages, not yet ready for production and
 > subject to have breaking changes,
@@ -8,6 +17,19 @@
 >
 > It will be tested & used in production by the Minekube network when
 > there is a "stable enough" release.
+
+### Features
+
+- [**Fast**](#benchmarks)
+- High performant parallelism (see benchmarks)
+- [Quick installation](#quick-sample-setup)
+    - simply pick a download from the releases
+    - support windows/macOS/linux/...
+    - single executable binary
+    - (No Java runtime needed)
+- Benefits from Go's awesome language features
+    - simple, reliable, efficient
+    - [and much more](https://golang.org/)
 
 ### Target audiences
 - advanced networks wanting performance while operating at a high scale
@@ -33,6 +55,10 @@ Therefore, Gate reads all packets sent between
 players (Minecraft client) and servers (e.g. Minecraft spigot, paper, sponge, ...),
 logs state changes and emits different events that 
 custom plugins/code can react to.
+
+## Benchmarks
+
+> TODO
 
 ## Quick sample setup
 
