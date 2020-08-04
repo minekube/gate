@@ -36,7 +36,8 @@ custom plugins/code can react to.
 
 ## Quick sample setup
 
-This is a simple sample setup of a Minecraft network using Gate proxy.
+This is a simple setup of a Minecraft network using Gate proxy,
+a Paper 1.16.1 (server1) & Paper 1.8.8 (server2).
 
 **You will only need a JRE (Java Runtime Environment, 8 or higher).**
 
@@ -48,11 +49,11 @@ and run the pre-compiled executable
     - windows: `gate.exe`
     - Or build an executable yourself. ;)
 4. Open two terminals, one for each `server1` & `server2`.
-    - Run `java -jar server.jar` to run both servers.
+    - Run `java -jar <the server jar>` to run both servers.
     
 Now you can connect to the network on `localhost:25565`
-with Minecraft version 1.8.9.
-(Newer versions will be easily supported very, very soon!)
+with a Minecraft version 1.16.1 and 1.8.x.
+Gate tries to connect you to one of the servers as specified in the configuration.
 
 Checkout the `/server` command
 (temporarily hardcoded until commands system has been added).
