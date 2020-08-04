@@ -6,5 +6,7 @@ compression:
   threshold: 256
 servers:
   server1: localhost:25566
+  server2: localhost:25567
 try:
   - server1
+  - server2

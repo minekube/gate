@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"errors"
 	nbt2 "github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
@@ -127,8 +126,6 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	b := new(bytes.Buffer)
-	rd = io.TeeReader(rd, b)
 	j.EntityId, err = util.ReadInt(rd)
 	if err != nil {
 		return err
@@ -182,10 +179,11 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		j.Dimension = int(d)
 	}
 	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
-		j.Difficulty, err = util.ReadInt16(rd)
+		difficulty, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
+		j.Difficulty = int16(difficulty)
 	}
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_15) {
 		j.PartialHashedSeed, err = util.ReadInt64(rd)
@@ -199,7 +197,7 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		return err
 	}
 	if c.Protocol.Lower(proto.Minecraft_1_16) {
-		lt, err := util.ReadStringLen(rd, 16)
+		lt, err := util.ReadStringMax(rd, 16)
 		if err != nil {
 			return err
 		}

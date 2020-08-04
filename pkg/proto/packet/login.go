@@ -23,7 +23,7 @@ func (s *ServerLogin) Encode(_ *proto.PacketContext, wr io.Writer) error {
 }
 
 func (s *ServerLogin) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	s.Username, err = util.ReadStringLen(rd, maxUsernameLen)
+	s.Username, err = util.ReadStringMax(rd, maxUsernameLen)
 	if len(s.Username) == 0 {
 		return errEmptyUsername
 	}
@@ -121,7 +121,7 @@ func (e *EncryptionRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (e *EncryptionRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	e.ServerId, err = util.ReadStringLen(rd, 20)
+	e.ServerId, err = util.ReadStringMax(rd, 20)
 	if err != nil {
 		return err
 	}
@@ -158,9 +158,9 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		s.UUID, err = util.ReadUuid(rd)
 	} else {
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_7_6) {
-			uuidString, err = util.ReadStringLen(rd, 36)
+			uuidString, err = util.ReadStringMax(rd, 36)
 		} else {
-			uuidString, err = util.ReadStringLen(rd, 32)
+			uuidString, err = util.ReadStringMax(rd, 32)
 		}
 		s.UUID, err = uuid.Parse(uuidString)
 		if err != nil {
@@ -170,7 +170,7 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	if err != nil {
 		return err
 	}
-	s.Username, err = util.ReadStringLen(rd, maxUsernameLen)
+	s.Username, err = util.ReadStringMax(rd, maxUsernameLen)
 	return err
 }
 

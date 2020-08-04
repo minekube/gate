@@ -12,15 +12,30 @@ import (
 )
 
 func ReadString(rd io.Reader) (string, error) {
-	return ReadStringLen(rd, bufio.MaxScanTokenSize)
+	return ReadStringMax(rd, bufio.MaxScanTokenSize)
 }
 
-func ReadStringLen(rd io.Reader, maxLength int) (string, error) {
-	b, err := ReadBytesLen(rd, maxLength)
+func ReadStringMax(rd io.Reader, max int) (string, error) {
+	length, err := ReadVarInt(rd)
 	if err != nil {
 		return "", err
 	}
-	return string(b), nil
+	return readStringMax(rd, max, length)
+}
+
+func readStringMax(rd io.Reader, max, length int) (string, error) {
+	if length < 0 {
+		return "", errors.New("length of string must not 0")
+	}
+	if length > max*4 { // *4 since UTF8 character has up to 4 bytes
+		return "", fmt.Errorf("bad string length (got %d, max. %d)", length, max)
+	}
+	str := make([]byte, length)
+	_, err := io.ReadFull(rd, str)
+	if err != nil {
+		return "", err
+	}
+	return string(str), nil
 }
 
 func ReadStringArray(rd io.Reader) ([]string, error) {
@@ -53,7 +68,7 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 		return
 	}
 	if length > maxLength {
-		err = fmt.Errorf("decode, bytes/string length is above given maximum: %d", maxLength)
+		err = fmt.Errorf("decode, bytes/string length %d is above given maximum: %d", length, maxLength)
 		return
 	}
 	bytes = make([]byte, length)
