@@ -24,15 +24,19 @@ func ReadStringLen(rd io.Reader, maxLength int) (string, error) {
 }
 
 func ReadStringArray(rd io.Reader) ([]string, error) {
-	b, err := ReadBytes(rd)
+	length, err := ReadVarInt(rd)
 	if err != nil {
 		return nil, err
 	}
-	s := make([]string, 0, len(b))
-	for _, e := range b {
-		s = append(s, string(e))
+	a := make([]string, 0, length)
+	for i := 0; i < length; i++ {
+		s, err := ReadString(rd)
+		if err != nil {
+			return nil, err
+		}
+		a = append(a, s)
 	}
-	return s, nil
+	return a, nil
 }
 
 func ReadBytes(rd io.Reader) ([]byte, error) {

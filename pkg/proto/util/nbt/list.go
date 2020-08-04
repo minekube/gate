@@ -1,97 +1,97 @@
 package nbt
 
-type NbtList struct {
+type List struct {
 	array interface{}
 }
 
-func WrappedNbtList(array interface{}) NbtList {
-	return NbtList{array: array}
+func WrappedNbtList(array interface{}) List {
+	return List{array: array}
 }
 
-func (this NbtList) AsInt8() []int8 {
-	if val, ok := this.array.([]int8); ok {
+func (l List) AsInt8() []int8 {
+	if val, ok := l.array.([]int8); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsInt16() []int16 {
-	if val, ok := this.array.([]int16); ok {
+func (l List) AsInt16() []int16 {
+	if val, ok := l.array.([]int16); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsInt32() []int32 {
-	if val, ok := this.array.([]int32); ok {
+func (l List) AsInt32() []int32 {
+	if val, ok := l.array.([]int32); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsInt64() []int64 {
-	if val, ok := this.array.([]int64); ok {
+func (l List) AsInt64() []int64 {
+	if val, ok := l.array.([]int64); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsFloat32() []int32 {
-	if val, ok := this.array.([]int32); ok {
+func (l List) AsFloat32() []int32 {
+	if val, ok := l.array.([]int32); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsFloat64() []int64 {
-	if val, ok := this.array.([]int64); ok {
+func (l List) AsFloat64() []int64 {
+	if val, ok := l.array.([]int64); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsByteArray() [][]byte {
-	if val, ok := this.array.([][]byte); ok {
+func (l List) AsByteArray() [][]byte {
+	if val, ok := l.array.([][]byte); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsString() []string {
-	if val, ok := this.array.([]string); ok {
+func (l List) AsString() []string {
+	if val, ok := l.array.([]string); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsList() []NbtList {
-	if val, ok := this.array.([]NbtList); ok {
+func (l List) AsList() []List {
+	if val, ok := l.array.([]List); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsNbt() []Nbt {
-	if val, ok := this.array.([]Nbt); ok {
+func (l List) AsNbt() []Nbt {
+	if val, ok := l.array.([]Nbt); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsInt32Array() [][]int32 {
-	if val, ok := this.array.([][]int32); ok {
+func (l List) AsInt32Array() [][]int32 {
+	if val, ok := l.array.([][]int32); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) AsInt64Array() [][]int64 {
-	if val, ok := this.array.([][]int64); ok {
+func (l List) AsInt64Array() [][]int64 {
+	if val, ok := l.array.([][]int64); ok {
 		return val
 	}
 	return nil
 }
 
-func (this NbtList) Nil() bool {
-	return this.array == nil
+func (l List) Nil() bool {
+	return l.array == nil
 }

@@ -18,7 +18,7 @@ const (
 	UnregisterChannel       string = "minecraft:unregister"
 )
 
-var ValidIdentifierRegex = regexp.MustCompile(`[a-z0-9\-_]*`)
+var InvalidIdentifierRegex = regexp.MustCompile(`[^a-z0-9\\-_]*`)
 
 // McBrand determines whether or not this is a brand plugin message.
 // This is shown on the client.
@@ -86,7 +86,7 @@ func TransformLegacyToModernChannel(name string) string {
 		// BungeeCord does to transform channels, but also removes clearly invalid characters as
 		// well.
 		lower := strings.ToLower(name)
-		return "legacy:" + ValidIdentifierRegex.ReplaceAllString(lower, "")
+		return "legacy:" + InvalidIdentifierRegex.ReplaceAllString(lower, "")
 	}
 }
 

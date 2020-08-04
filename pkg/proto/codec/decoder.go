@@ -220,6 +220,9 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Packet is known, decode data into it.
 	ctx.KnownPacket = true
 	if err = ctx.Packet.Decode(ctx, payload); err != nil {
+		if err == io.EOF { // payload was to short or decoder has a bug
+			err = io.ErrUnexpectedEOF
+		}
 		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s): %w",
 			ctx.Packet, ctx.PacketId, ctx.Protocol, ctx.Direction, err)
 	}

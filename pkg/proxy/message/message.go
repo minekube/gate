@@ -3,7 +3,7 @@ package message
 import (
 	"errors"
 	"fmt"
-	. "go.minekube.com/gate/pkg/proto/packet/plugin"
+	"regexp"
 )
 
 // ChannelIdentifier is a channel identifier for use with plugin messaging.
@@ -37,6 +37,8 @@ const DefaultNamespace = "minecraft"
 type channelIdentifier struct {
 	namespace, name string
 }
+
+var ValidIdentifierRegex = regexp.MustCompile(`[a-z0-9\\-_]*`)
 
 // NewChannelIdentifier returns a new validated channel identifier.
 func NewChannelIdentifier(namespace, name string) (ChannelIdentifier, error) {

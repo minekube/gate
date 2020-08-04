@@ -9,12 +9,12 @@ import (
 type Respawn struct {
 	Dimension            int
 	PartialHashedSeed    int64
-	Difficulty           int8
-	Gamemode             int8
+	Difficulty           int16
+	Gamemode             int16
 	LevelType            string         // empty by default
 	ShouldKeepPlayerData bool           // 1.16+
 	DimensionInfo        *DimensionInfo // 1.16+
-	PreviousGamemode     int8           // 1.16+
+	PreviousGamemode     int16          // 1.16+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -34,7 +34,7 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 		}
 	}
 	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
-		err = util.WriteInt8(wr, r.Difficulty)
+		err = util.WriteByte(wr, byte(r.Difficulty))
 		if err != nil {
 			return err
 		}
@@ -45,12 +45,12 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 			return err
 		}
 	}
-	err = util.WriteInt8(wr, r.Gamemode)
+	err = util.WriteByte(wr, byte(r.Gamemode))
 	if err != nil {
 		return err
 	}
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		err = util.WriteInt8(wr, r.PreviousGamemode)
+		err = util.WriteByte(wr, byte(r.PreviousGamemode))
 		if err != nil {
 			return err
 		}
@@ -93,10 +93,11 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 	}
 	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
-		r.Difficulty, err = util.ReadInt8(rd)
+		difficulty, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
+		r.Difficulty = int16(difficulty)
 	}
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_15) {
 		r.PartialHashedSeed, err = util.ReadInt64(rd)
@@ -104,15 +105,17 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	}
-	r.Gamemode, err = util.ReadInt8(rd)
+	gamemode, err := util.ReadByte(rd)
 	if err != nil {
 		return err
 	}
+	r.Gamemode = int16(gamemode)
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		r.PreviousGamemode, err = util.ReadInt8(rd)
+		previousGamemode, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
+		r.PreviousGamemode = int16(previousGamemode)
 		debug, err := util.ReadBool(rd)
 		if err != nil {
 			return err

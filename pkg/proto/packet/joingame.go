@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"bytes"
 	"errors"
 	nbt2 "github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
@@ -12,18 +13,18 @@ import (
 
 type JoinGame struct {
 	EntityId          int
-	Gamemode          int8
+	Gamemode          int16
 	Dimension         int
 	PartialHashedSeed int64 // 1.15+
-	Difficulty        int8
-	MaxPlayers        int8
+	Difficulty        int16
+	MaxPlayers        int16
 	LevelType         *string // nil-able: removed in 1.16+
 	ViewDistance      int     // 1.14+
 	ReducedDebugInfo  bool
 	ShowRespawnScreen bool
 	DimensionRegistry *DimensionRegistry // 1.16+
 	DimensionInfo     *DimensionInfo     // 1.16+
-	PreviousGamemode  int8               // 1.16+
+	PreviousGamemode  int16              // 1.16+
 
 	// TODO add retained []byte field with util/io.RecordReader so we don't encode again when forwarding
 }
@@ -33,12 +34,12 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = util.WriteUint8(wr, uint8(j.Gamemode))
+	err = util.WriteByte(wr, byte(j.Gamemode))
 	if err != nil {
 		return err
 	}
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		err = util.WriteUint8(wr, uint8(j.PreviousGamemode))
+		err = util.WriteByte(wr, byte(j.PreviousGamemode))
 		if err != nil {
 			return err
 		}
@@ -64,13 +65,13 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	} else {
-		err = util.WriteUint8(wr, uint8(j.Dimension))
+		err = util.WriteByte(wr, byte(j.Dimension))
 		if err != nil {
 			return err
 		}
 	}
 	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
-		err = util.WriteUint8(wr, uint8(j.Difficulty))
+		err = util.WriteByte(wr, byte(j.Difficulty))
 		if err != nil {
 			return err
 		}
@@ -81,7 +82,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	err = util.WriteInt8(wr, j.MaxPlayers)
+	err = util.WriteByte(wr, byte(j.MaxPlayers))
 	if err != nil {
 		return err
 	}
@@ -126,20 +127,24 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	b := new(bytes.Buffer)
+	rd = io.TeeReader(rd, b)
 	j.EntityId, err = util.ReadInt(rd)
 	if err != nil {
 		return err
 	}
-	j.Gamemode, err = util.ReadInt8(rd)
+	gamemode, err := util.ReadByte(rd)
 	if err != nil {
 		return err
 	}
+	j.Gamemode = int16(gamemode)
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		j.PreviousGamemode, err = util.ReadInt8(rd)
+		previousGamemode, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
+		j.PreviousGamemode = int16(previousGamemode)
 		levelNames, err := util.ReadStringArray(rd)
 		if err != nil {
 			return err
@@ -170,14 +175,14 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	} else {
-		d, err := util.ReadInt8(rd)
+		d, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
 		j.Dimension = int(d)
 	}
 	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
-		j.Difficulty, err = util.ReadInt8(rd)
+		j.Difficulty, err = util.ReadInt16(rd)
 		if err != nil {
 			return err
 		}
@@ -188,12 +193,13 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	}
-	j.MaxPlayers, err = util.ReadInt8(rd)
+	maxPlayers, err := util.ReadByte(rd)
+	j.MaxPlayers = int16(maxPlayers)
 	if err != nil {
 		return err
 	}
 	if c.Protocol.Lower(proto.Minecraft_1_16) {
-		lt, err := util.ReadString(rd)
+		lt, err := util.ReadStringLen(rd, 16)
 		if err != nil {
 			return err
 		}

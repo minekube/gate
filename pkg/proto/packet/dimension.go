@@ -38,13 +38,20 @@ func FromGameData(toParse nbt.Nbt) (mappings []*DimensionData, err error) {
 	if toParse == nil {
 		return nil, errors.New("gamedata is cannot be nil")
 	}
-	d, ok := toParse.List("dimension")
-	if !ok || d.Nil() {
+	dimension, ok := toParse["dimension"]
+	if !ok {
 		return nil, errors.New("gamedata does not contain dimension")
 	}
-	dimension := d.AsNbt()
+	list, ok := dimension.([]interface{})
+	if !ok {
+		return nil, errors.New("gamedata dimension is not a list")
+	}
 	var data *DimensionData
-	for _, compound := range dimension {
+	for i, compound := range list {
+		compound, ok := compound.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("dimension data at index %d is not a compount nbt", i)
+		}
 		data, err = DecodeCompoundTagDimensionData(compound)
 		if err != nil {
 			return nil, err

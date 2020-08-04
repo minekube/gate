@@ -29,7 +29,7 @@ _(where much of the knowledge and ideas for this proxy comes from)_,
 Gate delivers rich interfaces to interact with connected players
 on a network of Minecraft servers.
 
-Therefore, Gate reads all packets send between
+Therefore, Gate reads all packets sent between
 players (Minecraft client) and servers (e.g. Minecraft spigot, paper, sponge, ...),
 logs state changes and emits different events that 
 custom plugins/code can react to.
