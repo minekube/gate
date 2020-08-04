@@ -349,3 +349,7 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 	}
 	c.forwardToServer(p)
 }
+
+func (c *clientPlaySessionHandler) player_() *connectedPlayer {
+	return c.player
+}

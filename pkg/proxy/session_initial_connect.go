@@ -54,3 +54,7 @@ func (i *initialConnectSessionHandler) disconnected() {
 }
 
 var _ sessionHandler = (*initialConnectSessionHandler)(nil)
+
+func (i *initialConnectSessionHandler) player_() *connectedPlayer {
+	return i.player
+}

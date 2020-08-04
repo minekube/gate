@@ -98,7 +98,7 @@ func (c *minecraftConn) nextPacket() (p *proto.PacketContext, err error) {
 // close will be called on method return.
 func (c *minecraftConn) readLoop() {
 	// Make sure to close connection on return, if not already
-	defer c.close()
+	defer c.closeKnown(false)
 
 	for !c.Closed() && func() bool {
 		defer func() { // Catch any panics
@@ -267,11 +267,18 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 		if markKnown {
 			c.knownDisconnect.Store(true)
 		}
+
 		close(c.closed)
 		err = c.c.Close()
+
 		if sh := c.SessionHandler(); sh != nil {
 			sh.disconnected()
+
+			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
+				zap.S().Infof("%s has disconnected", p.player_())
+			}
 		}
+
 	})
 	if alreadyClosed {
 		err = errAlreadyClosedConn
