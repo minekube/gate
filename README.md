@@ -2,9 +2,9 @@
 
 # The Minecraft Proxy _(alpha)_
 
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/minekube/gate?sort=semver)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/minekube/gate?sort=semver)](https://github.com/minekube/gate/releases)
 [![Doc](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/go.minekube.com/gate)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/minekube/gate?logo=go)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/minekube/gate?logo=go)](https://golang.org/doc/devel/release.html)
 [![Go Report Card](https://goreportcard.com/badge/go.minekube.com/gate)](https://goreportcard.com/report/go.minekube.com/gate)
 [![test](https://github.com/minekube/gate/workflows/test/badge.svg)](https://github.com/minekube/gate/actions?query=workflow%3Atest)
 [![Discord](https://img.shields.io/discord/633708750032863232?logo=discord)](https://discord.gg/6vMDqWE)
@@ -21,12 +21,14 @@
 ### Features
 
 - [**Fast**](#benchmarks)
-- High performant parallelism (see benchmarks)
+- Excellent server version support
+    - Newest version down to 1.7 (+forge support)
+    - Bungeecord plugins compatible (plugin messages)
+    - Velocity's player forwarding mode
 - [Quick installation](#quick-sample-setup)
-    - simply pick a download from the releases
-    - support windows/macOS/linux/...
-    - single executable binary
-    - (No Java runtime needed)
+    - simply pick a download from the [releases](https://github.com/minekube/gate/releases)
+    - (No Java runtime needed for Gate itself)
+- A simple API to [extend Gate](#extending-gate-with-custom-code)
 - Benefits from Go's awesome language features
     - simple, reliable, efficient
     - [and much more](https://golang.org/)
@@ -65,16 +67,16 @@ custom plugins/code can react to.
 This is a simple setup of a Minecraft network using Gate proxy,
 a Paper 1.16.1 (server1) & Paper 1.8.8 (server2).
 
-**You will only need a JRE (Java Runtime Environment, 8 or higher).**
+_You will need Java Runtime 8 or higer for running the Paper servers._
 
 1. `git clone https://github.com/minekube/gate.git`
 2. Go to `docs/sample`
 3. Open a terminal in this directory
-and run the pre-compiled executable
-    - linux: `./gate`
-    - windows: `gate.exe`
-    - Or build an executable yourself. ;)
-4. Open two terminals, one for each `server1` & `server2`.
+and download a [release](https://github.com/minekube/gate/releases).
+    - Or compile it yourself. ;)
+4. Run Gate within `docs/sample`
+    - (windows: `gate.exe` / linux: `./gate`)
+5. Open two more terminals, one for each `server1` & `server2`.
     - Run `java -jar <the server jar>` to run both servers.
     
 Now you can connect to the network on `localhost:25565`

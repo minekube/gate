@@ -40,6 +40,7 @@ type RegisteredServer interface {
 //
 //
 
+// Players is a list of players safe for concurrent use.
 type Players interface {
 	Len() int                  // Returns the size of the player list.
 	Range(func(p Player) bool) // Loops through the players, breaks if func returns false.
@@ -256,7 +257,7 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 	// Wrap server connection
 	serverMc := newMinecraftConn(conn, s.player.proxy, false, func() []zap.Field {
 		return []zap.Field{
-			zap.Bool("isBackendServerConnection", true),
+			zap.Bool("server", true),
 			zap.String("serverName", s.Server().ServerInfo().Name()),
 			zap.Stringer("serverAddr", s.Server().ServerInfo().Addr()),
 			zap.Stringer("forPlayer", s.player),

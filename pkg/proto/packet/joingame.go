@@ -24,8 +24,6 @@ type JoinGame struct {
 	DimensionRegistry *DimensionRegistry // 1.16+
 	DimensionInfo     *DimensionInfo     // 1.16+
 	PreviousGamemode  int16              // 1.16+
-
-	// TODO add retained []byte field with util/io.RecordReader so we don't encode again when forwarding
 }
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {

@@ -70,7 +70,7 @@ func (c *Connect) listen(address string) error {
 func (c *Connect) handleRawConn(rawConn net.Conn) {
 	// Create client connection
 	conn := newMinecraftConn(rawConn, c.proxy, true, func() []zap.Field {
-		return []zap.Field{zap.Bool("isPlayer", true)}
+		return []zap.Field{zap.Bool("player", true)}
 	})
 	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
 	// Read packets in loop

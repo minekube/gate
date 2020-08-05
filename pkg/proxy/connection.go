@@ -35,9 +35,8 @@ type sessionHandler interface {
 // minecraftConn is a Minecraft connection from the
 // client -> proxy or proxy -> server (backend).
 type minecraftConn struct {
-	proxy *Proxy // convenient backreference
-
-	c net.Conn // Underlying connection
+	proxy *Proxy   // convenient backreference
+	c     net.Conn // Underlying connection
 
 	// readLoop owns these fields
 	readBuf *bufio.Reader

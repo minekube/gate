@@ -230,7 +230,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Payload buffer should now be empty.
 	if payload.Len() != 0 {
 		// packet decoder did not read all of the packet's data!
-		zap.L().Warn("Decoder did not read all of packet's data", append([]zap.Field{
+		zap.L().Debug("Decoder did not read all of packet's data", append([]zap.Field{
 			zap.Stringer("type", reflect.TypeOf(ctx.Packet)),
 			zap.Stringer("packetId", ctx.PacketId),
 			zap.Stringer("protocol", ctx.Protocol),

@@ -20,7 +20,8 @@ type statusSessionHandler struct {
 }
 
 func (h *statusSessionHandler) activated() {
-	if h.conn.proxy.Config().Status.ShowPingRequests {
+	cfg := h.conn.proxy.Config()
+	if cfg.Status.ShowPingRequests || cfg.Debug {
 		zap.S().Infof("%s with version %s", h.inbound, h.conn.protocol)
 	}
 }

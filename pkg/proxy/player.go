@@ -277,7 +277,7 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 	}
 
 	if len(p.serversToTry) == 0 {
-		p.serversToTry = p.proxy.Config().AttemptConnectionOrder()
+		p.serversToTry = p.proxy.Config().Try
 	}
 
 	sameName := func(rs RegisteredServer, name string) bool {
