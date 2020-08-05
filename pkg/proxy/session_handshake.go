@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"fmt"
+	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/internal/quotautil"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
@@ -77,8 +79,14 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		return
 	}
 
-	// TODO add client IP rate limiter preventing too fast logins
-
+	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
+	if loginsQuota := h.loginsQuota(); loginsQuota != nil && loginsQuota.Blocked(inbound.RemoteAddr()) {
+		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
+			Content: "You are logging in to fast, wait a little and retry.",
+			S:       component.Style{Color: color.Red},
+		}))
+		return
+	}
 	h.conn.SetType(connTypeForHandshake(p))
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
@@ -93,6 +101,10 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 
 	// TODO fire ConnectionHandshakeEvent
 	h.conn.setSessionHandler(newLoginSessionHandler(h.conn, inbound))
+}
+
+func (h *handshakeSessionHandler) loginsQuota() *quotautil.Quota {
+	return h.conn.proxy.Connect().loginsQuota
 }
 
 func stateForProtocol(status int) *state.Registry {

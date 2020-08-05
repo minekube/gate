@@ -29,6 +29,7 @@
     - simply pick a download from the [releases](https://github.com/minekube/gate/releases)
     - (No Java runtime needed for Gate itself)
 - A simple API to [extend Gate](#extending-gate-with-custom-code)
+- Built-in [rate limiter](#rate-limiter)
 - Benefits from Go's awesome language features
     - simple, reliable, efficient
     - [and much more](https://golang.org/)
@@ -58,6 +59,21 @@ players (Minecraft client) and servers (e.g. Minecraft spigot, paper, sponge, ..
 logs state changes and emits different events that 
 custom plugins/code can react to.
 
+## Rate Limiter
+
+Rate limiting is an important mechanism for controlling
+resource utilization and managing quality of service.
+
+Defaults set should never affect legitimate operations,
+but rate limit aggressive behaviours.
+
+In the `quota` section you can configure rate limiter
+to block too many connections from the same IP-block (255.255.255.xxx).
+    
+**Note:** _The limiter only prevents attacks on a per IP block bases
+and cannot mitigate against distributed denial of services (DDoS), since this type
+of attack should be handled on a higher networking layer._
+    
 ## Benchmarks
 
 > TODO

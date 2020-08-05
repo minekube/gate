@@ -17,59 +17,102 @@ type Config struct {
 // File is for reading a config file into this struct.
 type File struct {
 	// The address to listen for connections.
-	Bind                          string
+	Bind string
+
 	OnlineMode                    bool
 	OnlineModeKickExistingPlayers bool
-	Forwarding                    struct {
-		Mode           ForwardingMode
-		VelocitySecret string
-	}
-	Status struct {
+
+	Forwarding Forwarding
+	Status     Status
+	Query      Query
+	// Whether the proxy should present itself as a
+	// Forge/FML-compatible server. By default, this is disabled.
+	AnnounceForge bool
+
+	Servers                              map[string]string // name:address
+	Try                                  []string          // Try server names order
+	ForcedHosts                          ForcedHosts       // virtualhost:server names
+	FailoverOnUnexpectedServerDisconnect bool
+
+	ConnectionTimeout int
+	ReadTimeout       int
+
+	Quota                               Quota
+	Compression                         Compression
+	ProxyProtocol                       bool // ha-proxy compatibility
+	ShouldPreventClientProxyConnections bool // sends player ip to mojang
+
+	BungeePluginChannelEnabled bool
+
+	Debug            bool
+	ConfigAutoUpdate bool
+}
+
+type (
+	ForcedHosts map[string][]string
+	Status      struct {
 		MaxPlayers       int
 		Motd             string
 		FavIconFile      string
 		ShowPingRequests bool
 	}
-	// Whether the proxy should present itself as a
-	// Forge/FML-compatible server. By default, this is disabled.
-	AnnounceForge bool
-	Servers       map[string]string   // name:address
-	Try           []string            // Try server names order
-	ForcedHosts   map[string][]string // virtualhost:server names
-	Query         struct {
+	Query struct {
 		Enabled     bool
 		Port        int
 		ShowPlugins bool
 	}
-	ConnectionTimeout                    int
-	ReadTimeout                          int
-	FailoverOnUnexpectedServerDisconnect bool
-	Compression                          struct {
+	Forwarding struct {
+		Mode           ForwardingMode
+		VelocitySecret string
+	}
+	Compression struct {
 		Threshold int
 		Level     int
 	}
-	ShouldPreventClientProxyConnections bool // sends player ip to mojang
-	BungeePluginChannelEnabled          bool
-	ProxyProtocol                       bool // ha-proxy compatibility
-	ConfigAutoUpdate                    bool
-	Debug                               bool
-}
+	// Quota is the config for rate limiting.
+	Quota struct {
+		Connections QuotaSettings // Limits new connections per second, per IP block.
+		Logins      QuotaSettings // Limits logins per second, per IP block.
+		// Maybe add a bytes-per-sec limiter, or should be managed by a higher layer.
+	}
+	QuotaSettings struct {
+		Enabled    bool    // If false, there is no such limiting.
+		OPS        float32 // Allowed operations/events per second, per IP block
+		Burst      int     // The maximum events per second, per block; the size of the token bucket
+		MaxEntries int     // Maximum number of IP blocks to keep track of in cache
+	}
+)
 
 func init() {
 	viper.SetDefault("bind", "0.0.0.0:25565")
 	viper.SetDefault("onlineMode", true)
 	viper.SetDefault("forwarding.mode", LegacyForwardingMode)
 	viper.SetDefault("announceForge", false)
+
 	viper.SetDefault("status.motd", "§bA Gate Proxy Server!")
 	viper.SetDefault("status.maxplayers", 1000)
 	viper.SetDefault("status.faviconfile", "server-icon.png")
 	viper.SetDefault("status.showPingRequests", false)
+
 	viper.SetDefault("compression.threshold", 256)
 	viper.SetDefault("compression.level", 1)
+
 	viper.SetDefault("query.enabled", false)
 	viper.SetDefault("query.port", 25577)
 	viper.SetDefault("query.showplugins", false)
-	viper.SetDefault("loginratelimit", 3000)
+
+	// Default quotas should never affect legitimate operations,
+	// but rate limits aggressive behaviours.
+	viper.SetDefault("quota.connections.Enabled", true)
+	viper.SetDefault("quota.connections.OPS", 5)
+	viper.SetDefault("quota.connections.burst", 10)
+	viper.SetDefault("quota.connections.MaxEntries", 1000)
+
+	viper.SetDefault("quota.logins.Enabled", true)
+	viper.SetDefault("quota.logins.OPS", 0.4)
+	viper.SetDefault("quota.logins.burst", 3)
+	viper.SetDefault("quota.logins.MaxEntries", 1000)
+
 	viper.SetDefault("connectiontimeout", 5000)
 	viper.SetDefault("readtimeout", 30000)
 	viper.SetDefault("BungeePluginChannelEnabled", true)

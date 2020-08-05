@@ -3,7 +3,9 @@ module go.minekube.com/gate
 go 1.14
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
+	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/uuid v1.1.1
 	github.com/sandertv/gophertunnel v1.7.11
 	github.com/spf13/cobra v1.0.0
@@ -15,5 +17,6 @@ require (
 	go.uber.org/zap v1.15.0
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.2
+	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )

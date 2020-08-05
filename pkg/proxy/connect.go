@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/internal/quotautil"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/zap"
@@ -12,21 +13,32 @@ import (
 )
 
 type Connect struct {
-	proxy           *Proxy
-	closeListenChan chan struct{}
+	proxy            *Proxy
+	closeListenChan  chan struct{}
+	connectionsQuota *quotautil.Quota
+	loginsQuota      *quotautil.Quota
 
 	mu    sync.RWMutex                   // Protects following fields
 	names map[string]*connectedPlayer    // lower case usernames map
 	ids   map[uuid.UUID]*connectedPlayer // uuids map
 }
 
-func NewConnect(s *Proxy) *Connect {
-	return &Connect{
-		proxy:           s,
+func NewConnect(proxy *Proxy) *Connect {
+	c := &Connect{
+		proxy:           proxy,
 		closeListenChan: make(chan struct{}),
 		names:           map[string]*connectedPlayer{},
 		ids:             map[uuid.UUID]*connectedPlayer{},
 	}
+	quota := proxy.config.Quota.Connections
+	if quota.Enabled {
+		c.connectionsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+	}
+	quota = proxy.config.Quota.Logins
+	if quota.Enabled {
+		c.loginsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+	}
+	return c
 }
 
 func (c *Connect) closeListener() {
@@ -61,15 +73,22 @@ func (c *Connect) listen(address string) error {
 		if err != nil {
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
+
 		go c.handleRawConn(conn)
 	}
 }
 
 // handleRawConn handles a just-accepted connection that
 // has not had any I/O performed on it yet.
-func (c *Connect) handleRawConn(rawConn net.Conn) {
+func (c *Connect) handleRawConn(raw net.Conn) {
+	if c.connectionsQuota != nil && c.connectionsQuota.Blocked(raw.RemoteAddr()) {
+		_ = raw.Close()
+		zap.L().Info("A connection was exceeded the rate limit", zap.Stringer("remoteAddr", raw.RemoteAddr()))
+		return
+	}
+
 	// Create client connection
-	conn := newMinecraftConn(rawConn, c.proxy, true, func() []zap.Field {
+	conn := newMinecraftConn(raw, c.proxy, true, func() []zap.Field {
 		return []zap.Field{zap.Bool("player", true)}
 	})
 	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
