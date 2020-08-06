@@ -18,20 +18,20 @@ import (
 type ConnectionRequest interface {
 	// Returns the server that this connection request is for.
 	Server() RegisteredServer
-	// This method is blocking and initiates the connection to the
-	// remote server and ALWAYS emits a result by calling the
-	// resultFn after the user has logged on, an error occurred or ctx was called.
+	// This method is blocking, initiates the connection to the
+	// remote Server and returns a result after the user has logged on
+	// or an error when an error occurred (e.g. could not net.Dial the Server, ctx was called, etc.).
 	//
-	// The given Context can be used to cancel the connection initiation, but it
+	// The given Context can be used to cancel the connection initiation, but
 	// has no effect if the connection was already established or canceled.
 	//
-	// resultFn may be called before this Connect() method returns.
-	//
-	// No messages will be communicated to the client: the user is responsible for all error handling.
-	Connect(ctx context.Context, resultFn ConnectionResultFn) // TODO move callback to return
-	// This method is the same as Connect(), but the proxy's built-in
-	// handling will be used to provide errors to the player before resultFn is called.
-	ConnectWithIndication(ctx context.Context, resultFn func(successful bool))
+	// No messages will be communicated to the client:
+	// You are responsible for all error handling.
+	Connect(ctx context.Context) (ConnectionResult, error)
+	// This method is the same as Connect, but the proxy's built-in
+	// handling will be used to provide errors to the player and returns
+	// true if the player was successfully connected.
+	ConnectWithIndication(ctx context.Context) (successful bool)
 }
 
 // ConnectionResult is the result of a ConnectionRequest.
@@ -103,7 +103,12 @@ type connectionRequest struct {
 	player *connectedPlayer // the player to connect to the server
 }
 
-func (c *connectionRequest) Connect(ctx context.Context, resultFn ConnectionResultFn) {
+func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, error) {
+	type res struct {
+		ConnectionResult
+		error
+	}
+	resultChan := make(chan *res, 1)
 	c.internalConnect(ctx, func(result *connectionResult, err error) {
 		if err == nil {
 			if !result.safe {
@@ -113,19 +118,18 @@ func (c *connectionRequest) Connect(ctx context.Context, resultFn ConnectionResu
 				c.player.resetInFlightConnection()
 			}
 		}
-		if resultFn != nil {
-			resultFn(result, err)
-		}
+		resultChan <- &res{result, err}
 	})
+	r := <-resultChan
+	return r.ConnectionResult, r.error
 }
 
-func (c *connectionRequest) ConnectWithIndication(ctx context.Context, resultFn func(successful bool)) {
+func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
+	resultChan := make(chan bool, 1)
 	c.internalConnect(ctx, func(result *connectionResult, err error) {
 		if err != nil {
 			c.player.handleConnectionErr(c.server, err, true)
-			if resultFn != nil {
-				resultFn(false)
-			}
+			resultChan <- false
 			return
 		}
 
@@ -145,10 +149,9 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context, resultFn 
 		default:
 			// The only remaining value is successful (no need to do anything!)
 		}
-		if resultFn != nil {
-			resultFn(result.Status().Successful())
-		}
+		resultChan <- result.Status().Successful()
 	})
+	return <-resultChan
 }
 
 // Handles unexpected disconnects.
@@ -262,18 +265,16 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *DisconnectPlayerKickResult:
 		p.Disconnect(result.Reason)
 	case *RedirectPlayerKickResult:
-		p.CreateConnectionRequest(result.Server).
-			ConnectWithIndication(context.Background(), func(successful bool) {
-				if successful {
-					if result.Message == nil {
-						_ = p.SendMessage(movedToNewServer)
-					} else {
-						_ = p.SendMessage(result.Message)
-					}
-				} else {
-					p.Disconnect(friendlyReason)
-				}
-			})
+		successful := p.CreateConnectionRequest(result.Server).ConnectWithIndication(context.Background())
+		if successful {
+			if result.Message == nil {
+				_ = p.SendMessage(movedToNewServer)
+			} else {
+				_ = p.SendMessage(result.Message)
+			}
+		} else {
+			p.Disconnect(friendlyReason)
+		}
 	case *NotifyKickResult:
 		if e.KickedDuringServerConnect() {
 			_ = p.SendMessage(result.Message)

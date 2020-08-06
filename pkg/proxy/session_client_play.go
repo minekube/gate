@@ -355,14 +355,13 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 func (c *clientPlaySessionHandler) serverCmd(args []string) {
 	if len(args) > 1 {
 		// switch server
-		c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background(), func(successful bool) {
-			if successful {
-				_ = c.player.SendMessage(&component.Text{
-					Content: "Connected to server " + args[1],
-					S:       component.Style{Color: color.Green},
-				})
-			}
-		})
+		successful := c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background())
+		if successful {
+			_ = c.player.SendMessage(&component.Text{
+				Content: "Connected to server " + args[1],
+				S:       component.Style{Color: color.Green},
+			})
+		}
 	} else {
 		// list registered servers
 		var servers []component.Component

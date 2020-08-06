@@ -321,7 +321,7 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		player.Disconnect(noAvailableServers) // Will call disconnected() in InitialConnectSessionHandler
 		return
 	}
-	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(context.Background(), nil)
+	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(context.Background())
 }
 
 func (l *loginSessionHandler) event() *event.Manager {

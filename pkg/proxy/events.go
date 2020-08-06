@@ -297,15 +297,18 @@ type PlayerChooseInitialServerEvent struct {
 	initialServer RegisteredServer // May be nil if no server is configured.
 }
 
+// Player returns the player to find the initial server for.
 func (e *PlayerChooseInitialServerEvent) Player() Player {
 	return e.player
 }
 
+// InitialServer returns the initial server or nil if no server is configured.
 func (e *PlayerChooseInitialServerEvent) InitialServer() RegisteredServer {
 	return e.initialServer
 }
 
-func (e *PlayerChooseInitialServerEvent) SerInitialServer(server RegisteredServer) {
+// SetInitialServer sets the initial server for the player.
+func (e *PlayerChooseInitialServerEvent) SetInitialServer(server RegisteredServer) {
 	e.initialServer = server
 }
 
@@ -316,6 +319,7 @@ func (e *PlayerChooseInitialServerEvent) SerInitialServer(server RegisteredServe
 //
 //
 
+// ServerPreConnectEvent is fired before the player connects to a server.
 type ServerPreConnectEvent struct {
 	player   Player
 	original RegisteredServer
@@ -331,6 +335,7 @@ func newServerPreConnectEvent(player Player, server RegisteredServer) *ServerPre
 	}
 }
 
+// Player returns the player that tries to connect to another server.
 func (e *ServerPreConnectEvent) Player() Player {
 	return e.player
 }
