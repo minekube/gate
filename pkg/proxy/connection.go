@@ -337,8 +337,8 @@ func (c *minecraftConn) Protocol() proto.Protocol {
 	return c.protocol
 }
 
-// SetProtocol sets the connection's protocol version.
-func (c *minecraftConn) SetProtocol(protocol proto.Protocol) {
+// setProtocol sets the connection's protocol version.
+func (c *minecraftConn) setProtocol(protocol proto.Protocol) {
 	c.protocol = protocol
 	c.decoder.SetProtocol(protocol)
 	c.encoder.SetProtocol(protocol)
@@ -351,7 +351,7 @@ func (c *minecraftConn) State() *state.Registry {
 	return c.state
 }
 
-func (c *minecraftConn) SetState(state *state.Registry) {
+func (c *minecraftConn) setState(state *state.Registry) {
 	c.mu.Lock()
 	c.state = state
 	c.decoder.SetState(state)
@@ -365,7 +365,7 @@ func (c *minecraftConn) Type() connectionType {
 	return c.connType
 }
 
-func (c *minecraftConn) SetType(connType connectionType) {
+func (c *minecraftConn) setType(connType connectionType) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.connType = connType
@@ -432,4 +432,7 @@ type Inbound interface {
 	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
 	RemoteAddr() net.Addr     // The player's IP address.
 	Active() bool             // Whether or not the player remains online.
+	// Closed returns a receive only channel that can be used know when the connection was closed.
+	// (e.g. for canceling work in an event subscriber)
+	Closed() <-chan struct{}
 }

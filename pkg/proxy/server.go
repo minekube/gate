@@ -302,8 +302,8 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 
 	// Set server's protocol & state
 	// after writing handshake, but before writing ServerLogin
-	serverMc.SetProtocol(protocol)
-	serverMc.SetState(state.Login)
+	serverMc.setProtocol(protocol)
+	serverMc.setState(state.Login)
 
 	// Kick off the connection process
 	// connection from proxy -> server (backend)

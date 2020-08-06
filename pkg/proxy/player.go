@@ -45,8 +45,7 @@ type Player interface {
 	// Creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() profile.GameProfile // Returns the player's game profile.
-	// TODO updateable game properties (locked func)
-	// TabList() TODO
+	Settings() player.Settings        // The players client settings. Returns player.DefaultSettings if not yet unknown.
 	// Disconnects the player with a reason.
 	// Once called, further interface calls to this player become undefined.
 	Disconnect(reason component.Component)
@@ -61,7 +60,7 @@ type Player interface {
 	// SHA-1 hash of the resource pack file. To monitor the status of the sent resource pack,
 	// subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePackWithHash(url string, sha1Hash []byte) error
-	// TODO
+	// TODO TabList() and more
 }
 
 // CommandSource is the source that ran a command.
@@ -459,6 +458,10 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 		player:   p,
 		settings: wrapped,
 	})
+}
+
+func (p *connectedPlayer) Closed() <-chan struct{} {
+	return p.minecraftConn.closed
 }
 
 // Settings returns the players client settings.

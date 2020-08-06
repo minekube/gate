@@ -15,6 +15,7 @@ type ConnectionHandshakeEvent struct {
 	inbound Inbound
 }
 
+// Connection returns the inbound connection.
 func (e *ConnectionHandshakeEvent) Connection() Inbound {
 	return e.inbound
 }

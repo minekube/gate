@@ -175,7 +175,7 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	if !ok {
 		return
 	}
-	serverMc.SetState(state.Play)
+	serverMc.setState(state.Play)
 
 	// Switch to the transition handler.
 	serverMc.setSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.resultFn))

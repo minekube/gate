@@ -281,7 +281,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 		return
 	}
 
-	player.SetState(state.Play)
+	player.setState(state.Play)
 	loginEvent := &LoginEvent{player: player}
 	l.event().Fire(loginEvent)
 

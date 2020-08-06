@@ -56,8 +56,8 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	}
 
 	// Update connection to requested state and protocol sent in the packet.
-	h.conn.SetState(nextState)
-	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
+	h.conn.setState(nextState)
+	h.conn.setProtocol(proto.Protocol(handshake.ProtocolVersion))
 
 	switch nextState {
 	case state.Status:
@@ -87,7 +87,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		}))
 		return
 	}
-	h.conn.SetType(connTypeForHandshake(p))
+	h.conn.setType(connTypeForHandshake(p))
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
@@ -158,12 +158,16 @@ func newInitialInbound(c *minecraftConn, virtualHost net.Addr) Inbound {
 	}
 }
 
+func (i *initialInbound) Closed() <-chan struct{} {
+	return i.minecraftConn.closed
+}
+
 func (i *initialInbound) VirtualHost() net.Addr {
 	return i.virtualHost
 }
 
 func (i *initialInbound) Active() bool {
-	return !i.Closed()
+	return !i.minecraftConn.Closed()
 }
 
 func (i *initialInbound) String() string {
