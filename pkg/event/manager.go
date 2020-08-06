@@ -55,6 +55,8 @@ func (m *Manager) Wait() {
 
 // Subscribe subscribes a handler to an event type with a priority
 // and returns a func that can be run to unsubscribe.
+//
+// HandlerFn should return quick and start long running tasks in parallel!
 func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubscribe func()) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

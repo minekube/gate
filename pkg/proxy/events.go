@@ -9,6 +9,16 @@ import (
 	"go.minekube.com/gate/pkg/util/profile"
 )
 
+// ConnectionHandshakeEvent is fired when a handshake
+// is established between a client and the proxy.
+type ConnectionHandshakeEvent struct {
+	inbound Inbound
+}
+
+func (e *ConnectionHandshakeEvent) Connection() Inbound {
+	return e.inbound
+}
+
 // GameProfileRequestEvent is fired after the PreLoginEvent in
 // order to set up the game profile for the user.
 // This can be used to configure a custom profile for a user, i.e. skin replacement.

@@ -455,7 +455,7 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 	p.settings = wrapped
 	p.mu.Unlock()
 
-	p.proxy.Event().FireParallel(&PlayerSettingsChangedEvent{
+	p.proxy.Event().Fire(&PlayerSettingsChangedEvent{
 		player:   p,
 		settings: wrapped,
 	})

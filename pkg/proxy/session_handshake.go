@@ -99,7 +99,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		return
 	}
 
-	// TODO fire ConnectionHandshakeEvent
+	h.conn.proxy.Event().Fire(&ConnectionHandshakeEvent{inbound: inbound})
 	h.conn.setSessionHandler(newLoginSessionHandler(h.conn, inbound))
 }
 
