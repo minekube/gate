@@ -569,3 +569,36 @@ func (s *PlayerSettingsChangedEvent) Player() Player {
 func (s *PlayerSettingsChangedEvent) Settings() player.Settings {
 	return s.settings
 }
+
+//
+//
+//
+//
+
+// PlayerChatEvent is fired when a player sends a chat message.
+type PlayerChatEvent struct {
+	player  Player
+	message string
+
+	denied bool
+}
+
+// Player returns the player that sent the message.
+func (c *PlayerChatEvent) Player() Player {
+	return c.player
+}
+
+// Message returns the message the player sent.
+func (c *PlayerChatEvent) Message() string {
+	return c.message
+}
+
+// SetAllowed sets whether the chat message is allowed.
+func (c *PlayerChatEvent) SetAllowed(allowed bool) {
+	c.denied = !allowed
+}
+
+// Allowed returns true when the chat message is allowed.
+func (c *PlayerChatEvent) Allowed() bool {
+	return !c.denied
+}

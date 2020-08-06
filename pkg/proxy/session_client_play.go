@@ -12,6 +12,7 @@ import (
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/proto/state"
 	"go.minekube.com/gate/pkg/util/sets"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"strings"
@@ -314,41 +315,71 @@ func (c *clientPlaySessionHandler) proxy() *Proxy {
 }
 
 func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
+	serverConn := c.player.connectedServer()
+	if serverConn == nil {
+		return
+	}
+	serverMc := serverConn.conn()
+	if serverMc == nil {
+		return
+	}
+
+	zap.S().Debugf("ChatPacket> %s: %s", c.player.Username(), p.Message)
+
 	// TODO add a proper proxy commands system here
-	// TODO fire PlayerChatEvent
-	zap.S().Debugf("Chat> %s: %s", c.player.Username(), p.Message)
-	args := strings.Split(p.Message, " ")
-	if len(args) != 0 && strings.HasPrefix(args[0], "/server") {
-		if len(args) > 1 {
-			// switch server
-			c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background(), func(successful bool) {
-				if successful {
-					_ = c.player.SendMessage(&component.Text{
-						Content: "Connected to server " + args[1],
-						S:       component.Style{Color: color.Green},
-					})
-				}
-			})
-		} else {
-			// list registered servers
-			var servers []component.Component
-			for _, s := range c.proxy().Servers() {
-				servers = append(servers, &component.Text{
-					Content: fmt.Sprintf("  %s - %s\n", s.ServerInfo().Name(), s.ServerInfo().Addr()),
-				})
-			}
-			_ = c.player.SendMessage(&component.Text{
-				Content: fmt.Sprintf("\nServers (%d):\n", len(servers)),
-				S:       component.Style{Color: color.Green},
-				Extra: []component.Component{&component.Text{
-					S:     component.Style{Color: color.Yellow},
-					Extra: servers,
-				}},
-			})
+	if strings.HasPrefix(p.Message, "/") {
+		args := strings.Split(p.Message, " ")
+		if len(args) != 0 && strings.HasPrefix(args[0], "/server") {
+			c.serverCmd(args)
 		}
 		return
 	}
-	c.forwardToServer(p)
+
+	e := &PlayerChatEvent{
+		player:  c.player,
+		message: p.Message,
+	}
+	c.proxy().Event().Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	// Forward to server
+	_ = serverMc.WritePacket(&packet.Chat{
+		Message: p.Message,
+		Type:    packet.ChatMessage,
+		Sender:  uuid.Nil,
+	})
+}
+
+// TODO use proper command system
+func (c *clientPlaySessionHandler) serverCmd(args []string) {
+	if len(args) > 1 {
+		// switch server
+		c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background(), func(successful bool) {
+			if successful {
+				_ = c.player.SendMessage(&component.Text{
+					Content: "Connected to server " + args[1],
+					S:       component.Style{Color: color.Green},
+				})
+			}
+		})
+	} else {
+		// list registered servers
+		var servers []component.Component
+		for _, s := range c.proxy().Servers() {
+			servers = append(servers, &component.Text{
+				Content: fmt.Sprintf("  %s - %s\n", s.ServerInfo().Name(), s.ServerInfo().Addr()),
+			})
+		}
+		_ = c.player.SendMessage(&component.Text{
+			Content: fmt.Sprintf("\nServers (%d):\n", len(servers)),
+			S:       component.Style{Color: color.Green},
+			Extra: []component.Component{&component.Text{
+				S:     component.Style{Color: color.Yellow},
+				Extra: servers,
+			}},
+		})
+	}
 }
 
 func (c *clientPlaySessionHandler) player_() *connectedPlayer {
