@@ -188,7 +188,7 @@ func (l *loginSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
 	l.conn.close()
 }
 
-// TODO temporary until localization support
+// Temporary english messages until localization support
 var (
 	alreadyConnected = &component.Text{
 		Content: "You are already connected to this server!",
@@ -238,15 +238,10 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 		defaultFunc: player.permFunc,
 	}
 	player.proxy.event.Fire(permSetup)
-	if l.conn.Closed() {
-		return // Player disconnected
-	}
+	// Set the players permission function
 	player.permFunc = permSetup.Func()
 
-	//e := r.(*PermissionSetupEvent)
 	if player.Active() {
-		// Wait for permissions to load, then set the players permission function
-		//TODO player.setPermissionFunction(e.createFunction(player))
 		l.completeLoginProtocolPhaseAndInit(player)
 	}
 }

@@ -169,7 +169,6 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	}
 
 	connectedServer := p.CurrentServer()
-	// TODO use localization
 	var userMsg string
 	if connectedServer != nil && connectedServer.Server().Equals(server) {
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",

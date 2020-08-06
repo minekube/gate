@@ -3,10 +3,12 @@ package proxy
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
+	"go.minekube.com/gate/pkg/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/proto/state"
 	"go.minekube.com/gate/pkg/proxy/forge"
 	"go.minekube.com/gate/pkg/proxy/message"
@@ -216,7 +218,20 @@ func (s *serverConnection) conn() *minecraftConn {
 }
 
 func (s *serverConnection) SendPluginMessage(id message.ChannelIdentifier, data []byte) error {
-	panic("implement me") // TODO
+	if len(data) == 0 {
+		return nil
+	}
+	if id == nil {
+		return errors.New("identifier must not be nil")
+	}
+	mc, ok := s.ensureConnected()
+	if !ok {
+		return ErrClosedConn
+	}
+	return mc.WritePacket(&plugin.Message{
+		Channel: id.Id(),
+		Data:    data,
+	})
 }
 
 func (s *serverConnection) Server() RegisteredServer {

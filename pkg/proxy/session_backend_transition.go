@@ -136,7 +136,6 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 
 	// The goods are in hand! We got JoinGame.
 	// Let's transition completely to the new state.
-	// TODO smc.setAutoReading(false)
 	connectedEvent := &ServerConnectedEvent{
 		player:         b.serverConn.player,
 		server:         b.serverConn.server,

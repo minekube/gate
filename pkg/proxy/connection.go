@@ -188,7 +188,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 		return
 	}
 	_ = c.close()
-	if err == errAlreadyClosedConn {
+	if err == ErrClosedConn {
 		return // Don't log this error
 	}
 	var opErr *net.OpError
@@ -204,7 +204,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 // The connection will be closed on any error encountered!
 func (c *minecraftConn) WritePacket(p proto.Packet) (err error) {
 	if c.Closed() {
-		return errAlreadyClosedConn
+		return ErrClosedConn
 	}
 	defer func() { c.closeOnErr(err) }()
 	if err = c.BufferPacket(p); err != nil {
@@ -217,7 +217,7 @@ func (c *minecraftConn) WritePacket(p proto.Packet) (err error) {
 // write buffer and flushes the complete buffer afterwards.
 func (c *minecraftConn) Write(payload []byte) (err error) {
 	if c.Closed() {
-		return errAlreadyClosedConn
+		return ErrClosedConn
 	}
 	defer func() { c.closeOnErr(err) }()
 	if _, err = c.encoder.Write(payload); err != nil {
@@ -229,7 +229,7 @@ func (c *minecraftConn) Write(payload []byte) (err error) {
 // BufferPacket writes a packet into the connection's write buffer.
 func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
 	if c.Closed() {
-		return errAlreadyClosedConn
+		return ErrClosedConn
 	}
 	defer func() { c.closeOnErr(err) }()
 	_, err = c.encoder.WritePacket(packet)
@@ -239,7 +239,7 @@ func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
 // BufferPayload writes payload (containing packet id + data) to the connection's write buffer.
 func (c *minecraftConn) BufferPayload(payload []byte) (err error) {
 	if c.Closed() {
-		return errAlreadyClosedConn
+		return ErrClosedConn
 	}
 	defer func() { c.closeOnErr(err) }()
 	_, err = c.encoder.Write(payload)
@@ -259,7 +259,8 @@ func (c *minecraftConn) close() error {
 	return c.closeKnown(true)
 }
 
-var errAlreadyClosedConn = errors.New("connection is already closed")
+// Indicates a connection is already closed.
+var ErrClosedConn = errors.New("connection is closed")
 
 func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 	alreadyClosed := true
@@ -282,7 +283,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 
 	})
 	if alreadyClosed {
-		err = errAlreadyClosedConn
+		err = ErrClosedConn
 	}
 	return err
 }
@@ -290,7 +291,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 // Closes the connection after writing the packet.
 func (c *minecraftConn) closeWith(packet proto.Packet) (err error) {
 	if c.Closed() {
-		return errAlreadyClosedConn
+		return ErrClosedConn
 	}
 	defer func() {
 		err = c.close()
