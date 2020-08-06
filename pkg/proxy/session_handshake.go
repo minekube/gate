@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/internal/quotautil"
+	"go.minekube.com/gate/internal/util/quotautil"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"

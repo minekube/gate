@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/internal/auth"
+	"go.minekube.com/gate/internal/util/auth"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/proto"

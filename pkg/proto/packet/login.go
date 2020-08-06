@@ -96,7 +96,8 @@ func (l *LoginPluginResponse) Decode(c *proto.PacketContext, rd io.Reader) (err 
 		return err
 	}
 	l.Data, err = util.ReadBytes(rd)
-	if errors.Is(err, io.EOF) { // TODO is this the check for whether rd is readable?
+	if errors.Is(err, io.EOF) {
+		// Ignore if we couldn't read data
 		return nil
 	}
 	return
@@ -218,7 +219,8 @@ func (l *LoginPluginMessage) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		return err
 	}
 	l.Data, err = util.ReadBytes(rd)
-	if errors.Is(err, io.EOF) { // TODO is this the check for whether rd is readable?
+	if errors.Is(err, io.EOF) {
+		// Ignore if we couldn't read data
 		return nil
 	}
 	return

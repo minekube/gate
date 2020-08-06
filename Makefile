@@ -1,4 +1,4 @@
-all: fmt vet
+all: fmt vet mod
 
 # Run tests
 test: fmt vet
@@ -8,10 +8,14 @@ test: fmt vet
 fmt:
 	go fmt ./...
 
+# Run go fmt against code
+mod:
+	go mod tidy && go mod verify
+
 # Run go vet against code
 vet:
 	go vet ./...
 
 # Run golangci-lint against code
 lint:
-	golangci-lint run ./...
+	golangci-lint run

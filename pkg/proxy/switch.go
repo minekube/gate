@@ -175,7 +175,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",
 			server.ServerInfo().Name())
 	} else {
-		zap.L().Error("unable to connect to server",
+		zap.L().Info("unable to connect to server",
 			zap.String("serverName", server.ServerInfo().Name()),
 			zap.String("serverAddr", server.ServerInfo().Addr().String()),
 			zap.String("playerName", p.Username()),
@@ -300,7 +300,7 @@ func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *
 
 	connected := p.connectedServer()
 	if connected != nil && connected.server.ServerInfo().Equals(server.ServerInfo()) {
-		zap.S().Errorf("%s: kicked from server %q: %s", p, server.ServerInfo().Name(), plainReason)
+		zap.S().Infof("%s was kicked from server %q: %s", p, server.ServerInfo().Name(), plainReason)
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: fmt.Sprintf("Kicked from %q: ", server.ServerInfo().Name()),
 			S:       Style{Color: Red},

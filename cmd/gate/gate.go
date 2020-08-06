@@ -17,10 +17,12 @@ package gate
 
 import (
 	"fmt"
+	"github.com/logrusorgru/aurora"
 	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proxy"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func Run() (err error) {
@@ -38,17 +40,24 @@ func Run() (err error) {
 		return fmt.Errorf("error validating config: %w", err)
 	}
 
+	zap.S().Infof("%s", aurora.Green("test"))
+
 	return proxy.NewProxy(cfg).Run()
 }
 
 func initLogger(debug bool) (err error) {
-	var l *zap.Logger
+	var cfg zap.Config
 	if debug {
-		l, err = zap.NewDevelopment()
+		cfg = zap.NewDevelopmentConfig()
 	} else {
-		l, err = zap.NewProduction()
+		cfg = zap.NewProductionConfig()
 	}
 
+	cfg.Encoding = "console"
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	l, err := cfg.Build()
 	if err != nil {
 		return err
 	}

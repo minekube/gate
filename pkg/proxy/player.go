@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/internal/util/console"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
@@ -335,12 +335,7 @@ func (p *connectedPlayer) teardown() {
 
 // may be nil!
 func (p *connectedPlayer) CurrentServer() ServerConnection {
-	sc := p.connectedServer()
-	if sc == nil {
-		// Fixes interface nil != nil // TODO check if still necessary
-		return nil
-	}
-	return sc
+	return p.connectedServer()
 }
 
 func (p *connectedPlayer) connectedServer() *serverConnection {
@@ -362,15 +357,14 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		return
 	}
 
-	// TODO convert reason to legacy formatting and use logger that supports displays legacy minecraft colors
-	var r interface{} = reason
+	var r string
 	b := new(strings.Builder)
-	if (&codec.Plain{}).Marshal(b, reason) == nil {
+	if (&legacy.Legacy{}).Marshal(b, reason) == nil {
 		r = b.String()
 	}
 
 	if p.closeWith(packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
-		zap.S().Infof("%s has disconnected: %s", p, r)
+		zap.S().Infof("%s has disconnected: %s", p, console.AnsiFromLegacy(r))
 	}
 }
 

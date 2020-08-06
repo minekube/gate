@@ -3,7 +3,7 @@ package proxy
 import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/internal/quotautil"
+	"go.minekube.com/gate/internal/util/quotautil"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/zap"

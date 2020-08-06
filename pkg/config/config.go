@@ -211,8 +211,8 @@ func validate(f *File) (warns []error, errs []error) {
 
 	for _, quota := range []QuotaSettings{f.Quota.Connections, f.Quota.Logins} {
 		if quota.Enabled {
-			if quota.OPS < 1 {
-				e("Invalid quota ops %d, use a number >= 1", quota.OPS)
+			if quota.OPS <= 0 {
+				e("Invalid quota ops %d, use a number > 0", quota.OPS)
 			}
 			if quota.Burst < 1 {
 				e("Invalid quota burst %d, use a number >= 1", quota.Burst)
