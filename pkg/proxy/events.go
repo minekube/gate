@@ -5,7 +5,7 @@ import (
 	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/proxy/permission"
 	"go.minekube.com/gate/pkg/proxy/player"
-	"go.minekube.com/gate/pkg/util/gameprofile"
+	"go.minekube.com/gate/pkg/util/profile"
 )
 
 // GameProfileRequestEvent is fired after the PreLoginEvent in
@@ -13,15 +13,15 @@ import (
 // This can be used to configure a custom profile for a user, i.e. skin replacement.
 type GameProfileRequestEvent struct {
 	inbound    Inbound
-	original   *gameprofile.GameProfile
+	original   profile.GameProfile
 	onlineMode bool
 
-	use *gameprofile.GameProfile
+	use profile.GameProfile
 }
 
 func NewGameProfileRequestEvent(
 	inbound Inbound,
-	original *gameprofile.GameProfile,
+	original profile.GameProfile,
 	onlineMode bool,
 ) *GameProfileRequestEvent {
 	return &GameProfileRequestEvent{
@@ -37,7 +37,7 @@ func (e *GameProfileRequestEvent) Conn() Inbound {
 }
 
 // OriginalServer returns the by the proxy created offline or online (Mojang authenticated) game profile.
-func (e *GameProfileRequestEvent) Original() *gameprofile.GameProfile {
+func (e *GameProfileRequestEvent) Original() profile.GameProfile {
 	return e.original
 }
 
@@ -47,17 +47,17 @@ func (e *GameProfileRequestEvent) OnlineMode() bool {
 }
 
 // SetGameProfile sets the profile to use for this connection.
-func (e *GameProfileRequestEvent) SetGameProfile(p *gameprofile.GameProfile) {
+func (e *GameProfileRequestEvent) SetGameProfile(p profile.GameProfile) {
 	e.use = p
 }
 
 // GameProfile returns the game profile that will be used to initialize the connection with.
 // Should no profile be set, the original profile (given by the proxy) will be used.
-func (e *GameProfileRequestEvent) GameProfile() *gameprofile.GameProfile {
-	if e.use != nil {
-		return e.use
+func (e *GameProfileRequestEvent) GameProfile() profile.GameProfile {
+	if len(e.use.Name) == 0 {
+		return e.original
 	}
-	return e.original
+	return e.use
 }
 
 //

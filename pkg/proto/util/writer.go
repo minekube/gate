@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"go.minekube.com/gate/pkg/util/gameprofile"
+	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"math"
@@ -133,7 +133,7 @@ func WriteUuid(wr io.Writer, uuid uuid.UUID) error {
 	return WriteInt64(wr, int64(l2))
 }
 
-func WriteProperties(wr io.Writer, properties []*gameprofile.Property) error {
+func WriteProperties(wr io.Writer, properties []profile.Property) error {
 	err := WriteVarInt(wr, len(properties))
 	if err != nil {
 		return err

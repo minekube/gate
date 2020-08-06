@@ -17,8 +17,8 @@ import (
 	"go.minekube.com/gate/pkg/proxy/permission"
 	"go.minekube.com/gate/pkg/proxy/player"
 	"go.minekube.com/gate/pkg/util"
-	"go.minekube.com/gate/pkg/util/gameprofile"
 	"go.minekube.com/gate/pkg/util/modinfo"
+	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
@@ -44,7 +44,7 @@ type Player interface {
 	OnlineMode() bool                // Whether the player was authenticated with Mojang's session servers.
 	// Creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
-	GameProfile() *gameprofile.GameProfile // Returns the player's game profile.
+	GameProfile() profile.GameProfile // Returns the player's game profile.
 	// TODO updateable game properties (locked func)
 	// TabList() TODO
 	// Disconnects the player with a reason.
@@ -75,7 +75,7 @@ type connectedPlayer struct {
 	*minecraftConn
 	virtualHost net.Addr
 	onlineMode  bool
-	profile     *gameprofile.GameProfile
+	profile     *profile.GameProfile
 	ping        atomic.Duration
 	permFunc    permission.Func
 
@@ -101,7 +101,7 @@ var _ Player = (*connectedPlayer)(nil)
 
 func newConnectedPlayer(
 	conn *minecraftConn,
-	profile *gameprofile.GameProfile,
+	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
 ) *connectedPlayer {
@@ -147,8 +147,8 @@ func (p *connectedPlayer) OnlineMode() bool {
 	return p.onlineMode
 }
 
-func (p *connectedPlayer) GameProfile() *gameprofile.GameProfile {
-	return p.profile
+func (p *connectedPlayer) GameProfile() profile.GameProfile {
+	return *p.profile
 }
 
 var (

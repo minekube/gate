@@ -1,4 +1,4 @@
-package gameprofile
+package profile
 
 import (
 	"encoding/json"
@@ -8,9 +8,9 @@ import (
 
 // GameProfile is a Mojang game profile.
 type GameProfile struct {
-	Id         uuid.UUID   `json:"id"`
-	Name       string      `json:"name"`
-	Properties []*Property `json:"properties"`
+	Id         uuid.UUID  `json:"id"`
+	Name       string     `json:"name"`
+	Properties []Property `json:"properties"`
 }
 
 func (g *GameProfile) String() string {
@@ -57,10 +57,6 @@ type Property struct {
 	Name      string `json:"name"`
 	Value     string `json:"value"`
 	Signature string `json:"signature"`
-}
-
-func NewProperty(name, value, signature string) *Property {
-	return &Property{Name: name, Value: value, Signature: signature}
 }
 
 func (p *Property) String() string {

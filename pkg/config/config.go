@@ -16,8 +16,7 @@ type Config struct {
 
 // File is for reading a config file into this struct.
 type File struct {
-	// The address to listen for connections.
-	Bind string
+	Bind string // The address to listen for connections.
 
 	OnlineMode                    bool
 	OnlineModeKickExistingPlayers bool
@@ -31,10 +30,10 @@ type File struct {
 
 	Servers                              map[string]string // name:address
 	Try                                  []string          // Try server names order
-	ForcedHosts                          ForcedHosts       // virtualhost:server names
+	ForcedHosts                          ForcedHosts
 	FailoverOnUnexpectedServerDisconnect bool
 
-	ConnectionTimeout int
+	ConnectionTimeout int // Write timeout
 	ReadTimeout       int
 
 	Quota                               Quota
@@ -49,7 +48,7 @@ type File struct {
 }
 
 type (
-	ForcedHosts map[string][]string
+	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
 		MaxPlayers       int
 		Motd             string
@@ -208,6 +207,20 @@ func validate(f *File) (warns []error, errs []error) {
 	} else if f.Compression.Threshold == 0 {
 		w("All packets going through the proxy will be compressed, this lowers bandwidth, " +
 			"but has lower throughput and increases CPU usage.")
+	}
+
+	for _, quota := range []QuotaSettings{f.Quota.Connections, f.Quota.Logins} {
+		if quota.Enabled {
+			if quota.OPS < 1 {
+				e("Invalid quota ops %d, use a number >= 1", quota.OPS)
+			}
+			if quota.Burst < 1 {
+				e("Invalid quota burst %d, use a number >= 1", quota.Burst)
+			}
+			if quota.MaxEntries < 1 {
+				e("Invalid quota max entries %d, use a number >= 1", quota.Burst)
+			}
+		}
 	}
 
 	return

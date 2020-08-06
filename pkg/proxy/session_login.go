@@ -8,13 +8,13 @@ import (
 	"encoding/json"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/auth"
+	"go.minekube.com/gate/internal/auth"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
 	"go.minekube.com/gate/pkg/proto/state"
-	"go.minekube.com/gate/pkg/util/gameprofile"
+	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/zap"
 	"net"
@@ -73,7 +73,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 		return
 	}
 	// Offline mode login
-	l.initPlayer(gameprofile.NewOffline(l.login.Username), false)
+	l.initPlayer(profile.NewOffline(l.login.Username), false)
 }
 
 func (l *loginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequest {
@@ -154,7 +154,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	switch statusCode {
 	case http.StatusOK:
 		// All went well, initialize the session.
-		gameProfile := new(gameprofile.GameProfile)
+		gameProfile := new(profile.GameProfile)
 		if err = json.Unmarshal(body, gameProfile); err != nil {
 			if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
 				zap.L().Error("Unable to unmarshal GameProfile from Mojang authentication response", zap.Error(err))
@@ -211,19 +211,20 @@ var (
 	}
 )
 
-func (l *loginSessionHandler) initPlayer(profile *gameprofile.GameProfile, onlineMode bool) {
+func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMode bool) {
 	// Some connection types may need to alter the game profile.
 	profile = l.conn.Type().addGameProfileTokensIfRequired(profile,
 		l.conn.proxy.Config().Forwarding.Mode)
 
-	profileRequest := NewGameProfileRequestEvent(l.inbound, profile, onlineMode)
+	profileRequest := NewGameProfileRequestEvent(l.inbound, *profile, onlineMode)
 	l.conn.proxy.event.Fire(profileRequest)
 	if l.conn.Closed() {
 		return // Player disconnected after authentication
 	}
+	gameProfile := profileRequest.GameProfile()
 
 	// Initiate a regular connection and move over to it.
-	player := newConnectedPlayer(l.conn, profileRequest.GameProfile(), l.inbound.VirtualHost(), onlineMode)
+	player := newConnectedPlayer(l.conn, &gameProfile, l.inbound.VirtualHost(), onlineMode)
 	if !player.proxy.connect.canRegisterConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return

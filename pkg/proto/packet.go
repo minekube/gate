@@ -14,9 +14,14 @@ type Packet interface {
 }
 
 // TypeOf is a helper func to make sure the
-// reflect.Type implements proto.Packet.
+// reflect.Type of p implements Packet
+// and returns a non-pointer type.
 func TypeOf(p Packet) PacketType {
-	return reflect.TypeOf(p).Elem()
+	t := reflect.TypeOf(p)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
 
 type PacketContext struct {

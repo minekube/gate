@@ -8,12 +8,12 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proto"
-	packet "go.minekube.com/gate/pkg/proto/packet"
+	"go.minekube.com/gate/pkg/proto/packet"
 	"go.minekube.com/gate/pkg/proto/state"
-	"go.minekube.com/gate/pkg/proto/util"
-	util2 "go.minekube.com/gate/pkg/util"
+	protoutil "go.minekube.com/gate/pkg/proto/util"
+	"go.minekube.com/gate/pkg/util"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/gameprofile"
+	"go.minekube.com/gate/pkg/util/profile"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"reflect"
@@ -77,7 +77,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 		strings.EqualFold(p.Channel, velocityIpForwardingChannel) {
 		forwardingData, err := createVelocityForwardingData([]byte(cfg.Forwarding.VelocitySecret),
 			b.serverConn.Player().RemoteAddr().String(),
-			b.serverConn.player.GameProfile())
+			b.serverConn.player.profile)
 		if err != nil {
 			zap.L().Error("Error creating velocity forwarding data", zap.Error(err))
 			return
@@ -99,25 +99,25 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 	}
 }
 
-func createVelocityForwardingData(hmacSecret []byte, address string, profile *gameprofile.GameProfile) ([]byte, error) {
+func createVelocityForwardingData(hmacSecret []byte, address string, profile *profile.GameProfile) ([]byte, error) {
 	forwarded := bytes.NewBuffer(make([]byte, 2048))
-	err := util.WriteVarInt(forwarded, velocityForwardingVersion)
+	err := protoutil.WriteVarInt(forwarded, velocityForwardingVersion)
 	if err != nil {
 		return nil, err
 	}
-	err = util.WriteString(forwarded, address)
+	err = protoutil.WriteString(forwarded, address)
 	if err != nil {
 		return nil, err
 	}
-	err = util.WriteUuid(forwarded, profile.Id)
+	err = protoutil.WriteUuid(forwarded, profile.Id)
 	if err != nil {
 		return nil, err
 	}
-	err = util.WriteString(forwarded, profile.Name)
+	err = protoutil.WriteString(forwarded, profile.Name)
 	if err != nil {
 		return nil, err
 	}
-	err = util.WriteProperties(forwarded, profile.Properties)
+	err = protoutil.WriteProperties(forwarded, profile.Properties)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func disconnectResultForPacket(
 	if p != nil && p.Reason != nil {
 		reason = *p.Reason
 	}
-	r, _ := util2.JsonCodec(protocol).Unmarshal([]byte(reason))
+	r, _ := util.JsonCodec(protocol).Unmarshal([]byte(reason))
 	return disconnectResult(r, server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {

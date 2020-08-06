@@ -2,10 +2,9 @@ package packet
 
 import (
 	"errors"
-	nbt2 "github.com/sandertv/gophertunnel/minecraft/nbt"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
-	"go.minekube.com/gate/pkg/proto/util/nbt"
 	"go.minekube.com/gate/pkg/util/sets"
 	"io"
 )
@@ -44,7 +43,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if err != nil {
 			return err
 		}
-		err = nbt2.NewEncoderWithEncoding(wr, nbt2.BigEndian).Encode(j.DimensionRegistry.ToNBT())
+		err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(j.DimensionRegistry.ToNBT())
 		if err != nil {
 			return err
 		}
@@ -144,8 +143,8 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-		var data nbt.Nbt
-		if err = nbt2.NewDecoderWithEncoding(rd, nbt2.BigEndian).Decode(&data); err != nil {
+		var data util.NBT
+		if err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&data); err != nil {
 			return err
 		}
 		readData, err := FromGameData(data)

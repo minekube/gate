@@ -3,7 +3,7 @@ package packet
 import (
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/proto/util/nbt"
+	"go.minekube.com/gate/pkg/proto/util"
 	"go.minekube.com/gate/pkg/util/sets"
 )
 
@@ -34,7 +34,7 @@ type DimensionData struct {
 }
 
 // FromGameData decodes a CompoundTag storing a dimension registry.
-func FromGameData(toParse nbt.Nbt) (mappings []*DimensionData, err error) {
+func FromGameData(toParse util.NBT) (mappings []*DimensionData, err error) {
 	if toParse == nil {
 		return nil, errors.New("gamedata is cannot be nil")
 	}
@@ -61,7 +61,7 @@ func FromGameData(toParse nbt.Nbt) (mappings []*DimensionData, err error) {
 	return mappings, nil
 }
 
-func DecodeCompoundTagDimensionData(toRead nbt.Nbt) (*DimensionData, error) {
+func DecodeCompoundTagDimensionData(toRead util.NBT) (*DimensionData, error) {
 	if toRead == nil {
 		return nil, errors.New("CompoundTag cannot be nil")
 	}
@@ -132,8 +132,8 @@ func DecodeCompoundTagDimensionData(toRead nbt.Nbt) (*DimensionData, error) {
 }
 
 // Encodes the Dimension data as nbt CompoundTag
-func (d *DimensionData) EncodeCompoundTag() nbt.Nbt {
-	c := nbt.Nbt{
+func (d *DimensionData) EncodeCompoundTag() util.NBT {
+	c := util.NBT{
 		"name":                 d.RegistryIdentifier,
 		"natural":              d.Natural,
 		"ambient_light":        d.AmbientLight,
@@ -158,10 +158,10 @@ func (d *DimensionData) EncodeCompoundTag() nbt.Nbt {
 }
 
 // ToNBT the stored Dimension registry as CompoundTag containing identifier:type mappings.
-func (r *DimensionRegistry) ToNBT() nbt.Nbt {
-	var dimensionData []nbt.Nbt
+func (r *DimensionRegistry) ToNBT() util.NBT {
+	var dimensionData []util.NBT
 	for _, d := range r.Dimensions {
 		dimensionData = append(dimensionData, d.EncodeCompoundTag())
 	}
-	return nbt.Nbt{"dimension": dimensionData}
+	return util.NBT{"dimension": dimensionData}
 }
