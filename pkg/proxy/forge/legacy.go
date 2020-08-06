@@ -57,7 +57,7 @@ func ResetPacket() *plugin.Message {
 
 // ReadMods returns the mod list from the mod list packet and parses it.
 // May be empty.
-func ReadMods(message *plugin.Message) ([]*modinfo.Mod, error) {
+func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 	if message == nil {
 		return nil, errors.New("message must not be nil")
 	}
@@ -73,7 +73,7 @@ func ReadMods(message *plugin.Message) ([]*modinfo.Mod, error) {
 	if err != nil {
 		return nil, err
 	}
-	mods := make([]*modinfo.Mod, 0, modCount)
+	mods := make([]modinfo.Mod, 0, modCount)
 	for i := 0; i < modCount; i++ {
 		id, err := util.ReadString(buf)
 		if err != nil {
@@ -83,7 +83,7 @@ func ReadMods(message *plugin.Message) ([]*modinfo.Mod, error) {
 		if err != nil {
 			return nil, err
 		}
-		mods = append(mods, &modinfo.Mod{
+		mods = append(mods, modinfo.Mod{
 			Id:      id,
 			Version: version,
 		})

@@ -396,10 +396,17 @@ func (p *connectedPlayer) ModInfo() *modinfo.ModInfo {
 	return p.modInfo
 }
 
-func (p *connectedPlayer) SetModInfo(modInfo *modinfo.ModInfo) {
+func (p *connectedPlayer) setModInfo(info *modinfo.ModInfo) {
 	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.modInfo = modInfo
+	p.modInfo = info
+	p.mu.Unlock()
+
+	if info != nil {
+		p.proxy.Event().Fire(&PlayerModInfoEvent{
+			player:  p,
+			modInfo: *info,
+		})
+	}
 }
 
 // NOTE: the returned set is not goroutine-safe and must not be modified,

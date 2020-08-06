@@ -4,7 +4,7 @@ var Default = &ModInfo{Type: "FML"}
 
 type ModInfo struct {
 	Type string
-	Mods []*Mod
+	Mods []Mod
 }
 
 type Mod struct {

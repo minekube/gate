@@ -5,6 +5,7 @@ import (
 	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/proxy/permission"
 	"go.minekube.com/gate/pkg/proxy/player"
+	"go.minekube.com/gate/pkg/util/modinfo"
 	"go.minekube.com/gate/pkg/util/profile"
 )
 
@@ -58,6 +59,30 @@ func (e *GameProfileRequestEvent) GameProfile() profile.GameProfile {
 		return e.original
 	}
 	return e.use
+}
+
+//
+//
+//
+//
+//
+//
+
+// PlayerModInfoEvent is fired when a Forge client sends its
+// mods to the proxy while connecting to a server.
+type PlayerModInfoEvent struct {
+	player  Player
+	modInfo modinfo.ModInfo
+}
+
+// Player returns the player who sent the mod info.
+func (e *PlayerModInfoEvent) Player() Player {
+	return e.player
+}
+
+// ModInfo is the mod info received by the player.
+func (e *PlayerModInfoEvent) ModInfo() modinfo.ModInfo {
+	return e.modInfo
 }
 
 //

@@ -115,7 +115,7 @@ func init() {
 				return false
 			}
 			if len(mods) != 0 {
-				p.SetModInfo(&modinfo.ModInfo{
+				p.setModInfo(&modinfo.ModInfo{
 					Type: "FML",
 					Mods: mods,
 				})
