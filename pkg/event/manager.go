@@ -7,11 +7,12 @@ import (
 	"sync"
 )
 
+// NewManager returns a new event Manager.
 func NewManager() *Manager {
 	return &Manager{subscribers: map[Type][]*subscriber{}}
 }
 
-// Manager is an event manager.
+// Manager is an event manager to subscribe to and fire events.
 type Manager struct {
 	activeSubscribers sync.WaitGroup // Wait for active subscribers to be done.
 
@@ -27,16 +28,24 @@ type subscriber struct {
 	fn       HandlerFn // The event handler func.
 }
 
+// HandleFn is an event handler func.
 type HandlerFn func(e Event)
 
+// Type is an event type.
 type Type reflect.Type
 
 // TypeOf is a helper func to make sure the
-// reflect.Type implements the Event interface.
+// reflect.Type implements the Event interface
+// and returns a non-pointer type.
 func TypeOf(e Event) Type {
-	return reflect.TypeOf(e).Elem()
+	t := reflect.TypeOf(e)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
 
+// Event is the event interface.
 type Event interface{}
 
 // Wait blocks until no event subscribers are running.
@@ -44,26 +53,24 @@ func (m *Manager) Wait() {
 	m.activeSubscribers.Wait()
 }
 
+// Subscribe subscribes a handler to an event type with a priority
+// and returns a func that can be run to unsubscribe.
 func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubscribe func()) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-
-	// Get subscriber list for event type
-	list, ok := m.subscribers[eventType]
-	if !ok {
-		// Init new list for event type
-		list = make([]*subscriber, 1)
-		m.subscribers[eventType] = list
-	}
 
 	sub := &subscriber{
 		priority: priority,
 		fn:       fn,
 	}
-	list = append(list, sub)
+
+	// Get subscriber list for event type
+	list := append(m.subscribers[eventType], sub)
+	m.subscribers[eventType] = list
+
 	// Sort subscribers by priority
 	sort.SliceStable(list, func(i, j int) bool {
-		return list[i].priority < list[j].priority
+		return list[j].priority < list[i].priority
 	})
 
 	// Unsubscribe func
