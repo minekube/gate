@@ -104,7 +104,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 }
 
 func (h *handshakeSessionHandler) loginsQuota() *quotautil.Quota {
-	return h.conn.proxy.Connect().loginsQuota
+	return h.conn.proxy.connect.loginsQuota
 }
 
 func stateForProtocol(status int) *state.Registry {

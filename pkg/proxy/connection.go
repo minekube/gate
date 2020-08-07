@@ -248,7 +248,7 @@ func (c *minecraftConn) BufferPayload(payload []byte) (err error) {
 
 // returns the proxy's config
 func (c *minecraftConn) config() *config.Config {
-	return c.proxy.Config()
+	return c.proxy.config
 }
 
 // close closes the connection, if not already,

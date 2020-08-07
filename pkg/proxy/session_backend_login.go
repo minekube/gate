@@ -214,5 +214,5 @@ func disconnectResult(reason component.Component, server RegisteredServer, safe 
 }
 
 func (b *backendLoginSessionHandler) config() *config.Config {
-	return b.serverConn.player.proxy.Config()
+	return b.serverConn.player.proxy.config
 }

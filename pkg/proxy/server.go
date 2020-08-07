@@ -401,5 +401,5 @@ func (s *serverConnection) completeJoin() {
 }
 
 func (s *serverConnection) config() *config.Config {
-	return s.player.proxy.Config()
+	return s.player.proxy.config
 }

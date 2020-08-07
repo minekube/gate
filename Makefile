@@ -1,4 +1,4 @@
-all: fmt vet mod
+all: fmt vet mod lint
 
 # Run tests
 test: fmt vet

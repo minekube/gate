@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -49,6 +50,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringP("bind", "b", "0.0.0.0:25565", "The address to bind to")
+	rootCmd.PersistentFlags().String("health", "0.0.0.0:8080", "The grpc health probe service address")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
 }
 
@@ -56,9 +58,14 @@ func init() {
 func initConfig() {
 	_ = viper.BindPFlag("bind", rootCmd.Flags().Lookup("bind"))
 	_ = viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
+	if rootCmd.Flags().Changed("health") {
+		viper.SetDefault("health.enabled", true)
+		viper.SetDefault("health.bind", rootCmd.Flags().Lookup("health").Value)
+	}
 
 	viper.SetEnvPrefix("GATE")
 	viper.AutomaticEnv() // read in environment variables that match
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	viper.SetConfigFile("config.yml")
 	// If a config file is found, read it in.

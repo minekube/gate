@@ -1,7 +1,12 @@
 package proxy
 
+import "C"
 import (
+	"context"
+	"errors"
+	"fmt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/internal/health"
 	"go.minekube.com/gate/internal/util/auth"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/event"
@@ -9,32 +14,40 @@ import (
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/util/sets"
-	"go.uber.org/atomic"
 	"go.uber.org/zap"
+	rpc "google.golang.org/grpc/health/grpc_health_v1"
+	"io/ioutil"
+	"net"
 	"strings"
 	"sync"
+	"time"
 )
 
+// Proxy is the "Gate" for proxying and managing
+// Minecraft connections in a network.
 type Proxy struct {
 	config           *config.Config
 	event            *event.Manager
-	connect          *Connect
+	connect          *connect
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
-	shuttingDown atomic.Bool
+	closeOnce sync.Once
+	closed    chan struct{}
+	wg        sync.WaitGroup
 
-	smu     sync.RWMutex                // Protects following fields
+	mu      sync.RWMutex                // Protects following fields
 	servers map[string]RegisteredServer // registered backend servers: by lower case names
 }
 
-// NewProxy returns a new initialized proxy server.
-func NewProxy(config *config.Config) (s *Proxy) {
+// New returns a new initialized Proxy.
+func New(config config.Config) (s *Proxy) {
 	defer func() {
-		s.connect = NewConnect(s)
+		s.connect = newConnect(s)
 	}()
 	return &Proxy{
-		config:           config,
+		closed:           make(chan struct{}),
+		config:           &config,
 		event:            event.NewManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]RegisteredServer{},
@@ -42,52 +55,97 @@ func NewProxy(config *config.Config) (s *Proxy) {
 	}
 }
 
-func (s *Proxy) Event() *event.Manager {
-	return s.event
-}
-
-func (s *Proxy) Config() *config.Config {
-	return s.config
-}
-
-func (s *Proxy) Connect() *Connect {
-	return s.connect
-}
-
-func (s *Proxy) Run() error {
-	for name, addr := range s.Config().Servers {
-		s.Register(NewServerInfo(name, tcpAddr(addr)))
+// Run runs the proxy and blocks until Shutdown is called or an error occurred.
+// Run can only be called once per Proxy instance.
+func (p *Proxy) Run() (err error) {
+	select {
+	default:
+		// We can run the proxy
+		p.wg.Add(1)
+		defer p.wg.Done()
+		return p.run()
+	case <-p.closed:
+		return errors.New("proxy was already run, create a new one")
 	}
-	return s.connect.listen(s.Config().Bind)
 }
 
-func (s *Proxy) Shutdown(reason component.Component) {
-	if !s.shuttingDown.CAS(false, true) {
-		return // Already shutdown
+// Shutdown shuts down the Proxy and blocks until finished.
+//
+// It first stops listening for new connections, disconnects
+// all existing connections with the given reason (if nil stands for no reason)
+// and waits for all event subscribers to finish.
+func (p *Proxy) Shutdown(reason component.Component) {
+	p.closeOnce.Do(func() {
+		zap.L().Info("Shutting down the proxy...")
+		defer zap.L().Info("Finished shutdown.")
+		close(p.closed)
+		p.connect.DisconnectAll(reason)
+		p.event.Wait()
+		p.wg.Wait()
+	})
+}
+
+func (p *Proxy) run() error {
+	for name, addr := range p.config.Servers {
+		p.Register(NewServerInfo(name, tcpAddr(addr)))
 	}
-	zap.L().Info("Shutting down the proxy...")
-	// Shutdown the connection manager, this should be
-	// done first to refuse new connections.
-	s.connect.closeListener()
-	s.connect.DisconnectAll(reason)
-	s.event.Wait()
+
+	errChan := make(chan error, 1)
+	wg := new(sync.WaitGroup)
+	defer wg.Wait()
+
+	if p.config.Health.Enabled {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errChan <- p.runHealthService(p.closed)
+		}()
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
+	}()
+
+	return <-errChan
+}
+
+func (p *Proxy) runHealthService(stop <-chan struct{}) error {
+	probe := p.config.Health
+	run, err := health.New(probe.Bind)
+	if err != nil {
+		return fmt.Errorf("error creating health probe service: %w", err)
+	}
+	zap.S().Infof("Health probe service running at %s", probe.Bind)
+	return run(stop, p.healthCheck)
+}
+
+// Event returns the Proxy's event manager.
+func (p *Proxy) Event() *event.Manager {
+	return p.event
+}
+
+// Config returns the config used by the Proxy.
+func (p *Proxy) Config() config.Config {
+	return *p.config
 }
 
 // Server gets a backend server registered with the proxy by name.
 // Returns nil if not found.
-func (s *Proxy) Server(name string) RegisteredServer {
+func (p *Proxy) Server(name string) RegisteredServer {
 	name = strings.ToLower(name)
-	s.smu.RLock()
-	defer s.smu.RUnlock()
-	return s.servers[name] // may be nil
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.servers[name] // may be nil
 }
 
 // Servers gets all registered servers.
-func (s *Proxy) Servers() []RegisteredServer {
-	s.smu.RLock()
-	defer s.smu.RUnlock()
-	l := make([]RegisteredServer, 0, len(s.servers))
-	for _, rs := range s.servers {
+func (p *Proxy) Servers() []RegisteredServer {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	l := make([]RegisteredServer, 0, len(p.servers))
+	for _, rs := range p.servers {
 		l = append(l, rs)
 	}
 	return l
@@ -97,16 +155,16 @@ func (s *Proxy) Servers() []RegisteredServer {
 //
 // Returns the new registered server and true on success.
 // On failure returns false and the already registered server with the same name.
-func (s *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
+func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	name := strings.ToLower(info.Name())
 
-	s.smu.Lock()
-	defer s.smu.Unlock()
-	if exists, ok := s.servers[name]; ok {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if exists, ok := p.servers[name]; ok {
 		return exists, false
 	}
 	rs := newRegisteredServer(info)
-	s.servers[name] = rs
+	p.servers[name] = rs
 
 	zap.S().Debugf("Registered server %q (%s)", info.Name(), info.Addr())
 	return rs, true
@@ -114,22 +172,22 @@ func (s *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 
 // Unregister unregisters the server exactly matching the
 // given ServerInfo and returns true if found.
-func (s *Proxy) Unregister(info ServerInfo) bool {
+func (p *Proxy) Unregister(info ServerInfo) bool {
 	name := strings.ToLower(info.Name())
-	s.smu.Lock()
-	defer s.smu.Unlock()
-	rs, ok := s.servers[name]
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	rs, ok := p.servers[name]
 	if !ok || !rs.ServerInfo().Equals(info) {
 		return false
 	}
-	delete(s.servers, name)
+	delete(p.servers, name)
 
 	zap.S().Debugf("Unregistered server %q (%s)", info.Name(), info.Addr())
 	return true
 }
 
-func (s *Proxy) ChannelRegistrar() *ChannelRegistrar {
-	return s.channelRegistrar
+func (p *Proxy) ChannelRegistrar() *ChannelRegistrar {
+	return p.channelRegistrar
 }
 
 //
@@ -191,4 +249,33 @@ func (r *ChannelRegistrar) FromId(channel string) (message.ChannelIdentifier, bo
 	defer r.mu.RUnlock()
 	id, ok := r.identifiers[channel]
 	return id, ok
+}
+
+//
+//
+//
+//
+//
+
+// pings the proxy to check health
+func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error) {
+	ctx, cancel := context.WithTimeout(c, time.Second)
+	defer cancel()
+
+	var dialer net.Dialer
+	client, err := dialer.DialContext(ctx, "tcp", p.config.Bind)
+	if err != nil {
+		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
+	}
+	defer client.Close()
+
+	if err = client.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
+	}
+
+	data, err := ioutil.ReadAll(client)
+	if err != nil || len(data) == 0 {
+		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
+	}
+	return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_SERVING}, nil
 }

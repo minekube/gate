@@ -7,7 +7,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/uuid v1.1.1
 	github.com/gookit/color v1.2.7
-	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/sandertv/gophertunnel v1.7.11
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
@@ -19,5 +18,6 @@ require (
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	google.golang.org/grpc v1.31.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )

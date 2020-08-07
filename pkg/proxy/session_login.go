@@ -324,13 +324,13 @@ func (l *loginSessionHandler) event() *event.Manager {
 }
 
 func (l *loginSessionHandler) config() *config.Config {
-	return l.conn.proxy.Config()
+	return l.conn.proxy.config
 }
 
 func (l *loginSessionHandler) auth() *auth.Authenticator {
 	return l.conn.proxy.authenticator
 }
 
-func (l *loginSessionHandler) connect() *Connect {
-	return l.conn.proxy.Connect()
+func (l *loginSessionHandler) connect() *connect {
+	return l.conn.proxy.connect
 }

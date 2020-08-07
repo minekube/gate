@@ -212,5 +212,5 @@ func (r *bungeeCordMessageRecorder) process(message *plugin.Message) bool {
 }
 
 func (r *bungeeCordMessageRecorder) config() *config.Config {
-	return r.player.proxy.Config()
+	return r.player.proxy.config
 }
