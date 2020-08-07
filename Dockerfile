@@ -22,13 +22,10 @@ COPY pkg pkg/
 COPY gate.go ./
 
 # Build
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -o gate gate.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o gate gate.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
+# Final image
 FROM alpine:latest
-# Need this since gate is compiled with CGO_ENABLED=1
-RUN apk add libc6-compat --no-cache
 WORKDIR /gate
 COPY --from=build /bin/grpc_health_probe bin/
 COPY --from=build /workspace/gate .

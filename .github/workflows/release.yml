@@ -4,7 +4,22 @@ on:
     tags:
       - '*'
 jobs:
-  release:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v1
+        with:
+          always_pull: true
+          cache_froms: docker.pkg.github.com/${{ github.repository }}:latest
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: ${{ github.repository }}/gate
+          tag_with_ref: true
+          push: ${{ startsWith(github.ref, 'refs/tags/') }}
+  releaser:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

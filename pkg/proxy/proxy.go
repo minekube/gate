@@ -1,6 +1,5 @@
 package proxy
 
-import "C"
 import (
 	"context"
 	"errors"
