@@ -13,7 +13,7 @@ import (
 // Information is kept in an LRU cache of size maxEntries.
 type Quota struct {
 	eps   float32    // allowed events per second
-	burst int        // maximum event per second (queue)
+	burst int        // maximum events per second (queue)
 	mu    sync.Mutex // protects cache
 	cache *lru.Cache
 }

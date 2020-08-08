@@ -38,9 +38,8 @@ type Config struct {
 
 	BungeePluginChannelEnabled bool
 
-	Debug            bool
-	ConfigAutoUpdate bool
-	Health           HealthProbeService
+	Debug  bool
+	Health HealthProbeService
 }
 
 type (
@@ -100,15 +99,15 @@ func init() {
 	viper.SetDefault("bind", "0.0.0.0:25565")
 	viper.SetDefault("onlineMode", true)
 	viper.SetDefault("forwarding.mode", LegacyForwardingMode)
-	viper.SetDefault("announceForge", false)
 
 	viper.SetDefault("status.motd", "§bA Gate Proxy Server!")
 	viper.SetDefault("status.maxplayers", 1000)
 	viper.SetDefault("status.faviconfile", "server-icon.png")
+	viper.SetDefault("status.announceForge", false)
 	viper.SetDefault("status.showPingRequests", false)
 
 	viper.SetDefault("compression.threshold", 256)
-	viper.SetDefault("compression.level", 1)
+	viper.SetDefault("compression.level", -1)
 
 	viper.SetDefault("query.enabled", false)
 	viper.SetDefault("query.port", 25577)
@@ -130,7 +129,6 @@ func init() {
 	viper.SetDefault("readtimeout", 30000)
 	viper.SetDefault("BungeePluginChannelEnabled", true)
 	viper.SetDefault("FailoverOnUnexpectedServerDisconnect", true)
-	viper.SetDefault("configautoupdate", false)
 
 	viper.SetDefault("Health.enabled", false)
 	viper.SetDefault("Health.bind", "0.0.0.0:8080")

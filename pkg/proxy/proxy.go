@@ -88,6 +88,9 @@ func (p *Proxy) run() error {
 	for name, addr := range p.config.Servers {
 		p.Register(NewServerInfo(name, tcpAddr(addr)))
 	}
+	if len(p.config.Servers) != 0 {
+		zap.S().Infof("Registered %d servers from the config", len(p.config.Servers))
+	}
 
 	errChan := make(chan error, 1)
 	wg := new(sync.WaitGroup)
@@ -153,8 +156,16 @@ func (p *Proxy) Servers() []RegisteredServer {
 // Register registers a server with the proxy.
 //
 // Returns the new registered server and true on success.
-// On failure returns false and the already registered server with the same name.
+//
+// On failure either:
+//  - if name already exists, returns the already registered server and false
+//  - if the name or address specified in the info is invalid, returns nil and false.
 func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
+	if !config.ValidServerName(info.Name()) ||
+		config.ValidHostPort(info.Addr().String()) != nil {
+		return nil, false
+	}
+
 	name := strings.ToLower(info.Name())
 
 	p.mu.Lock()

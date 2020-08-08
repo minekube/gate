@@ -1,12 +1,76 @@
-# This is a simplified config where the rest of the
-# settings are omitted and will be set by default.
+# The bind address to listen for Minecraft client connections.
 bind: 0.0.0.0:25565
+# Whether to use the proxy in online (authenticate players with Mojang API) or offline mode (not recommended).
 onlineMode: true
-compression:
-  threshold: 256
+# Registers servers with the proxy by giving the address of backend server a custom reference name.
 servers:
+  # Server name: server address
   server1: localhost:25566
   server2: localhost:25567
+# The list of servers to try (ordered) to connect a player to
+# upon login or fallback when a player is kicked from a server.
 try:
   - server1
   - server2
+# Configure the response for server list pings.
+status:
+  favIconFile: server-icon.png
+  # The maximum players shown (is not the actual player limit!).
+  maxPlayers: 1000
+  motd: §bA Gate Proxy Server!
+  # Whether to log ping requests in the console.
+  showPingRequests: false
+  # Whether the proxy should present itself as Forge/FML-compatible server.
+  announceForge: false
+# Whether the proxy should support bungee plugin channels.
+# (Disable this if your backend servers are untrusted.)
+bungeePluginChannelEnabled: true
+compression:
+  # The minimum size (in bytes) a packet must be before the proxy compresses it.
+  # The Minecraft vanilla server uses 256 by default.
+  threshold: 256
+  # Indicates what zlib compression level Gate should use.
+  # It goes from -1 to 9 where zero means no compression and -1 the default.
+  level: -1
+# The time in milliseconds Gate waits to connect to a server before timing out.
+connectionTimeout: 5000
+# The time in milliseconds Gate waits to receive data from a server before timing out.
+# If you use Forge, you may need to increase this setting.
+readTimeout: 30000
+# Whether to reconnect the player when disconnected from a server.
+failoverOnUnexpectedServerDisconnect: true
+# Enabled extra debug logging (only for debugging purposes).
+debug: false
+# This allows you to customize how player information such as IPs and UUIDs are forwarded to your server.
+# See the documentation for more information.
+forwarding:
+  # Options: legacy, none, velocity
+  mode: legacy
+# The section for health checking when Gate runs in a Kubernetes pod.
+# Refer to https://github.com/grpc-ecosystem/grpc-health-probe for more details.
+# Gate is also delivered with a docker image where the health check service is enabled by default.
+health:
+  enabled: false
+  bind: 0.0.0.0:8080
+# The quota settings allows rate-limiting IP (last block cut off) for certain operations.
+# ops: The allowed operations per second.
+# burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
+# maxEntries: The maximum IPs to keep track of in cache for rate-limiting (if full, deletes oldest).
+quota:
+  # Limit how many new connections can be established by the same IP range.
+  connections:
+    enabled: true
+    ops: 5
+    burst: 10
+    maxEntries: 1000
+  # Limit how many login requests can be made by the same IP range.
+  logins:
+    enabled: true
+    burst: 3
+    ops: 0.4
+    maxentries: 1000
+# Whether and how Gate should reply to GameSpy 4 (Minecraft query protocol) requests.
+query:
+  enabled: false
+  port: 25577
+  showPlugins: false
