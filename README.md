@@ -25,8 +25,9 @@
     - Newest version down to 1.7 (+forge support)
     - Bungeecord plugins compatible (plugin messages)
     - Velocity's player forwarding mode
-- [Quick installation](#quick-sample-setup)
+- [Quick installation](#quick-start)
     - simply pick a download from the [releases](https://github.com/minekube/gate/releases)
+    - or quickly run our [docker image](https://github.com/minekube/gate/packages/347300)!
     - (No Java runtime needed for Gate itself)
 - A simple API to [extend Gate](#extending-gate-with-custom-code)
 - Built-in [rate limiter](#rate-limiter)
@@ -78,7 +79,7 @@ of attack should be handled on a higher networking layer._
 
 > TODO
 
-## Quick sample setup
+## Quick start
 
 This is a simple setup of a Minecraft network using Gate proxy,
 a Paper 1.16.1 (server1) & Paper 1.8.8 (server2).
