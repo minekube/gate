@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/internal/health"
 	"go.minekube.com/gate/internal/util/auth"
 	"go.minekube.com/gate/pkg/config"
@@ -12,6 +13,8 @@ import (
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/proxy/message"
+	"go.minekube.com/gate/pkg/util"
+	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/zap"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
@@ -25,15 +28,18 @@ import (
 // Proxy is the "Gate" for proxying and managing
 // Minecraft connections in a network.
 type Proxy struct {
+	*connect
 	config           *config.Config
 	event            *event.Manager
-	connect          *connect
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
 	closeOnce sync.Once
 	closed    chan struct{}
 	wg        sync.WaitGroup
+
+	motd    *component.Text
+	favicon favicon.Favicon
 
 	mu      sync.RWMutex                // Protects following fields
 	servers map[string]RegisteredServer // registered backend servers: by lower case names
@@ -84,12 +90,52 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	})
 }
 
-func (p *Proxy) run() error {
-	for name, addr := range p.config.Servers {
+func (p *Proxy) preInit() (err error) {
+	c := p.config
+	// Parse status motd
+	if len(c.Status.Motd) != 0 {
+		var motd component.Component
+		if strings.HasPrefix(c.Status.Motd, "{") {
+			motd, err = util.LatestJsonCodec().Unmarshal([]byte(c.Status.Motd))
+		} else {
+			motd, err = (&legacy.Legacy{}).Unmarshal([]byte(c.Status.Motd))
+		}
+		if err != nil {
+			return err
+		}
+		t, ok := motd.(*component.Text)
+		if !ok {
+			return errors.New("specified motd is not a text component")
+		}
+		p.motd = t
+	}
+	// Load favicon
+	if len(c.Status.Favicon) != 0 {
+		if strings.HasPrefix(c.Status.Favicon, "data:image/") {
+			p.favicon = favicon.Favicon(c.Status.Favicon)
+			zap.L().Info("Using favicon from data uri")
+		} else {
+			p.favicon, err = favicon.FromFile(c.Status.Favicon)
+			if err != nil {
+				return fmt.Errorf("error reading favicon %q: %w", c.Status.Favicon, err)
+			}
+			zap.S().Infof("Using favicon file %s", c.Status.Favicon)
+		}
+	}
+
+	// Register servers
+	for name, addr := range c.Servers {
 		p.Register(NewServerInfo(name, tcpAddr(addr)))
 	}
-	if len(p.config.Servers) != 0 {
-		zap.S().Infof("Registered %d servers from the config", len(p.config.Servers))
+	if len(c.Servers) != 0 {
+		zap.S().Infof("Pre-registered %d servers", len(c.Servers))
+	}
+	return
+}
+
+func (p *Proxy) run() error {
+	if err := p.preInit(); err != nil {
+		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
 	errChan := make(chan error, 1)

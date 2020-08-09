@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/util"
 	"go.uber.org/zap"
 	"strings"
+	"time"
 )
 
 // ConnectionRequest can send a connection request to another server on the proxy.
@@ -264,7 +265,9 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *DisconnectPlayerKickResult:
 		p.Disconnect(result.Reason)
 	case *RedirectPlayerKickResult:
-		successful := p.CreateConnectionRequest(result.Server).ConnectWithIndication(context.Background())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
+		defer cancel()
+		successful := p.CreateConnectionRequest(result.Server).ConnectWithIndication(ctx)
 		if successful {
 			if result.Message == nil {
 				_ = p.SendMessage(movedToNewServer)

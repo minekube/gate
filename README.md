@@ -31,6 +31,7 @@
     - (No Java runtime needed for Gate itself)
 - A simple API to [extend Gate](#extending-gate-with-custom-code)
 - Built-in [rate limiter](#rate-limiter)
+- Automatic server icon resizing to 64x64
 - Benefits from Go's awesome language features
     - simple, reliable, efficient
     - [and much more](https://golang.org/)
@@ -77,9 +78,13 @@ of attack should be handled on a higher networking layer._
     
 ## Benchmarks
 
-> TODO
+Gate has already been tested to successfully handle thousands of incoming connections
+(even with rate limiter disabled).
 
-## Quick start
+> TODO: PRs are always welcome...
+> Proper benchmarks will be added when Gate is stable enough.
+
+## Quick Start
 
 This is a simple setup of a Minecraft network using Gate proxy,
 a Paper 1.16.1 (server1) & Paper 1.8.8 (server2).

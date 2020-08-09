@@ -173,3 +173,22 @@ func (i *initialInbound) Active() bool {
 func (i *initialInbound) String() string {
 	return fmt.Sprintf("[initial connection] %s -> %s", i.RemoteAddr(), i.virtualHost)
 }
+
+//
+//
+//
+//
+//
+//
+
+// A no-operation session handler can be wrapped to
+// implement the sessionHandler interface.
+type noOpSessionHandler struct{}
+
+var _ sessionHandler = (*noOpSessionHandler)(nil)
+
+func (noOpSessionHandler) handlePacket(proto.Packet)                {}
+func (noOpSessionHandler) handleUnknownPacket(*proto.PacketContext) {}
+func (noOpSessionHandler) disconnected()                            {}
+func (noOpSessionHandler) deactivated()                             {}
+func (noOpSessionHandler) activated()                               {}

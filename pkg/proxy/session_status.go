@@ -1,20 +1,19 @@
 package proxy
 
 import (
+	"encoding/json"
 	"fmt"
-	"go.minekube.com/common/minecraft/color"
-	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/common/minecraft/component/codec"
-	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
+	"go.minekube.com/gate/pkg/proxy/ping"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type statusSessionHandler struct {
 	conn    *minecraftConn
 	inbound Inbound
+
+	receivedRequest bool
 
 	noOpSessionHandler
 }
@@ -41,33 +40,58 @@ func (h *statusSessionHandler) handlePacket(p proto.Packet) {
 	}
 }
 
-func (h *statusSessionHandler) handleStatusRequest() {
-	// TODO proxy ping event
-	hover := new(strings.Builder)
-	_ = (&legacy.Legacy{}).Marshal(hover, &component.Text{
-		Content: "A Minecraft Proxy by Minekube",
-		S:       component.Style{Color: color.Gold},
-	})
+var versionName = fmt.Sprintf("Gate %s", proto.SupportedVersionsString)
 
-	motd := new(strings.Builder)
-	_ = (&codec.Json{}).Marshal(motd, &component.Text{
-		Content: "A Gate Proxy ",
-		S:       component.Style{Color: color.Aqua},
-		Extra: []component.Component{
-			&component.Text{
-				Content: "(Alpha)\n",
-				S:       component.Style{Color: color.Gray},
-			},
-			&component.Text{Content: "Visit ➞ "},
-			&component.Text{
-				Content: "github.com/minekube/gate",
-				S:       component.Style{Color: color.White},
-			},
+func (h *statusSessionHandler) newInitialPing() *ping.ServerPing {
+	shownVersion := h.conn.Protocol()
+	if !h.conn.Protocol().Supported() {
+		shownVersion = proto.MaximumVersion.Protocol
+	}
+	return &ping.ServerPing{
+		Version: ping.Version{
+			Protocol: shownVersion,
+			Name:     versionName,
 		},
-	})
+		Players: &ping.Players{
+			Online: h.proxy().PlayerCount(),
+			Max:    h.proxy().config.Status.ShowMaxPlayers,
+		},
+		Description: h.proxy().motd,
+		Favicon:     h.proxy().favicon,
+	}
+}
+
+func (h *statusSessionHandler) handleStatusRequest() {
+	if h.receivedRequest {
+		// Already sent response
+		_ = h.conn.close()
+		return
+	}
+	h.receivedRequest = true
+
+	e := &PingEvent{
+		inbound: h.inbound,
+		ping:    h.newInitialPing(),
+	}
+	h.proxy().event.Fire(e)
+
+	if e.ping == nil {
+		_ = h.conn.close()
+		zap.L().Debug("Ping is nil, sent no response")
+		return
+	}
+	if !h.inbound.Active() {
+		return
+	}
+
+	response, err := json.Marshal(e.ping)
+	if err != nil {
+		_ = h.conn.close()
+		zap.L().Error("Error marshaling ping response to json", zap.Error(err))
+		return
+	}
 	_ = h.conn.WritePacket(&packet.StatusResponse{
-		Status: fmt.Sprintf(sampleStatus, h.conn.Protocol(), len(h.conn.proxy.connect.ids),
-			hover.String(), motd.String()),
+		Status: string(response),
 	})
 }
 
@@ -84,20 +108,6 @@ func (h *statusSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
 	h.conn.close()
 }
 
-const sampleStatus = `{
-    "version": {
-        "name": "1.8.9",
-        "protocol": %d
-    },
-    "players": {
-        "max": 100,
-        "online": %d,
-        "sample": [
-            {
-                "name": "%s",
-                "id": "00000000-0000-0000-0000-000000000000"
-            }
-        ]
-    },	
-    "description": %s
-}`
+func (h *statusSessionHandler) proxy() *Proxy {
+	return h.conn.proxy
+}

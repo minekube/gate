@@ -63,6 +63,8 @@ var (
 	MinimumVersion = SupportedVersions[0]
 	// The highest supported version.
 	MaximumVersion = SupportedVersions[len(SupportedVersions)-1]
+	// The supported versions range as a string.
+	SupportedVersionsString = fmt.Sprintf("%s-%s", MinimumVersion, MaximumVersion)
 )
 
 // ProtocolVersion gets the Version by the protocol id
@@ -109,6 +111,10 @@ func (p Protocol) Legacy() bool {
 
 func (p Protocol) Unknown() bool {
 	return p == Unknown.Protocol
+}
+
+func (p Protocol) Version() *Version {
+	return ProtocolVersion(p)
 }
 
 func (v Version) String() string {

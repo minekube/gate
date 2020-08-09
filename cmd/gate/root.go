@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 scalability, flexibility & excelled server version support.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := Run(); err != nil {
-			cmd.PrintErr(fmt.Sprintf("Error initializing Gate Proxy: %v", err))
+			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
 		}
 	},
 }

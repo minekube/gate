@@ -45,9 +45,9 @@ type Config struct {
 type (
 	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
-		MaxPlayers       int
+		ShowMaxPlayers   int
 		Motd             string
-		FavIconFile      string
+		Favicon          string
 		ShowPingRequests bool
 	}
 	Query struct {
@@ -100,9 +100,8 @@ func init() {
 	viper.SetDefault("onlineMode", true)
 	viper.SetDefault("forwarding.mode", LegacyForwardingMode)
 
-	viper.SetDefault("status.motd", "§bA Gate Proxy Server!")
-	viper.SetDefault("status.maxplayers", 1000)
-	viper.SetDefault("status.faviconfile", "server-icon.png")
+	viper.SetDefault("status.motd", "§bA Gate Proxy §7(Alpha)\n§bVisit ➞ §fgithub.com/minekube/gate")
+	viper.SetDefault("status.showmaxplayers", 1000)
 	viper.SetDefault("status.announceForge", false)
 	viper.SetDefault("status.showPingRequests", false)
 

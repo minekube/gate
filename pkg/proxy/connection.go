@@ -432,7 +432,7 @@ type Inbound interface {
 	Protocol() proto.Protocol // The current protocol version the connection uses.
 	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
 	RemoteAddr() net.Addr     // The player's IP address.
-	Active() bool             // Whether or not the player remains online.
+	Active() bool             // Whether or not connection remains active.
 	// Closed returns a receive only channel that can be used know when the connection was closed.
 	// (e.g. for canceling work in an event subscriber)
 	Closed() <-chan struct{}

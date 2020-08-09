@@ -14,6 +14,10 @@ func JsonCodec(protocol proto.Protocol) codec.Codec {
 	return defaultJsonCodec
 }
 
+func LatestJsonCodec() codec.Codec {
+	return jsonCodec_1_16
+}
+
 var (
 	// Json component codec for pre-1.16 clients
 	defaultJsonCodec = &codec.Json{}

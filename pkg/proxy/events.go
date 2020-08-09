@@ -4,10 +4,39 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/proxy/permission"
+	"go.minekube.com/gate/pkg/proxy/ping"
 	"go.minekube.com/gate/pkg/proxy/player"
 	"go.minekube.com/gate/pkg/util/modinfo"
 	"go.minekube.com/gate/pkg/util/profile"
 )
+
+// PingEvent is fired when a server list ping
+// request is sent by a remote client.
+type PingEvent struct {
+	inbound Inbound
+	ping    *ping.ServerPing
+}
+
+// Connection returns the inbound connection.
+func (p *PingEvent) Connection() Inbound {
+	return p.inbound
+}
+
+// Ping returns the used ping. (pre-initialized by the proxy)
+func (p *PingEvent) Ping() *ping.ServerPing {
+	return p.ping
+}
+
+// SetPing sets the ping response to use.
+func (p *PingEvent) SetPing(ping *ping.ServerPing) {
+	p.ping = ping
+}
+
+//
+//
+//
+//
+//
 
 // ConnectionHandshakeEvent is fired when a handshake
 // is established between a client and the proxy.
@@ -19,6 +48,12 @@ type ConnectionHandshakeEvent struct {
 func (e *ConnectionHandshakeEvent) Connection() Inbound {
 	return e.inbound
 }
+
+//
+//
+//
+//
+//
 
 // GameProfileRequestEvent is fired after the PreLoginEvent in
 // order to set up the game profile for the user.

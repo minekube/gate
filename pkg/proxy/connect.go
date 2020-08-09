@@ -97,6 +97,13 @@ func (c *connect) handleRawConn(raw net.Conn) {
 	conn.readLoop()
 }
 
+// PlayerCount returns the number of players on the proxy.
+func (c *connect) PlayerCount() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.ids)
+}
+
 func (c *connect) canRegisterConnection(player *connectedPlayer) bool {
 	cfg := c.config()
 	if cfg.OnlineMode && cfg.OnlineModeKickExistingPlayers {
