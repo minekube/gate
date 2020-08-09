@@ -31,6 +31,7 @@ type Proxy struct {
 	*connect
 	config           *config.Config
 	event            *event.Manager
+	command          *CommandManager
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
@@ -54,6 +55,7 @@ func New(config config.Config) (s *Proxy) {
 		closed:           make(chan struct{}),
 		config:           &config,
 		event:            event.NewManager(),
+		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]RegisteredServer{},
 		authenticator:    auth.NewAuthenticator(),
@@ -130,6 +132,9 @@ func (p *Proxy) preInit() (err error) {
 	if len(c.Servers) != 0 {
 		zap.S().Infof("Pre-registered %d servers", len(c.Servers))
 	}
+
+	// Register builtin commands
+	p.command.Register(&serverCmd{proxy: p}, "server")
 	return
 }
 
@@ -172,6 +177,11 @@ func (p *Proxy) runHealthService(stop <-chan struct{}) error {
 // Event returns the Proxy's event manager.
 func (p *Proxy) Event() *event.Manager {
 	return p.event
+}
+
+// Command returns the Proxy's command manager.
+func (p *Proxy) Command() *CommandManager {
+	return p.command
 }
 
 // Config returns the config used by the Proxy.

@@ -13,7 +13,7 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/fasthttp v1.15.1
-	go.minekube.com/common v0.0.0-20200804114822-9c4fad286696
+	go.minekube.com/common v0.0.0-20200809185449-de163b8050bf
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect

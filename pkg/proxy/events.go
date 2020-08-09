@@ -652,6 +652,7 @@ func (s *PlayerSettingsChangedEvent) Settings() player.Settings {
 //
 
 // PlayerChatEvent is fired when a player sends a chat message.
+// Note that messages with a leading "/" do not trigger this event, but instead CommandExecuteEvent.
 type PlayerChatEvent struct {
 	player  Player
 	message string
@@ -676,5 +677,39 @@ func (c *PlayerChatEvent) SetAllowed(allowed bool) {
 
 // Allowed returns true when the chat message is allowed.
 func (c *PlayerChatEvent) Allowed() bool {
+	return !c.denied
+}
+
+//
+//
+//
+//
+//
+
+// CommandExecuteEvent is fired when someone wants to execute a command.
+type CommandExecuteEvent struct {
+	source      CommandSource
+	commandline string
+
+	denied bool
+}
+
+// Source returns the command source that wants to run the command.
+func (c *CommandExecuteEvent) Source() CommandSource {
+	return c.source
+}
+
+// Command returns the whole commandline without the leading "/".
+func (c *CommandExecuteEvent) Command() string {
+	return c.commandline
+}
+
+// SetAllowed sets whether the command is allowed to be executed.
+func (c *CommandExecuteEvent) SetAllowed(allowed bool) {
+	c.denied = !allowed
+}
+
+// Allowed returns true when the command is allowed to be executed.
+func (c *CommandExecuteEvent) Allowed() bool {
 	return !c.denied
 }

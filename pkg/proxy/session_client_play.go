@@ -2,10 +2,7 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 	"github.com/gammazero/deque"
-	"go.minekube.com/common/minecraft/color"
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
@@ -324,61 +321,52 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 		return
 	}
 
-	zap.S().Debugf("ChatPacket> %s: %s", c.player.Username(), p.Message)
-
-	// TODO add a proper proxy commands system here
+	// Is it a command?
 	if strings.HasPrefix(p.Message, "/") {
-		args := strings.Split(p.Message, " ")
-		if len(args) != 0 && strings.HasPrefix(args[0], "/server") {
-			c.serverCmd(args)
+		commandline := trimSpaces(strings.TrimPrefix(p.Message, "/"))
+
+		e := &CommandExecuteEvent{
+			source:      c.player,
+			commandline: commandline,
 		}
-		return
+		c.proxy().event.Fire(e)
+		if !e.Allowed() || !c.player.Active() {
+			return
+		}
+
+		cmd, args, _ := extract(commandline)
+		if c.proxy().command.Has(cmd) {
+			zap.S().Infof("%s executing command /%s", c.player, commandline)
+			// Invoke registered command
+			_, err := c.proxy().command.Invoke(&Context{
+				Context: context.Background(),
+				Source:  c.player,
+				Args:    args,
+			}, cmd)
+			if err != nil {
+				zap.S().Errorf("Error invoking command %q: %v", commandline, err)
+			}
+			return
+		}
+		// Else, proxy command not registered, forward to server.
+	} else {
+		e := &PlayerChatEvent{
+			player:  c.player,
+			message: p.Message,
+		}
+		c.proxy().Event().Fire(e)
+		if !e.Allowed() || !c.player.Active() {
+			return
+		}
+		zap.S().Debugf("Chat> %s: %s", c.player, p.Message)
 	}
 
-	e := &PlayerChatEvent{
-		player:  c.player,
-		message: p.Message,
-	}
-	c.proxy().Event().Fire(e)
-	if !e.Allowed() {
-		return
-	}
 	// Forward to server
 	_ = serverMc.WritePacket(&packet.Chat{
 		Message: p.Message,
 		Type:    packet.ChatMessage,
 		Sender:  uuid.Nil,
 	})
-}
-
-// TODO use proper command system
-func (c *clientPlaySessionHandler) serverCmd(args []string) {
-	if len(args) > 1 {
-		// switch server
-		successful := c.player.CreateConnectionRequest(c.proxy().Server(args[1])).ConnectWithIndication(context.Background())
-		if successful {
-			_ = c.player.SendMessage(&component.Text{
-				Content: "Connected to server " + args[1],
-				S:       component.Style{Color: color.Green},
-			})
-		}
-	} else {
-		// list registered servers
-		var servers []component.Component
-		for _, s := range c.proxy().Servers() {
-			servers = append(servers, &component.Text{
-				Content: fmt.Sprintf("  %s - %s\n", s.ServerInfo().Name(), s.ServerInfo().Addr()),
-			})
-		}
-		_ = c.player.SendMessage(&component.Text{
-			Content: fmt.Sprintf("\nServers (%d):\n", len(servers)),
-			S:       component.Style{Color: color.Green},
-			Extra: []component.Component{&component.Text{
-				S:     component.Style{Color: color.Yellow},
-				Extra: servers,
-			}},
-		})
-	}
 }
 
 func (c *clientPlaySessionHandler) player_() *connectedPlayer {
