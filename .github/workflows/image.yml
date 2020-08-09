@@ -1,4 +1,4 @@
-name: release
+name: image
 on: [push]
 jobs:
   image:
