@@ -42,6 +42,8 @@
 - simple Minecraft network admins when [scripting languages](#script-languages)
 are supported
 
+![Server list](docs/images/server-list.png)
+
 ## What Gate does
 
 The whole point of a Minecraft proxy is to be able to
