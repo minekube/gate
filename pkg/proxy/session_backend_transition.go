@@ -26,10 +26,18 @@ func (b *backendTransitionSessionHandler) activated() {
 	b.listenDoneCtx = make(chan struct{})
 	go func() {
 		select {
-		case <-b.requestCtx.Done():
-			b.requestCtx.result(nil, errors.New(
-				"context deadline exceeded while transitioning player to backend server"))
 		case <-b.listenDoneCtx:
+		case <-b.requestCtx.Done():
+			// We must check again since request context
+			// may be canceled before deactivated() was run.
+			select {
+			case <-b.listenDoneCtx:
+				return
+			default:
+				b.requestCtx.result(nil, errors.New(
+					"context deadline exceeded while transitioning player to backend server"))
+				b.serverConn.disconnect()
+			}
 		}
 	}()
 }
@@ -167,6 +175,13 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	// event handler might have disconnected player.
 	if !b.serverConn.player.Active() {
 		return
+	}
+
+	if previousServer == nil {
+		zap.S().Infof("%s initial server %q", b.serverConn.player, b.serverConn.server.ServerInfo().Name())
+	} else {
+		zap.S().Infof("%s moved from %q to %q", b.serverConn.player, previousServer.ServerInfo().Name(),
+			b.serverConn.server.ServerInfo().Name())
 	}
 
 	// Strap on the ClientPlaySessionHandler if required.

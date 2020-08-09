@@ -40,10 +40,18 @@ func (b *backendLoginSessionHandler) activated() {
 	b.listenDoneCtx = make(chan struct{})
 	go func() {
 		select {
-		case <-b.requestCtx.Done():
-			b.requestCtx.result(nil, errors.New(
-				"context deadline exceeded while logging into backend server"))
 		case <-b.listenDoneCtx:
+		case <-b.requestCtx.Done():
+			// We must check again since request context
+			// may be canceled before deactivated() was run.
+			select {
+			case <-b.listenDoneCtx:
+				return
+			default:
+				b.requestCtx.result(nil, errors.New(
+					"context deadline exceeded while logging into backend server"))
+				b.serverConn.disconnect()
+			}
 		}
 	}()
 }
