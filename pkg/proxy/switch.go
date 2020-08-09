@@ -42,8 +42,6 @@ type ConnectionResult interface {
 	Reason() Component // Returns a reason for the failure to connect to the server.
 }
 
-type ConnectionResultFn func(ConnectionResult, error)
-
 // ConnectionStatus is the status for a ConnectionResult
 type ConnectionStatus uint8
 
@@ -105,54 +103,43 @@ type connectionRequest struct {
 }
 
 func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, error) {
-	type res struct {
-		ConnectionResult
-		error
-	}
-	resultChan := make(chan *res, 1)
-	c.internalConnect(ctx, func(result *connectionResult, err error) {
-		if err == nil {
-			if !result.safe {
-				// If it's not safe to continue the connection we need to shut it down.
-				c.player.handleConnectionErr(result.attemptedConn, err, true)
-			} else if !result.Status().Successful() {
-				c.player.resetInFlightConnection()
-			}
+	result, err := c.internalConnect(ctx)
+	if err == nil {
+		if !result.safe {
+			// If it's not safe to continue the connection we need to shut it down.
+			c.player.handleConnectionErr(result.attemptedConn, err, true)
+		} else if !result.Status().Successful() {
+			c.player.resetInFlightConnection()
 		}
-		resultChan <- &res{result, err}
-	})
-	r := <-resultChan
-	return r.ConnectionResult, r.error
+	}
+	return result, err
 }
 
 func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
-	resultChan := make(chan bool, 1)
-	c.internalConnect(ctx, func(result *connectionResult, err error) {
-		if err != nil {
-			c.player.handleConnectionErr(c.server, err, true)
-			resultChan <- false
-			return
-		}
+	result, err := c.internalConnect(ctx)
+	if err != nil {
+		c.player.handleConnectionErr(c.server, err, true)
+		return false
+	}
 
-		switch result.Status() {
-		case AlreadyConnectedConnectionStatus:
-			_ = c.player.SendMessage(alreadyConnected)
-		case InProgressConnectionStatus:
-			_ = c.player.SendMessage(alreadyInProgress)
-		case CanceledConnectionStatus:
-			// Ignore, event subscriber probably handled this.
-		case ServerDisconnectedConnectionStatus:
-			reason := result.Reason()
-			if reason == nil {
-				reason = internalServerConnectionError
-			}
-			c.player.handleConnectionErr1(c.server, reason, result.safe)
-		default:
-			// The only remaining value is successful (no need to do anything!)
+	switch result.Status() {
+	case AlreadyConnectedConnectionStatus:
+		_ = c.player.SendMessage(alreadyConnected)
+	case InProgressConnectionStatus:
+		_ = c.player.SendMessage(alreadyInProgress)
+	case CanceledConnectionStatus:
+		// Ignore, event subscriber probably handled this.
+	case ServerDisconnectedConnectionStatus:
+		reason := result.Reason()
+		if reason == nil {
+			reason = internalServerConnectionError
 		}
-		resultChan <- result.Status().Successful()
-	})
-	return <-resultChan
+		c.player.handleConnectionErr1(c.server, reason, result.safe)
+	default:
+		// The only remaining value is successful (no need to do anything!)
+	}
+
+	return result.Status().Successful()
 }
 
 // Handles unexpected disconnects.
@@ -169,8 +156,8 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 		return
 	}
 
-	connectedServer := p.CurrentServer()
 	var userMsg string
+	connectedServer := p.CurrentServer()
 	if connectedServer != nil && connectedServer.Server().Equals(server) {
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",
 			server.ServerInfo().Name())
@@ -352,49 +339,40 @@ func (c *connectionRequest) checkServer(server RegisteredServer) (s ConnectionSt
 	return 0, true
 }
 
-type internalConnectionResultFn func(result *connectionResult, err error)
-
-func (c *connectionRequest) internalConnect(ctx context.Context, resultFn internalConnectionResultFn) {
+func (c *connectionRequest) internalConnect(ctx context.Context) (result *connectionResult, err error) {
 	if ctx == nil {
 		ctx = context.Background()
-	}
-	if resultFn == nil {
-		resultFn = func(result *connectionResult, err error) {}
 	}
 
 	status, ok := c.checkServer(c.server)
 	if !ok {
-		resultFn(plainConnectionResult(status, c.server), nil)
-		return
+		return plainConnectionResult(status, c.server), nil
 	}
 
 	connectEvent := newServerPreConnectEvent(c.player, c.server)
 	c.event().Fire(connectEvent)
 	if !connectEvent.Allowed() {
-		resultFn(plainConnectionResult(CanceledConnectionStatus, c.server), nil)
-		return
+		return plainConnectionResult(CanceledConnectionStatus, c.server), nil
 	}
 
 	newDest := connectEvent.Server()
+	if newDest == nil {
+		return plainConnectionResult(CanceledConnectionStatus, newDest), nil
+	}
 	status, ok = c.checkServer(newDest)
 	if !ok {
-		resultFn(plainConnectionResult(status, newDest), nil)
-		return
+		return plainConnectionResult(status, newDest), nil
 	}
 
 	server, ok := newDest.(*registeredServer)
 	if !ok { // Must be of this type
-		resultFn(plainConnectionResult(CanceledConnectionStatus, newDest), nil)
-		return
+		return plainConnectionResult(CanceledConnectionStatus, newDest), nil
 	}
 
 	con := newServerConnection(server, c.player)
-	// TODO goroutine: register in flight connection context to be gracefully canceled on Proxy shutdown?
 	c.player.setInFlightConnection(con)
-	con.connect(ctx, func(result *connectionResult, err error) {
-		c.resetIfInFlightIs(con)
-		resultFn(result, err)
-	})
+	defer c.resetIfInFlightIs(con)
+	return con.connect(ctx)
 }
 
 func (c *connectionRequest) resetIfInFlightIs(establishedConnection *serverConnection) {

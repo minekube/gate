@@ -21,8 +21,9 @@ import (
 )
 
 type backendLoginSessionHandler struct {
-	serverConn *serverConnection
-	resultFn   internalConnectionResultFn
+	serverConn    *serverConnection
+	requestCtx    *connRequestCxt
+	listenDoneCtx chan struct{}
 
 	informationForwarded atomic.Bool
 
@@ -31,8 +32,26 @@ type backendLoginSessionHandler struct {
 
 var _ sessionHandler = (*backendLoginSessionHandler)(nil)
 
-func newBackendLoginSessionHandler(serverConn *serverConnection, resultFn internalConnectionResultFn) sessionHandler {
-	return &backendLoginSessionHandler{serverConn: serverConn, resultFn: resultFn}
+func newBackendLoginSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
+	return &backendLoginSessionHandler{serverConn: serverConn, requestCtx: requestCtx}
+}
+
+func (b *backendLoginSessionHandler) activated() {
+	b.listenDoneCtx = make(chan struct{})
+	go func() {
+		select {
+		case <-b.requestCtx.Done():
+			b.requestCtx.result(nil, errors.New(
+				"context deadline exceeded while logging into backend server"))
+		case <-b.listenDoneCtx:
+		}
+	}()
+}
+
+func (b *backendLoginSessionHandler) deactivated() {
+	if b.listenDoneCtx != nil {
+		close(b.listenDoneCtx)
+	}
 }
 
 func (b *backendLoginSessionHandler) handlePacket(p proto.Packet) {
@@ -59,7 +78,7 @@ var ErrServerOnlineMode = errors.New("backend server is online mode, but should 
 func (b *backendLoginSessionHandler) handleEncryptionRequest() {
 	// If we get an encryption request we know that the server is online mode!
 	// Server should be offline mode.
-	b.resultFn(nil, ErrServerOnlineMode)
+	b.requestCtx.result(nil, ErrServerOnlineMode)
 }
 
 const (
@@ -143,14 +162,14 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
 	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, true)
-	b.resultFn(result, nil)
+	b.requestCtx.result(result, nil)
 }
 
 func (b *backendLoginSessionHandler) handleSetCompression(packet *packet.SetCompression) {
 	conn, ok := b.serverConn.ensureConnected()
 	if ok {
 		if err := conn.SetCompressionThreshold(packet.Threshold); err != nil {
-			b.resultFn(nil, err)
+			b.requestCtx.result(nil, err)
 			b.serverConn.disconnect()
 		}
 	}
@@ -162,7 +181,7 @@ var velocityIpForwardingFailure = &component.Text{
 
 func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	if b.config().Forwarding.Mode == config.VelocityForwardingMode && !b.informationForwarded.Load() {
-		b.resultFn(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
+		b.requestCtx.result(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
 		b.serverConn.disconnect()
 		return
 	}
@@ -178,16 +197,16 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	serverMc.setState(state.Play)
 
 	// Switch to the transition handler.
-	serverMc.setSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.resultFn))
+	serverMc.setSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.requestCtx))
 }
 
 func (b *backendLoginSessionHandler) disconnected() {
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode {
-		b.resultFn(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
+		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
 		// TODO add link to player info forwarding instructions docs
 	} else {
-		b.resultFn(nil, errs.NewSilentErr("The connection to the remote server was unexpectedly closed."))
+		b.requestCtx.result(nil, errs.NewSilentErr("The connection to the remote server was unexpectedly closed."))
 	}
 }
 

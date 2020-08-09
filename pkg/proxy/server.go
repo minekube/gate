@@ -253,8 +253,24 @@ func (s *serverConnection) phase() backendConnectionPhase {
 	return s.connPhase
 }
 
+type (
+	connRequestCxt struct {
+		context.Context
+		response chan<- *connResponse
+		once     sync.Once
+	}
+	connResponse struct {
+		*connectionResult
+		error
+	}
+)
+
+func (c *connRequestCxt) result(result *connectionResult, err error) {
+	c.once.Do(func() { c.response <- &connResponse{connectionResult: result, error: err} })
+}
+
 // TODO support cancel connect via ctx
-func (s *serverConnection) connect(ctx context.Context, resultFn internalConnectionResultFn) {
+func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	addr := s.server.ServerInfo().Addr().String()
 
 	// Connect proxy -> server
@@ -262,8 +278,7 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
-		resultFn(nil, fmt.Errorf("error connecting to server %s: %w", addr, err))
-		return
+		return nil, fmt.Errorf("error connecting to server %s: %w", addr, err)
 	}
 	zap.L().Debug("Connected to server",
 		zap.String("name", s.server.ServerInfo().Name()),
@@ -280,9 +295,14 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 		}
 	})
 
+	resultChan := make(chan *connResponse, 1)
+
 	s.mu.Lock()
 	s.connection = serverMc
-	s.connection.setSessionHandler0(newBackendLoginSessionHandler(s, resultFn))
+	s.connection.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
+		Context:  ctx,
+		response: resultChan,
+	}))
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
@@ -326,6 +346,10 @@ func (s *serverConnection) connect(ctx context.Context, resultFn internalConnect
 		return
 	}
 	go serverMc.readLoop()
+
+	// Block
+	r := <-resultChan
+	return r.connectionResult, r.error
 }
 
 func (s *serverConnection) createLegacyForwardingAddress() string {

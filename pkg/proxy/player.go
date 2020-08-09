@@ -335,7 +335,11 @@ func (p *connectedPlayer) teardown() {
 
 // may be nil!
 func (p *connectedPlayer) CurrentServer() ServerConnection {
-	return p.connectedServer()
+	if cs := p.connectedServer(); cs != nil {
+		return cs
+	}
+	// We must return an explicit nil, not a (*serverConnection)(nil).
+	return nil
 }
 
 func (p *connectedPlayer) connectedServer() *serverConnection {

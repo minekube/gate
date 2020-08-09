@@ -11,14 +11,33 @@ import (
 )
 
 type backendTransitionSessionHandler struct {
-	serverConn *serverConnection
-	resultFn   internalConnectionResultFn
+	serverConn    *serverConnection
+	requestCtx    *connRequestCxt
+	listenDoneCtx chan struct{}
 
 	noOpSessionHandler
 }
 
-func newBackendTransitionSessionHandler(serverConn *serverConnection, resultFn internalConnectionResultFn) sessionHandler {
-	return &backendTransitionSessionHandler{serverConn: serverConn, resultFn: resultFn}
+func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
+	return &backendTransitionSessionHandler{serverConn: serverConn, requestCtx: requestCtx}
+}
+
+func (b *backendTransitionSessionHandler) activated() {
+	b.listenDoneCtx = make(chan struct{})
+	go func() {
+		select {
+		case <-b.requestCtx.Done():
+			b.requestCtx.result(nil, errors.New(
+				"context deadline exceeded while transitioning player to backend server"))
+		case <-b.listenDoneCtx:
+		}
+	}()
+}
+
+func (b *backendTransitionSessionHandler) deactivated() {
+	if b.listenDoneCtx != nil {
+		close(b.listenDoneCtx)
+	}
 }
 
 func (b *backendTransitionSessionHandler) handlePacket(p proto.Packet) {
@@ -59,7 +78,7 @@ func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect)
 	// We must kick the client.
 	safe := b.serverConn.connection.Type() != LegacyForge || b.serverConn.phase().consideredComplete()
 	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, safe)
-	b.resultFn(result, nil)
+	b.requestCtx.result(result, nil)
 }
 
 func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Message) {
@@ -167,7 +186,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	// We will have nothing more to do with this connection once this task finishes up.
 	backendPlay, err := newBackendPlaySessionHandler(b.serverConn)
 	if err != nil {
-		b.resultFn(nil, err)
+		b.requestCtx.result(nil, err)
 		return
 	}
 	smc.setSessionHandler(backendPlay)
@@ -179,12 +198,12 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	postConnectEvent := newServerPostConnectEvent(b.serverConn.player, previousServer)
 	go func() {
 		b.event().Fire(postConnectEvent)
-		b.resultFn(plainConnectionResult(SuccessConnectionStatus, b.serverConn.server), nil)
+		b.requestCtx.result(plainConnectionResult(SuccessConnectionStatus, b.serverConn.server), nil)
 	}()
 }
 
 func (b *backendTransitionSessionHandler) disconnected() {
-	b.resultFn(nil, errors.New("unexpectedly disconnected from remote server"))
+	b.requestCtx.result(nil, errors.New("unexpectedly disconnected from remote server"))
 }
 
 func (b *backendTransitionSessionHandler) event() *event.Manager {
