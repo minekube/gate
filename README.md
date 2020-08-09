@@ -27,7 +27,8 @@
     - Velocity's player forwarding mode
 - [Quick installation](#quick-start)
     - simply pick a download from the [releases](https://github.com/minekube/gate/releases)
-    - or quickly run our [docker image](https://github.com/minekube/gate/packages/347300)!
+    - or quickly run our [docker image](https://gitlab.com/minekube/gate/container_registry)!
+        - `docker run -it --rm -p 25565:25565 registry.gitlab.com/minekube/gate:latest`
     - (No Java runtime needed for Gate itself)
 - A simple API to [extend Gate](#extending-gate-with-custom-code)
 - Built-in [rate limiter](#rate-limiter)
@@ -40,7 +41,6 @@
 - advanced networks wanting performance while operating at a high scale
 - simple Minecraft network admins when [scripting languages](#script-languages)
 are supported
-
 
 ## What Gate does
 

@@ -1,4 +1,3 @@
-# Build the manager binary
 FROM golang:1.14 AS build
 
 # Health probe client

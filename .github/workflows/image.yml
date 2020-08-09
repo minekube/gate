@@ -1,0 +1,15 @@
+name: release
+on: [push]
+jobs:
+  image:
+    name: Trigger image build & push on GitLab
+    runs-on: ubuntu-latest
+    steps:
+      - run: >-
+          curl -X POST
+          -F token=${{ secrets.GITLAB_TOKEN }}
+          -F "variables[CLONE_REPO]=https://github.com/${{ github.repository }}.git"
+          -F "variables[CLONE_REF]=$(basename "$GITHUB_REF")"
+          -F "variables[IMAGE_TAG]=$([ "$GITHUB_REF" = refs/heads/master ] && echo "latest" || echo $(basename "$GITHUB_REF"))"
+          -F "ref=master"
+          https://gitlab.com/api/v4/projects/20429164/trigger/pipeline
