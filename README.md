@@ -63,6 +63,19 @@ players (Minecraft client) and servers (e.g. Minecraft spigot, paper, sponge, ..
 logs state changes and emits different events that 
 custom plugins/code can react to.
 
+## Why use Gate instead of one of the Java proxies?
+
+An always asked question: "Whats the difference between Gate and
+BungeeCord, for instance?"
+
+First off, if you have all your code base in Java, just stay there.
+Gate is for the Go ecosystem and does not have all the convenient
+plugins published on SpigotMC!
+
+Although Gate targets better performance, has more version support
+(modded servers) and simpler API than known proxies like BungeeCord
+and Gate lets you write server code in Go <3.
+
 ## Rate Limiter
 
 Rate limiting is an important mechanism for controlling
