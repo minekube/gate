@@ -37,7 +37,6 @@ type Proxy struct {
 
 	closeOnce sync.Once
 	closed    chan struct{}
-	wg        sync.WaitGroup
 
 	motd    *component.Text
 	favicon favicon.Favicon
@@ -67,9 +66,8 @@ func New(config config.Config) (s *Proxy) {
 func (p *Proxy) Run() (err error) {
 	select {
 	default:
-		// We can run the proxy
-		p.wg.Add(1)
-		defer p.wg.Done()
+		// Make sure Shutdown is at least called once.
+		defer p.Shutdown(nil)
 		return p.run()
 	case <-p.closed:
 		return errors.New("proxy was already run, create a new one")
@@ -85,10 +83,16 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	p.closeOnce.Do(func() {
 		zap.L().Info("Shutting down the proxy...")
 		defer zap.L().Info("Finished shutdown.")
+
+		pre := &PreShutdownEvent{reason: reason}
+		p.event.Fire(pre)
+		reason = pre.Reason()
+
 		close(p.closed)
 		p.connect.DisconnectAll(reason)
+
+		p.event.Fire(&ShutdownEvent{})
 		p.event.Wait()
-		p.wg.Wait()
 	})
 }
 
@@ -135,6 +139,13 @@ func (p *Proxy) preInit() (err error) {
 
 	// Register builtin commands
 	p.command.Register(&serverCmd{proxy: p}, "server")
+
+	// Init "plugins"
+	for _, pl := range Plugins {
+		if err := pl.Init(p); err != nil {
+			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
+		}
+	}
 	return
 }
 

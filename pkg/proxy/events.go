@@ -713,3 +713,38 @@ func (c *CommandExecuteEvent) SetAllowed(allowed bool) {
 func (c *CommandExecuteEvent) Allowed() bool {
 	return !c.denied
 }
+
+//
+//
+//
+//
+
+// PreShutdownEvent is fired before the proxy begins to shut down by
+// stopping to accept new connections and disconnect all players.
+type PreShutdownEvent struct {
+	reason component.Component // may be nil
+}
+
+// Reason returns the shutdown reason used to disconnect players with.
+// May be nil!
+func (s *PreShutdownEvent) Reason() component.Component {
+	return s.reason
+}
+
+// Reason returns the shutdown reason used to disconnect players with.
+func (s *PreShutdownEvent) SetReason(reason component.Component) {
+	s.reason = reason
+}
+
+//
+//
+//
+//
+
+// ShutdownEvent is fired by the proxy after the proxy
+// has stopped accepting connections and PreShutdownEvent,
+// but before the proxy process exits.
+//
+// Subscribe to this event to gracefully stop any subtasks,
+// such as plugin dependencies.
+type ShutdownEvent struct{}
