@@ -21,7 +21,7 @@ var Plugins []Plugin
 //
 // Native Go:
 //
-//	- Create your own Go project/module and `go get "go.minekube.com/gate"`
+//  - Create your own Go project/module and `go get "go.minekube.com/gate"`
 //  - Within you main function
 //   - Add your "plugin's" Hook to the Plugins
 //   - And call cmd/gate.Execute (blocking your main until shutdown).

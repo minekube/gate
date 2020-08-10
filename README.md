@@ -142,14 +142,15 @@ more things planned (e.g. command system, more events, stability etc.).
 ### Native Go
 
 You can import Gate as a Go module and use it like a framework
-in your own external projects.
+in your own project.
 
-Go get it into your project
-- `go get -u go.minekube.com/gate`
+Go get it into your project:
+```
+go get -u go.minekube.com/gate
+```
 
-
-create a `proxy.New(...)`, register servers and event subscribers and start
-`proxy.Listen(...)` for connections.
+**Refer to [plugin.go](https://github.com/minekube/gate/blob/master/pkg/proxy/plugin.go)
+for detailed information!**
 
 > TODO: code examples
 
