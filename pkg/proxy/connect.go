@@ -104,6 +104,17 @@ func (c *connect) PlayerCount() int {
 	return len(c.ids)
 }
 
+// Players returns all players on the proxy.
+func (c *connect) Players() []Player {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	pls := make([]Player, 0, len(c.ids))
+	for _, player := range c.ids {
+		pls = append(pls, player)
+	}
+	return pls
+}
+
 func (c *connect) canRegisterConnection(player *connectedPlayer) bool {
 	cfg := c.config()
 	if cfg.OnlineMode && cfg.OnlineModeKickExistingPlayers {

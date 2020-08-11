@@ -504,7 +504,7 @@ type DisconnectPlayerKickResult struct {
 	Reason component.Component
 }
 
-func (DisconnectPlayerKickResult) isServerKickResult() {}
+func (*DisconnectPlayerKickResult) isServerKickResult() {}
 
 // RedirectPlayerKickResult is a ServerKickResult and
 // tells the proxy to redirect the player to another server.
@@ -514,7 +514,7 @@ type RedirectPlayerKickResult struct {
 	Message component.Component // Optional message to send to the kicked player.
 }
 
-func (RedirectPlayerKickResult) isServerKickResult() {}
+func (*RedirectPlayerKickResult) isServerKickResult() {}
 
 // NotifyKickResult is ServerKickResult and
 // notifies the player with the specified message but does nothing else.
@@ -524,7 +524,7 @@ type NotifyKickResult struct {
 	Message component.Component
 }
 
-func (NotifyKickResult) isServerKickResult() {}
+func (*NotifyKickResult) isServerKickResult() {}
 
 //
 //
