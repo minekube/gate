@@ -18,7 +18,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/zap"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
-	"io/ioutil"
 	"net"
 	"strings"
 	"sync"
@@ -349,13 +348,5 @@ func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error)
 	}
 	defer client.Close()
 
-	if err = client.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
-		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
-	}
-
-	data, err := ioutil.ReadAll(client)
-	if err != nil || len(data) == 0 {
-		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
-	}
 	return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_SERVING}, nil
 }
