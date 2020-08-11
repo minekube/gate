@@ -301,6 +301,8 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.minekube.com/common v0.0.0-20200809185449-de163b8050bf h1:HVTUSpJlMZwcRiwKZ0nMDvqMGnPZRBdPC5BklO26iDo=
 go.minekube.com/common v0.0.0-20200809185449-de163b8050bf/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
+go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09 h1:E/AB72vPICyxqDcUQxC6SQyJ1jLF//GBG20Vw0wCDxE=
+go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
