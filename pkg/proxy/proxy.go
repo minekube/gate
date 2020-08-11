@@ -226,9 +226,9 @@ func (p *Proxy) Servers() []RegisteredServer {
 //
 // On failure either:
 //  - if name already exists, returns the already registered server and false
-//  - if the name or address specified in the info is invalid, returns nil and false.
+//  - if the specified ServerInfo is invalid, returns nil and false.
 func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
-	if !config.ValidServerName(info.Name()) ||
+	if info == nil || !config.ValidServerName(info.Name()) ||
 		config.ValidHostPort(info.Addr().String()) != nil {
 		return nil, false
 	}
@@ -250,6 +250,9 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 // Unregister unregisters the server exactly matching the
 // given ServerInfo and returns true if found.
 func (p *Proxy) Unregister(info ServerInfo) bool {
+	if info == nil {
+		return false
+	}
 	name := strings.ToLower(info.Name())
 	p.mu.Lock()
 	defer p.mu.Unlock()
