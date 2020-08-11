@@ -215,6 +215,9 @@ func (p *connectedPlayer) SendMessage(msg component.Component) error {
 }
 
 func (p *connectedPlayer) SendMessagePosition(msg component.Component, position packet.MessagePosition) (err error) {
+	if msg == nil {
+		return nil // skip nil message
+	}
 	var messageJson string
 	b := new(strings.Builder)
 	if position == packet.ActionBarMessage {

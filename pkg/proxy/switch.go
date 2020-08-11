@@ -21,7 +21,7 @@ type ConnectionRequest interface {
 	Server() RegisteredServer
 	// This method is blocking, initiates the connection to the
 	// remote Server and returns a result after the user has logged on
-	// or an error when an error occurred (e.g. could not net.Dial the Server, ctx was called, etc.).
+	// or an error when an error occurred (e.g. could not net.Dial the Server, ctx was canceled, etc.).
 	//
 	// The given Context can be used to cancel the connection initiation, but
 	// has no effect if the connection was already established or canceled.
