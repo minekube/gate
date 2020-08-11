@@ -115,6 +115,22 @@ func (c *connect) Players() []Player {
 	return pls
 }
 
+// Player returns the online player by their Minecraft id.
+// Returns nil if the player was not found.
+func (c *connect) Player(id uuid.UUID) Player {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.ids[id]
+}
+
+// Player returns the online player by their Minecraft name (search is case-insensitive).
+// Returns nil if the player was not found.
+func (c *connect) PlayerByName(username string) Player {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.names[strings.ToLower(username)]
+}
+
 func (c *connect) canRegisterConnection(player *connectedPlayer) bool {
 	cfg := c.config()
 	if cfg.OnlineMode && cfg.OnlineModeKickExistingPlayers {
