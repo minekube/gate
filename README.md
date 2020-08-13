@@ -101,20 +101,18 @@ Gate has already been tested to successfully handle thousands of incoming connec
 
 ## Quick Start
 
-This is a simple setup of a Minecraft network using Gate proxy,
+This is an example Minecraft network using Gate proxy,
 a Paper 1.16.1 (server1) & Paper 1.8.8 (server2).
 
-_You will need Java Runtime 8 or higer for running the Paper servers._
+_You will need Java Runtime 8 or higher for running the Paper servers._
 
 1. `git clone https://github.com/minekube/gate.git`
-2. Go to `docs/sample`
-3. Open a terminal in this directory
-and download a [release](https://github.com/minekube/gate/releases).
-    - Or compile it yourself (e.g. `go build .`)
-4. Run Gate within `docs/sample`
-    - (windows: `gate.exe` / linux: `./gate`)
-5. Open two more terminals, one for each `server1` & `server2`.
-    - Run `java -jar <the server jar>` to run both servers.
+2. Run `server1` and `server2` found in `docs/sample/`
+    - `java -jar <server>.jar`
+3. Run Gate within `docs/sample` to use sample config
+    - [Download a release here](https://github.com/minekube/gate/releases)
+    - Or compile it yourself: `go build .`
+    - Run `gate` (help flag `-h`)
     
 Now you can connect to the network on `localhost:25565`
 with a Minecraft version 1.16.1 and 1.8.x.
