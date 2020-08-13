@@ -110,7 +110,7 @@ _You will need Java Runtime 8 or higer for running the Paper servers._
 2. Go to `docs/sample`
 3. Open a terminal in this directory
 and download a [release](https://github.com/minekube/gate/releases).
-    - Or compile it yourself. ;)
+    - Or compile it yourself (e.g. `go build .`)
 4. Run Gate within `docs/sample`
     - (windows: `gate.exe` / linux: `./gate`)
 5. Open two more terminals, one for each `server1` & `server2`.
@@ -120,19 +120,7 @@ Now you can connect to the network on `localhost:25565`
 with a Minecraft version 1.16.1 and 1.8.x.
 Gate tries to connect you to one of the servers as specified in the configuration.
 
-Checkout the `/server` command
-(temporarily hardcoded until commands system has been added).
-
 > There will be an expressive documentation website for Gate later on!
-
-## Known Bugs / Limitations
-
-Remember that Gate is in a very early stage and there are many
-more things planned (e.g. command system, more events, stability etc.).
-
-- Can't login sometime in online mode.
-  - _Dev note: Is this due to Mojang API database latencies when
- replicating data for the `hasJoined` endpoint?_
 
 ## Extending Gate with custom code
 

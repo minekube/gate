@@ -99,7 +99,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	}
 
 	authenticator := l.auth()
-	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifiedToken)
+	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifyToken)
 	if err != nil {
 		zap.L().Error("Could not decrypt verification token", zap.Error(err))
 		_ = l.conn.close()
@@ -117,7 +117,14 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		_ = l.conn.close()
 		return
 	}
-	serverId := authenticator.GenerateServerId(decryptedSharedSecret)
+
+	// Enable encryption.
+	// Once the client sends EncryptionResponse, encryption is enabled.
+	if err = l.conn.enableEncryption(decryptedSharedSecret); err != nil {
+		zap.L().Error("Error enabling encryption for connecting player", zap.Error(err))
+		_ = l.conn.closeWith(packet.DisconnectWith(internalServerConnectionError))
+		return
+	}
 
 	var userIp string
 	getUserIp := func() string {
@@ -132,6 +139,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		optionalUserIp = getUserIp()
 	}
 
+	serverId := authenticator.GenerateServerId(decryptedSharedSecret)
 	statusCode, body, err := authenticator.HasJoined(l.login.Username, optionalUserIp, serverId)
 	if err != nil {
 		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
@@ -141,14 +149,6 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	}
 	if l.conn.Closed() {
 		// The player disconnected after receiving the response.
-		return
-	}
-
-	// Enable encryption.
-	// Once the client sends EncryptionResponse, encryption is enabled.
-	if err = l.conn.enableEncryption(decryptedSharedSecret); err != nil {
-		zap.L().Error("Error enabling encryption for connecting player", zap.Error(err))
-		_ = l.conn.closeWith(packet.DisconnectWith(internalServerConnectionError))
 		return
 	}
 
@@ -168,7 +168,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))
 	default:
 		// Something else went wrong
-		zap.L().Error("Got an status error code whilst contacting Mojang to log in player",
+		zap.L().Error("Got unexpected status error code whilst contacting Mojang to log in player",
 			zap.Int("statusCode", statusCode),
 			zap.String("username", l.login.Username),
 			zap.String("playerIp", getUserIp()),

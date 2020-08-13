@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/valyala/fasthttp"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -55,8 +56,32 @@ func (a *Authenticator) HasJoined(username, optionalUserIp string, serverId stri
 }
 
 func (a *Authenticator) GenerateServerId(sharedSecret []byte) string {
-	s := sha1.New()
-	_, _ = s.Write(sharedSecret)
-	_, _ = s.Write(a.PublicKey)
-	return hex.EncodeToString(s.Sum(nil))
+	hash := func() []byte {
+		h := sha1.New()
+		_, _ = h.Write(sharedSecret)
+		_, _ = h.Write(a.PublicKey)
+		return h.Sum(nil)
+	}()
+
+	var s strings.Builder
+	// Check for negative hash
+	if (hash[0] & 0x80) == 0x80 {
+		hash = twosComplement(hash)
+		s.WriteRune('-')
+	}
+	s.WriteString(strings.TrimLeft(hex.EncodeToString(hash), "0"))
+	return s.String()
+}
+
+// big endian!
+func twosComplement(p []byte) []byte {
+	carry := true
+	for i := len(p) - 1; i >= 0; i-- {
+		p[i] = ^p[i]
+		if carry {
+			carry = p[i] == 0xff
+			p[i]++
+		}
+	}
+	return p
 }

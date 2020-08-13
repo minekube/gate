@@ -31,8 +31,8 @@ func (s *ServerLogin) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 }
 
 type EncryptionResponse struct {
-	SharedSecret  []byte
-	VerifiedToken []byte
+	SharedSecret []byte
+	VerifyToken  []byte
 }
 
 func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -41,13 +41,13 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 		if err != nil {
 			return err
 		}
-		return util.WriteBytes(wr, e.VerifiedToken)
+		return util.WriteBytes(wr, e.VerifyToken)
 	} else {
 		err := util.WriteBytes17(wr, e.SharedSecret, false)
 		if err != nil {
 			return err
 		}
-		return util.WriteBytes17(wr, e.VerifiedToken, false)
+		return util.WriteBytes17(wr, e.VerifyToken, false)
 	}
 }
 
@@ -57,13 +57,13 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		if err != nil {
 			return
 		}
-		e.VerifiedToken, err = util.ReadBytesLen(rd, 128)
+		e.VerifyToken, err = util.ReadBytesLen(rd, 128)
 	} else {
 		e.SharedSecret, err = util.ReadBytes17(rd)
 		if err != nil {
 			return
 		}
-		e.VerifiedToken, err = util.ReadBytes17(rd)
+		e.VerifyToken, err = util.ReadBytes17(rd)
 	}
 	return
 }
