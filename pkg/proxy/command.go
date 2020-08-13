@@ -106,9 +106,9 @@ func (f Func) Invoke(c *Context) {
 
 // Context is a command invocation context.
 type Context struct {
-	context.Context
-	Source CommandSource
-	Args   []string
+	context.Context               // The context to propagate to subprocesses of the command invocation.
+	Source          CommandSource // The one executing the command.
+	Args            []string      // The command arguments (without the "/<command>" part)
 }
 
 var spaceRegex = regexp.MustCompile(`\s+`)

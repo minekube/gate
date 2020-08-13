@@ -406,7 +406,7 @@ func (c *minecraftConn) SetCompressionThreshold(threshold int) error {
 // SendKeepAlive sends a keep-alive packet to the connection if in Play state.
 func (c *minecraftConn) SendKeepAlive() error {
 	if c.State() == state.Play {
-		return c.WritePacket(&packet.KeepAlive{RandomId: int64(RandomUint64())})
+		return c.WritePacket(&packet.KeepAlive{RandomId: int64(randomUint64())})
 	}
 	return nil
 }

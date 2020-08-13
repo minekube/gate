@@ -336,10 +336,13 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 
 		cmd, args, _ := extract(commandline)
 		if c.proxy().command.Has(cmd) {
-			zap.S().Infof("%s executing command /%s", c.player, commandline)
+			// Make invoke context
+			ctx, cancel := c.player.newContext(context.Background())
+			defer cancel()
 			// Invoke registered command
+			zap.S().Infof("%s executing command /%s", c.player, commandline)
 			_, err := c.proxy().command.Invoke(&Context{
-				Context: context.Background(),
+				Context: ctx,
 				Source:  c.player,
 				Args:    args,
 			}, cmd)
