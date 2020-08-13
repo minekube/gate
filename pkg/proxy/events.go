@@ -533,9 +533,12 @@ func (*NotifyKickResult) isServerKickResult() {}
 //
 //
 
-// ServerConnectedEvent is fired once the player has successfully
-// connected to the target server and the connection to the previous
-// server has been de-established (if any).
+// ServerConnectedEvent is fired before the player completely transitions
+// to the target server and the connection to the previous server has been
+// de-established.
+//
+// Use Server to get the target server since Player.CurrentServer is yet nil or
+// listen for ServerPostConnectEvent instead.
 type ServerConnectedEvent struct {
 	player         Player
 	server         RegisteredServer
