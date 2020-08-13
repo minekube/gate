@@ -446,6 +446,10 @@ func (p *connectedPlayer) canForwardPluginMessage(protocol proto.Protocol, messa
 func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Lock()
 	p.connectedServer_ = conn
+	p.tryIndex = 0 // reset since we got connected to a server
+	if conn == p.connInFlight {
+		p.connInFlight = nil
+	}
 	p.mu.Unlock()
 }
 
