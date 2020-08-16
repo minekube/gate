@@ -173,13 +173,6 @@ func (p *Proxy) run() error {
 		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
 	}()
 
-	select {
-	case err := <-errChan:
-		return err
-	default:
-		p.event.Fire(&ReadyEvent{})
-	}
-
 	return <-errChan
 }
 

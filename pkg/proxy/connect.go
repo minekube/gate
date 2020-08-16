@@ -64,6 +64,8 @@ func (c *connect) listenAndServe(addr string, stop <-chan struct{}) error {
 		_ = ln.Close()
 	}()
 
+	c.proxy.event.Fire(&ReadyEvent{})
+
 	zap.S().Infof("Listening on %s", addr)
 	for {
 		conn, err := ln.Accept()
