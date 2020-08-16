@@ -744,6 +744,10 @@ func (s *PreShutdownEvent) SetReason(reason component.Component) {
 //
 //
 
+// ReadyEvent is fired once the proxy was successfully
+// initialized and is ready to serve connections.
+type ReadyEvent struct{}
+
 // ShutdownEvent is fired by the proxy after the proxy
 // has stopped accepting connections and PreShutdownEvent,
 // but before the proxy process exits.

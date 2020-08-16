@@ -16,6 +16,7 @@ import (
 	"go.minekube.com/gate/pkg/util"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
 	"net"
@@ -34,6 +35,7 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
+	runOnce   atomic.Bool
 	closeOnce sync.Once
 	closed    chan struct{}
 
@@ -60,17 +62,17 @@ func New(config config.Config) (s *Proxy) {
 	}
 }
 
+// Returned by Proxy.Run if the proxy instance was already run.
+var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
+
 // Run runs the proxy and blocks until Shutdown is called or an error occurred.
 // Run can only be called once per Proxy instance.
 func (p *Proxy) Run() (err error) {
-	select {
-	default:
-		// Make sure Shutdown is at least called once.
-		defer p.Shutdown(nil)
-		return p.run()
-	case <-p.closed:
-		return errors.New("proxy was already run, create a new one")
+	if !p.runOnce.CAS(false, true) {
+		return ErrProxyAlreadyRun
 	}
+	defer p.Shutdown(nil) // Make sure Shutdown is at least called once.
+	return p.run()        // Run and block
 }
 
 // Shutdown shuts down the Proxy and blocks until finished.
@@ -170,6 +172,13 @@ func (p *Proxy) run() error {
 		defer wg.Done()
 		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
 	}()
+
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		p.event.Fire(&ReadyEvent{})
+	}
 
 	return <-errChan
 }
