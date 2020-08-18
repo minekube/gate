@@ -53,6 +53,12 @@ func (c *connect) DisconnectAll(reason component.Component) {
 
 // listenAndServe starts listening for connections on addr until closed channel receives.
 func (c *connect) listenAndServe(addr string, stop <-chan struct{}) error {
+	select {
+	case <-stop:
+		return nil
+	default:
+	}
+
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
