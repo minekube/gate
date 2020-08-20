@@ -269,12 +269,15 @@ func (c *connRequestCxt) result(result *connectionResult, err error) {
 	c.once.Do(func() { c.response <- &connResponse{connectionResult: result, error: err} })
 }
 
-// TODO support cancel connect via ctx
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	addr := s.server.ServerInfo().Addr().String()
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil { // should never happen, as we validated addr already
+		return nil, fmt.Errorf("error split host port of server info address: %v", err)
+	}
 
 	// Connect proxy -> server
-	zap.L().Debug("Proxy connecting to server to bridge player...", zap.String("addr", addr))
+	zap.L().Debug("Proxy connecting to backend server...", zap.String("addr", addr))
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
@@ -294,15 +297,15 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 			zap.Stringer("forPlayerUuid", s.player.Id()),
 		}
 	})
-
 	resultChan := make(chan *connResponse, 1)
-
-	s.mu.Lock()
-	s.connection = serverMc
-	s.connection.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
+	serverMc.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
 		Context:  ctx,
 		response: resultChan,
 	}))
+
+	// Update serverConnection
+	s.mu.Lock()
+	s.connection = serverMc
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
@@ -317,10 +320,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		ProtocolVersion: int(protocol),
 		NextStatus:      int(proto.LoginState),
 	}
-	host, port, err := net.SplitHostPort(s.server.ServerInfo().Addr().String())
-	if err != nil { // should never happen, as we validated it already
-		panic(err)
-	}
+
 	if s.config().Forwarding.Mode == config.LegacyForwardingMode {
 		handshake.ServerAddress = s.createLegacyForwardingAddress()
 	} else if s.player.Type() == LegacyForge {
@@ -331,8 +331,8 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	p, _ := strconv.Atoi(port)
 	handshake.Port = int16(p)
 
-	if serverMc.BufferPacket(handshake) != nil {
-		return
+	if err = serverMc.BufferPacket(handshake); err != nil {
+		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
 	}
 
 	// Set server's protocol & state
@@ -342,8 +342,9 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 
 	// Kick off the connection process
 	// connection from proxy -> server (backend)
-	if serverMc.WritePacket(&packet.ServerLogin{Username: s.player.Username()}) != nil {
-		return
+	err = serverMc.WritePacket(&packet.ServerLogin{Username: s.player.Username()})
+	if err != nil {
+		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}
 	go serverMc.readLoop()
 
