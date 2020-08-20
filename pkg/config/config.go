@@ -37,6 +37,7 @@ type Config struct {
 	ShouldPreventClientProxyConnections bool // sends player ip to mojang
 
 	BungeePluginChannelEnabled bool
+	BuiltinCommands            bool
 
 	Debug  bool
 	Health HealthProbeService
@@ -127,6 +128,7 @@ func init() {
 	viper.SetDefault("connectiontimeout", 5000)
 	viper.SetDefault("readtimeout", 30000)
 	viper.SetDefault("BungeePluginChannelEnabled", true)
+	viper.SetDefault("BuiltinCommands", true)
 	viper.SetDefault("FailoverOnUnexpectedServerDisconnect", true)
 
 	viper.SetDefault("Health.enabled", false)

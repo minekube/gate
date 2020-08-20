@@ -139,7 +139,9 @@ func (p *Proxy) preInit() (err error) {
 	}
 
 	// Register builtin commands
-	p.command.Register(&serverCmd{proxy: p}, "server")
+	if c.BuiltinCommands {
+		p.registerBuiltinCommands()
+	}
 
 	// Init "plugins"
 	for _, pl := range Plugins {

@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+func (p *Proxy) registerBuiltinCommands() {
+	p.command.Register(&serverCmd{proxy: p}, "server")
+}
+
+//
+//
+//
+//
+
 type serverCmd struct{ proxy *Proxy }
 
 func (s *serverCmd) Invoke(c *Context) {

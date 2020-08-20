@@ -29,6 +29,10 @@ status:
 # Whether the proxy should support bungee plugin channels.
 # (Disable this if your backend servers are untrusted.)
 bungeePluginChannelEnabled: true
+# Whether to register builtin commands on proxy start.
+# Default: true
+builtinCommands: true
+# Packet compression settings.
 compression:
   # The minimum size (in bytes) a packet must be before the proxy compresses it.
   # The Minecraft vanilla server uses 256 by default.
