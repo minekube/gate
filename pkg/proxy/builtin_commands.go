@@ -5,11 +5,24 @@ import (
 	"fmt"
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/proxy/permission"
 	"time"
 )
 
+var missingCommandPermission = &Text{
+	Content: "You do not have the permission to run this command.",
+	S:       Style{Color: Red}}
+
 func (p *Proxy) registerBuiltinCommands() {
 	p.command.Register(&serverCmd{proxy: p}, "server")
+}
+
+func hasCmdPerm(s CommandSource, perm string) bool {
+	if s.PermissionValue(perm) != permission.False {
+		_ = s.SendMessage(missingCommandPermission)
+		return false
+	}
+	return true
 }
 
 //
@@ -17,9 +30,15 @@ func (p *Proxy) registerBuiltinCommands() {
 //
 //
 
+const serverCmdPermission = "gate.command.server"
+
 type serverCmd struct{ proxy *Proxy }
 
 func (s *serverCmd) Invoke(c *Context) {
+	if !hasCmdPerm(c.Source, serverCmdPermission) {
+		return
+	}
+
 	if len(c.Args) == 0 {
 		s.list(c)
 		return
