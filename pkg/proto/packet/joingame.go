@@ -2,7 +2,6 @@ package packet
 
 import (
 	"errors"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
@@ -16,7 +15,8 @@ type JoinGame struct {
 	Dimension            int
 	PartialHashedSeed    int64 // 1.15+
 	Difficulty           int16
-	MaxPlayers           int16
+	Hardcore             bool
+	MaxPlayers           int
 	LevelType            *string // nil-able: removed in 1.16+
 	ViewDistance         int     // 1.14+
 	ReducedDebugInfo     bool
@@ -25,7 +25,7 @@ type JoinGame struct {
 	DimensionInfo        *DimensionInfo     // 1.16+
 	CurrentDimensionData *DimensionData     // 1.16.2+
 	PreviousGamemode     int16              // 1.16+
-	BiomeRegistry        *util.NBT          // 1.16.2+
+	BiomeRegistry        util.NBT           // 1.16.2+
 }
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -33,9 +33,24 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = util.WriteByte(wr, byte(j.Gamemode))
-	if err != nil {
-		return err
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		err = util.WriteBool(wr, j.Hardcore)
+		if err != nil {
+			return err
+		}
+		err = util.WriteByte(wr, byte(j.Gamemode))
+		if err != nil {
+			return err
+		}
+	} else {
+		b := byte(j.Gamemode)
+		if j.Hardcore {
+			b = byte(j.Gamemode) | 0x8
+		}
+		err = util.WriteByte(wr, b)
+		if err != nil {
+			return err
+		}
 	}
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
 		err = util.WriteByte(wr, byte(j.PreviousGamemode))
@@ -61,7 +76,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			if j.BiomeRegistry == nil {
 				return errors.New("missing biome registry")
 			}
-			registryContainer["minecraft:worldgen/biom"] = *j.BiomeRegistry
+			registryContainer["minecraft:worldgen/biom"] = j.BiomeRegistry
 		} else {
 			registryContainer["dimension"] = encodedDimensionRegistry
 		}
@@ -84,6 +99,9 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
 			if err != nil {
 				return err
+			}
+			if j.DimensionInfo.LevelName == nil {
+				return errors.New("dimension info level name must not be nil")
 			}
 			err = util.WriteString(wr, *j.DimensionInfo.LevelName)
 			if err != nil {
@@ -113,9 +131,16 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	err = util.WriteByte(wr, byte(j.MaxPlayers))
-	if err != nil {
-		return err
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		err = util.WriteVarInt(wr, j.MaxPlayers)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = util.WriteByte(wr, byte(j.MaxPlayers))
+		if err != nil {
+			return err
+		}
 	}
 	if c.Protocol.Lower(proto.Minecraft_1_16) {
 		if j.LevelType == nil {
@@ -162,11 +187,26 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	gamemode, err := util.ReadByte(rd)
-	if err != nil {
+	readGamemode := func() error {
+		gamemode, err := util.ReadByte(rd)
+		j.Gamemode = int16(gamemode)
 		return err
 	}
-	j.Gamemode = int16(gamemode)
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		j.Hardcore, err = util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+		if err = readGamemode(); err != nil {
+			return err
+		}
+	} else {
+		if err = readGamemode(); err != nil {
+			return err
+		}
+		j.Hardcore = (j.Gamemode & 0x08) != 0
+		j.Gamemode &= ^0x08 // bitwise complement
+	}
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
 		previousGamemode, err := util.ReadByte(rd)
@@ -179,28 +219,38 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 
+		nbtDecoder := nbt.NewDecoderWithEncoding(rd, nbt.BigEndian)
 		registryContainer := util.NBT{}
-		err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&registryContainer)
+		err = nbtDecoder.Decode(&registryContainer)
 		if err != nil {
 			return err
 		}
-		var dimensionRegistryContainer util.NBT
+		var dimensionRegistryContainer []util.NBT
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
-			dimType, ok := registryContainer["minecraft:dimension_type"]
+			const (
+				dimTypeKey = "minecraft:dimension_type"
+				biomeKey   = "minecraft:worldgen/biome"
+			)
+			dimType, ok := registryContainer.NBT(dimTypeKey)
 			if !ok {
-				return dimMissKeyErr("minecraft:dimension_type")
+				return dimReadErr("%q not a compound tag, is %T", dimTypeKey, registryContainer[dimTypeKey])
 			}
-			list, ok := dimType.([]util.NBT)
+			dimensionRegistryContainer, ok = dimType.List("value")
 			if !ok {
-				return dimReadErr("%q is not a nbt list", "minecraft:dimension_type")
+				return dimReadErr("%q not an NBT list, is %T", "value", dimType["value"])
 			}
-
-			dimensionRegistryContainer = util.NBT{
-				"value": list,
+			j.BiomeRegistry, ok = registryContainer.NBT(biomeKey)
+			if !ok {
+				return dimReadErr("%q not a compound tag, is %T", biomeKey, dimType[biomeKey])
+			}
+		} else {
+			var ok bool
+			dimensionRegistryContainer, ok = registryContainer.List("dimension")
+			if !ok {
+				return dimReadErr("%q is not a compound tag list", "dimension")
 			}
 		}
-		data := util.NBT{}
-		readData, err := fromGameData(data)
+		readData, err := fromGameData(dimensionRegistryContainer, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -208,13 +258,30 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			Dimensions: readData,
 			LevelNames: sets.NewString(levelNames...),
 		}
-		dimensionIdentifier, err = util.ReadString(rd)
-		if err != nil {
-			return err
-		}
-		levelName, err = util.ReadString(rd)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			currentDimDataTag := util.NBT{}
+			err = nbtDecoder.Decode(&currentDimDataTag)
+			if err != nil {
+				return err
+			}
+			dimensionIdentifier, err = util.ReadString(rd)
+			if err != nil {
+				return err
+			}
+			j.CurrentDimensionData, err = decodeBaseCompoundTag(currentDimDataTag)
+			if err != nil {
+				return err
+			}
+			j.CurrentDimensionData.RegistryIdentifier = dimensionIdentifier
+		} else {
+			dimensionIdentifier, err = util.ReadString(rd)
+			if err != nil {
+				return err
+			}
+			levelName, err = util.ReadString(rd)
+			if err != nil {
+				return err
+			}
 		}
 	} else if c.Protocol.GreaterEqual(proto.Minecraft_1_9_1) {
 		j.Dimension, err = util.ReadInt(rd)
@@ -241,10 +308,17 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	}
-	maxPlayers, err := util.ReadByte(rd)
-	j.MaxPlayers = int16(maxPlayers)
-	if err != nil {
-		return err
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		j.MaxPlayers, err = util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+	} else {
+		maxPlayers, err := util.ReadByte(rd)
+		j.MaxPlayers = int(maxPlayers)
+		if err != nil {
+			return err
+		}
 	}
 	if c.Protocol.Lower(proto.Minecraft_1_16) {
 		lt, err := util.ReadStringMax(rd, 16)
@@ -282,7 +356,7 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 		j.DimensionInfo = &DimensionInfo{
 			RegistryIdentifier: dimensionIdentifier,
-			LevelName:          levelName,
+			LevelName:          &levelName,
 			Flat:               flat,
 			DebugType:          debug,
 		}

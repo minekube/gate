@@ -395,6 +395,9 @@ func (s *serverConnection) active() bool {
 func (s *serverConnection) disconnect() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.disconnect0()
+}
+func (s *serverConnection) disconnect0() {
 	if s.connection != nil {
 		s.gracefulDisconnect.Store(true)
 		if !s.connection.Closed() { // only close if not already closing to prevent deadlock

@@ -91,6 +91,7 @@ func init() {
 		m(0x20, Minecraft_1_14),
 		m(0x21, Minecraft_1_15),
 		m(0x20, Minecraft_1_16),
+		m(0x1F, Minecraft_1_16_2),
 	)
 	Play.ClientBound.Register(&p.JoinGame{},
 		m(0x01, Minecraft_1_7_2),
@@ -99,6 +100,7 @@ func init() {
 		m(0x25, Minecraft_1_14),
 		m(0x26, Minecraft_1_15),
 		m(0x25, Minecraft_1_16),
+		m(0x24, Minecraft_1_16_2),
 	)
 	Play.ClientBound.Register(&p.Respawn{},
 		m(0x07, Minecraft_1_7_2),
@@ -109,6 +111,7 @@ func init() {
 		m(0x3A, Minecraft_1_14),
 		m(0x3B, Minecraft_1_15),
 		m(0x3A, Minecraft_1_16),
+		m(0x39, Minecraft_1_16_2),
 	)
 	Play.ClientBound.Register(&p.Disconnect{},
 		m(0x40, Minecraft_1_7_2),
@@ -117,6 +120,7 @@ func init() {
 		m(0x1A, Minecraft_1_14),
 		m(0x1B, Minecraft_1_15),
 		m(0x1A, Minecraft_1_16),
+		m(0x19, Minecraft_1_16_2),
 	)
 	Play.ClientBound.Register(&p.Chat{},
 		m(0x02, Minecraft_1_7_2),
@@ -142,6 +146,7 @@ func init() {
 		m(0x18, Minecraft_1_14),
 		m(0x19, Minecraft_1_15),
 		m(0x18, Minecraft_1_16),
+		m(0x17, Minecraft_1_16_2),
 	)
 	Play.ClientBound.Register(&p.ResourcePackRequest{},
 		m(0x48, Minecraft_1_8),
@@ -152,6 +157,7 @@ func init() {
 		m(0x39, Minecraft_1_14),
 		m(0x3A, Minecraft_1_15),
 		m(0x39, Minecraft_1_16),
+		m(0x38, Minecraft_1_16_2),
 	)
 	// coming soon...
 	// BossBar

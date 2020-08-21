@@ -209,10 +209,8 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 		return false
 	}
 	playerVersion := c.player.Protocol()
-	if !c.spawned.Load() {
+	if c.spawned.CAS(false, true) {
 		// Nothing special to do with regards to spawning the player
-		c.spawned.Store(true)
-
 		destination.setActiveDimensionRegistry(joinGame.DimensionRegistry) // 1.16
 		// Buffer JoinGame packet to player connection
 		if c.player.BufferPacket(joinGame) != nil {
@@ -248,6 +246,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 			ShouldKeepPlayerData: false,
 			DimensionInfo:        joinGame.DimensionInfo,
 			PreviousGamemode:     joinGame.PreviousGamemode,
+			CurrentDimensionData: joinGame.CurrentDimensionData,
 		}
 
 		// Since 1.16 this dynamic changed:
