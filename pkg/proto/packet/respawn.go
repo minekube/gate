@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
 	"io"
@@ -13,19 +14,31 @@ type Respawn struct {
 	Gamemode             int16
 	LevelType            string         // empty by default
 	ShouldKeepPlayerData bool           // 1.16+
-	DimensionInfo        *DimensionInfo // 1.16+
+	DimensionInfo        *DimensionInfo // 1.16-1.16.1
 	PreviousGamemode     int16          // 1.16+
+	CurrentDimensionData *DimensionData // 1.16.2+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
-		if err != nil {
-			return err
-		}
-		err = util.WriteString(wr, r.DimensionInfo.LevelName)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(r.CurrentDimensionData.encodeDimensionDetails())
+			if err != nil {
+				return err
+			}
+			err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
+			if err != nil {
+				return err
+			}
+			err = util.WriteString(wr, *r.DimensionInfo.LevelName)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		err = util.WriteInt32(wr, int32(r.Dimension))
@@ -78,13 +91,30 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		dimensionIdentifier, err = util.ReadString(rd)
-		if err != nil {
-			return err
-		}
-		levelName, err = util.ReadString(rd)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			dimDataTag := util.NBT{}
+			err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&dimDataTag)
+			if err != nil {
+				return err
+			}
+			dimensionIdentifier, err := util.ReadString(rd)
+			if err != nil {
+				return err
+			}
+			r.CurrentDimensionData, err = decodeBaseCompoundTag(dimDataTag)
+			if err != nil {
+				return err
+			}
+			r.CurrentDimensionData.RegistryIdentifier = dimensionIdentifier
+		} else {
+			dimensionIdentifier, err = util.ReadString(rd)
+			if err != nil {
+				return err
+			}
+			levelName, err = util.ReadString(rd)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		r.Dimension, err = util.ReadInt(rd)
@@ -126,7 +156,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 		r.DimensionInfo = &DimensionInfo{
 			RegistryIdentifier: dimensionIdentifier,
-			LevelName:          levelName,
+			LevelName:          &levelName,
 			Flat:               flat,
 			DebugType:          debug,
 		}

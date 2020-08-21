@@ -81,11 +81,17 @@ func (b *backendTransitionSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	_ = b.serverConn.conn().WritePacket(p)
 }
 func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect) {
-	b.serverConn.disconnect()
+	var connType connectionType
+	b.serverConn.mu.Lock()
+	if b.serverConn.connection != nil {
+		connType = b.serverConn.connection.Type()
+	}
+	b.serverConn.disconnect0()
+	b.serverConn.mu.Unlock()
 
 	// If we were in the middle of the Forge handshake, it is not safe to proceed.
 	// We must kick the client.
-	safe := b.serverConn.connection.Type() != LegacyForge || b.serverConn.phase().consideredComplete()
+	safe := connType != LegacyForge || b.serverConn.phase().consideredComplete()
 	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, safe)
 	b.requestCtx.result(result, nil)
 }

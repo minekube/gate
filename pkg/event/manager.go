@@ -78,27 +78,30 @@ func (m *Manager) Subscribe(eventType Type, priority int, fn HandlerFn) (unsubsc
 	})
 
 	// Unsubscribe func
+	var once sync.Once
 	return func() {
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		list, ok := m.subscribers[eventType]
-		if !ok {
-			return
-		}
-		if len(list) == 1 {
-			delete(m.subscribers, eventType)
-			return
-		}
-		for i, s := range list {
-			if s != sub { // Find by pointer
-				continue
+		once.Do(func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			list, ok := m.subscribers[eventType]
+			if !ok {
+				return
 			}
-			// Delete subscriber from list while maintaining the order.
-			copy(list[i:], list[i+1:]) // Shift list[i+1:] left one index.
-			list[len(list)-1] = nil    // Erase last element (write zero value).
-			m.subscribers[eventType] = list[:len(list)-1]
-			return
-		}
+			if len(list) == 1 {
+				delete(m.subscribers, eventType)
+				return
+			}
+			for i, s := range list {
+				if s != sub { // Find by pointer
+					continue
+				}
+				// Delete subscriber from list while maintaining the order.
+				copy(list[i:], list[i+1:]) // Shift list[i+1:] left one index.
+				list[len(list)-1] = nil    // Erase last element (write zero value).
+				m.subscribers[eventType] = list[:len(list)-1]
+				return
+			}
+		})
 	}
 }
 

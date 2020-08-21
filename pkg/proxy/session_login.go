@@ -101,7 +101,8 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	authenticator := l.auth()
 	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifyToken)
 	if err != nil {
-		zap.L().Error("Could not decrypt verification token", zap.Error(err))
+		zap.L().Error("Could not decrypt verification token", zap.Error(err),
+			zap.Stringer("protocol", l.conn.protocol))
 		_ = l.conn.close()
 		return
 	}

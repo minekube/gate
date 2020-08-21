@@ -83,10 +83,37 @@ func (b NBT) String(name string) (ret string, ok bool) {
 	return
 }
 
-func (b NBT) Nbt(name string) (ret NBT, ok bool) {
+func (b NBT) NBT(name string) (ret NBT, ok bool) {
 	var val interface{}
 	if val, ok = b[name]; ok {
 		ret, ok = val.(NBT)
+		if !ok {
+			m, ok2 := val.(map[string]interface{})
+			if ok2 {
+				ret, ok = m, true
+			}
+		}
+	}
+	return
+}
+
+func (b NBT) List(name string) (ret []NBT, ok bool) {
+	var val interface{}
+	if val, ok = b[name]; ok {
+		ret, ok = val.([]NBT)
+		if !ok {
+			l, ok2 := val.([]interface{})
+			if ok2 {
+				var n NBT
+				for _, e := range l {
+					n, ok = e.(NBT)
+					if ok {
+						ret = append(ret, n)
+					}
+				}
+				ok = true
+			}
+		}
 	}
 	return
 }

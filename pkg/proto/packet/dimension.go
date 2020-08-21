@@ -77,7 +77,7 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 			return nil, dimMissKeyErr("id")
 		}
 		dimensionId = &dimId
-		details, ok = dimTag.Nbt("element")
+		details, ok = dimTag.NBT("element")
 		if !ok {
 			return nil, dimMissKeyErr("element")
 		}
@@ -115,10 +115,7 @@ func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
 	if !ok {
 		return nil, dimMissKeyErr("ambient_light")
 	}
-	d.Shrunk, ok = details.Bool("shrunk")
-	if !ok {
-		return nil, dimMissKeyErr("shrunk")
-	}
+	d.Shrunk, _ = details.Bool("shrunk")
 	d.Ultrawarm, ok = details.Bool("ultrawarm")
 	if !ok {
 		return nil, dimMissKeyErr("ultrawarm")
