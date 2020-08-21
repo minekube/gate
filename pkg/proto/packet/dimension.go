@@ -3,6 +3,7 @@ package packet
 import (
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
 	"go.minekube.com/gate/pkg/util/sets"
 )
@@ -16,43 +17,41 @@ type DimensionRegistry struct {
 }
 
 type DimensionInfo struct {
-	RegistryId string
-	LevelName  string
-	Flat       bool
-	DebugType  bool
+	RegistryIdentifier string
+	LevelName          *string // nil-able
+	Flat               bool
+	DebugType          bool
 }
+
+const UnknownDimensionId = "gate:unknown_dimension"
 
 type DimensionData struct {
 	RegistryIdentifier string
+	DimensionId        *int // nil-able
 	AmbientLight       float32
 	Shrunk, Natural, Ultrawarm, Ceiling, Skylight, PiglineSafe,
 	DoBedsWork, DoRespawnAnchorsWork, Raids bool
 	LogicalHeight              int32
 	BurningBehaviourIdentifier string
-	FixedTime                  *int64 // nil-able
-	CreateDragonFight          *bool  // nil-able
+	FixedTime                  *int64   // nil-able
+	CreateDragonFight          *bool    // nil-able
+	CoordinateScale            *float64 // nil-able
+	Effects                    *string  // optional; unknown purpose
 }
 
-// FromGameData decodes a CompoundTag storing a dimension registry.
-func FromGameData(toParse util.NBT) (mappings []*DimensionData, err error) {
-	if toParse == nil {
-		return nil, errors.New("gamedata is cannot be nil")
-	}
-	dimension, ok := toParse["dimension"]
+// fromGameData decodes a CompoundTag storing a dimension registry.
+func fromGameData(toParse []util.NBT, protocol proto.Protocol) (mappings []*DimensionData, err error) {
+	/*dimension, ok := toParse["dimension"]
 	if !ok {
 		return nil, errors.New("gamedata does not contain dimension")
 	}
 	list, ok := dimension.([]interface{})
 	if !ok {
 		return nil, errors.New("gamedata dimension is not a list")
-	}
+	}*/
 	var data *DimensionData
-	for i, compound := range list {
-		compound, ok := compound.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("dimension data at index %d is not a compount nbt", i)
-		}
-		data, err = DecodeCompoundTagDimensionData(compound)
+	for _, compound := range toParse {
+		data, err = decodeRegistryEntry(compound, protocol)
 		if err != nil {
 			return nil, err
 		}
@@ -61,80 +60,147 @@ func FromGameData(toParse util.NBT) (mappings []*DimensionData, err error) {
 	return mappings, nil
 }
 
-func DecodeCompoundTagDimensionData(toRead util.NBT) (*DimensionData, error) {
-	if toRead == nil {
-		return nil, errors.New("CompoundTag cannot be nil")
+// Parses CompoundTag to DimensionData;
+// assumes the data is part of a dimension registry.
+func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionData, error) {
+	registryIdentifier, ok := dimTag.String("name")
+	if !ok {
+		return nil, dimReadErr("data misses %q key", "name")
 	}
-	err := func(key string) error { return fmt.Errorf("CompoundTag is missing DimensionData %q", key) }
-	d := &DimensionData{}
+	var (
+		details     util.NBT
+		dimensionId *int
+	)
+	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		dimId, ok := dimTag.Int("id")
+		if !ok {
+			return nil, dimMissKeyErr("id")
+		}
+		dimensionId = &dimId
+		details, ok = dimTag.Nbt("element")
+		if !ok {
+			return nil, dimMissKeyErr("element")
+		}
+		if details == nil {
+			return nil, dimReadErr("key %q must not be nil", "element")
+		}
+	} else {
+		details = dimTag
+	}
+
+	data, err := decodeBaseCompoundTag(details)
+	if err != nil {
+		return nil, err
+	}
+	data.RegistryIdentifier = registryIdentifier
+	data.DimensionId = dimensionId
+	return data, nil
+}
+
+// Parses CompoundTag to a DimensionData instance;
+// assumes the data only contains dimension details.
+func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
+	if details == nil {
+		return nil, dimReadErr("dimension details must not be nil")
+	}
+	d := &DimensionData{
+		RegistryIdentifier: UnknownDimensionId,
+	}
 	var ok bool
-	d.RegistryIdentifier, ok = toRead.String("name")
+	d.Natural, ok = details.Bool("natural")
 	if !ok {
-		return nil, err("name")
+		return nil, dimMissKeyErr("natural")
 	}
-	d.Natural, ok = toRead.Bool("natural")
+	d.AmbientLight, ok = details.Float32("ambient_light")
 	if !ok {
-		return nil, err("natural")
+		return nil, dimMissKeyErr("ambient_light")
 	}
-	d.AmbientLight, ok = toRead.Float32("ambient_light")
+	d.Shrunk, ok = details.Bool("shrunk")
 	if !ok {
-		return nil, err("ambient_light")
+		return nil, dimMissKeyErr("shrunk")
 	}
-	d.Shrunk, ok = toRead.Bool("shrunk")
+	d.Ultrawarm, ok = details.Bool("ultrawarm")
 	if !ok {
-		return nil, err("shrunk")
+		return nil, dimMissKeyErr("ultrawarm")
 	}
-	d.Ultrawarm, ok = toRead.Bool("ultrawarm")
+	d.Ceiling, ok = details.Bool("has_ceiling")
 	if !ok {
-		return nil, err("ultrawarm")
+		return nil, dimMissKeyErr("has_ceiling")
 	}
-	d.Ceiling, ok = toRead.Bool("has_ceiling")
+	d.Skylight, ok = details.Bool("has_skylight")
 	if !ok {
-		return nil, err("has_ceiling")
+		return nil, dimMissKeyErr("has_skylight")
 	}
-	d.Skylight, ok = toRead.Bool("has_skylight")
+	d.PiglineSafe, ok = details.Bool("piglin_safe")
 	if !ok {
-		return nil, err("has_skylight")
+		return nil, dimMissKeyErr("piglin_safe")
 	}
-	d.PiglineSafe, ok = toRead.Bool("piglin_safe")
+	d.DoBedsWork, ok = details.Bool("bed_works")
 	if !ok {
-		return nil, err("piglin_safe")
+		return nil, dimMissKeyErr("bed_works")
 	}
-	d.DoBedsWork, ok = toRead.Bool("bed_works")
+	d.DoRespawnAnchorsWork, ok = details.Bool("respawn_anchor_works")
 	if !ok {
-		return nil, err("bed_works")
+		return nil, dimMissKeyErr("respawn_anchor_works")
 	}
-	d.DoRespawnAnchorsWork, ok = toRead.Bool("respawn_anchor_works")
+	d.Raids, ok = details.Bool("has_raids")
 	if !ok {
-		return nil, err("respawn_anchor_works")
+		return nil, dimMissKeyErr("has_raids")
 	}
-	d.Raids, ok = toRead.Bool("has_raids")
+	d.LogicalHeight, ok = details.Int32("logical_height")
 	if !ok {
-		return nil, err("has_raids")
+		return nil, dimMissKeyErr("logical_height")
 	}
-	d.LogicalHeight, ok = toRead.Int32("logical_height")
+	d.BurningBehaviourIdentifier, ok = details.String("infiniburn")
 	if !ok {
-		return nil, err("logical_height")
+		return nil, dimMissKeyErr("infiniburn")
 	}
-	d.BurningBehaviourIdentifier, ok = toRead.String("infiniburn")
-	if !ok {
-		return nil, err("infiniburn")
-	}
-	fixedTime, ok := toRead.Int64("fixed_time")
+	fixedTime, ok := details.Int64("fixed_time")
 	if ok { // optional
 		d.FixedTime = &fixedTime
 	}
-	createDragonFight, ok := toRead.Bool("has_enderdragon_fight")
+	createDragonFight, ok := details.Bool("has_enderdragon_fight")
 	if ok { // optional
 		d.CreateDragonFight = &createDragonFight
+	}
+	coordinateScale, ok := details.Float64("coordinate_scale")
+	if ok {
+		d.CoordinateScale = &coordinateScale
+	}
+	effects, ok := details.String("effects")
+	if ok {
+		d.Effects = &effects
 	}
 	return d, nil
 }
 
+// utility func to create dimension decode error
+func dimReadErr(format string, a ...interface{}) error {
+	return fmt.Errorf("error decoding dimension: %v", fmt.Errorf(format, a...))
+}
+func dimMissKeyErr(key string) error {
+	return dimReadErr("DimensionData misses %q key", key)
+}
+
+func (d *DimensionData) encodeCompoundTag(protocol proto.Protocol) (util.NBT, error) {
+	details := d.encodeDimensionDetails()
+	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+		if d.DimensionId == nil {
+			return nil, errors.New("can not encode 1.16.2+ dimension registry entry without and id")
+		}
+		return util.NBT{
+			"name":    d.RegistryIdentifier,
+			"id":      d.DimensionId,
+			"element": details,
+		}, nil
+	}
+	details["name"] = d.RegistryIdentifier
+	return details, nil
+}
+
 // Encodes the Dimension data as nbt CompoundTag
-func (d *DimensionData) EncodeCompoundTag() util.NBT {
+func (d *DimensionData) encodeDimensionDetails() util.NBT {
 	c := util.NBT{
-		"name":                 d.RegistryIdentifier,
 		"natural":              d.Natural,
 		"ambient_light":        d.AmbientLight,
 		"shrunk":               d.Shrunk,
@@ -154,14 +220,24 @@ func (d *DimensionData) EncodeCompoundTag() util.NBT {
 	if d.CreateDragonFight != nil {
 		c["has_enderdragon_fight"] = *d.CreateDragonFight
 	}
+	if d.CoordinateScale != nil {
+		c["coordinate_scale"] = *d.CoordinateScale
+	}
+	if d.Effects != nil {
+		c["effects"] = *d.Effects
+	}
 	return c
 }
 
-// ToNBT the stored Dimension registry as CompoundTag containing identifier:type mappings.
-func (r *DimensionRegistry) ToNBT() util.NBT {
+// encode the stored Dimension registry as CompoundTag containing identifier:type mappings.
+func (r *DimensionRegistry) encode(protocol proto.Protocol) (dimensions []util.NBT, err error) {
 	var dimensionData []util.NBT
-	for _, d := range r.Dimensions {
-		dimensionData = append(dimensionData, d.EncodeCompoundTag())
+	for i, d := range r.Dimensions {
+		data, err := d.encodeCompoundTag(protocol)
+		if err != nil {
+			return nil, fmt.Errorf("error encoding %d. dimension: %v", i+1, err)
+		}
+		dimensionData = append(dimensionData, data)
 	}
-	return util.NBT{"dimension": dimensionData}
+	return dimensionData, nil
 }

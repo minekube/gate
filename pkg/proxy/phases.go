@@ -275,7 +275,7 @@ type legacyForgeHandshakeBackendPhase struct {
 var _ backendConnectionPhase = (*legacyForgeHandshakeBackendPhase)(nil)
 
 var (
-	// Dummy phase for use with unknownBackendPhase.
+	// Indicates that the handshake has not started, used for unknownBackendPhase.
 	notStartedLegacyForgeHandshakeBackendPhase = &legacyForgeHandshakeBackendPhase{
 		packetToAdvanceOn: intPtr(forge.ServerHelloDiscriminator),
 		nextPhase:         helloLegacyForgeHandshakeBackendPhase,

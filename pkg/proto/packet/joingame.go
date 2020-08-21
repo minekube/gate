@@ -2,6 +2,7 @@ package packet
 
 import (
 	"errors"
+	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
@@ -10,19 +11,21 @@ import (
 )
 
 type JoinGame struct {
-	EntityId          int
-	Gamemode          int16
-	Dimension         int
-	PartialHashedSeed int64 // 1.15+
-	Difficulty        int16
-	MaxPlayers        int16
-	LevelType         *string // nil-able: removed in 1.16+
-	ViewDistance      int     // 1.14+
-	ReducedDebugInfo  bool
-	ShowRespawnScreen bool
-	DimensionRegistry *DimensionRegistry // 1.16+
-	DimensionInfo     *DimensionInfo     // 1.16+
-	PreviousGamemode  int16              // 1.16+
+	EntityId             int
+	Gamemode             int16
+	Dimension            int
+	PartialHashedSeed    int64 // 1.15+
+	Difficulty           int16
+	MaxPlayers           int16
+	LevelType            *string // nil-able: removed in 1.16+
+	ViewDistance         int     // 1.14+
+	ReducedDebugInfo     bool
+	ShowRespawnScreen    bool
+	DimensionRegistry    *DimensionRegistry // 1.16+
+	DimensionInfo        *DimensionInfo     // 1.16+
+	CurrentDimensionData *DimensionData     // 1.16.2+
+	PreviousGamemode     int16              // 1.16+
+	BiomeRegistry        *util.NBT          // 1.16.2+
 }
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -43,17 +46,49 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if err != nil {
 			return err
 		}
-		err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(j.DimensionRegistry.ToNBT())
+
+		registryContainer := util.NBT{}
+		encodedDimensionRegistry, err := j.DimensionRegistry.encode(c.Protocol)
 		if err != nil {
 			return err
 		}
-		err = util.WriteString(wr, j.DimensionInfo.RegistryId)
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			dimensionRegistryEntry := util.NBT{
+				"type":  "minecraft:dimension_type",
+				"value": encodedDimensionRegistry,
+			}
+			registryContainer["minecraft:dimension_type"] = dimensionRegistryEntry
+			if j.BiomeRegistry == nil {
+				return errors.New("missing biome registry")
+			}
+			registryContainer["minecraft:worldgen/biom"] = *j.BiomeRegistry
+		} else {
+			registryContainer["dimension"] = encodedDimensionRegistry
+		}
+
+		nbtEncoder := nbt.NewEncoderWithEncoding(wr, nbt.BigEndian)
+		err = nbtEncoder.Encode(registryContainer)
 		if err != nil {
 			return err
 		}
-		err = util.WriteString(wr, j.DimensionInfo.LevelName)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			err = nbtEncoder.Encode(j.CurrentDimensionData.encodeDimensionDetails())
+			if err != nil {
+				return err
+			}
+			err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
+			if err != nil {
+				return err
+			}
+			err = util.WriteString(wr, *j.DimensionInfo.LevelName)
+			if err != nil {
+				return err
+			}
 		}
 	} else if c.Protocol.GreaterEqual(proto.Minecraft_1_9_1) {
 		err = util.WriteInt32(wr, int32(j.Dimension))
@@ -143,11 +178,29 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-		var data util.NBT
-		if err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&data); err != nil {
+
+		registryContainer := util.NBT{}
+		err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&registryContainer)
+		if err != nil {
 			return err
 		}
-		readData, err := FromGameData(data)
+		var dimensionRegistryContainer util.NBT
+		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+			dimType, ok := registryContainer["minecraft:dimension_type"]
+			if !ok {
+				return dimMissKeyErr("minecraft:dimension_type")
+			}
+			list, ok := dimType.([]util.NBT)
+			if !ok {
+				return dimReadErr("%q is not a nbt list", "minecraft:dimension_type")
+			}
+
+			dimensionRegistryContainer = util.NBT{
+				"value": list,
+			}
+		}
+		data := util.NBT{}
+		readData, err := fromGameData(data)
 		if err != nil {
 			return err
 		}
@@ -228,10 +281,10 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 		j.DimensionInfo = &DimensionInfo{
-			RegistryId: dimensionIdentifier,
-			LevelName:  levelName,
-			Flat:       flat,
-			DebugType:  debug,
+			RegistryIdentifier: dimensionIdentifier,
+			LevelName:          levelName,
+			Flat:               flat,
+			DebugType:          debug,
 		}
 	}
 	return nil
