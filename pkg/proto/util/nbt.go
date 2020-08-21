@@ -38,6 +38,10 @@ func (b NBT) Int32(name string) (ret int32, ok bool) {
 	}
 	return
 }
+func (b NBT) Int(name string) (int, bool) {
+	i, ok := b.Int32(name)
+	return int(i), ok
+}
 
 func (b NBT) Int64(name string) (ret int64, ok bool) {
 	var val interface{}

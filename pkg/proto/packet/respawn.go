@@ -19,7 +19,7 @@ type Respawn struct {
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		err = util.WriteString(wr, r.DimensionInfo.RegistryId)
+		err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
 		if err != nil {
 			return err
 		}
@@ -125,10 +125,10 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 		r.DimensionInfo = &DimensionInfo{
-			RegistryId: dimensionIdentifier,
-			LevelName:  levelName,
-			Flat:       flat,
-			DebugType:  debug,
+			RegistryIdentifier: dimensionIdentifier,
+			LevelName:          levelName,
+			Flat:               flat,
+			DebugType:          debug,
 		}
 		r.ShouldKeepPlayerData, err = util.ReadBool(rd)
 		if err != nil {

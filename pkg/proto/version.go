@@ -23,6 +23,7 @@ var (
 	Minecraft_1_15   = &Version{573, "1.15"}
 	Minecraft_1_16   = &Version{735, "1.16"}
 	Minecraft_1_16_1 = &Version{736, "1.16.1"}
+	Minecraft_1_16_2 = &Version{751, "1.16.2"}
 
 	// Versions ordered from lowest to highest
 	Versions = []*Version{
@@ -36,7 +37,7 @@ var (
 		Minecraft_1_13, Minecraft_1_13_2,
 		Minecraft_1_14,
 		Minecraft_1_15,
-		Minecraft_1_16, Minecraft_1_16_1,
+		Minecraft_1_16, Minecraft_1_16_1, Minecraft_1_16_2,
 	}
 )
 

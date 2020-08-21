@@ -16,7 +16,7 @@ func PacketCodings(t *testing.T, c *proto.PacketContext, samples ...proto.Packet
 		buf.Reset()
 		rType := reflect.TypeOf(sample).Elem()
 
-		// ToNBT sample
+		// encode sample
 		assert.NoError(t, sample.Encode(c, buf), rType.String())
 
 		// Decode into new empty clone of same type as sample
