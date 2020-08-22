@@ -211,7 +211,6 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 	playerVersion := c.player.Protocol()
 	if c.spawned.CAS(false, true) {
 		// Nothing special to do with regards to spawning the player
-		destination.setActiveDimensionRegistry(joinGame.DimensionRegistry) // 1.16
 		// Buffer JoinGame packet to player connection
 		if c.player.BufferPacket(joinGame) != nil {
 			return false
@@ -264,7 +263,6 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 		if c.player.BufferPacket(respawn) != nil {
 			return false
 		}
-		destination.setActiveDimensionRegistry(joinGame.DimensionRegistry) // 1.16
 	}
 
 	// TODO Remove previous boss bars.
