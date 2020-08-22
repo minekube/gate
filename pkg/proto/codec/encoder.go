@@ -110,9 +110,8 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	_ = util.WriteVarInt(frame, payload.Len())
 	_, _ = payload.WriteTo(frame)
 
-	n = frame.Len()
-	_, err = frame.WriteTo(e.wr)
-	return
+	m, err := frame.WriteTo(e.wr)
+	return int(m), err
 }
 
 // Write encodes and writes the uncompressed and unencrypted payload (packed id + data).

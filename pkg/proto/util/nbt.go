@@ -86,12 +86,9 @@ func (b NBT) String(name string) (ret string, ok bool) {
 func (b NBT) NBT(name string) (ret NBT, ok bool) {
 	var val interface{}
 	if val, ok = b[name]; ok {
-		ret, ok = val.(NBT)
+		ret, ok = val.(map[string]interface{})
 		if !ok {
-			m, ok2 := val.(map[string]interface{})
-			if ok2 {
-				ret, ok = m, true
-			}
+			ret, ok = val.(NBT)
 		}
 	}
 	return
@@ -100,18 +97,17 @@ func (b NBT) NBT(name string) (ret NBT, ok bool) {
 func (b NBT) List(name string) (ret []NBT, ok bool) {
 	var val interface{}
 	if val, ok = b[name]; ok {
-		ret, ok = val.([]NBT)
+		var l []interface{}
+		l, ok = val.([]interface{})
 		if !ok {
-			l, ok2 := val.([]interface{})
-			if ok2 {
-				var n NBT
-				for _, e := range l {
-					n, ok = e.(NBT)
-					if ok {
-						ret = append(ret, n)
-					}
-				}
-				ok = true
+			ret, ok = val.([]NBT)
+			return
+		}
+		var n NBT
+		for _, e := range l {
+			n, ok = e.(map[string]interface{})
+			if ok {
+				ret = append(ret, n)
 			}
 		}
 	}

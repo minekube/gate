@@ -16,7 +16,6 @@ import (
 
 type backendPlaySessionHandler struct {
 	serverConn                *serverConnection
-	playerSessionHandler      *clientPlaySessionHandler
 	bungeeCordMessageRecorder *bungeeCordMessageRecorder
 	exceptionTriggered        atomic.Bool
 
@@ -24,13 +23,12 @@ type backendPlaySessionHandler struct {
 }
 
 func newBackendPlaySessionHandler(serverConn *serverConnection) (sessionHandler, error) {
-	psh, ok := serverConn.player.SessionHandler().(*clientPlaySessionHandler)
+	_, ok := serverConn.player.SessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
 	}
 	return &backendPlaySessionHandler{
 		serverConn:                serverConn,
-		playerSessionHandler:      psh,
 		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{player: serverConn.player},
 	}, nil
 }

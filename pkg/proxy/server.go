@@ -408,17 +408,17 @@ func (s *serverConnection) disconnect0() {
 
 // Indicates that we have completed the plugin process.
 func (s *serverConnection) completeJoin() {
-	s.mu.Lock() // Yes, lock whole function including atomic completedJoin
 	if s.completedJoin.CAS(false, true) {
+		s.mu.Lock()
 		if s.connPhase == unknownBackendPhase {
 			// Now we know
 			s.connPhase = vanillaBackendPhase
 			if s.connection != nil {
-				s.connection.connType = vanillaConnectionType
+				s.connection.setType(vanillaConnectionType)
 			}
 		}
+		s.mu.Unlock()
 	}
-	s.mu.Unlock()
 }
 
 func (s *serverConnection) config() *config.Config {

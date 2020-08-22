@@ -5,7 +5,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
-	"go.minekube.com/gate/pkg/util/sets"
 	"io"
 )
 
@@ -57,30 +56,27 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if err != nil {
 			return err
 		}
-		err = util.WriteStrings(wr, j.DimensionRegistry.LevelNames.UnsortedList())
+		err = util.WriteStrings(wr, j.DimensionRegistry.LevelNames)
 		if err != nil {
 			return err
 		}
-
-		registryContainer := util.NBT{}
 		encodedDimensionRegistry, err := j.DimensionRegistry.encode(c.Protocol)
 		if err != nil {
 			return err
 		}
+		registryContainer := util.NBT{}
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
-			dimensionRegistryEntry := util.NBT{
+			registryContainer["minecraft:dimension_type"] = util.NBT{
 				"type":  "minecraft:dimension_type",
 				"value": encodedDimensionRegistry,
 			}
-			registryContainer["minecraft:dimension_type"] = dimensionRegistryEntry
 			if j.BiomeRegistry == nil {
 				return errors.New("missing biome registry")
 			}
-			registryContainer["minecraft:worldgen/biom"] = j.BiomeRegistry
+			registryContainer["minecraft:worldgen/biome"] = j.BiomeRegistry
 		} else {
 			registryContainer["dimension"] = encodedDimensionRegistry
 		}
-
 		nbtEncoder := nbt.NewEncoderWithEncoding(wr, nbt.BigEndian)
 		err = nbtEncoder.Encode(registryContainer)
 		if err != nil {
@@ -218,7 +214,6 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-
 		nbtDecoder := nbt.NewDecoderWithEncoding(rd, nbt.BigEndian)
 		registryContainer := util.NBT{}
 		err = nbtDecoder.Decode(&registryContainer)
@@ -256,7 +251,7 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 		j.DimensionRegistry = &DimensionRegistry{
 			Dimensions: readData,
-			LevelNames: sets.NewString(levelNames...),
+			LevelNames: levelNames,
 		}
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
 			currentDimDataTag := util.NBT{}

@@ -165,7 +165,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	} else {
-		r.LevelType, err = util.ReadString(rd)
+		r.LevelType, err = util.ReadStringMax(rd, 16)
 		if err != nil {
 			return err
 		}
