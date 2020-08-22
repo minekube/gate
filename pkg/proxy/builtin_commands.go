@@ -18,7 +18,7 @@ func (p *Proxy) registerBuiltinCommands() {
 }
 
 func hasCmdPerm(s CommandSource, perm string) bool {
-	if s.PermissionValue(perm) != permission.False {
+	if s.PermissionValue(perm) == permission.False {
 		_ = s.SendMessage(missingCommandPermission)
 		return false
 	}
