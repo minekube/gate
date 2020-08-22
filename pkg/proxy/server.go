@@ -198,10 +198,9 @@ type serverConnection struct {
 	lastPingId         atomic.Int64
 	lastPingSent       atomic.Int64 // unix millis
 
-	mu                      sync.RWMutex   // Protects following fields
-	connection              *minecraftConn // the backend server connection
-	connPhase               backendConnectionPhase
-	activeDimensionRegistry *packet.DimensionRegistry
+	mu         sync.RWMutex   // Protects following fields
+	connection *minecraftConn // the backend server connection
+	connPhase  backendConnectionPhase
 }
 
 func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
@@ -405,12 +404,6 @@ func (s *serverConnection) disconnect0() {
 		}
 		s.connection = nil // nil means not connected
 	}
-}
-
-func (s *serverConnection) setActiveDimensionRegistry(registry *packet.DimensionRegistry) {
-	s.mu.Lock()
-	s.activeDimensionRegistry = registry
-	s.mu.Unlock()
 }
 
 // Indicates that we have completed the plugin process.
