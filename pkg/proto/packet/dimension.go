@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/util"
-	"go.minekube.com/gate/pkg/util/sets"
 )
 
 // DimensionRegistry is required for Minecraft 1.16+ clients/servers to communicate,
@@ -13,7 +12,7 @@ import (
 // Respawn action (dimension change).
 type DimensionRegistry struct {
 	Dimensions []*DimensionData
-	LevelNames sets.String
+	LevelNames []string
 }
 
 type DimensionInfo struct {
@@ -41,14 +40,6 @@ type DimensionData struct {
 
 // fromGameData decodes a CompoundTag storing a dimension registry.
 func fromGameData(toParse []util.NBT, protocol proto.Protocol) (mappings []*DimensionData, err error) {
-	/*dimension, ok := toParse["dimension"]
-	if !ok {
-		return nil, errors.New("gamedata does not contain dimension")
-	}
-	list, ok := dimension.([]interface{})
-	if !ok {
-		return nil, errors.New("gamedata dimension is not a list")
-	}*/
 	var data *DimensionData
 	for _, compound := range toParse {
 		data, err = decodeRegistryEntry(compound, protocol)
@@ -187,7 +178,7 @@ func (d *DimensionData) encodeCompoundTag(protocol proto.Protocol) (util.NBT, er
 		}
 		return util.NBT{
 			"name":    d.RegistryIdentifier,
-			"id":      d.DimensionId,
+			"id":      int32(*d.DimensionId),
 			"element": details,
 		}, nil
 	}

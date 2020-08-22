@@ -3,7 +3,6 @@ module go.minekube.com/gate
 go 1.14
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/uuid v1.1.1
