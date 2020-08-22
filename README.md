@@ -11,12 +11,11 @@
 
 **Gate is an extensible Minecraft proxy written in Go**
 
-> This project is in its early stages, not yet ready for production and
+> This project is not yet ready for production and
 > subject to have breaking changes,
 > but you can already start playing around with it!
 >
-> It will be tested & used in production by the Minekube network when
-> there is a "stable enough" release.
+> It is already being used by the Minekube network!
 
 ### Features
 
