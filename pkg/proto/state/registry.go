@@ -81,8 +81,8 @@ func (r *ProtocolRegistry) CreatePacket(id proto.PacketId) proto.Packet {
 	p, ok := reflect.New(packetType).Interface().(proto.Packet)
 	if !ok {
 		// Shall not happen, but let's be extra sure
-		zap.S().Errorf("Tried to create packet (type: %s id: %d) that does not implement %s interface",
-			packetType, id, reflect.TypeOf((proto.Packet)(nil)))
+		zap.S().Errorf("Tried to create packet (type: %s, id: %d) that does not implement %T interface",
+			packetType, id, (proto.Packet)(nil))
 		return nil
 	}
 	return p

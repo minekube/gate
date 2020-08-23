@@ -106,7 +106,7 @@ func newConnectedPlayer(
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
-) (c *connectedPlayer) {
+) *connectedPlayer {
 	ping := atomic.Duration{}
 	ping.Store(-1)
 	return &connectedPlayer{

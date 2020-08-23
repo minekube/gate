@@ -362,7 +362,7 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	b.WriteString("\000")
 	b.WriteString(playerIP)
 	b.WriteString("\000")
-	b.WriteString(s.player.GameProfile().Id.Undashed())
+	b.WriteString(s.player.profile.Id.Undashed())
 	b.WriteString("\000")
 	props, err := json.Marshal(s.player.profile.Properties)
 	if err != nil { // should never happen

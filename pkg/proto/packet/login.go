@@ -156,7 +156,7 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var uuidString string
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		s.UUID, err = util.ReadUuid(rd)
+		s.UUID, err = util.ReadUUID(rd)
 	} else {
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_7_6) {
 			uuidString, err = util.ReadStringMax(rd, 36)

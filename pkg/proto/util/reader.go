@@ -252,29 +252,22 @@ func ReadBytes17(rd io.Reader) ([]byte, error) {
 	return b, err
 }
 
-func ReadUuid(rd io.Reader) (id uuid.UUID, err error) {
-	l1, err := ReadInt64(rd)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-	l2, err := ReadInt64(rd)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-
+func ReadUUID(rd io.Reader) (id uuid.UUID, err error) {
 	b := make([]byte, 16)
-	binary.BigEndian.PutUint64(b, uint64(l1))
-	binary.BigEndian.PutUint64(b, uint64(l2))
-
-	copy(id[:], b)
-	return
+	_, err = io.ReadFull(rd, b)
+	if err != nil {
+		return
+	}
+	return uuid.FromBytes(b)
 }
 
 func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
-	size, err := ReadVarInt(rd)
+	var size int
+	size, err = ReadVarInt(rd)
 	if err != nil {
-		return nil, err
+		return
 	}
+	props = make([]profile.Property, 0, size)
 	var name, value, signature string
 	for i := 0; i < size; i++ {
 		name, err = ReadString(rd)

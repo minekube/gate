@@ -197,10 +197,8 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 		KnownPacket: false,
 		Payload:     p,
 	}
-
-	//raw := bytes.NewBuffer(make([]byte, 0, len(p)))
 	payload := bytes.NewReader(p)
-	//tee := io.TeeReader(payload, raw)
+
 	// Read packet id.
 	packetId, err := util.ReadVarInt(payload)
 	if err != nil {

@@ -193,8 +193,8 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 			return err
 		}
 		for i := 0; i < length; i++ {
-			item := new(PlayerListItemEntry)
-			item.ID, err = util.ReadUuid(rd)
+			item := PlayerListItemEntry{}
+			item.ID, err = util.ReadUUID(rd)
 			if err != nil {
 				return err
 			}
@@ -235,13 +235,13 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 			default:
 				return fmt.Errorf("unknown PlayerListItemAction %d", p.Action)
 			}
-			p.Items = append(p.Items, *item)
+			p.Items = append(p.Items, item)
 		}
 
 		return nil
 	}
 
-	item := new(PlayerListItemEntry)
+	item := PlayerListItemEntry{}
 	item.Name, err = util.ReadString(rd)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 		return err
 	}
 	item.Latency = int(latency)
-	p.Items = append(p.Items, *item)
+	p.Items = append(p.Items, item)
 	return nil
 }
 

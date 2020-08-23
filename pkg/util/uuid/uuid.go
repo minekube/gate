@@ -32,6 +32,19 @@ func Parse(s string) (UUID, error) {
 	return UUID(uuid), err
 }
 
+// ParseBytes is like Parse, except it parses a byte slice instead of a string.
+func ParseBytes(b []byte) (UUID, error) {
+	uuid, err := guuid.ParseBytes(b)
+	return UUID(uuid), err
+}
+
+// FromBytes creates a new UUID from a byte slice. Returns an error if the slice
+// does not have a length of 16. The bytes are copied from the slice.
+func FromBytes(b []byte) (UUID, error) {
+	uuid, err := guuid.FromBytes(b)
+	return UUID(uuid), err
+}
+
 func OfflinePlayerUuid(username string) UUID {
 	const version = 3 // UUID v3
 	uuid := md5.Sum([]byte("OfflinePlayer:" + username))
