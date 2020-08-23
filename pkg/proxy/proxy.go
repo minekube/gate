@@ -162,7 +162,7 @@ func (p *Proxy) run(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
-	var eg errgroup.Group
+	eg, ctx := errgroup.WithContext(ctx)
 
 	if p.config.Health.Enabled {
 		eg.Go(func() error {
