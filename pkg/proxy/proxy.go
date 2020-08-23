@@ -50,10 +50,7 @@ type Proxy struct {
 
 // New returns a new initialized Proxy.
 func New(config config.Config) (s *Proxy) {
-	defer func() {
-		s.connect = newConnect(s)
-	}()
-	return &Proxy{
+	s = &Proxy{
 		config:           &config,
 		event:            event.NewManager(),
 		command:          newCommandManager(),
@@ -61,6 +58,8 @@ func New(config config.Config) (s *Proxy) {
 		servers:          map[string]RegisteredServer{},
 		authenticator:    auth.NewAuthenticator(),
 	}
+	s.connect = newConnect(s)
+	return
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.
