@@ -23,6 +23,9 @@ import (
 	"go.minekube.com/gate/pkg/proxy"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func Run(ctx context.Context) (err error) {
@@ -38,6 +41,21 @@ func Run(ctx context.Context) (err error) {
 	if err = config.Validate(&cfg); err != nil {
 		return fmt.Errorf("error validating config: %w", err)
 	}
+
+	ctx, cancelFunc := context.WithCancel(ctx)
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer func() { signal.Stop(sig); cancelFunc() }()
+
+	go func() {
+		select {
+		case s := <-sig:
+			zap.S().Infof("Received %s signal", s)
+			cancelFunc()
+		case <-ctx.Done():
+		}
+	}()
 	p := proxy.New(cfg)
 	return p.Run(ctx)
 }

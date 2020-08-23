@@ -16,16 +16,11 @@ limitations under the License.
 package gate
 
 import (
-	"context"
 	"fmt"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-
 	"github.com/spf13/viper"
+	"os"
+	"strings"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -35,20 +30,7 @@ var rootCmd = &cobra.Command{
 	Long: `A high performant & paralleled Minecraft proxy server with
 scalability, flexibility & excelled server version support.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-		defer func() { signal.Stop(sig); close(sig) }()
-
-		ctx, cancelFunc := context.WithCancel(cmd.Context())
-		go func() {
-			s, ok := <-sig
-			if !ok {
-				return
-			}
-			zap.S().Infof("Received %s signal", s)
-			cancelFunc()
-		}()
-		if err := Run(ctx); err != nil {
+		if err := Run(cmd.Context()); err != nil {
 			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
 		}
 	},
