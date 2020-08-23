@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/internal/health"
@@ -36,8 +37,8 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
-	runOnce   atomic.Bool
-	closeOnce sync.Once
+	runOnce    atomic.Bool
+	closeOnce  sync.Once
 	cancelFunc context.CancelFunc
 
 	motd    *component.Text
@@ -71,11 +72,13 @@ func (p *Proxy) Run(ctx context.Context) (err error) {
 	if !p.runOnce.CAS(false, true) {
 		return ErrProxyAlreadyRun
 	}
-	defer p.Shutdown(nil) // Make sure Shutdown is at least called once.
+	defer p.Shutdown(&component.Text{
+		Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
+		S:       component.Style{Color: color.Red}}) // Make sure Shutdown is at least called once.
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 	p.cancelFunc = cancelFunc
-	return p.run(ctx)        // Run and block
+	return p.run(ctx) // Run and block
 }
 
 // Shutdown shuts down the Proxy and blocks until finished.
