@@ -18,6 +18,7 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
 	"net"
 	"strings"
@@ -156,25 +157,19 @@ func (p *Proxy) run() error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
-	errChan := make(chan error, 1)
-	wg := new(sync.WaitGroup)
-	defer wg.Wait()
+	var eg errgroup.Group
 
 	if p.config.Health.Enabled {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			errChan <- p.runHealthService(p.closed)
-		}()
+		eg.Go(func() error {
+			return p.runHealthService(p.closed)
+		})
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
-	}()
+	eg.Go(func() error {
+		return p.connect.listenAndServe(p.config.Bind, p.closed)
+	})
 
-	return <-errChan
+	return eg.Wait()
 }
 
 func (p *Proxy) runHealthService(stop <-chan struct{}) error {
