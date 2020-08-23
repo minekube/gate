@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
@@ -51,10 +52,10 @@ func (c *connect) DisconnectAll(reason component.Component) {
 	}
 }
 
-// listenAndServe starts listening for connections on addr until closed channel receives.
-func (c *connect) listenAndServe(addr string, stop <-chan struct{}) error {
+// listenAndServe starts listening for connections on addr until context closes.
+func (c *connect) listenAndServe(ctx context.Context, addr string) error {
 	select {
-	case <-stop:
+	case <-ctx.Done():
 		return nil
 	default:
 	}
@@ -66,7 +67,7 @@ func (c *connect) listenAndServe(addr string, stop <-chan struct{}) error {
 	defer ln.Close()
 
 	go func() {
-		<-stop
+		<-ctx.Done()
 		_ = ln.Close()
 	}()
 

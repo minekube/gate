@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/internal/health"
@@ -36,9 +37,9 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
-	runOnce   atomic.Bool
-	closeOnce sync.Once
-	closed    chan struct{}
+	runOnce    atomic.Bool
+	closeOnce  sync.Once
+	cancelFunc context.CancelFunc
 
 	motd    *component.Text
 	favicon favicon.Favicon
@@ -50,7 +51,6 @@ type Proxy struct {
 // New returns a new initialized Proxy.
 func New(config config.Config) (s *Proxy) {
 	s = &Proxy{
-		closed:           make(chan struct{}),
 		config:           &config,
 		event:            event.NewManager(),
 		command:          newCommandManager(),
@@ -59,7 +59,7 @@ func New(config config.Config) (s *Proxy) {
 		authenticator:    auth.NewAuthenticator(),
 	}
 	s.connect = newConnect(s)
-	return s
+	return
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.
@@ -67,12 +67,17 @@ var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
 // Run runs the proxy and blocks until Shutdown is called or an error occurred.
 // Run can only be called once per Proxy instance.
-func (p *Proxy) Run() (err error) {
+func (p *Proxy) Run(ctx context.Context) (err error) {
 	if !p.runOnce.CAS(false, true) {
 		return ErrProxyAlreadyRun
 	}
-	defer p.Shutdown(nil) // Make sure Shutdown is at least called once.
-	return p.run()        // Run and block
+	defer p.Shutdown(&component.Text{
+		Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
+		S:       component.Style{Color: color.Red}}) // Make sure Shutdown is at least called once.
+
+	ctx, cancelFunc := context.WithCancel(ctx)
+	p.cancelFunc = cancelFunc
+	return p.run(ctx) // Run and block
 }
 
 // Shutdown shuts down the Proxy and blocks until finished.
@@ -89,7 +94,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		p.event.Fire(pre)
 		reason = pre.Reason()
 
-		close(p.closed)
+		p.cancelFunc()
 		p.connect.DisconnectAll(reason)
 
 		p.event.Fire(&ShutdownEvent{})
@@ -152,34 +157,34 @@ func (p *Proxy) preInit() (err error) {
 	return
 }
 
-func (p *Proxy) run() error {
+func (p *Proxy) run(ctx context.Context) error {
 	if err := p.preInit(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
-	var eg errgroup.Group
+	eg, ctx := errgroup.WithContext(ctx)
 
 	if p.config.Health.Enabled {
 		eg.Go(func() error {
-			return p.runHealthService(p.closed)
+			return p.runHealthService(ctx)
 		})
 	}
 
 	eg.Go(func() error {
-		return p.connect.listenAndServe(p.config.Bind, p.closed)
+		return p.connect.listenAndServe(ctx, p.config.Bind)
 	})
 
 	return eg.Wait()
 }
 
-func (p *Proxy) runHealthService(stop <-chan struct{}) error {
+func (p *Proxy) runHealthService(ctx context.Context) error {
 	probe := p.config.Health
 	run, err := health.New(probe.Bind)
 	if err != nil {
 		return fmt.Errorf("error creating health probe service: %w", err)
 	}
 	zap.S().Infof("Health probe service running at %s", probe.Bind)
-	return run(stop, p.healthCheck)
+	return run(ctx, p.healthCheck)
 }
 
 // Event returns the Proxy's event manager.

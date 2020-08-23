@@ -16,20 +16,16 @@ limitations under the License.
 package gate
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/viper"
-	"go.minekube.com/common/minecraft/color"
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/proxy"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
-func Run() (err error) {
+func Run(ctx context.Context) (err error) {
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -42,23 +38,8 @@ func Run() (err error) {
 	if err = config.Validate(&cfg); err != nil {
 		return fmt.Errorf("error validating config: %w", err)
 	}
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer func() { signal.Stop(sig); close(sig) }()
-
 	p := proxy.New(cfg)
-	go func() {
-		s, ok := <-sig
-		if !ok {
-			return
-		}
-		zap.S().Infof("Received %s signal", s)
-		p.Shutdown(&component.Text{
-			Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
-			S:       component.Style{Color: color.Red}})
-	}()
-	return p.Run()
+	return p.Run(ctx)
 }
 
 func initLogger(debug bool) (err error) {
