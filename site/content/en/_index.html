@@ -1,0 +1,39 @@
+<!-- TODO Make this page beautiful -->
+
++++
+title = "Gate"
+linkTitle = "Gate"
++++
+
+{{< blocks/cover title="" image_anchor="top" height="min" color="white" >}}
+<div class="mx-auto">
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="{{< relref "/docs" >}}">
+		Learn More <i class="fas fa-arrow-alt-circle-right ml-2"></i>
+	</a>
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="{{< param releases >}}">
+		Releases <i class="fab fa-github ml-2 "></i>
+	</a>
+	<p class="lead mt-4">Proxy your Minecraft network with <strong>Gate</strong></p>
+	<div class="mx-auto mt-5">
+		{{< blocks/link-down color="light-secondary" >}}
+	</div>
+</div>
+{{< /blocks/cover >}}
+
+{{% blocks/lead color="secondary" %}}
+<strong>What is Gate?</strong>
+
+An open source, batteries-included, Minecraft proxy written in Golang
+that can run alongside your organization's growing demands in production.
+Run it with a single binary or let <a class="text-primary" href="https://kubernetes.io">Kubernetes</a>
+orchestrate it.
+{{% /blocks/lead %}}
+
+<!-- TODO Reference servers using Gate -->
+
+{{% blocks/feature icon="fab fa-github" title="Contributions welcome!" url="{{< param github_repo >}}" url_text="Contribute to Gate" %}}
+  We do a [Pull Request]({{< param github_repo >}}/pulls) contributions workflow on **GitHub**.
+
+  New users are always welcome!
+{{% /blocks/feature %}}
+

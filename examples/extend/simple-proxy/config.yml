@@ -1,0 +1,9 @@
+# This is a simplified config where the rest of the
+# settings are omitted and will be set by default.
+# See config.yml for the full configuration options.
+servers:
+  server1: localhost:25566
+  server2: localhost:25567
+try:
+  - server1
+  - server2
