@@ -55,13 +55,15 @@ func (a *Authenticator) HasJoined(username, optionalUserIp string, serverId stri
 	return a.HttpClient.Get(nil, uri)
 }
 
+func makeHash(sharedSecret, publicKey []byte) []byte {
+	h := sha1.New()
+	_, _ = h.Write(sharedSecret)
+	_, _ = h.Write(publicKey)
+	return h.Sum(nil)
+}
+
 func (a *Authenticator) GenerateServerId(sharedSecret []byte) string {
-	hash := func() []byte {
-		h := sha1.New()
-		_, _ = h.Write(sharedSecret)
-		_, _ = h.Write(a.PublicKey)
-		return h.Sum(nil)
-	}()
+	hash := makeHash(sharedSecret, a.PublicKey)
 
 	var s strings.Builder
 	// Check for negative hash
