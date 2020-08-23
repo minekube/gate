@@ -46,12 +46,9 @@ type Proxy struct {
 	servers map[string]RegisteredServer // registered backend servers: by lower case names
 }
 
-// New returns a new initialized Proxy.
-func New(config config.Config) (s *Proxy) {
-	defer func() {
-		s.connect = newConnect(s)
-	}()
-	return &Proxy{
+// New takes a validated config and returns a new initialized Proxy.
+func New(config config.Config) (p *Proxy) {
+	p = &Proxy{
 		closed:           make(chan struct{}),
 		config:           &config,
 		event:            event.NewManager(),
@@ -60,13 +57,18 @@ func New(config config.Config) (s *Proxy) {
 		servers:          map[string]RegisteredServer{},
 		authenticator:    auth.NewAuthenticator(),
 	}
+	p.connect = newConnect(p)
+	return p
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.
 var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
-// Run runs the proxy and blocks until Shutdown is called or an error occurred.
-// Run can only be called once per Proxy instance.
+// Run runs the proxy, blocks until the proxy is
+// Shutdown or an error occurred while starting.
+// The Proxy is already shutdown on method return.
+// In order to stop the Proxy call Shutdown.
+// A Proxy can only be run once or ErrProxyAlreadyRun is returned.
 func (p *Proxy) Run() (err error) {
 	if !p.runOnce.CAS(false, true) {
 		return ErrProxyAlreadyRun
@@ -75,10 +77,10 @@ func (p *Proxy) Run() (err error) {
 	return p.run()        // Run and block
 }
 
-// Shutdown shuts down the Proxy and blocks until finished.
+// Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
 // It first stops listening for new connections, disconnects
-// all existing connections with the given reason (if nil stands for no reason)
+// all existing connections with the given reason (nil = blank reason)
 // and waits for all event subscribers to finish.
 func (p *Proxy) Shutdown(reason component.Component) {
 	p.closeOnce.Do(func() {

@@ -29,7 +29,11 @@ import (
 	"syscall"
 )
 
-func Run() (err error) {
+// Run reads in and validates the config to pass into proxy.New,
+// initializes the logger, runs the new proxy.Proxy and
+// blocks until stopChan is triggered or an OS signal is sent.
+// The proxy is already shutdown on method return.
+func Run(stopCh <-chan struct{}) (err error) {
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -39,6 +43,7 @@ func Run() (err error) {
 		return fmt.Errorf("error initializing global logger: %w", err)
 	}
 
+	// Validate after we initialized the logger.
 	if err = config.Validate(&cfg); err != nil {
 		return fmt.Errorf("error validating config: %w", err)
 	}
@@ -49,11 +54,15 @@ func Run() (err error) {
 
 	p := proxy.New(cfg)
 	go func() {
-		s, ok := <-sig
-		if !ok {
-			return
+		select {
+		case <-stopCh:
+		case s, ok := <-sig:
+			if !ok {
+				// Sig chan was closed
+				return
+			}
+			zap.S().Infof("Received %s signal", s)
 		}
-		zap.S().Infof("Received %s signal", s)
 		p.Shutdown(&component.Text{
 			Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
 			S:       component.Style{Color: color.Red}})
