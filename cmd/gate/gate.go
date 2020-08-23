@@ -16,6 +16,7 @@ limitations under the License.
 package gate
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/viper"
 	"go.minekube.com/common/minecraft/color"
@@ -29,7 +30,7 @@ import (
 	"syscall"
 )
 
-func Run() (err error) {
+func Run(ctx context.Context) (err error) {
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -58,7 +59,7 @@ func Run() (err error) {
 			Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
 			S:       component.Style{Color: color.Red}})
 	}()
-	return p.Run()
+	return p.Run(ctx)
 }
 
 func initLogger(debug bool) (err error) {

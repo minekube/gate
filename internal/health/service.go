@@ -10,16 +10,16 @@ import (
 	"time"
 )
 
-func New(addr string) (run func(stop <-chan struct{}, checkFn CheckFn) error, err error) {
+func New(addr string) (run func(ctx context.Context, checkFn CheckFn) error, err error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-	return func(stop <-chan struct{}, checkFn CheckFn) error {
+	return func(ctx context.Context, checkFn CheckFn) error {
 		s := grpc.NewServer(grpc.ConnectionTimeout(time.Second * 3))
 		rpc.RegisterHealthServer(s, &server{checkFn: checkFn})
 		go func() {
-			<-stop
+			<-ctx.Done()
 			s.Stop()
 		}()
 		return s.Serve(ln)

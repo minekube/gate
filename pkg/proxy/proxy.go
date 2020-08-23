@@ -37,7 +37,7 @@ type Proxy struct {
 
 	runOnce   atomic.Bool
 	closeOnce sync.Once
-	closed    chan struct{}
+	cancelFunc context.CancelFunc
 
 	motd    *component.Text
 	favicon favicon.Favicon
@@ -52,7 +52,6 @@ func New(config config.Config) (s *Proxy) {
 		s.connect = newConnect(s)
 	}()
 	return &Proxy{
-		closed:           make(chan struct{}),
 		config:           &config,
 		event:            event.NewManager(),
 		command:          newCommandManager(),
@@ -67,12 +66,12 @@ var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
 // Run runs the proxy and blocks until Shutdown is called or an error occurred.
 // Run can only be called once per Proxy instance.
-func (p *Proxy) Run() (err error) {
+func (p *Proxy) Run(ctx context.Context) (err error) {
 	if !p.runOnce.CAS(false, true) {
 		return ErrProxyAlreadyRun
 	}
 	defer p.Shutdown(nil) // Make sure Shutdown is at least called once.
-	return p.run()        // Run and block
+	return p.run(ctx)        // Run and block
 }
 
 // Shutdown shuts down the Proxy and blocks until finished.
@@ -89,7 +88,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		p.event.Fire(pre)
 		reason = pre.Reason()
 
-		close(p.closed)
+		p.cancelFunc()
 		p.connect.DisconnectAll(reason)
 
 		p.event.Fire(&ShutdownEvent{})
@@ -152,7 +151,7 @@ func (p *Proxy) preInit() (err error) {
 	return
 }
 
-func (p *Proxy) run() error {
+func (p *Proxy) run(ctx context.Context) error {
 	if err := p.preInit(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
@@ -165,27 +164,27 @@ func (p *Proxy) run() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			errChan <- p.runHealthService(p.closed)
+			errChan <- p.runHealthService(ctx)
 		}()
 	}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
+		errChan <- p.connect.listenAndServe(ctx, p.config.Bind)
 	}()
 
 	return <-errChan
 }
 
-func (p *Proxy) runHealthService(stop <-chan struct{}) error {
+func (p *Proxy) runHealthService(ctx context.Context) error {
 	probe := p.config.Health
 	run, err := health.New(probe.Bind)
 	if err != nil {
 		return fmt.Errorf("error creating health probe service: %w", err)
 	}
 	zap.S().Infof("Health probe service running at %s", probe.Bind)
-	return run(stop, p.healthCheck)
+	return run(ctx, p.healthCheck)
 }
 
 // Event returns the Proxy's event manager.

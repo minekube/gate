@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 	Long: `A high performant & paralleled Minecraft proxy server with
 scalability, flexibility & excelled server version support.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := Run(); err != nil {
+		if err := Run(cmd.Context()); err != nil {
 			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
 		}
 	},
