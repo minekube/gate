@@ -1,0 +1,278 @@
+package packet
+
+import (
+	"errors"
+	"fmt"
+	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/proto"
+	"go.minekube.com/gate/pkg/proto/util"
+	codec "go.minekube.com/gate/pkg/util"
+	"go.minekube.com/gate/pkg/util/profile"
+	"go.minekube.com/gate/pkg/util/uuid"
+	"io"
+	"strings"
+)
+
+type HeaderAndFooter struct {
+	Header string
+	Footer string
+}
+
+func (h *HeaderAndFooter) Encode(c *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteString(wr, h.Header)
+	if err != nil {
+		return err
+	}
+	return util.WriteString(wr, h.Footer)
+}
+
+// we never read this packet
+func (h *HeaderAndFooter) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	return errors.New("decode is not implemented")
+}
+
+var ResetHeaderAndFooter = &HeaderAndFooter{
+	Header: `{"translate":""}`,
+	Footer: `{"translate":""}`,
+}
+
+var (
+	_ proto.Packet = (*HeaderAndFooter)(nil)
+	_ proto.Packet = (*PlayerListItem)(nil)
+)
+
+//
+//
+//
+//
+
+type PlayerListItem struct {
+	Action PlayerListItemAction
+	Items  []PlayerListItemEntry
+}
+
+type PlayerListItemAction int
+
+const (
+	AddPlayerListItemAction PlayerListItemAction = iota
+	UpdateGameModePlayerListItemAction
+	UpdateLatencyPlayerListItemAction
+	UpdateDisplayNamePlayerListItemAction
+	RemovePlayerListItemAction
+)
+
+type PlayerListItemEntry struct {
+	ID          uuid.UUID
+	Name        string
+	Properties  []profile.Property
+	GameMode    int
+	Latency     int
+	DisplayName component.Component // nil-able
+}
+
+func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+		err = util.WriteVarInt(wr, int(p.Action))
+		if err != nil {
+			return err
+		}
+		err = util.WriteVarInt(wr, len(p.Items))
+		if err != nil {
+			return err
+		}
+		for _, item := range p.Items {
+			err = util.WriteUuid(wr, item.ID)
+			if err != nil {
+				return err
+			}
+			switch p.Action {
+			case AddPlayerListItemAction:
+				err = util.WriteString(wr, item.Name)
+				if err != nil {
+					return err
+				}
+				err = util.WriteProperties(wr, item.Properties)
+				if err != nil {
+					return err
+				}
+				err = util.WriteVarInt(wr, item.GameMode)
+				if err != nil {
+					return err
+				}
+				err = util.WriteVarInt(wr, item.Latency)
+				if err != nil {
+					return err
+				}
+				err = writeDisplayName(wr, item.DisplayName, c.Protocol)
+				if err != nil {
+					return err
+				}
+			case UpdateLatencyPlayerListItemAction:
+				err = util.WriteVarInt(wr, item.Latency)
+				if err != nil {
+					return err
+				}
+			case UpdateGameModePlayerListItemAction:
+				err = util.WriteVarInt(wr, item.GameMode)
+				if err != nil {
+					return err
+				}
+			case UpdateDisplayNamePlayerListItemAction:
+				err = writeDisplayName(wr, item.DisplayName, c.Protocol)
+				if err != nil {
+					return err
+				}
+			case RemovePlayerListItemAction:
+			// Do nothing, all that is needed is the uuid
+			default:
+				return fmt.Errorf("unknown PlayerListItemAction %d", p.Action)
+			}
+		}
+
+		return nil
+	}
+
+	if len(p.Items) == 0 {
+		return errors.New("items must not be empty")
+	}
+	item := p.Items[0]
+	displayName := item.DisplayName
+	if displayName != nil {
+		legacyDisplayName := new(strings.Builder)
+		err = codec.DefaultJsonCodec().Marshal(legacyDisplayName, displayName)
+		if err != nil {
+			return fmt.Errorf("error marshal legacy display name: %w", err)
+		}
+		err = util.WriteString(wr, func() string {
+			if legacyDisplayName.Len() > 16 {
+				return legacyDisplayName.String()[:16]
+			}
+			return legacyDisplayName.String()
+		}())
+		if err != nil {
+			return err
+		}
+	} else {
+		err = util.WriteString(wr, item.Name)
+		if err != nil {
+			return err
+		}
+	}
+	err = util.WriteBool(wr, p.Action != RemovePlayerListItemAction)
+	if err != nil {
+		return err
+	}
+	return util.WriteInt16(wr, int16(item.Latency))
+}
+
+func writeDisplayName(wr io.Writer, displayName component.Component, protocol proto.Protocol) (err error) {
+	err = util.WriteBool(wr, displayName != nil)
+	if err != nil {
+		return err
+	}
+	if displayName != nil {
+		b := new(strings.Builder)
+		err = codec.JsonCodec(protocol).Marshal(b, displayName)
+		if err != nil {
+			return fmt.Errorf("error marshal display name: %w", err)
+		}
+		err = util.WriteString(wr, b.String())
+	}
+	return
+}
+
+func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+		action, err := util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+		p.Action = PlayerListItemAction(action)
+		length, err := util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+		for i := 0; i < length; i++ {
+			item := new(PlayerListItemEntry)
+			item.ID, err = util.ReadUuid(rd)
+			if err != nil {
+				return err
+			}
+			switch p.Action {
+			case AddPlayerListItemAction:
+				item.Name, err = util.ReadString(rd)
+				if err != nil {
+					return err
+				}
+				item.Properties, err = util.ReadProperties(rd)
+				if err != nil {
+					return err
+				}
+				item.GameMode, err = util.ReadVarInt(rd)
+				if err != nil {
+					return err
+				}
+				item.Latency, err = util.ReadVarInt(rd)
+				if err != nil {
+					return err
+				}
+				item.DisplayName, err = readOptionalComponent(rd, c.Protocol)
+				if err != nil {
+					return err
+				}
+			case UpdateGameModePlayerListItemAction:
+				item.GameMode, err = util.ReadVarInt(rd)
+				if err != nil {
+					return err
+				}
+			case UpdateLatencyPlayerListItemAction:
+				item.Latency, err = util.ReadVarInt(rd)
+				if err != nil {
+					return err
+				}
+			case RemovePlayerListItemAction:
+			// Do nothing, all that is needed is the uuid
+			default:
+				return fmt.Errorf("unknown PlayerListItemAction %d", p.Action)
+			}
+			p.Items = append(p.Items, *item)
+		}
+
+		return nil
+	}
+
+	item := new(PlayerListItemEntry)
+	item.Name, err = util.ReadString(rd)
+	if err != nil {
+		return err
+	}
+	actionBool, err := util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+	if actionBool {
+		p.Action = AddPlayerListItemAction
+	} else {
+		p.Action = RemovePlayerListItemAction
+	}
+	latency, err := util.ReadInt16(rd)
+	if err != nil {
+		return err
+	}
+	item.Latency = int(latency)
+	p.Items = append(p.Items, *item)
+	return nil
+}
+
+func readOptionalComponent(rd io.Reader, protocol proto.Protocol) (c component.Component, err error) {
+	var has bool
+	has, err = util.ReadBool(rd)
+	if !has {
+		return
+	}
+	s, err := util.ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	return codec.JsonCodec(protocol).Unmarshal([]byte(s))
+}

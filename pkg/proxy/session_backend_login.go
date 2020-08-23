@@ -171,6 +171,7 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
 	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, true)
 	b.requestCtx.result(result, nil)
+	b.serverConn.disconnect()
 }
 
 func (b *backendLoginSessionHandler) handleSetCompression(packet *packet.SetCompression) {

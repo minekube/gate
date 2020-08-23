@@ -113,11 +113,13 @@ func (c *minecraftConn) readLoop() {
 		// Read next packet.
 		packetCtx, err := c.nextPacket()
 		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
-			zap.L().Debug("Error reading packet", zap.Error(err))
 			if handleReadErr(err) {
+				zap.L().Debug("Error reading packet, recovered", zap.Error(err))
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
 				return true
+			} else {
+				zap.L().Debug("Error reading packet, closing connection", zap.Error(err))
 			}
 			return false
 		}
@@ -280,7 +282,6 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 				zap.S().Infof("%s has disconnected", p.player_())
 			}
 		}
-
 	})
 	if alreadyClosed {
 		err = ErrClosedConn

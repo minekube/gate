@@ -13,6 +13,7 @@ var (
 	Minecraft_1_8    = &Version{47, "1.8"}
 	Minecraft_1_9    = &Version{107, "1.9"}
 	Minecraft_1_9_1  = &Version{108, "1.9.1"}
+	Minecraft_1_9_4  = &Version{110, "1.9.4"}
 	Minecraft_1_11   = &Version{315, "1.11"}
 	Minecraft_1_12   = &Version{335, "1.12"}
 	Minecraft_1_12_1 = &Version{338, "1.12.1"}
@@ -31,7 +32,7 @@ var (
 		Legacy,
 		Minecraft_1_7_2, Minecraft_1_7_6,
 		Minecraft_1_8,
-		Minecraft_1_9, Minecraft_1_9_1,
+		Minecraft_1_9, Minecraft_1_9_1, Minecraft_1_9_4,
 		Minecraft_1_11,
 		Minecraft_1_12, Minecraft_1_12_1, Minecraft_1_12_2,
 		Minecraft_1_13, Minecraft_1_13_2,

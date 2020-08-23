@@ -44,6 +44,8 @@ func (b *backendPlaySessionHandler) handlePacket(pack proto.Packet) {
 		b.handleDisconnect(p)
 	case *plugin.Message:
 		b.handlePluginMessage(p)
+	case *packet.PlayerListItem:
+		b.handlePlayerListItem(p)
 	default:
 		b.forwardToPlayer(pack)
 	}
@@ -74,9 +76,7 @@ func (b *backendPlaySessionHandler) disconnected() {
 		return
 	}
 	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
-		b.serverConn.player.handleDisconnect(b.serverConn.server,
-			packet.DisconnectWithProtocol(internalServerConnectionError, b.serverConn.player.Protocol()),
-			true)
+		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server, internalServerConnectionError, true)
 	} else {
 		b.serverConn.player.Disconnect(internalServerConnectionError)
 	}
@@ -156,6 +156,11 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message) 
 			})
 		}
 	})
+}
+
+func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem) {
+	b.serverConn.player.tabList.processBackendPacket(p)
+	b.forwardToPlayer(p)
 }
 
 func (b *backendPlaySessionHandler) forwardToPlayer(p proto.Packet) {

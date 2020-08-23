@@ -38,7 +38,7 @@ type Player interface {
 	message.ChannelMessageSink
 
 	Username() string // The username of the player.
-	Id() uuid.UUID    // The Minecraft UUID of the player.
+	Id() uuid.UUID    // The Minecraft ID of the player.
 	// May be nil, if no backend server connection!
 	CurrentServer() ServerConnection // Returns the current server connection of the player.
 	Ping() time.Duration             // The player's ping or -1 if currently unknown.
@@ -86,6 +86,8 @@ type connectedPlayer struct {
 	pluginChannelsMu sync.RWMutex // Protects following field
 	pluginChannels   sets.String  // Known plugin channels
 
+	tabList *tabList
+
 	mu               sync.RWMutex // Protects following fields
 	connectedServer_ *serverConnection
 	connInFlight     *serverConnection
@@ -104,7 +106,7 @@ func newConnectedPlayer(
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
-) *connectedPlayer {
+) (c *connectedPlayer) {
 	ping := atomic.Duration{}
 	ping.Store(-1)
 	return &connectedPlayer{
@@ -115,6 +117,7 @@ func newConnectedPlayer(
 		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
 		connPhase:      conn.Type().initialClientPhase(),
 		ping:           ping,
+		tabList:        newTabList(conn),
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
 	}
 }
@@ -254,7 +257,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 
 	return p.WritePacket(&packet.Chat{
 		Message: messageJson,
-		Type:    packet.ChatMessage,
+		Type:    position,
 		Sender:  uuid.Nil,
 	})
 }

@@ -18,6 +18,11 @@ func LatestJsonCodec() codec.Codec {
 	return jsonCodec_1_16
 }
 
+// DefaultJsonCodec returns a legacy supportive codec.
+func DefaultJsonCodec() codec.Codec {
+	return defaultJsonCodec
+}
+
 var (
 	// Json component codec for pre-1.16 clients
 	defaultJsonCodec = &codec.Json{}

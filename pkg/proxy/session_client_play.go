@@ -219,7 +219,9 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 		c.player.phase().onFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
-		//player.getTabList().clearAll();
+		if c.player.tabList.clearAll() != nil {
+			return false
+		}
 
 		// In order to handle switching to another server, you will need to send two packets:
 		//

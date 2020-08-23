@@ -308,7 +308,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
-	zap.L().Debug("Started bridging backend server to player",
+	zap.L().Debug("Trying to connect player with server...",
 		zap.String("addr", addr),
 		zap.String("server", s.server.ServerInfo().Name()))
 	zap.String("player", s.player.Username())
@@ -355,16 +355,16 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 func (s *serverConnection) createLegacyForwardingAddress() string {
 	// BungeeCord IP forwarding is simply a special injection after the "address" in the handshake,
 	// separated by \0 (the null byte). In order, you send the original host, the player's IP, their
-	// UUID (undashed), and if you are in online-mode, their login properties (from Mojang).
+	// ID (undashed), and if you are in online-mode, their login properties (from Mojang).
+	playerIP, _, _ := net.SplitHostPort(s.player.RemoteAddr().String())
 	b := new(strings.Builder)
-	//host, _, _ := net.SplitHostPort(s.server.ServerInfo().Addr().String())
 	b.WriteString(s.server.ServerInfo().Addr().String())
 	b.WriteString("\000")
-	b.WriteString(s.player.RemoteAddr().String())
+	b.WriteString(playerIP)
 	b.WriteString("\000")
 	b.WriteString(s.player.GameProfile().Id.Undashed())
 	b.WriteString("\000")
-	props, err := json.Marshal(s.player.GameProfile().Properties)
+	props, err := json.Marshal(s.player.profile.Properties)
 	if err != nil { // should never happen
 		panic(err)
 	}

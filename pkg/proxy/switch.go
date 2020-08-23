@@ -106,7 +106,7 @@ func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, erro
 	result, err := c.internalConnect(ctx)
 	if err == nil {
 		if !result.safe {
-			// If it's not safe to continue the connection we need to shut it down.
+			// It's not safe to continue the connection, we need to shut it down.
 			c.player.handleConnectionErr(result.attemptedConn, err, true)
 		} else if !result.Status().Successful() {
 			c.player.resetInFlightConnection()
@@ -134,7 +134,7 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 		if reason == nil {
 			reason = internalServerConnectionError
 		}
-		c.player.handleConnectionErr1(c.server, reason, result.safe)
+		c.player.handleDisconnectWithReason(c.server, reason, result.safe)
 	default:
 		// The only remaining value is successful (no need to do anything!)
 	}
@@ -173,30 +173,6 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	p.handleConnectionErr2(server, nil, &Text{Content: userMsg, S: Style{Color: Red}}, safe)
 }
 
-func (p *connectedPlayer) handleConnectionErr1(
-	server RegisteredServer,
-	disconnectReason Component,
-	safe bool,
-) {
-	if !p.Active() {
-		// If the connection is no longer active, we don't have to try recover it.
-		return
-	}
-
-	b := new(strings.Builder)
-	_ = (&codec.Plain{}).Marshal(b, disconnectReason)
-	plainReason := b.String()
-
-	connectedServer := p.CurrentServer()
-	if connectedServer != nil && connectedServer.Server().Equals(server) {
-		zap.S().Error("%s: kicked from server %s: %s", p, server.ServerInfo().Name(), plainReason)
-		p.handleConnectionErr2(server, disconnectReason, &Text{
-			Content: fmt.Sprintf("Kicked from %q: ", server.ServerInfo().Name()),
-			S:       Style{Color: Red},
-		}, safe)
-	}
-
-}
 func (p *connectedPlayer) handleConnectionErr2(
 	rs RegisteredServer,
 	kickReason Component,
@@ -238,6 +214,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 }
 
 func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component) {
+	connectedToServer := p.connectedServer() != nil
 	p.proxy.Event().Fire(e)
 
 	// There can't be any connection in flight now.
@@ -255,14 +232,12 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
 		defer cancel()
 		successful := p.CreateConnectionRequest(result.Server).ConnectWithIndication(ctx)
-		if successful {
+		if successful && connectedToServer {
 			if result.Message == nil {
 				_ = p.SendMessage(movedToNewServer)
 			} else {
 				_ = p.SendMessage(result.Message)
 			}
-		} else {
-			p.Disconnect(friendlyReason)
 		}
 	case *NotifyKickResult:
 		if e.KickedDuringServerConnect() {
@@ -277,14 +252,22 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 }
 
 func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *packet.Disconnect, safe bool) {
+	reason, _ := util.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
+	p.handleDisconnectWithReason(server, reason, safe)
+}
+
+// handles unexpected disconnects
+func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, reason Component, safe bool) {
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
 		return
 	}
 
-	reason, _ := util.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
 	b := new(strings.Builder)
-	_ = (&codec.Plain{}).Marshal(b, reason)
+	err := (&codec.Plain{}).Marshal(b, reason)
+	if err != nil {
+		zap.L().Debug("Error marshal disconnect reason to plain", zap.Error(err))
+	}
 	plainReason := b.String()
 
 	connected := p.connectedServer()
@@ -298,7 +281,7 @@ func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *
 		return
 	}
 
-	zap.S().Errorf("%s disconnected while connecting to %q: %s", p, server.ServerInfo().Name(), plainReason)
+	zap.S().Infof("%s disconnected while connecting to %q: %s", p, server.ServerInfo().Name(), plainReason)
 	p.handleConnectionErr2(server, reason, &Text{
 		Content: fmt.Sprintf("Can't connect to server %q: ", server.ServerInfo().Name()),
 		S:       Style{Color: Red},

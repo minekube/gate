@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"io/ioutil"
@@ -252,24 +253,6 @@ func ReadBytes17(rd io.Reader) ([]byte, error) {
 }
 
 func ReadUuid(rd io.Reader) (id uuid.UUID, err error) {
-	// there is probably a simpler method to convert two int64 to [16]byte uuid
-
-	//high, err := ReadInt(rd)
-	//msbHigh := int64(high) << 32
-	//
-	//low, err := ReadInt(rd)
-	//msbLow := int64(low) & 0xFFFFFFFF
-	//
-	//msb := msbHigh | msbLow
-	//
-	//high, err := ReadInt(rd)
-	//lsbHigh := int64(high) << 32
-	//
-	//low, err = ReadInt(rd)
-	//lsbLow := int64(low) & 0xFFFFFFFF
-	//
-	//lsb := lsbHigh | lsbLow
-
 	l1, err := ReadInt64(rd)
 	if err != nil {
 		return uuid.UUID{}, err
@@ -284,5 +267,40 @@ func ReadUuid(rd io.Reader) (id uuid.UUID, err error) {
 	binary.BigEndian.PutUint64(b, uint64(l2))
 
 	copy(id[:], b)
+	return
+}
+
+func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
+	size, err := ReadVarInt(rd)
+	if err != nil {
+		return nil, err
+	}
+	var name, value, signature string
+	for i := 0; i < size; i++ {
+		name, err = ReadString(rd)
+		if err != nil {
+			return
+		}
+		value, err = ReadString(rd)
+		if err != nil {
+			return
+		}
+		signature = ""
+		hasSignature, err := ReadBool(rd)
+		if err != nil {
+			return nil, err
+		}
+		if hasSignature {
+			signature, err = ReadString(rd)
+			if err != nil {
+				return nil, err
+			}
+		}
+		props = append(props, profile.Property{
+			Name:      name,
+			Value:     value,
+			Signature: signature,
+		})
+	}
 	return
 }
