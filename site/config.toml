@@ -1,5 +1,5 @@
-baseURL = "/"
-title = "Goldydocs"
+baseURL = "https://gate.minekube.com/"
+title = "Gate proxy"
 
 enableRobotsTXT = true
 

@@ -6,7 +6,7 @@ menu:
   main:
     weight: 20
 description: >
-  Documentation and usage guides on how to configure a Minecraft network and extend Gate with your code.
+  Documentation and usage guides on how to set up a Minecraft network and extend Gate with your code.
 ---
 These pages show you how to get up and running as quickly as possible with Gate.
 
