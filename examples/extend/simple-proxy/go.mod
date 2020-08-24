@@ -17,7 +17,7 @@ require (
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.minekube.com/gate v0.8.1
+	go.minekube.com/gate v0.8.2-0.20200824170740-5cf85b332cf0
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sys v0.0.0-20200821140526-fda516888d29 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect

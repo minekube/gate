@@ -45,7 +45,7 @@ func (p *SimpleProxy) init() error {
 
 // Register a proxy-wide commands (can be run while being on any server)
 func (p *SimpleProxy) registerCommands() {
-	p.Command().Register(proxy.Func(func(c *proxy.Context) {
+	p.Command().Register(proxy.CommandFunc(func(c *proxy.Context) {
 		if len(c.Args) == 0 {
 			_ = c.Source.SendMessage(&Text{Content: "/broadcast <message>"})
 			return
