@@ -9,7 +9,7 @@
 [![test](https://github.com/minekube/gate/workflows/test/badge.svg)](https://github.com/minekube/gate/actions?query=workflow%3Atest)
 [![Discord](https://img.shields.io/discord/633708750032863232?logo=discord)](https://discord.gg/6vMDqWE)
 
-**Gate is an extensible Minecraft proxy written in Go**
+**Gate is an extensible Minecraft proxy written in Go.**
 
 > This project is not yet ready for production and
 > subject to have breaking changes,
@@ -22,8 +22,8 @@
 - [**Fast**](#benchmarks)
 - Excellent server version support
     - Newest version down to 1.7 (+forge support)
-    - Bungeecord plugins compatible (plugin messages)
     - Velocity's player forwarding mode
+    - TODO: Bungeecord plugin channels compatible (plugin messages)
 - [Quick installation](#quick-start)
     - simply pick a download from the [releases](https://github.com/minekube/gate/releases)
     - or quickly run our [docker image](https://gitlab.com/minekube/gate/container_registry)!

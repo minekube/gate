@@ -48,6 +48,9 @@ func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		ch.Type = MessagePosition(pos)
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
 			ch.Sender, err = util.ReadUUID(rd)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return
