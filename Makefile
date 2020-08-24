@@ -19,3 +19,8 @@ vet:
 # Run golangci-lint against code
 lint:
 	golangci-lint run
+
+
+
+updatedocsy:
+	git submodule update --depth 1 --init --recursive site/themes/docsy

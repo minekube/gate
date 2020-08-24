@@ -96,11 +96,11 @@ type Command interface {
 	Invoke(*Context)
 }
 
-// Func is a shorthand type that implements the Command interface.
-type Func func(*Context)
+// CommandFunc is a shorthand type that implements the Command interface.
+type CommandFunc func(*Context)
 
 // Invoke implements Command.
-func (f Func) Invoke(c *Context) {
+func (f CommandFunc) Invoke(c *Context) {
 	f(c)
 }
 
