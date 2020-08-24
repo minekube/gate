@@ -1,0 +1,22 @@
+{{ $col_id := .Get "color" | default "dark" }}
+{{/* Height can be one of: auto, min, med, max, full. */}}
+{{ $height := .Get "height" | default "max"  }}
+<section class="row td-cover-block td-cover-block--height-{{ $height }} js-td-cover td-overlay td-overlay--light -bg-{{ $col_id }}">
+    <div class="container td-overlay__inner">
+        <div class="row align-items-end">
+            <div class="col-lg-6">
+                <h1 class="display-1 mt-0 pb-3">
+                    <img width="400" src="images/cover.png" />
+                </h1>
+                <p class="display-2 mb-0">The extensible Minecraft proxy written in Go.</p>
+                <br>
+            </div>
+            <img alt="server-list" width="200" src="images/gopher-cable.png"/>
+            <div class="col-12 pt-3">
+                <div class="pt-3 lead text-center">
+                    {{ .Inner }}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

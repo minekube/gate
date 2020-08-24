@@ -1,5 +1,3 @@
-<!-- TODO Make this page beautiful -->
-
 +++
 title = "Gate"
 linkTitle = "Gate"
@@ -23,17 +21,71 @@ linkTitle = "Gate"
 {{% blocks/lead color="secondary" %}}
 <strong>What is Gate?</strong>
 
-An open source, batteries-included, Minecraft proxy written in Golang
+An open source, batteries-included, Minecraft proxy written in
+<a class="text-primary" target="_blank" href="https://golang.org">Golang</a>
 that can run alongside your organization's growing demands in production.
-Run it with a single binary or let <a class="text-primary" href="https://kubernetes.io">Kubernetes</a>
+Run it with a single binary or let <a class="text-primary" target="_blank" href="https://kubernetes.io">Kubernetes</a>
 orchestrate it.
+<br><br>
+<img alt="server-list" width="800" src="images/server-list.png"/>
 {{% /blocks/lead %}}
 
-<!-- TODO Reference servers using Gate -->
 
-{{% blocks/feature icon="fab fa-github" title="Contributions welcome!" url="{{< param github_repo >}}" url_text="Contribute to Gate" %}}
+
+
+
+
+
+{{< blocks/section color="dark" >}}
+
+{{% blocks/feature icon="fas fa-chart-area" title="High performant" url="./docs/performance/" %}}
+Proxy thousands of players in parallel powered by Go's amazing language features.
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fas fa-file-code" title="Extensible" url="./docs/extend/" %}}
+Customize your Gate proxy using the simple API, native Go code and scripting languages.
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fas fa-wrench" title="Simple Config" url="./docs/configuration/" %}}
+Configure your Gate proxy in detail and leverage our sane defaults.
+{{% /blocks/feature %}}
+
+
+{{< /blocks/section >}}
+
+
+
+
+{{< blocks/section color="primary" >}}
+<div class="col">
+	<h2 class="text-center pb-3">Servers using Gate</h2>
+	<p class="text-center showcase" style="font-size:30px" >
+		<a target="_blank" href="http://minekube.net/discord"><img alt="minekube" width="100" src="https://avatars1.githubusercontent.com/u/51905918?s=200&v=4" />Minekube.net</a>
+	</p>
+    <h4 class="text-center">
+    You want to see your server here too?<br>
+    Open an <a target="_blank" href="{{< param github_repo >}}/issues/new?title=Add%20<Your%20server>%20to%20website">Issue</a> to request your server!
+    </h4>
+</div>
+{{< /blocks/section >}}
+
+
+
+
+{{< blocks/section color="secondary"  >}}
+
+{{% blocks/feature icon="fab fa-discord" title="Join us on Discord" url="https://minekube.com/discord" url_text="Join us" %}}
+Join the community on Discord
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fab fa-github" title="Contributions welcome!" url="https://github.com/minekube/gate" url_text="Contribute to Gate" %}}
   We do a [Pull Request]({{< param github_repo >}}/pulls) contributions workflow on **GitHub**.
 
   New users are always welcome!
 {{% /blocks/feature %}}
 
+{{% blocks/feature icon="fab fa-discord" title="Have Fun" %}}
+And don't forget to have fun!
+{{% /blocks/feature %}}
+
+{{< /blocks/section >}}

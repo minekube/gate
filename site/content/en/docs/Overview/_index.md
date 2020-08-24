@@ -28,6 +28,6 @@ Gate incorporates these abilities:
 - c
 
 ## What Next?
-- Have a look at our [installation guides]({{< ref "/docs/Installation/_index.md" >}}), for setting up a Kubernetes cluster
-  and installing Agones on it.
-- Go through our [Quickstart Guides]({{< ref "/docs/Getting Started/_index.md" >}}) to take you through setting up a simple game server on Agones.
+- Have a look at our [installation guides]({{< ref "/docs/Installation/_index.md" >}}), for installing Gate.
+- Go through our [Quickstart Guides]({{< ref "/docs/Getting Started/_index.md" >}}) to take you through setting
+up a simple Minecraft network using Gate.

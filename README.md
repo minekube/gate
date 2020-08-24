@@ -1,4 +1,4 @@
-![Logo](site/static/img/cover3.png)
+![Logo](site/static/images/cover3.png)
 
 # The Minecraft Proxy _(alpha)_
 
@@ -41,7 +41,7 @@
 - simple Minecraft network admins when [scripting languages](#script-languages)
 are supported
 
-![Server list](site/static/img/server-list.png)
+![Server list](site/static/images/server-list.png)
 
 ## What Gate does
 

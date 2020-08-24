@@ -83,7 +83,7 @@ release_branch = "master"
 # images = ["images/project-illustration.png"]
 
 # Google Custom Search Engine ID. Remove or comment out to disable search.
-#gcs_engine_id = "011737558837375720776:fsdu1nryfng"
+gcs_engine_id = "AIzaSyDGgig0winPCjisiIKdhlYHVE3GZyu7t_4"
 
 # Enable Algolia DocSearch
 algolia_docsearch = false
