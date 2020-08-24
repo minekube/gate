@@ -1,3 +1,5 @@
 public/
 resources/
+node_modules/
 *.json
+!/assets/templates/crd-doc-config.json
