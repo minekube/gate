@@ -79,17 +79,8 @@ zip = "https://github.com/minekube/gate/archive/master.zip"
 releases = "https://github.com/minekube/gate/releases"
 release_branch = "master"
 
-# First one is picked as the Twitter card image if not set on page.
-# images = ["images/project-illustration.png"]
-
 # Google Custom Search Engine ID. Remove or comment out to disable search.
-gcs_engine_id = "AIzaSyDGgig0winPCjisiIKdhlYHVE3GZyu7t_4"
-
-# Enable Algolia DocSearch
-algolia_docsearch = false
-
-# Enable Lunr.js offline search
-offlineSearch = false
+gcs_engine_id = "fd5c25aab8b19bdb1"
 
 # User interface configuration
 [params.ui]

@@ -6,4 +6,10 @@ description: >
   This page shows you why Gate is so performant.
 ---
 
-## TODO
+## Benchmarks
+
+Gate has already been tested to successfully handle thousands of incoming connections
+(even with rate limiter disabled).
+
+> TODO: add complete benchmarks and comparisons
+> PRs are always welcome...
