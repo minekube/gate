@@ -16,6 +16,6 @@ jobs:
           -F "variables[CLONE_REPO]=https://github.com/${{ github.repository }}.git"
           -F "variables[CLONE_REF]=$(basename "$GITHUB_REF")"
           -F "variables[PAGE_JOB]=true"
-          -F "variables[PAGE_BUILD]=env HUGO_ENV=production cd site && hugo -d ../../public --minify"
+          -F "variables[PAGE_BUILD]=HUGO_ENV=production cd site && hugo -d ../../public --minify"
           -F "ref=master"
           https://gitlab.com/api/v4/projects/20429129/trigger/pipeline
