@@ -134,6 +134,9 @@ func (c *connect) Player(id uuid.UUID) Player {
 // Player returns the online player by their Minecraft name (search is case-insensitive).
 // Returns nil if the player was not found.
 func (c *connect) PlayerByName(username string) Player {
+	return c.playerByName(username)
+}
+func (c *connect) playerByName(username string) *connectedPlayer {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.names[strings.ToLower(username)]

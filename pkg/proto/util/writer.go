@@ -239,3 +239,13 @@ func WriteExtendedForgeShort(wr io.Writer, toWrite int) (err error) {
 	}
 	return
 }
+
+// WriteUTF util function as exists in Java
+func WriteUTF(wr io.Writer, s string) error {
+	err := WriteUint16(wr, uint16(len(s)))
+	if err != nil {
+		return err
+	}
+	_, err = wr.Write([]byte(s))
+	return err
+}

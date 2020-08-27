@@ -2,16 +2,12 @@ package proxy
 
 import (
 	"errors"
-	"go.minekube.com/common/minecraft/key"
-	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet"
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
-	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/atomic"
-	"strings"
 )
 
 type backendPlaySessionHandler struct {
@@ -29,7 +25,7 @@ func newBackendPlaySessionHandler(serverConn *serverConnection) (sessionHandler,
 	}
 	return &backendPlaySessionHandler{
 		serverConn:                serverConn,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{player: serverConn.player},
+		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
 	}, nil
 }
 
@@ -176,44 +172,3 @@ func (b *backendPlaySessionHandler) proxy() *Proxy {
 }
 
 var _ sessionHandler = (*backendPlaySessionHandler)(nil)
-
-type bungeeCordMessageRecorder struct {
-	player *connectedPlayer
-}
-
-var (
-	bungeeCordModernChannel = &message.MinecraftChannelIdentifier{Key: key.New("bungeecord", "main")}
-	bungeeCordLegacyChannel = message.LegacyChannelIdentifier("Bungeecord")
-)
-
-func (r *bungeeCordMessageRecorder) bungeeCordChannel(protocol proto.Protocol) string {
-	if protocol.GreaterEqual(proto.Minecraft_1_13) {
-		return bungeeCordModernChannel.Id()
-	}
-	return bungeeCordLegacyChannel.Id()
-}
-
-func (r *bungeeCordMessageRecorder) process(message *plugin.Message) bool {
-	if !r.config().BungeePluginChannelEnabled {
-		return false
-	}
-
-	if !strings.EqualFold(bungeeCordModernChannel.Id(), message.Channel) &&
-		!strings.EqualFold(bungeeCordLegacyChannel.Id(), message.Channel) {
-		return false
-	}
-
-	return true
-	// TODO support bungeecord plugin channels
-	//in := UTFReader(message.Data)
-	//subChannel := in.readUTF() // read first sequence
-	//switch subChannel {
-	//case "ForwardToPlayer":
-	//	r.forwardToPlayer()
-	// ...more: https://www.spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel/
-	//}
-}
-
-func (r *bungeeCordMessageRecorder) config() *config.Config {
-	return r.player.proxy.config
-}

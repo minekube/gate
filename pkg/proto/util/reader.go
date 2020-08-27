@@ -297,3 +297,20 @@ func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
 	}
 	return
 }
+
+//
+//
+//
+//
+//
+
+// ReadUTF util function as exists in Java
+func ReadUTF(rd io.Reader) (string, error) {
+	length, err := ReadUint16(rd)
+	if err != nil {
+		return "", err
+	}
+	p := make([]byte, length)
+	_, err = io.ReadFull(rd, p)
+	return string(p), err
+}

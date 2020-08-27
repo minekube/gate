@@ -24,7 +24,7 @@ func DefaultJsonCodec() codec.Codec {
 }
 
 var (
-	// Json component codec for pre-1.16 clients
+	// Json component codec supporting pre-1.16 clients
 	defaultJsonCodec = &codec.Json{}
 	// Json component codec for 1.16+ clients
 	jsonCodec_1_16 = &codec.Json{

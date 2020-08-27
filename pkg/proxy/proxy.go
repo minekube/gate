@@ -42,8 +42,8 @@ type Proxy struct {
 	motd    *component.Text
 	favicon favicon.Favicon
 
-	mu      sync.RWMutex                // Protects following fields
-	servers map[string]RegisteredServer // registered backend servers: by lower case names
+	mu      sync.RWMutex                 // Protects following fields
+	servers map[string]*registeredServer // registered backend servers: by lower case names
 }
 
 // New takes a validated config and returns a new initialized Proxy.
@@ -54,7 +54,7 @@ func New(config config.Config) (p *Proxy) {
 		event:            event.NewManager(),
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
-		servers:          map[string]RegisteredServer{},
+		servers:          map[string]*registeredServer{},
 		authenticator:    auth.NewAuthenticator(),
 	}
 	p.connect = newConnect(p)
@@ -208,6 +208,10 @@ func (p *Proxy) Config() config.Config {
 // Server gets a backend server registered with the proxy by name.
 // Returns nil if not found.
 func (p *Proxy) Server(name string) RegisteredServer {
+	return p.server(name)
+}
+
+func (p *Proxy) server(name string) *registeredServer {
 	name = strings.ToLower(name)
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -355,4 +359,22 @@ func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error)
 	defer client.Close()
 
 	return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_SERVING}, nil
+}
+
+// sends msg to all players on this proxy
+func (p *Proxy) sendMessage(msg component.Component) {
+	p.mu.RLock()
+	players := p.ids
+	p.mu.RUnlock()
+	for _, p := range players {
+		go func(p Player) { _ = p.SendMessage(msg) }(p)
+	}
+}
+
+//
+//
+//
+
+func withConnectionTimeout(parent context.Context, cfg *config.Config) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout)*time.Millisecond)
 }

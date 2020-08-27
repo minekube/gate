@@ -170,6 +170,17 @@ func (r *registeredServer) Players() Players {
 
 var _ RegisteredServer = (*registeredServer)(nil)
 
+// sends the a plugin message to all players on this server.
+func (r *registeredServer) sendPluginMessage(identifier message.ChannelIdentifier, data []byte) {
+	if r == nil {
+		return
+	}
+	r.Players().Range(func(p Player) bool {
+		go func() { _ = p.SendPluginMessage(identifier, data) }()
+		return true
+	})
+}
+
 //
 //
 //
@@ -374,6 +385,9 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 
 // Returns the active backend server connection or false if inactive.
 func (s *serverConnection) ensureConnected() (backend *minecraftConn, connected bool) {
+	if s == nil {
+		return nil, false
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.connection, s.connection != nil
