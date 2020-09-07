@@ -94,6 +94,10 @@ func (r ConnectionStatus) ServerDisconnected() bool {
 //
 
 func (p *connectedPlayer) CreateConnectionRequest(server RegisteredServer) ConnectionRequest {
+	return p.createConnectionRequest(server)
+}
+
+func (p *connectedPlayer) createConnectionRequest(server RegisteredServer) *connectionRequest {
 	return &connectionRequest{server: server, player: p}
 }
 
@@ -102,7 +106,7 @@ type connectionRequest struct {
 	player *connectedPlayer // the player to connect to the server
 }
 
-func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, error) {
+func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, error) {
 	result, err := c.internalConnect(ctx)
 	if err == nil {
 		if !result.safe {
@@ -115,6 +119,12 @@ func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, erro
 	return result, err
 }
 
+// See ConnectionRequest interface.
+func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, error) {
+	return c.connect(ctx)
+}
+
+// See ConnectionRequest interface.
 func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
 	result, err := c.internalConnect(ctx)
 	if err != nil {
@@ -210,15 +220,22 @@ func (p *connectedPlayer) handleConnectionErr2(
 		result = &NotifyKickResult{Message: friendlyReason}
 	}
 	e := newKickedFromServerEvent(p, rs, kickReason, !kickedFromCurrent, result)
-	p.handleKickEvent(e, friendlyReason)
+	p.handleKickEvent(e, friendlyReason, kickedFromCurrent)
 }
 
-func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component) {
-	connectedToServer := p.connectedServer() != nil
+func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component, kickedFromCurrent bool) {
 	p.proxy.Event().Fire(e)
 
 	// There can't be any connection in flight now.
 	p.setInFlightConnection(nil)
+
+	// Make sure we clear the current connected server as the connection is invalid.
+	p.mu.Lock()
+	previouslyConnected := p.connectedServer_ != nil
+	if kickedFromCurrent {
+		p.connectedServer_ = nil
+	}
+	p.mu.Unlock()
 
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
@@ -231,16 +248,35 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *RedirectPlayerKickResult:
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
 		defer cancel()
-		successful := p.CreateConnectionRequest(result.Server).ConnectWithIndication(ctx)
-		if successful && connectedToServer {
-			if result.Message == nil {
-				_ = p.SendMessage(movedToNewServer)
-			} else {
-				_ = p.SendMessage(result.Message)
+		redirect, err := p.createConnectionRequest(result.Server).connect(ctx)
+		if err != nil {
+			p.handleConnectionErr(result.Server, err, true)
+			return
+		}
+
+		switch redirect.Status() {
+		// Impossible/nonsensical cases
+		case AlreadyConnectedConnectionStatus, InProgressConnectionStatus:
+		// Fatal case
+		case CanceledConnectionStatus:
+			reason := redirect.Reason()
+			if reason == nil {
+				reason = result.Message
 			}
+			p.Disconnect(reason)
+		case ServerDisconnectedConnectionStatus:
+			reason := redirect.Reason()
+			if reason == nil {
+				reason = internalServerConnectionError
+			}
+			p.handleDisconnectWithReason(result.Server, reason, redirect.safe)
+		case SuccessConnectionStatus:
+			_ = p.SendMessage(&Text{Extra: []Component{movedToNewServer, friendlyReason}})
+		default:
+			// The only remaining value is successful (no need to do anything!)
 		}
 	case *NotifyKickResult:
-		if e.KickedDuringServerConnect() {
+		if e.KickedDuringServerConnect() && previouslyConnected {
 			_ = p.SendMessage(result.Message)
 		} else {
 			p.Disconnect(result.Message)

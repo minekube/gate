@@ -201,7 +201,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 			b.serverConn.server.ServerInfo().Name())
 	}
 
-	// Strap on the ClientPlaySessionHandler if required.
+	// Change client to use ClientPlaySessionHandler if required.
 	b.serverConn.player.minecraftConn.mu.Lock()
 	playHandler, ok := b.serverConn.player.minecraftConn.sessionHandler.(*clientPlaySessionHandler)
 	if !ok {
