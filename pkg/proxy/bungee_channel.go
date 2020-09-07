@@ -66,6 +66,8 @@ func (r *bungeeCordMessageRecorder) process(message *plugin.Message) bool {
 		r.processConnectOther(in)
 	case "IP":
 		r.processIP()
+	case "IPOther":
+		r.processIPOther(in)
 	case "UUID":
 		r.processUUID()
 	case "UUIDOther":
@@ -186,6 +188,25 @@ func (r *bungeeCordMessageRecorder) processIP() {
 	_ = util.WriteUTF(b, ip)
 	_ = util.WriteInt32(b, int32(port))
 	r.sendServerResponse(b.Bytes())
+}
+
+func (r *bungeeCordMessageRecorder) processIPOther(in io.Reader) {
+	r.readPlayer(in, func(p *connectedPlayer) {
+		ip, portS, err := net.SplitHostPort(p.RemoteAddr().String())
+		if err != nil {
+			return
+		}
+		port, err := strconv.Atoi(portS)
+		if err != nil {
+			return
+		}
+		b := new(bytes.Buffer)
+		_ = util.WriteUTF(b, "IPOther")
+		_ = util.WriteUTF(b, p.Username())
+		_ = util.WriteUTF(b, ip)
+		_ = util.WriteInt32(b, int32(port))
+		r.sendServerResponse(b.Bytes())
+	})
 }
 
 func (r *bungeeCordMessageRecorder) processPlayerCount(in io.Reader) {

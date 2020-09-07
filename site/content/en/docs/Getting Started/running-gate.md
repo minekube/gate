@@ -58,7 +58,7 @@ We disabled the nether and end world for faster startup times.
 
 ### 3. Running Gate
 
-Make sure you are have a terminal open inside the same path as the `config.yaml` and run the Gate binary with:
+Make sure you have a terminal open inside the same path as the `config.yaml` and run the Gate binary with:
 - Windows: `gate.exe`
 - Linux: `./gate`
 
