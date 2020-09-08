@@ -90,6 +90,7 @@ type Version struct {
 	Name string
 }
 
+// Protocol is a protocol version id specified by Mojang.
 type Protocol int
 
 func (p Protocol) String() string {

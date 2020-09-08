@@ -13,24 +13,20 @@ type Packet interface {
 	Decode(c *PacketContext, rd io.Reader) (err error) // Decodes a packet by reading from the reader
 }
 
-// TypeOf is a helper func to make sure the
-// reflect.Type of p implements Packet
-// and returns a non-pointer type.
-func TypeOf(p Packet) PacketType {
-	t := reflect.TypeOf(p)
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	return t
-}
-
+// PacketContext carries context information for a received packet.
 type PacketContext struct {
-	Direction Direction // The direction the packet was bound to.
+	Direction Direction // The direction the packet is bound to.
 	Protocol  Protocol  // The protocol version of the packet.
+	PacketID  PacketID  // The ID of the packet, is always set.
 
-	KnownPacket bool     // If false Packet field is nil.
-	PacketID    PacketID // Is always set.
-	Packet      Packet   // The decoded packet.
+	// Whether the PacketID is known in the connections current state.ProtocolRegistry.
+	// If true Packet field is non-nil.
+	KnownPacket bool
+
+	// Is the decoded type that is found by PacketID in the connections
+	// current state.ProtocolRegistry. Otherwise is nil and an unknown
+	// PacketID and is probably to be forwarded.
+	Packet Packet
 
 	// The unencrypted and uncompressed form of packet id + data.
 	// It contains the actual received payload (may be longer than what the Packet's Decode read).
@@ -38,12 +34,17 @@ type PacketContext struct {
 	Payload []byte // Empty when encoding.
 }
 
-// Direction is the direction a packet is meant to go to/come from.
+// Direction is the direction a packet is bound to.
+//  - Receiving a packet from a client is ServerBound.
+//  - Receiving a packet from a server is ClientBound.
+//  - Sending a packet to a client is ClientBound.
+//  - Sending a packet to a server is ServerBound.
 type Direction uint8
 
+// Available packet bound directions.
 const (
-	ClientBound Direction = iota // Packets sent to the client.
-	ServerBound                  // Packets send to this proxy.
+	ClientBound Direction = iota // A packet is send to a client.
+	ServerBound                  // A packet is send to a server.
 )
 
 func (d Direction) String() string {
@@ -81,12 +82,22 @@ func (s State) String() string {
 	return "UnknownState"
 }
 
-// PacketID identifies a packet.
+// PacketID identifies a packet in a protocol version.
 type PacketID int
 
-func (p PacketID) String() string {
-	return fmt.Sprintf("%x", int(p))
+func (id PacketID) String() string {
+	return fmt.Sprintf("%x", int(id))
 }
 
-// PacketType helps to instantiate a new packet of it's reflect type.
+// PacketType is the non-pointer reflect.Type of a packet.
+// Use TypeOf helper function to for convenience.
 type PacketType reflect.Type
+
+// TypeOf returns a non-pointer type of p.
+func TypeOf(p Packet) PacketType {
+	t := reflect.TypeOf(p)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
+}
