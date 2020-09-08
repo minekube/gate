@@ -79,7 +79,7 @@ func (p *players) Range(fn func(p Player) bool) {
 func (p *players) add(players ...*connectedPlayer) {
 	p.mu.Lock()
 	for _, player := range players {
-		p.list[player.Id()] = player
+		p.list[player.ID()] = player
 	}
 	p.mu.Unlock()
 }
@@ -87,7 +87,7 @@ func (p *players) add(players ...*connectedPlayer) {
 func (p *players) remove(players ...*connectedPlayer) {
 	p.mu.Lock()
 	for _, player := range players {
-		delete(p.list, player.Id())
+		delete(p.list, player.ID())
 	}
 	p.mu.Unlock()
 }
@@ -206,7 +206,7 @@ type serverConnection struct {
 
 	completedJoin      atomic.Bool
 	gracefulDisconnect atomic.Bool
-	lastPingId         atomic.Int64
+	lastPingID         atomic.Int64
 	lastPingSent       atomic.Int64 // unix millis
 
 	mu         sync.RWMutex   // Protects following fields
@@ -239,7 +239,7 @@ func (s *serverConnection) SendPluginMessage(id message.ChannelIdentifier, data 
 		return ErrClosedConn
 	}
 	return mc.WritePacket(&plugin.Message{
-		Channel: id.Id(),
+		Channel: id.ID(),
 		Data:    data,
 	})
 }
@@ -304,7 +304,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 			zap.String("serverName", s.Server().ServerInfo().Name()),
 			zap.Stringer("serverAddr", s.Server().ServerInfo().Addr()),
 			zap.Stringer("forPlayer", s.player),
-			zap.Stringer("forPlayerUuid", s.player.Id()),
+			zap.Stringer("forPlayerUUID", s.player.ID()),
 		}
 	})
 	resultChan := make(chan *connResponse, 1)
@@ -373,7 +373,7 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	b.WriteString("\000")
 	b.WriteString(playerIP)
 	b.WriteString("\000")
-	b.WriteString(s.player.profile.Id.Undashed())
+	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString("\000")
 	props, err := json.Marshal(s.player.profile.Properties)
 	if err != nil { // should never happen

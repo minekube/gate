@@ -55,19 +55,19 @@ func (e *Encoder) SetCompression(threshold, level int) (err error) {
 func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	packetId, found := e.registry.PacketId(packet)
+	packetID, found := e.registry.PacketID(packet)
 	if !found {
 		return n, fmt.Errorf("packet id for type %T in protocol %s not registered in the %s state registry",
 			packet, e.registry.Protocol, e.state)
 	}
 	buf := new(bytes.Buffer)
-	_ = util.WriteVarInt(buf, int(packetId))
+	_ = util.WriteVarInt(buf, int(packetID))
 
 	ctx := &proto.PacketContext{
 		Direction:   e.direction,
 		Protocol:    e.registry.Protocol,
 		KnownPacket: true,
-		PacketId:    packetId,
+		PacketID:    packetID,
 		Packet:      packet,
 		Payload:     nil,
 	}

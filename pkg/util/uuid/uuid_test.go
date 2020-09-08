@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestOfflinePlayerUuid(t *testing.T) {
-	id := OfflinePlayerUuid("bob")
-	id2 := OfflinePlayerUuid("bob")
+func TestOfflinePlayerUUID(t *testing.T) {
+	id := OfflinePlayerUUID("bob")
+	id2 := OfflinePlayerUUID("bob")
 	require.Equal(t, id, id2)
 
-	id2 = OfflinePlayerUuid("Bob")
+	id2 = OfflinePlayerUUID("Bob")
 	require.NotEqual(t, id, id2)
 }

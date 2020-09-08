@@ -29,7 +29,7 @@ type PacketContext struct {
 	Protocol  Protocol  // The protocol version of the packet.
 
 	KnownPacket bool     // If false Packet field is nil.
-	PacketId    PacketId // Is always set.
+	PacketID    PacketID // Is always set.
 	Packet      Packet   // The decoded packet.
 
 	// The unencrypted and uncompressed form of packet id + data.
@@ -81,10 +81,10 @@ func (s State) String() string {
 	return "UnknownState"
 }
 
-// PacketId identifies a packet.
-type PacketId int
+// PacketID identifies a packet.
+type PacketID int
 
-func (p PacketId) String() string {
+func (p PacketID) String() string {
 	return fmt.Sprintf("%x", int(p))
 }
 

@@ -84,7 +84,7 @@ func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 			return nil, err
 		}
 		mods = append(mods, modinfo.Mod{
-			Id:      id,
+			ID:      id,
 			Version: version,
 		})
 	}

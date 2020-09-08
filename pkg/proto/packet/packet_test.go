@@ -42,6 +42,6 @@ func TestPackets(t *testing.T) {
 		},
 		&StatusRequest{},
 		&StatusResponse{Status: "TEST"},
-		&StatusPing{RandomId: 1234567890},
+		&StatusPing{RandomID: 1234567890},
 	)
 }

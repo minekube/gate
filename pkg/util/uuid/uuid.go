@@ -45,7 +45,7 @@ func FromBytes(b []byte) (UUID, error) {
 	return UUID(uuid), err
 }
 
-func OfflinePlayerUuid(username string) UUID {
+func OfflinePlayerUUID(username string) UUID {
 	const version = 3 // UUID v3
 	uuid := md5.Sum([]byte("OfflinePlayer:" + username))
 	uuid[6] = (uuid[6] & 0x0f) | uint8((version&0xf)<<4)

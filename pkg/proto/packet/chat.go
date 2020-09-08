@@ -28,7 +28,7 @@ func (ch *Chat) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 		if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-			err = util.WriteUuid(wr, ch.Sender)
+			err = util.WriteUUID(wr, ch.Sender)
 		}
 	}
 	return err

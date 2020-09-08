@@ -8,7 +8,7 @@ func NewLegacyChannelIdentifier(name string) ChannelIdentifier {
 	return &legacyChannelIdentifier{name: name}
 }
 
-func (l *legacyChannelIdentifier) Id() string {
+func (l *legacyChannelIdentifier) ID() string {
 	return l.name
 }
 

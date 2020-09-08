@@ -110,7 +110,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			return
 		}
 		if mc.WritePacket(&packet.LoginPluginResponse{
-			Id:      p.Id,
+			ID:      p.ID,
 			Success: true,
 			Data:    forwardingData,
 		}) != nil {
@@ -120,7 +120,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 	} else {
 		// Don't understand
 		_ = mc.WritePacket(&packet.LoginPluginResponse{
-			Id:      p.Id,
+			ID:      p.ID,
 			Success: false,
 		})
 	}
@@ -136,7 +136,7 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 	if err != nil {
 		return nil, err
 	}
-	err = protoutil.WriteUuid(forwarded, profile.Id)
+	err = protoutil.WriteUUID(forwarded, profile.ID)
 	if err != nil {
 		return nil, err
 	}

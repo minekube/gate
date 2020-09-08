@@ -69,13 +69,13 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 }
 
 type LoginPluginResponse struct {
-	Id      int
+	ID      int
 	Success bool
 	Data    []byte
 }
 
-func (l *LoginPluginResponse) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
-	err = util.WriteVarInt(wr, l.Id)
+func (l *LoginPluginResponse) Encode(_ *proto.PacketContext, wr io.Writer) (err error) {
+	err = util.WriteVarInt(wr, l.ID)
 	if err != nil {
 		return err
 	}
@@ -86,8 +86,8 @@ func (l *LoginPluginResponse) Encode(c *proto.PacketContext, wr io.Writer) (err 
 	return util.WriteBytes(wr, l.Data)
 }
 
-func (l *LoginPluginResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	l.Id, err = util.ReadVarInt(rd)
+func (l *LoginPluginResponse) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+	l.ID, err = util.ReadVarInt(rd)
 	if err != nil {
 		return err
 	}
@@ -104,13 +104,13 @@ func (l *LoginPluginResponse) Decode(c *proto.PacketContext, rd io.Reader) (err 
 }
 
 type EncryptionRequest struct {
-	ServerId    string
+	ServerID    string
 	PublicKey   []byte
 	VerifyToken []byte
 }
 
-func (e *EncryptionRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteString(wr, e.ServerId)
+func (e *EncryptionRequest) Encode(_ *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteString(wr, e.ServerID)
 	if err != nil {
 		return err
 	}
@@ -121,8 +121,8 @@ func (e *EncryptionRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
 	return util.WriteBytes(wr, e.VerifyToken)
 }
 
-func (e *EncryptionRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	e.ServerId, err = util.ReadStringMax(rd, 20)
+func (e *EncryptionRequest) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+	e.ServerID, err = util.ReadStringMax(rd, 20)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ type ServerLoginSuccess struct {
 
 func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		err = util.WriteUuid(wr, s.UUID)
+		err = util.WriteUUID(wr, s.UUID)
 	} else if c.Protocol.GreaterEqual(proto.Minecraft_1_7_6) {
 		err = util.WriteString(wr, s.UUID.String())
 	} else {
@@ -192,13 +192,13 @@ func (s *SetCompression) Decode(c *proto.PacketContext, rd io.Reader) (err error
 }
 
 type LoginPluginMessage struct {
-	Id      int
+	ID      int
 	Channel string
 	Data    []byte
 }
 
-func (l *LoginPluginMessage) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteVarInt(wr, l.Id)
+func (l *LoginPluginMessage) Encode(_ *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteVarInt(wr, l.ID)
 	if err != nil {
 		return err
 	}
@@ -209,8 +209,8 @@ func (l *LoginPluginMessage) Encode(c *proto.PacketContext, wr io.Writer) error 
 	return util.WriteBytes(wr, l.Data)
 }
 
-func (l *LoginPluginMessage) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	l.Id, err = util.ReadVarInt(rd)
+func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+	l.ID, err = util.ReadVarInt(rd)
 	if err != nil {
 		return err
 	}

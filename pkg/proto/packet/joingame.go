@@ -9,7 +9,7 @@ import (
 )
 
 type JoinGame struct {
-	EntityId             int
+	EntityID             int
 	Gamemode             int16
 	Dimension            int
 	PartialHashedSeed    int64 // 1.15+
@@ -28,7 +28,7 @@ type JoinGame struct {
 }
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteInt32(wr, int32(j.EntityId))
+	err := util.WriteInt32(wr, int32(j.EntityID))
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	j.EntityId, err = util.ReadInt(rd)
+	j.EntityID, err = util.ReadInt(rd)
 	if err != nil {
 		return err
 	}

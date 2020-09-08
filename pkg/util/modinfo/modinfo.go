@@ -8,6 +8,6 @@ type ModInfo struct {
 }
 
 type Mod struct {
-	Id      string `json:"modid"`
+	ID      string `json:"modid"`
 	Version string
 }

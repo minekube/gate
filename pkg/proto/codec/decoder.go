@@ -200,15 +200,15 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	payload := bytes.NewReader(p)
 
 	// Read packet id.
-	packetId, err := util.ReadVarInt(payload)
+	packetID, err := util.ReadVarInt(payload)
 	if err != nil {
 		return nil, err
 	}
-	ctx.PacketId = proto.PacketId(packetId)
+	ctx.PacketID = proto.PacketID(packetID)
 	// Now the payload reader should only have left the packet's actual data.
 
 	// Try find and create packet from the id.
-	ctx.Packet = d.registry.CreatePacket(ctx.PacketId)
+	ctx.Packet = d.registry.CreatePacket(ctx.PacketID)
 	if ctx.Packet == nil {
 		// Packet id is unknown in this registry,
 		// the payload is probably being forwarded as is.
@@ -222,7 +222,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 			err = io.ErrUnexpectedEOF
 		}
 		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s): %w",
-			ctx.Packet, ctx.PacketId, ctx.Protocol, ctx.Direction, err)
+			ctx.Packet, ctx.PacketID, ctx.Protocol, ctx.Direction, err)
 	}
 
 	// Payload buffer should now be empty.
@@ -230,7 +230,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 		// packet decoder did not read all of the packet's data!
 		zap.L().Debug("Decoder did not read all of packet's data", append([]zap.Field{
 			zap.Stringer("type", reflect.TypeOf(ctx.Packet)),
-			zap.Stringer("packetId", ctx.PacketId),
+			zap.Stringer("packetID", ctx.PacketID),
 			zap.Stringer("protocol", ctx.Protocol),
 			zap.Stringer("direction", ctx.Direction),
 			zap.Int("decodedBytes", len(ctx.Payload)),

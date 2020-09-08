@@ -22,11 +22,11 @@ type DimensionInfo struct {
 	DebugType          bool
 }
 
-const UnknownDimensionId = "gate:unknown_dimension"
+const UnknownDimensionID = "gate:unknown_dimension"
 
 type DimensionData struct {
 	RegistryIdentifier string
-	DimensionId        *int // nil-able
+	DimensionID        *int // nil-able
 	AmbientLight       float32
 	Shrunk, Natural, Ultrawarm, Ceiling, Skylight, PiglineSafe,
 	DoBedsWork, DoRespawnAnchorsWork, Raids bool
@@ -60,14 +60,14 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 	}
 	var (
 		details     util.NBT
-		dimensionId *int
+		dimensionID *int
 	)
 	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
-		dimId, ok := dimTag.Int("id")
+		dimID, ok := dimTag.Int("id")
 		if !ok {
 			return nil, dimMissKeyErr("id")
 		}
-		dimensionId = &dimId
+		dimensionID = &dimID
 		details, ok = dimTag.NBT("element")
 		if !ok {
 			return nil, dimMissKeyErr("element")
@@ -84,7 +84,7 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 		return nil, err
 	}
 	data.RegistryIdentifier = registryIdentifier
-	data.DimensionId = dimensionId
+	data.DimensionID = dimensionID
 	return data, nil
 }
 
@@ -95,7 +95,7 @@ func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
 		return nil, dimReadErr("dimension details must not be nil")
 	}
 	d := &DimensionData{
-		RegistryIdentifier: UnknownDimensionId,
+		RegistryIdentifier: UnknownDimensionID,
 	}
 	var ok bool
 	d.Natural, ok = details.Bool("natural")
@@ -173,12 +173,12 @@ func dimMissKeyErr(key string) error {
 func (d *DimensionData) encodeCompoundTag(protocol proto.Protocol) (util.NBT, error) {
 	details := d.encodeDimensionDetails()
 	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
-		if d.DimensionId == nil {
+		if d.DimensionID == nil {
 			return nil, errors.New("can not encode 1.16.2+ dimension registry entry without and id")
 		}
 		return util.NBT{
 			"name":    d.RegistryIdentifier,
-			"id":      int32(*d.DimensionId),
+			"id":      int32(*d.DimensionID),
 			"element": details,
 		}, nil
 	}

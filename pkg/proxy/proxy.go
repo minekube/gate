@@ -299,41 +299,41 @@ func NewChannelRegistrar() *ChannelRegistrar {
 // to register depending on the Minecraft protocol version.
 func (r *ChannelRegistrar) ChannelsForProtocol(protocol proto.Protocol) sets.String {
 	if protocol.GreaterEqual(proto.Minecraft_1_13) {
-		return r.ModernChannelIds()
+		return r.ModernChannelIDs()
 	}
-	return r.LegacyChannelIds()
+	return r.LegacyChannelIDs()
 }
 
-// ModernChannelIds returns all channel IDs (as strings)
+// ModernChannelIDs returns all channel IDs (as strings)
 // for use with Minecraft 1.13 and above.
-func (r *ChannelRegistrar) ModernChannelIds() sets.String {
+func (r *ChannelRegistrar) ModernChannelIDs() sets.String {
 	r.mu.RLock()
 	ids := r.identifiers
 	r.mu.RUnlock()
 	ss := sets.String{}
 	for _, i := range ids {
 		if _, ok := i.(*message.MinecraftChannelIdentifier); ok {
-			ss.Insert(i.Id())
+			ss.Insert(i.ID())
 		} else {
-			ss.Insert(plugin.TransformLegacyToModernChannel(i.Id()))
+			ss.Insert(plugin.TransformLegacyToModernChannel(i.ID()))
 		}
 	}
 	return ss
 }
 
-// LegacyChannelIds returns all legacy channel IDs.
-func (r *ChannelRegistrar) LegacyChannelIds() sets.String {
+// LegacyChannelIDs returns all legacy channel IDs.
+func (r *ChannelRegistrar) LegacyChannelIDs() sets.String {
 	r.mu.RLock()
 	ids := r.identifiers
 	r.mu.RUnlock()
 	ss := sets.String{}
 	for _, i := range ids {
-		ss.Insert(i.Id())
+		ss.Insert(i.ID())
 	}
 	return ss
 }
 
-func (r *ChannelRegistrar) FromId(channel string) (message.ChannelIdentifier, bool) {
+func (r *ChannelRegistrar) FromID(channel string) (message.ChannelIdentifier, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	id, ok := r.identifiers[channel]

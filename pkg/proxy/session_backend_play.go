@@ -79,7 +79,7 @@ func (b *backendPlaySessionHandler) disconnected() {
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	b.serverConn.lastPingId.Store(p.RandomId)
+	b.serverConn.lastPingID.Store(p.RandomID)
 	b.forwardToPlayer(p) // forwards on
 }
 
@@ -129,7 +129,7 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message) 
 		return // handled
 	}
 
-	id, ok := b.proxy().ChannelRegistrar().FromId(packet.Channel)
+	id, ok := b.proxy().ChannelRegistrar().FromID(packet.Channel)
 	if !ok {
 		b.forwardToPlayer(packet)
 		return

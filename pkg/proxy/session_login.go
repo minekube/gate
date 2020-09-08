@@ -134,13 +134,13 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		return userIp
 	}
 
-	var optionalUserIp string
+	var optionalUserIP string
 	if l.config().ShouldPreventClientProxyConnections {
-		optionalUserIp = getUserIp()
+		optionalUserIP = getUserIp()
 	}
 
-	serverId := authenticator.GenerateServerId(decryptedSharedSecret)
-	statusCode, body, err := authenticator.HasJoined(l.login.Username, optionalUserIp, serverId)
+	serverID := authenticator.GenerateServerID(decryptedSharedSecret)
+	statusCode, body, err := authenticator.HasJoined(l.login.Username, optionalUserIP, serverID)
 	if err != nil {
 		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
 			zap.L().Error("Unable to authenticate player with Mojang", zap.Error(err))
@@ -266,12 +266,12 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 	}
 
 	// Send login success
-	playerId := player.Id()
+	playerID := player.ID()
 	if cfg.Forwarding.Mode == config.NoneForwardingMode {
-		playerId = uuid.OfflinePlayerUuid(player.Username())
+		playerID = uuid.OfflinePlayerUUID(player.Username())
 	}
 	if player.WritePacket(&packet.ServerLoginSuccess{
-		UUID:     playerId,
+		UUID:     playerID,
 		Username: player.Username(),
 	}) != nil {
 		return

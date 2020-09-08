@@ -110,7 +110,7 @@ func (c *clientPlaySessionHandler) flushQueuedMessages() {
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	serverConn := c.player.connectedServer()
-	if serverConn != nil && p.RandomId == serverConn.lastPingId.Load() {
+	if serverConn != nil && p.RandomID == serverConn.lastPingID.Load() {
 		serverMc := serverConn.conn()
 		if serverMc != nil {
 			lastPingSent := time.Unix(0, serverConn.lastPingSent.Load()*int64(time.Millisecond))
@@ -166,7 +166,7 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			return
 		}
 		if playerPhase.consideredComplete() && serverConnPhase.consideredComplete() {
-			id, ok := c.proxy().ChannelRegistrar().FromId(packet.Channel)
+			id, ok := c.proxy().ChannelRegistrar().FromID(packet.Channel)
 			if !ok {
 				_ = backendConn.WritePacket(packet)
 				return

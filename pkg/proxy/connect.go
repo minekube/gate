@@ -150,7 +150,7 @@ func (c *connect) canRegisterConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.names[lowerName] == nil && c.ids[player.Id()] == nil
+	return c.names[lowerName] == nil && c.ids[player.ID()] == nil
 }
 
 // Attempts to register the connection with the proxy.
@@ -161,7 +161,7 @@ func (c *connect) registerConnection(player *connectedPlayer) bool {
 retry:
 	c.mu.Lock()
 	if cfg.OnlineModeKickExistingPlayers {
-		existing, ok := c.ids[player.Id()]
+		existing, ok := c.ids[player.ID()]
 		if ok {
 			// Make sure we disconnect existing duplicate
 			// player connection before we register the new one.
@@ -185,13 +185,13 @@ retry:
 		if exists {
 			return false
 		}
-		_, exists = c.ids[player.Id()]
+		_, exists = c.ids[player.ID()]
 		if exists {
 			return false
 		}
 	}
 
-	c.ids[player.Id()] = player
+	c.ids[player.ID()] = player
 	c.names[lowerName] = player
 	c.mu.Unlock()
 	return true
@@ -201,9 +201,9 @@ retry:
 func (c *connect) unregisterConnection(player *connectedPlayer) (found bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, found = c.ids[player.Id()]
+	_, found = c.ids[player.ID()]
 	delete(c.names, strings.ToLower(player.Username()))
-	delete(c.ids, player.Id())
+	delete(c.ids, player.ID())
 	// TODO c.s.bossBarManager.onDisconnect(player)?
 	return found
 }

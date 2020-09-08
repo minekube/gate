@@ -31,9 +31,9 @@ var (
 
 func (r *bungeeCordMessageRecorder) bungeeCordChannel(protocol proto.Protocol) string {
 	if protocol.GreaterEqual(proto.Minecraft_1_13) {
-		return bungeeCordModernChannel.Id()
+		return bungeeCordModernChannel.ID()
 	}
-	return bungeeCordLegacyChannel.Id()
+	return bungeeCordLegacyChannel.ID()
 }
 
 func (r *bungeeCordMessageRecorder) config() *config.Config {
@@ -45,8 +45,8 @@ func (r *bungeeCordMessageRecorder) process(message *plugin.Message) bool {
 		return false
 	}
 
-	if !strings.EqualFold(bungeeCordModernChannel.Id(), message.Channel) &&
-		!strings.EqualFold(bungeeCordLegacyChannel.Id(), message.Channel) {
+	if !strings.EqualFold(bungeeCordModernChannel.ID(), message.Channel) &&
+		!strings.EqualFold(bungeeCordLegacyChannel.ID(), message.Channel) {
 		return false
 	}
 
@@ -332,7 +332,7 @@ func (r *bungeeCordMessageRecorder) processGetServer() {
 func (r *bungeeCordMessageRecorder) processUUID() {
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "UUID")
-	_ = util.WriteUTF(b, r.Id().Undashed())
+	_ = util.WriteUTF(b, r.ID().Undashed())
 	r.sendServerResponse(b.Bytes())
 }
 func (r *bungeeCordMessageRecorder) processUUIDOther(in io.Reader) {
@@ -340,7 +340,7 @@ func (r *bungeeCordMessageRecorder) processUUIDOther(in io.Reader) {
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "UUIDOther")
 		_ = util.WriteUTF(b, player.Username())
-		_ = util.WriteUTF(b, player.Id().Undashed())
+		_ = util.WriteUTF(b, player.ID().Undashed())
 		r.sendServerResponse(b.Bytes())
 	})
 }

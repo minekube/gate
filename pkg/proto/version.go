@@ -43,7 +43,7 @@ var (
 )
 
 var (
-	IdToVersion = func() map[Protocol]*Version {
+	ProtocolToVersion = func() map[Protocol]*Version {
 		m := make(map[Protocol]*Version, len(Versions))
 		for _, v := range Versions {
 			m[v.Protocol] = v
@@ -72,7 +72,7 @@ var (
 // ProtocolVersion gets the Version by the protocol id
 // or returns the Unknown version if not found.
 func ProtocolVersion(protocol Protocol) *Version {
-	v, ok := IdToVersion[protocol]
+	v, ok := ProtocolToVersion[protocol]
 	if !ok {
 		v = Unknown
 	}

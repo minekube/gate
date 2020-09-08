@@ -123,7 +123,7 @@ func WriteStrings(wr io.Writer, a []string) error {
 // Encoded as an unsigned 128-bit integer
 // (or two unsigned 64-bit integers: the most
 // significant 64 bits and then the least significant 64 bits)
-func WriteUuid(wr io.Writer, uuid uuid.UUID) error {
+func WriteUUID(wr io.Writer, uuid uuid.UUID) error {
 	l1 := binary.BigEndian.Uint64(uuid[:8])
 	l2 := binary.BigEndian.Uint64(uuid[8:])
 	err := WriteInt64(wr, int64(l1))
@@ -162,7 +162,7 @@ func WriteProperties(wr io.Writer, properties []profile.Property) error {
 }
 
 /*
-func WriteUuidIntArray(wr io.Writer, uuid [16]byte) (err error) {
+func WriteUUIDIntArray(wr io.Writer, uuid [16]byte) (err error) {
 	err = WriteInt32(wr, ByteArrayToInt32(uuid[:3]))
 	if err != nil {
 		return err

@@ -41,8 +41,8 @@ func NewPacketRegistry(direction proto.Direction) *PacketRegistry {
 		if !ver.Legacy() && !ver.Unknown() {
 			r.Protocols[ver.Protocol] = &ProtocolRegistry{
 				Protocol:    ver.Protocol,
-				PacketIds:   map[proto.PacketId]proto.PacketType{},
-				PacketTypes: map[proto.PacketType]proto.PacketId{},
+				PacketIDs:   map[proto.PacketID]proto.PacketType{},
+				PacketTypes: map[proto.PacketType]proto.PacketID{},
 			}
 		}
 	}
@@ -61,20 +61,20 @@ func (p *PacketRegistry) ProtocolRegistry(protocol proto.Protocol) *ProtocolRegi
 // ProtocolRegistry stores packets of a protocol version.
 type ProtocolRegistry struct {
 	Protocol    proto.Protocol                      // The protocol version of the registered packets.
-	PacketIds   map[proto.PacketId]proto.PacketType // Gets packet type by packet id.
-	PacketTypes map[proto.PacketType]proto.PacketId // Gets packet id by packet type.
+	PacketIDs   map[proto.PacketID]proto.PacketType // Gets packet type by packet id.
+	PacketTypes map[proto.PacketType]proto.PacketID // Gets packet id by packet type.
 }
 
-// PacketId gets the packet id by the registered packet type.
-func (r *ProtocolRegistry) PacketId(of proto.Packet) (id proto.PacketId, found bool) {
+// PacketID gets the packet id by the registered packet type.
+func (r *ProtocolRegistry) PacketID(of proto.Packet) (id proto.PacketID, found bool) {
 	id, found = r.PacketTypes[proto.TypeOf(of)]
 	return
 }
 
 // CreatePacket returns a new zero valued instance of the type
 // of the mapped packet id or nil if not found.
-func (r *ProtocolRegistry) CreatePacket(id proto.PacketId) proto.Packet {
-	packetType, ok := r.PacketIds[id]
+func (r *ProtocolRegistry) CreatePacket(id proto.PacketID) proto.Packet {
+	packetType, ok := r.PacketIDs[id]
 	if !ok {
 		return nil
 	}
@@ -119,15 +119,15 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 				panic(fmt.Sprintf("Unknown protocol version %s", current.Protocol))
 			}
 
-			if _, ok = registry.PacketIds[current.Id]; ok {
+			if _, ok = registry.PacketIDs[current.ID]; ok {
 				panic(fmt.Sprintf("Can not register packet type %T with id %#x for "+
-					"protocol %s because another packet is already registered", packetOf, current.Id, registry.Protocol))
+					"protocol %s because another packet is already registered", packetOf, current.ID, registry.Protocol))
 			}
 			if _, ok = registry.PacketTypes[proto.TypeOf(packetOf)]; ok {
 				panic(fmt.Sprintf("%T is already registered for protocol %s", packetOf, registry.Protocol))
 			}
-			registry.PacketIds[current.Id] = packetType
-			registry.PacketTypes[packetType] = current.Id
+			registry.PacketIDs[current.ID] = packetType
+			registry.PacketTypes[packetType] = current.ID
 			return true
 		})
 	}
@@ -141,13 +141,13 @@ func FromDirection(direction proto.Direction, state *Registry, protocol proto.Pr
 }
 
 type PacketMapping struct {
-	Id       proto.PacketId
+	ID       proto.PacketID
 	Protocol proto.Protocol
 }
 
-func m(id proto.PacketId, version *proto.Version) *PacketMapping {
+func m(id proto.PacketID, version *proto.Version) *PacketMapping {
 	return &PacketMapping{
-		Id:       id,
+		ID:       id,
 		Protocol: version.Protocol,
 	}
 }

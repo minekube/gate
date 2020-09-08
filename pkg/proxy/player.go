@@ -38,7 +38,7 @@ type Player interface {
 	message.ChannelMessageSink
 
 	Username() string // The username of the player.
-	Id() uuid.UUID    // The Minecraft ID of the player.
+	ID() uuid.UUID    // The Minecraft ID of the player.
 	// May be nil, if no backend server connection!
 	CurrentServer() ServerConnection // Returns the current server connection of the player.
 	Ping() time.Duration             // The player's ping or -1 if currently unknown.
@@ -264,7 +264,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 
 func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier, data []byte) error {
 	return p.WritePacket(&plugin.Message{
-		Channel: identifier.Id(),
+		Channel: identifier.ID(),
 		Data:    data,
 	})
 }
@@ -359,8 +359,8 @@ func (p *connectedPlayer) Username() string {
 	return p.profile.Name
 }
 
-func (p *connectedPlayer) Id() uuid.UUID {
-	return p.profile.Id
+func (p *connectedPlayer) ID() uuid.UUID {
+	return p.profile.ID
 }
 
 func (p *connectedPlayer) Disconnect(reason component.Component) {

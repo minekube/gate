@@ -8,31 +8,31 @@ import (
 
 // GameProfile is a Mojang game profile.
 type GameProfile struct {
-	Id         uuid.UUID  `json:"id"`
+	ID         uuid.UUID  `json:"id"`
 	Name       string     `json:"name"`
 	Properties []Property `json:"properties"`
 }
 
 func (g *GameProfile) String() string {
-	return fmt.Sprintf("GameProfile{Id:%s,Name:%s,Properties:%s}",
-		g.Id, g.Name, g.Properties)
+	return fmt.Sprintf("GameProfile{ID:%s,Name:%s,Properties:%s}",
+		g.ID, g.Name, g.Properties)
 }
 
 // NewOffline returns the new GameProfile for an offline profile.
 func NewOffline(username string) *GameProfile {
 	return &GameProfile{
 		Name: username,
-		Id:   uuid.OfflinePlayerUuid(username),
+		ID:   uuid.OfflinePlayerUUID(username),
 	}
 }
 
 func (g *GameProfile) MarshalJSON() ([]byte, error) {
 	type Embed GameProfile
 	return json.Marshal(&struct {
-		Id string `json:"id"`
+		ID string `json:"id"`
 		*Embed
 	}{
-		Id:    g.Id.Undashed(),
+		ID:    g.ID.Undashed(),
 		Embed: (*Embed)(g),
 	})
 }
@@ -40,7 +40,7 @@ func (g *GameProfile) MarshalJSON() ([]byte, error) {
 func (g *GameProfile) UnmarshalJSON(data []byte) (err error) {
 	type Embed GameProfile
 	s := &struct {
-		Id string `json:"id"`
+		ID string `json:"id"`
 		*Embed
 	}{
 		Embed: (*Embed)(g),
@@ -48,7 +48,7 @@ func (g *GameProfile) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	g.Id, err = uuid.Parse(s.Id)
+	g.ID, err = uuid.Parse(s.ID)
 	return
 }
 

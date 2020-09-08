@@ -12,17 +12,17 @@ type (
 		Status string
 	}
 	StatusPing struct {
-		RandomId int64
+		RandomID int64
 	}
 	// TODO LegacyPing
 )
 
 func (s *StatusPing) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	return util.WriteInt64(wr, s.RandomId)
+	return util.WriteInt64(wr, s.RandomID)
 }
 
 func (s *StatusPing) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	s.RandomId, err = util.ReadInt64(rd)
+	s.RandomID, err = util.ReadInt64(rd)
 	return
 }
 

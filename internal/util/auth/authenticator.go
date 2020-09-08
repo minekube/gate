@@ -42,20 +42,20 @@ func NewDefaultHttpClient() *fasthttp.Client {
 
 const mojangHasJoinedUrl = "https://sessionserver.mojang.com/session/minecraft/hasJoined?username=%s&serverId=%s%s"
 
-func (a *Authenticator) HasJoined(username, optionalUserIp string, serverId string) (statusCode int, body []byte, err error) {
+func (a *Authenticator) HasJoined(username, optionalUserIP string, serverID string) (statusCode int, body []byte, err error) {
 	var ip string
-	if len(optionalUserIp) != 0 {
-		ip = fmt.Sprintf("&ip=%s", url.QueryEscape(optionalUserIp))
+	if len(optionalUserIP) != 0 {
+		ip = fmt.Sprintf("&ip=%s", url.QueryEscape(optionalUserIP))
 	}
 	uri := fmt.Sprintf(mojangHasJoinedUrl,
 		url.QueryEscape(username),
-		serverId,
+		serverID,
 		ip,
 	)
 	return a.HttpClient.Get(nil, uri)
 }
 
-func (a *Authenticator) GenerateServerId(sharedSecret []byte) string {
+func (a *Authenticator) GenerateServerID(sharedSecret []byte) string {
 	hash := func() []byte {
 		h := sha1.New()
 		_, _ = h.Write(sharedSecret)

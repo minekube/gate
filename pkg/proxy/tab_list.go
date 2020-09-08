@@ -98,7 +98,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 		case packet.AddPlayerListItemAction:
 			t.entries[item.ID] = &tabListEntry{
 				profile: &profile.GameProfile{
-					Id:         item.ID,
+					ID:         item.ID,
 					Name:       item.Name,
 					Properties: item.Properties,
 				},
@@ -188,7 +188,7 @@ func (t *tabListEntry) setGameMode(gameMode int) {
 func newPlayerListItemEntry(entry player.TabListEntry) *packet.PlayerListItemEntry {
 	p := entry.Profile()
 	return &packet.PlayerListItemEntry{
-		ID:          p.Id,
+		ID:          p.ID,
 		Name:        p.Name,
 		Properties:  p.Properties,
 		GameMode:    entry.GameMode(),

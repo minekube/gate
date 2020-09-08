@@ -9,7 +9,7 @@ import (
 // ChannelIdentifier is a channel identifier for use with plugin messaging.
 type ChannelIdentifier interface {
 	// Returns the channel identifier.
-	Id() string
+	ID() string
 }
 
 // ChannelMessageSink can receive plugin messages.
@@ -72,7 +72,7 @@ func (m *channelIdentifier) Name() string {
 	return m.name
 }
 
-func (m *channelIdentifier) Id() string {
+func (m *channelIdentifier) ID() string {
 	return fmt.Sprintf("%s:%s", m.namespace, m.name)
 }
 

@@ -81,7 +81,7 @@ func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error
 			return err
 		}
 		for _, item := range p.Items {
-			err = util.WriteUuid(wr, item.ID)
+			err = util.WriteUUID(wr, item.ID)
 			if err != nil {
 				return err
 			}

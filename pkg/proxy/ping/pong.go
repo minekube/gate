@@ -48,5 +48,5 @@ type Players struct {
 
 type SamplePlayer struct {
 	Name string
-	Id   uuid.UUID
+	ID   uuid.UUID
 }
