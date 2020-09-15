@@ -585,9 +585,9 @@ func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error)
 
 // sends msg to all players on this proxy
 func (p *Proxy) sendMessage(msg component.Component) {
-	p.muS.RLock()
+	p.muP.RLock()
 	players := p.playerIDs
-	p.muS.RUnlock()
+	p.muP.RUnlock()
 	for _, p := range players {
 		go func(p Player) { _ = p.SendMessage(msg) }(p)
 	}
