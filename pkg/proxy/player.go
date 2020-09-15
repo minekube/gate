@@ -321,7 +321,7 @@ func (p *connectedPlayer) teardown() {
 	}
 
 	var status LoginStatus
-	if p.proxy.connect.unregisterConnection(p) {
+	if p.proxy.unregisterConnection(p) {
 		if p.disconnectDueToDuplicateConnection.Load() {
 			status = ConflictingLoginStatus
 		} else {

@@ -145,9 +145,9 @@ func (r *bungeeCordMessageRecorder) processForwardToServer(in io.Reader) {
 	}
 	forward := r.prepareForwardMessage(in)
 	if strings.EqualFold(target, "ALL") {
-		r.proxy.mu.RLock()
+		r.proxy.muS.RLock()
 		servers := r.proxy.servers
-		r.proxy.mu.RUnlock()
+		r.proxy.muS.RUnlock()
 		for _, server := range servers {
 			go server.sendPluginMessage(bungeeCordLegacyChannel, forward)
 		}
@@ -247,9 +247,9 @@ func (r *bungeeCordMessageRecorder) processPlayerList(in io.Reader) {
 		players map[uuid.UUID]*connectedPlayer
 	)
 	if strings.EqualFold(target, name) {
-		r.proxy.mu.RLock()
-		players = r.proxy.ids
-		r.proxy.mu.RUnlock()
+		r.proxy.muS.RLock()
+		players = r.proxy.playerIDs
+		r.proxy.muS.RUnlock()
 	} else {
 		s := r.proxy.server(target)
 		if s == nil {
@@ -275,9 +275,9 @@ func (r *bungeeCordMessageRecorder) processPlayerList(in io.Reader) {
 }
 
 func (r *bungeeCordMessageRecorder) processGetServers() {
-	r.proxy.mu.RLock()
+	r.proxy.muS.RLock()
 	servers := r.proxy.servers
-	r.proxy.mu.RUnlock()
+	r.proxy.muS.RUnlock()
 
 	list := joiner{split: ", "}
 	for _, s := range servers {

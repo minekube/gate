@@ -91,7 +91,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
-	if h.conn.proxy.Config().Forwarding.Mode == config.VelocityForwardingMode &&
+	if h.proxy().Config().Forwarding.Mode == config.VelocityForwardingMode &&
 		p.ProtocolVersion < int(proto.Minecraft_1_13.Protocol) {
 		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
@@ -99,12 +99,16 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		return
 	}
 
-	h.conn.proxy.Event().Fire(&ConnectionHandshakeEvent{inbound: inbound})
+	h.proxy().Event().Fire(&ConnectionHandshakeEvent{inbound: inbound})
 	h.conn.setSessionHandler(newLoginSessionHandler(h.conn, inbound))
 }
 
+func (h *handshakeSessionHandler) proxy() *Proxy {
+	return h.conn.proxy
+}
+
 func (h *handshakeSessionHandler) loginsQuota() *quotautil.Quota {
-	return h.conn.proxy.connect.loginsQuota
+	return h.proxy().loginsQuota
 }
 
 func stateForProtocol(status int) *state.Registry {

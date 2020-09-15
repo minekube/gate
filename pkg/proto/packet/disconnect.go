@@ -38,14 +38,14 @@ func DisconnectWith(reason component.Component) *Disconnect {
 	return DisconnectWithProtocol(reason, proto.Minecraft_1_7_2.Protocol)
 }
 
+// DisconnectWithProtocol creates a new Disconnect packet for the given given protocol.
 func DisconnectWithProtocol(reason component.Component, protocol proto.Protocol) *Disconnect {
 	if reason == nil {
 		reason = &component.Text{} // empty reason
 	}
 	b := new(strings.Builder)
 	if err := util2.JsonCodec(protocol).Marshal(b, reason); err != nil {
-		zap.L().Debug("Error marshal disconnect reason component to json",
-			zap.Error(err))
+		zap.L().Debug("Error marshal disconnect reason component to json", zap.Error(err))
 		b.Reset() // empty reason
 	}
 	s := b.String()

@@ -8,14 +8,17 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/internal/health"
 	"go.minekube.com/gate/internal/util/auth"
+	"go.minekube.com/gate/internal/util/quotautil"
 	"go.minekube.com/gate/pkg/config"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/proto"
 	"go.minekube.com/gate/pkg/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/proxy/message"
 	"go.minekube.com/gate/pkg/util"
+	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
@@ -28,7 +31,6 @@ import (
 // Proxy is the "Gate" for proxying and managing
 // Minecraft connections in a network.
 type Proxy struct {
-	*connect
 	config           *config.Config
 	event            *event.Manager
 	command          *CommandManager
@@ -42,11 +44,19 @@ type Proxy struct {
 	motd    *component.Text
 	favicon favicon.Favicon
 
-	mu      sync.RWMutex                 // Protects following fields
+	muS     sync.RWMutex                 // Protects following field
 	servers map[string]*registeredServer // registered backend servers: by lower case names
+
+	muP         sync.RWMutex                   // Protects following fields
+	playerNames map[string]*connectedPlayer    // lower case usernames map
+	playerIDs   map[uuid.UUID]*connectedPlayer // uuids map
+
+	connectionsQuota *quotautil.Quota
+	loginsQuota      *quotautil.Quota
 }
 
-// New takes a validated config and returns a new initialized Proxy.
+// New takes a config that should have been validated by
+// config.Validate and returns a new initialized Proxy ready to run.
 func New(config config.Config) (p *Proxy) {
 	p = &Proxy{
 		closed:           make(chan struct{}),
@@ -55,9 +65,19 @@ func New(config config.Config) (p *Proxy) {
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
+		playerNames:      map[string]*connectedPlayer{},
+		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    auth.NewAuthenticator(),
 	}
-	p.connect = newConnect(p)
+	// Connection & login rate limiters
+	quota := config.Quota.Connections
+	if quota.Enabled {
+		p.connectionsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+	}
+	quota = config.Quota.Logins
+	if quota.Enabled {
+		p.loginsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+	}
 	return p
 }
 
@@ -91,47 +111,28 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		p.event.Fire(pre)
 		reason = pre.Reason()
 
+		zap.L().Info("Disconnecting all players...")
 		close(p.closed)
-		p.connect.DisconnectAll(reason)
+		p.DisconnectAll(reason)
 
+		zap.L().Info("Waiting for all event handlers to complete...")
 		p.event.Fire(&ShutdownEvent{})
 		p.event.Wait()
 	})
 }
 
+// called before starting to actually run the proxy
 func (p *Proxy) preInit() (err error) {
-	c := p.config
-	// Parse status motd
-	if len(c.Status.Motd) != 0 {
-		var motd component.Component
-		if strings.HasPrefix(c.Status.Motd, "{") {
-			motd, err = util.LatestJsonCodec().Unmarshal([]byte(c.Status.Motd))
-		} else {
-			motd, err = (&legacy.Legacy{}).Unmarshal([]byte(c.Status.Motd))
-		}
-		if err != nil {
-			return err
-		}
-		t, ok := motd.(*component.Text)
-		if !ok {
-			return errors.New("specified motd is not a text component")
-		}
-		p.motd = t
+	// Load status motd
+	if err = p.loadMotd(); err != nil {
+		return fmt.Errorf("error loading status motd: %v", err)
 	}
 	// Load favicon
-	if len(c.Status.Favicon) != 0 {
-		if strings.HasPrefix(c.Status.Favicon, "data:image/") {
-			p.favicon = favicon.Favicon(c.Status.Favicon)
-			zap.L().Info("Using favicon from data uri")
-		} else {
-			p.favicon, err = favicon.FromFile(c.Status.Favicon)
-			if err != nil {
-				return fmt.Errorf("error reading favicon %q: %w", c.Status.Favicon, err)
-			}
-			zap.S().Infof("Using favicon file %s", c.Status.Favicon)
-		}
+	if err = p.loadFavicon(); err != nil {
+		return fmt.Errorf("error loading favicon: %v", err)
 	}
 
+	c := p.config
 	// Register servers
 	for name, addr := range c.Servers {
 		p.Register(NewServerInfo(name, tcpAddr(addr)))
@@ -145,13 +146,59 @@ func (p *Proxy) preInit() (err error) {
 		p.registerBuiltinCommands()
 	}
 
-	// Init "plugins"
+	// Init "plugins" with the proxy
+	return p.initPlugins()
+}
+
+// loads status motd from the config
+func (p *Proxy) loadMotd() (err error) {
+	c := p.config
+	if len(c.Status.Motd) == 0 {
+		return nil
+	}
+	var motd component.Component
+	if strings.HasPrefix(c.Status.Motd, "{") {
+		motd, err = util.LatestJsonCodec().Unmarshal([]byte(c.Status.Motd))
+	} else {
+		motd, err = (&legacy.Legacy{}).Unmarshal([]byte(c.Status.Motd))
+	}
+	if err != nil {
+		return err
+	}
+	t, ok := motd.(*component.Text)
+	if !ok {
+		return errors.New("specified motd is not a text component")
+	}
+	p.motd = t
+	return nil
+}
+
+// initializes favicon from the config
+func (p *Proxy) loadFavicon() (err error) {
+	c := p.config
+	if len(c.Status.Favicon) == 0 {
+		return nil
+	}
+	if strings.HasPrefix(c.Status.Favicon, "data:image/") {
+		p.favicon = favicon.Favicon(c.Status.Favicon)
+		zap.L().Info("Using favicon from data uri")
+	} else {
+		p.favicon, err = favicon.FromFile(c.Status.Favicon)
+		if err != nil {
+			return fmt.Errorf("error reading favicon file %q: %w", c.Status.Favicon, err)
+		}
+		zap.S().Infof("Using favicon file %s", c.Status.Favicon)
+	}
+	return nil
+}
+
+func (p *Proxy) initPlugins() error {
 	for _, pl := range Plugins {
 		if err := pl.Init(p); err != nil {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
 	}
-	return
+	return nil
 }
 
 func (p *Proxy) run() error {
@@ -174,7 +221,7 @@ func (p *Proxy) run() error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		errChan <- p.connect.listenAndServe(p.config.Bind, p.closed)
+		errChan <- p.listenAndServe(p.config.Bind, p.closed)
 	}()
 
 	return <-errChan
@@ -213,15 +260,15 @@ func (p *Proxy) Server(name string) RegisteredServer {
 
 func (p *Proxy) server(name string) *registeredServer {
 	name = strings.ToLower(name)
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.muS.RLock()
+	defer p.muS.RUnlock()
 	return p.servers[name] // may be nil
 }
 
 // Servers gets all registered servers.
 func (p *Proxy) Servers() []RegisteredServer {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.muS.RLock()
+	defer p.muS.RUnlock()
 	l := make([]RegisteredServer, 0, len(p.servers))
 	for _, rs := range p.servers {
 		l = append(l, rs)
@@ -244,8 +291,8 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 
 	name := strings.ToLower(info.Name())
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.muS.Lock()
+	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
 		return exists, false
 	}
@@ -263,8 +310,8 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 		return false
 	}
 	name := strings.ToLower(info.Name())
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.muS.Lock()
+	defer p.muS.Unlock()
 	rs, ok := p.servers[name]
 	if !ok || !rs.ServerInfo().Equals(info) {
 		return false
@@ -275,8 +322,179 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	return true
 }
 
-func (p *Proxy) ChannelRegistrar() *ChannelRegistrar {
-	return p.channelRegistrar
+// DisconnectAll disconnects all current connected players in parallel.
+// It is done in parallel
+func (p *Proxy) DisconnectAll(reason component.Component) {
+	p.muP.RLock()
+	players := p.playerIDs
+	p.muP.RUnlock()
+
+	var wg sync.WaitGroup
+	wg.Add(len(players))
+	for _, p := range players {
+		go func(p *connectedPlayer) {
+			p.Disconnect(reason)
+			wg.Done()
+		}(p)
+	}
+	wg.Wait()
+}
+
+// listenAndServe starts listening for connections on addr until closed channel receives.
+func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
+	select {
+	case <-stop:
+		return nil
+	default:
+	}
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer ln.Close()
+
+	go func() {
+		<-stop
+		_ = ln.Close()
+	}()
+
+	p.event.Fire(&ReadyEvent{})
+
+	zap.S().Infof("Listening on %s", addr)
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			var opErr *net.OpError
+			if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
+				// Listener was closed
+				return nil
+			}
+			return fmt.Errorf("error accepting new connection: %w", err)
+		}
+		go p.handleRawConn(conn)
+	}
+}
+
+// handleRawConn handles a just-accepted connection that
+// has not had any I/O performed on it yet.
+func (p *Proxy) handleRawConn(raw net.Conn) {
+	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(raw.RemoteAddr()) {
+		_ = raw.Close()
+		zap.L().Info("A connection was exceeded the rate limit", zap.Stringer("remoteAddr", raw.RemoteAddr()))
+		return
+	}
+
+	// Create client connection
+	conn := newMinecraftConn(raw, p, true, func() []zap.Field {
+		return []zap.Field{zap.Bool("player", true)}
+	})
+	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
+	// Read packets in loop
+	conn.readLoop()
+}
+
+// PlayerCount returns the number of players on the proxy.
+func (p *Proxy) PlayerCount() int {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	return len(p.playerIDs)
+}
+
+// Players returns all players on the proxy.
+func (p *Proxy) Players() []Player {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	pls := make([]Player, 0, len(p.playerIDs))
+	for _, player := range p.playerIDs {
+		pls = append(pls, player)
+	}
+	return pls
+}
+
+// Player returns the online player by their Minecraft id.
+// Returns nil if the player was not found.
+func (p *Proxy) Player(id uuid.UUID) Player {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	return p.playerIDs[id]
+}
+
+// Player returns the online player by their Minecraft name (search is case-insensitive).
+// Returns nil if the player was not found.
+func (p *Proxy) PlayerByName(username string) Player {
+	return p.playerByName(username)
+}
+func (p *Proxy) playerByName(username string) *connectedPlayer {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	return p.playerNames[strings.ToLower(username)]
+}
+
+func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
+	c := p.config
+	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
+		return true
+	}
+	lowerName := strings.ToLower(player.Username())
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	return p.playerNames[lowerName] == nil && p.playerIDs[player.ID()] == nil
+}
+
+// Attempts to register the connection with the proxy.
+func (p *Proxy) registerConnection(player *connectedPlayer) bool {
+	lowerName := strings.ToLower(player.Username())
+	c := p.config
+
+retry:
+	p.muP.Lock()
+	if c.OnlineModeKickExistingPlayers {
+		existing, ok := p.playerIDs[player.ID()]
+		if ok {
+			// Make sure we disconnect existing duplicate
+			// player connection before we register the new one.
+			//
+			// Disconnecting the existing connection will call p.unregisterConnection in the
+			// teardown needing the p.muP.Lock() so we unlock.
+			p.muP.Unlock()
+			existing.disconnectDueToDuplicateConnection.Store(true)
+			existing.Disconnect(&component.Translation{
+				Key: "multiplayer.disconnect.duplicate_login",
+			})
+			// Now we can retry in case another duplicate connection
+			// occurred before we could acquire the lock at `retry`.
+			//
+			// Meaning we keep disconnecting incoming duplicates until
+			// we can register our connection, but this shall be uncommon anyways. :)
+			goto retry
+		}
+	} else {
+		_, exists := p.playerNames[lowerName]
+		if exists {
+			return false
+		}
+		_, exists = p.playerIDs[player.ID()]
+		if exists {
+			return false
+		}
+	}
+
+	p.playerIDs[player.ID()] = player
+	p.playerNames[lowerName] = player
+	p.muP.Unlock()
+	return true
+}
+
+// unregisters a connected player
+func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
+	p.muP.Lock()
+	defer p.muP.Unlock()
+	_, found = p.playerIDs[player.ID()]
+	delete(p.playerNames, strings.ToLower(player.Username()))
+	delete(p.playerIDs, player.ID())
+	// TODO p.s.bossBarManager.onDisconnect(player)?
+	return found
 }
 
 //
@@ -285,6 +503,10 @@ func (p *Proxy) ChannelRegistrar() *ChannelRegistrar {
 //
 //
 //
+
+func (p *Proxy) ChannelRegistrar() *ChannelRegistrar {
+	return p.channelRegistrar
+}
 
 type ChannelRegistrar struct {
 	mu          sync.RWMutex // Protects following fields
@@ -363,9 +585,9 @@ func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error)
 
 // sends msg to all players on this proxy
 func (p *Proxy) sendMessage(msg component.Component) {
-	p.mu.RLock()
-	players := p.ids
-	p.mu.RUnlock()
+	p.muS.RLock()
+	players := p.playerIDs
+	p.muS.RUnlock()
 	for _, p := range players {
 		go func(p Player) { _ = p.SendMessage(msg) }(p)
 	}

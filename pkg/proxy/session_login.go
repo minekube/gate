@@ -215,10 +215,10 @@ var (
 func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMode bool) {
 	// Some connection types may need to alter the game profile.
 	profile = l.conn.Type().addGameProfileTokensIfRequired(profile,
-		l.conn.proxy.Config().Forwarding.Mode)
+		l.proxy().Config().Forwarding.Mode)
 
 	profileRequest := NewGameProfileRequestEvent(l.inbound, *profile, onlineMode)
-	l.conn.proxy.event.Fire(profileRequest)
+	l.proxy().event.Fire(profileRequest)
 	if l.conn.Closed() {
 		return // Player disconnected after authentication
 	}
@@ -226,7 +226,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 
 	// Initiate a regular connection and move over to it.
 	player := newConnectedPlayer(l.conn, &gameProfile, l.inbound.VirtualHost(), onlineMode)
-	if !player.proxy.connect.canRegisterConnection(player) {
+	if !l.proxy().canRegisterConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return
 	}
@@ -294,7 +294,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 		return
 	}
 
-	if !l.connect().registerConnection(player) {
+	if !l.proxy().registerConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return
 	}
@@ -322,18 +322,18 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 
+func (l *loginSessionHandler) proxy() *Proxy {
+	return l.conn.proxy
+}
+
 func (l *loginSessionHandler) event() *event.Manager {
-	return l.conn.proxy.event
+	return l.proxy().event
 }
 
 func (l *loginSessionHandler) config() *config.Config {
-	return l.conn.proxy.config
+	return l.proxy().config
 }
 
 func (l *loginSessionHandler) auth() *auth.Authenticator {
-	return l.conn.proxy.authenticator
-}
-
-func (l *loginSessionHandler) connect() *connect {
-	return l.conn.proxy.connect
+	return l.proxy().authenticator
 }
