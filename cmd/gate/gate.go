@@ -18,10 +18,9 @@ package gate
 import (
 	"fmt"
 	"github.com/spf13/viper"
-	"go.minekube.com/common/minecraft/color"
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/config"
-	"go.minekube.com/gate/pkg/proxy"
+	"go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -33,7 +32,7 @@ import (
 // initializes the logger, runs the new proxy.Proxy and
 // blocks until stopChan is triggered or an OS signal is sent.
 // The proxy is already shutdown on method return.
-func Run(stopCh <-chan struct{}) (err error) {
+func Run(parentStop <-chan struct{}) (err error) {
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -52,10 +51,19 @@ func Run(stopCh <-chan struct{}) (err error) {
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer func() { signal.Stop(sig); close(sig) }()
 
-	p := proxy.New(cfg)
+	mgr, err := manager.New(manager.Options{})
+	if err != nil {
+		return fmt.Errorf("error new runtime manager: %w", err)
+	}
+	if err := mgr.Add(proxy.New(cfg)); err != nil {
+		return fmt.Errorf("error adding java proxy to manager: %w", err)
+	}
+
+	stop := make(chan struct{})
 	go func() {
+		defer close(stop)
 		select {
-		case <-stopCh:
+		case <-parentStop:
 		case s, ok := <-sig:
 			if !ok {
 				// Sig chan was closed
@@ -63,11 +71,9 @@ func Run(stopCh <-chan struct{}) (err error) {
 			}
 			zap.S().Infof("Received %s signal", s)
 		}
-		p.Shutdown(&component.Text{
-			Content: "Gate proxy is shutting down...\nPlease reconnect in a moment!",
-			S:       component.Style{Color: color.Red}})
 	}()
-	return p.Run()
+
+	return mgr.Start(stop)
 }
 
 func initLogger(debug bool) (err error) {

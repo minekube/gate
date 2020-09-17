@@ -4,7 +4,8 @@ go 1.14
 
 require (
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
-	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
+	github.com/go-logr/logr v0.2.1
+	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7
 	github.com/google/uuid v1.1.1
 	github.com/gookit/color v1.2.7
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
@@ -17,8 +18,9 @@ require (
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
-	golang.org/x/text v0.3.2
+	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.31.0
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	k8s.io/apimachinery v0.19.2
+	sigs.k8s.io/controller-runtime v0.6.3
 )

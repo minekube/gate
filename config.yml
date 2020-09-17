@@ -34,6 +34,11 @@ bungeePluginChannelEnabled: true
 # Whether to register builtin commands on proxy start.
 # Default: true
 builtinCommands: true
+# The default disconnect reason to kick player on proxy shutdown when no other reason was given.
+# Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
+shutdownReason: |
+  §cGate proxy is shutting down...
+  Please reconnect in a moment!
 # Packet compression settings.
 compression:
   # The minimum size (in bytes) a packet must be before the proxy compresses it.

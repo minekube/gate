@@ -39,8 +39,9 @@ type Config struct {
 	BungeePluginChannelEnabled bool
 	BuiltinCommands            bool
 
-	Debug  bool
-	Health HealthProbeService
+	Debug          bool
+	Health         HealthProbeService
+	ShutdownReason string
 }
 
 type (
@@ -100,6 +101,8 @@ func init() {
 	viper.SetDefault("bind", "0.0.0.0:25565")
 	viper.SetDefault("onlineMode", true)
 	viper.SetDefault("forwarding.mode", LegacyForwardingMode)
+
+	viper.SetDefault("ShutdownReason", "§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 
 	viper.SetDefault("status.motd", "§bA Gate Proxy §7(Alpha)\n§bVisit ➞ §fgithub.com/minekube/gate")
 	viper.SetDefault("status.showmaxplayers", 1000)

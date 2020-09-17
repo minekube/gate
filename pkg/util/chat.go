@@ -2,7 +2,7 @@ package util
 
 import (
 	"go.minekube.com/common/minecraft/component/codec"
-	"go.minekube.com/gate/pkg/proto"
+	"go.minekube.com/gate/pkg/edition/java/proto"
 )
 
 // JsonCodec returns the appropriate codec for the given protocol version.
