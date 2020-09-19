@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto"
-	"go.minekube.com/gate/pkg/util"
+	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -20,7 +20,7 @@ type ServerPing struct {
 
 func (p *ServerPing) MarshalJSON() ([]byte, error) {
 	b := new(bytes.Buffer)
-	err := util.JsonCodec(p.Version.Protocol).Marshal(b, p.Description)
+	err := util2.JsonCodec(p.Version.Protocol).Marshal(b, p.Description)
 	if err != nil {
 		return nil, err
 	}

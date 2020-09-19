@@ -5,16 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"net"
 	"strconv"
 	"strings"
@@ -203,6 +203,7 @@ type ServerConnection interface {
 type serverConnection struct {
 	server *registeredServer
 	player *connectedPlayer
+	log    logr.Logger
 
 	completedJoin      atomic.Bool
 	gracefulDisconnect atomic.Bool
@@ -215,7 +216,11 @@ type serverConnection struct {
 }
 
 func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
-	return &serverConnection{server: server, player: player}
+	return &serverConnection{server: server, player: player,
+		log: player.log.WithName("server-conn").WithValues(
+			"serverName", server.info.Name(),
+			"serverAddr", server.info.Addr()),
+	}
 }
 
 var _ ServerConnection = (*serverConnection)(nil)
@@ -287,26 +292,17 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	}
 
 	// Connect proxy -> server
-	zap.L().Debug("Proxy connecting to backend server...", zap.String("addr", addr))
+	debug := s.log.V(1)
+	debug.Info("Connecting to server...")
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to server %s: %w", addr, err)
 	}
-	zap.L().Debug("Connected to server",
-		zap.String("name", s.server.ServerInfo().Name()),
-		zap.String("addr", addr))
+	debug.Info("Connected to server")
 
 	// Wrap server connection
-	serverMc := newMinecraftConn(conn, s.player.proxy, false, func() []zap.Field {
-		return []zap.Field{
-			zap.Bool("server", true),
-			zap.String("serverName", s.Server().ServerInfo().Name()),
-			zap.Stringer("serverAddr", s.Server().ServerInfo().Addr()),
-			zap.Stringer("forPlayer", s.player),
-			zap.Stringer("forPlayerUUID", s.player.ID()),
-		}
-	})
+	serverMc := newMinecraftConn(conn, s.player.proxy, false)
 	resultChan := make(chan *connResponse, 1)
 	serverMc.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
 		Context:  ctx,
@@ -319,10 +315,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
-	zap.L().Debug("Trying to connect player with server...",
-		zap.String("addr", addr),
-		zap.String("server", s.server.ServerInfo().Name()))
-	zap.String("player", s.player.Username())
+	debug.Info("Establishing player connection with server...")
 
 	// Initiate the handshake.
 	protocol := s.player.Protocol()

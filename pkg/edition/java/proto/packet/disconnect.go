@@ -5,8 +5,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	util2 "go.minekube.com/gate/pkg/util"
-	"go.uber.org/zap"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"io"
 	"strings"
 )
@@ -38,14 +37,19 @@ func DisconnectWith(reason component.Component) *Disconnect {
 	return DisconnectWithProtocol(reason, proto.Minecraft_1_7_2.Protocol)
 }
 
+var log = logr.Log.WithName("packet")
+
 // DisconnectWithProtocol creates a new Disconnect packet for the given given protocol.
 func DisconnectWithProtocol(reason component.Component, protocol proto.Protocol) *Disconnect {
 	if reason == nil {
 		reason = &component.Text{} // empty reason
 	}
 	b := new(strings.Builder)
-	if err := util2.JsonCodec(protocol).Marshal(b, reason); err != nil {
-		zap.L().Debug("Error marshal disconnect reason component to json", zap.Error(err))
+	if err := util.JsonCodec(protocol).Marshal(b, reason); err != nil {
+		log.V(1).WithName("DisconnectWithProtocol").Error(err,
+			"Error marshal disconnect reason component to json",
+			"reason", reason,
+			"protocol", protocol)
 		b.Reset() // empty reason
 	}
 	s := b.String()

@@ -1,21 +1,24 @@
+// Package bridge contains packages for setting up a bridge between proxies of different Minecraft editions.
+// Refer to Bridge.
 package bridge
 
 import (
 	"errors"
 	"fmt"
-	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"sync"
 )
 
-// Bridge enables "cross-play" between different Minecraft editions (Bedrock <-> Java).
-// Exposed fields in this struct should be set before calling Setup
+// Bridge allows "cross-play" between different Minecraft edition (Bedrock <-> Java) proxies.
+// Exposed fields in this struct should be set before calling Setup.
 //
 // It does so by registering various handlers and interceptors to the given proxies
 // to translate connection protocols.
 //
+// This struct may only be useful until Setup was called and can get garbage collected afterwards.
 type Bridge struct {
 	Log logr.Logger // The logger used in bridging-code.
 

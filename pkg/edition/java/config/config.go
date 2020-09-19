@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"net"
 	"regexp"
 )
@@ -104,7 +104,7 @@ func init() {
 
 	viper.SetDefault("ShutdownReason", "§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 
-	viper.SetDefault("status.motd", "§bA Gate Proxy §7(Alpha)\n§bVisit ➞ §fgithub.com/minekube/gate")
+	viper.SetDefault("status.motd", "§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
 	viper.SetDefault("status.showmaxplayers", 1000)
 	viper.SetDefault("status.announceForge", false)
 	viper.SetDefault("status.showPingRequests", false)
@@ -138,6 +138,8 @@ func init() {
 	viper.SetDefault("Health.bind", "0.0.0.0:8080")
 }
 
+var log = logr.Log.WithName("java-proxy-config")
+
 func Validate(c *Config) (err error) {
 	if c == nil {
 		return errors.New("config must not be nil-pointer")
@@ -145,26 +147,38 @@ func Validate(c *Config) (err error) {
 
 	// validate input config
 	warns, errs := validate(c)
+
+	warn := func() {
+		for _, err = range warns {
+			log.Info(err.Error())
+		}
+	}
+
 	if len(errs) != 0 {
 		for _, err = range errs {
-			zap.S().Errorf("Config error: %s", err)
+			log.Error(err, "Config error")
 		}
 
 		a, s := "are", "s"
 		if len(errs) == 1 {
 			a, s = "is", ""
 		}
+
+		warn()
 		return fmt.Errorf("there %s %d config validation error%s", a, len(errs), s)
 	}
-	for _, err = range warns {
-		zap.L().Warn(err.Error())
-	}
+
+	warn()
 	return nil
 }
 
 func validate(c *Config) (warns []error, errs []error) {
 	e := func(m string, args ...interface{}) { errs = append(errs, fmt.Errorf(m, args...)) }
 	w := func(m string, args ...interface{}) { warns = append(warns, fmt.Errorf(m, args...)) }
+
+	if c.ProxyProtocol {
+		e("Proxy protocol is not supported yet, disable it")
+	}
 
 	if len(c.Bind) == 0 {
 		e("Bind is empty")

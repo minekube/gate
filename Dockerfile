@@ -16,7 +16,7 @@ RUN go mod download
 
 # Copy the go source
 COPY cmd cmd/
-COPY internal internal/
+COPY pkg/edition/java/internal internal/
 COPY pkg pkg/
 COPY gate.go ./
 

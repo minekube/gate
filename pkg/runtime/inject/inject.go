@@ -1,6 +1,6 @@
 package inject
 
-import "github.com/go-logr/logr"
+import "go.minekube.com/gate/pkg/runtime/logr"
 
 // Stoppable is used by the Manager to inject stop channel.
 // It is used for gracefully stopping components in run by Manager.

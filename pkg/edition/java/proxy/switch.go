@@ -7,9 +7,8 @@ import (
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/event"
-	"go.minekube.com/gate/pkg/util"
-	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -156,10 +155,10 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 // server - the server we disconnected from
 // safe - whether or not we can safely reconnect to a new server
 func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error, safe bool) {
-	zap.L().Debug("Could not connect player to server",
-		zap.String("server", server.ServerInfo().Name()),
-		zap.String("addr", server.ServerInfo().Addr().String()),
-		zap.Error(err))
+	log := p.log.WithValues(
+		"serverName", server.ServerInfo().Name(),
+		"serverAddr", server.ServerInfo().Addr())
+	log.V(1).Error(err, "Could not connect player to server")
 
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
@@ -172,12 +171,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",
 			server.ServerInfo().Name())
 	} else {
-		zap.L().Info("unable to connect to server",
-			zap.String("serverName", server.ServerInfo().Name()),
-			zap.String("serverAddr", server.ServerInfo().Addr().String()),
-			zap.String("playerName", p.Username()),
-			zap.Error(err),
-		)
+		log.Info("unable to connect to server", "error", err)
 		userMsg = fmt.Sprintf("Unable to connect to %q. Try again later.", server.ServerInfo().Name())
 	}
 	p.handleConnectionErr2(server, nil, &Text{Content: userMsg, S: Style{Color: Red}}, safe)
@@ -288,7 +282,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 }
 
 func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *packet.Disconnect, safe bool) {
-	reason, _ := util.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
+	reason, _ := util2.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
 	p.handleDisconnectWithReason(server, reason, safe)
 }
 
@@ -302,13 +296,15 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	b := new(strings.Builder)
 	err := (&codec.Plain{}).Marshal(b, reason)
 	if err != nil {
-		zap.L().Debug("Error marshal disconnect reason to plain", zap.Error(err))
+		p.log.V(1).Error(err, "Error marshal disconnect reason to plain")
 	}
 	plainReason := b.String()
 
+	log := p.log.WithValues("server", server.ServerInfo().Name(), "reason", plainReason)
+
 	connected := p.connectedServer()
 	if connected != nil && connected.server.ServerInfo().Equals(server.ServerInfo()) {
-		zap.S().Infof("%s was kicked from server %q: %s", p, server.ServerInfo().Name(), plainReason)
+		log.Info("Player was kicked from server")
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: fmt.Sprintf("Kicked from %q: ", server.ServerInfo().Name()),
 			S:       Style{Color: Red},
@@ -317,7 +313,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 		return
 	}
 
-	zap.S().Infof("%s disconnected while connecting to %q: %s", p, server.ServerInfo().Name(), plainReason)
+	log.Info("Player disconnected from server while connecting")
 	p.handleConnectionErr2(server, reason, &Text{
 		Content: fmt.Sprintf("Can't connect to server %q: ", server.ServerInfo().Name()),
 		S:       Style{Color: Red},
@@ -410,7 +406,7 @@ func plainConnectionResult(status ConnectionStatus, attemptedConn RegisteredServ
 	}
 }
 
-func (c *connectionRequest) event() *event.Manager {
+func (c *connectionRequest) event() event.Manager {
 	return c.player.proxy.event
 }
 

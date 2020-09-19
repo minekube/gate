@@ -8,17 +8,15 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.uber.org/zap"
 	"io"
-	"reflect"
 	"sync"
 )
 
 // Decoder is a synchronized packet decoder.
 type Decoder struct {
-	sourceDetails func() []zap.Field // Constructs more details about the reader source.
-
+	log       logr.Logger
 	direction proto.Direction
 
 	mu                   sync.Mutex // Protects following field and locked while reading a packet.
@@ -32,14 +30,14 @@ type Decoder struct {
 func NewDecoder(
 	r io.Reader,
 	direction proto.Direction,
-	sourceDetails func() []zap.Field,
+	log logr.Logger,
 ) *Decoder {
 	return &Decoder{
-		rd:            &fullReader{r}, // using the fullReader is essential here!
-		direction:     direction,
-		state:         state.Handshake,
-		registry:      state.FromDirection(direction, state.Handshake, proto.MinimumVersion.Protocol),
-		sourceDetails: sourceDetails,
+		rd:        &fullReader{r}, // using the fullReader is essential here!
+		direction: direction,
+		state:     state.Handshake,
+		registry:  state.FromDirection(direction, state.Handshake, proto.MinimumVersion.Protocol),
+		log:       log,
 	}
 }
 
@@ -226,14 +224,10 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Payload buffer should now be empty.
 	if payload.Len() != 0 {
 		// packet decoder did not read all of the packet's data!
-		zap.L().Debug("Decoder did not read all of packet's data", append([]zap.Field{
-			zap.Stringer("type", reflect.TypeOf(ctx.Packet)),
-			zap.Stringer("packetID", ctx.PacketID),
-			zap.Stringer("protocol", ctx.Protocol),
-			zap.Stringer("direction", ctx.Direction),
-			zap.Int("decodedBytes", len(ctx.Payload)),
-			zap.Int("unreadBytes", payload.Len()),
-		}, d.sourceDetails()...)...)
+		d.log.V(1).Info("Packet's decoder did not read all of packet's data",
+			"ctx", ctx,
+			"decodedBytes", len(ctx.Payload),
+			"unreadBytes", payload.Len())
 		return ctx, ErrDecoderLeftBytes
 	}
 

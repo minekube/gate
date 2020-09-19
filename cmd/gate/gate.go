@@ -17,9 +17,11 @@ package gate
 
 import (
 	"fmt"
+	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
-	"go.minekube.com/gate/pkg/config"
-	"go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/gate"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,14 +34,28 @@ import (
 // initializes the logger, runs the new proxy.Proxy and
 // blocks until stopChan is triggered or an OS signal is sent.
 // The proxy is already shutdown on method return.
-func Run(parentStop <-chan struct{}) (err error) {
+func Run(stop <-chan struct{}) (err error) {
+	setLogger := func(dev bool) error {
+		zl, err := newZapLogger(dev)
+		if err != nil {
+			return fmt.Errorf("error creating zap logger: %w", err)
+		}
+		logr.SetLogger(zapr.NewLogger(zl))
+		return nil
+	}
+	if err = setLogger(false); err != nil {
+		return err
+	}
+
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	if err := initLogger(cfg.Debug); err != nil {
-		return fmt.Errorf("error initializing global logger: %w", err)
+	if cfg.Debug {
+		if err = setLogger(cfg.Debug); err != nil {
+			return err
+		}
 	}
 
 	// Validate after we initialized the logger.
@@ -55,30 +71,31 @@ func Run(parentStop <-chan struct{}) (err error) {
 	if err != nil {
 		return fmt.Errorf("error new runtime manager: %w", err)
 	}
-	if err := mgr.Add(proxy.New(cfg)); err != nil {
-		return fmt.Errorf("error adding java proxy to manager: %w", err)
+	_, err = gate.New(mgr, gate.Config{})
+	if err != nil {
+		return fmt.Errorf("error creating Gate: %w", err)
 	}
 
-	stop := make(chan struct{})
+	childStop := make(chan struct{})
 	go func() {
-		defer close(stop)
+		defer close(childStop)
 		select {
-		case <-parentStop:
+		case <-stop:
 		case s, ok := <-sig:
 			if !ok {
 				// Sig chan was closed
 				return
 			}
-			zap.S().Infof("Received %s signal", s)
+			mgr.Logger().Info("Received a signal", "signal", s)
 		}
 	}()
 
-	return mgr.Start(stop)
+	return mgr.Start(childStop)
 }
 
-func initLogger(debug bool) (err error) {
+func newZapLogger(dev bool) (l *zap.Logger, err error) {
 	var cfg zap.Config
-	if debug {
+	if dev {
 		cfg = zap.NewDevelopmentConfig()
 	} else {
 		cfg = zap.NewProductionConfig()
@@ -88,10 +105,9 @@ func initLogger(debug bool) (err error) {
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	l, err := cfg.Build()
+	l, err = cfg.Build()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	zap.ReplaceGlobals(l)
-	return nil
+	return l, nil
 }

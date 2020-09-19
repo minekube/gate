@@ -7,7 +7,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/event"
-	"go.uber.org/zap"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"reflect"
 )
 
@@ -15,12 +15,14 @@ type backendTransitionSessionHandler struct {
 	serverConn    *serverConnection
 	requestCtx    *connRequestCxt
 	listenDoneCtx chan struct{}
+	log           logr.Logger
 
 	noOpSessionHandler
 }
 
 func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
-	return &backendTransitionSessionHandler{serverConn: serverConn, requestCtx: requestCtx}
+	return &backendTransitionSessionHandler{serverConn: serverConn, requestCtx: requestCtx,
+		log: serverConn.log.WithName("backendTransitionSession")}
 }
 
 func (b *backendTransitionSessionHandler) activated() {
@@ -63,8 +65,8 @@ func (b *backendTransitionSessionHandler) handlePacket(p proto.Packet) {
 	case *plugin.Message:
 		b.handlePluginMessage(t)
 	default:
-		zap.L().Warn("Received unhandled packet from backend server while transitioning",
-			zap.Stringer("type", reflect.TypeOf(p)))
+		b.log.V(1).Info("Received unhandled packet from backend server while transitioning",
+			"type", reflect.TypeOf(p))
 	}
 }
 
@@ -152,8 +154,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 
 	failResult := func(format string, a ...interface{}) {
 		err := fmt.Errorf(format, a...)
-		zap.S().Errorf("Unable to switch %q to new server %q: %v",
-			b.serverConn.player, b.serverConn.server.ServerInfo().Name(), err)
+		b.log.Error(err, "Unable to switch player to new server, disconnecting")
 		b.serverConn.player.Disconnect(internalServerConnectionError)
 		b.requestCtx.result(nil, err)
 	}
@@ -195,10 +196,11 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	}
 
 	if previousServer == nil {
-		zap.S().Infof("%s initial server %q", b.serverConn.player, b.serverConn.server.ServerInfo().Name())
+		b.log.Info("Player joining initial server")
 	} else {
-		zap.S().Infof("%s moved from %q to %q", b.serverConn.player, previousServer.ServerInfo().Name(),
-			b.serverConn.server.ServerInfo().Name())
+		b.log.Info("Player switching the server",
+			"previous", previousServer.ServerInfo().Name(),
+			"previousAddr", previousServer.ServerInfo().Addr())
 	}
 
 	// Change client to use ClientPlaySessionHandler if required.
@@ -237,6 +239,6 @@ func (b *backendTransitionSessionHandler) disconnected() {
 	b.requestCtx.result(nil, errors.New("unexpectedly disconnected from remote server"))
 }
 
-func (b *backendTransitionSessionHandler) event() *event.Manager {
+func (b *backendTransitionSessionHandler) event() event.Manager {
 	return b.serverConn.player.proxy.Event()
 }

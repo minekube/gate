@@ -1,4 +1,4 @@
-package quotautil
+package addrquota
 
 import (
 	"github.com/golang/groupcache/lru"

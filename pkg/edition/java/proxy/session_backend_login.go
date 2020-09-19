@@ -6,16 +6,15 @@ import (
 	"crypto/sha256"
 	"errors"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	protoutil "go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/util"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/profile"
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"reflect"
 	"strings"
 )
@@ -24,6 +23,7 @@ type backendLoginSessionHandler struct {
 	serverConn    *serverConnection
 	requestCtx    *connRequestCxt
 	listenDoneCtx chan struct{}
+	log           logr.Logger
 
 	informationForwarded atomic.Bool
 
@@ -33,7 +33,8 @@ type backendLoginSessionHandler struct {
 var _ sessionHandler = (*backendLoginSessionHandler)(nil)
 
 func newBackendLoginSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
-	return &backendLoginSessionHandler{serverConn: serverConn, requestCtx: requestCtx}
+	return &backendLoginSessionHandler{serverConn: serverConn, requestCtx: requestCtx,
+		log: serverConn.log.WithName("backendLoginSession")}
 }
 
 func (b *backendLoginSessionHandler) activated() {
@@ -75,8 +76,8 @@ func (b *backendLoginSessionHandler) handlePacket(p proto.Packet) {
 	case *packet.ServerLoginSuccess:
 		b.handleServerLoginSuccess()
 	default:
-		zap.L().Warn("Received unhandled packet from backend server while logging in",
-			zap.Stringer("type", reflect.TypeOf(p)))
+		b.log.Info("Received unhandled packet from backend server while logging in",
+			"packetType", reflect.TypeOf(p))
 	}
 }
 
@@ -106,7 +107,8 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			b.serverConn.Player().RemoteAddr().String(),
 			b.serverConn.player.profile)
 		if err != nil {
-			zap.L().Error("Error creating velocity forwarding data", zap.Error(err))
+			b.log.Error(err, "Error creating velocity forwarding data")
+			b.serverConn.disconnect()
 			return
 		}
 		if mc.WritePacket(&packet.LoginPluginResponse{
@@ -229,7 +231,7 @@ func disconnectResultForPacket(
 	if p != nil && p.Reason != nil {
 		reason = *p.Reason
 	}
-	r, _ := util.JsonCodec(protocol).Unmarshal([]byte(reason))
+	r, _ := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
 	return disconnectResult(r, server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {

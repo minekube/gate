@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/internal/util/quotautil"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
-	"go.uber.org/zap"
+	"go.minekube.com/gate/pkg/internal/addrquota"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"net"
 	"strconv"
 	"strings"
@@ -18,13 +18,14 @@ import (
 
 type handshakeSessionHandler struct {
 	conn *minecraftConn
+	log  logr.Logger
 
 	noOpSessionHandler
 }
 
 // newHandshakeSessionHandler returns a handler used for clients in the handshake state.
 func newHandshakeSessionHandler(conn *minecraftConn) sessionHandler {
-	return &handshakeSessionHandler{conn: conn}
+	return &handshakeSessionHandler{conn: conn, log: conn.log.WithName("handshakeSession")}
 }
 
 func (h *handshakeSessionHandler) handlePacket(p proto.Packet) {
@@ -50,8 +51,9 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
 	if nextState == nil {
-		zap.S().Debugf("%s provided invalid protocol %d", inbound, handshake.NextStatus)
-		h.conn.close()
+		h.log.V(1).Info("Client provided invalid next status state, closing connection",
+			"nextStatus", handshake.NextStatus)
+		_ = h.conn.close()
 		return
 	}
 
@@ -107,7 +109,7 @@ func (h *handshakeSessionHandler) proxy() *Proxy {
 	return h.conn.proxy
 }
 
-func (h *handshakeSessionHandler) loginsQuota() *quotautil.Quota {
+func (h *handshakeSessionHandler) loginsQuota() *addrquota.Quota {
 	return h.proxy().loginsQuota
 }
 

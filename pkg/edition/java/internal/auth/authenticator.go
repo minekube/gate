@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Authenticator is a Minecraft client login authenticator.
+// Authenticator can authenticate Minecraft client logins.
 type Authenticator struct {
 	ServerKey  *rsa.PrivateKey
 	PublicKey  []byte // ASN.1 DER form encoded

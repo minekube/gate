@@ -8,10 +8,10 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -19,6 +19,7 @@ import (
 // Handles communication with the connected Minecraft client.
 // This is effectively the primary nerve center that joins backend servers with players.
 type clientPlaySessionHandler struct {
+	log                 logr.Logger
 	player              *connectedPlayer
 	spawned             atomic.Bool
 	loginPluginMessages deque.Deque
@@ -27,7 +28,7 @@ type clientPlaySessionHandler struct {
 }
 
 func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
-	return &clientPlaySessionHandler{player: player}
+	return &clientPlaySessionHandler{player: player, log: player.log.WithName("clientPlaySession")}
 }
 
 func (c *clientPlaySessionHandler) handlePacket(pack proto.Packet) {
@@ -134,8 +135,8 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	}
 
 	if backendConn.State() != state.Play {
-		zap.S().Warnf("A plugin message was received while the backend server was not ready."+
-			"Channel: %q. Packet discarded.", packet.Channel)
+		c.log.Info("A plugin message was received while the backend server was not ready. Packet discarded.",
+			"channel", packet.Channel)
 	} else if plugin.Register(packet) {
 		if backendConn.WritePacket(packet) != nil {
 			c.player.lockedKnownChannels(func(knownChannels sets.String) {
@@ -339,14 +340,14 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 			ctx, cancel := c.player.newContext(context.Background())
 			defer cancel()
 			// Invoke registered command
-			zap.S().Infof("%s executing command /%s", c.player, commandline)
+			c.log.Info("Player executing command", "cmd", commandline)
 			_, err := c.proxy().command.Invoke(&Context{
 				Context: ctx,
 				Source:  c.player,
 				Args:    args,
 			}, cmd)
 			if err != nil {
-				zap.S().Errorf("Error invoking command %q: %v", commandline, err)
+				c.log.Error(err, "Error invoking command", "cmd", commandline)
 			}
 			return
 		}
@@ -360,7 +361,7 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 		if !e.Allowed() || !c.player.Active() {
 			return
 		}
-		zap.S().Debugf("Chat> %s: %s", c.player, p.Message)
+		c.log.V(1).Info("Player sent chat message", "chat", p.Message)
 	}
 
 	// Forward to server

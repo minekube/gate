@@ -3,9 +3,9 @@ package forge
 import (
 	"bytes"
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/util/modinfo"
 	"strings"
 )
 

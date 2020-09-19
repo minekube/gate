@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
 	github.com/go-logr/logr v0.2.1
+	github.com/go-logr/zapr v0.2.0
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7
 	github.com/google/uuid v1.1.1
 	github.com/gookit/color v1.2.7

@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	codec "go.minekube.com/gate/pkg/util"
-	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"strings"
@@ -139,7 +138,7 @@ func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error
 	displayName := item.DisplayName
 	if displayName != nil {
 		legacyDisplayName := new(strings.Builder)
-		err = codec.DefaultJsonCodec().Marshal(legacyDisplayName, displayName)
+		err = util.DefaultJsonCodec().Marshal(legacyDisplayName, displayName)
 		if err != nil {
 			return fmt.Errorf("error marshal legacy display name: %w", err)
 		}
@@ -172,7 +171,7 @@ func writeDisplayName(wr io.Writer, displayName component.Component, protocol pr
 	}
 	if displayName != nil {
 		b := new(strings.Builder)
-		err = codec.JsonCodec(protocol).Marshal(b, displayName)
+		err = util.JsonCodec(protocol).Marshal(b, displayName)
 		if err != nil {
 			return fmt.Errorf("error marshal display name: %w", err)
 		}
@@ -274,5 +273,5 @@ func readOptionalComponent(rd io.Reader, protocol proto.Protocol) (c component.C
 	if err != nil {
 		return nil, err
 	}
-	return codec.JsonCodec(protocol).Unmarshal([]byte(s))
+	return util.JsonCodec(protocol).Unmarshal([]byte(s))
 }

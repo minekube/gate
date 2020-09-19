@@ -1,8 +1,8 @@
 package manager
 
 import (
-	"github.com/go-logr/logr"
-	logf "go.minekube.com/gate/pkg/runtime/log"
+	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"time"
 )
 
@@ -11,14 +11,16 @@ import (
 type Manager interface {
 	// Add will set requested dependencies on the Runnable, and cause the Runnable to be
 	// started when Start is called. Add will inject any dependencies for which the argument
-	// implements the inject interface - e.g. inject.Stoppable.
+	// implements an inject interface - e.g. inject.Logger.
 	Add(Runnable) error
-	// Start starts all registered Proxies and blocks until the Stop channel is closed.
-	// Returns an error if there is an error starting any proxy.
-	Start(<-chan struct{}) error
+	// Start starts all registered Runnables and blocks until the stop channel is closed.
+	// Returns an error if there is an error starting any Runnable.
+	Start(stop <-chan struct{}) error
 	// Logger returns this manager's logger.
 	Logger() logr.Logger
-	// SetFields will set any dependencies on an object for which the object has implemented the inject
+	// Event returns the manager's event manager.
+	Event() event.Manager
+	// SetFields will set any dependencies on an object for which the object has implemented an inject
 	// interface - e.g. inject.Logger.
 	SetFields(interface{}) error
 }
@@ -29,7 +31,7 @@ type Runnable interface {
 	// Start starts running the component. The component will stop running
 	// when the channel is closed. Start blocks until the channel is closed or
 	// an error occurs.
-	Start(<-chan struct{}) error
+	Start(stop <-chan struct{}) error
 }
 
 // RunnableFunc implements Runnable using a function.
@@ -45,14 +47,20 @@ func (r RunnableFunc) Start(s <-chan struct{}) error {
 // Options are the arguments for creating a new Manager
 type Options struct {
 	// Logger is the logger that should be used by this manager.
-	// If none is set, it defaults to log.Log global logger.
+	// If none is set, it defaults to logr.Log global logger.
 	Logger logr.Logger
+	// Event is the event manager that should be used by this manager.
+	// If none is set, a new one is creates.
+	Event event.Manager
 	// GracefulShutdownTimeout is the duration given to runnable to
 	// stop before the manager actually returns on stop.
 	// To disable graceful shutdown, set to time.Duration(0)
-	// To use graceful shutdown without timeout, set to a negative duration, e.g. time.Duration(-1)
+	// To use graceful shutdown without timeout, set to a negative duration, e.g. time.Duration(-1).
+	// If note set DefaultGracefulShutdownPeriod is used.
 	GracefulShutdownTimeout *time.Duration
 }
+
+const DefaultGracefulShutdownPeriod = 30 * time.Second
 
 // New returns a new Manager for creating proxies.
 func New(options Options) (Manager, error) {
@@ -63,18 +71,22 @@ func New(options Options) (Manager, error) {
 		internalStop:            make(chan struct{}),
 		logger:                  options.Logger,
 		gracefulShutdownTimeout: *options.GracefulShutdownTimeout,
+		event:                   options.Event,
 	}, nil
 }
 
 // setOptionsDefaults set default values for Options fields
 func setOptionsDefaults(options Options) Options {
 	if options.GracefulShutdownTimeout == nil {
-		gracefulShutdownTimeout := defaultGracefulShutdownPeriod
+		gracefulShutdownTimeout := DefaultGracefulShutdownPeriod
 		options.GracefulShutdownTimeout = &gracefulShutdownTimeout
 	}
 
 	if options.Logger == nil {
-		options.Logger = logf.Log
+		options.Logger = logr.Log
+	}
+	if options.Event == nil {
+		options.Event = event.New(options.Logger.WithName("event"))
 	}
 
 	return options

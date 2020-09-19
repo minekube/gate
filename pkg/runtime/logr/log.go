@@ -1,12 +1,17 @@
-package log
+package logr
 
 import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// Logger is Gate's logger interfacing logr.Logger from "github.com/go-logr/logr".
+type Logger interface {
+	logr.Logger
+}
+
 // SetLogger sets a concrete logging implementation for all deferred Loggers.
-func SetLogger(l logr.Logger) {
+func SetLogger(l Logger) {
 	Log.Fulfill(l)
 }
 

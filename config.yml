@@ -18,7 +18,7 @@ try:
 status:
   # The message of the day in legacy '§' format or modern text component '{"text":"...", ...}' json.
   motd: |
-    §bA Gate Proxy §7(Alpha)
+    §bA Gate Proxy
     §bVisit ➞ §fgithub.com/minekube/gate
   # The maximum players shown (is not the actual player limit!).
   showMaxPlayers: 1000

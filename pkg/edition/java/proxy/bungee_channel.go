@@ -7,12 +7,11 @@ import (
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/common/minecraft/key"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
-	codecutil "go.minekube.com/gate/pkg/util"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"net"
@@ -315,7 +314,7 @@ func (r *bungeeCordMessageRecorder) processMessage(in io.Reader) {
 	r.processMessage0(in, &legacy.Legacy{})
 }
 func (r *bungeeCordMessageRecorder) processMessageRaw(in io.Reader) {
-	r.processMessage0(in, codecutil.DefaultJsonCodec())
+	r.processMessage0(in, util.DefaultJsonCodec())
 }
 
 func (r *bungeeCordMessageRecorder) processGetServer() {

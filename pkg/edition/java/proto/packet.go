@@ -34,6 +34,13 @@ type PacketContext struct {
 	Payload []byte // Empty when encoding.
 }
 
+func (c *PacketContext) String() string {
+	return fmt.Sprintf("PacketContext:direction=%s,Protocol=%s,"+
+		"KnownPacket=%t,PacketID=%s,PacketType=%s,Payloadlen=%d",
+		c.Direction, c.Protocol, c.KnownPacket, c.PacketID,
+		reflect.TypeOf(c.Packet), len(c.Payload))
+}
+
 // Direction is the direction a packet is bound to.
 //  - Receiving a packet from a client is ServerBound.
 //  - Receiving a packet from a server is ClientBound.

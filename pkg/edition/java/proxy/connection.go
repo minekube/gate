@@ -3,14 +3,15 @@ package proxy
 import (
 	"bufio"
 	"errors"
-	"go.minekube.com/gate/pkg/config"
+	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"io"
 	"net"
 	"strings"
@@ -38,11 +39,12 @@ type MinecraftConn interface {
 
 // minecraftConn is a Minecraft connection from the
 // client -> proxy or proxy -> server (backend).
+// readLoop owns these fields
 type minecraftConn struct {
-	proxy *Proxy   // convenient backreference
-	c     net.Conn // Underlying connection
+	proxy *Proxy      // convenient backreference
+	log   logr.Logger // connections own logger
+	c     net.Conn    // Underlying connection
 
-	// readLoop owns these fields
 	readBuf *bufio.Reader
 	decoder *codec.Decoder
 
@@ -62,28 +64,28 @@ type minecraftConn struct {
 }
 
 // newMinecraftConn returns a new Minecraft client connection.
-func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool, connDetails func() []zap.Field) (conn *minecraftConn) {
+func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool) (conn *minecraftConn) {
 	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
 	out := proto.ClientBound // writes to client are client bound (proxy -> client)
-	if !playerConn {         // if a backend server connection
+	logName := "player-conn"
+	if !playerConn { // if a backend server connection
 		in = proto.ClientBound  // reads from backend are client bound (proxy <- backend)
 		out = proto.ServerBound // writes to backend are server bound (proxy -> backend)
+		logName = "backend-conn"
 	}
 
-	defer func() {
-		conn.encoder = codec.NewEncoder(conn.writeBuf, out)
-		conn.decoder = codec.NewDecoder(conn.readBuf, in, func() []zap.Field {
-			return append(connDetails(), // TODO maybe fork a child zap logger for each connection
-				zap.Stringer("remoteAddr", conn.RemoteAddr()),
-			)
-		})
-	}()
+	log := proxy.log.WithName(logName).WithValues("remoteAddr", base.RemoteAddr())
+	writeBuf := bufio.NewWriter(base)
+	readBuf := bufio.NewReader(base)
 	return &minecraftConn{
 		proxy:    proxy,
+		log:      log,
 		c:        base,
 		closed:   make(chan struct{}),
-		writeBuf: bufio.NewWriter(base),
-		readBuf:  bufio.NewReader(base),
+		writeBuf: writeBuf,
+		readBuf:  readBuf,
+		encoder:  codec.NewEncoder(writeBuf, out),
+		decoder:  codec.NewDecoder(readBuf, in, log.WithName("decoder")),
 		state:    state.Handshake,
 		protocol: proto.Minecraft_1_7_2.Protocol,
 		connType: undeterminedConnectionType,
@@ -106,7 +108,7 @@ func (c *minecraftConn) readLoop() {
 	for !c.Closed() && func() bool {
 		defer func() { // Catch any panics
 			if r := recover(); r != nil {
-				zap.S().Errorf("Recovered from panic in read packets loop: %v", r)
+				c.log.Error(fmt.Errorf("%v", r), "Recovered panic in packets read loop")
 			}
 		}()
 
@@ -117,13 +119,13 @@ func (c *minecraftConn) readLoop() {
 		// Read next packet.
 		packetCtx, err := c.nextPacket()
 		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
-			if handleReadErr(err) {
-				zap.L().Debug("Error reading packet, recovered", zap.Error(err))
+			if c.handleReadErr(err) {
+				c.log.V(1).Error(err, "Error reading packet, recovered")
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
 				return true
 			} else {
-				zap.L().Debug("Error reading packet, closing connection", zap.Error(err))
+				c.log.V(1).Error(err, "Error reading packet, closing connection")
 			}
 			return false
 		}
@@ -140,10 +142,10 @@ func (c *minecraftConn) readLoop() {
 }
 
 // handles error when read the next packet
-func handleReadErr(err error) (recoverable bool) {
+func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 	var silentErr *errs.SilentError
 	if errors.As(err, &silentErr) {
-		zap.L().Debug("silentErr: error reading next packet, unrecoverable and closing connection", zap.Error(err))
+		c.log.V(1).Error(err, "silentErr: error reading next packet, unrecoverable and closing connection")
 		return false
 	}
 	// Immediately retry for EAGAIN
@@ -157,7 +159,7 @@ func handleReadErr(err error) (recoverable bool) {
 			return true
 		} else if netErr.Timeout() {
 			// Read timeout, disconnect
-			zap.S().Errorf("read timeout: %v", err)
+			c.log.Info("read timeout", "error", err)
 			return false
 		} else if errs.IsConnClosedErr(netErr.Err) {
 			// Connection is already closed
@@ -171,7 +173,7 @@ func handleReadErr(err error) (recoverable bool) {
 		strings.Contains(err.Error(), "use of closed file") {
 		return false
 	}
-	zap.L().Error("error reading next packet, unrecoverable and closing connection", zap.Error(err))
+	c.log.Info("error reading next packet, unrecoverable and closing connection", "error", err)
 	return false
 }
 
@@ -201,7 +203,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
-	zap.L().Debug("Error writing packet, closing connection", zap.Error(err))
+	c.log.V(1).Error(err, "Error writing packet, closing connection")
 }
 
 // WritePacket writes a packet to the connection's
@@ -283,7 +285,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 			sh.disconnected()
 
 			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
-				zap.S().Infof("%s has disconnected", p.player_())
+				c.log.Info("Player has disconnected", "player", p.player_())
 			}
 		}
 	})
@@ -403,7 +405,7 @@ func (c *minecraftConn) setSessionHandler0(handler sessionHandler) {
 // Sets the compression threshold on the connection.
 // You are responsible for sending packet.SetCompression beforehand.
 func (c *minecraftConn) SetCompressionThreshold(threshold int) error {
-	zap.S().Debugf("Set compression threshold %d", threshold)
+	c.log.V(1).Info("Update compression", "threshold", threshold)
 	c.decoder.SetCompressionThreshold(threshold)
 	return c.encoder.SetCompression(threshold, c.config().Compression.Level)
 }

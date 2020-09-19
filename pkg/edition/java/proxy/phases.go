@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"go.minekube.com/gate/pkg/edition/java/forge"
+	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
-	"go.minekube.com/gate/pkg/util/modinfo"
 	"strings"
 )
 

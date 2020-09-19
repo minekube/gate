@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/util/profile"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"io/ioutil"

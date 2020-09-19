@@ -6,21 +6,21 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
-	"go.minekube.com/gate/internal/health"
-	"go.minekube.com/gate/internal/util/auth"
-	"go.minekube.com/gate/internal/util/quotautil"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/internal/auth"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/event"
-	"go.minekube.com/gate/pkg/util"
+	"go.minekube.com/gate/pkg/internal/addrquota"
+	"go.minekube.com/gate/pkg/internal/health"
+	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	rpc "google.golang.org/grpc/health/grpc_health_v1"
 	"net"
 	"strings"
@@ -28,18 +28,20 @@ import (
 	"time"
 )
 
-// Proxy is Gate's Java edition of a Minecraft proxy.
+// Proxy is Gate's Java edition Minecraft proxy.
 type Proxy struct {
+	log              logr.Logger
 	config           *config.Config
-	event            *event.Manager
+	event            event.Manager
 	command          *CommandManager
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
-	startTime time.Time
-	runOnce   atomic.Bool
-	closeOnce sync.Once
-	closed    chan struct{}
+	startTimeMu sync.RWMutex
+	startTime   time.Time
+
+	closeMu sync.Mutex
+	started bool
 
 	shutdownReason *component.Text
 	motd           *component.Text
@@ -52,17 +54,17 @@ type Proxy struct {
 	playerNames map[string]*connectedPlayer    // lower case usernames map
 	playerIDs   map[uuid.UUID]*connectedPlayer // uuids map
 
-	connectionsQuota *quotautil.Quota
-	loginsQuota      *quotautil.Quota
+	connectionsQuota *addrquota.Quota
+	loginsQuota      *addrquota.Quota
 }
 
 // New takes a config that should have been validated by
 // config.Validate and returns a new initialized Proxy ready to run.
-func New(config config.Config) (p *Proxy) {
-	p = &Proxy{
-		closed:           make(chan struct{}),
+func New(mgr manager.Manager, config config.Config) (*Proxy, error) {
+	p := &Proxy{
+		log:              mgr.Logger().WithName("java-proxy"),
 		config:           &config,
-		event:            event.NewManager(),
+		event:            mgr.Event(),
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
@@ -73,13 +75,13 @@ func New(config config.Config) (p *Proxy) {
 	// Connection & login rate limiters
 	quota := config.Quota.Connections
 	if quota.Enabled {
-		p.connectionsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+		p.connectionsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
 	}
 	quota = config.Quota.Logins
 	if quota.Enabled {
-		p.loginsQuota = quotautil.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
+		p.loginsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
 	}
-	return p
+	return p, mgr.Add(p)
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.
@@ -90,11 +92,29 @@ var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 // The Proxy is already shutdown on method return.
 // In order to stop the Proxy call Shutdown.
 // A Proxy can only be run once or ErrProxyAlreadyRun is returned.
+// TODO allow running again after shutdown
 func (p *Proxy) Start(stop <-chan struct{}) error {
-	if !p.runOnce.CAS(false, true) {
-		return ErrProxyAlreadyRun
+	if err := func() error {
+		p.closeMu.Lock()
+		defer p.closeMu.Unlock()
+		if p.started {
+			return ErrProxyAlreadyRun
+		}
+		p.started = true
+		return nil
+	}(); err != nil {
+		return err
 	}
-	return p.run(stop) // Run and block
+
+	p.startTimeMu.Lock()
+	p.startTime = time.Now().UTC()
+	p.startTimeMu.Unlock()
+
+	if err := p.preInit(); err != nil {
+		return fmt.Errorf("pre-initialization error: %w", err)
+	}
+	defer p.Shutdown(p.shutdownReason) // disconnects players
+	return p.listenAndServe(p.config.Bind, stop)
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
@@ -103,22 +123,33 @@ func (p *Proxy) Start(stop <-chan struct{}) error {
 // all existing connections with the given reason (nil = blank reason)
 // and waits for all event subscribers to finish.
 func (p *Proxy) Shutdown(reason component.Component) {
-	p.closeOnce.Do(func() {
-		zap.L().Info("Shutting down the proxy...")
-		defer zap.L().Info("Finished shutdown.")
+	p.closeMu.Lock()
+	defer p.closeMu.Unlock()
+	if !p.started {
+		return // not started or already shutdown
+	}
+	p.started = false
 
-		pre := &PreShutdownEvent{reason: reason}
-		p.event.Fire(pre)
-		reason = pre.Reason()
+	p.log.Info("Shutting down the proxy...")
+	shutdownTime := time.Now()
+	defer func() { p.log.Info("Finished shutdown.", "time", time.Since(shutdownTime)) }()
 
-		zap.L().Info("Disconnecting all players...")
-		close(p.closed)
-		p.DisconnectAll(reason)
+	pre := &PreShutdownEvent{reason: reason}
+	p.event.Fire(pre)
+	reason = pre.Reason()
 
-		zap.L().Info("Waiting for all event handlers to complete...")
-		p.event.Fire(&ShutdownEvent{})
-		p.event.Wait()
-	})
+	lReason := new(strings.Builder)
+	if reason == nil {
+		_ = (&legacy.Legacy{}).Marshal(lReason, reason)
+	}
+	p.log.Info("Disconnecting all players...", "reason", lReason)
+	disconnectTime := time.Now()
+	p.DisconnectAll(reason)
+	p.log.Info("Disconnected all players.", "time", time.Since(disconnectTime))
+
+	p.log.Info("Waiting for all event handlers to complete...")
+	p.event.Fire(&ShutdownEvent{})
+	p.event.Wait()
 }
 
 // called before starting to actually run the proxy
@@ -142,7 +173,7 @@ func (p *Proxy) preInit() (err error) {
 		p.Register(NewServerInfo(name, tcpAddr(addr)))
 	}
 	if len(c.Servers) != 0 {
-		zap.S().Infof("Pre-registered %d servers", len(c.Servers))
+		p.log.Info("Registered servers", "count", len(c.Servers))
 	}
 
 	// Register builtin commands
@@ -160,7 +191,7 @@ func (p *Proxy) loadShutdownReason() (err error) {
 	if len(c.ShutdownReason) == 0 {
 		return nil
 	}
-	p.motd, err = parseTextComponentFromConfig(c.ShutdownReason)
+	p.shutdownReason, err = parseTextComponentFromConfig(c.ShutdownReason)
 	return
 }
 
@@ -176,7 +207,7 @@ func (p *Proxy) loadMotd() (err error) {
 func parseTextComponentFromConfig(s string) (t *component.Text, err error) {
 	var c component.Component
 	if strings.HasPrefix(s, "{") {
-		c, err = util.LatestJsonCodec().Unmarshal([]byte(s))
+		c, err = util2.LatestJsonCodec().Unmarshal([]byte(s))
 	} else {
 		c, err = (&legacy.Legacy{}).Unmarshal([]byte(s))
 	}
@@ -198,13 +229,13 @@ func (p *Proxy) loadFavicon() (err error) {
 	}
 	if strings.HasPrefix(c.Status.Favicon, "data:image/") {
 		p.favicon = favicon.Favicon(c.Status.Favicon)
-		zap.L().Info("Using favicon from data uri")
+		p.log.Info("Using favicon from data uri", "length", len(p.favicon))
 	} else {
 		p.favicon, err = favicon.FromFile(c.Status.Favicon)
 		if err != nil {
 			return fmt.Errorf("error reading favicon file %q: %w", c.Status.Favicon, err)
 		}
-		zap.S().Infof("Using favicon file %s", c.Status.Favicon)
+		p.log.Info("Using favicon file", "file", c.Status.Favicon)
 	}
 	return nil
 }
@@ -218,46 +249,19 @@ func (p *Proxy) initPlugins() error {
 	return nil
 }
 
-func (p *Proxy) run(stop <-chan struct{}) error {
-	p.startTime = time.Now().UTC()
-	if err := p.preInit(); err != nil {
-		return fmt.Errorf("pre-initialization error: %w", err)
-	}
-	go func() { <-stop; p.Shutdown(p.shutdownReason) }()
-
-	errChan := make(chan error, 1)
-	wg := new(sync.WaitGroup)
-	defer wg.Wait()
-
-	if p.config.Health.Enabled {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			errChan <- p.runHealthService(p.closed)
-		}()
-	}
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		errChan <- p.listenAndServe(p.config.Bind, p.closed)
-	}()
-
-	return <-errChan
-}
-
+// TODO move to gate package for services to register
 func (p *Proxy) runHealthService(stop <-chan struct{}) error {
 	probe := p.config.Health
 	run, err := health.New(probe.Bind)
 	if err != nil {
 		return fmt.Errorf("error creating health probe service: %w", err)
 	}
-	zap.S().Infof("Health probe service running at %s", probe.Bind)
+	p.log.Info("Health probe service running", "addr", probe.Bind)
 	return run(stop, p.healthCheck)
 }
 
 // Event returns the Proxy's event manager.
-func (p *Proxy) Event() *event.Manager {
+func (p *Proxy) Event() event.Manager {
 	return p.event
 }
 
@@ -318,7 +322,8 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 
-	zap.S().Debugf("Registered server %q (%s)", info.Name(), info.Addr())
+	p.log.V(1).Info("Registered new server",
+		"name", info.Name(), "addr", info.Addr())
 	return rs, true
 }
 
@@ -337,7 +342,8 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	}
 	delete(p.servers, name)
 
-	zap.S().Debugf("Unregistered server %q (%s)", info.Name(), info.Addr())
+	p.log.Info("Unregistered backend server",
+		"name", info.Name(), "addr", info.Addr())
 	return true
 }
 
@@ -380,7 +386,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 
 	p.event.Fire(&ReadyEvent{})
 
-	zap.S().Infof("Listening on %s", addr)
+	p.log.Info("Listening for connections", "addr", addr)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -400,14 +406,12 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 func (p *Proxy) handleRawConn(raw net.Conn) {
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(raw.RemoteAddr()) {
 		_ = raw.Close()
-		zap.L().Info("A connection was exceeded the rate limit", zap.Stringer("remoteAddr", raw.RemoteAddr()))
+		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		return
 	}
 
 	// Create client connection
-	conn := newMinecraftConn(raw, p, true, func() []zap.Field {
-		return []zap.Field{zap.Bool("player", true)}
-	})
+	conn := newMinecraftConn(raw, p, true)
 	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
 	// Read packets in loop
 	conn.readLoop()

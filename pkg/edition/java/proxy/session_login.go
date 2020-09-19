@@ -8,15 +8,15 @@ import (
 	"encoding/json"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/internal/util/auth"
-	"go.minekube.com/gate/pkg/config"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/internal/auth"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/event"
-	"go.minekube.com/gate/pkg/util/profile"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"go.uber.org/zap"
 	"net"
 	"net/http"
 )
@@ -24,6 +24,7 @@ import (
 type loginSessionHandler struct {
 	conn    *minecraftConn
 	inbound Inbound
+	log     logr.Logger
 
 	noOpSessionHandler
 
@@ -33,7 +34,7 @@ type loginSessionHandler struct {
 }
 
 func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
-	return &loginSessionHandler{conn: conn, inbound: inbound}
+	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
 }
 
 func (l *loginSessionHandler) handlePacket(p proto.Packet) {
@@ -43,7 +44,7 @@ func (l *loginSessionHandler) handlePacket(p proto.Packet) {
 	case *packet.EncryptionResponse:
 		l.handleEncryptionResponse(t)
 	default:
-		l.conn.close() // unknown packet, close connection
+		_ = l.conn.close() // unknown packet, close connection
 	}
 }
 
@@ -100,20 +101,19 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	authenticator := l.auth()
 	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifyToken)
 	if err != nil {
-		zap.L().Error("Could not decrypt verification token", zap.Error(err),
-			zap.Stringer("protocol", l.conn.protocol))
+		l.log.Error(err, "Could not decrypt verification token")
 		_ = l.conn.close()
 		return
 	}
 	if !bytes.Equal(l.verify, decryptedVerifyToken) {
-		zap.L().Error("Unable to successfully decrypt the verification token.")
+		l.log.Error(err, "Unable to successfully decrypt the verification token.")
 		_ = l.conn.close()
 		return
 	}
 
 	decryptedSharedSecret, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.SharedSecret)
 	if err != nil {
-		zap.L().Error("Could not decrypt verify token", zap.Error(err))
+		l.log.Error(err, "Could not decrypt verify token")
 		_ = l.conn.close()
 		return
 	}
@@ -121,13 +121,13 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	// Enable encryption.
 	// Once the client sends EncryptionResponse, encryption is enabled.
 	if err = l.conn.enableEncryption(decryptedSharedSecret); err != nil {
-		zap.L().Error("Error enabling encryption for connecting player", zap.Error(err))
+		l.log.Error(err, "Error enabling encryption for connecting player")
 		_ = l.conn.closeWith(packet.DisconnectWith(internalServerConnectionError))
 		return
 	}
 
 	var userIp string
-	getUserIp := func() string {
+	getUserIP := func() string {
 		if len(userIp) == 0 {
 			userIp, _, _ = net.SplitHostPort(l.conn.RemoteAddr().String())
 		}
@@ -136,14 +136,14 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 
 	var optionalUserIP string
 	if l.config().ShouldPreventClientProxyConnections {
-		optionalUserIP = getUserIp()
+		optionalUserIP = getUserIP()
 	}
 
 	serverID := authenticator.GenerateServerID(decryptedSharedSecret)
 	statusCode, body, err := authenticator.HasJoined(l.login.Username, optionalUserIP, serverID)
 	if err != nil {
 		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
-			zap.L().Error("Unable to authenticate player with Mojang", zap.Error(err))
+			l.log.Error(err, "Unable to authenticate player with Mojang")
 		}
 		return
 	}
@@ -158,7 +158,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		gameProfile := new(profile.GameProfile)
 		if err = json.Unmarshal(body, gameProfile); err != nil {
 			if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
-				zap.L().Error("Unable to unmarshal GameProfile from Mojang authentication response", zap.Error(err))
+				l.log.Error(err, "Unable to unmarshal GameProfile from Mojang authentication response")
 			}
 			return
 		}
@@ -168,11 +168,10 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))
 	default:
 		// Something else went wrong
-		zap.L().Error("Got unexpected status error code whilst contacting Mojang to log in player",
-			zap.Int("statusCode", statusCode),
-			zap.String("username", l.login.Username),
-			zap.String("playerIp", getUserIp()),
-		)
+		l.log.Info("Got unexpected status error code whilst contacting Mojang to log in player",
+			"statusCode", statusCode,
+			"username", l.login.Username,
+			"playerIP", getUserIP())
 	}
 }
 
@@ -231,7 +230,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 		return
 	}
 
-	zap.S().Infof("%s has connected", player)
+	l.log.Info("Player has connected, completing login", "player", player)
 
 	// Setup permissions
 	permSetup := &PermissionsSetupEvent{
@@ -259,7 +258,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 			return
 		}
 		if err := player.SetCompressionThreshold(threshold); err != nil {
-			zap.L().Error("Error setting compression threshold", zap.Error(err))
+			l.log.Error(err, "Error setting compression threshold")
 			_ = player.closeWith(packet.DisconnectWith(internalServerConnectionError))
 			return
 		}
@@ -326,7 +325,7 @@ func (l *loginSessionHandler) proxy() *Proxy {
 	return l.conn.proxy
 }
 
-func (l *loginSessionHandler) event() *event.Manager {
+func (l *loginSessionHandler) event() event.Manager {
 	return l.proxy().event
 }
 

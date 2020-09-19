@@ -6,27 +6,31 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.uber.org/zap"
+	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 type statusSessionHandler struct {
 	conn    *minecraftConn
 	inbound Inbound
+	log     logr.Logger
 
 	receivedRequest bool
 
 	noOpSessionHandler
 }
 
+func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
+	return &statusSessionHandler{conn: conn, inbound: inbound,
+		log: conn.log.WithName("statusSession").WithValues(
+			"inbound", inbound,
+			"protocol", conn.protocol)}
+}
+
 func (h *statusSessionHandler) activated() {
 	cfg := h.conn.proxy.Config()
 	if cfg.Status.ShowPingRequests || cfg.Debug {
-		zap.S().Infof("%s with version %s", h.inbound, h.conn.protocol)
+		h.log.Info("Got server list status request")
 	}
-}
-
-func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
-	return &statusSessionHandler{conn: conn, inbound: inbound}
 }
 
 func (h *statusSessionHandler) handlePacket(p proto.Packet) {
@@ -36,7 +40,7 @@ func (h *statusSessionHandler) handlePacket(p proto.Packet) {
 	case *packet.StatusPing:
 		h.handleStatusPing(typed)
 	default:
-		h.conn.close()
+		_ = h.conn.close()
 	}
 }
 
@@ -77,7 +81,7 @@ func (h *statusSessionHandler) handleStatusRequest() {
 
 	if e.ping == nil {
 		_ = h.conn.close()
-		zap.L().Debug("Ping is nil, sent no response")
+		h.log.V(1).Info("Ping response was set to nil by an event handler, no response is sent")
 		return
 	}
 	if !h.inbound.Active() {
@@ -87,7 +91,7 @@ func (h *statusSessionHandler) handleStatusRequest() {
 	response, err := json.Marshal(e.ping)
 	if err != nil {
 		_ = h.conn.close()
-		zap.L().Error("Error marshaling ping response to json", zap.Error(err))
+		h.log.Error(err, "Error marshaling ping response to json")
 		return
 	}
 	_ = h.conn.WritePacket(&packet.StatusResponse{
@@ -99,13 +103,13 @@ func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
 	// Just return again and close
 	defer h.conn.close()
 	if err := h.conn.WritePacket(p); err != nil {
-		zap.S().Debugf("Error writing StatusPing: %v", err)
+		h.log.V(1).Error(err, "Error writing StatusPing response")
 	}
 }
 
 func (h *statusSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
 	// What even is going on? ;D
-	h.conn.close()
+	_ = h.conn.close()
 }
 
 func (h *statusSessionHandler) proxy() *Proxy {

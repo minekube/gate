@@ -3,7 +3,7 @@ package errs
 import "fmt"
 
 // SilentError is an error wrapper type that silences an
-// errors and only log them in the debug log.
+// error and only logs them in the debug log.
 //
 // It is usually used to prevent spamming the default
 // log when Minecraft clients send invalid packets which cannot be read.

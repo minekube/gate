@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
-	"go.minekube.com/gate/pkg/util/modinfo"
-	"go.minekube.com/gate/pkg/util/profile"
 )
 
 // PingEvent is fired when a server list ping

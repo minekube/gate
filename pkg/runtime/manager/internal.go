@@ -4,16 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/runtime/inject"
 	logf "go.minekube.com/gate/pkg/runtime/internal/log"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sync"
 	"time"
-)
-
-const (
-	defaultGracefulShutdownPeriod = 30 * time.Second
 )
 
 var log = logf.RuntimeLog.WithName("manager")
@@ -28,9 +25,11 @@ type proxyManager struct {
 	// be closed via `internalStopper` (by being the same underlying channel).
 	internalStop chan struct{}
 
-	// Logger is the logger that should be used by this manager.
+	// The logger that should be used by this manager and potentially Runnables.
 	// If none is set, it defaults to log.Log global logger.
 	logger logr.Logger
+	// The event manager shared among Runnables.
+	event event.Manager
 
 	mu      sync.Mutex // Protects these fields
 	started bool
@@ -46,6 +45,10 @@ type proxyManager struct {
 	// waitForRunnable is holding the number of runnables currently running so that
 	// we can wait for them to exit before quitting the manager
 	waitForRunnable sync.WaitGroup
+}
+
+func (pm *proxyManager) Event() event.Manager {
+	return pm.event
 }
 
 func (pm *proxyManager) Logger() logr.Logger {

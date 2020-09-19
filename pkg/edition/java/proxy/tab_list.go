@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
-	"go.minekube.com/gate/pkg/util"
-	"go.minekube.com/gate/pkg/util/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"sync"
 	"time"
@@ -29,7 +29,7 @@ func newTabList(c *minecraftConn) *tabList {
 func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	b := new(bytes.Buffer)
 	p := new(packet.HeaderAndFooter)
-	j := util.JsonCodec(t.protocol)
+	j := util2.JsonCodec(t.protocol)
 
 	if err := j.Marshal(b, header); err != nil {
 		return fmt.Errorf("error marshal header: %w", err)

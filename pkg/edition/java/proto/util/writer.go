@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"go.minekube.com/gate/pkg/util/profile"
+	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"math"
