@@ -18,6 +18,7 @@ package gate
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"go.minekube.com/gate/pkg/gate"
 	"os"
 	"strings"
 )
@@ -29,7 +30,7 @@ var rootCmd = &cobra.Command{
 	Long: `A high performant & paralleled Minecraft proxy server with
 scalability, flexibility & excelled server version support.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := Run(cmd.Context().Done()); err != nil {
+		if err := gate.Run(cmd.Context().Done()); err != nil {
 			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
 		}
 	},
@@ -52,15 +53,15 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	_ = Viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
+	_ = gate.Viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
 
-	Viper.SetEnvPrefix("GATE")
-	Viper.AutomaticEnv() // read in environment variables that match
-	Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	gate.Viper.SetEnvPrefix("GATE")
+	gate.Viper.AutomaticEnv() // read in environment variables that match
+	gate.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	Viper.SetConfigFile("config.yml")
+	gate.Viper.SetConfigFile("config.yml")
 	// If a config file is found, read it in.
-	if err := Viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", Viper.ConfigFileUsed())
+	if err := gate.Viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", gate.Viper.ConfigFileUsed())
 	}
 }
