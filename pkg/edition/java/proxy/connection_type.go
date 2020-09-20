@@ -9,7 +9,10 @@ import (
 type connectionType interface {
 	initialClientPhase() clientConnectionPhase
 	initialBackendPhase() backendConnectionPhase
-	addGameProfileTokensIfRequired(original *profile.GameProfile, forwardingType config.ForwardingMode) *profile.GameProfile
+	addGameProfileTokensIfRequired(
+		original *profile.GameProfile,
+		forwardingType config.ForwardingMode,
+	) *profile.GameProfile
 }
 
 type connType struct {
@@ -26,7 +29,10 @@ func (c *connType) initialClientPhase() clientConnectionPhase {
 func (c *connType) initialBackendPhase() backendConnectionPhase {
 	return c.initialBackendPhase_
 }
-func (*connType) addGameProfileTokensIfRequired(original *profile.GameProfile, _ config.ForwardingMode) *profile.GameProfile {
+func (*connType) addGameProfileTokensIfRequired(
+	original *profile.GameProfile,
+	_ config.ForwardingMode,
+) *profile.GameProfile {
 	return original
 }
 
@@ -34,7 +40,10 @@ type legacyForgeConnType struct {
 	*connType
 }
 
-func (*legacyForgeConnType) addGameProfileTokensIfRequired(original *profile.GameProfile, forwardingType config.ForwardingMode) *profile.GameProfile {
+func (*legacyForgeConnType) addGameProfileTokensIfRequired(
+	original *profile.GameProfile,
+	forwardingType config.ForwardingMode,
+) *profile.GameProfile {
 	// We can't forward the FML token to the server when we are running in legacy forwarding mode,
 	// since both use the "hostname" field in the handshake. We add a special property to the
 	// profile instead, which will be ignored by non-Forge servers and can be intercepted by a

@@ -14,14 +14,13 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/internal/addrquota"
-	"go.minekube.com/gate/pkg/internal/health"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
-	rpc "google.golang.org/grpc/health/grpc_health_v1"
+	"go.minekube.com/gate/pkg/util/validation"
 	"net"
 	"strings"
 	"sync"
@@ -39,6 +38,7 @@ type Proxy struct {
 
 	startTimeMu sync.RWMutex
 	startTime   time.Time
+	stop        chan struct{}
 
 	closeMu sync.Mutex
 	started bool
@@ -58,12 +58,29 @@ type Proxy struct {
 	loginsQuota      *addrquota.Quota
 }
 
+// Options are the options for a new Java edition Proxy.
+type Options struct {
+	// Config requires a valid configuration.
+	Config *config.Config
+	// Logger is the logger to be used by the Proxy.
+	// If none is set, the managers logger is used.
+	Logger logr.Logger
+}
+
 // New takes a config that should have been validated by
-// config.Validate and returns a new initialized Proxy ready to run.
-func New(mgr manager.Manager, config config.Config) (*Proxy, error) {
+// config.Validate and returns a new initialized Proxy ready to start.
+func New(mgr manager.Manager, options Options) (*Proxy, error) {
+	if options.Config == nil {
+		return nil, errs.ErrMissingConfig
+	}
+	log := options.Logger
+	if log == nil {
+		log = mgr.Logger().WithName("java-proxy")
+	}
+
 	p := &Proxy{
-		log:              mgr.Logger().WithName("java-proxy"),
-		config:           &config,
+		log:              log,
+		config:           options.Config,
 		event:            mgr.Event(),
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
@@ -72,27 +89,32 @@ func New(mgr manager.Manager, config config.Config) (*Proxy, error) {
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    auth.NewAuthenticator(),
 	}
+
+	c := options.Config
 	// Connection & login rate limiters
-	quota := config.Quota.Connections
+	quota := c.Quota.Connections
 	if quota.Enabled {
 		p.connectionsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
 	}
-	quota = config.Quota.Logins
+	quota = c.Quota.Logins
 	if quota.Enabled {
 		p.loginsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
 	}
+
 	return p, mgr.Add(p)
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.
 var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
+// Start should not be called directly, use the Start method on the
+// Manager that was given to the New when creating this Proxy.
+//
 // Start runs the Java edition Proxy, blocks until the proxy is
 // Shutdown or an error occurred while starting.
 // The Proxy is already shutdown on method return.
-// In order to stop the Proxy call Shutdown.
+// Another method of stopping the Proxy is to call Shutdown.
 // A Proxy can only be run once or ErrProxyAlreadyRun is returned.
-// TODO allow running again after shutdown
 func (p *Proxy) Start(stop <-chan struct{}) error {
 	if err := func() error {
 		p.closeMu.Lock()
@@ -106,7 +128,11 @@ func (p *Proxy) Start(stop <-chan struct{}) error {
 		return err
 	}
 
+	stopCh := make(chan struct{})
+	go func() { <-stop; close(stopCh) }()
+
 	p.startTimeMu.Lock()
+	p.stop = stopCh
 	p.startTime = time.Now().UTC()
 	p.startTimeMu.Unlock()
 
@@ -114,7 +140,7 @@ func (p *Proxy) Start(stop <-chan struct{}) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
-	return p.listenAndServe(p.config.Bind, stop)
+	return p.listenAndServe(p.config.Bind, stopCh)
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
@@ -129,6 +155,13 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		return // not started or already shutdown
 	}
 	p.started = false
+	// stop listening for new connections
+	select {
+	case <-p.stop:
+		return // channel already closed
+	default:
+		close(p.stop)
+	}
 
 	p.log.Info("Shutting down the proxy...")
 	shutdownTime := time.Now()
@@ -249,17 +282,6 @@ func (p *Proxy) initPlugins() error {
 	return nil
 }
 
-// TODO move to gate package for services to register
-func (p *Proxy) runHealthService(stop <-chan struct{}) error {
-	probe := p.config.Health
-	run, err := health.New(probe.Bind)
-	if err != nil {
-		return fmt.Errorf("error creating health probe service: %w", err)
-	}
-	p.log.Info("Health probe service running", "addr", probe.Bind)
-	return run(stop, p.healthCheck)
-}
-
 // Event returns the Proxy's event manager.
 func (p *Proxy) Event() event.Manager {
 	return p.event
@@ -307,8 +329,8 @@ func (p *Proxy) Servers() []RegisteredServer {
 //  - if name already exists, returns the already registered server and false
 //  - if the specified ServerInfo is invalid, returns nil and false.
 func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
-	if info == nil || !config.ValidServerName(info.Name()) ||
-		config.ValidHostPort(info.Addr().String()) != nil {
+	if info == nil || !validation.ValidServerName(info.Name()) ||
+		validation.ValidHostPort(info.Addr().String()) != nil {
 		return nil, false
 	}
 
@@ -590,21 +612,6 @@ func (r *ChannelRegistrar) FromID(channel string) (message.ChannelIdentifier, bo
 //
 //
 //
-
-// pings the proxy to check health
-func (p *Proxy) healthCheck(c context.Context) (*rpc.HealthCheckResponse, error) {
-	ctx, cancel := context.WithTimeout(c, time.Second)
-	defer cancel()
-
-	var dialer net.Dialer
-	client, err := dialer.DialContext(ctx, "tcp", p.config.Bind)
-	if err != nil {
-		return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_NOT_SERVING}, nil
-	}
-	defer client.Close()
-
-	return &rpc.HealthCheckResponse{Status: rpc.HealthCheckResponse_SERVING}, nil
-}
 
 // sends msg to all players on this proxy
 func (p *Proxy) sendMessage(msg component.Component) {

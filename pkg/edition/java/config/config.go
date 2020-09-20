@@ -1,12 +1,9 @@
 package config
 
 import (
-	"errors"
 	"fmt"
-	"github.com/spf13/viper"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	"net"
-	"regexp"
+	"go.minekube.com/gate/pkg/util/configutil"
+	"go.minekube.com/gate/pkg/util/validation"
 )
 
 // Config is the configuration of the proxy.
@@ -40,7 +37,6 @@ type Config struct {
 	BuiltinCommands            bool
 
 	Debug          bool
-	Health         HealthProbeService
 	ShutdownReason string
 }
 
@@ -77,12 +73,6 @@ type (
 		Burst      int     // The maximum events per second, per block; the size of the token bucket
 		MaxEntries int     // Maximum number of IP blocks to keep track of in cache
 	}
-	// GRPC health probe service to use with Kubernetes pods.
-	// (https://github.com/grpc-ecosystem/grpc-health-probe)
-	HealthProbeService struct {
-		Enabled bool
-		Bind    string
-	}
 )
 
 // ForwardingMode is a player info forwarding mode.
@@ -96,86 +86,54 @@ const (
 	VelocityForwardingMode ForwardingMode = "velocity"
 )
 
-// Init config defaults
-func init() {
-	viper.SetDefault("bind", "0.0.0.0:25565")
-	viper.SetDefault("onlineMode", true)
-	viper.SetDefault("forwarding.mode", LegacyForwardingMode)
+// SetDefaults sets Config defaults used with Viper.
+func SetDefaults(i configutil.SetDefault) {
+	i.SetDefault("bind", "0.0.0.0:25565")
+	i.SetDefault("onlineMode", true)
+	i.SetDefault("forwarding.mode", LegacyForwardingMode)
 
-	viper.SetDefault("ShutdownReason", "§cGate proxy is shutting down...\nPlease reconnect in a moment!")
+	i.SetDefault("ShutdownReason", "§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 
-	viper.SetDefault("status.motd", "§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
-	viper.SetDefault("status.showmaxplayers", 1000)
-	viper.SetDefault("status.announceForge", false)
-	viper.SetDefault("status.showPingRequests", false)
+	i.SetDefault("status.motd", "§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
+	i.SetDefault("status.showmaxplayers", 1000)
+	i.SetDefault("status.announceForge", false)
+	i.SetDefault("status.showPingRequests", false)
 
-	viper.SetDefault("compression.threshold", 256)
-	viper.SetDefault("compression.level", -1)
+	i.SetDefault("compression.threshold", 256)
+	i.SetDefault("compression.level", -1)
 
-	viper.SetDefault("query.enabled", false)
-	viper.SetDefault("query.port", 25577)
-	viper.SetDefault("query.showplugins", false)
+	i.SetDefault("query.enabled", false)
+	i.SetDefault("query.port", 25577)
+	i.SetDefault("query.showplugins", false)
 
 	// Default quotas should never affect legitimate operations,
 	// but rate limits aggressive behaviours.
-	viper.SetDefault("quota.connections.Enabled", true)
-	viper.SetDefault("quota.connections.OPS", 5)
-	viper.SetDefault("quota.connections.burst", 10)
-	viper.SetDefault("quota.connections.MaxEntries", 1000)
+	i.SetDefault("quota.connections.Enabled", true)
+	i.SetDefault("quota.connections.OPS", 5)
+	i.SetDefault("quota.connections.burst", 10)
+	i.SetDefault("quota.connections.MaxEntries", 1000)
 
-	viper.SetDefault("quota.logins.Enabled", true)
-	viper.SetDefault("quota.logins.OPS", 0.4)
-	viper.SetDefault("quota.logins.burst", 3)
-	viper.SetDefault("quota.logins.MaxEntries", 1000)
+	i.SetDefault("quota.logins.Enabled", true)
+	i.SetDefault("quota.logins.OPS", 0.4)
+	i.SetDefault("quota.logins.burst", 3)
+	i.SetDefault("quota.logins.MaxEntries", 1000)
 
-	viper.SetDefault("connectiontimeout", 5000)
-	viper.SetDefault("readtimeout", 30000)
-	viper.SetDefault("BungeePluginChannelEnabled", true)
-	viper.SetDefault("BuiltinCommands", true)
-	viper.SetDefault("FailoverOnUnexpectedServerDisconnect", true)
-
-	viper.SetDefault("Health.enabled", false)
-	viper.SetDefault("Health.bind", "0.0.0.0:8080")
+	i.SetDefault("connectiontimeout", 5000)
+	i.SetDefault("readtimeout", 30000)
+	i.SetDefault("BungeePluginChannelEnabled", true)
+	i.SetDefault("BuiltinCommands", true)
+	i.SetDefault("FailoverOnUnexpectedServerDisconnect", true)
 }
 
-var log = logr.Log.WithName("java-proxy-config")
-
-func Validate(c *Config) (err error) {
-	if c == nil {
-		return errors.New("config must not be nil-pointer")
-	}
-
-	// validate input config
-	warns, errs := validate(c)
-
-	warn := func() {
-		for _, err = range warns {
-			log.Info(err.Error())
-		}
-	}
-
-	if len(errs) != 0 {
-		for _, err = range errs {
-			log.Error(err, "Config error")
-		}
-
-		a, s := "are", "s"
-		if len(errs) == 1 {
-			a, s = "is", ""
-		}
-
-		warn()
-		return fmt.Errorf("there %s %d config validation error%s", a, len(errs), s)
-	}
-
-	warn()
-	return nil
-}
-
-func validate(c *Config) (warns []error, errs []error) {
+// Validate validates Config.
+func (c *Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...interface{}) { errs = append(errs, fmt.Errorf(m, args...)) }
 	w := func(m string, args ...interface{}) { warns = append(warns, fmt.Errorf(m, args...)) }
 
+	if c == nil {
+		e("config must not be nil")
+		return
+	}
 	if c.ProxyProtocol {
 		e("Proxy protocol is not supported yet, disable it")
 	}
@@ -183,7 +141,7 @@ func validate(c *Config) (warns []error, errs []error) {
 	if len(c.Bind) == 0 {
 		e("Bind is empty")
 	} else {
-		if err := ValidHostPort(c.Bind); err != nil {
+		if err := validation.ValidHostPort(c.Bind); err != nil {
 			e("Invalid bind %q: %v", c.Bind, err)
 		}
 	}
@@ -204,12 +162,13 @@ func validate(c *Config) (warns []error, errs []error) {
 	if len(c.Servers) == 0 {
 		w("No backend servers configured.")
 	}
+
 	for name, addr := range c.Servers {
-		if !ValidServerName(name) {
+		if !validation.ValidServerName(name) {
 			e("Invalid server name format %q: %s and length be 1-%d", name,
-				qualifiedNameErrMsg, qualifiedNameMaxLength)
+				validation.QualifiedNameErrMsg, validation.QualifiedNameMaxLength)
 		}
-		if err := ValidHostPort(addr); err != nil {
+		if err := validation.ValidHostPort(addr); err != nil {
 			e("Invalid address %q for server %q: %w", addr, name, err)
 		}
 	}
@@ -253,31 +212,5 @@ func validate(c *Config) (warns []error, errs []error) {
 		}
 	}
 
-	if c.Health.Enabled {
-		if err := ValidHostPort(c.Health.Bind); err != nil {
-			e("Invalid health probe bind address %q: %v", c.Health.Bind, err)
-		}
-	}
-
 	return
-}
-
-func ValidHostPort(hostAndPort string) error {
-	_, _, err := net.SplitHostPort(hostAndPort)
-	return err
-}
-
-// Constants obtained from https://github.com/kubernetes/apimachinery/blob/master/pkg/util/validation/validation.go
-const (
-	qnameCharFmt           = "[A-Za-z0-9]"
-	qnameExtCharFmt        = "[-A-Za-z0-9_.]"
-	qualifiedNameFmt       = "(" + qnameCharFmt + qnameExtCharFmt + "*)?" + qnameCharFmt
-	qualifiedNameErrMsg    = "must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character"
-	qualifiedNameMaxLength = 63
-)
-
-var qualifiedNameRegexp = regexp.MustCompile("^" + qualifiedNameFmt + "$")
-
-func ValidServerName(str string) bool {
-	return str != "" && len(str) <= qualifiedNameMaxLength && qualifiedNameRegexp.MatchString(str)
 }

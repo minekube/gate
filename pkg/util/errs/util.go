@@ -1,6 +1,13 @@
 package errs
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	ErrMissingConfig = errors.New("config is missing")
+)
 
 // SilentError is an error wrapper type that silences an
 // error and only logs them in the debug log.

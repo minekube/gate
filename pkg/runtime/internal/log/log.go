@@ -5,4 +5,4 @@ import (
 )
 
 // RuntimeLog is a base parent logger for use inside proxy-runtime.
-var RuntimeLog = logr.Log.WithName("proxy-runtime")
+var RuntimeLog = logr.Log.WithName("runtime")

@@ -6,7 +6,9 @@ import (
 	"time"
 )
 
-// Manager initializes shared dependencies such as Caches and Clients, and provides them to Runnables.
+// Manager initializes shared dependencies such as Caches,
+// Clients and a Logger, and provides them to Runnables/Proxies.
+//
 // A Manager is required to create Proxies.
 type Manager interface {
 	// Add will set requested dependencies on the Runnable, and cause the Runnable to be
@@ -46,7 +48,7 @@ func (r RunnableFunc) Start(s <-chan struct{}) error {
 
 // Options are the arguments for creating a new Manager
 type Options struct {
-	// Logger is the logger that should be used by this manager.
+	// Logger is the logger that should be used by this manager an possible Runnables added to the Manager.
 	// If none is set, it defaults to logr.Log global logger.
 	Logger logr.Logger
 	// Event is the event manager that should be used by this manager.
@@ -60,6 +62,7 @@ type Options struct {
 	GracefulShutdownTimeout *time.Duration
 }
 
+// Default graceful shutdown timeout to wait for Runnables to shutdown on manager stop.
 const DefaultGracefulShutdownPeriod = 30 * time.Second
 
 // New returns a new Manager for creating proxies.

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
-	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/gate"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
@@ -30,50 +29,69 @@ import (
 	"syscall"
 )
 
+// Viper is a viper instance initialized with defaults
+// for the Config in `pkg/gate/config` package.
+// It can be used to load in config files.
+var Viper = viper.New()
+
+func init() { gate.SetDefaults(Viper) }
+
+var log = logr.Log.WithName("setup")
+
 // Run reads in and validates the config to pass into proxy.New,
 // initializes the logger, runs the new proxy.Proxy and
 // blocks until stopChan is triggered or an OS signal is sent.
 // The proxy is already shutdown on method return.
 func Run(stop <-chan struct{}) (err error) {
-	setLogger := func(dev bool) error {
-		zl, err := newZapLogger(dev)
+	// Set logger
+	setLogger := func(devMode bool) error {
+		zl, err := newZapLogger(devMode)
 		if err != nil {
 			return fmt.Errorf("error creating zap logger: %w", err)
 		}
 		logr.SetLogger(zapr.NewLogger(zl))
 		return nil
 	}
-	if err = setLogger(false); err != nil {
+	if err = setLogger(Viper.GetBool("debug")); err != nil {
 		return err
 	}
 
-	var cfg config.Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	// Load in Gate config
+	var cfg gate.Config
+	if err := Viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	if cfg.Debug {
-		if err = setLogger(cfg.Debug); err != nil {
-			return err
-		}
+	// Validate Gate config
+	warns, errs := cfg.Validate()
+	for _, e := range errs {
+		log.Info("Config validation error", "error", e.Error())
+	}
+	for _, w := range warns {
+		log.Info("Config validation warn", "warn", w.Error())
+	}
+	if len(errs) != 0 {
+		// Shouldn't run Gate with validation errors
+		return fmt.Errorf("config validation failure (errors: %d, warns: %d), inspect the logs for details",
+			len(errs), len(warns))
 	}
 
-	// Validate after we initialized the logger.
-	if err = config.Validate(&cfg); err != nil {
-		return fmt.Errorf("error validating config: %w", err)
-	}
-
+	// Setup os signal channel to trigger Gate shutdown.
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer func() { signal.Stop(sig); close(sig) }()
 
+	// Top-level manager starting all sub-components.
 	mgr, err := manager.New(manager.Options{})
 	if err != nil {
 		return fmt.Errorf("error new runtime manager: %w", err)
 	}
-	_, err = gate.New(mgr, gate.Config{})
+	// Setup new Gate with manager and loaded config.
+	_, err = gate.New(mgr, gate.Options{
+		Config: &cfg,
+	})
 	if err != nil {
-		return fmt.Errorf("error creating Gate: %w", err)
+		return fmt.Errorf("error creating Gate instance: %w", err)
 	}
 
 	childStop := make(chan struct{})
@@ -90,9 +108,12 @@ func Run(stop <-chan struct{}) (err error) {
 		}
 	}()
 
+	// Start everything
 	return mgr.Start(childStop)
 }
 
+// newZapLogger returns a new zap logger with a modified production
+// or development default config to ensure human readability.
 func newZapLogger(dev bool) (l *zap.Logger, err error) {
 	var cfg zap.Config
 	if dev {

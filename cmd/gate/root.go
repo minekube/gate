@@ -20,8 +20,6 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -49,27 +47,20 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringP("bind", "b", "0.0.0.0:25565", "The address to bind to")
-	rootCmd.PersistentFlags().String("health", "0.0.0.0:8080", "The grpc health probe service address")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	_ = viper.BindPFlag("bind", rootCmd.Flags().Lookup("bind"))
-	_ = viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
-	if rootCmd.Flags().Changed("health") {
-		viper.SetDefault("health.enabled", true)
-		viper.SetDefault("health.bind", rootCmd.Flags().Lookup("health").Value)
-	}
+	_ = Viper.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
 
-	viper.SetEnvPrefix("GATE")
-	viper.AutomaticEnv() // read in environment variables that match
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	Viper.SetEnvPrefix("GATE")
+	Viper.AutomaticEnv() // read in environment variables that match
+	Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	viper.SetConfigFile("config.yml")
+	Viper.SetConfigFile("config.yml")
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := Viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", Viper.ConfigFileUsed())
 	}
 }

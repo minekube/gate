@@ -5,6 +5,7 @@ import (
 	"go.minekube.com/gate/pkg/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
+	"go.minekube.com/gate/pkg/util/errs"
 )
 
 // Proxy is Gate's Bedrock edition Minecraft proxy.
@@ -13,10 +14,29 @@ type Proxy struct {
 	event event.Manager
 }
 
-func New(mgr manager.Manager, config config.Config) (*Proxy, error) {
+// Options are the options for a new Bedrock edition Proxy.
+type Options struct {
+	// Config requires a valid configuration.
+	Config *config.Config
+	// Logger is the logger to be used by the Proxy.
+	// If none is set, the managers logger is used.
+	Logger logr.Logger
+}
+
+// New takes a config that should have been validated by
+// config.Validate and returns a new initialized Proxy ready to start.
+func New(mgr manager.Manager, options Options) (*Proxy, error) {
+	if options.Config == nil {
+		return nil, errs.ErrMissingConfig
+	}
+	log := options.Logger
+	if log == nil {
+		log = mgr.Logger().WithName("bedrock-proxy")
+	}
+
 	p := &Proxy{
 		event: mgr.Event(),
-		log:   mgr.Logger(),
+		log:   log,
 	}
 	return p, mgr.Add(p)
 }

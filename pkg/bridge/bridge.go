@@ -27,6 +27,7 @@ type Bridge struct {
 	BedrockProxy *bproxy.Proxy // Holds bedrock edition players
 
 	setupOnce sync.Once
+	err       error
 }
 
 // Setup sets up the bridge between the given proxies.
@@ -34,28 +35,28 @@ func (b *Bridge) Setup() (err error) {
 	if b == nil {
 		return nil
 	}
-	b.setupOnce.Do(func() { err = b.setup() })
-	return
+	b.setupOnce.Do(func() { b.err = b.setup() })
+	return b.err
 }
 
 func (b *Bridge) valid() error {
-	if b.Log == nil {
-		return errors.New("logger must not be nil")
-	}
 	if b.BedrockProxy == nil && b.JavaProxy == nil {
 		return fmt.Errorf("proxy must run at least one edition (%s and/or %s)",
 			edition.Java, edition.Bedrock)
+	}
+	if b.Log == nil {
+		b.Log = logr.Log.WithName("bridge")
 	}
 	return nil
 }
 
 func (b *Bridge) setup() (err error) {
 	if err := b.valid(); err != nil {
-		return fmt.Errorf("invalid setup: %v", err)
+		return fmt.Errorf("invalid bridge setup: %v", err)
 	}
 
 	// TODO setup bedrock <---> java edition bridges by registering:
 	//  - packet interceptors
 	//  - event subscribers
-	return errors.New("not implemented yet")
+	return errors.New("bridge features not implemented yet")
 }

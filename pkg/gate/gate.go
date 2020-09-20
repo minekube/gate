@@ -3,72 +3,83 @@ package gate
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
-	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
-	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
+	"go.minekube.com/gate/pkg/util/errs"
 )
 
-// Config is a Gate config.
-type Config struct {
-	// Minecraft edition specific configs.
-	// If multiple editions are enabled, cross-play is activated.
-	// If no edition is enabled, all will be enabled.
-	Editions struct {
-		Java struct {
-			Enabled bool
-			Config  jconfig.Config
-		}
-		Bedrock struct {
-			Enabled bool
-			Config  bconfig.Config
-		}
-	}
-}
-
-// Gate manages one or multiple proxy editions (Bedrock & Java).
-type Gate struct {
-	options *Config
-	bridge  *bridge.Bridge
+// Options are Gate options.
+type Options struct {
+	// Config requires a valid Gate configuration.
+	Config *Config
+	// Logger is the logger used for Gate and
+	// sub-components like Minecraft edition proxies.
+	// If not set, the managers logger is used.
+	Logger logr.Logger
 }
 
 // New returns a new Gate instance setup with the given Manager.
-func New(mgr manager.Manager, config Config) (g *Gate, err error) {
-	config.setDefaults()
+// The given Options requires a validated Config.
+func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
+	if options.Config == nil {
+		return nil, errs.ErrMissingConfig
+	}
+	log := options.Logger
+	if log == nil {
+		log = mgr.Logger().WithName("gate")
+	}
 
-	g = &Gate{
-		options: &config,
+	gate = &Gate{
 		bridge: &bridge.Bridge{
-			Log: mgr.Logger().WithName("bridge"),
+			Log: log.WithName("bridge"),
 		},
 	}
 
-	if config.Editions.Java.Enabled {
-		g.bridge.JavaProxy, err = jproxy.New(mgr, config.Editions.Java.Config)
+	c := options.Config
+	if c.Editions.Java.Enabled {
+		gate.bridge.JavaProxy, err = jproxy.New(mgr, jproxy.Options{
+			Config: &c.Editions.Java.Config,
+			Logger: log.WithName("java-proxy"),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
 		}
 	}
-	if config.Editions.Bedrock.Enabled {
-		g.bridge.BedrockProxy, err = bproxy.New(mgr, config.Editions.Bedrock.Config)
+	if c.Editions.Bedrock.Enabled {
+		gate.bridge.BedrockProxy, err = bproxy.New(mgr, bproxy.Options{
+			Config: &c.Editions.Bedrock.Config,
+			Logger: log.WithName("bedrock-proxy"),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Bedrock, err)
 		}
 	}
 
-	return g, nil
+	if c.Editions.Bedrock.Enabled && c.Editions.Java.Enabled {
+		// More than once edition was enabled, setup bridge between them
+		if err = gate.bridge.Setup(); err != nil {
+			return nil, fmt.Errorf("error setting up bridge between proxy editions: %w", err)
+		}
+	}
+
+	return gate, nil
 }
 
-func InitViper(v *viper.Viper) {}
+// Gate manages one or multiple proxy editions (Bedrock & Java).
+type Gate struct {
+	bridge *bridge.Bridge
+}
 
-func (c *Config) setDefaults() {
-	if !c.Editions.Bedrock.Enabled && !c.Editions.Java.Enabled {
-		// If all disabled, enable all editions
-		c.Editions.Bedrock.Enabled = true
-		c.Editions.Java.Enabled = true
-	}
+// Java returns the Java edition proxy, or nil if none.
+func (g *Gate) Java() *jproxy.Proxy {
+	return g.bridge.JavaProxy
+}
+
+// Bedrock returns the Bedrock edition proxy, or nil if none.
+func (g *Gate) Bedrock() *bproxy.Proxy {
+	return g.bridge.BedrockProxy
 }

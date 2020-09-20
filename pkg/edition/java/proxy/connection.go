@@ -33,10 +33,6 @@ type sessionHandler interface {
 	deactivated() // Called when the connection is no longer managed by this sessionHandler.
 }
 
-type MinecraftConn interface {
-	WritePacket()
-}
-
 // minecraftConn is a Minecraft connection from the
 // client -> proxy or proxy -> server (backend).
 // readLoop owns these fields
@@ -92,32 +88,20 @@ func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool) (conn *minec
 	}
 }
 
-// reads from underlying connection.
-func (c *minecraftConn) nextPacket() (p *proto.PacketContext, err error) {
-	p, err = c.decoder.ReadPacket()
-	return
-}
-
 // readLoop is the main goroutine of this connection and
 // reads packets to pass them further to the current sessionHandler.
 // close will be called on method return.
 func (c *minecraftConn) readLoop() {
-	// Make sure to close connection on return, if not already
+	// Make sure to close connection on return, if not already closed
 	defer func() { _ = c.closeKnown(false) }()
 
-	for !c.Closed() && func() bool {
-		defer func() { // Catch any panics
-			if r := recover(); r != nil {
-				c.log.Error(fmt.Errorf("%v", r), "Recovered panic in packets read loop")
-			}
-		}()
-
+	next := func() bool {
 		// Set read timeout to wait for client to send a packet
 		deadline := time.Now().Add(time.Duration(c.config().ReadTimeout) * time.Millisecond)
 		_ = c.c.SetReadDeadline(deadline)
 
-		// Read next packet.
-		packetCtx, err := c.nextPacket()
+		// Read next packet from underlying connection.
+		packetCtx, err := c.decoder.ReadPacket()
 		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
 			if c.handleReadErr(err) {
 				c.log.V(1).Error(err, "Error reading packet, recovered")
@@ -137,7 +121,22 @@ func (c *minecraftConn) readLoop() {
 		// Handle packet by connections session handler.
 		c.SessionHandler().handlePacket(packetCtx.Packet)
 		return true
-	}() {
+	}
+
+	cond := func() bool { return !c.Closed() && next() }
+	loop := func() (ok bool) {
+		defer func() { // Catch any panics
+			if r := recover(); r != nil {
+				c.log.Error(fmt.Errorf("%v", r), "Recovered panic in packets read loop")
+				ok = true // recovered, keep going
+			}
+		}()
+		for cond() {
+		}
+		return false
+	}
+
+	for loop() {
 	}
 }
 
@@ -159,7 +158,7 @@ func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 			return true
 		} else if netErr.Timeout() {
 			// Read timeout, disconnect
-			c.log.Info("read timeout", "error", err)
+			c.log.Error(err, "read timeout")
 			return false
 		} else if errs.IsConnClosedErr(netErr.Err) {
 			// Connection is already closed
@@ -173,7 +172,7 @@ func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 		strings.Contains(err.Error(), "use of closed file") {
 		return false
 	}
-	c.log.Info("error reading next packet, unrecoverable and closing connection", "error", err)
+	c.log.Error(err, "error reading next packet, unrecoverable and closing connection")
 	return false
 }
 
@@ -440,7 +439,7 @@ type Inbound interface {
 	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
 	RemoteAddr() net.Addr     // The player's IP address.
 	Active() bool             // Whether or not connection remains active.
-	// Closed returns a receive only channel that can be used know when the connection was closed.
-	// (e.g. for canceling work in an event subscriber)
+	// Closed returns a receive only channel that can be used to know when the connection was closed.
+	// (e.g. for canceling work in an event handler)
 	Closed() <-chan struct{}
 }
