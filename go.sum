@@ -410,6 +410,8 @@ github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQD
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/sandertv/go-raknet v1.7.6 h1:zKRPhwAlW41bdEu9X4TGyjsGtfst6Qs4DgPJD/AOEGs=
 github.com/sandertv/go-raknet v1.7.6/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
+github.com/sandertv/go-raknet v1.7.8 h1:17uKxzaagB/9AHPg8l83RwVZji8kuCrtdwQwqJOI/tQ=
+github.com/sandertv/go-raknet v1.7.8/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
 github.com/sandertv/gophertunnel v1.7.11 h1:55hlX2Hx9BFMPHv/dcnulfOF2SJbVDUQIrxxvErQmUo=
 github.com/sandertv/gophertunnel v1.7.11/go.mod h1:kpFO99NEFB7GhmQlDvnJ+ykho4U7WgG9Spod8BZxVKw=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
