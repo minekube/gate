@@ -6,9 +6,9 @@ import (
 	"go.minekube.com/gate/pkg/edition/bedrock/proto/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"io"
 	"net"
 	"sync"
-	"time"
 )
 
 type minecraftConn struct {
@@ -51,10 +51,20 @@ func newMinecraftConn(base net.Conn, proxy *Proxy, isPlayer bool) (conn *minecra
 }
 
 func (c *minecraftConn) readLoop() {
-	// Set read timeout to wait for client to send packet/s
-	deadline := time.Now().Add(time.Duration(c.config().ReadTimeout) * time.Millisecond)
-	_ = c.c.SetReadDeadline(deadline)
+	//defer c.close()
 
+	//// Set read timeout to wait for client to send packet/s
+	//deadline := time.Now().Add(time.Duration(c.config().ReadTimeout) * time.Millisecond)
+	//_ = c.c.SetReadDeadline(deadline)
+	for {
+		packets, err := c.decoder.Decode()
+		if err != nil {
+			if err != io.EOF { // EOF means connection was closed
+				c.log.V(1).Info("Error decoding next packets, closing connection", "err", err)
+			}
+			return
+		}
+	}
 }
 
 func (c *minecraftConn) config() *config.Config {

@@ -12,16 +12,9 @@ import (
 	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.minekube.com/gate/pkg/util/errs"
 	"net"
+	"sync"
+	"sync/atomic"
 )
-
-// Proxy is Gate's Bedrock edition Minecraft proxy.
-type Proxy struct {
-	log    logr.Logger
-	event  event.Manager
-	config *config.Config
-
-	listenerKey *ecdsa.PrivateKey
-}
 
 // Options are the options for a new Bedrock edition Proxy.
 type Options struct {
@@ -57,6 +50,21 @@ func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
 	return p, mgr.Add(p)
 }
 
+// Proxy is Gate's Bedrock edition Minecraft proxy.
+type Proxy struct {
+	log    logr.Logger
+	event  event.Manager
+	config *config.Config
+
+	startTime atomic.Value
+
+	closeMu       sync.Mutex
+	closeListener chan struct{}
+	started       bool
+
+	listenerKey *ecdsa.PrivateKey
+}
+
 func (p *Proxy) Start(stop <-chan struct{}) error {
 	return nil
 }
@@ -72,6 +80,10 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 	if err != nil {
 		return err
 	}
+	// TODO the raknet library sadly strictly couples the listener and accepted connections,
+	// make sure we first send players a disconnect packet before closing the listener
+	defer ln.Close()
+	go func() { <-stop; _ = ln.Close() }()
 
 	p.log.Info("Listening for connections", "addr", addr)
 	for {
@@ -85,8 +97,9 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 }
 
 func (p *Proxy) handleRawConn(raw net.Conn) {
+	defer raw.Close()
 	// Create client connection
 	conn := newMinecraftConn(raw, p, true)
-	conn.setSessionHandler0()
+	//conn.setSessionHandler0()
 	conn.readLoop()
 }

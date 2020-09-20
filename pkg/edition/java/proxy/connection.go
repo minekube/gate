@@ -3,7 +3,6 @@ package proxy
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
@@ -104,12 +103,12 @@ func (c *minecraftConn) readLoop() {
 		packetCtx, err := c.decoder.ReadPacket()
 		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
 			if c.handleReadErr(err) {
-				c.log.V(1).Error(err, "Error reading packet, recovered")
+				c.log.V(1).Info("Error reading packet, recovered", "err", err)
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
 				return true
 			} else {
-				c.log.V(1).Error(err, "Error reading packet, closing connection")
+				c.log.V(1).Info("Error reading packet, closing connection", "err", err)
 			}
 			return false
 		}
@@ -127,7 +126,7 @@ func (c *minecraftConn) readLoop() {
 	loop := func() (ok bool) {
 		defer func() { // Catch any panics
 			if r := recover(); r != nil {
-				c.log.Error(fmt.Errorf("%v", r), "Recovered panic in packets read loop")
+				c.log.Error(nil, "Recovered panic in packets read loop", "panic", r)
 				ok = true // recovered, keep going
 			}
 		}()
@@ -144,7 +143,7 @@ func (c *minecraftConn) readLoop() {
 func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 	var silentErr *errs.SilentError
 	if errors.As(err, &silentErr) {
-		c.log.V(1).Error(err, "silentErr: error reading next packet, unrecoverable and closing connection")
+		c.log.V(1).Info("silentErr: error reading next packet, unrecoverable and closing connection", "err", err)
 		return false
 	}
 	// Immediately retry for EAGAIN
@@ -202,7 +201,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
-	c.log.V(1).Error(err, "Error writing packet, closing connection")
+	c.log.V(1).Info("Error writing packet, closing connection", "err", err)
 }
 
 // WritePacket writes a packet to the connection's

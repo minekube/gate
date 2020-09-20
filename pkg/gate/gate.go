@@ -167,7 +167,7 @@ func Run(stop <-chan struct{}) (err error) {
 				// Sig chan was closed
 				return
 			}
-			mgr.Logger().Info("Received a signal", "signal", s)
+			mgr.Logger().Info("Received os signal", "signal", s)
 		}
 	}()
 

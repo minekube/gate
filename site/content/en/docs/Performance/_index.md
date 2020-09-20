@@ -8,7 +8,7 @@ description: >
 
 ## Benchmarks
 
-Gate has already been tested to successfully handle thousands of incoming connections
+Gate has already been tested to successfully handle thousands of incoming connections per second
 (even with rate limiter disabled).
 
 > TODO: add complete benchmarks and comparisons

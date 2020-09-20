@@ -28,5 +28,4 @@ FROM alpine:latest
 WORKDIR /gate
 COPY --from=build /bin/grpc_health_probe bin/
 COPY --from=build /workspace/gate .
-ENV GATE_HEALTH_ENABLED=true
 CMD ["./gate"]

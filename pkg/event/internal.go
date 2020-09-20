@@ -1,8 +1,6 @@
 package event
 
 import (
-	"errors"
-	"fmt"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"sort"
 	"sync"
@@ -88,8 +86,9 @@ func (m *manager) FireParallel(event Event, after ...HandlerFunc) {
 		var i int
 		defer func() {
 			if r := recover(); r != nil && m.log != nil {
-				m.log.Error(errors.New(fmt.Sprint(r)),
+				m.log.Error(nil,
 					"Recovered from panic by an 'after fire' func",
+					"panic", r,
 					"eventType", TypeOf(event),
 					"index", i)
 			}
@@ -111,8 +110,8 @@ func (m *manager) Fire(event Event) {
 		func() {
 			defer func() {
 				if r := recover(); r != nil && m.log != nil {
-					m.log.Error(errors.New(fmt.Sprint(r)),
-						"Recovered from panic from an event subscriber",
+					m.log.Error(nil, "Recovered from panic from an event subscriber",
+						"panic", r,
 						"eventType", eventType,
 						"subscriberPriority", sub.priority)
 				}

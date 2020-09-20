@@ -103,7 +103,7 @@ func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
 	// Just return again and close
 	defer h.conn.close()
 	if err := h.conn.WritePacket(p); err != nil {
-		h.log.V(1).Error(err, "Error writing StatusPing response")
+		h.log.V(1).Info("Error writing StatusPing response", "err", err)
 	}
 }
 

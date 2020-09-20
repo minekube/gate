@@ -24,6 +24,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -36,12 +37,11 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    *auth.Authenticator
 
-	startTimeMu sync.RWMutex
-	startTime   time.Time
-	stop        chan struct{}
+	startTime atomic.Value
 
-	closeMu sync.Mutex
-	started bool
+	closeMu       sync.Mutex
+	closeListener chan struct{}
+	started       bool
 
 	shutdownReason *component.Text
 	motd           *component.Text
@@ -116,31 +116,24 @@ var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 // Another method of stopping the Proxy is to call Shutdown.
 // A Proxy can only be run once or ErrProxyAlreadyRun is returned.
 func (p *Proxy) Start(stop <-chan struct{}) error {
-	if err := func() error {
-		p.closeMu.Lock()
-		defer p.closeMu.Unlock()
-		if p.started {
-			return ErrProxyAlreadyRun
-		}
-		p.started = true
-		return nil
-	}(); err != nil {
-		return err
+	p.closeMu.Lock()
+	if p.started {
+		p.closeMu.Unlock()
+		return ErrProxyAlreadyRun
 	}
+	p.started = true
+	p.startTime.Store(time.Now().UTC())
 
-	stopCh := make(chan struct{})
-	go func() { <-stop; close(stopCh) }()
-
-	p.startTimeMu.Lock()
-	p.stop = stopCh
-	p.startTime = time.Now().UTC()
-	p.startTimeMu.Unlock()
+	stopListener := make(chan struct{})
+	go func() { <-stop; close(stopListener) }()
+	p.closeListener = stopListener
+	p.closeMu.Unlock()
 
 	if err := p.preInit(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
-	return p.listenAndServe(p.config.Bind, stopCh)
+	return p.listenAndServe(p.config.Bind, stopListener)
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
@@ -155,17 +148,16 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		return // not started or already shutdown
 	}
 	p.started = false
-	// stop listening for new connections
 	select {
-	case <-p.stop:
-		return // channel already closed
+	case <-p.closeListener: // channel already closed
 	default:
-		close(p.stop)
+		// stop listening for new connections
+		close(p.closeListener)
 	}
 
 	p.log.Info("Shutting down the proxy...")
 	shutdownTime := time.Now()
-	defer func() { p.log.Info("Finished shutdown.", "time", time.Since(shutdownTime)) }()
+	defer func() { p.log.Info("Finished shutdown.", "time", time.Since(shutdownTime).String()) }()
 
 	pre := &PreShutdownEvent{reason: reason}
 	p.event.Fire(pre)
@@ -178,7 +170,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	p.log.Info("Disconnecting all players...", "reason", lReason)
 	disconnectTime := time.Now()
 	p.DisconnectAll(reason)
-	p.log.Info("Disconnected all players.", "time", time.Since(disconnectTime))
+	p.log.Info("Disconnected all players.", "time", time.Since(disconnectTime).String())
 
 	p.log.Info("Waiting for all event handlers to complete...")
 	p.event.Fire(&ShutdownEvent{})
@@ -400,11 +392,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 		return err
 	}
 	defer ln.Close()
-
-	go func() {
-		<-stop
-		_ = ln.Close()
-	}()
+	go func() { <-stop; _ = ln.Close() }()
 
 	p.event.Fire(&ReadyEvent{})
 
