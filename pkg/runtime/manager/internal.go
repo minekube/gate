@@ -16,16 +16,15 @@ import (
 var log = logf.RuntimeLog.WithName("manager")
 
 type proxyManager struct {
-	// runnables is the set of proxies that the controllerManager injects deps into and Starts.
+	// runnables is the set of proxies that the proxyManager injects deps into and Starts.
 	runnables []Runnable
 
 	// internalStop is the stop channel *actually* used by everything involved
 	// with the manager as a stop channel, so that we can pass a stop channel
-	// to things that need it off the bat (like the Channel source).  It can
-	// be closed via `internalStopper` (by being the same underlying channel).
+	// to things that need it off the bat (like the Channel source).
 	internalStop chan struct{}
 
-	// The logger that should be used by this manager and potentially Runnables.
+	// The logger that should be used by this manager and potential Runnables.
 	// If none is set, it defaults to log.Log global logger.
 	logger logr.Logger
 	// The event manager shared among Runnables.
@@ -55,7 +54,7 @@ func (pm *proxyManager) Logger() logr.Logger {
 	return pm.logger
 }
 
-// Add sets dependencies on i, and adds it to the list of Runnables to start.
+// Add sets dependencies on r, and adds it to the list of Runnables to start.
 func (pm *proxyManager) Add(r Runnable) error {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
@@ -70,7 +69,7 @@ func (pm *proxyManager) Add(r Runnable) error {
 
 	pm.runnables = append(pm.runnables, r)
 	if pm.started {
-		// If manager already started, start the controller
+		// If manager already started, start the runnable
 		pm.startRunnable(r)
 	}
 
