@@ -37,13 +37,13 @@ type Runnable interface {
 }
 
 // RunnableFunc implements Runnable using a function.
-// It's very important that the given function block
+// It's very important that the given function blocks
 // until it's done running.
 type RunnableFunc func(<-chan struct{}) error
 
 // Start implements Runnable
-func (r RunnableFunc) Start(s <-chan struct{}) error {
-	return r(s)
+func (r RunnableFunc) Start(stop <-chan struct{}) error {
+	return r(stop)
 }
 
 // Options are the arguments for creating a new Manager
@@ -52,7 +52,7 @@ type Options struct {
 	// If none is set, it defaults to logr.Log global logger.
 	Logger logr.Logger
 	// Event is the event manager that should be used by this manager.
-	// If none is set, a new one is creates.
+	// If none is set, a new one is created.
 	Event event.Manager
 	// GracefulShutdownTimeout is the duration given to runnable to
 	// stop before the manager actually returns on stop.
