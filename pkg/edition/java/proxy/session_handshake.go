@@ -6,9 +6,10 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"net"
@@ -74,7 +75,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 
 func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbound) {
 	// Check for supported client version.
-	if !proto.Protocol(p.ProtocolVersion).Supported() {
+	if !version.Protocol(p.ProtocolVersion).Supported() {
 		_ = h.conn.closeWith(packet.DisconnectWith(&component.Translation{
 			Key: "multiplayer.disconnect.outdated_client",
 		}))
@@ -94,7 +95,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
 	if h.proxy().Config().Forwarding.Mode == config.VelocityForwardingMode &&
-		p.ProtocolVersion < int(proto.Minecraft_1_13.Protocol) {
+		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
 		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
 		}))
@@ -114,10 +115,10 @@ func (h *handshakeSessionHandler) loginsQuota() *addrquota.Quota {
 }
 
 func stateForProtocol(status int) *state.Registry {
-	switch proto.State(status) {
-	case proto.StatusState:
+	switch state.State(status) {
+	case state.StatusState:
 		return state.Status
-	case proto.LoginState:
+	case state.LoginState:
 		return state.Login
 	}
 	return nil
@@ -125,10 +126,10 @@ func stateForProtocol(status int) *state.Registry {
 
 func connTypeForHandshake(h *packet.Handshake) connectionType {
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
-	if h.ProtocolVersion < int(proto.Minecraft_1_13.Protocol) &&
+	if h.ProtocolVersion < int(version.Minecraft_1_13.Protocol) &&
 		strings.HasSuffix(h.ServerAddress, forge.HandshakeHostnameToken) {
 		return LegacyForge
-	} else if h.ProtocolVersion <= int(proto.Minecraft_1_7_6.Protocol) {
+	} else if h.ProtocolVersion <= int(version.Minecraft_1_7_6.Protocol) {
 		// 1.7 Forge will not notify us during handshake. UNDETERMINED will listen for incoming
 		// forge handshake attempts. Also sends a reset handshake packet on every transition.
 		return undetermined17ConnectionType

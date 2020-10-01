@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
 	"sync"
 )
@@ -36,7 +37,7 @@ func NewEncoder(w io.Writer, direction proto.Direction) *Encoder {
 	return &Encoder{
 		wr:        w,
 		direction: direction,
-		registry:  state.FromDirection(direction, state.Handshake, proto.MinimumVersion.Protocol),
+		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		state:     state.Handshake,
 	}
 }

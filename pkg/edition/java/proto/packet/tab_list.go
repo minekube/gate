@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/internal/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"strings"
@@ -70,7 +71,7 @@ type PlayerListItemEntry struct {
 }
 
 func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		err = util.WriteVarInt(wr, int(p.Action))
 		if err != nil {
 			return err
@@ -181,7 +182,7 @@ func writeDisplayName(wr io.Writer, displayName component.Component, protocol pr
 }
 
 func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		action, err := util.ReadVarInt(rd)
 		if err != nil {
 			return err

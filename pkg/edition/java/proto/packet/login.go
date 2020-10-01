@@ -3,8 +3,9 @@ package packet
 import (
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
@@ -36,7 +37,7 @@ type EncryptionResponse struct {
 }
 
 func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		err := util.WriteBytes(wr, e.SharedSecret)
 		if err != nil {
 			return err
@@ -52,7 +53,7 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 }
 
 func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		e.SharedSecret, err = util.ReadBytesLen(rd, 256)
 		if err != nil {
 			return
@@ -140,9 +141,9 @@ type ServerLoginSuccess struct {
 }
 
 func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		err = util.WriteUUID(wr, s.UUID)
-	} else if c.Protocol.GreaterEqual(proto.Minecraft_1_7_6) {
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
 		err = util.WriteString(wr, s.UUID.String())
 	} else {
 		err = util.WriteString(wr, s.UUID.Undashed())
@@ -155,10 +156,10 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 
 func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var uuidString string
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		s.UUID, err = util.ReadUUID(rd)
 	} else {
-		if c.Protocol.GreaterEqual(proto.Minecraft_1_7_6) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
 			uuidString, err = util.ReadStringMax(rd, 36)
 		} else {
 			uuidString, err = util.ReadStringMax(rd, 32)

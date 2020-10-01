@@ -8,10 +8,11 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/common/minecraft/key"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"net"
@@ -29,7 +30,7 @@ var (
 )
 
 func (r *bungeeCordMessageRecorder) bungeeCordChannel(protocol proto.Protocol) string {
-	if protocol.GreaterEqual(proto.Minecraft_1_13) {
+	if protocol.GreaterEqual(version.Minecraft_1_13) {
 		return bungeeCordModernChannel.ID()
 	}
 	return bungeeCordLegacyChannel.ID()

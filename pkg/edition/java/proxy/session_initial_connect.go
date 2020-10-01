@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 type initialConnectSessionHandler struct {

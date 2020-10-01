@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/uuid"
 )

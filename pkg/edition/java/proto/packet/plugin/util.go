@@ -3,8 +3,9 @@ package plugin
 import (
 	"bytes"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"regexp"
 	"strings"
 )
@@ -97,7 +98,7 @@ func ConstructChannelsPacket(protocol proto.Protocol, channels ...string) *Messa
 		panic("channels must not be empty")
 	}
 	var channelName string
-	if protocol.GreaterEqual(proto.Minecraft_1_13) {
+	if protocol.GreaterEqual(version.Minecraft_1_13) {
 		channelName = RegisterChannel
 	} else {
 		channelName = RegisterChannelLegacy
@@ -120,7 +121,7 @@ func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 	rewrittenBrand := fmt.Sprintf("%s (Minekube Proxy)", currentBrand)
 
 	rewrittenBuf := new(bytes.Buffer)
-	if protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if protocol.GreaterEqual(version.Minecraft_1_8) {
 		_ = util.WriteString(rewrittenBuf, rewrittenBrand)
 	} else {
 		rewrittenBuf.WriteString(rewrittenBrand)

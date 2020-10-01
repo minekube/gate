@@ -1,8 +1,9 @@
 package packet
 
 import (
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
 )
 
@@ -33,7 +34,7 @@ func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.Protocol.LowerEqual(proto.Minecraft_1_7_6) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_7_6) {
 		err = util.WriteBool(wr, s.Difficulty)
 		if err != nil {
 			return err
@@ -43,7 +44,7 @@ func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_9) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
 		err = util.WriteVarInt(wr, s.MainHand)
 		if err != nil {
 			return err
@@ -69,7 +70,7 @@ func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error
 	if err != nil {
 		return err
 	}
-	if c.Protocol.LowerEqual(proto.Minecraft_1_7_6) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_7_6) {
 		s.Difficulty, err = util.ReadBool(rd)
 		if err != nil {
 			return err
@@ -79,7 +80,7 @@ func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error
 	if err != nil {
 		return err
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_9) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
 		s.MainHand, err = util.ReadVarInt(rd)
 		if err != nil {
 			return err

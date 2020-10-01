@@ -3,8 +3,9 @@ package packet
 import (
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 // DimensionRegistry is required for Minecraft 1.16+ clients/servers to communicate,
@@ -62,7 +63,7 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 		details     util.NBT
 		dimensionID *int
 	)
-	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+	if protocol.GreaterEqual(version.Minecraft_1_16_2) {
 		dimID, ok := dimTag.Int("id")
 		if !ok {
 			return nil, dimMissKeyErr("id")
@@ -172,7 +173,7 @@ func dimMissKeyErr(key string) error {
 
 func (d *DimensionData) encodeCompoundTag(protocol proto.Protocol) (util.NBT, error) {
 	details := d.encodeDimensionDetails()
-	if protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+	if protocol.GreaterEqual(version.Minecraft_1_16_2) {
 		if d.DimensionID == nil {
 			return nil, errors.New("can not encode 1.16.2+ dimension registry entry without and id")
 		}

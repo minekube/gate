@@ -1,8 +1,9 @@
 package packet
 
 import (
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 )
@@ -22,12 +23,12 @@ func (ch *Chat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.Direction == proto.ClientBound && c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Direction == proto.ClientBound && c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		err = util.WriteByte(wr, byte(ch.Type))
 		if err != nil {
 			return err
 		}
-		if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 			err = util.WriteUUID(wr, ch.Sender)
 		}
 	}
@@ -39,14 +40,14 @@ func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	if c.Direction == proto.ClientBound && c.Protocol.GreaterEqual(proto.Minecraft_1_8) {
+	if c.Direction == proto.ClientBound && c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		var pos byte
 		pos, err = util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
 		ch.Type = MessagePosition(pos)
-		if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 			ch.Sender, err = util.ReadUUID(rd)
 			if err != nil {
 				return err

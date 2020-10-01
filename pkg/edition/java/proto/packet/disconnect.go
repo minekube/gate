@@ -3,8 +3,9 @@ package packet
 import (
 	"errors"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"io"
 	"strings"
@@ -34,7 +35,7 @@ var _ proto.Packet = (*Disconnect)(nil)
 
 // DisconnectWith creates a Disconnect packet with guaranteed reason.
 func DisconnectWith(reason component.Component) *Disconnect {
-	return DisconnectWithProtocol(reason, proto.Minecraft_1_7_2.Protocol)
+	return DisconnectWithProtocol(reason, version.Minecraft_1_7_2.Protocol)
 }
 
 var log = logr.Log.WithName("packet")

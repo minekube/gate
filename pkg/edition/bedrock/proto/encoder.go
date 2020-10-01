@@ -1,8 +1,8 @@
-package codec
+package proto
 
 import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"io"
 )

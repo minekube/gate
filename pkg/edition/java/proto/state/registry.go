@@ -2,19 +2,32 @@ package state
 
 import (
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"reflect"
 )
 
-// Registry stores server/client bound packets.
+// State is a Java edition client state.
+type State int
+
+// The states the Java edition client connection can be in.
+const (
+	HandshakeState State = iota
+	StatusState
+	LoginState
+	PlayState
+)
+
+// Registry stores server/client bound packets for a specific State.
 type Registry struct {
-	proto.State
+	State
 	ServerBound *PacketRegistry
 	ClientBound *PacketRegistry
 }
 
-func NewRegistry(state proto.State) *Registry {
+// NewRegistry returns a new state registry.
+func NewRegistry(state State) *Registry {
 	return &Registry{
 		State:       state,
 		ServerBound: NewPacketRegistry(proto.ServerBound),
@@ -37,8 +50,8 @@ func NewPacketRegistry(direction proto.Direction) *PacketRegistry {
 		Protocols: map[proto.Protocol]*ProtocolRegistry{},
 		Fallback:  true, // fallback by default
 	}
-	for _, ver := range proto.Versions {
-		if !ver.Legacy() && !ver.Unknown() {
+	for _, ver := range version.Versions {
+		if !version.Protocol(ver.Protocol).Legacy() && !version.Protocol(ver.Protocol).Unknown() {
 			r.Protocols[ver.Protocol] = &ProtocolRegistry{
 				Protocol:    ver.Protocol,
 				PacketIDs:   map[proto.PacketID]proto.PacketType{},
@@ -53,7 +66,7 @@ func NewPacketRegistry(direction proto.Direction) *PacketRegistry {
 func (p *PacketRegistry) ProtocolRegistry(protocol proto.Protocol) *ProtocolRegistry {
 	r := p.Protocols[protocol]
 	if r == nil && p.Fallback {
-		return p.ProtocolRegistry(proto.MinimumVersion.Protocol)
+		return p.ProtocolRegistry(version.MinimumVersion.Protocol)
 	}
 	return r // nil if not found
 }
@@ -105,14 +118,14 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 			to = next.Protocol
 		} else {
 			next = current
-			to = proto.MaximumVersion.Protocol
+			to = version.MaximumVersion.Protocol
 		}
 
-		if from >= to && from != proto.MaximumVersion.Protocol {
+		if from >= to && from != version.MaximumVersion.Protocol {
 			panic(fmt.Sprintf("Next mapping version (%s) should be lower then current (%s)", to, from))
 		}
 
-		versionRange(proto.Versions, from, to, func(protocol proto.Protocol) bool {
+		versionRange(version.Versions, from, to, func(protocol proto.Protocol) bool {
 			if protocol == to && next != current {
 				return false
 			}
@@ -122,10 +135,10 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 			}
 
 			if _, ok = registry.PacketIDs[current.ID]; ok {
-				panic(fmt.Sprintf("Can not register packet type %T with id %#x for "+
-					"protocol %s because another packet is already registered", packetOf, current.ID, registry.Protocol))
+				panic(fmt.Sprintf("Can not register packet type %s with id %#x for "+
+					"protocol %s because another packet is already registered", packetType, current.ID, registry.Protocol))
 			}
-			if _, ok = registry.PacketTypes[proto.TypeOf(packetOf)]; ok {
+			if _, ok = registry.PacketTypes[packetType]; ok {
 				panic(fmt.Sprintf("%T is already registered for protocol %s", packetOf, registry.Protocol))
 			}
 			registry.PacketIDs[current.ID] = packetType
@@ -173,4 +186,19 @@ func versionRange(
 			}
 		}
 	}
+}
+
+// String implements fmt.Stringer.
+func (s State) String() string {
+	switch s {
+	case StatusState:
+		return "Status"
+	case HandshakeState:
+		return "Handshake"
+	case LoginState:
+		return "Login"
+	case PlayState:
+		return "Play"
+	}
+	return "UnknownState"
 }

@@ -3,7 +3,8 @@ package packet
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
-	"go.minekube.com/gate/pkg/edition/java/proto"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"reflect"
 	"testing"
 )
@@ -32,10 +33,10 @@ func PacketCodings(t *testing.T, c *proto.PacketContext, samples ...proto.Packet
 func TestPackets(t *testing.T) {
 	PacketCodings(t, &proto.PacketContext{
 		Direction: proto.ServerBound,
-		Protocol:  proto.Minecraft_1_7_2.Protocol,
+		Protocol:  version.Minecraft_1_7_2.Protocol,
 	},
 		&Handshake{
-			ProtocolVersion: int(proto.Minecraft_1_7_2.Protocol),
+			ProtocolVersion: int(version.Minecraft_1_7_2.Protocol),
 			ServerAddress:   "localhost",
 			Port:            25565,
 			NextStatus:      1,

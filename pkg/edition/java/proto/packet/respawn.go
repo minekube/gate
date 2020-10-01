@@ -2,8 +2,9 @@ package packet
 
 import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
 )
 
@@ -20,8 +21,8 @@ type Respawn struct {
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
 			err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(r.CurrentDimensionData.encodeDimensionDetails())
 			if err != nil {
 				return err
@@ -46,13 +47,13 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 			return err
 		}
 	}
-	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
 		err = util.WriteByte(wr, byte(r.Difficulty))
 		if err != nil {
 			return err
 		}
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_15) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
 		err = util.WriteInt64(wr, r.PartialHashedSeed)
 		if err != nil {
 			return err
@@ -62,7 +63,7 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if err != nil {
 		return err
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		err = util.WriteByte(wr, byte(r.PreviousGamemode))
 		if err != nil {
 			return err
@@ -90,8 +91,8 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 
 func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var dimensionIdentifier, levelName string
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
-		if c.Protocol.GreaterEqual(proto.Minecraft_1_16_2) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
 			dimDataTag := util.NBT{}
 			err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&dimDataTag)
 			if err != nil {
@@ -122,14 +123,14 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	}
-	if c.Protocol.LowerEqual(proto.Minecraft_1_13_2) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
 		difficulty, err := util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
 		r.Difficulty = int16(difficulty)
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_15) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
 		r.PartialHashedSeed, err = util.ReadInt64(rd)
 		if err != nil {
 			return err
@@ -140,7 +141,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		return err
 	}
 	r.Gamemode = int16(gamemode)
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		previousGamemode, err := util.ReadByte(rd)
 		if err != nil {
 			return err

@@ -12,13 +12,14 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/internal/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/console"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -228,7 +229,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 	var messageJson string
 	b := new(strings.Builder)
 	if position == packet.ActionBarMessage {
-		if p.Protocol().GreaterEqual(proto.Minecraft_1_11) {
+		if p.Protocol().GreaterEqual(version.Minecraft_1_11) {
 			if err = util2.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
 				return err
 			}
@@ -437,7 +438,7 @@ func (p *connectedPlayer) canForwardPluginMessage(protocol proto.Protocol, messa
 	var minecraftOrFmlMessage bool
 
 	// By default, all internal Minecraft and Forge channels are forwarded from the server.
-	if int(protocol) <= int(proto.Minecraft_1_12_2.Protocol) {
+	if int(protocol) <= int(version.Minecraft_1_12_2.Protocol) {
 		channel := message.Channel
 		minecraftOrFmlMessage = strings.HasPrefix(channel, "MC|") ||
 			strings.HasPrefix(channel, forge.LegacyHandshakeChannel) ||

@@ -2,13 +2,14 @@ package util
 
 import (
 	"go.minekube.com/common/minecraft/component/codec"
-	"go.minekube.com/gate/pkg/edition/java/proto"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 // JsonCodec returns the appropriate codec for the given protocol version.
 // This is used to constrain messages sent to older clients.
 func JsonCodec(protocol proto.Protocol) codec.Codec {
-	if protocol.GreaterEqual(proto.Minecraft_1_16) {
+	if protocol.GreaterEqual(version.Minecraft_1_16) {
 		return jsonCodec_1_16
 	}
 	return defaultJsonCodec

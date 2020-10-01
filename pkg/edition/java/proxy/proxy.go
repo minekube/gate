@@ -8,11 +8,12 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/internal/auth"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/manager"
@@ -553,7 +554,7 @@ func NewChannelRegistrar() *ChannelRegistrar {
 // ChannelsForProtocol returns all the channel names
 // to register depending on the Minecraft protocol version.
 func (r *ChannelRegistrar) ChannelsForProtocol(protocol proto.Protocol) sets.String {
-	if protocol.GreaterEqual(proto.Minecraft_1_13) {
+	if protocol.GreaterEqual(version.Minecraft_1_13) {
 		return r.ModernChannelIDs()
 	}
 	return r.LegacyChannelIDs()

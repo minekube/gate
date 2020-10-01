@@ -5,9 +5,10 @@ import (
 	"compress/zlib"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"io"
@@ -36,7 +37,7 @@ func NewDecoder(
 		rd:        &fullReader{r}, // using the fullReader is essential here!
 		direction: direction,
 		state:     state.Handshake,
-		registry:  state.FromDirection(direction, state.Handshake, proto.MinimumVersion.Protocol),
+		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		log:       log,
 	}
 }
@@ -169,16 +170,6 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 	}
 	return decompressed, z.Close()
 }
-
-// Indicates a packet was known and successfully decoded by it's registered decoder,
-// but the decoder has not read all of the packet's data.
-//
-// This may happen in cases where
-//  - the decoder has a bug
-//  - the decoder does not handle the case for the new protocol version of the packet changed by Mojang/Minecraft
-//  - someone (server/client) has sent valid bytes in the beginning of the packet's data that the packet's
-//    decoder could successfully decode, but then the data contains even more bytes (the left bytes)
-var ErrDecoderLeftBytes = errors.New("decoder dis not read all packet data")
 
 // DecodePayload takes p as the packet's payload that contains the packet id + data
 // and returns a PacketContext that is the result of the decoding or returns an error.

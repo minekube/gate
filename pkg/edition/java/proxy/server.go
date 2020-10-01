@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -321,7 +320,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	protocol := s.player.Protocol()
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
-		NextStatus:      int(proto.LoginState),
+		NextStatus:      int(state.LoginState),
 	}
 
 	if s.config().Forwarding.Mode == config.LegacyForwardingMode {

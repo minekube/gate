@@ -11,10 +11,11 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/internal/auth"
 	"go.minekube.com/gate/pkg/edition/java/internal/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"net"
@@ -251,7 +252,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 
 	// Send compression threshold
 	threshold := cfg.Compression.Threshold
-	if threshold >= 0 && player.Protocol().GreaterEqual(proto.Minecraft_1_8) {
+	if threshold >= 0 && player.Protocol().GreaterEqual(version.Minecraft_1_8) {
 		err := player.WritePacket(&packet.SetCompression{Threshold: threshold})
 		if err != nil {
 			player.close()

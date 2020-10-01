@@ -3,8 +3,9 @@ package packet
 import (
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
 )
 
@@ -39,7 +40,7 @@ func (t *Title) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.Protocol.GreaterEqual(proto.Minecraft_1_11) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_11) {
 		// 1.11+ shifted the action enum by 1 to handle the action bar
 		switch t.Action {
 		case SetTitle, SetSubtitle, Hide, Reset:
@@ -105,19 +106,19 @@ func NewResetTitle(protocol proto.Protocol) *Title {
 	return &Title{Action: ResetTitleAction(protocol)}
 }
 func HideTitleAction(protocol proto.Protocol) TitleAction {
-	if protocol.GreaterEqual(proto.Minecraft_1_11) {
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
 		return Hide
 	}
 	return HideOld
 }
 func ResetTitleAction(protocol proto.Protocol) TitleAction {
-	if protocol.GreaterEqual(proto.Minecraft_1_11) {
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
 		return Reset
 	}
 	return ResetOld
 }
 func TimesTitleAction(protocol proto.Protocol) TitleAction {
-	if protocol.GreaterEqual(proto.Minecraft_1_11) {
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
 		return SetTimes
 	}
 	return SetTimesOld

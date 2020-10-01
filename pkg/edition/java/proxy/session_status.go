@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/ping"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
@@ -44,12 +45,12 @@ func (h *statusSessionHandler) handlePacket(p proto.Packet) {
 	}
 }
 
-var versionName = fmt.Sprintf("Gate %s", proto.SupportedVersionsString)
+var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
 
 func (h *statusSessionHandler) newInitialPing() *ping.ServerPing {
 	shownVersion := h.conn.Protocol()
-	if !h.conn.Protocol().Supported() {
-		shownVersion = proto.MaximumVersion.Protocol
+	if !version.Protocol(h.conn.Protocol()).Supported() {
+		shownVersion = version.MaximumVersion.Protocol
 	}
 	return &ping.ServerPing{
 		Version: ping.Version{

@@ -3,11 +3,12 @@ package proxy
 import (
 	"context"
 	"github.com/gammazero/deque"
-	"go.minekube.com/gate/pkg/edition/java/proto"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -253,7 +254,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 
 		// Since 1.16 this dynamic changed:
 		// We don't need to send two dimension switches anymore!
-		if playerVersion.Lower(proto.Minecraft_1_16) {
+		if playerVersion.Lower(version.Minecraft_1_16) {
 			if joinGame.Dimension == 0 {
 				respawn.Dimension = -1
 			}
@@ -290,7 +291,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 	}
 
 	// Clear any title from the previous server.
-	if playerVersion.GreaterEqual(proto.Minecraft_1_8) {
+	if playerVersion.GreaterEqual(version.Minecraft_1_8) {
 		resetTitle := packet.NewResetTitle(playerVersion)
 		if c.player.BufferPacket(resetTitle) != nil {
 			return false
