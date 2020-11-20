@@ -61,7 +61,7 @@ func (c *minecraftConn) readLoop() {
 	//deadline := time.Now().Add(time.Duration(c.config().ReadTimeout) * time.Millisecond)
 	//_ = c.c.SetReadDeadline(deadline)
 	for {
-		packet, err := c.decoder.Decode()
+		packetCtx, err := c.decoder.Decode()
 		if err != nil {
 			if err != io.EOF { // EOF means connection was closed
 				c.log.V(1).Info("Error decoding next packets, closing connection", "err", err)

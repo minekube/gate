@@ -6,6 +6,17 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 )
 
+// State is a Java edition client state.
+type State int
+
+// The states the Java edition client connection can be in.
+const (
+	HandshakeState State = iota
+	StatusState
+	LoginState
+	PlayState
+)
+
 // The registries storing the packets for a connection state.
 var (
 	Handshake = NewRegistry(HandshakeState)

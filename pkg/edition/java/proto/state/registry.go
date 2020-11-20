@@ -8,17 +8,6 @@ import (
 	"reflect"
 )
 
-// State is a Java edition client state.
-type State int
-
-// The states the Java edition client connection can be in.
-const (
-	HandshakeState State = iota
-	StatusState
-	LoginState
-	PlayState
-)
-
 // Registry stores server/client bound packets for a specific State.
 type Registry struct {
 	State
