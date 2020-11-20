@@ -59,7 +59,7 @@ func (d *Decoder) fillQueue() error {
 	// Error out if we get too many packets and the server can't keep up.
 	if len(rawPackets)+d.queue.Len() > 1000 {
 		d.queue.Clear()
-		return errors.New("1000+ unhandled packets in queue, Decode caller is to slow")
+		return errors.New("1000+ unhandled packets in queue, Decode caller is too slow")
 	}
 
 	for _, rawPacket := range rawPackets {

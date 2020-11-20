@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// injected at build time
+// TODO injected at build time
 var version string
 
 func String() string {
@@ -14,10 +14,11 @@ func String() string {
 
 func UserAgent() string {
 	s := strings.Builder{}
-	s.WriteString("Minekube-Gate")
+	s.WriteString("Minekube-Gate/")
 	if v := String(); v != "" {
-		s.WriteRune('/')
 		s.WriteString(v)
+	} else {
+		s.WriteString("Dirty")
 	}
 	return s.String()
 }

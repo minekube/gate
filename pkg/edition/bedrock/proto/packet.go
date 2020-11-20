@@ -12,11 +12,6 @@ type PacketMeta struct {
 	proto.PacketContext
 }
 
-func init() {
-	p := PacketMeta{}
-	p.
-}
-
 // Header is the header of a packet containing
 // a one varuint32 which is composed of a packet id,
 // a sender and target sub client id.

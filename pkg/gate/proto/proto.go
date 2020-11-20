@@ -9,22 +9,39 @@ import (
 )
 
 // Indicates a packet was known and successfully decoded by it's registered decoder,
-// but the decoder has not read all of the packet's data.
+// but the decoder has not read all of the packet's bytes.
 //
 // This may happen in cases where
 //  - the decoder has a bug
 //  - the decoder does not handle the case for the new protocol version of the packet changed by Mojang/Minecraft
 //  - someone (server/client) has sent valid bytes in the beginning of the packet's data that the packet's
 //    decoder could successfully decode, but then the data contains even more bytes (the left bytes)
-var ErrDecoderLeftBytes = errors.New("decoder did not read all packet data")
+var ErrDecoderLeftBytes = errors.New("decoder did not read all bytes of packet")
 
-// Packet should be implemented by all Minecraft packet types.
-// It is the data layer of a packet and shall support multiple protocols
-// up- and/or downwards by testing the Protocol contained in the passed PacketContext.
+// PacketDecoder decodes packets from an underlying
+// source and returns them with additional context.
+type PacketDecoder interface {
+	Decode() (*PacketContext, error)
+}
+
+// PacketEncoder encodes packets to an underlying
+// destination using the additional context.
+type PacketEncoder interface {
+	Encode(*PacketContext) error
+}
+
+// Packet represents a packet type in a Minecraft edition.
+//
+// It is the data layer of a packet in a and shall support
+// multiple protocols up- and/or downwards by testing the
+// Protocol contained in the passed PacketContext.
+//
 // The passed PacketContext is read-only and must not be modified.
 type Packet interface {
-	Encode(c *PacketContext, wr io.Writer) error       // Encode encodes the packet data into the writer.
-	Decode(c *PacketContext, rd io.Reader) (err error) // Decodes expected data from a reader into the packet.
+	// Encode encodes the packet data into the writer.
+	Encode(c *PacketContext, wr io.Writer) error
+	// Decode expected data from a reader into the packet.
+	Decode(c *PacketContext, rd io.Reader) (err error)
 }
 
 // PacketContext carries context information for a

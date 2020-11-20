@@ -121,12 +121,12 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		return
 	}
 
-	var userIp string
+	var userIP string
 	getUserIP := func() string {
-		if len(userIp) == 0 {
-			userIp, _, _ = net.SplitHostPort(l.conn.RemoteAddr().String())
+		if len(userIP) == 0 {
+			userIP, _, _ = net.SplitHostPort(l.conn.RemoteAddr().String())
 		}
-		return userIp
+		return userIP
 	}
 
 	var optionalUserIP string
@@ -144,10 +144,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	ctx, cancel := func() (context.Context, func()) {
 		tCtx, tCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		ctx, cancel := l.conn.newContext(tCtx)
-		return ctx, func() {
-			tCancel()
-			cancel()
-		}
+		return ctx, func() { tCancel(); cancel() }
 	}()
 	defer cancel()
 
@@ -191,7 +188,7 @@ Did you change your username? Sign out of Minecraft, sign back in, and try again
 )
 
 func (l *loginSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
-	l.conn.close()
+	_ = l.conn.close()
 }
 
 // Temporary english messages until localization support

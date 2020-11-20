@@ -80,14 +80,6 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 	return e.writeBuf(buf) // packet id + data
 }
 
-// Write encodes payload (uncompressed and unencrypted) (containing packed id + data)
-// and writes it to the underlying writer.
-func (e *Encoder) WriteBuf(payload *bytes.Buffer) (n int, err error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	return e.writeBuf(payload)
-}
-
 // see https://wiki.vg/Protocol#Packet_format for details
 func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	if e.compression.enabled {
@@ -115,9 +107,12 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	return int(m), err
 }
 
-// Write encodes and writes the uncompressed and unencrypted payload (packed id + data).
+// Write encodes payload (uncompressed and unencrypted, containing packed id + data)
+// and writes it to the underlying writer.
 func (e *Encoder) Write(payload []byte) (n int, err error) {
-	return e.WriteBuf(bytes.NewBuffer(payload))
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.writeBuf(bytes.NewBuffer(payload))
 }
 
 func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {

@@ -3,7 +3,6 @@ package codec
 import (
 	"bytes"
 	"compress/zlib"
-	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -15,7 +14,8 @@ import (
 	"sync"
 )
 
-// Decoder is a synchronized packet decoder.
+// Decoder is a synchronized packet decoder
+// for the Minecraft Java edition.
 type Decoder struct {
 	log       logr.Logger
 	direction proto.Direction
@@ -27,6 +27,8 @@ type Decoder struct {
 	compression          bool
 	compressionThreshold int
 }
+
+var _ proto.PacketDecoder = (*Decoder)(nil)
 
 func NewDecoder(
 	r io.Reader,
@@ -79,12 +81,12 @@ func (d *Decoder) SetCompressionThreshold(threshold int) {
 	d.mu.Unlock()
 }
 
-// ReadPacket blocks Decoder's mutex when the next packet's frame is known
+// Decode blocks Decoder's mutex when the next packet's frame is known
 // and stays blocked until the full packet from the underlying io.Reader is read.
 //
 // This is to ensure the mutex is not locked while being blocked by the first Read call
 // (e.g. underlying io.Reader is a net.Conn).
-func (d *Decoder) ReadPacket() (ctx *proto.PacketContext, err error) {
+func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.readPacket()
@@ -219,7 +221,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 			"ctx", ctx,
 			"decodedBytes", len(ctx.Payload),
 			"unreadBytes", payload.Len())
-		return ctx, ErrDecoderLeftBytes
+		return ctx, proto.ErrDecoderLeftBytes
 	}
 
 	// Packet decoder has read exactly all data from the payload.

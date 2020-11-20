@@ -21,28 +21,26 @@ import (
 	"time"
 )
 
-// Authenticator can authenticate Minecraft client logins.
+// Authenticator can authenticate joining Minecraft clients.
 type Authenticator interface {
-	// Returns a new Authenticator that uses specified logger.
-	WithLogger(logger logr.Logger) Authenticator
-
 	// Returns the public key encoded in ASN.1 DER form.
 	PublicKey() []byte
-
-	// 1) Verifies the verify token sent by joining user.
+	// 1) Verifies the verify token sent by joining client.
 	Verify(encryptedVerifyToken, actualVerifyToken []byte) (equal bool, err error)
-	// 2)
+	// 2) Decrypt shared secret sent by client.
 	DecryptSharedSecret(encrypted []byte) (decrypted []byte, err error)
-	// 3)
+	// 3) Generate server id to be used with AuthenticateJoin.
 	GenerateServerID(decryptedSharedSecret []byte) (serverID string, err error)
-	// 4) Authenticates a joining user.
+	// 4) Authenticates a joining user. The ip is optional.
 	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (*Response, error)
+	// Returns a new Authenticator that uses the specified logger.
+	WithLogger(logger logr.Logger) Authenticator
 }
 
 // Response is the authentication response.
 type Response struct {
 	OnlineMode bool   // Whether the user is in online mode
-	Body       []byte // The http body authentication API returned
+	Body       []byte // The http body the auth server returned
 }
 
 // GameProfile extracts the GameProfile from an authenticated user.
