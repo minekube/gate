@@ -5,7 +5,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Logger is Gate's logger interfacing logr.Logger from "github.com/go-logr/logr".
+// Logger is Gate's logger interface.
 type Logger interface {
 	logr.Logger
 }
@@ -18,4 +18,7 @@ func SetLogger(l Logger) {
 // Log is the base logger used.
 // It delegates to another logr.Logger.
 // You *must* call SetLogger to get any actual logging.
-var Log = log.NewDelegatingLogger(log.NullLogger{})
+var Log = log.NewDelegatingLogger(NullLog)
+
+// NullLog is a Logger that does nothing.
+var NullLog Logger = log.NullLogger{}

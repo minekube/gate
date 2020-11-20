@@ -1,15 +1,13 @@
 package proxy
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/rsa"
-	"encoding/json"
+	"errors"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/internal/auth"
 	"go.minekube.com/gate/pkg/edition/java/internal/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -19,7 +17,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"net"
-	"net/http"
+	"time"
 )
 
 type loginSessionHandler struct {
@@ -82,7 +80,7 @@ func (l *loginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequ
 	verify := make([]byte, 4)
 	_, _ = rand.Read(verify)
 	return &packet.EncryptionRequest{
-		PublicKey:   l.auth().PublicKey,
+		PublicKey:   l.auth().PublicKey(),
 		VerifyToken: verify,
 	}
 }
@@ -99,22 +97,18 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		return
 	}
 
-	authenticator := l.auth()
-	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.VerifyToken)
-	if err != nil {
-		l.log.Error(err, "Could not decrypt verification token")
-		_ = l.conn.close()
-		return
-	}
-	if !bytes.Equal(l.verify, decryptedVerifyToken) {
-		l.log.Error(err, "Unable to successfully decrypt the verification token.")
+	log := l.log.WithName("authn")
+	authn := l.auth().WithLogger(log)
+	valid, err := authn.Verify(resp.VerifyToken, l.verify)
+	if err != nil || !valid {
+		// Simple close the connection without much overhead.
 		_ = l.conn.close()
 		return
 	}
 
-	decryptedSharedSecret, err := rsa.DecryptPKCS1v15(rand.Reader, authenticator.ServerKey, resp.SharedSecret)
+	decryptedSharedSecret, err := authn.DecryptSharedSecret(resp.SharedSecret)
 	if err != nil {
-		l.log.Error(err, "Could not decrypt verify token")
+		// Simple close the connection without much overhead.
 		_ = l.conn.close()
 		return
 	}
@@ -140,40 +134,51 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		optionalUserIP = getUserIP()
 	}
 
-	serverID := authenticator.GenerateServerID(decryptedSharedSecret)
-	statusCode, body, err := authenticator.HasJoined(l.login.Username, optionalUserIP, serverID)
+	serverID, err := authn.GenerateServerID(decryptedSharedSecret)
 	if err != nil {
-		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
-			l.log.Error(err, "Unable to authenticate player with Mojang")
-		}
-		return
-	}
-	if l.conn.Closed() {
-		// The player disconnected after receiving the response.
+		// Simple close the connection without much overhead.
+		_ = l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang))
 		return
 	}
 
-	switch statusCode {
-	case http.StatusOK:
-		// All went well, initialize the session.
-		gameProfile := new(profile.GameProfile)
-		if err = json.Unmarshal(body, gameProfile); err != nil {
-			if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
-				l.log.Error(err, "Unable to unmarshal GameProfile from Mojang authentication response")
-			}
+	ctx, cancel := func() (context.Context, func()) {
+		tCtx, tCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := l.conn.newContext(tCtx)
+		return ctx, func() {
+			tCancel()
+			cancel()
+		}
+	}()
+	defer cancel()
+
+	authResp, err := authn.AuthenticateJoin(ctx, serverID, l.login.Username, optionalUserIP)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			// The player disconnected before receiving we could authenticate.
 			return
 		}
-		l.initPlayer(gameProfile, true)
-	case http.StatusNoContent:
+		_ = l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang))
+		return
+	}
+
+	if !authResp.OnlineMode {
+		log.Info("Disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
 		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))
-	default:
-		// Something else went wrong
-		l.log.Info("Got unexpected status error code whilst contacting Mojang to log in player",
-			"statusCode", statusCode,
-			"username", l.login.Username,
-			"playerIP", getUserIP())
+		return
 	}
+
+	// Extract game profile from response.
+	gameProfile, err := authResp.GameProfile()
+	if err != nil {
+		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
+			log.Error(err, "Unable get GameProfile from Mojang authentication response")
+		}
+		return
+	}
+
+	// All went well, initialize the session.
+	l.initPlayer(gameProfile, true)
 }
 
 var (
@@ -334,6 +339,6 @@ func (l *loginSessionHandler) config() *config.Config {
 	return l.proxy().config
 }
 
-func (l *loginSessionHandler) auth() *auth.Authenticator {
+func (l *loginSessionHandler) auth() auth.Authenticator {
 	return l.proxy().authenticator
 }

@@ -28,7 +28,7 @@ type Packet interface {
 }
 
 // PacketContext carries context information for a
-// received packet or packet that is about to be sent.
+// received packet or packet that is about to be send.
 type PacketContext struct {
 	Direction Direction // The direction the packet is bound to.
 	Protocol  Protocol  // The protocol version of the packet.

@@ -102,7 +102,7 @@ func (c *minecraftConn) readLoop() {
 
 		// Read next packet from underlying connection.
 		packetCtx, err := c.decoder.ReadPacket()
-		if err != nil && !errors.Is(err, codec.ErrDecoderLeftBytes) { // Ignore this error.
+		if err != nil && !errors.Is(err, proto.ErrDecoderLeftBytes) { // Ignore this error.
 			if c.handleReadErr(err) {
 				c.log.V(1).Info("Error reading packet, recovered", "err", err)
 				// Sleep briefly and try again

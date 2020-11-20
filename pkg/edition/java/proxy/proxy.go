@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/internal/auth"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -36,13 +36,14 @@ type Proxy struct {
 	event            event.Manager
 	command          *CommandManager
 	channelRegistrar *ChannelRegistrar
-	authenticator    *auth.Authenticator
+	authenticator    auth.Authenticator
 
 	startTime atomic.Value
 
 	closeMu       sync.Mutex
-	closeListener chan struct{}
-	started       bool
+	closeListener chan struct {
+	}
+	started bool
 
 	shutdownReason *component.Text
 	motd           *component.Text
@@ -64,22 +65,33 @@ type Options struct {
 	// Config requires a valid configuration.
 	Config *config.Config
 	// Logger is the logger to be used by the Proxy.
-	// If none is set, the managers logger is used.
+	// If none is set, does no logging at all.
 	Logger logr.Logger
+	// Authenticator to authenticate users in online mode.
+	// If not set, creates a default one.
+	Authenticator auth.Authenticator
 }
 
 // New takes a config that should have been validated by
 // config.Validate and returns a new initialized Proxy ready to start.
-func New(mgr manager.Manager, options Options) (*Proxy, error) {
+func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
 	log := options.Logger
 	if log == nil {
-		log = mgr.Logger().WithName("java-proxy")
+		log = logr.NullLog
 	}
 
-	p := &Proxy{
+	authn := options.Authenticator
+	if authn == nil {
+		authn, err = auth.New(auth.Options{})
+		if err != nil {
+			return nil, fmt.Errorf("erorr creating authenticator: %w", err)
+		}
+	}
+
+	p = &Proxy{
 		log:              log,
 		config:           options.Config,
 		event:            mgr.Event(),
@@ -88,7 +100,7 @@ func New(mgr manager.Manager, options Options) (*Proxy, error) {
 		servers:          map[string]*registeredServer{},
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
-		authenticator:    auth.NewAuthenticator(),
+		authenticator:    authn,
 	}
 
 	c := options.Config

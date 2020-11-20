@@ -489,14 +489,14 @@ func (p *connectedPlayer) Settings() player.Settings {
 }
 
 // returns a new player context that is canceled when:
-//  - player disconnects
+//  - connection disconnects
 //  - parent was canceled
-func (p *connectedPlayer) newContext(parent context.Context) (ctx context.Context, cancel func()) {
+func (c *minecraftConn) newContext(parent context.Context) (ctx context.Context, cancel func()) {
 	ctx, cancel = context.WithCancel(parent)
 	go func() {
 		select {
 		case <-ctx.Done():
-		case <-p.closed:
+		case <-c.closed:
 			cancel()
 		}
 	}()

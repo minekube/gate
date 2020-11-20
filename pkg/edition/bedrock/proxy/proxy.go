@@ -21,7 +21,7 @@ type Options struct {
 	// Config requires a valid configuration.
 	Config *config.Config
 	// Logger is the logger to be used by the Proxy.
-	// If none is set, the managers logger is used.
+	// If none is set, does no logging at all.
 	Logger logr.Logger
 }
 
@@ -33,7 +33,7 @@ func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
 	}
 	log := options.Logger
 	if log == nil {
-		log = mgr.Logger().WithName("bedrock-proxy")
+		log = logr.NullLog
 	}
 
 	p = &Proxy{

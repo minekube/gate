@@ -50,7 +50,7 @@ func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
 	if c.Editions.Java.Enabled {
 		gate.bridge.JavaProxy, err = jproxy.New(mgr, jproxy.Options{
 			Config: &c.Editions.Java.Config,
-			Logger: log.WithName("java-proxy"),
+			Logger: log.WithName("java"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
@@ -59,7 +59,7 @@ func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
 	if c.Editions.Bedrock.Enabled {
 		gate.bridge.BedrockProxy, err = bproxy.New(mgr, bproxy.Options{
 			Config: &c.Editions.Bedrock.Config,
-			Logger: log.WithName("bedrock-proxy"),
+			Logger: log.WithName("bedrock"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Bedrock, err)
@@ -67,7 +67,7 @@ func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
 	}
 
 	if c.Editions.Bedrock.Enabled && c.Editions.Java.Enabled {
-		// More than once edition was enabled, setup bridge between them
+		// More than one edition was enabled, setup bridge between them
 		if err = gate.bridge.Setup(); err != nil {
 			return nil, fmt.Errorf("error setting up bridge between proxy editions: %w", err)
 		}
