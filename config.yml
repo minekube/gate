@@ -1,8 +1,8 @@
 # The Minecraft editions Gate supports.
 editions:
   bedrock:
+    # Bedrock edition support is in development and not yet supported.
     enabled: false
-    config: # Bedrock edition support is in active development.
   # Java Minecraft edition is the first popular edition for desktops.
   java:
     enabled: true

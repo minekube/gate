@@ -1,10 +1,20 @@
 # This is a simplified config where the rest of the
 # settings are omitted and will be set by default.
 # See config.yml for the full configuration options.
-bind: 0.0.0.0:25565
-servers:
-  server1: localhost:25566
-  server2: localhost:25567
-try:
-  - server1
-  - server2
+#
+# The Minecraft editions Gate supports.
+editions:
+  # Java Minecraft edition is the first popular edition for desktops.
+  java:
+    enabled: true
+    config:
+      bind: 0.0.0.0:25565
+      servers:
+        server1: localhost:25566
+        server2: localhost:25567
+      try:
+        - server1
+        - server2
+  bedrock:
+    # Bedrock edition support is in development and not yet supported.
+    enabled: false

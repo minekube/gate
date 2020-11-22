@@ -1,5 +1,5 @@
 // Package bridge contains packages for setting up a bridge between proxies of different Minecraft editions.
-// Refer to Bridge.
+// Refer to Bridge struct.
 package bridge
 
 import (
