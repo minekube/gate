@@ -216,7 +216,7 @@ type serverConnection struct {
 
 func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
 	return &serverConnection{server: server, player: player,
-		log: player.log.WithName("server-conn").WithValues(
+		log: player.log.WithName("serverConn").WithValues(
 			"serverName", server.info.Name(),
 			"serverAddr", server.info.Addr()),
 	}

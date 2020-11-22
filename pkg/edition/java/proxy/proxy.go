@@ -40,9 +40,8 @@ type Proxy struct {
 	startTime atomic.Value
 
 	closeMu       sync.Mutex
-	closeListener chan struct {
-	}
-	started bool
+	closeListener chan struct{}
+	started       bool
 
 	shutdownReason *component.Text
 	motd           *component.Text
@@ -125,9 +124,6 @@ func New(options Options) (p *Proxy, err error) {
 // Returned by Proxy.Run if the proxy instance was already run.
 var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
-// Start should not be called directly, use the Start method on the
-// Manager that was given to the New when creating this Proxy.
-//
 // Start runs the Java edition Proxy, blocks until the proxy is
 // Shutdown or an error occurred while starting.
 // The Proxy is already shutdown on method return.
@@ -167,7 +163,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	}
 	p.started = false
 	select {
-	case <-p.closeListener: // channel already closed
+	case <-p.closeListener: // channel may be already closed
 	default:
 		// stop listening for new connections
 		close(p.closeListener)
@@ -175,17 +171,25 @@ func (p *Proxy) Shutdown(reason component.Component) {
 
 	p.log.Info("Shutting down the proxy...")
 	shutdownTime := time.Now()
-	defer func() { p.log.Info("Finished shutdown.", "time", time.Since(shutdownTime).String()) }()
+	defer func() {
+		p.log.Info("Finished shutdown.",
+			"shutdownTime", time.Since(shutdownTime).String(),
+			"totalTime", time.Since(p.startTime.Load().(time.Time)).String())
+	}()
 
 	pre := &PreShutdownEvent{reason: reason}
 	p.event.Fire(pre)
 	reason = pre.Reason()
 
-	lReason := new(strings.Builder)
-	if reason == nil {
-		_ = (&legacy.Legacy{}).Marshal(lReason, reason)
+	reasonStr := new(strings.Builder)
+	if reason != nil {
+		err := (&legacy.Legacy{}).Marshal(reasonStr, reason)
+		if err != nil {
+			p.log.Error(err, "Error marshal disconnect reason to legacy format")
+		}
 	}
-	p.log.Info("Disconnecting all players...", "reason", lReason)
+
+	p.log.Info("Disconnecting all players...", "reason", reasonStr.String())
 	disconnectTime := time.Now()
 	p.DisconnectAll(reason)
 	p.log.Info("Disconnected all players.", "time", time.Since(disconnectTime).String())
@@ -414,6 +418,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 
 	p.event.Fire(&ReadyEvent{})
 
+	defer p.log.Info("Stopped listening for new connections")
 	p.log.Info("Listening for connections", "addr", addr)
 	for {
 		conn, err := ln.Accept()

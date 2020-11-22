@@ -144,32 +144,30 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 	q := u.Query()
 	q.Set("username", username)
 	q.Set("serverId", serverID)
-	log := a.log.V(1).WithName("authenticateJoin").WithValues("username", username)
 	if ip != "" {
 		q.Set("ip", ip)
-		log = log.WithValues("ip", ip)
 	}
-	urlStr := u.String()
-	log = log.WithValues("serverID", serverID, "url", urlStr)
+	u.RawQuery = q.Encode()
 
+	urlStr := u.String()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating authentication request: %w", err)
 	}
 
-	start := time.Now()
-	log = log.WithName("request")
-	log.Info("Sending http request to Mojang sessionserver", "time", start)
+	log := a.log.V(1).WithName("authnJoin").WithName("request")
+	log.Info("Sending http request to Mojang sessionserver", "url", urlStr)
 
+	start := time.Now()
 	resp, err := a.cli.Do(req)
 	if err != nil {
-		log.Error(err, "Error with http request", "duration", time.Since(start))
+		log.Error(err, "Error with http request", "time", time.Since(start).String())
 		return nil, fmt.Errorf("error authenticating join with Mojang sessionserver: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	log.Info("Received response from Mojang sessionserver",
-		"duration", time.Since(start), "statusCode", resp.StatusCode)
+		"time", time.Since(start).String(), "statusCode", resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

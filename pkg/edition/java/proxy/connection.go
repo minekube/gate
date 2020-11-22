@@ -63,14 +63,14 @@ type minecraftConn struct {
 func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool) (conn *minecraftConn) {
 	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
 	out := proto.ClientBound // writes to client are client bound (proxy -> client)
-	logName := "clientConn"
+	logName := "client"
 	if !playerConn { // if a backend server connection
 		in = proto.ClientBound  // reads from backend are client bound (proxy <- backend)
 		out = proto.ServerBound // writes to backend are server bound (proxy -> backend)
-		logName = "serverConn"
+		logName = "server"
 	}
 
-	log := proxy.log.WithName(logName).WithValues("remoteAddr", base.RemoteAddr())
+	log := proxy.log.WithName(logName)
 	writeBuf := bufio.NewWriter(base)
 	readBuf := bufio.NewReader(base)
 	return &minecraftConn{
@@ -290,7 +290,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 			sh.disconnected()
 
 			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
-				c.log.Info("Player has disconnected", "player", p.player_())
+				p.player_().log.Info("Player has disconnected")
 			}
 		}
 	})

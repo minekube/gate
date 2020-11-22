@@ -20,7 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/internal/console"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -379,7 +378,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 	}
 
 	if p.closeWith(packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
-		p.log.Info("Player has been disconnected", "reason", console.AnsiFromLegacy(r))
+		p.log.Info("Player has been disconnected", "reason", r)
 	}
 }
 
