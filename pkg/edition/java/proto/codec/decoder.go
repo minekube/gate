@@ -47,10 +47,7 @@ func NewDecoder(
 
 type fullReader struct{ io.Reader }
 
-func (fr *fullReader) Read(p []byte) (n int, err error) {
-	n, err = io.ReadFull(fr.Reader, p)
-	return
-}
+func (fr *fullReader) Read(p []byte) (int, error) { return io.ReadFull(fr.Reader, p) }
 
 func (d *Decoder) SetState(state *state.Registry) {
 	d.mu.Lock()
@@ -82,11 +79,8 @@ func (d *Decoder) SetCompressionThreshold(threshold int) {
 	d.mu.Unlock()
 }
 
-// Decode blocks Decoder's mutex when the next packet's frame is known
-// and stays blocked until the full packet from the underlying io.Reader is read.
-//
-// This is to ensure the mutex is not locked while being blocked by the first Read call
-// (e.g. underlying io.Reader is a net.Conn).
+// Decode reads the next packet from the underlying reader.
+// It blocks other calls to Decode until return.
 func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -168,7 +162,7 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 	} else {
 		// Reuse already allocated zlib reader
 		if err = d.zrd.(zlib.Resetter).Reset(rd, nil); err != nil {
-			return nil, fmt.Errorf("error reseting zlib.Reader: %w", err)
+			return nil, fmt.Errorf("error reseting zlib reader: %w", err)
 		}
 	}
 

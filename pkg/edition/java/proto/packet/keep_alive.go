@@ -20,8 +20,7 @@ func (k *KeepAlive) Encode(c *proto.PacketContext, wr io.Writer) error {
 	return util.WriteInt32(wr, int32(k.RandomID))
 }
 
-func (k *KeepAlive) Decode(c *proto.PacketContext, r io.Reader) (err error) {
-	rd := &countingReader{Reader: r}
+func (k *KeepAlive) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_12_2) {
 		k.RandomID, err = util.ReadInt64(rd)
 	} else if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
@@ -33,17 +32,6 @@ func (k *KeepAlive) Decode(c *proto.PacketContext, r io.Reader) (err error) {
 		id, err = util.ReadInt32(rd)
 		k.RandomID = int64(id)
 	}
-	return
-}
-
-type countingReader struct {
-	io.Reader
-	n int
-}
-
-func (cr *countingReader) Read(p []byte) (n int, err error) {
-	n, err = cr.Reader.Read(p)
-	cr.n += n
 	return
 }
 
