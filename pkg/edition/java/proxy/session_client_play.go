@@ -53,10 +53,10 @@ func (c *clientPlaySessionHandler) deactivated() {
 }
 
 func (c *clientPlaySessionHandler) activated() {
-	version := c.player.Protocol()
-	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(version)
+	protocol := c.player.Protocol()
+	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(protocol)
 	if len(channels) != 0 {
-		register := plugin.ConstructChannelsPacket(version, channels.UnsortedList()...)
+		register := plugin.ConstructChannelsPacket(protocol, channels.UnsortedList()...)
 		_ = c.player.WritePacket(register)
 		c.player.pluginChannelsMu.Lock()
 		c.player.pluginChannels.InsertSet(channels)

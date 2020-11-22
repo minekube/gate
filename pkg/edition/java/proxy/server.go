@@ -175,7 +175,7 @@ func (r *registeredServer) sendPluginMessage(identifier message.ChannelIdentifie
 		return
 	}
 	r.Players().Range(func(p Player) bool {
-		go func() { _ = p.SendPluginMessage(identifier, data) }()
+		go func(p Player) { _ = p.SendPluginMessage(identifier, data) }(p)
 		return true
 	})
 }
