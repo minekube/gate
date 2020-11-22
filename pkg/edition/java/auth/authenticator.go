@@ -32,31 +32,17 @@ type Authenticator interface {
 	// 3) Generate server id to be used with AuthenticateJoin.
 	GenerateServerID(decryptedSharedSecret []byte) (serverID string, err error)
 	// 4) Authenticates a joining user. The ip is optional.
-	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (*Response, error)
+	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error)
 	// Returns a new Authenticator that uses the specified logger.
 	WithLogger(logger logr.Logger) Authenticator
 }
 
 // Response is the authentication response.
-type Response struct {
-	OnlineMode bool   // Whether the user is in online mode
-	Body       []byte // The http body the auth server returned
-}
-
-// GameProfile extracts the GameProfile from an authenticated user.
-func (r *Response) GameProfile() (*profile.GameProfile, error) {
-	if r == nil || !r.OnlineMode || len(r.Body) == 0 {
-		return nil, errors.New("was not authenticated online mode")
-	}
-	var p profile.GameProfile
-	if err := json.Unmarshal(r.Body, &p); err != nil {
-		return nil, fmt.Errorf("error unmarshal GameProfile: %w", err)
-	}
-	// Validate
-	if p.Name == "" {
-		return nil, fmt.Errorf("response body misses username")
-	}
-	return &p, nil
+type Response interface {
+	OnlineMode() bool // Whether the user is in online mode
+	// Extracts the GameProfile from an authenticated client.
+	// Returns nil if OnlineMode is false.
+	GameProfile() (*profile.GameProfile, error)
 }
 
 //
@@ -112,7 +98,7 @@ func New(options Options) (Authenticator, error) {
 	cli.Transport = withHeader(cli.Transport, version.UserAgentHeader())
 
 	return &authn{
-		log:     logr.NullLog,
+		log:     logr.NopLog,
 		private: private,
 		public:  public,
 		cli:     cli,
@@ -153,7 +139,7 @@ func (a *authn) DecryptSharedSecret(encrypted []byte) (decrypted []byte, err err
 	return rsa.DecryptPKCS1v15(rand.Reader, a.private, encrypted)
 }
 
-func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (*Response, error) {
+func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error) {
 	u := *mojangURL // copy
 	q := u.Query()
 	q.Set("username", username)
@@ -200,9 +186,9 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 		return nil, fmt.Errorf("got unexpected status code (%d) from Mojang sessionserver", resp.StatusCode)
 	}
 
-	return &Response{
-		OnlineMode: resp.StatusCode == http.StatusOK,
-		Body:       body,
+	return &response{
+		onlineMode: resp.StatusCode == http.StatusOK && len(body) != 0,
+		body:       body,
 	}, nil
 }
 
@@ -244,6 +230,35 @@ func twosComplement(p []byte) []byte {
 		}
 	}
 	return p
+}
+
+//
+//
+//
+//
+//
+//
+
+type response struct {
+	onlineMode bool
+	body       []byte
+}
+
+func (r *response) OnlineMode() bool { return r.onlineMode }
+
+func (r *response) GameProfile() (*profile.GameProfile, error) {
+	if r == nil || !r.onlineMode {
+		return nil, errors.New("no GameProfile for offline mode user")
+	}
+	var p profile.GameProfile
+	if err := json.Unmarshal(r.body, &p); err != nil {
+		return nil, fmt.Errorf("error unmarshal GameProfile: %w", err)
+	}
+	// Validate
+	if p.Name == "" {
+		return nil, fmt.Errorf("response body misses username")
+	}
+	return &p, nil
 }
 
 //

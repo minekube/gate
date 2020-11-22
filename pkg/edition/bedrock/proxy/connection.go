@@ -68,6 +68,8 @@ func (c *minecraftConn) readLoop() {
 			}
 			return
 		}
+		// TODO
+		_ = packetCtx
 	}
 }
 

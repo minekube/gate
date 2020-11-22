@@ -7,8 +7,7 @@ import (
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/cmd/gate"
-	"go.minekube.com/gate/pkg/event"
-	"go.minekube.com/gate/pkg/proxy"
+	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"strings"
 )
 
@@ -22,7 +21,7 @@ func main() {
 	})
 
 	// Execute Gate entrypoint and block until shutdown.
-	// We could also run gate.Run if we don't need Gate's command-line.
+	// We could also run gate.Start if we don't need Gate's command-line.
 	gate.Execute()
 }
 

@@ -63,11 +63,11 @@ type minecraftConn struct {
 func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool) (conn *minecraftConn) {
 	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
 	out := proto.ClientBound // writes to client are client bound (proxy -> client)
-	logName := "player-conn"
+	logName := "clientConn"
 	if !playerConn { // if a backend server connection
 		in = proto.ClientBound  // reads from backend are client bound (proxy <- backend)
 		out = proto.ServerBound // writes to backend are server bound (proxy -> backend)
-		logName = "backend-conn"
+		logName = "serverConn"
 	}
 
 	log := proxy.log.WithName(logName).WithValues("remoteAddr", base.RemoteAddr())
@@ -95,10 +95,11 @@ func (c *minecraftConn) readLoop() {
 	// Make sure to close connection on return, if not already closed
 	defer func() { _ = c.closeKnown(false) }()
 
+	readTimeout := time.Duration(c.config().ReadTimeout) * time.Millisecond
+
 	next := func() bool {
 		// Set read timeout to wait for client to send a packet
-		deadline := time.Now().Add(time.Duration(c.config().ReadTimeout) * time.Millisecond)
-		_ = c.c.SetReadDeadline(deadline)
+		_ = c.c.SetReadDeadline(time.Now().Add(readTimeout))
 
 		// Read next packet from underlying connection.
 		packetCtx, err := c.decoder.Decode()
@@ -108,9 +109,8 @@ func (c *minecraftConn) readLoop() {
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
 				return true
-			} else {
-				c.log.V(1).Info("Error reading packet, closing connection", "err", err)
 			}
+			c.log.V(1).Info("Error reading packet, closing connection", "err", err)
 			return false
 		}
 		if !packetCtx.KnownPacket {
@@ -118,7 +118,13 @@ func (c *minecraftConn) readLoop() {
 			return true
 		}
 
-		// Handle packet by connections session handler.
+		// TODO wrap packetCtx into struct with source info
+		// (minecraftConn) and chain into packet interceptor to...
+		//  - packet interception
+		//  - statistics / count bytes
+		//  - in turn call session handler
+
+		// Handle packet by connection's session handler.
 		c.SessionHandler().handlePacket(packetCtx.Packet)
 		return true
 	}

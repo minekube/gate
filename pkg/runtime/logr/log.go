@@ -12,13 +12,14 @@ type Logger interface {
 
 // SetLogger sets a concrete logging implementation for all deferred Loggers.
 func SetLogger(l Logger) {
-	Log.Fulfill(l)
+	dLog.Fulfill(l)
 }
 
 // Log is the base logger used.
 // It delegates to another logr.Logger.
 // You *must* call SetLogger to get any actual logging.
-var Log = log.NewDelegatingLogger(NullLog)
+var Log Logger = dLog
+var dLog = log.NewDelegatingLogger(NopLog)
 
-// NullLog is a Logger that does nothing.
-var NullLog Logger = log.NullLogger{}
+// NopLog is a Logger that does nothing.
+var NopLog Logger = log.NullLogger{}

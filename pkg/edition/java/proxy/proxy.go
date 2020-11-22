@@ -16,7 +16,6 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/logr"
-	"go.minekube.com/gate/pkg/runtime/manager"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -62,8 +61,12 @@ type Proxy struct {
 
 // Options are the options for a new Java edition Proxy.
 type Options struct {
-	// Config requires a valid configuration.
+	// Config requires configuration
+	// validated by config.Validate.
 	Config *config.Config
+	// The event manager to use.
+	// If none is set, no events are sent.
+	EventMgr event.Manager
 	// Logger is the logger to be used by the Proxy.
 	// If none is set, does no logging at all.
 	Logger logr.Logger
@@ -72,17 +75,19 @@ type Options struct {
 	Authenticator auth.Authenticator
 }
 
-// New takes a config that should have been validated by
-// config.Validate and returns a new initialized Proxy ready to start.
-func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
+// New returns a new Proxy ready to start.
+func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
 	log := options.Logger
 	if log == nil {
-		log = logr.NullLog
+		log = logr.NopLog
 	}
-
+	eventMgr := options.EventMgr
+	if eventMgr == nil {
+		eventMgr = event.Nop
+	}
 	authn := options.Authenticator
 	if authn == nil {
 		authn, err = auth.New(auth.Options{})
@@ -94,7 +99,7 @@ func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
 	p = &Proxy{
 		log:              log,
 		config:           options.Config,
-		event:            mgr.Event(),
+		event:            eventMgr,
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
@@ -114,7 +119,7 @@ func New(mgr manager.Manager, options Options) (p *Proxy, err error) {
 		p.loginsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
 	}
 
-	return p, mgr.Add(p)
+	return p, nil
 }
 
 // Returned by Proxy.Run if the proxy instance was already run.

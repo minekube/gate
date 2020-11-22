@@ -158,7 +158,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		return
 	}
 
-	if !authResp.OnlineMode {
+	if !authResp.OnlineMode() {
 		log.Info("Disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
 		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))

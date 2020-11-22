@@ -9,8 +9,10 @@ import (
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/runtime/logr"
-	"go.minekube.com/gate/pkg/runtime/manager"
+	"go.minekube.com/gate/pkg/runtime/process"
 	errors "go.minekube.com/gate/pkg/util/errs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -22,25 +24,33 @@ import (
 // Options are Gate options.
 type Options struct {
 	// Config requires a valid Gate configuration.
-	Config *Config
-	// Logger is the logger used for Gate and
-	// sub-components like Minecraft edition proxies.
-	// If not set, the managers logger is used.
+	Config *config.Config
+	// The event manager to use.
+	// If none is set, no events are sent.
+	EventMgr event.Manager
+	// Logger is the logger used for Gate
+	// and potential sub-components.
+	// If not set, no logging is done.
 	Logger logr.Logger
 }
 
-// New returns a new Gate instance setup with the given Manager.
+// New returns a new Gate instance.
 // The given Options requires a validated Config.
-func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
+func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errors.ErrMissingConfig
 	}
 	log := options.Logger
 	if log == nil {
-		log = mgr.Logger().WithName("gate")
+		log = logr.NopLog
+	}
+	eventMgr := options.EventMgr
+	if eventMgr == nil {
+		eventMgr = event.Nop
 	}
 
 	gate = &Gate{
+		proc: process.New(process.Options{Logger: log}),
 		bridge: &bridge.Bridge{
 			Log: log.WithName("bridge"),
 		},
@@ -48,21 +58,29 @@ func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
 
 	c := options.Config
 	if c.Editions.Java.Enabled {
-		gate.bridge.JavaProxy, err = jproxy.New(mgr, jproxy.Options{
-			Config: &c.Editions.Java.Config,
-			Logger: log.WithName("java"),
+		gate.bridge.JavaProxy, err = jproxy.New(jproxy.Options{
+			Config:   &c.Editions.Java.Config,
+			EventMgr: eventMgr,
+			Logger:   log.WithName("java"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
 		}
+		if err = gate.proc.Add(gate.bridge.JavaProxy); err != nil {
+			return nil, err
+		}
 	}
 	if c.Editions.Bedrock.Enabled {
-		gate.bridge.BedrockProxy, err = bproxy.New(mgr, bproxy.Options{
-			Config: &c.Editions.Bedrock.Config,
-			Logger: log.WithName("bedrock"),
+		gate.bridge.BedrockProxy, err = bproxy.New(bproxy.Options{
+			Config:   &c.Editions.Bedrock.Config,
+			EventMgr: eventMgr,
+			Logger:   log.WithName("bedrock"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Bedrock, err)
+		}
+		if err = gate.proc.Add(gate.bridge.BedrockProxy); err != nil {
+			return nil, err
 		}
 	}
 
@@ -79,6 +97,8 @@ func New(mgr manager.Manager, options Options) (gate *Gate, err error) {
 // Gate manages one or multiple proxy editions (Bedrock & Java).
 type Gate struct {
 	bridge *bridge.Bridge
+	// Parallel running main processes.
+	proc process.Collection
 }
 
 // Java returns the Java edition proxy, or nil if none.
@@ -91,23 +111,24 @@ func (g *Gate) Bedrock() *bproxy.Proxy {
 	return g.bridge.BedrockProxy
 }
 
-// Viper is a viper instance initialized with defaults
-// for the Config in `pkg/gate/config` package.
+// Start starts the Gate instance and all potential sub-components.
+func (g *Gate) Start(stop chan struct{}) error { return g.proc.Start(stop) }
+
+// Viper is a viper instance initialized
+// with defaults for the Config struct.
 // It can be used to load in config files.
 var Viper = viper.New()
 
-func init() { SetDefaults(Viper) }
+// TODO remove: func init() { config.SetDefaults(Viper) }
 
-var log = logr.Log.WithName("setup")
-
-// Run is a convenience function to setup and run a Gate instance.
+// Start is a convenience function to setup and run a Gate instance.
 //
-// Run sets up a Logger, reads in a Config, validates it, sets up
-// os signal handling and creates a Manager to start a new Gate,
+// It sets up a Logger, reads in a Config, validates it and sets up
+// os signal handling before starting the instance.
 //
-// The Gate is shutdown on stop channel close or on occurrence of any significant error,
-// config validation warnings are logged but ignored.
-func Run(stop <-chan struct{}) (err error) {
+// The Gate is shutdown on stop channel close or on occurrence of any
+// significant error. Config validation warnings are logged but ignored.
+func Start(stop <-chan struct{}) (err error) {
 	// Set logger
 	setLogger := func(devMode bool) error {
 		zl, err := newZapLogger(devMode)
@@ -121,33 +142,37 @@ func Run(stop <-chan struct{}) (err error) {
 		return err
 	}
 
+	// Clone default config
+	cfg := func() config.Config { return config.DefaultConfig }()
 	// Load in Gate config
-	var cfg Config
 	if err := Viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
+	var configLog = logr.Log.WithName("config")
+
 	// Validate Gate config
 	warns, errs := cfg.Validate()
 	for _, e := range errs {
-		log.Info("Config validation error", "error", e.Error())
+		configLog.Info("Config validation error", "error", e.Error())
 	}
 	for _, w := range warns {
-		log.Info("Config validation warn", "warn", w.Error())
+		configLog.Info("Config validation warn", "warn", w.Error())
 	}
 	if len(errs) != 0 {
 		// Shouldn't run Gate with validation errors
-		return fmt.Errorf("config validation failure (errors: %d, warns: %d), inspect the logs for details",
+		return fmt.Errorf("config validation errors "+
+			"(errors: %d, warns: %d), inspect the logs for details",
 			len(errs), len(warns))
 	}
 
-	// Top-level manager starting all sub-components.
-	mgr, err := manager.New(manager.Options{})
-	if err != nil {
-		return fmt.Errorf("error new runtime manager: %w", err)
-	}
-	// Setup new Gate with manager and loaded config.
-	_, err = New(mgr, Options{Config: &cfg})
+	log := logr.Log.WithName("gate")
+	// Setup new Gate instance with loaded config.
+	gate, err := New(Options{
+		Config:   &cfg,
+		Logger:   log,
+		EventMgr: event.New(log.WithName("event")),
+	})
 	if err != nil {
 		return fmt.Errorf("error creating Gate instance: %w", err)
 	}
@@ -167,12 +192,12 @@ func Run(stop <-chan struct{}) (err error) {
 				// Sig chan was closed
 				return
 			}
-			mgr.Logger().Info("Received os signal", "signal", s)
+			log.Info("Received os signal", "signal", s)
 		}
 	}()
 
 	// Start everything
-	return mgr.Start(childStop)
+	return gate.Start(childStop)
 }
 
 // newZapLogger returns a new zap logger with a modified production

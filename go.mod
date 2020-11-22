@@ -15,7 +15,6 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
-	github.com/valyala/fasthttp v1.15.1
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.0

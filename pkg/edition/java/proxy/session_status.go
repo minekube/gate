@@ -29,7 +29,7 @@ func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandle
 
 func (h *statusSessionHandler) activated() {
 	cfg := h.conn.proxy.Config()
-	if cfg.Status.ShowPingRequests || cfg.Debug {
+	if cfg.Status.LogPingRequests || cfg.Debug {
 		h.log.Info("Got server list status request")
 	}
 }
