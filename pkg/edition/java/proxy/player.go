@@ -10,17 +10,17 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/forge"
-	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
-	"go.minekube.com/gate/pkg/edition/java/internal/profile"
+	"go.minekube.com/gate/pkg/edition/java/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
-	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
-	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/util/permission"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
@@ -229,7 +229,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 	b := new(strings.Builder)
 	if position == packet.ActionBarMessage {
 		if p.Protocol().GreaterEqual(version.Minecraft_1_11) {
-			if err = util2.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
+			if err = util.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
 				return err
 			}
 			s := b.String()
@@ -252,7 +252,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 		}
 		messageJson = string(j)
 	} else {
-		if err = util2.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
+		if err = util.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
 			return err
 		}
 		messageJson = b.String()

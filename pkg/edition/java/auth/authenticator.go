@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/internal/profile"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/version"
 	"io/ioutil"

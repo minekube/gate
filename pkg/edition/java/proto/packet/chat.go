@@ -15,7 +15,7 @@ const (
 type Chat struct {
 	Message string
 	Type    MessagePosition
-	Sender  uuid.UUID // 1.16+, and can empty UUID, all zeros
+	Sender  uuid.UUID // 1.16+, and can be empty UUID, all zeros
 }
 
 func (ch *Chat) Encode(c *proto.PacketContext, wr io.Writer) error {

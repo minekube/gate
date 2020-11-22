@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/internal/modinfo"
-	"go.minekube.com/gate/pkg/edition/java/internal/profile"
+	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
-	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
+	"go.minekube.com/gate/pkg/util/permission"
 )
 
 // PingEvent is fired when a server list ping
@@ -162,7 +162,7 @@ func (p *PermissionsSetupEvent) Func() permission.Func {
 	return p.fn
 }
 
-// SetFunc sets the permission.Func use for the subject.
+// SetFunc sets the permission.Func usec for the subject.
 // If fn is nil, the default Func fill be used.
 func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
 	if fn == nil {

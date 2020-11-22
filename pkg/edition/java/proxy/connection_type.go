@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/internal/profile"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 )
 
 // connectionType is a client connection type.

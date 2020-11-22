@@ -5,7 +5,6 @@ import (
 	"fmt"
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proxy/permission"
 	"time"
 )
 
@@ -18,7 +17,7 @@ func (p *Proxy) registerBuiltinCommands() {
 }
 
 func hasCmdPerm(s CommandSource, perm string) bool {
-	if s.PermissionValue(perm) == permission.False {
+	if !s.HasPermission(perm) {
 		_ = s.SendMessage(missingCommandPermission)
 		return false
 	}
