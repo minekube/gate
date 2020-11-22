@@ -27,7 +27,7 @@ type backendLoginSessionHandler struct {
 
 	informationForwarded atomic.Bool
 
-	noOpSessionHandler
+	nopSessionHandler
 }
 
 var _ sessionHandler = (*backendLoginSessionHandler)(nil)
@@ -63,20 +63,24 @@ func (b *backendLoginSessionHandler) deactivated() {
 	}
 }
 
-func (b *backendLoginSessionHandler) handlePacket(p proto.Packet) {
-	switch t := p.(type) {
+func (b *backendLoginSessionHandler) handlePacket(pc *proto.PacketContext) {
+	if !pc.KnownPacket {
+		return // ignore unknown
+	}
+
+	switch p := pc.Packet.(type) {
 	case *packet.LoginPluginMessage:
-		b.handleLoginPluginMessage(t)
+		b.handleLoginPluginMessage(p)
 	case *packet.Disconnect:
-		b.handleDisconnect(t)
+		b.handleDisconnect(p)
 	case *packet.EncryptionRequest:
 		b.handleEncryptionRequest()
 	case *packet.SetCompression:
-		b.handleSetCompression(t)
+		b.handleSetCompression(p)
 	case *packet.ServerLoginSuccess:
 		b.handleServerLoginSuccess()
 	default:
-		b.log.Info("Received unhandled packet from backend server while logging in",
+		b.log.V(1).Info("Received unexpected packet from backend server while logging in",
 			"packetType", reflect.TypeOf(p))
 	}
 }

@@ -25,9 +25,8 @@ import (
 // Since connections transition between states packets need to be handled differently,
 // this behaviour is divided between sessions by sessionHandlers.
 type sessionHandler interface {
-	handlePacket(p proto.Packet)                // Called to handle incoming packets on the connection.
-	handleUnknownPacket(p *proto.PacketContext) // Called to handle incoming unknown packet.
-	disconnected()                              // Called when connection is closing, to teardown the session.
+	handlePacket(pc *proto.PacketContext) // Called to handle incoming known or unknown packet.
+	disconnected()                        // Called when connection is closing, to teardown the session.
 
 	activated()   // Called when the connection is now managed by this sessionHandler.
 	deactivated() // Called when the connection is no longer managed by this sessionHandler.
@@ -113,10 +112,6 @@ func (c *minecraftConn) readLoop() {
 			c.log.V(1).Info("Error reading packet, closing connection", "err", err)
 			return false
 		}
-		if !packetCtx.KnownPacket {
-			c.SessionHandler().handleUnknownPacket(packetCtx)
-			return true
-		}
 
 		// TODO wrap packetCtx into struct with source info
 		// (minecraftConn) and chain into packet interceptor to...
@@ -125,7 +120,7 @@ func (c *minecraftConn) readLoop() {
 		//  - in turn call session handler
 
 		// Handle packet by connection's session handler.
-		c.SessionHandler().handlePacket(packetCtx.Packet)
+		c.SessionHandler().handlePacket(packetCtx)
 		return true
 	}
 

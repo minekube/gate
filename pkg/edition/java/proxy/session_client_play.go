@@ -32,8 +32,13 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 	return &clientPlaySessionHandler{player: player, log: player.log.WithName("clientPlaySession")}
 }
 
-func (c *clientPlaySessionHandler) handlePacket(pack proto.Packet) {
-	switch p := pack.(type) {
+func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
+	if !pc.KnownPacket {
+		c.forwardToServer(pc)
+		return
+	}
+
+	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		c.handleKeepAlive(p)
 	case *packet.Chat:
@@ -42,9 +47,9 @@ func (c *clientPlaySessionHandler) handlePacket(pack proto.Packet) {
 		c.handlePluginMessage(p)
 	case *packet.ClientSettings:
 		c.player.setSettings(p)
-		c.forwardToServer(pack) // forward to server
+		c.forwardToServer(pc) // forward to server
 	default:
-		c.forwardToServer(pack)
+		c.forwardToServer(pc)
 	}
 }
 
@@ -64,15 +69,9 @@ func (c *clientPlaySessionHandler) activated() {
 	}
 }
 
-func (c *clientPlaySessionHandler) forwardToServer(packet proto.Packet) {
+func (c *clientPlaySessionHandler) forwardToServer(pc *proto.PacketContext) {
 	if serverMc := c.canForward(); serverMc != nil {
-		_ = serverMc.WritePacket(packet)
-	}
-}
-
-func (c *clientPlaySessionHandler) handleUnknownPacket(p *proto.PacketContext) {
-	if serverMc := c.canForward(); serverMc != nil {
-		_ = serverMc.Write(p.Payload)
+		_ = serverMc.Write(pc.Payload)
 	}
 }
 

@@ -17,7 +17,7 @@ type backendTransitionSessionHandler struct {
 	listenDoneCtx chan struct{}
 	log           logr.Logger
 
-	noOpSessionHandler
+	nopSessionHandler
 }
 
 func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
@@ -51,21 +51,25 @@ func (b *backendTransitionSessionHandler) deactivated() {
 	}
 }
 
-func (b *backendTransitionSessionHandler) handlePacket(p proto.Packet) {
+func (b *backendTransitionSessionHandler) handlePacket(pc *proto.PacketContext) {
+	if !pc.KnownPacket {
+		return // ignore unknown packet
+	}
+
 	if !b.shouldHandle() {
 		return
 	}
-	switch t := p.(type) {
+	switch p := pc.Packet.(type) {
 	case *packet.JoinGame:
-		b.handleJoinGame(t)
+		b.handleJoinGame(p)
 	case *packet.KeepAlive:
-		b.handleKeepAlive(t)
+		b.handleKeepAlive(p)
 	case *packet.Disconnect:
-		b.handleDisconnect(t)
+		b.handleDisconnect(p)
 	case *plugin.Message:
-		b.handlePluginMessage(t)
+		b.handlePluginMessage(p)
 	default:
-		b.log.V(1).Info("Received unhandled packet from backend server while transitioning",
+		b.log.V(1).Info("Received unexpected packet from backend server while transitioning",
 			"type", reflect.TypeOf(p))
 	}
 }

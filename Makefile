@@ -25,8 +25,17 @@ lint:
 updatedocsy:
 	git submodule update --depth 1 --init --recursive site/themes/docsy
 
-# Install gops & dependency for profiling
-install-gops:
+
+
+
+
+# Install gops & dependencies
+pprof-gops-install:
 	go install github.com/google/gops && \
 	sudo apt install graphviz gv && \
-	sudo apt install libcanberra-gtk-module libcanberra-gtk3-module
+	sudo apt install libcanberra-gtk-module
+
+# Dump heap & show in browser
+pprof-heap:
+	curl -sK -v http://localhost:8080/debug/pprof/heap > /tmp/heap.out && \
+	go tool pprof -http=:8081 /tmp/heap.out

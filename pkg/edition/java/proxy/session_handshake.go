@@ -21,7 +21,7 @@ type handshakeSessionHandler struct {
 	conn *minecraftConn
 	log  logr.Logger
 
-	noOpSessionHandler
+	nopSessionHandler
 }
 
 // newHandshakeSessionHandler returns a handler used for clients in the handshake state.
@@ -29,20 +29,22 @@ func newHandshakeSessionHandler(conn *minecraftConn) sessionHandler {
 	return &handshakeSessionHandler{conn: conn, log: conn.log.WithName("handshakeSession")}
 }
 
-func (h *handshakeSessionHandler) handlePacket(p proto.Packet) {
-	switch typed := p.(type) {
+func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
+	if !p.KnownPacket {
+		// Unknown packet received.
+		// Better to close the connection.
+		_ = h.conn.close()
+		return
+	}
+	switch typed := p.Packet.(type) {
 	// TODO legacy pings
 	case *packet.Handshake:
 		h.handleHandshake(typed)
 	default:
-		// Unknown packet received. Better to close the connection.
-		h.conn.close()
+		// Unknown packet received.
+		// Better to close the connection.
+		_ = h.conn.close()
 	}
-}
-
-func (h *handshakeSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
-	// Unknown packet received. Better to close the connection.
-	h.conn.close()
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
@@ -190,12 +192,11 @@ func (i *initialInbound) String() string {
 
 // A no-operation session handler can be wrapped to
 // implement the sessionHandler interface.
-type noOpSessionHandler struct{}
+type nopSessionHandler struct{}
 
-var _ sessionHandler = (*noOpSessionHandler)(nil)
+var _ sessionHandler = (*nopSessionHandler)(nil)
 
-func (noOpSessionHandler) handlePacket(proto.Packet)                {}
-func (noOpSessionHandler) handleUnknownPacket(*proto.PacketContext) {}
-func (noOpSessionHandler) disconnected()                            {}
-func (noOpSessionHandler) deactivated()                             {}
-func (noOpSessionHandler) activated()                               {}
+func (nopSessionHandler) handlePacket(*proto.PacketContext) {}
+func (nopSessionHandler) disconnected()                     {}
+func (nopSessionHandler) deactivated()                      {}
+func (nopSessionHandler) activated()                        {}

@@ -8,15 +8,18 @@ import (
 type initialConnectSessionHandler struct {
 	player *connectedPlayer
 
-	noOpSessionHandler
+	nopSessionHandler
 }
 
 func newInitialConnectSessionHandler(player *connectedPlayer) sessionHandler {
 	return &initialConnectSessionHandler{player: player}
 }
 
-func (i *initialConnectSessionHandler) handlePacket(p proto.Packet) {
-	switch typed := p.(type) {
+func (i *initialConnectSessionHandler) handlePacket(p *proto.PacketContext) {
+	if !p.KnownPacket {
+		return
+	}
+	switch typed := p.Packet.(type) {
 	case *plugin.Message:
 		i.handlePluginMessage(typed)
 	}

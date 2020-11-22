@@ -17,7 +17,7 @@ type statusSessionHandler struct {
 
 	receivedRequest bool
 
-	noOpSessionHandler
+	nopSessionHandler
 }
 
 func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
@@ -34,13 +34,20 @@ func (h *statusSessionHandler) activated() {
 	}
 }
 
-func (h *statusSessionHandler) handlePacket(p proto.Packet) {
-	switch typed := p.(type) {
+func (h *statusSessionHandler) handlePacket(pc *proto.PacketContext) {
+	if !pc.KnownPacket {
+		// What even is going on? ;D
+		_ = h.conn.close()
+		return
+	}
+
+	switch p := pc.Packet.(type) {
 	case *packet.StatusRequest:
 		h.handleStatusRequest()
 	case *packet.StatusPing:
-		h.handleStatusPing(typed)
+		h.handleStatusPing(p)
 	default:
+		// unexpected packet, simply close
 		_ = h.conn.close()
 	}
 }
@@ -106,11 +113,6 @@ func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
 	if err := h.conn.WritePacket(p); err != nil {
 		h.log.V(1).Info("Error writing StatusPing response", "err", err)
 	}
-}
-
-func (h *statusSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
-	// What even is going on? ;D
-	_ = h.conn.close()
 }
 
 func (h *statusSessionHandler) proxy() *Proxy {

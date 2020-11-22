@@ -8,6 +8,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/bufpool"
 	"io"
 	"sync"
 )
@@ -17,6 +18,9 @@ const (
 	HardMaximumUncompressedSize    = 16 * 1024 * 1024 // 16MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
 )
+
+// disable calibration, since most minecraft packets size is smaller than 64 bytes
+var pool = &bufpool.Pool{DisableCalibration: true}
 
 // Encoder is a synchronized packet encoder.
 type Encoder struct {
@@ -61,7 +65,10 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		return n, fmt.Errorf("packet id for type %T in protocol %s not registered in the %s state registry",
 			packet, e.registry.Protocol, e.state)
 	}
-	buf := new(bytes.Buffer)
+
+	buf := bytes.NewBuffer(pool.Get())
+	defer func() { pool.Put(buf.Bytes()) }()
+
 	_ = util.WriteVarInt(buf, int(packetID))
 
 	ctx := &proto.PacketContext{
@@ -83,7 +90,9 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 // see https://wiki.vg/Protocol#Packet_format for details
 func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	if e.compression.enabled {
-		compressed := new(bytes.Buffer)
+		compressed := bytes.NewBuffer(pool.Get())
+		defer func() { pool.Put(compressed.Bytes()) }()
+
 		uncompressedSize := payload.Len()
 		if uncompressedSize <= e.compression.threshold {
 			// Under the threshold, there is nothing to do.
@@ -99,7 +108,10 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 		payload = compressed
 	}
 
-	frame := bytes.NewBuffer(make([]byte, 0, payload.Len()+5))
+	frame := bytes.NewBuffer(pool.Get())
+	defer func() { pool.Put(frame.Bytes()) }()
+	frame.Grow(payload.Len() + 5)
+
 	_ = util.WriteVarInt(frame, payload.Len())
 	_, _ = payload.WriteTo(frame)
 

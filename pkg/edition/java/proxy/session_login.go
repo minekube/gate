@@ -25,7 +25,7 @@ type loginSessionHandler struct {
 	inbound Inbound
 	log     logr.Logger
 
-	noOpSessionHandler
+	nopSessionHandler
 
 	// following fields are not goroutine-safe
 	login  *packet.ServerLogin
@@ -36,14 +36,19 @@ func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler
 	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
 }
 
-func (l *loginSessionHandler) handlePacket(p proto.Packet) {
-	switch t := p.(type) {
+func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
+	if !p.KnownPacket {
+		_ = l.conn.close() // unknown packet, close connection
+		return
+	}
+	switch t := p.Packet.(type) {
 	case *packet.ServerLogin:
 		l.handleServerLogin(t)
 	case *packet.EncryptionResponse:
 		l.handleEncryptionResponse(t)
 	default:
-		_ = l.conn.close() // unknown packet, close connection
+		// got unexpected packet, simple close
+		_ = l.conn.close()
 	}
 }
 
@@ -186,10 +191,6 @@ Did you change your username? Sign out of Minecraft, sign back in, and try again
 		S: component.Style{Color: color.Red},
 	}
 )
-
-func (l *loginSessionHandler) handleUnknownPacket(p *proto.PacketContext) {
-	_ = l.conn.close()
-}
 
 // Temporary english messages until localization support
 var (
