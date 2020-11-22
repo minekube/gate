@@ -139,7 +139,14 @@ func (p *Proxy) Start(stop <-chan struct{}) error {
 	p.startTime.Store(time.Now().UTC())
 
 	stopListener := make(chan struct{})
-	go func() { <-stop; close(stopListener) }()
+	go func() {
+		<-stop
+		select {
+		case <-stopListener:
+		default:
+			close(stopListener)
+		}
+	}()
 	p.closeListener = stopListener
 	p.closeMu.Unlock()
 

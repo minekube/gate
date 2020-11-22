@@ -24,3 +24,9 @@ lint:
 
 updatedocsy:
 	git submodule update --depth 1 --init --recursive site/themes/docsy
+
+# Install gops & dependency for profiling
+install-gops:
+	go install github.com/google/gops && \
+	sudo apt install graphviz gv && \
+	sudo apt install libcanberra-gtk-module libcanberra-gtk3-module

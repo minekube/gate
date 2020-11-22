@@ -26,6 +26,7 @@ type Decoder struct {
 	state                *state.Registry
 	compression          bool
 	compressionThreshold int
+	zrd                  io.ReadCloser
 }
 
 var _ proto.PacketDecoder = (*Decoder)(nil)
@@ -159,18 +160,25 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 			claimedUncompressedSize, UncompressedCap)
 	}
 
-	z, err := zlib.NewReader(rd)
-	if err != nil {
-		return nil, err
+	if d.zrd == nil {
+		d.zrd, err = zlib.NewReader(rd)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Reuse already allocated zlib reader
+		if err = d.zrd.(zlib.Resetter).Reset(rd, nil); err != nil {
+			return nil, fmt.Errorf("error reseting zlib.Reader: %w", err)
+		}
 	}
 
 	// decompress payload
 	decompressed = make([]byte, claimedUncompressedSize)
-	_, err = io.ReadFull(z, decompressed)
+	_, err = io.ReadFull(d.zrd, decompressed)
 	if err != nil {
 		return nil, err
 	}
-	return decompressed, z.Close()
+	return decompressed, d.zrd.Close()
 }
 
 // DecodePayload takes p as the packet's payload that contains the packet id + data
