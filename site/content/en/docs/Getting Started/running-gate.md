@@ -36,16 +36,23 @@ Being inside the `examples/simple-network` folder you see a `config.yaml` for Ga
 ```yaml
 # This is a simplified config where the rest of the
 # settings are omitted and will be set by default.
-bind: 0.0.0.0:25565
-onlineMode: true
-servers:
-  server1: localhost:25566
-  server2: localhost:25567
-try:
-  - server1
-  - server2
+# See config.yml for the full configuration options.
+#
+# The Minecraft editions Gate supports.
+editions:
+  # Java Minecraft edition is the first popular edition for desktops.
+  java:
+    enabled: true
+    config:
+      bind: 0.0.0.0:25565
+      servers:
+        server1: localhost:25566
+        server2: localhost:25567
+      try:
+        - server1
+        - server2
 ```
-Gate will listen for connection on all IPs on the host at port 25565 (default port) and
+Gate will listen for connections on all IPs on the host at port 25565 (Minecraft default port) and
 register two servers that players can be redirected to.
 
 Looking inside the server folders we:
