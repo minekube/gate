@@ -13,7 +13,7 @@ const (
 	steps      = 20
 
 	minSize = 1 << minBitSize
-	maxSize = 1 << (minBitSize + steps - 1)
+	//maxSize = 1 << (minBitSize + steps - 1)
 
 	calibrateCallsThreshold = 42000
 	maxPercentile           = 0.95
@@ -52,7 +52,7 @@ func Get() []byte { return defaultPool.Get() }
 func (p *Pool) Get() []byte {
 	v := p.pool.Get()
 	if v != nil {
-		return v.([]byte)
+		return *v.(*[]byte)
 	}
 	return make([]byte, 0, atomic.LoadUint64(&p.defaultSize))
 }
@@ -77,7 +77,7 @@ func (p *Pool) Put(b []byte) {
 	maxSize := int(atomic.LoadUint64(&p.maxSize))
 	if maxSize == 0 || cap(b) <= maxSize {
 		b = b[:0]
-		p.pool.Put(b)
+		p.pool.Put(&b)
 	}
 }
 

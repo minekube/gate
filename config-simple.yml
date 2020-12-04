@@ -15,6 +15,3 @@ editions:
       try:
         - server1
         - server2
-  bedrock:
-    # Bedrock edition support is in development and not yet supported.
-    enabled: false
