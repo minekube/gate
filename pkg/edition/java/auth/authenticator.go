@@ -166,9 +166,6 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	log.Info("Received response from Mojang sessionserver",
-		"time", time.Since(start).String(), "statusCode", resp.StatusCode)
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %v", err)
@@ -184,8 +181,15 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 		return nil, fmt.Errorf("got unexpected status code (%d) from Mojang sessionserver", resp.StatusCode)
 	}
 
+	onlineMode := resp.StatusCode == http.StatusOK && len(body) != 0
+
+	log.Info("User was tested against Mojang sessionserver",
+		"onlineMode", onlineMode,
+		"time", time.Since(start).String(),
+		"statusCode", resp.StatusCode)
+
 	return &response{
-		onlineMode: resp.StatusCode == http.StatusOK && len(body) != 0,
+		onlineMode: onlineMode,
 		body:       body,
 	}, nil
 }
