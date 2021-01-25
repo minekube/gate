@@ -6,7 +6,7 @@ import (
 )
 
 // Collection is a runtime utility to manage a collection of processes
-// and handle graceful shutdown if one of the them errors at any time.
+// and handle graceful shutdown if one of them errors at any time.
 type Collection interface {
 	// Add will cause the Runnable to be started when Start is called.
 	// It is started automatically if the Collection was already started.
