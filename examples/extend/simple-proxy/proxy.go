@@ -8,7 +8,7 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/cmd/gate"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
-	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/runtime/event"
 	"strings"
 )
 
