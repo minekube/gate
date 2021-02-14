@@ -52,7 +52,7 @@ var DefaultConfig = Config{
 		Threshold: 256,
 		Level:     -1,
 	},
-	ProxyProtocol:                       false,
+	HAProxyProtocol:                     false,
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
@@ -84,8 +84,8 @@ type Config struct {
 
 	Quota                               Quota
 	Compression                         Compression
-	ProxyProtocol                       bool // ha-proxy compatibility
-	ShouldPreventClientProxyConnections bool // sends player ip to mojang
+	HAProxyProtocol                     bool // Enable HA-Proxy protocol mode
+	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
 
 	BungeePluginChannelEnabled bool
 	BuiltinCommands            bool
@@ -188,7 +188,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		e("config must not be nil")
 		return
 	}
-	if c.ProxyProtocol {
+	if c.HAProxyProtocol {
 		e("Proxy protocol is not supported yet, disable it")
 	}
 
