@@ -147,7 +147,7 @@ func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Mes
 		return
 	}
 
-	_ = b.serverConn.player.Write(packet.Retained)
+	_ = b.serverConn.player.WritePacket(packet)
 }
 
 func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {

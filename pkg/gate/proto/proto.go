@@ -109,7 +109,7 @@ func (d Direction) String() string {
 	return "UnknownBound"
 }
 
-// Version is a Minecraft edition agnostic named protocol version.
+// Version is a named protocol version.
 type Version struct {
 	Protocol
 	Name string

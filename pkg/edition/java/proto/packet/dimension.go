@@ -165,7 +165,7 @@ func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
 
 // utility func to create dimension decode error
 func dimReadErr(format string, a ...interface{}) error {
-	return fmt.Errorf("error decoding dimension: %v", fmt.Errorf(format, a...))
+	return fmt.Errorf("error decoding dimension: %v", fmt.Sprintf(format, a...))
 }
 func dimMissKeyErr(key string) error {
 	return dimReadErr("DimensionData misses %q key", key)

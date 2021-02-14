@@ -105,9 +105,8 @@ func ConstructChannelsPacket(protocol proto.Protocol, channels ...string) *Messa
 	}
 	data := strings.Join(channels, "\000")
 	return &Message{
-		Channel:  channelName,
-		Data:     []byte(data),
-		Retained: nil,
+		Channel: channelName,
+		Data:    []byte(data),
 	}
 }
 
