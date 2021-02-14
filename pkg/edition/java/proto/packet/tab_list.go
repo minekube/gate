@@ -28,7 +28,12 @@ func (h *HeaderAndFooter) Encode(c *proto.PacketContext, wr io.Writer) error {
 
 // we never read this packet
 func (h *HeaderAndFooter) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	return errors.New("decode is not implemented")
+	h.Header, err = util.ReadString(rd)
+	if err != nil {
+		return err
+	}
+	h.Footer, err = util.ReadString(rd)
+	return err
 }
 
 var ResetHeaderAndFooter = &HeaderAndFooter{

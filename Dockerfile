@@ -1,4 +1,4 @@
-FROM golang:1.14 AS build
+FROM golang:1.15 AS build
 
 # Health probe client
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.2 && \

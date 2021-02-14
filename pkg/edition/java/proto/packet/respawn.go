@@ -98,7 +98,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			if err != nil {
 				return err
 			}
-			dimensionIdentifier, err := util.ReadString(rd)
+			dimensionIdentifier, err = util.ReadString(rd)
 			if err != nil {
 				return err
 			}

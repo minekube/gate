@@ -9,6 +9,7 @@ import (
 	"sync"
 )
 
+// CommandManager stores commands.
 type CommandManager struct {
 	mu       sync.RWMutex
 	commands map[string]*registration

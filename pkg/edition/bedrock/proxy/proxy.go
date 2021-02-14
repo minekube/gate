@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/sandertv/go-raknet"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
-	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"net"

@@ -3,6 +3,7 @@ module go.minekube.com/gate
 go 1.15
 
 require (
+	github.com/bxcodec/faker/v3 v3.6.0
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0

@@ -89,7 +89,7 @@ editions:
           enabled: true
           burst: 3
           ops: 0.4
-          maxentries: 1000
+          maxEntries: 1000
       # Whether and how Gate should reply to GameSpy 4 (Minecraft query protocol on UDP) requests.
       query:
         enabled: false

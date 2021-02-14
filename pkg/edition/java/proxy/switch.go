@@ -8,7 +8,7 @@ import (
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/event"
+	"go.minekube.com/gate/pkg/runtime/event"
 	"strings"
 	"time"
 )

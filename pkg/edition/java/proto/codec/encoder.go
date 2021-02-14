@@ -8,7 +8,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/bufpool"
+	"go.minekube.com/gate/pkg/internal/bufpool"
 	"io"
 	"sync"
 )
@@ -94,7 +94,7 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 		defer func() { pool.Put(compressed.Bytes()) }()
 
 		uncompressedSize := payload.Len()
-		if uncompressedSize <= e.compression.threshold {
+		if uncompressedSize < e.compression.threshold {
 			// Under the threshold, there is nothing to do.
 			_ = util.WriteVarInt(compressed, 0)
 			_, _ = payload.WriteTo(compressed)

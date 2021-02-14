@@ -130,10 +130,6 @@ func (r *bungeeCordMessageRecorder) sendServerResponse(in []byte) {
 
 func (r *bungeeCordMessageRecorder) processForwardToPlayer(in io.Reader) {
 	r.readPlayer(in, func(player *connectedPlayer) {
-		serverConn := player.CurrentServer()
-		if serverConn == nil {
-			return
-		}
 		r.sendServerResponse(r.prepareForwardMessage(in))
 	})
 }

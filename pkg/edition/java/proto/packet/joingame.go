@@ -28,6 +28,11 @@ type JoinGame struct {
 	BiomeRegistry        util.NBT           // 1.16.2+
 }
 
+const (
+	dimTypeKey = "minecraft:dimension_type"
+	biomeKey   = "minecraft:worldgen/biome"
+)
+
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 	err := util.WriteInt32(wr, int32(j.EntityID))
 	if err != nil {
@@ -67,14 +72,14 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 		}
 		registryContainer := util.NBT{}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
-			registryContainer["minecraft:dimension_type"] = util.NBT{
-				"type":  "minecraft:dimension_type",
+			registryContainer[dimTypeKey] = util.NBT{
+				"type":  dimTypeKey,
 				"value": encodedDimensionRegistry,
 			}
 			if j.BiomeRegistry == nil {
 				return errors.New("missing biome registry")
 			}
-			registryContainer["minecraft:worldgen/biome"] = j.BiomeRegistry
+			registryContainer[biomeKey] = j.BiomeRegistry
 		} else {
 			registryContainer["dimension"] = encodedDimensionRegistry
 		}
@@ -223,10 +228,6 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 		var dimensionRegistryContainer []util.NBT
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
-			const (
-				dimTypeKey = "minecraft:dimension_type"
-				biomeKey   = "minecraft:worldgen/biome"
-			)
 			dimType, ok := registryContainer.NBT(dimTypeKey)
 			if !ok {
 				return dimReadErr("%q not a compound tag, is %T", dimTypeKey, registryContainer[dimTypeKey])

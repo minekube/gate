@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"bytes"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -13,11 +12,6 @@ import (
 type Message struct {
 	Channel string
 	Data    []byte
-
-	// Not part of the packet!
-	// This is to store the decoded packet bytes as is
-	// to forward them without needing to encode the packet again.
-	Retained []byte
 }
 
 func (p *Message) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -30,7 +24,7 @@ func (p *Message) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 		return err
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		err = util.WriteBytes(wr, p.Data)
+		_, err = wr.Write(p.Data)
 	} else {
 		err = util.WriteBytes17(wr, p.Data, true) // true for Forge support
 	}
@@ -38,10 +32,7 @@ func (p *Message) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 }
 
 func (p *Message) Decode(c *proto.PacketContext, r io.Reader) (err error) {
-	retained := new(bytes.Buffer)
-	rd := io.TeeReader(r, retained)
-
-	p.Channel, err = util.ReadString(rd)
+	p.Channel, err = util.ReadString(r)
 	if err != nil {
 		return err
 	}
@@ -49,12 +40,10 @@ func (p *Message) Decode(c *proto.PacketContext, r io.Reader) (err error) {
 		p.Channel = TransformLegacyToModernChannel(p.Channel)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		p.Data, err = ioutil.ReadAll(rd)
+		p.Data, err = ioutil.ReadAll(r)
 	} else {
-		p.Data, err = util.ReadBytes17(rd)
+		p.Data, err = util.ReadBytes17(r)
 	}
-
-	p.Retained = retained.Bytes()
 	return
 }
 
