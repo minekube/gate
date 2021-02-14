@@ -1,16 +1,12 @@
 package packet
 
 import (
-	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
 )
-
-// Signifies that a packet is only meant to be encoded, no decoding.
-var ErrEncodeOnly = errors.New("packet is only to be encoded")
 
 type TitleAction int
 
@@ -99,6 +95,67 @@ func (t *Title) Encode(c *proto.PacketContext, wr io.Writer) error {
 	return nil
 }
 
+func (t *Title) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	i, err := util.ReadVarInt(rd)
+	t.Action = TitleAction(i)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_11) {
+		// 1.11+ shifted the action enum by 1 to handle the action bar
+		switch t.Action {
+		case SetTitle, SetSubtitle, Hide, Reset:
+		case SetActionBar:
+			s, err := util.ReadString(rd)
+			t.Component = &s
+			if err != nil {
+				return err
+			}
+		case SetTimes:
+			t.FadeIn, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+			t.Stay, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+			t.FadeOut, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown action %d", t.Action)
+		}
+	} else {
+		switch t.Action {
+		case SetTitle, HideOld, ResetOld:
+		case SetSubtitle:
+			s, err := util.ReadString(rd)
+			t.Component = &s
+			if err != nil {
+				return err
+			}
+		case SetTimesOld:
+			t.FadeIn, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+			t.Stay, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+			t.FadeOut, err = util.ReadInt(rd)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown action %d", t.Action)
+		}
+	}
+	return nil
+}
+
 func NewHideTitle(protocol proto.Protocol) *Title {
 	return &Title{Action: HideTitleAction(protocol)}
 }
@@ -122,10 +179,6 @@ func TimesTitleAction(protocol proto.Protocol) TitleAction {
 		return SetTimes
 	}
 	return SetTimesOld
-}
-
-func (t *Title) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	return ErrEncodeOnly
 }
 
 var _ proto.Packet = (*Title)(nil)
