@@ -8,7 +8,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/bufpool"
+	"go.minekube.com/gate/pkg/internal/bufpool"
 	"io"
 	"sync"
 )
