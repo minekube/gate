@@ -37,6 +37,9 @@ type Player interface {
 	message.ChannelMessageSource
 	message.ChannelMessageSink
 
+	player.TabList
+	// TODO action bar, title and more
+
 	Username() string // The username of the player.
 	ID() uuid.UUID    // The Minecraft ID of the player.
 	// May be nil, if no backend server connection!
@@ -61,7 +64,6 @@ type Player interface {
 	// SHA-1 hash of the resource pack file. To monitor the status of the sent resource pack,
 	// subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePackWithHash(url string, sha1Hash []byte) error
-	// TODO TabList() and more
 }
 
 // CommandSource is the source that ran a command.
@@ -87,7 +89,7 @@ type connectedPlayer struct {
 	pluginChannelsMu sync.RWMutex // Protects following field
 	pluginChannels   sets.String  // Known plugin channels
 
-	tabList *tabList
+	*tabList // Player's tab list
 
 	mu               sync.RWMutex // Protects following fields
 	connectedServer_ *serverConnection

@@ -220,7 +220,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 		c.player.phase().onFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
-		if c.player.tabList.clearAll() != nil {
+		if c.player.tabList.clearEntries() != nil {
 			return false
 		}
 
@@ -269,7 +269,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 	}
 
 	// TODO Remove previous boss bars.
-	// These don't get cleared when sending JoinGame, thus the need to track them.
+	// These don't get cleared when sending JoinGame, thus we need to track them.
 
 	// Tell the server about this client's plugin message channels.
 	serverVersion := serverMc.Protocol()

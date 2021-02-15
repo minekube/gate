@@ -14,7 +14,7 @@ import (
 )
 
 type tabList struct {
-	*minecraftConn
+	c *minecraftConn
 
 	mu      sync.RWMutex
 	entries map[uuid.UUID]*tabListEntry
@@ -23,13 +23,13 @@ type tabList struct {
 var _ player.TabList = (*tabList)(nil)
 
 func newTabList(c *minecraftConn) *tabList {
-	return &tabList{minecraftConn: c, entries: map[uuid.UUID]*tabListEntry{}}
+	return &tabList{c: c, entries: map[uuid.UUID]*tabListEntry{}}
 }
 
 func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	b := new(bytes.Buffer)
 	p := new(packet.HeaderAndFooter)
-	j := util2.JsonCodec(t.protocol)
+	j := util2.JsonCodec(t.c.protocol)
 
 	if err := j.Marshal(b, header); err != nil {
 		return fmt.Errorf("error marshal header: %w", err)
@@ -41,14 +41,15 @@ func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	}
 	p.Footer = b.String()
 
-	return t.WritePacket(p)
+	return t.c.WritePacket(p)
 }
 
 func (t *tabList) ClearHeaderFooter() error {
-	return t.WritePacket(packet.ResetHeaderAndFooter)
+	return t.c.WritePacket(packet.ResetHeaderAndFooter)
 }
 
-func (t *tabList) clearAll() error {
+// removes all player entries shown in the tab list
+func (t *tabList) clearEntries() error {
 	items, ok := func() ([]packet.PlayerListItemEntry, bool) {
 		t.mu.Lock()
 		defer t.mu.Unlock()
@@ -67,7 +68,7 @@ func (t *tabList) clearAll() error {
 		return nil
 	}
 
-	return t.WritePacket(&packet.PlayerListItem{
+	return t.c.WritePacket(&packet.PlayerListItem{
 		Action: packet.RemovePlayerListItemAction,
 		Items:  items,
 	})
