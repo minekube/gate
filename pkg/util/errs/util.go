@@ -32,5 +32,7 @@ func (e *SilentError) Unwrap() error { return e.error }
 
 // see https://github.com/golang/go/issues/4373 for details
 func IsConnClosedErr(err error) bool {
-	return err != nil && err.Error() == "use of closed network connection"
+	return err != nil &&
+		(err.Error() == "use of closed network connection" ||
+			err.Error() == "read: connection reset by peer")
 }

@@ -159,7 +159,7 @@ func (e *Encoder) SetWriter(w io.Writer) {
 }
 
 // Sync locks the encoder while running fn,
-// making sure no writes calls are run during this call.
+// making sure no write calls are run during this call.
 func (e *Encoder) Sync(fn func() error) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

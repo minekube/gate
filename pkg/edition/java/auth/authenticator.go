@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -243,12 +244,25 @@ func twosComplement(p []byte) []byte {
 
 type response struct {
 	onlineMode bool
-	body       []byte
+
+	once sync.Once // unmarshal body once
+	body []byte
+
+	gp  *profile.GameProfile
+	err error
 }
 
 func (r *response) OnlineMode() bool { return r.onlineMode }
 
 func (r *response) GameProfile() (*profile.GameProfile, error) {
+	r.once.Do(func() {
+		r.gp, r.err = r.gameProfile()
+		r.body = nil
+	})
+	return r.gp, r.err
+}
+
+func (r *response) gameProfile() (*profile.GameProfile, error) {
 	if r == nil || !r.onlineMode {
 		return nil, errors.New("no GameProfile for offline mode user")
 	}

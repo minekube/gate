@@ -175,7 +175,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 
 		// Send keep alive to try to avoid timeouts
 		if err := b.serverConn.player.SendKeepAlive(); err != nil {
-			failResult("could not send keep alive packet, player might have disconnected: %v", err)
+			failResult("could not send keep alive packet, player might have disconnected: %w", err)
 			return
 		}
 	} else {

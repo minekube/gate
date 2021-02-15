@@ -187,7 +187,7 @@ func (c *minecraftConn) flush() (err error) {
 		return err
 	}
 	// Must flush in sync with encoder or we may get an
-	// io.ErrShortWrite when flushing while encoder is writing.
+	// io.ErrShortWrite when flushing while encoder is already writing.
 	return c.encoder.Sync(c.writeBuf.Flush)
 }
 
@@ -262,7 +262,7 @@ func (c *minecraftConn) config() *config.Config {
 // close closes the connection, if not already,
 // and calls disconnected() on the current sessionHandler.
 // It is okay to call this method multiple times as it will only
-// run once but blocks if currently closing.
+// run once but blocks if currently closing already.
 func (c *minecraftConn) close() error {
 	return c.closeKnown(true)
 }

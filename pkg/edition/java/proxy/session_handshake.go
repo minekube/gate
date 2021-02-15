@@ -87,7 +87,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
 	if loginsQuota := h.loginsQuota(); loginsQuota != nil && loginsQuota.Blocked(inbound.RemoteAddr()) {
 		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
-			Content: "You are logging in to fast, wait a little and retry.",
+			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
 		}))
 		return

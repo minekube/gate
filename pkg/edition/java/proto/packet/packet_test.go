@@ -21,6 +21,8 @@ import (
 
 // All packets to test.
 // Empty packets are being initialized with random fake data at runtime.
+// Those types that contain interface fields/slices/maps or have constraints like max. length string
+// can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
 	&Chat{},
@@ -106,6 +108,7 @@ var packets = []proto.Packet{
 // fill packets with fake data
 func init() {
 	for _, p := range packets {
+		// Skip already filled packet
 		if !reflect.ValueOf(p).Elem().IsZero() {
 			continue
 		}
@@ -143,9 +146,9 @@ func PacketCodings(t *testing.T,
 				packetType := reflect.TypeOf(sample).Elem()
 				msg := message(direction, v, packetType)
 
-				// Encode sample at protocol version drop unnecessary data for that version
+				// Encode sample at protocol version to drop unnecessary data for that version
 				assert.NoError(t, sample.Encode(c, io.MultiWriter(bufA1, bufA2)), msg)
-				// Decode that bytes that versioned packet
+				// Decode bytes to get versioned packet
 				a := reflect.New(packetType).Interface().(proto.Packet)
 				assert.NoError(t, a.Decode(c, bufA1), msg)
 
@@ -157,7 +160,8 @@ func PacketCodings(t *testing.T,
 
 				// Both encode buffs should be equal
 				if !bytes.Equal(bufA2.Bytes(), bufB2.Bytes()) {
-					// Fallback to test json difference.
+					// Bytes might be in different order due to unsorted map
+					// Fallback to test json difference since std json package sorts maps by key
 					jsonA, err := json.MarshalIndent(a, "", "  ")
 					require.NoError(t, err)
 					jsonB, err := json.MarshalIndent(b, "", "  ")
@@ -165,7 +169,7 @@ func PacketCodings(t *testing.T,
 					assert.Equal(t, string(jsonA), string(jsonB), msg)
 				}
 
-				// Both decode buffs should be empty
+				// Both decode buffs should be emptied by packets decode method
 				assert.Equal(t, 0, bufA1.Len(), msg)
 				assert.Equal(t, 0, bufB1.Len(), msg)
 
