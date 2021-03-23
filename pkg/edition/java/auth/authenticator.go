@@ -16,7 +16,6 @@ import (
 	"go.minekube.com/gate/pkg/version"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -51,16 +50,38 @@ type Response interface {
 //
 //
 
-const (
-	// Default bit size of a generated private key.
-	DefaultPrivateKeyBits = 1024
-)
+const defaultHasJoinedEndpoint = `https://sessionserver.mojang.com/session/minecraft/hasJoined`
 
-var mojangURL = mustURL(url.Parse(
-	`https://sessionserver.mojang.com/session/minecraft/hasJoined`))
+// DefaultHasJoinedURL is the default implementation of a HasJoinedURLFn.
+func DefaultHasJoinedURL(serverID, username, userIP string) string {
+	s := new(strings.Builder)
+	s.WriteString(defaultHasJoinedEndpoint + "?serverId=")
+	s.WriteString(serverID)
+	s.WriteString("&username=")
+	s.WriteString(username)
+	if userIP != "" {
+		s.WriteString("&ip=")
+		s.WriteString(userIP)
+	}
+	return s.String()
+}
+
+// HasJoinedURLFn returns the url to authenticate a
+// joining online mode user. Note that userIP may be empty.
+// See DefaultHasJoinedURL for the default implementation.
+type HasJoinedURLFn func(serverID, username, userIP string) string
+
+// Default bit size of a generated private key.
+const DefaultPrivateKeyBits = 1024
 
 // Options to create a new Authenticator.
 type Options struct {
+	// This setting allows to an authentication url other
+	// than the official "hasJoined" Mojang API endpoint.
+	// The returned url is used to authenticate a joining
+	// online mode user.
+	// If not set, DefaultHasJoinedURL is used.
+	HasJoinedURLFn HasJoinedURLFn
 	// The servers private key.
 	// If none is set, a new one will be generated.
 	PrivateKey *rsa.PrivateKey
@@ -68,7 +89,7 @@ type Options struct {
 	// the bit size of a generated private key.
 	// The default is DefaultPrivateKeyBits.
 	PrivateKeyBits int
-	// The http client to query the mojang API.
+	// The http client to query the Mojang API.
 	// If none is set, a new one is created.
 	Client *http.Client
 }
@@ -98,27 +119,35 @@ func New(options Options) (Authenticator, error) {
 	}
 	cli.Transport = withHeader(cli.Transport, version.UserAgentHeader())
 
+	hasJoinedURLFn := options.HasJoinedURLFn
+	if hasJoinedURLFn == nil {
+		hasJoinedURLFn = DefaultHasJoinedURL
+	}
+
 	return &authn{
-		log:     logr.NopLog,
-		private: private,
-		public:  public,
-		cli:     cli,
+		log:            logr.NopLog,
+		private:        private,
+		public:         public,
+		cli:            cli,
+		hasJoinedURLFn: hasJoinedURLFn,
 	}, nil
 }
 
 type authn struct {
-	log     logr.Logger
-	private *rsa.PrivateKey
-	public  []byte // ASN.1 DER form encoded
-	cli     *http.Client
+	log            logr.Logger
+	private        *rsa.PrivateKey
+	public         []byte // ASN.1 DER form encoded
+	cli            *http.Client
+	hasJoinedURLFn HasJoinedURLFn
 }
 
 func (a *authn) WithLogger(logger logr.Logger) Authenticator {
 	return &authn{
-		log:     logger,
-		private: a.private,
-		public:  a.public,
-		cli:     a.cli,
+		log:            logger,
+		private:        a.private,
+		public:         a.public,
+		cli:            a.cli,
+		hasJoinedURLFn: a.hasJoinedURLFn,
 	}
 }
 
@@ -141,23 +170,14 @@ func (a *authn) DecryptSharedSecret(encrypted []byte) (decrypted []byte, err err
 }
 
 func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error) {
-	u := *mojangURL // copy
-	q := u.Query()
-	q.Set("username", username)
-	q.Set("serverId", serverID)
-	if ip != "" {
-		q.Set("ip", ip)
-	}
-	u.RawQuery = q.Encode()
-
-	urlStr := u.String()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	hasJoinedURL := a.hasJoinedURLFn(serverID, username, ip)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hasJoinedURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating authentication request: %w", err)
 	}
 
 	log := a.log.V(1).WithName("authnJoin").WithName("request")
-	log.Info("Sending http request to Mojang sessionserver", "url", urlStr)
+	log.Info("Sending http request to Mojang sessionserver", "url", hasJoinedURL)
 
 	start := time.Now()
 	resp, err := a.cli.Do(req)
@@ -300,11 +320,4 @@ func (h headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 		req.Header[k] = v
 	}
 	return h.rt.RoundTrip(req)
-}
-
-func mustURL(s *url.URL, err error) *url.URL {
-	if err != nil {
-		panic(err)
-	}
-	return s
 }
