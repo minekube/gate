@@ -63,11 +63,14 @@ func (b *backendPlaySessionHandler) shouldHandle() bool {
 
 func (b *backendPlaySessionHandler) activated() {
 	b.serverConn.server.players.add(b.serverConn.player)
-	serverMc, ok := b.serverConn.ensureConnected()
-	if ok {
-		protocol := serverMc.Protocol()
-		channelsPacket := plugin.ConstructChannelsPacket(protocol, b.bungeeCordMessageRecorder.bungeeCordChannel(protocol))
-		_ = serverMc.WritePacket(channelsPacket)
+	if b.proxy().config.BungeePluginChannelEnabled {
+		serverMc, ok := b.serverConn.ensureConnected()
+		if ok {
+			protocol := serverMc.Protocol()
+			channelsPacket := plugin.ConstructChannelsPacket(protocol,
+				b.bungeeCordMessageRecorder.bungeeCordChannel(protocol))
+			_ = serverMc.WritePacket(channelsPacket)
+		}
 	}
 }
 
@@ -77,7 +80,8 @@ func (b *backendPlaySessionHandler) disconnected() {
 		return
 	}
 	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
-		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server, internalServerConnectionError, true)
+		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server,
+			internalServerConnectionError, true)
 	} else {
 		b.serverConn.player.Disconnect(internalServerConnectionError)
 	}
