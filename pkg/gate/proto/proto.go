@@ -111,8 +111,26 @@ func (d Direction) String() string {
 
 // Version is a named protocol version.
 type Version struct {
-	Protocol
-	Name string
+	Protocol          // The protocol number of the version.
+	Names    []string // The names in this protocol version (at least one).
+}
+
+// FirstName returns the user-friendly name of
+// the version this protocol was introduced in.
+func (v *Version) FirstName() string {
+	if len(v.Names) == 0 {
+		return ""
+	}
+	return v.Names[0]
+}
+
+// LastName returns the user-friendly name of
+// the last version of this protocol.
+func (v *Version) LastName() string {
+	if len(v.Names) == 0 {
+		return ""
+	}
+	return v.Names[len(v.Names)-1]
 }
 
 // Protocol is a Minecraft edition agnostic protocol version id specified by Mojang.
@@ -123,9 +141,13 @@ func (p Protocol) String() string {
 	return strconv.Itoa(int(p))
 }
 
-// String implements fmt.Stringer.
+// String returns the user-friendly name of this protocol version.
+// If this version has multiple names it returns {first}-{last} version.
 func (v Version) String() string {
-	return v.Name
+	if len(v.Names) > 1 {
+		return fmt.Sprintf("%s-%s", v.FirstName(), v.LastName())
+	}
+	return v.FirstName()
 }
 
 // GreaterEqual is true when this Protocol is
