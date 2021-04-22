@@ -60,7 +60,7 @@ func initConfig() {
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	v.SetConfigFile("config.yml")
+	v.SetConfigFile("config/main.yml")
 	// If a config file is found, read it in.
 	if err := v.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", v.ConfigFileUsed())
