@@ -17,10 +17,11 @@ package gate
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"go.minekube.com/gate/pkg/gate"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"go.minekube.com/gate/pkg/gate"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -28,7 +29,7 @@ var rootCmd = &cobra.Command{
 	Use:   "gate",
 	Short: "Gate is an extensible Minecraft proxy.",
 	Long: `A high performant & paralleled Minecraft proxy server with
-scalability, flexibility & excelled server version support.`,
+	scalability, flexibility & excelled server version support.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := gate.Start(cmd.Context().Done()); err != nil {
 			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
@@ -47,20 +48,30 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	v := gate.Viper
 
+	rootCmd.PersistentFlags().String("config", "", "config file (default is ./config.yaml)")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
+	v.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	v.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	v := gate.Viper
-	_ = v.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
 
+	// Load Environment Variables
 	v.SetEnvPrefix("GATE")
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	v.SetConfigFile("config.yml")
+	if cfgFile := v.GetString("config"); cfgFile != "" {
+		v.SetConfigFile(cfgFile)
+	} else {
+		v.SetConfigName("config.yml")
+		v.AddConfigPath(".")
+	}
+
 	// If a config file is found, read it in.
 	if err := v.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", v.ConfigFileUsed())

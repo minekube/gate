@@ -3,6 +3,10 @@ package gate
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/bridge"
@@ -16,9 +20,6 @@ import (
 	errors "go.minekube.com/gate/pkg/util/errs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 // Options are Gate options.
