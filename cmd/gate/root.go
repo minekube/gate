@@ -68,12 +68,15 @@ func initConfig() {
 	if cfgFile := v.GetString("config"); cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	} else {
-		v.SetConfigName("config.yml")
+		v.SetConfigName("config")
 		v.AddConfigPath(".")
 	}
 
 	// If a config file is found, read it in.
-	if err := v.ReadInConfig(); err == nil {
+	err := v.ReadInConfig()
+	if err != nil {
+		fmt.Println(fmt.Errorf("Error reading config file: %s \n", err))
+	} else {
 		fmt.Println("Using config file:", v.ConfigFileUsed())
 	}
 }
