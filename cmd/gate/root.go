@@ -28,11 +28,13 @@ var rootCmd = &cobra.Command{
 	Use:   "gate",
 	Short: "Gate is an extensible Minecraft proxy.",
 	Long: `A high performant & paralleled Minecraft proxy server with
-scalability, flexibility & excelled server version support.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	scalability, flexibility & excelled server version support.`,
+	PreRunE: func(cmd *cobra.Command, args []string) error { return initErr },
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := gate.Start(cmd.Context().Done()); err != nil {
-			cmd.PrintErr(fmt.Sprintf("Error running Gate Proxy: %v", err))
+			return fmt.Errorf("error running Gate: %w", err)
 		}
+		return nil
 	},
 }
 
@@ -40,29 +42,52 @@ scalability, flexibility & excelled server version support.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+	os.Exit(0)
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+var initErr error
 
+func init() {
+	cobra.OnInitialize(func() { initErr = initConfig() })
+
+	rootCmd.PersistentFlags().StringP("config", "c", "", `config file (default: ./config.yml)
+Supports: yaml/yml, json, toml, hcl, ini, prop/properties/props, env/dotenv`)
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+// initConfig binds flags, reads in config file and ENV variables if set.
+func initConfig() error {
 	v := gate.Viper
-	_ = v.BindPFlag("debug", rootCmd.Flags().Lookup("debug"))
 
+	_ = v.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	_ = v.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+
+	// Load Environment Variables
 	v.SetEnvPrefix("GATE")
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	v.SetConfigFile("config.yml")
-	// If a config file is found, read it in.
-	if err := v.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", v.ConfigFileUsed())
+	if cfgFile := v.GetString("config"); cfgFile != "" {
+		v.SetConfigFile(cfgFile)
+	} else {
+		v.SetConfigName("config")
+		v.AddConfigPath(".")
 	}
+
+	// If a config file is found, read it in.
+	// A config file is not required.
+	if err := v.ReadInConfig(); err != nil {
+		if os.IsNotExist(err) {
+			if rootCmd.PersistentFlags().Changed("config") {
+				return fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
+			}
+			return nil
+		}
+		return err
+	}
+	fmt.Println("Using config file:", v.ConfigFileUsed())
+	return nil
 }
