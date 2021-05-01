@@ -80,13 +80,10 @@ func initConfig() error {
 	// If a config file is found, read it in.
 	// A config file is not required.
 	if err := v.ReadInConfig(); err != nil {
-		if os.IsNotExist(err) {
-			if rootCmd.PersistentFlags().Changed("config") {
-				return fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
-			}
+		if os.IsNotExist(err) && !rootCmd.PersistentFlags().Changed("config") {
 			return nil
 		}
-		return err
+		return fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
 	}
 	fmt.Println("Using config file:", v.ConfigFileUsed())
 	return nil
