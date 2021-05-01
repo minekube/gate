@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -24,6 +25,44 @@ var _ player.TabList = (*tabList)(nil)
 
 func newTabList(c *minecraftConn) *tabList {
 	return &tabList{c: c, entries: map[uuid.UUID]*tabListEntry{}}
+}
+
+func (t *tabList) AddEntry(entry player.TabListEntry) error {
+	if entry == nil {
+		return errors.New("entry must not be nil")
+	}
+	e, ok := entry.(*tabListEntry)
+	if !ok {
+		return errors.New("entry must not be an external implementation")
+	}
+	if entry.TabList() != t {
+		return errors.New("provided entry must be created by the tab list")
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.hasEntry(entry.Profile().ID) {
+		return errors.New("tab list already has entry of same profile id")
+	}
+	t.entries[entry.Profile().ID] = e
+	return t.c.WritePacket(&packet.PlayerListItem{
+		Action: packet.AddPlayerListItemAction,
+		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+	})
+}
+
+func (t *tabList) RemoveEntry(id uuid.UUID) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	entry, ok := t.entries[id]
+	if !ok {
+		// Ignore if not found
+		return nil
+	}
+	delete(t.entries, id)
+	return t.c.WritePacket(&packet.PlayerListItem{
+		Action: packet.RemovePlayerListItemAction,
+		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+	})
 }
 
 func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
@@ -98,6 +137,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 		switch p.Action {
 		case packet.AddPlayerListItemAction:
 			t.entries[item.ID] = &tabListEntry{
+				tabList: t,
 				profile: &profile.GameProfile{
 					ID:         item.ID,
 					Name:       item.Name,
@@ -117,7 +157,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 		case packet.UpdateLatencyPlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
-				e.SetLatency(time.Millisecond * time.Duration(item.Latency))
+				e.setLatency(time.Millisecond * time.Duration(item.Latency))
 			}
 		case packet.UpdateGameModePlayerListItemAction:
 			e, ok := t.entries[item.ID]
@@ -136,6 +176,8 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 //
 
 type tabListEntry struct {
+	tabList *tabList
+
 	mu          sync.RWMutex // protects following fields
 	profile     *profile.GameProfile
 	displayName component.Component
@@ -144,6 +186,10 @@ type tabListEntry struct {
 }
 
 var _ player.TabListEntry = (*tabListEntry)(nil)
+
+func (t *tabListEntry) TabList() player.TabList {
+	return t.tabList
+}
 
 func (t *tabListEntry) Profile() profile.GameProfile {
 	t.mu.RLock()
@@ -156,6 +202,7 @@ func (t *tabListEntry) DisplayName() component.Component {
 	defer t.mu.RUnlock()
 	return t.displayName
 }
+
 func (t *tabListEntry) SetDisplayName(name component.Component) {
 	t.mu.Lock()
 	t.displayName = name
@@ -174,7 +221,7 @@ func (t *tabListEntry) Latency() time.Duration {
 	return t.latency
 }
 
-func (t *tabListEntry) SetLatency(latency time.Duration) {
+func (t *tabListEntry) setLatency(latency time.Duration) {
 	t.mu.Lock()
 	t.latency = latency
 	t.mu.Unlock()
@@ -183,6 +230,7 @@ func (t *tabListEntry) SetLatency(latency time.Duration) {
 func (t *tabListEntry) setGameMode(gameMode int) {
 	t.mu.Lock()
 	t.gameMode = gameMode
+	t.tabList.updateEntry
 	t.mu.Unlock()
 }
 
@@ -193,7 +241,7 @@ func newPlayerListItemEntry(entry player.TabListEntry) *packet.PlayerListItemEnt
 		Name:        p.Name,
 		Properties:  p.Properties,
 		GameMode:    entry.GameMode(),
-		Latency:     int(entry.Latency() * time.Millisecond),
+		Latency:     int(entry.Latency().Milliseconds()),
 		DisplayName: entry.DisplayName(),
 	}
 }

@@ -246,7 +246,7 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 		return nil
 	}
 
-	item := PlayerListItemEntry{}
+	var item PlayerListItemEntry
 	item.Name, err = util.ReadString(rd)
 	if err != nil {
 		return err

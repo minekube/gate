@@ -16,7 +16,7 @@ type Manager interface {
 	// the exact type subscribed for.
 	//
 	// HandlerFunc always gets the fired event of the same subscribed eventType or the same type as
-	// represented by reflect.Type).
+	// represented by reflect.Type.
 	Subscribe(eventType interface{}, priority int, fn HandlerFunc) (unsubscribe func())
 	// Fire fires an event in the calling goroutine and returns after all subscribers are complete handling it.
 	// Any panic by a subscriber is caught so firing the event to the next subscriber can proceed.

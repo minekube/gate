@@ -11,8 +11,8 @@ import (
 type TabList interface {
 	SetHeaderFooter(header, footer component.Component) error // Sets the tab list header and footer for the player.
 	ClearHeaderFooter() error                                 // Clears the tab list header and footer for the player.
-	// TODO AddEntry(TabListEntry)
-	// TODO RemoveEntry(ID)
+	AddEntry(TabListEntry) error                              // Adds an entry to the tab list.
+	RemoveEntry(id uuid.UUID) error                           // Removes an entry from the tab list.
 	// Determines if the specified entry exists in the tab list.
 	HasEntry(id uuid.UUID) bool
 	// TODO Entries() []TabListEntry
@@ -20,11 +20,12 @@ type TabList interface {
 
 // TabListEntry is a single entry in a TabList.
 type TabListEntry interface {
+	TabList() TabList // The TabList this entry is in.
 	// Returns the profile of the entry, which uniquely identifies the entry with its
 	// containing uuid, as well as deciding what is shown as the player head in the tab list.
 	Profile() profile.GameProfile
 	// Returns the optional text displayed for this entry in the TabList,
-	// otherwise profile.GameProfile.Name is shown and returns nil.
+	// otherwise profile.GameProfile.Names is shown and returns nil.
 	DisplayName() component.Component
 	// Gets the game mode the entry has been set to.
 	GameMode() int
