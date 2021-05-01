@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/gate"
 )
 
@@ -65,18 +66,20 @@ func initConfig() {
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	if cfgFile := v.GetString("config"); cfgFile != "" {
+	cfgFile := v.GetString("config")
+	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	} else {
 		v.SetConfigName("config")
 		v.AddConfigPath(".")
 	}
 
-	// If a config file is found, read it in.
-	err := v.ReadInConfig()
-	if err != nil {
-		fmt.Println(fmt.Errorf("Error reading config file: %s \n", err))
-	} else {
+	switch err := v.ReadInConfig(); err.(type) {
+	case nil:
 		fmt.Println("Using config file:", v.ConfigFileUsed())
+	case viper.ConfigFileNotFoundError: // Do Nothing (config is optional)
+	default:
+		fmt.Println(fmt.Errorf("Error reading config file: %s \n", err))
 	}
+
 }
