@@ -480,10 +480,10 @@ func (p *connectedPlayer) Closed() <-chan struct{} {
 // If not known already, returns player.DefaultSettings.
 func (p *connectedPlayer) Settings() player.Settings {
 	p.mu.RLock()
+	defer p.mu.RUnlock()
 	if p.settings != nil {
 		return p.settings
 	}
-	p.mu.RUnlock()
 	return player.DefaultSettings
 }
 
