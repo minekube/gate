@@ -56,6 +56,7 @@ var DefaultConfig = Config{
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
+	RequireBuiltinCommandPermissions:    false,
 	Debug:                               false,
 	ShutdownReason:                      "§cGate proxy is shutting down...\nPlease reconnect in a moment!",
 }
@@ -87,8 +88,9 @@ type Config struct {
 	HAProxyProtocol                     bool // Enable HA-Proxy protocol mode
 	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
 
-	BungeePluginChannelEnabled bool
-	BuiltinCommands            bool
+	BungeePluginChannelEnabled       bool
+	BuiltinCommands                  bool
+	RequireBuiltinCommandPermissions bool // Whether builtin commands require player permissions
 
 	Debug          bool
 	ShutdownReason string

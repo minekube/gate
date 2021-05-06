@@ -16,9 +16,12 @@ func (p *Proxy) registerBuiltinCommands() {
 	p.command.Register(&serverCmd{proxy: p}, "server")
 }
 
-func hasCmdPerm(s CommandSource, perm string) bool {
-	if !s.HasPermission(perm) {
-		_ = s.SendMessage(missingCommandPermission)
+func (s *serverCmd) hasCmdPerm(src CommandSource, perm string) bool {
+	if !s.proxy.config.RequireBuiltinCommandPermissions {
+		return true
+	}
+	if !src.HasPermission(perm) {
+		_ = src.SendMessage(missingCommandPermission)
 		return false
 	}
 	return true
@@ -34,7 +37,7 @@ const serverCmdPermission = "gate.command.server"
 type serverCmd struct{ proxy *Proxy }
 
 func (s *serverCmd) Invoke(c *Context) {
-	if !hasCmdPerm(c.Source, serverCmdPermission) {
+	if !s.hasCmdPerm(c.Source, serverCmdPermission) {
 		return
 	}
 

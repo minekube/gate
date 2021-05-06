@@ -40,6 +40,12 @@ editions:
       # Whether to register builtin commands on proxy start.
       # Default: true
       builtinCommands: true
+      # Whether players require permissions to
+      # execute a builtin proxy command like /server.
+      # Ignore this if `builtinCommands` is set to false.
+      # (This should be set to true in production environments.)
+      # Default: false
+      requireBuiltinCommandPermissions: false
       # The default disconnect reason to kick player on proxy shutdown when no other reason was given.
       # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
       shutdownReason: |
