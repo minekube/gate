@@ -3,6 +3,11 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"io"
+	"net"
+	"strconv"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
@@ -14,14 +19,10 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"net"
-	"strconv"
-	"strings"
 )
 
 type bungeeCordMessageRecorder struct {
-	*connectedPlayer
+	*ConnectedPlayer
 }
 
 var (
@@ -129,7 +130,7 @@ func (r *bungeeCordMessageRecorder) sendServerResponse(in []byte) {
 }
 
 func (r *bungeeCordMessageRecorder) processForwardToPlayer(in io.Reader) {
-	r.readPlayer(in, func(player *connectedPlayer) {
+	r.readPlayer(in, func(player *ConnectedPlayer) {
 		r.sendServerResponse(r.prepareForwardMessage(in))
 	})
 }
@@ -161,7 +162,7 @@ func (r *bungeeCordMessageRecorder) processConnect(in io.Reader) {
 }
 
 func (r *bungeeCordMessageRecorder) processConnectOther(in io.Reader) {
-	r.readPlayer(in, func(player *connectedPlayer) {
+	r.readPlayer(in, func(player *ConnectedPlayer) {
 		r.readServer(in, func(server *registeredServer) {
 			ctx, cancel := withConnectionTimeout(context.Background(), r.config())
 			defer cancel()
@@ -187,7 +188,7 @@ func (r *bungeeCordMessageRecorder) processIP() {
 }
 
 func (r *bungeeCordMessageRecorder) processIPOther(in io.Reader) {
-	r.readPlayer(in, func(p *connectedPlayer) {
+	r.readPlayer(in, func(p *ConnectedPlayer) {
 		ip, portS, err := net.SplitHostPort(p.RemoteAddr().String())
 		if err != nil {
 			return
@@ -240,7 +241,7 @@ func (r *bungeeCordMessageRecorder) processPlayerList(in io.Reader) {
 	}
 	var (
 		name    = "ALL"
-		players map[uuid.UUID]*connectedPlayer
+		players map[uuid.UUID]*ConnectedPlayer
 	)
 	if strings.EqualFold(target, name) {
 		r.proxy.muS.RLock()
@@ -332,7 +333,7 @@ func (r *bungeeCordMessageRecorder) processUUID() {
 	r.sendServerResponse(b.Bytes())
 }
 func (r *bungeeCordMessageRecorder) processUUIDOther(in io.Reader) {
-	r.readPlayer(in, func(player *connectedPlayer) {
+	r.readPlayer(in, func(player *ConnectedPlayer) {
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "UUIDOther")
 		_ = util.WriteUTF(b, player.Username())
@@ -362,7 +363,7 @@ func (r *bungeeCordMessageRecorder) processServerIP(in io.Reader) {
 }
 
 func (r *bungeeCordMessageRecorder) processKick(in io.Reader) {
-	r.readPlayer(in, func(p *connectedPlayer) {
+	r.readPlayer(in, func(p *ConnectedPlayer) {
 		msg, err := util.ReadUTF(in)
 		if err != nil {
 			return
@@ -390,7 +391,7 @@ func (r *bungeeCordMessageRecorder) readServer(in io.Reader, fn func(s *register
 	}
 }
 
-func (r *bungeeCordMessageRecorder) readPlayer(in io.Reader, fn func(p *connectedPlayer)) {
+func (r *bungeeCordMessageRecorder) readPlayer(in io.Reader, fn func(p *ConnectedPlayer)) {
 	name, err := util.ReadUTF(in)
 	if err != nil {
 		return

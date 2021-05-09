@@ -3,14 +3,15 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"strings"
-	"time"
 )
 
 // ConnectionRequest can send a connection request to another server on the proxy.
@@ -92,17 +93,17 @@ func (r ConnectionStatus) ServerDisconnected() bool {
 //
 //
 
-func (p *connectedPlayer) CreateConnectionRequest(server RegisteredServer) ConnectionRequest {
+func (p *ConnectedPlayer) CreateConnectionRequest(server RegisteredServer) ConnectionRequest {
 	return p.createConnectionRequest(server)
 }
 
-func (p *connectedPlayer) createConnectionRequest(server RegisteredServer) *connectionRequest {
+func (p *ConnectedPlayer) createConnectionRequest(server RegisteredServer) *connectionRequest {
 	return &connectionRequest{server: server, player: p}
 }
 
 type connectionRequest struct {
 	server RegisteredServer // the target server to connect to
-	player *connectedPlayer // the player to connect to the server
+	player *ConnectedPlayer // the player to connect to the server
 }
 
 func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, error) {
@@ -154,7 +155,7 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 // Handles unexpected disconnects.
 // server - the server we disconnected from
 // safe - whether or not we can safely reconnect to a new server
-func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error, safe bool) {
+func (p *ConnectedPlayer) handleConnectionErr(server RegisteredServer, err error, safe bool) {
 	log := p.log.WithValues(
 		"serverName", server.ServerInfo().Name(),
 		"serverAddr", server.ServerInfo().Addr())
@@ -177,7 +178,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	p.handleConnectionErr2(server, nil, &Text{Content: userMsg, S: Style{Color: Red}}, safe)
 }
 
-func (p *connectedPlayer) handleConnectionErr2(
+func (p *ConnectedPlayer) handleConnectionErr2(
 	rs RegisteredServer,
 	kickReason Component,
 	friendlyReason Component,
@@ -217,7 +218,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 	p.handleKickEvent(e, friendlyReason, kickedFromCurrent)
 }
 
-func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component, kickedFromCurrent bool) {
+func (p *ConnectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component, kickedFromCurrent bool) {
 	p.proxy.Event().Fire(e)
 
 	// There can't be any connection in flight now.
@@ -281,13 +282,13 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	}
 }
 
-func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *packet.Disconnect, safe bool) {
+func (p *ConnectedPlayer) handleDisconnect(server RegisteredServer, disconnect *packet.Disconnect, safe bool) {
 	reason, _ := util2.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
 	p.handleDisconnectWithReason(server, reason, safe)
 }
 
 // handles unexpected disconnects
-func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, reason Component, safe bool) {
+func (p *ConnectedPlayer) handleDisconnectWithReason(server RegisteredServer, reason Component, safe bool) {
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
 		return
@@ -321,16 +322,16 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	}, safe)
 }
 
-func (p *connectedPlayer) resetInFlightConnection() {
+func (p *ConnectedPlayer) resetInFlightConnection() {
 	p.setInFlightConnection(nil)
 }
 
 // without locking
-func (p *connectedPlayer) resetInFlightConnection0() {
+func (p *ConnectedPlayer) resetInFlightConnection0() {
 	p.connInFlight = nil
 }
 
-func (p *connectedPlayer) setInFlightConnection(s *serverConnection) {
+func (p *ConnectedPlayer) setInFlightConnection(s *serverConnection) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.connInFlight = s

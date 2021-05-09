@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -25,7 +26,7 @@ func newBackendPlaySessionHandler(serverConn *serverConnection) (sessionHandler,
 	}
 	return &backendPlaySessionHandler{
 		serverConn:                serverConn,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
+		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{ConnectedPlayer: serverConn.player},
 	}, nil
 }
 

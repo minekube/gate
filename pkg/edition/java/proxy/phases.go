@@ -1,10 +1,11 @@
 package proxy
 
 import (
+	"strings"
+
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
-	"strings"
 )
 
 // clientConnectionPhase provides connection phase specific actions.
@@ -14,9 +15,9 @@ type clientConnectionPhase interface {
 	handle(*serverConnection, *plugin.Message) bool
 	// Instruct the proxy to reset the connection phase
 	// back to its default for the connection type.
-	resetConnectionPhase(*connectedPlayer)
+	resetConnectionPhase(*ConnectedPlayer)
 	// Perform actions just as the player joins the server.
-	onFirstJoin(*connectedPlayer)
+	onFirstJoin(*ConnectedPlayer)
 	// Indicates whether the connection is considered complete.
 	consideredComplete() bool
 }
@@ -26,16 +27,16 @@ var vanillaClientPhase clientConnectionPhase = &noOpClientPhase{}
 type noOpClientPhase struct{}
 
 func (noOpClientPhase) handle(*serverConnection, *plugin.Message) bool { return false }
-func (noOpClientPhase) resetConnectionPhase(*connectedPlayer)          {}
-func (noOpClientPhase) onFirstJoin(*connectedPlayer)                   {}
+func (noOpClientPhase) resetConnectionPhase(*ConnectedPlayer)          {}
+func (noOpClientPhase) onFirstJoin(*ConnectedPlayer)                   {}
 func (noOpClientPhase) consideredComplete() bool                       { return true }
 
 type legacyForgeHandshakeClientPhase struct {
 	packetToAdvanceOn     *int                                                                           // nil-able
 	nextPhase_            *legacyForgeHandshakeClientPhase                                               // nil-able
-	onHandle_             func(p *connectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool // nil-able
-	resetConnectionPhase_ func(p *connectedPlayer)                                                       // nil-able
-	onFirstJoin_          func(p *connectedPlayer)                                                       // nil-able
+	onHandle_             func(p *ConnectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool // nil-able
+	resetConnectionPhase_ func(p *ConnectedPlayer)                                                       // nil-able
+	onFirstJoin_          func(p *ConnectedPlayer)                                                       // nil-able
 	consideredComplete_   bool
 }
 
@@ -44,7 +45,7 @@ var (
 	notStartedLegacyForgeHandshakeClientPhase = &legacyForgeHandshakeClientPhase{
 		packetToAdvanceOn: intPtr(forge.ClientHelloDiscriminator),
 		nextPhase_:        helloLegacyForgeHandshakeClientPhase,
-		onFirstJoin_: func(p *connectedPlayer) {
+		onFirstJoin_: func(p *ConnectedPlayer) {
 			// We have something special to do for legacy Forge servers - during first connection the FML
 			// handshake will newPhase() to complete regardless. Thus, we need to ensure that a reset
 			// packet is ALWAYS sent on first switch.
@@ -53,7 +54,7 @@ var (
 			// Forge client that we must reset on the next switch.
 			p.setPhase(completeLegacyForgeHandshakeClientPhase)
 		},
-		onHandle_: func(p *connectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
+		onHandle_: func(p *ConnectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
 			// If we stay in this phase, we do nothing because it means the packet wasn't handled.
 			// Returning false indicates this.
 			return false
@@ -97,7 +98,7 @@ var (
 	// we will be in this state. After a handshake reset, if the next server
 	// is vanilla we will still be in the NOT_STARTED phase,
 	// which means we must NOT send a reset packet. This is handled by
-	// overriding the resetConnectionPhase(*connectedPlayer) in this
+	// overriding the resetConnectionPhase(*ConnectedPlayer) in this
 	// element (it is usually a no-op).
 	completeLegacyForgeHandshakeClientPhase = &legacyForgeHandshakeClientPhase{
 		consideredComplete_:   true,
@@ -107,7 +108,7 @@ var (
 )
 
 func init() {
-	modListLegacyForgeHandshakeClientPhase.onHandle_ = func(p *connectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
+	modListLegacyForgeHandshakeClientPhase.onHandle_ = func(p *ConnectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
 		// Read the mod list if we haven't already
 		if p.ModInfo() == nil {
 			mods, err := forge.ReadMods(msg)
@@ -123,7 +124,7 @@ func init() {
 		}
 		return modListLegacyForgeHandshakeClientPhase.onHandle(false, p, msg, backendConn)
 	}
-	completeLegacyForgeHandshakeClientPhase.onHandle_ = func(p *connectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
+	completeLegacyForgeHandshakeClientPhase.onHandle_ = func(p *ConnectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
 		completeLegacyForgeHandshakeClientPhase.onHandle(false, p, msg, backendConn)
 
 		// just in case the timing is awful
@@ -137,7 +138,7 @@ func init() {
 
 		return true
 	}
-	completeLegacyForgeHandshakeClientPhase.resetConnectionPhase_ = func(p *connectedPlayer) {
+	completeLegacyForgeHandshakeClientPhase.resetConnectionPhase_ = func(p *ConnectedPlayer) {
 		_ = p.WritePacket(forge.ResetPacket())
 		p.setPhase(notStartedLegacyForgeHandshakeClientPhase)
 	}
@@ -160,7 +161,7 @@ func (l *legacyForgeHandshakeClientPhase) handle(sc *serverConnection, message *
 	return false
 }
 
-func (l *legacyForgeHandshakeClientPhase) onHandle(checkOverridden bool, p *connectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
+func (l *legacyForgeHandshakeClientPhase) onHandle(checkOverridden bool, p *ConnectedPlayer, msg *plugin.Message, backendConn *minecraftConn) bool {
 	if checkOverridden && l.onHandle_ != nil {
 		return l.onHandle_(p, msg, backendConn)
 	}
@@ -168,13 +169,13 @@ func (l *legacyForgeHandshakeClientPhase) onHandle(checkOverridden bool, p *conn
 	return backendConn.WritePacket(msg) == nil // If true: We handled the packet. No need to continue processing.
 }
 
-func (l *legacyForgeHandshakeClientPhase) resetConnectionPhase(p *connectedPlayer) {
+func (l *legacyForgeHandshakeClientPhase) resetConnectionPhase(p *ConnectedPlayer) {
 	if l.resetConnectionPhase_ != nil {
 		l.resetConnectionPhase_(p)
 	}
 }
 
-func (l *legacyForgeHandshakeClientPhase) onFirstJoin(p *connectedPlayer) {
+func (l *legacyForgeHandshakeClientPhase) onFirstJoin(p *ConnectedPlayer) {
 	if l.onFirstJoin_ != nil {
 		l.onFirstJoin_(p)
 		return

@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"net"
+	"time"
+
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -16,8 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"net"
-	"time"
 )
 
 type loginSessionHandler struct {
@@ -250,7 +251,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 	}
 }
 
-func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connectedPlayer) {
+func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *ConnectedPlayer) {
 	cfg := l.config()
 
 	// Send compression threshold
@@ -309,7 +310,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 	l.connectToInitialServer(player)
 }
 
-func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
+func (l *loginSessionHandler) connectToInitialServer(player *ConnectedPlayer) {
 	initialFromConfig := player.nextServerToTry(nil)
 	chooseServer := &PlayerChooseInitialServerEvent{
 		player:        player,

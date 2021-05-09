@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -21,11 +27,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -51,8 +52,8 @@ type Proxy struct {
 	servers map[string]*registeredServer // registered backend servers: by lower case names
 
 	muP         sync.RWMutex                   // Protects following fields
-	playerNames map[string]*connectedPlayer    // lower case usernames map
-	playerIDs   map[uuid.UUID]*connectedPlayer // uuids map
+	playerNames map[string]*ConnectedPlayer    // lower case usernames map
+	playerIDs   map[uuid.UUID]*ConnectedPlayer // uuids map
 
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
@@ -102,8 +103,8 @@ func New(options Options) (p *Proxy, err error) {
 		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
-		playerNames:      map[string]*connectedPlayer{},
-		playerIDs:        map[uuid.UUID]*connectedPlayer{},
+		playerNames:      map[string]*ConnectedPlayer{},
+		playerIDs:        map[uuid.UUID]*ConnectedPlayer{},
 		authenticator:    authn,
 	}
 
@@ -400,7 +401,7 @@ func (p *Proxy) DisconnectAll(reason component.Component) {
 	var wg sync.WaitGroup
 	wg.Add(len(players))
 	for _, p := range players {
-		go func(p *connectedPlayer) {
+		go func(p *ConnectedPlayer) {
 			p.Disconnect(reason)
 			wg.Done()
 		}(p)
@@ -488,13 +489,13 @@ func (p *Proxy) Player(id uuid.UUID) Player {
 func (p *Proxy) PlayerByName(username string) Player {
 	return p.playerByName(username)
 }
-func (p *Proxy) playerByName(username string) *connectedPlayer {
+func (p *Proxy) playerByName(username string) *ConnectedPlayer {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
 	return p.playerNames[strings.ToLower(username)]
 }
 
-func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
+func (p *Proxy) canRegisterConnection(player *ConnectedPlayer) bool {
 	c := p.config
 	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
 		return true
@@ -506,7 +507,7 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 }
 
 // Attempts to register the connection with the proxy.
-func (p *Proxy) registerConnection(player *connectedPlayer) bool {
+func (p *Proxy) registerConnection(player *ConnectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	c := p.config
 
@@ -550,7 +551,7 @@ retry:
 }
 
 // unregisters a connected player
-func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
+func (p *Proxy) unregisterConnection(player *ConnectedPlayer) (found bool) {
 	p.muP.Lock()
 	defer p.muP.Unlock()
 	_, found = p.playerIDs[player.ID()]

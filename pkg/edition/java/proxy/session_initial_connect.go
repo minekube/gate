@@ -6,12 +6,12 @@ import (
 )
 
 type initialConnectSessionHandler struct {
-	player *connectedPlayer
+	player *ConnectedPlayer
 
 	nopSessionHandler
 }
 
-func newInitialConnectSessionHandler(player *connectedPlayer) sessionHandler {
+func newInitialConnectSessionHandler(player *ConnectedPlayer) sessionHandler {
 	return &initialConnectSessionHandler{player: player}
 }
 
@@ -58,6 +58,6 @@ func (i *initialConnectSessionHandler) disconnected() {
 
 var _ sessionHandler = (*initialConnectSessionHandler)(nil)
 
-func (i *initialConnectSessionHandler) player_() *connectedPlayer {
+func (i *initialConnectSessionHandler) player_() *ConnectedPlayer {
 	return i.player
 }

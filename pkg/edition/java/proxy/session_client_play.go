@@ -2,6 +2,9 @@ package proxy
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/gammazero/deque"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -13,22 +16,20 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"strings"
-	"time"
 )
 
 // Handles communication with the connected Minecraft client.
 // This is effectively the primary nerve center that joins backend servers with players.
 type clientPlaySessionHandler struct {
 	log                 logr.Logger
-	player              *connectedPlayer
+	player              *ConnectedPlayer
 	spawned             atomic.Bool
 	loginPluginMessages deque.Deque
 	// serverBossBars
 	// outstandingTabComplete TabCompleteRequest
 }
 
-func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
+func newClientPlaySessionHandler(player *ConnectedPlayer) *clientPlaySessionHandler {
 	return &clientPlaySessionHandler{player: player, log: player.log.WithName("clientPlaySession")}
 }
 
@@ -372,6 +373,6 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 	})
 }
 
-func (c *clientPlaySessionHandler) player_() *connectedPlayer {
+func (c *clientPlaySessionHandler) player_() *ConnectedPlayer {
 	return c.player
 }

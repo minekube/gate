@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"sync"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -14,10 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"net"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 // RegisteredServer is a backend server that has been registered with the proxy.
@@ -49,11 +50,11 @@ type Players interface {
 
 type players struct {
 	mu   sync.RWMutex // Protects following fields
-	list map[uuid.UUID]*connectedPlayer
+	list map[uuid.UUID]*ConnectedPlayer
 }
 
 func newPlayers() *players {
-	return &players{list: map[uuid.UUID]*connectedPlayer{}}
+	return &players{list: map[uuid.UUID]*ConnectedPlayer{}}
 }
 
 // Len returns the size of the players list
@@ -75,7 +76,7 @@ func (p *players) Range(fn func(p Player) bool) {
 	}
 }
 
-func (p *players) add(players ...*connectedPlayer) {
+func (p *players) add(players ...*ConnectedPlayer) {
 	p.mu.Lock()
 	for _, player := range players {
 		p.list[player.ID()] = player
@@ -83,7 +84,7 @@ func (p *players) add(players ...*connectedPlayer) {
 	p.mu.Unlock()
 }
 
-func (p *players) remove(players ...*connectedPlayer) {
+func (p *players) remove(players ...*ConnectedPlayer) {
 	p.mu.Lock()
 	for _, player := range players {
 		delete(p.list, player.ID())
@@ -201,7 +202,7 @@ type ServerConnection interface {
 
 type serverConnection struct {
 	server *registeredServer
-	player *connectedPlayer
+	player *ConnectedPlayer
 	log    logr.Logger
 
 	completedJoin      atomic.Bool
@@ -214,7 +215,7 @@ type serverConnection struct {
 	connPhase  backendConnectionPhase
 }
 
-func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
+func newServerConnection(server *registeredServer, player *ConnectedPlayer) *serverConnection {
 	return &serverConnection{server: server, player: player,
 		log: player.log.WithName("serverConn").WithValues(
 			"serverName", server.info.Name(),

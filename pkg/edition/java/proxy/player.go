@@ -7,6 +7,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net"
+	"strings"
+	"sync"
+	"time"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/forge"
@@ -24,10 +29,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"net"
-	"strings"
-	"sync"
-	"time"
 )
 
 // Player is a connected Minecraft player.
@@ -71,7 +72,7 @@ type CommandSource interface {
 	SendMessage(msg component.Component) error
 }
 
-type connectedPlayer struct {
+type ConnectedPlayer struct {
 	*minecraftConn
 	log         logr.Logger
 	virtualHost net.Addr
@@ -100,17 +101,17 @@ type connectedPlayer struct {
 	tryIndex     int
 }
 
-var _ Player = (*connectedPlayer)(nil)
+var _ Player = (*ConnectedPlayer)(nil)
 
 func newConnectedPlayer(
 	conn *minecraftConn,
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
-) *connectedPlayer {
+) *ConnectedPlayer {
 	ping := atomic.Duration{}
 	ping.Store(-1)
-	return &connectedPlayer{
+	return &ConnectedPlayer{
 		minecraftConn: conn,
 		log: conn.log.WithName("player").WithValues(
 			"name", profile.Name, "id", profile.ID),
@@ -125,35 +126,35 @@ func newConnectedPlayer(
 	}
 }
 
-func (p *connectedPlayer) connectionInFlight() *serverConnection {
+func (p *ConnectedPlayer) connectionInFlight() *serverConnection {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.connInFlight
 }
 
-func (p *connectedPlayer) phase() clientConnectionPhase {
+func (p *ConnectedPlayer) phase() clientConnectionPhase {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.connPhase
 }
 
-func (p *connectedPlayer) HasPermission(permission string) bool {
+func (p *ConnectedPlayer) HasPermission(permission string) bool {
 	return p.PermissionValue(permission).Bool()
 }
 
-func (p *connectedPlayer) PermissionValue(permission string) permission.TriState {
+func (p *ConnectedPlayer) PermissionValue(permission string) permission.TriState {
 	return p.permFunc(permission)
 }
 
-func (p *connectedPlayer) Ping() time.Duration {
+func (p *ConnectedPlayer) Ping() time.Duration {
 	return p.ping.Load()
 }
 
-func (p *connectedPlayer) OnlineMode() bool {
+func (p *ConnectedPlayer) OnlineMode() bool {
 	return p.onlineMode
 }
 
-func (p *connectedPlayer) GameProfile() profile.GameProfile {
+func (p *ConnectedPlayer) GameProfile() profile.GameProfile {
 	return *p.profile
 }
 
@@ -162,7 +163,7 @@ var (
 	ErrTooLongChatMessage  = errors.New("server bound chat message can not exceed 256 characters")
 )
 
-func (p *connectedPlayer) SpoofChatInput(input string) error {
+func (p *ConnectedPlayer) SpoofChatInput(input string) error {
 	if len(input) > packet.MaxServerBoundMessageLength {
 		return ErrTooLongChatMessage
 	}
@@ -177,7 +178,7 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 	})
 }
 
-func (p *connectedPlayer) ensureBackendConnection() (*minecraftConn, bool) {
+func (p *ConnectedPlayer) ensureBackendConnection() (*minecraftConn, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.connectedServer_ == nil {
@@ -192,14 +193,14 @@ func (p *connectedPlayer) ensureBackendConnection() (*minecraftConn, bool) {
 	return serverMc, true
 }
 
-func (p *connectedPlayer) SendResourcePack(url string) error {
+func (p *ConnectedPlayer) SendResourcePack(url string) error {
 	return p.WritePacket(&packet.ResourcePackRequest{
 		Url:  url,
 		Hash: "",
 	})
 }
 
-func (p *connectedPlayer) SendResourcePackWithHash(url string, sha1Hash []byte) error {
+func (p *ConnectedPlayer) SendResourcePackWithHash(url string, sha1Hash []byte) error {
 	if len(sha1Hash) != 20 {
 		return errors.New("hash length must be 20")
 	}
@@ -209,19 +210,19 @@ func (p *connectedPlayer) SendResourcePackWithHash(url string, sha1Hash []byte) 
 	})
 }
 
-func (p *connectedPlayer) VirtualHost() net.Addr {
+func (p *ConnectedPlayer) VirtualHost() net.Addr {
 	return p.virtualHost
 }
 
-func (p *connectedPlayer) Active() bool {
+func (p *ConnectedPlayer) Active() bool {
 	return !p.minecraftConn.Closed()
 }
 
-func (p *connectedPlayer) SendMessage(msg component.Component) error {
+func (p *ConnectedPlayer) SendMessage(msg component.Component) error {
 	return p.SendMessagePosition(msg, packet.ChatMessage)
 }
 
-func (p *connectedPlayer) SendMessagePosition(msg component.Component, position packet.MessagePosition) (err error) {
+func (p *ConnectedPlayer) SendMessagePosition(msg component.Component, position packet.MessagePosition) (err error) {
 	if msg == nil {
 		return nil // skip nil message
 	}
@@ -265,7 +266,7 @@ func (p *connectedPlayer) SendMessagePosition(msg component.Component, position 
 	})
 }
 
-func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier, data []byte) error {
+func (p *ConnectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier, data []byte) error {
 	return p.WritePacket(&plugin.Message{
 		Channel: identifier.ID(),
 		Data:    data,
@@ -278,7 +279,7 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 // current is the current server of the player is on, so we skip this server and not connect to it.
 // current can be nil if there is no current server.
 // MAY RETURN NIL if no next server available!
-func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredServer {
+func (p *ConnectedPlayer) nextServerToTry(current RegisteredServer) RegisteredServer {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(p.serversToTry) == 0 {
@@ -311,7 +312,7 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 
 // player's connection is closed at this point,
 // now need to disconnect backend server connection, if any.
-func (p *connectedPlayer) teardown() {
+func (p *ConnectedPlayer) teardown() {
 	p.mu.RLock()
 	connInFlight := p.connInFlight
 	connectedServer := p.connectedServer_
@@ -344,7 +345,7 @@ func (p *connectedPlayer) teardown() {
 }
 
 // may be nil!
-func (p *connectedPlayer) CurrentServer() ServerConnection {
+func (p *ConnectedPlayer) CurrentServer() ServerConnection {
 	if cs := p.connectedServer(); cs != nil {
 		return cs
 	}
@@ -352,21 +353,21 @@ func (p *connectedPlayer) CurrentServer() ServerConnection {
 	return nil
 }
 
-func (p *connectedPlayer) connectedServer() *serverConnection {
+func (p *ConnectedPlayer) connectedServer() *serverConnection {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.connectedServer_
 }
 
-func (p *connectedPlayer) Username() string {
+func (p *ConnectedPlayer) Username() string {
 	return p.profile.Name
 }
 
-func (p *connectedPlayer) ID() uuid.UUID {
+func (p *ConnectedPlayer) ID() uuid.UUID {
 	return p.profile.ID
 }
 
-func (p *connectedPlayer) Disconnect(reason component.Component) {
+func (p *ConnectedPlayer) Disconnect(reason component.Component) {
 	if !p.Active() {
 		return
 	}
@@ -382,28 +383,28 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 	}
 }
 
-func (p *connectedPlayer) String() string {
+func (p *ConnectedPlayer) String() string {
 	return p.profile.Name
 }
 
-func (p *connectedPlayer) sendLegacyForgeHandshakeResetPacket() {
+func (p *ConnectedPlayer) sendLegacyForgeHandshakeResetPacket() {
 	p.phase().resetConnectionPhase(p)
 }
 
-func (p *connectedPlayer) setPhase(phase *legacyForgeHandshakeClientPhase) {
+func (p *ConnectedPlayer) setPhase(phase *legacyForgeHandshakeClientPhase) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.connPhase = phase
 }
 
 // may return nil
-func (p *connectedPlayer) ModInfo() *modinfo.ModInfo {
+func (p *ConnectedPlayer) ModInfo() *modinfo.ModInfo {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.modInfo
 }
 
-func (p *connectedPlayer) setModInfo(info *modinfo.ModInfo) {
+func (p *ConnectedPlayer) setModInfo(info *modinfo.ModInfo) {
 	p.mu.Lock()
 	p.modInfo = info
 	p.mu.Unlock()
@@ -418,14 +419,14 @@ func (p *connectedPlayer) setModInfo(info *modinfo.ModInfo) {
 
 // NOTE: the returned set is not goroutine-safe and must not be modified,
 // it is only for reading!!!
-func (p *connectedPlayer) knownChannels() sets.String {
+func (p *ConnectedPlayer) knownChannels() sets.String {
 	p.pluginChannelsMu.RLock()
 	defer p.pluginChannelsMu.RUnlock()
 	return p.pluginChannels
 }
 
 // runs fn while pluginChannels is locked. Used for modifying channel set.
-func (p *connectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)) {
+func (p *ConnectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)) {
 	p.pluginChannelsMu.RUnlock()
 	defer p.pluginChannelsMu.RLock()
 	fn(p.pluginChannels)
@@ -433,7 +434,7 @@ func (p *connectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)
 
 // Determines whether or not we can forward a plugin message onto the client.
 // message - plugin message to forward to the client
-func (p *connectedPlayer) canForwardPluginMessage(protocol proto.Protocol, message *plugin.Message) bool {
+func (p *ConnectedPlayer) canForwardPluginMessage(protocol proto.Protocol, message *plugin.Message) bool {
 	var minecraftOrFmlMessage bool
 
 	// By default, all internal Minecraft and Forge channels are forwarded from the server.
@@ -450,7 +451,7 @@ func (p *connectedPlayer) canForwardPluginMessage(protocol proto.Protocol, messa
 	return minecraftOrFmlMessage || p.knownChannels().Has(message.Channel)
 }
 
-func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
+func (p *ConnectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Lock()
 	p.connectedServer_ = conn
 	p.tryIndex = 0 // reset since we got connected to a server
@@ -460,7 +461,7 @@ func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Unlock()
 }
 
-func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
+func (p *ConnectedPlayer) setSettings(settings *packet.ClientSettings) {
 	wrapped := player.NewSettings(settings)
 	p.mu.Lock()
 	p.settings = wrapped
@@ -472,13 +473,13 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 	})
 }
 
-func (p *connectedPlayer) Closed() <-chan struct{} {
+func (p *ConnectedPlayer) Closed() <-chan struct{} {
 	return p.minecraftConn.closed
 }
 
 // Settings returns the players client settings.
 // If not known already, returns player.DefaultSettings.
-func (p *connectedPlayer) Settings() player.Settings {
+func (p *ConnectedPlayer) Settings() player.Settings {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.settings != nil {

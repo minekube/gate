@@ -3,6 +3,13 @@ package proxy
 import (
 	"bufio"
 	"errors"
+	"io"
+	"net"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -12,12 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.uber.org/atomic"
-	"io"
-	"net"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
 )
 
 // sessionHandler handles received packets from the associated connection.
@@ -284,7 +285,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 		if sh := c.SessionHandler(); sh != nil {
 			sh.disconnected()
 
-			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
+			if p, ok := sh.(interface{ player_() *ConnectedPlayer }); ok && !c.knownDisconnect.Load() {
 				p.player_().log.Info("Player has disconnected")
 			}
 		}
