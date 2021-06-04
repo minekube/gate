@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -139,45 +138,6 @@ const (
 	// supported by PaperSpigot for versions starting at 1.13.
 	VelocityForwardingMode ForwardingMode = "velocity"
 )
-
-// SetDefaults sets Config defaults used with Viper.
-func SetDefaults(i configutil.SetDefault) {
-	i.SetDefault("bind", "0.0.0.0:25565")
-	i.SetDefault("onlineMode", true)
-	i.SetDefault("forwarding.mode", LegacyForwardingMode)
-
-	i.SetDefault("ShutdownReason", "§cGate proxy is shutting down...\nPlease reconnect in a moment!")
-
-	i.SetDefault("status.motd", "§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
-	i.SetDefault("status.showmaxplayers", 1000)
-	i.SetDefault("status.logPingRequests", false)
-	i.SetDefault("announceForge", false)
-
-	i.SetDefault("compression.threshold", 256)
-	i.SetDefault("compression.level", -1)
-
-	i.SetDefault("query.enabled", false)
-	i.SetDefault("query.port", 25577)
-	i.SetDefault("query.showplugins", false)
-
-	// Default quotas should never affect legitimate operations,
-	// but rate limits aggressive behaviours.
-	i.SetDefault("quota.connections.Enabled", true)
-	i.SetDefault("quota.connections.OPS", 5)
-	i.SetDefault("quota.connections.burst", 10)
-	i.SetDefault("quota.connections.MaxEntries", 1000)
-
-	i.SetDefault("quota.logins.Enabled", true)
-	i.SetDefault("quota.logins.OPS", 0.4)
-	i.SetDefault("quota.logins.burst", 3)
-	i.SetDefault("quota.logins.MaxEntries", 1000)
-
-	i.SetDefault("connectiontimeout", 5000)
-	i.SetDefault("readtimeout", 30000)
-	i.SetDefault("BungeePluginChannelEnabled", true)
-	i.SetDefault("BuiltinCommands", true)
-	i.SetDefault("FailoverOnUnexpectedServerDisconnect", true)
-}
 
 // Validate validates Config.
 func (c *Config) Validate() (warns []error, errs []error) {

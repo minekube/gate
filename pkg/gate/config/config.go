@@ -4,7 +4,6 @@ import (
 	"fmt"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -59,20 +58,6 @@ type Bedrock struct {
 type HealthService struct {
 	Enabled bool
 	Bind    string
-}
-
-// SetDefaults sets Config defaults to use with Viper.
-func SetDefaults(i configutil.SetDefault) {
-	i.SetDefault("healthservice.bind", "0.0.0.0:9090")
-
-	i.SetDefault("editions.java.enabled", true)
-	i.SetDefault("editions.bedrock.enabled", true)
-
-	// Set Java proxy config defaults
-	jconfig.SetDefaults(configutil.SetDefaultFunc(func(key string, value interface{}) {
-		// Add prefix
-		i.SetDefault("editions.java.config."+key, value)
-	}))
 }
 
 // Validate validates a Config and all enabled edition configs (Java / Bedrock).
