@@ -170,6 +170,17 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 	}
 }
 
+func (t *tabList) updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error {
+	if _, ok := t.entries[entry.Profile().ID]; !ok {
+		return nil
+	}
+	packetItem := newPlayerListItemEntry(entry)
+	return t.c.WritePacket(&packet.PlayerListItem{
+		Action: action,
+		Items:  []packet.PlayerListItemEntry{*packetItem},
+	})
+}
+
 //
 //
 //
@@ -230,7 +241,7 @@ func (t *tabListEntry) setLatency(latency time.Duration) {
 func (t *tabListEntry) setGameMode(gameMode int) {
 	t.mu.Lock()
 	t.gameMode = gameMode
-	t.tabList.updateEntry
+	_ = t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
 	t.mu.Unlock()
 }
 
