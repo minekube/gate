@@ -15,7 +15,8 @@ require (
 	github.com/sandertv/gophertunnel v1.7.14-0.20200925093235-d3d47c64a150
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
+	go.minekube.com/brigodier v0.0.0-20210604152758-a3f4ec8aad33
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.0

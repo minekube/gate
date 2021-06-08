@@ -9,6 +9,7 @@ import (
 	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	command2 "go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -33,7 +34,7 @@ import (
 // Player is a connected Minecraft player.
 type Player interface {
 	Inbound
-	CommandSource
+	command2.Source
 	message.ChannelMessageSource
 	message.ChannelMessageSink
 
@@ -64,13 +65,6 @@ type Player interface {
 	// SHA-1 hash of the resource pack file. To monitor the status of the sent resource pack,
 	// subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePackWithHash(url string, sha1Hash []byte) error
-}
-
-// CommandSource is the source that ran a command.
-type CommandSource interface {
-	permission.Subject
-	// Sends a message component to the invoker.
-	SendMessage(msg component.Component) error
 }
 
 type connectedPlayer struct {
@@ -482,10 +476,10 @@ func (p *connectedPlayer) Closed() <-chan struct{} {
 // If not known already, returns player.DefaultSettings.
 func (p *connectedPlayer) Settings() player.Settings {
 	p.mu.RLock()
+	defer p.mu.RUnlock()
 	if p.settings != nil {
 		return p.settings
 	}
-	p.mu.RUnlock()
 	return player.DefaultSettings
 }
 

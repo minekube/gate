@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -691,20 +692,32 @@ func (c *PlayerChatEvent) Allowed() bool {
 
 // CommandExecuteEvent is fired when someone wants to execute a command.
 type CommandExecuteEvent struct {
-	source      CommandSource
-	commandline string
+	source          command.Source
+	commandline     string
+	originalCommand string
 
-	denied bool
+	forward bool // forward command to server
+	denied  bool
 }
 
 // Source returns the command source that wants to run the command.
-func (c *CommandExecuteEvent) Source() CommandSource {
+func (c *CommandExecuteEvent) Source() command.Source {
 	return c.source
 }
 
 // Command returns the whole commandline without the leading "/".
 func (c *CommandExecuteEvent) Command() string {
 	return c.commandline
+}
+
+// OriginalCommand returns the original command if SetCommand has changed it.
+func (c *CommandExecuteEvent) OriginalCommand() string {
+	return c.originalCommand
+}
+
+// SetCommand changes the command being executed without the leading "/".
+func (c *CommandExecuteEvent) SetCommand(commandline string) {
+	c.commandline = commandline
 }
 
 // SetAllowed sets whether the command is allowed to be executed.
@@ -715,6 +728,50 @@ func (c *CommandExecuteEvent) SetAllowed(allowed bool) {
 // Allowed returns true when the command is allowed to be executed.
 func (c *CommandExecuteEvent) Allowed() bool {
 	return !c.denied
+}
+
+// SetForward sets whether the command should be forwarded to the server.
+func (c *CommandExecuteEvent) SetForward(forward bool) {
+	c.forward = forward
+}
+
+// Forward returns true when the command should be forwarded to the server.
+func (c *CommandExecuteEvent) Forward() bool {
+	return c.forward
+}
+
+//
+//
+//
+//
+
+// TabCompleteEvent is fired after a tab complete response is sent by the remote server,
+// for clients on1.12.2 and below. You have the opportunity to modify the response sent
+// to the remote player.
+type TabCompleteEvent struct {
+	player         Player
+	partialMessage string
+	suggestions    []string
+}
+
+// Player returns the player requesting the tab completion.
+func (t *TabCompleteEvent) Player() Player {
+	return t.player
+}
+
+// Suggestions returns all the suggestions provided to the user, as a mutable list.
+func (t *TabCompleteEvent) Suggestions() []string {
+	return t.suggestions
+}
+
+// SetSuggestions sets the suggestions provided to the user.
+func (t *TabCompleteEvent) SetSuggestions(s []string) {
+	t.suggestions = s
+}
+
+// PartialMessage returns the message being partially completed.
+func (t *TabCompleteEvent) PartialMessage() string {
+	return t.partialMessage
 }
 
 //

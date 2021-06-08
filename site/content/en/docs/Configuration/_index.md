@@ -7,7 +7,10 @@ description: >
   using a config file or environment variables.
 ---
 
-## TODO
+## Complete configuration
+
+Please see [config.yml](https://github.com/minekube/gate/blob/master/config.yml)
+for all configuration options and documentation!
 
 
 ## Rate limiter
@@ -31,7 +34,6 @@ Too many connections from the same IP-block (as configured)
 will be simply disconnected, and the default settings should
 never affect legitimate players and only rate limit aggressive
 behaviours.
-
 
 {{< alert title="Note" color="info">}}
 The limiter only prevents attacks on a per IP block bases

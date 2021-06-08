@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -33,7 +34,7 @@ type Proxy struct {
 	log              logr.Logger
 	config           *config.Config
 	event            event.Manager
-	command          *CommandManager
+	command          command.Manager
 	channelRegistrar *ChannelRegistrar
 	authenticator    auth.Authenticator
 
@@ -99,7 +100,6 @@ func New(options Options) (p *Proxy, err error) {
 		log:              log,
 		config:           options.Config,
 		event:            eventMgr,
-		command:          newCommandManager(),
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
 		playerNames:      map[string]*connectedPlayer{},
@@ -309,8 +309,8 @@ func (p *Proxy) Event() event.Manager {
 }
 
 // Command returns the Proxy's command manager.
-func (p *Proxy) Command() *CommandManager {
-	return p.command
+func (p *Proxy) Command() *command.Manager {
+	return &p.command
 }
 
 // Config returns the config used by the Proxy.
@@ -420,7 +420,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	go func() { <-stop; _ = ln.Close() }()
 
 	p.event.Fire(&ReadyEvent{})

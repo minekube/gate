@@ -2,7 +2,12 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"github.com/gammazero/deque"
+	"go.minekube.com/brigodier"
+	"go.minekube.com/common/minecraft/color"
+	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -13,6 +18,7 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
+	"sort"
 	"strings"
 	"time"
 )
@@ -20,16 +26,22 @@ import (
 // Handles communication with the connected Minecraft client.
 // This is effectively the primary nerve center that joins backend servers with players.
 type clientPlaySessionHandler struct {
-	log                 logr.Logger
+	log, log1           logr.Logger
 	player              *connectedPlayer
 	spawned             atomic.Bool
 	loginPluginMessages deque.Deque
-	// serverBossBars
-	// outstandingTabComplete TabCompleteRequest
+
+	// TODO serverBossBars
+	outstandingTabComplete *packet.TabCompleteRequest
 }
 
 func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
-	return &clientPlaySessionHandler{player: player, log: player.log.WithName("clientPlaySession")}
+	log := player.log.WithName("clientPlaySession")
+	return &clientPlaySessionHandler{
+		player: player,
+		log:    log,
+		log1:   log.V(1),
+	}
 }
 
 func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
@@ -43,6 +55,8 @@ func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 		c.handleKeepAlive(p)
 	case *packet.Chat:
 		c.handleChat(p)
+	case *packet.TabCompleteRequest:
+		c.handleTabCompleteRequest(p)
 	case *plugin.Message:
 		c.handlePluginMessage(p)
 	case *packet.ClientSettings:
@@ -223,6 +237,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 		if c.player.tabList.clearEntries() != nil {
 			return false
 		}
+		// TODO use instead: doFastClientServerSwitch, doSafeClientServerSwitch
 
 		// In order to handle switching to another server, you will need to send two packets:
 		//
@@ -326,52 +341,223 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 		commandline := trimSpaces(strings.TrimPrefix(p.Message, "/"))
 
 		e := &CommandExecuteEvent{
-			source:      c.player,
-			commandline: commandline,
+			source:          c.player,
+			commandline:     commandline,
+			originalCommand: commandline,
 		}
 		c.proxy().event.Fire(e)
-		if !e.Allowed() || !c.player.Active() {
-			return
+		if err := c.processCommandExecuteResult(e, serverMc); err != nil {
+			c.log.Error(err, "Error while running command", "cmd", commandline)
+			_ = c.player.SendMessage(&component.Text{
+				Content: "An error occurred while running this command.",
+				S:       component.Style{Color: color.Red},
+			})
 		}
 
-		cmd, args, _ := extract(commandline)
-		if c.proxy().command.Has(cmd) {
-			// Make invoke context
-			ctx, cancel := c.player.newContext(context.Background())
-			defer cancel()
-			// Invoke registered command
-			c.log.Info("Player executing command", "cmd", commandline)
-			_, err := c.proxy().command.Invoke(&Context{
-				Context: ctx,
-				Source:  c.player,
-				Args:    args,
-			}, cmd)
-			if err != nil {
-				c.log.Error(err, "Error invoking command", "cmd", commandline)
-			}
-			return
-		}
-		// Else, proxy command not registered, forward to server.
-	} else {
-		e := &PlayerChatEvent{
-			player:  c.player,
-			message: p.Message,
-		}
-		c.proxy().Event().Fire(e)
-		if !e.Allowed() || !c.player.Active() {
-			return
-		}
-		c.log.V(1).Info("Player sent chat message", "chat", p.Message)
+		return
 	}
 
+	e := &PlayerChatEvent{
+		player:  c.player,
+		message: p.Message,
+	}
+	c.proxy().Event().Fire(e)
+	if !e.Allowed() || !c.player.Active() {
+		return
+	}
+	// TODO
+	c.log1.Info("Player sent chat message", "chat", p.Message)
+
 	// Forward to server
-	_ = serverMc.WritePacket(&packet.Chat{
-		Message: p.Message,
+	//_ = serverMc.WritePacket(&packet.Chat{
+	//	Message: p.Message,
+	//	Type:    packet.ChatMessage,
+	//	Sender:  uuid.Nil,
+	//})
+}
+
+func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecuteEvent, serverMc *minecraftConn) error {
+	if !e.Allowed() || !c.player.Active() {
+		return nil
+	}
+
+	// Log player executed command
+	log := c.log
+	if e.Command() == e.OriginalCommand() {
+		log = log.WithValues("command", e.Command())
+	} else {
+		log = log.WithValues("original", e.OriginalCommand(),
+			"changed", e.Command())
+	}
+	log.Info("Player executed command")
+
+	if !e.Forward() {
+		hasRun, err := c.executeCommand(e.Command())
+		if err != nil {
+			return err
+		}
+		if hasRun {
+			return nil // ran command, done
+		}
+	}
+
+	// Forward command to server
+	return serverMc.WritePacket(&packet.Chat{
+		Message: "/" + e.Command(),
 		Type:    packet.ChatMessage,
 		Sender:  uuid.Nil,
 	})
 }
 
+func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err error) {
+	// Make invoke context
+	ctx, cancel := c.player.newContext(context.Background())
+	defer cancel()
+
+	// Dispatch command
+	err = c.proxy().command.Do(ctx, c.player, cmd)
+	if err != nil {
+		if errors.Is(err, command.ErrForward) {
+			return false, nil // forward command to server
+		}
+		var sErr *brigodier.CommandSyntaxError
+		if errors.As(err, &sErr) {
+			return true, c.player.SendMessage(&component.Text{
+				Content: sErr.Error(),
+				S:       component.Style{Color: color.Red},
+			})
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabCompleteRequest) {
+	isCommand := !p.AssumeCommand && strings.HasPrefix(p.Command, "/")
+	if isCommand {
+		c.handleCommandTabComplete(p)
+	} else {
+		c.handleRegularTabComplete(p)
+	}
+}
+
+func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest) {
+	// In 1.13+, we need to do additional work for the richer suggestions available.
+	cmd := p.Command[1:]
+	cmdEndPosition := strings.Index(cmd, " ")
+	if cmdEndPosition == -1 {
+		cmdEndPosition = len(cmd)
+	}
+
+	commandLabel := cmd[:cmdEndPosition]
+	if !c.proxy().command.Has(commandLabel) {
+		if c.player.protocol.Lower(version.Minecraft_1_13) {
+			// Outstanding tab completes are recorded for use with 1.12 clients and below to provide
+			// additional tab completion support.
+			c.outstandingTabComplete = p
+		}
+		return
+	}
+
+	ctx, cancel := c.player.newContext(context.Background())
+	defer cancel()
+	suggestions, err := c.proxy().command.OfferSuggestions(ctx, c.player, cmd)
+	if err != nil {
+		c.log.Error(err, "Error while handling command tab completion for player",
+			"command", cmd)
+		return
+	}
+	if len(suggestions) == 0 {
+		return
+	}
+
+	offers := make([]packet.TabCompleteOffer, 0, len(suggestions))
+	for _, suggestion := range suggestions {
+		offers = append(offers, packet.TabCompleteOffer{
+			Text: suggestion,
+		})
+	}
+	startPos := strings.Index(p.Command, " ") + 1
+	if startPos > 0 {
+		_ = c.player.WritePacket(&packet.TabCompleteResponse{
+			TransactionID: p.TransactionID,
+			Start:         startPos,
+			Length:        len(p.Command) - startPos,
+			Offers:        offers,
+		})
+	}
+}
+
+func (c *clientPlaySessionHandler) handleRegularTabComplete(p *packet.TabCompleteRequest) {
+	if c.player.protocol.Lower(version.Minecraft_1_13) {
+		// Outstanding tab completes are recorded for use with 1.12 clients and below to provide
+		// additional tab completion support.
+		c.outstandingTabComplete = p
+	}
+}
+
+// handles additional tab complete
+func (c *clientPlaySessionHandler) handleTabCompleteResponse(p *packet.TabCompleteResponse) {
+	if c.outstandingTabComplete == nil || c.outstandingTabComplete.AssumeCommand {
+		// Nothing to do
+		_ = c.player.WritePacket(p)
+		return
+	}
+
+	if strings.HasPrefix(c.outstandingTabComplete.Command, "/") {
+		c.finishCommandTabComplete(c.outstandingTabComplete, p)
+	} else {
+		c.finishRegularTabComplete(c.outstandingTabComplete, p)
+	}
+	c.outstandingTabComplete = nil
+}
+
+func (c *clientPlaySessionHandler) finishCommandTabComplete(request *packet.TabCompleteRequest, response *packet.TabCompleteResponse) {
+	cmd := request.Command[1:]
+	offers, err := c.proxy().command.OfferSuggestions(context.Background(), c.player, cmd)
+	if err != nil {
+		c.log.Error(err, "Error while finishing command tab completion",
+			"request", request, "response", response)
+		return
+	}
+	legacy := c.player.protocol.Lower(version.Minecraft_1_13)
+	for _, offer := range offers {
+		if legacy && !strings.HasPrefix(offer, "/") {
+			offer = "/" + offer
+		}
+		if legacy && strings.HasPrefix(offer, cmd) {
+			offer = offer[len(cmd):]
+		}
+		response.Offers = append(response.Offers, packet.TabCompleteOffer{
+			Text: offer,
+		})
+	}
+	// Sort offers alphabetically
+	sort.Slice(response.Offers, func(i, j int) bool {
+		return response.Offers[i].Text < response.Offers[j].Text
+	})
+	_ = c.player.WritePacket(response)
+}
+
 func (c *clientPlaySessionHandler) player_() *connectedPlayer {
 	return c.player
+}
+
+func (c *clientPlaySessionHandler) finishRegularTabComplete(request *packet.TabCompleteRequest, response *packet.TabCompleteResponse) {
+	offers := make([]string, 0, len(response.Offers))
+	for _, offer := range response.Offers {
+		offers = append(offers, offer.Text)
+	}
+
+	e := &TabCompleteEvent{
+		player:         c.player,
+		partialMessage: request.Command,
+		suggestions:    offers,
+	}
+	c.proxy().event.Fire(e)
+	response.Offers = nil
+	for _, suggestion := range e.suggestions {
+		response.Offers = append(response.Offers, packet.TabCompleteOffer{Text: suggestion})
+	}
+	_ = c.player.WritePacket(response)
 }

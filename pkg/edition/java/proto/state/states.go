@@ -91,8 +91,15 @@ func init() {
 		m(0x02, version.Minecraft_1_12_1),
 		m(0x03, version.Minecraft_1_14),
 	)
+	Play.ServerBound.Register(&p.TabCompleteRequest{},
+		m(0x14, version.Minecraft_1_7_2),
+		m(0x01, version.Minecraft_1_9),
+		m(0x02, version.Minecraft_1_12),
+		m(0x01, version.Minecraft_1_12_1),
+		m(0x05, version.Minecraft_1_13),
+		m(0x06, version.Minecraft_1_14),
+	)
 	// coming soon...
-	// TabCompleteRequest
 	// ResourcePackResponse
 
 	Play.ClientBound.Register(&p.KeepAlive{},
@@ -191,9 +198,16 @@ func init() {
 		m(0x39, version.Minecraft_1_16),
 		m(0x38, version.Minecraft_1_16_2),
 	)
+	Play.ClientBound.Register(&p.TabCompleteResponse{},
+		m(0x3A, version.Minecraft_1_7_2),
+		m(0x0E, version.Minecraft_1_9),
+		m(0x10, version.Minecraft_1_13),
+		m(0x11, version.Minecraft_1_15),
+		m(0x10, version.Minecraft_1_16),
+		m(0x0F, version.Minecraft_1_16_2),
+	)
 	// coming soon...
 	// BossBar
-	// TabCompleteResponse
 	// AvailableCommands
 	// HeaderAndFooter
 	// PlayerListItem
