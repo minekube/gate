@@ -1,12 +1,13 @@
 package packet
 
 import (
+	"bytes"
+	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
-	"strings"
 )
 
 const VanillaMaxTabCompleteLen = 2048
@@ -20,34 +21,38 @@ type TabCompleteRequest struct {
 }
 
 func (t *TabCompleteRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
+	if t.Command == "" {
+		return errors.New("command is not specified")
+	}
+
 	if c.Protocol.GreaterEqual(version.Minecraft_1_13) {
 		err := util.WriteVarInt(wr, t.TransactionID)
 		if err != nil {
 			return err
 		}
 		return util.WriteString(wr, t.Command)
-	} else {
-		err := util.WriteString(wr, t.Command)
+	}
+
+	err := util.WriteString(wr, t.Command)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
+		err = util.WriteBool(wr, t.AssumeCommand)
 		if err != nil {
 			return err
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
-			err = util.WriteBool(wr, t.AssumeCommand)
-			if err != nil {
-				return err
-			}
-		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-			err = util.WriteBool(wr, t.HasPosition)
-			if err != nil {
-				return err
-			}
-			if t.HasPosition {
-				return util.WriteInt64(wr, t.Position)
-			}
-		}
-		return nil
 	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
+		err = util.WriteBool(wr, t.HasPosition)
+		if err != nil {
+			return err
+		}
+		if t.HasPosition {
+			return util.WriteInt64(wr, t.Position)
+		}
+	}
+	return nil
 }
 
 func (t *TabCompleteRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -57,25 +62,26 @@ func (t *TabCompleteRequest) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			return err
 		}
 		t.Command, err = util.ReadStringMax(rd, VanillaMaxTabCompleteLen)
-	} else {
-		t.Command, err = util.ReadStringMax(rd, VanillaMaxTabCompleteLen)
+		return
+	}
+
+	t.Command, err = util.ReadStringMax(rd, VanillaMaxTabCompleteLen)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
+		t.AssumeCommand, err = util.ReadBool(rd)
 		if err != nil {
 			return err
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
-			t.AssumeCommand, err = util.ReadBool(rd)
-			if err != nil {
-				return err
-			}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
+		t.HasPosition, err = util.ReadBool(rd)
+		if err != nil {
+			return err
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-			t.HasPosition, err = util.ReadBool(rd)
-			if err != nil {
-				return err
-			}
-			if t.HasPosition {
-				t.Position, err = util.ReadInt64(rd)
-			}
+		if t.HasPosition {
+			t.Position, err = util.ReadInt64(rd)
 		}
 	}
 	return
@@ -120,23 +126,26 @@ func (t *TabCompleteResponse) Encode(c *proto.PacketContext, wr io.Writer) error
 		if err != nil {
 			return err
 		}
+		buf := new(bytes.Buffer)
 		for _, offer := range t.Offers {
 			err = util.WriteString(wr, offer.Text)
 			if err != nil {
 				return err
 			}
-			err = util.WriteBool(wr, offer.Text != "")
+			err = util.WriteBool(wr, offer.Tooltip != nil)
 			if err != nil {
 				return err
 			}
-			buf := new(strings.Builder)
-			err = util.JsonCodec(c.Protocol).Marshal(buf, offer.Tooltip)
-			if err != nil {
-				return err
-			}
-			err = util.WriteString(wr, buf.String())
-			if err != nil {
-				return err
+			if offer.Tooltip != nil {
+				err = util.JsonCodec(c.Protocol).Marshal(buf, offer.Tooltip)
+				if err != nil {
+					return err
+				}
+				err = util.WriteString(wr, buf.String())
+				if err != nil {
+					return err
+				}
+				buf.Reset()
 			}
 		}
 		return nil
