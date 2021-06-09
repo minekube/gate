@@ -321,14 +321,19 @@ func (p *Proxy) Config() config.Config {
 // Server gets a backend server registered with the proxy by name.
 // Returns nil if not found.
 func (p *Proxy) Server(name string) RegisteredServer {
-	return p.server(name)
+	s := p.server(name)
+	if s == (*registeredServer)(nil) {
+		return nil // return correct nil
+	}
+	return s
 }
 
 func (p *Proxy) server(name string) *registeredServer {
 	name = strings.ToLower(name)
 	p.muS.RLock()
-	defer p.muS.RUnlock()
-	return p.servers[name] // may be nil
+	s := p.servers[name] // may be nil
+	p.muS.RUnlock()
+	return s
 }
 
 // Servers gets all registered servers.
