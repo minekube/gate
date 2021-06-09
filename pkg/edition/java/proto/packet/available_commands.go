@@ -35,10 +35,12 @@ func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err er
 	var childrenQueue deque.Deque
 	childrenQueue.PushFront(a.RootNode)
 	idMappings := map[brigodier.CommandNode]int{}
+	var ordered []brigodier.CommandNode // nodes order, since Go map is unordered
 	for childrenQueue.Len() != 0 {
 		child := childrenQueue.PopFront().(brigodier.CommandNode)
 		if _, ok := idMappings[child]; !ok {
 			idMappings[child] = len(idMappings)
+			ordered = append(ordered, child)
 			child.ChildrenOrdered().Range(func(_ string, grantChild brigodier.CommandNode) bool {
 				childrenQueue.PushBack(grantChild)
 				return true
@@ -51,7 +53,7 @@ func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err er
 	if err != nil {
 		return err
 	}
-	for child := range idMappings {
+	for _, child := range ordered {
 		err = encodeNode(wr, child, idMappings)
 		if err != nil {
 			return err
@@ -104,11 +106,12 @@ func encodeNode(wr io.Writer, node brigodier.CommandNode, idMappings map[brigodi
 		}
 	}
 
-	err = util.WriteString(wr, node.Name())
-	if err != nil {
-		return err
-	}
-	if n, ok := node.(*brigodier.ArgumentCommandNode); ok {
+	switch n := node.(type) {
+	case *brigodier.ArgumentCommandNode:
+		err = util.WriteString(wr, node.Name())
+		if err != nil {
+			return err
+		}
 		err = brigadier.Encode(wr, n.Type())
 		if err != nil {
 			return err
@@ -123,6 +126,11 @@ func encodeNode(wr io.Writer, node brigodier.CommandNode, idMappings map[brigodi
 			if err != nil {
 				return err
 			}
+		}
+	case *brigodier.LiteralCommandNode:
+		err = util.WriteString(wr, node.Name())
+		if err != nil {
+			return err
 		}
 	}
 
@@ -176,6 +184,9 @@ func (a *AvailableCommands) Decode(_ *proto.PacketContext, rd io.Reader) error {
 	if err != nil {
 		return err
 	}
+	if rootIDx < 0 || rootIDx >= len(wireNodes) {
+		return fmt.Errorf("rootIDx points to non-existent index %d (max=%d)", rootIDx, len(wireNodes))
+	}
 	built := wireNodes[rootIDx].Built
 	a.RootNode, ok = built.(*brigodier.RootCommandNode)
 	if !ok {
@@ -209,6 +220,7 @@ func (w *WireNode) decode(rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
+
 	w.RedirectTo = -1
 	if w.Flags&FlagIsRedirect > 0 {
 		w.RedirectTo, err = util.ReadVarInt(rd)
@@ -308,7 +320,7 @@ func (w *WireNode) validate(wireNodes []*WireNode) error {
 	// that needs to come after this node is built.
 	for _, child := range w.Children {
 		if child < 0 || child >= len(wireNodes) {
-			return fmt.Errorf("node points to non-existent index %d", child)
+			return fmt.Errorf("node points to non-existent index %d (max=%d)", child, len(wireNodes))
 		}
 	}
 	if w.RedirectTo != -1 {

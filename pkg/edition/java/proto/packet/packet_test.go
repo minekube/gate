@@ -7,6 +7,7 @@ import (
 	"github.com/bxcodec/faker/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -29,12 +30,23 @@ var packets = []proto.Packet{
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
-			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip"}},
-			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip2"}},
-			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip3"}},
+			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip"}},
+			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip2"}},
+			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip3"}},
 		},
 	},
-	&AvailableCommands{},
+	&AvailableCommands{RootNode: func() *brigodier.RootCommandNode {
+		n := &brigodier.RootCommandNode{}
+		cmd := brigodier.CommandFunc(func(*brigodier.CommandContext) error { return nil })
+		n.AddChild(brigodier.Literal("l1").
+			Executes(cmd).
+			Then(brigodier.Argument("a1", brigodier.String).Executes(cmd)).
+			Build())
+		n.AddChild(brigodier.Literal("l2").
+			Executes(cmd).
+			Build())
+		return n
+	}()},
 	&ClientSettings{},
 	&Disconnect{},
 	&Handshake{},
@@ -144,10 +156,11 @@ func PacketCodings(t *testing.T,
 	t.Helper()
 
 	message := func(direction proto.Direction, v *proto.Version, packet reflect.Type) string {
-		return fmt.Sprintf("Type: %s, Direction: %s, Version: %s", packet.String(), direction, v)
+		return fmt.Sprintf("Type: %s, Direction: %s, Version: %s, Note: %s", packet.String(), direction, v, "%s")
 	}
 
-	bufA1, bufA2, bufB1, bufB2 := new(bytes.Buffer), new(bytes.Buffer), new(bytes.Buffer), new(bytes.Buffer)
+	bufA1, bufA2 := new(bytes.Buffer), new(bytes.Buffer)
+	bufB1, bufB2 := new(bytes.Buffer), new(bytes.Buffer)
 	for _, direction := range directions {
 		for _, v := range versions {
 			c := &proto.PacketContext{Direction: direction, Protocol: v.Protocol}
@@ -156,16 +169,16 @@ func PacketCodings(t *testing.T,
 				msg := message(direction, v, packetType)
 
 				// Encode sample at protocol version to drop unnecessary data for that version
-				assert.NoError(t, sample.Encode(c, io.MultiWriter(bufA1, bufA2)), msg)
+				require.NoError(t, sample.Encode(c, io.MultiWriter(bufA1, bufA2)), msg, "sample encode")
 				// Decode bytes to get versioned packet
 				a := reflect.New(packetType).Interface().(proto.Packet)
-				assert.NoError(t, a.Decode(c, bufA1), msg)
+				require.NoError(t, a.Decode(c, bufA1), msg, "a decode from bufA1")
 
 				// Now encode it again
-				assert.NoError(t, a.Encode(c, io.MultiWriter(bufB1, bufB2)), msg)
+				require.NoError(t, a.Encode(c, io.MultiWriter(bufB1, bufB2)), msg, "a encode")
 				b := reflect.New(packetType).Interface().(proto.Packet)
 				// And decode it again.
-				assert.NoError(t, b.Decode(c, bufB1), msg)
+				require.NoError(t, b.Decode(c, bufB1), msg, "b decode from bufB1")
 
 				// Both encode buffs should be equal
 				if !bytes.Equal(bufA2.Bytes(), bufB2.Bytes()) {
@@ -175,12 +188,12 @@ func PacketCodings(t *testing.T,
 					require.NoError(t, err)
 					jsonB, err := json.MarshalIndent(b, "", "  ")
 					require.NoError(t, err)
-					assert.Equal(t, string(jsonA), string(jsonB), msg)
+					assert.Equal(t, string(jsonA), string(jsonB), msg, "jsons not equal")
 				}
 
 				// Both decode buffs should be emptied by packets decode method
-				assert.Equal(t, 0, bufA1.Len(), msg)
-				assert.Equal(t, 0, bufB1.Len(), msg)
+				assert.Equal(t, 0, bufA1.Len(), msg, "bufA1 not empty")
+				assert.Equal(t, 0, bufB1.Len(), msg, "bufB1 not empty")
 
 				bufA1.Reset()
 				bufA2.Reset()
@@ -208,3 +221,4 @@ func mustFake(a interface{}) interface{} {
 	}
 	return a
 }
+func mustFakeStr() string { return *mustFake(strPtr("")).(*string) }
