@@ -417,7 +417,8 @@ func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err 
 	// Dispatch command
 	err = c.proxy().command.Do(ctx, c.player, cmd)
 	if err != nil {
-		if errors.Is(err, command.ErrForward) {
+		if errors.Is(err, command.ErrForward) ||
+			errors.Is(err, brigodier.ErrDispatcherUnknownCommand) {
 			return false, nil // forward command to server
 		}
 		var sErr *brigodier.CommandSyntaxError
