@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/bxcodec/faker/v3 v3.6.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0
@@ -16,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
-	go.minekube.com/brigodier v0.0.0-20210604152758-a3f4ec8aad33
+	go.minekube.com/brigodier v0.0.0-20210609110140-d63d50a4d576
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.0

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
@@ -772,6 +773,28 @@ func (t *TabCompleteEvent) SetSuggestions(s []string) {
 // PartialMessage returns the message being partially completed.
 func (t *TabCompleteEvent) PartialMessage() string {
 	return t.partialMessage
+}
+
+//
+//
+//
+//
+
+// PlayerAvailableCommandsEvent allows plugins to modify the packet
+// indicating commands available on the server to a Minecraft 1.13+ client.
+type PlayerAvailableCommandsEvent struct {
+	player   Player
+	rootNode *brigodier.RootCommandNode
+}
+
+// Player returns the player that is about to see the available commands.
+func (p *PlayerAvailableCommandsEvent) Player() Player {
+	return p.player
+}
+
+// RootNode returns the available commands to the Player.
+func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
+	return p.rootNode
 }
 
 //

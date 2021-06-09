@@ -168,6 +168,7 @@ func init() {
 		m(0x33, version.Minecraft_1_16),
 		m(0x32, version.Minecraft_1_16_2),
 	)
+	// TODO add TitleSubtitle packet
 	Play.ClientBound.Register(&p.Title{},
 		m(0x45, version.Minecraft_1_8),
 		m(0x45, version.Minecraft_1_9),
@@ -206,9 +207,14 @@ func init() {
 		m(0x10, version.Minecraft_1_16),
 		m(0x0F, version.Minecraft_1_16_2),
 	)
+	Play.ClientBound.Register(&p.AvailableCommands{},
+		m(0x11, version.Minecraft_1_13),
+		m(0x12, version.Minecraft_1_15),
+		m(0x11, version.Minecraft_1_16),
+		m(0x10, version.Minecraft_1_16_2),
+	)
 	// coming soon...
 	// BossBar
-	// AvailableCommands
 	// HeaderAndFooter
 	// PlayerListItem
 }

@@ -70,6 +70,10 @@ func WriteInt32(writer io.Writer, val int32) (err error) {
 	return
 }
 
+func WriteInt(writer io.Writer, val int) (err error) {
+	return WriteInt32(writer, int32(val))
+}
+
 func WriteUint32(writer io.Writer, val uint32) (err error) {
 	var protocol [4]byte
 	binary.BigEndian.PutUint32(protocol[:4], val)

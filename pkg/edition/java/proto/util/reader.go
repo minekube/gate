@@ -175,6 +175,24 @@ func ReadInt32(reader io.Reader) (val int32, err error) {
 	return
 }
 
+func ReadIntArray(rd io.Reader) ([]int, error) {
+	length, err := ReadVarInt(rd)
+	if err != nil {
+		return nil, err
+	}
+	if length < 0 {
+		return nil, fmt.Errorf("got negative-length int array (%d)", length)
+	}
+	a := make([]int, length)
+	for i := 0; i < length; i++ {
+		a[i], err = ReadVarInt(rd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return a, nil
+}
+
 func ReadInt(rd io.Reader) (int, error) {
 	i, err := ReadInt32(rd)
 	return int(i), err

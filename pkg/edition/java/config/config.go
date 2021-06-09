@@ -56,6 +56,7 @@ var DefaultConfig = Config{
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
 	RequireBuiltinCommandPermissions:    false,
+	AnnounceProxyCommands:               true,
 	Debug:                               false,
 	ShutdownReason:                      "§cGate proxy is shutting down...\nPlease reconnect in a moment!",
 }
@@ -90,6 +91,7 @@ type Config struct {
 	BungeePluginChannelEnabled       bool
 	BuiltinCommands                  bool
 	RequireBuiltinCommandPermissions bool // Whether builtin commands require player permissions
+	AnnounceProxyCommands            bool
 
 	Debug          bool
 	ShutdownReason string

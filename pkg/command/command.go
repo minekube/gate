@@ -31,6 +31,11 @@ func SourceFromContext(ctx context.Context) Source {
 	return src
 }
 
+// ContextWithSource returns a new context including the specified Source.
+func ContextWithSource(ctx context.Context, src Source) context.Context {
+	return context.WithValue(ctx, sourceCtxKey, src)
+}
+
 // Context wraps the context for a brigodier.Command.
 type Context struct {
 	*brigodier.CommandContext
@@ -78,7 +83,7 @@ func (m *Manager) Parse(ctx context.Context, src Source, command string) *ParseR
 // ParseReader stores a required command invoker Source in ctx,
 // parses the command and returns parse results for use with Execute.
 func (m *Manager) ParseReader(ctx context.Context, src Source, command *brigodier.StringReader) *ParseResults {
-	ctx = context.WithValue(ctx, sourceCtxKey, src)
+	ctx = ContextWithSource(ctx, src)
 	return (*ParseResults)(m.Dispatcher.ParseReader(ctx, command))
 }
 

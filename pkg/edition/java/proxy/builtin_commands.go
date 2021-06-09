@@ -20,7 +20,7 @@ func (p *Proxy) registerBuiltinCommands() {
 	p.command.Register(newServerCmd(p))
 }
 
-func newServerCmd(proxy *Proxy) *brigodier.LiteralArgumentBuilder {
+func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 	return brigodier.Literal("server").
 		Requires(hasCmdPerm(proxy, serverCmdPermission)).
 		// List registered server.

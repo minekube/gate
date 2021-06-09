@@ -26,6 +26,15 @@ import (
 var packets = []proto.Packet{
 	&plugin.Message{},
 	&Chat{},
+	&TabCompleteRequest{},
+	&TabCompleteResponse{
+		Offers: []TabCompleteOffer{
+			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip"}},
+			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip2"}},
+			{Text: *mustFake(strPtr("")).(*string), Tooltip: &component.Text{Content: "MyTooltip3"}},
+		},
+	},
+	&AvailableCommands{},
 	&ClientSettings{},
 	&Disconnect{},
 	&Handshake{},

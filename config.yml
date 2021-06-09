@@ -46,6 +46,9 @@ editions:
       # (This should be set to true in production environments.)
       # Default: false
       requireBuiltinCommandPermissions: false
+      # Declares the proxy commands to 1.13+ clients.
+      # Default: true
+      announceProxyCommands: true
       # The default disconnect reason to kick player on proxy shutdown when no other reason was given.
       # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
       shutdownReason: |

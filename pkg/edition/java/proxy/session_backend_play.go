@@ -1,7 +1,11 @@
 package proxy
 
 import (
+	"context"
 	"errors"
+	"github.com/davecgh/go-spew/spew"
+	"go.minekube.com/brigodier"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -47,7 +51,10 @@ func (b *backendPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 		b.handleDisconnect(p)
 	case *plugin.Message:
 		b.handlePluginMessage(p, pc)
+	case *packet.AvailableCommands:
+		b.handleAvailableCommands(p)
 	case *packet.TabCompleteResponse:
+		spew.Dump(p)
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *packet.PlayerListItem:
 		b.handlePlayerListItem(p, pc)
@@ -171,6 +178,59 @@ func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListIte
 	// Track changes to tab list of player
 	b.serverConn.player.tabList.processBackendPacket(p)
 	b.forwardToPlayer(pc, nil)
+}
+
+func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
+	rootNode := p.RootNode
+	if b.proxy().config.AnnounceProxyCommands {
+		// Inject commands from the proxy.
+		dispatcherRootNode := filterNode(&b.proxy().command.Root, b.serverConn.player)
+		if dispatcherRootNode == nil {
+			return // unexpected
+		}
+		proxyNodes := dispatcherRootNode.ChildrenOrdered()
+		proxyNodes.Range(func(_ string, node brigodier.CommandNode) bool {
+			existingServerChild := rootNode.Children()[node.Name()]
+			if existingServerChild != nil {
+				rootNode.RemoveChild(existingServerChild.Name())
+			}
+			rootNode.AddChild(node)
+			return true
+		})
+	}
+
+	b.proxy().event.Fire(&PlayerAvailableCommandsEvent{
+		player:   b.serverConn.player,
+		rootNode: rootNode,
+	})
+	_ = b.serverConn.player.WritePacket(p)
+}
+
+func filterNode(src brigodier.CommandNode, cmdSrc command.Source) brigodier.CommandNode {
+	var dest brigodier.CommandNode
+	_, ok := src.(*brigodier.RootCommandNode)
+	if ok {
+		dest = &brigodier.RootCommandNode{}
+	} else {
+		if !src.CanUse(command.ContextWithSource(context.Background(), cmdSrc)) {
+			return nil
+		}
+		builder := src.CreateBuilder().Requires(func(context.Context) bool { return true })
+		if src.Redirect() != nil {
+			builder.Redirect(filterNode(src.Redirect(), cmdSrc))
+		}
+		dest = builder.Build()
+	}
+
+	src.ChildrenOrdered().Range(func(_ string, sourceChild brigodier.CommandNode) bool {
+		destChild := filterNode(sourceChild, cmdSrc)
+		if destChild != nil {
+			dest.AddChild(destChild)
+		}
+		return true
+	})
+
+	return dest
 }
 
 // prefer PacketContext over Packet
