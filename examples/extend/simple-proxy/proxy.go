@@ -3,13 +3,14 @@ package main
 
 import (
 	"fmt"
+	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/cmd/gate"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"strings"
 )
 
 func main() {
@@ -34,7 +35,10 @@ type SimpleProxy struct {
 }
 
 func newSimpleProxy(proxy *proxy.Proxy) *SimpleProxy {
-	return &SimpleProxy{Proxy: proxy, legacyCodec: &legacy.Legacy{}}
+	return &SimpleProxy{
+		Proxy:       proxy,
+		legacyCodec: &legacy.Legacy{Char: legacy.AmpersandChar},
+	}
 }
 
 // initialize our sample proxy
@@ -45,29 +49,39 @@ func (p *SimpleProxy) init() error {
 
 // Register a proxy-wide commands (can be run while being on any server)
 func (p *SimpleProxy) registerCommands() {
-	p.Command().Register(proxy.CommandFunc(func(c *proxy.Context) {
-		if len(c.Args) == 0 {
-			_ = c.Source.SendMessage(&Text{Content: "/broadcast <message>"})
-			return
-		}
+	// The message argument as in "/broadcast <message>"
+	// Get command to use as redirect for the "alert" alias
+	p.Command().Register(brigodier.Literal("broadcast").Then(
+		brigodier.Argument("message", brigodier.StringPhrase).
+			// Adds completion suggestions to "/broadcast [suggestions]"
+			Suggests(command.SuggestFunc(func(
+				c *command.Context,
+				b *brigodier.SuggestionsBuilder,
+			) *brigodier.Suggestions {
+				player, ok := c.Source.(proxy.Player)
+				if ok {
+					b.Suggest("&oI am &6&l" + player.Username())
+				}
+				b.Suggest("Hello world!")
+				return b.Build()
+			})).
+			Executes(command.Command(func(c *command.Context) error {
+				// Colorize/format message
+				message, err := p.legacyCodec.Unmarshal([]byte(c.String("message")))
+				if err != nil {
+					return c.Source.SendMessage(&Text{
+						Content: fmt.Sprintf("Error formatting message: %v", err)})
+				}
 
-		s := strings.Join(c.Args, " ")
-		s = strings.ReplaceAll(s, string(legacy.AmpersandChar), string(legacy.SectionChar))
-		// Colorize/format message
-		message, err := p.legacyCodec.Unmarshal([]byte(s))
-		if err != nil {
-			_ = c.Source.SendMessage(&Text{Content: fmt.Sprintf("Error parsing message: %v", err)})
-			return
-		}
-
-		// Send to all players on this proxy
-		for _, player := range p.Players() {
-			// Send message in new goroutine,
-			// to not halt loop on slow connections.
-			go func(p proxy.Player) { _ = p.SendMessage(message) }(player)
-		}
-
-	}), "broadcast", "alert")
+				// Send to all players on this proxy
+				for _, player := range p.Players() {
+					// Send message in new goroutine,
+					// to not halt loop on slow connections.
+					go func(p proxy.Player) { _ = p.SendMessage(message) }(player)
+				}
+				return nil
+			})),
+	))
 }
 
 // Register event subscribers
@@ -82,11 +96,26 @@ func (p *SimpleProxy) registerSubscribers() error {
 		}
 
 		_ = e.Player().SendMessage(&Text{
-			Content: "You connected to ",
-			S:       Style{Color: color.Aqua},
+			S: Style{Color: color.Aqua},
 			Extra: []Component{
+				&Text{
+					Content: "\nWelcome to the Gate Sample proxy!\n\n",
+					S:       Style{Color: color.Green, Bold: True},
+				},
+				&Text{Content: "You connected to "},
 				&Text{Content: newServer.Server().ServerInfo().Name(), S: Style{Color: color.Yellow}},
 				&Text{Content: "."},
+				&Text{
+					S: Style{
+						ClickEvent: SuggestCommand("/broadcast Gate is awesome!"),
+						HoverEvent: ShowText(&Text{Content: "/broadcast Gate is awesome!"}),
+					},
+					Content: "\n\nClick me to run ",
+					Extra: []Component{&Text{
+						Content: "/broadcast Gate is awesome!",
+						S:       Style{Color: color.White, Bold: True, Italic: True},
+					}},
+				},
 			},
 		})
 	})

@@ -18,8 +18,9 @@ require (
 	github.com/spf13/cobra v1.1.3 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
+	go.minekube.com/brigodier v0.0.0-20210609110140-d63d50a4d576
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.minekube.com/gate v0.10.1
+	go.minekube.com/gate v0.11.1-0.20210610122028-fa8cd02a82e7
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/image v0.0.0-20210215062227-55ae14f3ebb2 // indirect
