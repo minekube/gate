@@ -7,8 +7,14 @@ import (
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
+	"go.minekube.com/gate/pkg/internal/suggest"
+	"strings"
 	"time"
 )
+
+func (p *Proxy) registerBuiltinCommands() {
+	p.command.Register(newServerCmd(p))
+}
 
 func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {
 	return command.Requires(func(c *command.RequiresContext) bool {
@@ -16,9 +22,7 @@ func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {
 	})
 }
 
-func (p *Proxy) registerBuiltinCommands() {
-	p.command.Register(newServerCmd(p))
-}
+const serverCmdPermission = "gate.command.server"
 
 func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 	return brigodier.Literal("server").
@@ -55,6 +59,7 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 		})).
 		// Switch server
 		Then(brigodier.Argument("name", brigodier.StringWord).
+			Suggests(serverSuggestionProvider(proxy)).
 			Executes(command.Command(func(c *command.Context) error {
 				player, ok := c.Source.(Player)
 				if !ok {
@@ -75,9 +80,14 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 		)
 }
 
-//
-//
-//
-//
-
-const serverCmdPermission = "gate.command.server"
+func serverSuggestionProvider(p *Proxy) brigodier.SuggestionProvider {
+	return suggest.ProviderFunc(func(_ *brigodier.CommandContext, b *brigodier.SuggestionsBuilder) *brigodier.Suggestions {
+		servers := p.Servers()
+		candidates := make([]string, len(servers))
+		for i, s := range servers {
+			candidates[i] = s.ServerInfo().Name()
+		}
+		given := b.Input[strings.Index(b.Input, " ")+1:]
+		return suggest.Build(b, given, candidates)
+	})
+}

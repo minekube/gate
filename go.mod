@@ -3,6 +3,7 @@ module go.minekube.com/gate
 go 1.15
 
 require (
+	github.com/agext/levenshtein v1.2.3
 	github.com/bxcodec/faker/v3 v3.6.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33
