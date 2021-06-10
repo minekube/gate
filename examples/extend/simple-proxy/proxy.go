@@ -50,7 +50,6 @@ func (p *SimpleProxy) init() error {
 // Register a proxy-wide commands (can be run while being on any server)
 func (p *SimpleProxy) registerCommands() {
 	// The message argument as in "/broadcast <message>"
-	// Get command to use as redirect for the "alert" alias
 	p.Command().Register(brigodier.Literal("broadcast").Then(
 		brigodier.Argument("message", brigodier.StringPhrase).
 			// Adds completion suggestions to "/broadcast [suggestions]"
