@@ -22,7 +22,7 @@ func newGlistCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 			return c.SendMessage(glistTotalCount(proxy.PlayerCount()))
 		})).
 		Then(brigodier.Argument(glistServerArg, brigodier.String).
-			Suggests(suggest.ProviderFunc(func(_ *brigodier.CommandContext,
+			Suggests(command.SuggestFunc(func(_ *command.Context,
 				b *brigodier.SuggestionsBuilder) *brigodier.Suggestions {
 				return suggest.Build(b, b.Input, append(serverNames(proxy), "all"))
 			})).

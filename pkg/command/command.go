@@ -42,6 +42,13 @@ type Context struct {
 	Source
 }
 
+func createContext(c *brigodier.CommandContext) *Context {
+	return &Context{
+		CommandContext: c,
+		Source:         SourceFromContext(c),
+	}
+}
+
 // RequiresContext wraps the context for a brigodier.RequireFn.
 type RequiresContext struct {
 	context.Context
@@ -51,10 +58,7 @@ type RequiresContext struct {
 // Command wraps the context for a brigodier.Command.
 func Command(fn func(c *Context) error) brigodier.Command {
 	return brigodier.CommandFunc(func(c *brigodier.CommandContext) error {
-		return fn(&Context{
-			CommandContext: c,
-			Source:         SourceFromContext(c),
-		})
+		return fn(createContext(c))
 	})
 }
 

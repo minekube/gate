@@ -132,8 +132,8 @@ func sortServers(s []RegisteredServer) {
 }
 
 func serverSuggestionProvider(p *Proxy) brigodier.SuggestionProvider {
-	return suggest.ProviderFunc(func(
-		_ *brigodier.CommandContext,
+	return command.SuggestFunc(func(
+		_ *command.Context,
 		b *brigodier.SuggestionsBuilder,
 	) *brigodier.Suggestions {
 		return suggest.Build(b, b.Input, serverNames(p))

@@ -45,15 +45,3 @@ func Score(given, suggestion string) float64 {
 	}
 	return levenshtein.Similarity(given, suggestion[:i], nil)
 }
-
-type ProviderFunc func(
-	c *brigodier.CommandContext,
-	b *brigodier.SuggestionsBuilder) *brigodier.Suggestions
-
-var _ brigodier.SuggestionProvider = (*ProviderFunc)(nil)
-
-func (s ProviderFunc) Suggestions(
-	c *brigodier.CommandContext,
-	b *brigodier.SuggestionsBuilder) *brigodier.Suggestions {
-	return s(c, b)
-}
