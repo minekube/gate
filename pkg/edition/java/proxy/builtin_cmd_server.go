@@ -9,12 +9,12 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/internal/suggest"
 	"sort"
-	"strings"
 	"time"
 )
 
 const serverCmdPermission = "gate.command.server"
 
+// command to list and connect to registered servers
 func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 	return brigodier.Literal("server").
 		Requires(hasCmdPerm(proxy, serverCmdPermission)).
@@ -23,7 +23,7 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 			return c.SendMessage(serversInfo(proxy, c.Source))
 		})).
 		// Switch server
-		Then(brigodier.Argument("name", brigodier.StringWord).
+		Then(brigodier.Argument("name", brigodier.String).
 			Suggests(serverSuggestionProvider(proxy)).
 			Executes(command.Command(func(c *command.Context) error {
 				player, ok := c.Source.(Player)
@@ -116,6 +116,9 @@ func formatServerComponent(currentPlayerServer string, s RegisteredServer) Compo
 
 func plural(s string, i int) string {
 	if i == 0 || i > 1 || i < -1 {
+		if s == "is" {
+			return "are"
+		}
 		return s + "s"
 	}
 	return s
@@ -133,12 +136,15 @@ func serverSuggestionProvider(p *Proxy) brigodier.SuggestionProvider {
 		_ *brigodier.CommandContext,
 		b *brigodier.SuggestionsBuilder,
 	) *brigodier.Suggestions {
-		servers := p.Servers()
-		candidates := make([]string, len(servers))
-		for i, s := range servers {
-			candidates[i] = s.ServerInfo().Name()
-		}
-		given := b.Input[strings.Index(b.Input, " ")+1:]
-		return suggest.Build(b, given, candidates)
+		return suggest.Build(b, b.Input, serverNames(p))
 	})
+}
+
+func serverNames(p *Proxy) []string {
+	servers := p.Servers()
+	n := make([]string, len(servers))
+	for i, s := range servers {
+		n[i] = s.ServerInfo().Name()
+	}
+	return n
 }

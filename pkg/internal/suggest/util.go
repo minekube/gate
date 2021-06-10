@@ -4,6 +4,7 @@ import (
 	"github.com/agext/levenshtein"
 	"go.minekube.com/brigodier"
 	"sort"
+	"strings"
 )
 
 type suggestion struct {
@@ -11,7 +12,8 @@ type suggestion struct {
 	score float64
 }
 
-func Build(builder *brigodier.SuggestionsBuilder, given string, candidates []string) *brigodier.Suggestions {
+func Build(builder *brigodier.SuggestionsBuilder, input string, candidates []string) *brigodier.Suggestions {
+	given := input[strings.Index(input, " ")+1:]
 	var result []suggestion
 	for _, text := range candidates {
 		score := Score(given, text)

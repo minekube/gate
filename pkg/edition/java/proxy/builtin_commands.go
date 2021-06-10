@@ -7,6 +7,7 @@ import (
 
 func (p *Proxy) registerBuiltinCommands() {
 	p.command.Register(newServerCmd(p))
+	p.command.Register(newGlistCmd(p))
 }
 
 func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {
