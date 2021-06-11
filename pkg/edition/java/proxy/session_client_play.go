@@ -16,7 +16,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
-	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 	"sort"
 	"strings"
@@ -346,39 +345,42 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 			originalCommand: commandline,
 		}
 		c.proxy().event.Fire(e)
-		if err := c.processCommandExecuteResult(e, serverMc); err != nil {
+		forward, err := c.processCommandExecuteResult(e)
+		if err != nil {
 			c.log.Error(err, "Error while running command", "cmd", commandline)
 			_ = c.player.SendMessage(&component.Text{
 				Content: "An error occurred while running this command.",
 				S:       component.Style{Color: color.Red},
 			})
+			return
 		}
-
-		return
+		if !forward {
+			return
+		}
+	} else { // Is chat message
+		e := &PlayerChatEvent{
+			player:  c.player,
+			message: p.Message,
+		}
+		c.proxy().Event().Fire(e)
+		if !e.Allowed() || !c.player.Active() {
+			return
+		}
+		// TODO
+		c.log1.Info("Player sent chat message", "chat", p.Message)
 	}
 
-	e := &PlayerChatEvent{
-		player:  c.player,
-		message: p.Message,
-	}
-	c.proxy().Event().Fire(e)
-	if !e.Allowed() || !c.player.Active() {
-		return
-	}
-	// TODO
-	c.log1.Info("Player sent chat message", "chat", p.Message)
-
-	// Forward to server
-	//_ = serverMc.WritePacket(&packet.Chat{
-	//	Message: p.Message,
-	//	Type:    packet.ChatMessage,
-	//	Sender:  uuid.Nil,
-	//})
+	// Forward message/command to server
+	_ = serverMc.WritePacket(&packet.Chat{
+		Message: p.Message,
+		Type:    packet.ChatMessage,
+		Sender:  c.player.ID(),
+	})
 }
 
-func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecuteEvent, serverMc *minecraftConn) error {
+func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecuteEvent) (forward bool, err error) {
 	if !e.Allowed() || !c.player.Active() {
-		return nil
+		return false, nil
 	}
 
 	// Log player executed command
@@ -394,19 +396,15 @@ func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecute
 	if !e.Forward() {
 		hasRun, err := c.executeCommand(e.Command())
 		if err != nil {
-			return err
+			return false, err
 		}
 		if hasRun {
-			return nil // ran command, done
+			return false, nil // ran command, done
 		}
 	}
 
 	// Forward command to server
-	return serverMc.WritePacket(&packet.Chat{
-		Message: "/" + e.Command(),
-		Type:    packet.ChatMessage,
-		Sender:  uuid.Nil,
-	})
+	return true, nil
 }
 
 func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err error) {
