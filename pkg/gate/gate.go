@@ -1,4 +1,4 @@
-// Package Gate is the main package for running one or more Minecraft proxy editions.
+// Package gate is the main package for running one or more Minecraft proxy editions.
 package gate
 
 import (
@@ -50,7 +50,7 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	gate = &Gate{
-		proc: process.New(process.Options{Logger: log}),
+		proc: process.New(process.Options{Logger: log, AllOrNothing: true}),
 		bridge: &bridge.Bridge{
 			Log: log.WithName("bridge"),
 		},
@@ -96,9 +96,8 @@ func New(options Options) (gate *Gate, err error) {
 
 // Gate manages one or multiple proxy editions (Bedrock & Java).
 type Gate struct {
-	bridge *bridge.Bridge
-	// Parallel running main processes.
-	proc process.Collection
+	bridge *bridge.Bridge     // The proxies.
+	proc   process.Collection // Parallel running proc.
 }
 
 // Java returns the Java edition proxy, or nil if none.
@@ -111,7 +110,7 @@ func (g *Gate) Bedrock() *bproxy.Proxy {
 	return g.bridge.BedrockProxy
 }
 
-// Start starts the Gate instance and all potential sub-components.
+// Start starts the Gate instance and all underlying proc.
 func (g *Gate) Start(stop chan struct{}) error { return g.proc.Start(stop) }
 
 // Viper is a viper instance initialized

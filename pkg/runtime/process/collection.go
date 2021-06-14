@@ -26,11 +26,10 @@ type Runnable interface {
 }
 
 // RunnableFunc implements Runnable using a function.
-// It's very important that the given function blocks
-// until it's done running.
+// It's very important that it blocks until it's done running.
 type RunnableFunc func(<-chan struct{}) error
 
-// Start implements Runnable
+// Start implements Runnable.
 func (r RunnableFunc) Start(stop <-chan struct{}) error { return r(stop) }
 
 // Options are the arguments for creating a new Collection
@@ -38,6 +37,9 @@ type Options struct {
 	// The logger that should be used by the Collection.
 	// If none is set, no logging is done.
 	Logger logr.Logger
+	// Whether all Runnables in the Collection should be running or none.
+	// The complete Collection will be stopped if one Runnable returns.
+	AllOrNothing bool
 	// GracefulShutdownTimeout is the duration given to Runnable to
 	// stop before the Collection actually returns on stop.
 	// To disable graceful shutdown, set to time.Duration(0)
@@ -46,7 +48,8 @@ type Options struct {
 	GracefulShutdownTimeout *time.Duration
 }
 
-// Default graceful shutdown timeout to wait for Runnables to shutdown on collection stop.
+// DefaultGracefulShutdownPeriod is the default graceful shutdown
+// timeout to wait for Runnables to shutdown on Collection stop.
 const DefaultGracefulShutdownPeriod = 30 * time.Second
 
 // New returns a new Collection for managing Runnables.
@@ -57,6 +60,7 @@ func New(options Options, runnables ...Runnable) Collection {
 	coll := &collection{
 		internalStop:            make(chan struct{}),
 		log:                     options.Logger,
+		allOrNothing:            options.AllOrNothing,
 		gracefulShutdownTimeout: *options.GracefulShutdownTimeout,
 	}
 	for _, r := range runnables {

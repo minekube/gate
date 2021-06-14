@@ -29,6 +29,8 @@ type collection struct {
 	// stop procedure engaged. In other words, we should not add anything else to the collection
 	stopProcedureEngaged bool
 
+	// whether to stop all other left runnables if one has returned
+	allOrNothing bool
 	// gracefulShutdownTimeout is the duration given to runnable to stop
 	// before the collection actually returns on stop.
 	gracefulShutdownTimeout time.Duration
@@ -56,12 +58,18 @@ func (pm *collection) Add(r Runnable) error {
 	return nil
 }
 
+// internal error returned by Runnable to trigger shutdown of the whole Collection.
+var errStopAll = errors.New("stop all")
+
 func (pm *collection) Start(stop <-chan struct{}) (err error) {
 	// This chan indicates that stop is complete,
 	// in other words all runnables have returned or timeout on stop request
 	stopComplete := make(chan struct{})
 	defer close(stopComplete)
 	defer func() {
+		if err == errStopAll {
+			err = nil
+		}
 		stopErr := pm.engageStopProcedure(stopComplete)
 		if stopErr != nil {
 			if err != nil {
@@ -87,7 +95,7 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 	case <-stop:
 		// We are done
 		return nil
-	case err := <-pm.errChan:
+	case err = <-pm.errChan:
 		// Error starting or running a runnable
 		return err
 	}
@@ -157,6 +165,8 @@ func (pm *collection) startRunnable(r Runnable) {
 		defer pm.waitForRunnable.Done()
 		if err := r.Start(pm.internalStop); err != nil {
 			pm.errChan <- err
+		} else if pm.allOrNothing {
+			pm.errChan <- errStopAll
 		}
 	}()
 }

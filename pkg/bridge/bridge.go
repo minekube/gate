@@ -58,5 +58,5 @@ func (b *Bridge) setup() (err error) {
 	// TODO setup bedrock <---> java edition bridges by registering:
 	//  - packet interceptors
 	//  - event subscribers
-	return errors.New("bridging between multiple editions not supported yet")
+	return errors.New("bridging between multiple editions is not yet supported")
 }
