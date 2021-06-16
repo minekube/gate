@@ -49,10 +49,11 @@ func (p *SimpleProxy) init() error {
 
 // Register a proxy-wide commands (can be run while being on any server)
 func (p *SimpleProxy) registerCommands() {
-	// The message argument as in "/broadcast <message>"
+	// Registers the "/broadcast" command
 	p.Command().Register(brigodier.Literal("broadcast").Then(
+		// Adds message argument as in "/broadcast <message>"
 		brigodier.Argument("message", brigodier.StringPhrase).
-			// Adds completion suggestions to "/broadcast [suggestions]"
+			// Adds completion suggestions as in "/broadcast [suggestions]"
 			Suggests(command.SuggestFunc(func(
 				c *command.Context,
 				b *brigodier.SuggestionsBuilder,
@@ -64,6 +65,7 @@ func (p *SimpleProxy) registerCommands() {
 				b.Suggest("Hello world!")
 				return b.Build()
 			})).
+			// Executed when running "/broadcast <message>"
 			Executes(command.Command(func(c *command.Context) error {
 				// Colorize/format message
 				message, err := p.legacyCodec.Unmarshal([]byte(c.String("message")))

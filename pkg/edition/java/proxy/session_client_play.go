@@ -425,7 +425,6 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 		if !e.Allowed() || !c.player.Active() {
 			return
 		}
-		// TODO
 		c.log1.Info("Player sent chat message", "chat", p.Message)
 	}
 
