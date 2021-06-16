@@ -395,8 +395,8 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	return true
 }
 
-// DisconnectAll disconnects all current connected players in parallel.
-// It is done in parallel
+// DisconnectAll disconnects all current connected players
+// in parallel and waits until all players have been disconnected.
 func (p *Proxy) DisconnectAll(reason component.Component) {
 	p.muP.RLock()
 	players := p.playerIDs
@@ -406,8 +406,8 @@ func (p *Proxy) DisconnectAll(reason component.Component) {
 	wg.Add(len(players))
 	for _, p := range players {
 		go func(p *connectedPlayer) {
+			defer wg.Done()
 			p.Disconnect(reason)
-			wg.Done()
 		}(p)
 	}
 	wg.Wait()
