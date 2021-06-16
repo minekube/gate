@@ -119,8 +119,9 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	return int(m), err
 }
 
-// Write encodes payload (uncompressed and unencrypted, containing packed id + data)
-// and writes it to the underlying writer.
+// Write encodes payload and writes it to the underlying writer.
+// The payload must not already be compressed nor encrypted and must
+// start with the packet's id VarInt and then the packet's data.
 func (e *Encoder) Write(payload []byte) (n int, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

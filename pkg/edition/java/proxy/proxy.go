@@ -180,8 +180,8 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	shutdownTime := time.Now()
 	defer func() {
 		p.log.Info("Finished shutdown.",
-			"shutdownTime", time.Since(shutdownTime).String(),
-			"totalTime", time.Since(p.startTime.Load().(time.Time)).String())
+			"shutdownTime", time.Since(shutdownTime).Round(time.Microsecond).String(),
+			"totalTime", time.Since(p.startTime.Load().(time.Time)).Round(time.Millisecond).String())
 	}()
 
 	pre := &PreShutdownEvent{reason: reason}
