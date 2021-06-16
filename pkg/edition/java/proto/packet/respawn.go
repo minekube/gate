@@ -102,7 +102,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			if err != nil {
 				return err
 			}
-			r.CurrentDimensionData, err = decodeBaseCompoundTag(dimDataTag)
+			r.CurrentDimensionData, err = decodeBaseCompoundTag(dimDataTag, c.Protocol)
 			if err != nil {
 				return err
 			}

@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/gammazero/deque"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
@@ -10,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -43,6 +45,8 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 		log1:   log.V(1),
 	}
 }
+
+var _ sessionHandler = (*clientPlaySessionHandler)(nil)
 
 func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
@@ -218,69 +222,42 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 
 // Handles the JoinGame packet and is responsible for handling the client-side
 // switching servers in the proxy.
-func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGame, destination *serverConnection) (handled bool) {
+func (c *clientPlaySessionHandler) handleBackendJoinGame(
+	joinGame *packet.JoinGame, destination *serverConnection) (err error) {
 	serverMc, ok := destination.ensureConnected()
 	if !ok {
-		return false
+		return errors.New("no backend server connection")
 	}
 	playerVersion := c.player.Protocol()
 	if c.spawned.CAS(false, true) {
 		// Nothing special to do with regards to spawning the player
-		// Buffer JoinGame packet to player connection
-		if c.player.BufferPacket(joinGame) != nil {
-			return false
+
+		destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
+		if err = c.player.BufferPacket(joinGame); err != nil {
+			return fmt.Errorf("error buffering %T for player: %w", joinGame, err)
 		}
 		// Required for Legacy Forge
 		c.player.phase().onFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
-		if c.player.tabList.clearEntries() != nil {
-			return false
+		if err = c.player.tabList.clearEntries(); err != nil {
+			return fmt.Errorf("error clearing tablist entries: %w", err)
 		}
-		// TODO use instead: doFastClientServerSwitch, doSafeClientServerSwitch
-
-		// In order to handle switching to another server, you will need to send two packets:
-		//
-		// - The join game packet from the backend server, with a different dimension
-		// - A respawn with the correct dimension
-		//
-		// Most notably, by having the client accept the join game packet, we can work around the need
-		// to perform entity ID rewrites, eliminating potential issues from rewriting packets and
-		// improving compatibility with mods.
-		if c.player.BufferPacket(joinGame) != nil {
-			return false
-		}
-		respawn := &packet.Respawn{
-			PartialHashedSeed: joinGame.PartialHashedSeed,
-			Difficulty:        joinGame.Difficulty,
-			Gamemode:          joinGame.Gamemode,
-			LevelType: func() string {
-				if joinGame.LevelType != nil {
-					return *joinGame.LevelType
-				}
-				return ""
-			}(),
-			ShouldKeepPlayerData: false,
-			DimensionInfo:        joinGame.DimensionInfo,
-			PreviousGamemode:     joinGame.PreviousGamemode,
-			CurrentDimensionData: joinGame.CurrentDimensionData,
-		}
-
-		// Since 1.16 this dynamic changed:
-		// We don't need to send two dimension switches anymore!
-		if playerVersion.Lower(version.Minecraft_1_16) {
-			if joinGame.Dimension == 0 {
-				respawn.Dimension = -1
+		if _, ok = c.player.Type().(*legacyForgeConnType); ok {
+			err = c.doSafeClientServerSwitch(joinGame)
+			if err != nil {
+				err = fmt.Errorf("error during safe client-server-switch: %w", err)
 			}
-			if c.player.BufferPacket(respawn) != nil {
-				return false
+		} else {
+			err = c.doFastClientServerSwitch(joinGame, playerVersion)
+			if err != nil {
+				err = fmt.Errorf("error during fast client-server-switch: %w", err)
 			}
 		}
-
-		respawn.Dimension = joinGame.Dimension
-		if c.player.BufferPacket(respawn) != nil {
-			return false
+		if err != nil {
+			return err
 		}
+		destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
 	}
 
 	// TODO Remove previous boss bars.
@@ -291,36 +268,118 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(joinGame *packet.JoinGa
 	playerKnownChannels := c.player.knownChannels().UnsortedList()
 	if len(playerKnownChannels) != 0 {
 		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, playerKnownChannels...)
-		if serverMc.BufferPacket(channelsPacket) != nil {
-			return false
+		if err = serverMc.BufferPacket(channelsPacket); err != nil {
+			return fmt.Errorf("error buffering %T for backend: %w", channelsPacket, err)
 		}
 	}
 
 	// If we had plugin messages queued during login/FML handshake, send them now.
 	for c.loginPluginMessages.Len() != 0 {
 		pm := c.loginPluginMessages.PopFront().(*plugin.Message)
-		if serverMc.BufferPacket(pm) != nil {
-			return false
+		if err = serverMc.BufferPacket(pm); err != nil {
+			return fmt.Errorf("error buffering %T for backend: %w", pm, err)
 		}
 	}
 
 	// Clear any title from the previous server.
 	if playerVersion.GreaterEqual(version.Minecraft_1_8) {
-		resetTitle := packet.NewResetTitle(playerVersion)
-		if c.player.BufferPacket(resetTitle) != nil {
-			return false
+		resetTitle := &title.Clear{Action: title.Reset}
+		if err = c.player.BufferPacket(resetTitle); err != nil {
+			return fmt.Errorf("error buffering %T for player: %w", resetTitle, err)
 		}
 	}
 
 	// Flush everything
-	if c.player.flush() != nil || serverMc.flush() != nil {
-		return false
+	if err = c.player.flush(); err != nil {
+		return fmt.Errorf("error flushing buffered player packets: %w", err)
+	}
+	if serverMc.flush() != nil {
+		return fmt.Errorf("error flushing buffered backend packets: %w", err)
 	}
 	destination.completeJoin()
-	return true
+	return nil
 }
 
-var _ sessionHandler = (*clientPlaySessionHandler)(nil)
+func (c *clientPlaySessionHandler) doFastClientServerSwitch(joinGame *packet.JoinGame, playerVersion proto.Protocol) error {
+	// In order to handle switching to another server, you will need to send two packets:
+	//
+	// - The join game packet from the backend server, with a different dimension
+	// - A respawn with the correct dimension
+	//
+	// Most notably, by having the client accept the join game packet, we can work around the need
+	// to perform entity ID rewrites, eliminating potential issues from rewriting packets and
+	// improving compatibility with mods.
+	respawn := respawnFromJoinGame(joinGame)
+	respawn.Dimension = 0
+
+	// Since 1.16 this dynamic changed:
+	// We don't need to send two dimension switches anymore!
+	if playerVersion.Lower(version.Minecraft_1_16) {
+		if joinGame.Dimension == 0 {
+			respawn.Dimension = -1
+		}
+	}
+	var err error
+	if err = c.player.BufferPacket(respawn); err != nil {
+		return fmt.Errorf("error buffering 1st %T for player: %w", respawn, err)
+	}
+
+	respawn.Dimension = joinGame.Dimension
+	if err = c.player.BufferPacket(respawn); err != nil {
+		return fmt.Errorf("error buffering 2nd %T for player: %w", respawn, err)
+	}
+	return nil
+}
+
+func (c *clientPlaySessionHandler) doSafeClientServerSwitch(joinGame *packet.JoinGame) error {
+	// Some clients do not behave well with the "fast" respawn sequence. In this case we will use
+	// a "safe" respawn sequence that involves sending three packets to the client. They have the
+	// same effect but tend to work better with buggier clients (Forge 1.8 in particular).
+
+	var err error
+	// Send the JoinGame packet itself, unmodified.
+	if err = c.player.BufferPacket(joinGame); err != nil {
+		return fmt.Errorf("error buffering 1st %T for player: %w", joinGame, err)
+	}
+
+	// Send a respawn packet in a different dimension.
+	respawn := respawnFromJoinGame(joinGame)
+	correctDim := respawn.Dimension
+	if respawn.Dimension == 0 {
+		respawn.Dimension = -1
+	} else {
+		respawn.Dimension = 0
+	}
+	if err = c.player.BufferPacket(joinGame); err != nil {
+		return fmt.Errorf("error buffering 2dn %T for player: %w", joinGame, err)
+	}
+
+	// Now send a respawn packet in the correct dimension.
+	respawn.Dimension = correctDim
+	if err = c.player.BufferPacket(joinGame); err != nil {
+		return fmt.Errorf("error buffering 3rd %T for player: %w", joinGame, err)
+	}
+	return nil
+}
+
+func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
+	return &packet.Respawn{
+		Dimension:         joinGame.Dimension,
+		PartialHashedSeed: joinGame.PartialHashedSeed,
+		Difficulty:        joinGame.Difficulty,
+		Gamemode:          joinGame.Gamemode,
+		LevelType: func() string {
+			if joinGame.LevelType != nil {
+				return *joinGame.LevelType
+			}
+			return ""
+		}(),
+		ShouldKeepPlayerData: false,
+		DimensionInfo:        joinGame.DimensionInfo,
+		PreviousGamemode:     joinGame.PreviousGamemode,
+		CurrentDimensionData: joinGame.CurrentDimensionData,
+	}
+}
 
 func (c *clientPlaySessionHandler) proxy() *Proxy {
 	return c.player.proxy
@@ -371,7 +430,7 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 	// Forward to server
 	//_ = serverMc.WritePacket(&packet.Chat{
 	//	Message: p.Message,
-	//	Type:    packet.ChatMessage,
+	//	Type:    packet.ChatMessageType,
 	//	Sender:  uuid.Nil,
 	//})
 }
@@ -404,7 +463,7 @@ func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecute
 	// Forward command to server
 	return serverMc.WritePacket(&packet.Chat{
 		Message: "/" + e.Command(),
-		Type:    packet.ChatMessage,
+		Type:    packet.ChatMessageType,
 		Sender:  uuid.Nil,
 	})
 }

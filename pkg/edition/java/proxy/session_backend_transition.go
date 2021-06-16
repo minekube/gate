@@ -216,8 +216,8 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	}
 	b.serverConn.player.minecraftConn.mu.Unlock()
 
-	if !playHandler.handleBackendJoinGame(p, b.serverConn) {
-		failResult("JoinGame packet could not be handled, client-side switching server failed")
+	if err := playHandler.handleBackendJoinGame(p, b.serverConn); err != nil {
+		failResult("JoinGame packet could not be handled, client-side switching server failed: %w", err)
 		return // not handled
 	}
 
@@ -225,7 +225,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	// We will have nothing more to do with this connection once this task finishes up.
 	backendPlay, err := newBackendPlaySessionHandler(b.serverConn)
 	if err != nil {
-		failResult("error creating backend player session handler: %v", err)
+		failResult("error creating backend play session handler: %w", err)
 		return
 	}
 	smc.setSessionHandler(backendPlay)

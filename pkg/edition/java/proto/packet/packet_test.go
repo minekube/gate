@@ -12,6 +12,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -57,7 +58,10 @@ var packets = []proto.Packet{
 	&ServerLoginSuccess{},
 	&SetCompression{},
 	&LoginPluginMessage{},
-	&ResourcePackRequest{},
+	&ResourcePackRequest{
+		Url:    "https://example.com/",
+		Prompt: &component.Text{Content: "Prompt"},
+	},
 	&Respawn{},
 	&StatusRequest{},
 	&StatusResponse{},
@@ -68,12 +72,14 @@ var packets = []proto.Packet{
 		PublicKey:   []byte("9wh90fh23dh203d2b23b3"),
 		VerifyToken: []byte("32f8d89dh3di"),
 	},
-	&Title{
-		Action:    SetSubtitle,
-		Component: strPtr(`{"text":"sub title"}`),
-		FadeIn:    1,
-		Stay:      2,
-		FadeOut:   3,
+	&title.Text{Component: `{"text":"sub title"}`},
+	&title.Subtitle{Component: `{"text":"sub title"}`},
+	&title.Actionbar{Component: `{"text":"action bar"}`},
+	&title.Clear{Action: title.Reset},
+	&title.Times{
+		FadeIn:  1,
+		Stay:    2,
+		FadeOut: 3,
 	},
 	&PlayerListItem{
 		Action: UpdateLatencyPlayerListItemAction,
@@ -202,6 +208,37 @@ func PacketCodings(t *testing.T,
 			}
 		}
 	}
+}
+
+func TestLegacyTitle(t *testing.T) {
+	PacketCodings(t,
+		[]proto.Direction{proto.ServerBound, proto.ClientBound},
+		vRange(version.Minecraft_1_11, version.MaximumVersion),
+		[]proto.Packet{
+			&title.Legacy{
+				Action:    title.SetActionBar,
+				Component: `{"text":"legacy action bar"}`,
+			},
+		}...)
+	PacketCodings(t,
+		[]proto.Direction{proto.ServerBound, proto.ClientBound},
+		vRange(version.MinimumVersion, version.MaximumVersion),
+		[]proto.Packet{
+			&title.Legacy{
+				Action:    title.SetSubtitle,
+				Component: `{"text":"legacy sub title"}`,
+			},
+			&title.Legacy{
+				Action:  title.SetTimes,
+				FadeIn:  1,
+				Stay:    2,
+				FadeOut: 3,
+			},
+			&title.Legacy{
+				Action:    title.SetTitle,
+				Component: `{"text":"legacy title"}`,
+			},
+		}...)
 }
 
 var testUUID, _ = uuid.Parse(`123e4567-e89b-12d3-a456-426614174000`)

@@ -9,12 +9,13 @@ import (
 	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
-	command2 "go.minekube.com/gate/pkg/command"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
@@ -34,37 +35,40 @@ import (
 // Player is a connected Minecraft player.
 type Player interface {
 	Inbound
-	command2.Source
+	command.Source
 	message.ChannelMessageSource
 	message.ChannelMessageSink
 
-	player.TabList
-	// TODO action bar, title and more
-
-	Username() string // The username of the player.
 	ID() uuid.UUID    // The Minecraft ID of the player.
-	// May be nil, if no backend server connection!
-	CurrentServer() ServerConnection // Returns the current server connection of the player.
+	Username() string // The username of the player.
+	// CurrentServer returns the current server connection of the player.
+	CurrentServer() ServerConnection // May be nil, if there is no backend server connection!
 	Ping() time.Duration             // The player's ping or -1 if currently unknown.
 	OnlineMode() bool                // Whether the player was authenticated with Mojang's session servers.
-	// Creates a connection request to begin switching the backend server.
+	// CreateConnectionRequest creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() profile.GameProfile // Returns the player's game profile.
 	Settings() player.Settings        // The players client settings. Returns player.DefaultSettings if not yet unknown.
-	// Disconnects the player with a reason.
+	// Disconnect disconnects the player with a reason.
 	// Once called, further interface calls to this player become undefined.
 	Disconnect(reason component.Component)
-	// Sends chats input onto the player's current server as if
+	// SpoofChatInput sends chats input onto the player's current server as if
 	// they typed it into the client chat box.
 	SpoofChatInput(input string) error
-	// Sends the specified resource pack from url to the user. If at all possible, send the
-	// resource pack with a sha1 hash using SendResourcePackWithHash. To monitor the status of the
-	// sent resource pack, subscribe to PlayerResourcePackStatusEvent.
+	// SendResourcePack sends the specified resource pack from url to the user. If at all possible,
+	// send the resource pack with a sha1 hash using SendResourcePackWithHash. To monitor the status
+	// of the sent resource pack, subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePack(url string) error
-	// Sends the specified resource pack from url to the user, using the specified 20-byte
-	// SHA-1 hash of the resource pack file. To monitor the status of the sent resource pack,
-	// subscribe to PlayerResourcePackStatusEvent.
+	// SendResourcePackWithHash sends the specified resource pack from url to the user,
+	// using the specified 20-byte SHA-1 hash of the resource pack file. To monitor the
+	// status of the sent resource pack, subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePackWithHash(url string, sha1Hash []byte) error
+	// SendActionBar sends an action bar to the player.
+	SendActionBar(msg component.Component) error
+	// SendMessageWith sends a chat message with optional modifications.
+	SendMessageWith(msg component.Component, opts ...MessageOption) error
+	player.TabList
+	// TODO add title and more
 }
 
 type connectedPlayer struct {
@@ -169,7 +173,7 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 	}
 	return serverMc.WritePacket(&packet.Chat{
 		Message: input,
-		Type:    packet.ChatMessage,
+		Type:    packet.ChatMessageType,
 	})
 }
 
@@ -213,50 +217,90 @@ func (p *connectedPlayer) Active() bool {
 	return !p.minecraftConn.Closed()
 }
 
-func (p *connectedPlayer) SendMessage(msg component.Component) error {
-	return p.SendMessagePosition(msg, packet.ChatMessage)
+// MessageOption is an option for Player.SendMessageWith.
+type MessageOption func(c *packet.Chat)
+
+// MessageWithSender modifies the sender identity of the chat message.
+func MessageWithSender(id uuid.UUID) MessageOption {
+	return func(c *packet.Chat) { c.Sender = id }
 }
 
-func (p *connectedPlayer) SendMessagePosition(msg component.Component, position packet.MessagePosition) (err error) {
+// MessageType is a chat message type.
+type MessageType uint8
+
+// Chat message types.
+const (
+	// ChatMessageType is a standard chat message.
+	ChatMessageType MessageType = iota
+	// SystemMessageType is a system chat message.
+	// e.g. client is willing to accept messages from commands,
+	// but does not want general chat from other players.
+	SystemMessageType
+)
+
+// MessageWithType modifies chat message type.
+func MessageWithType(t MessageType) MessageOption {
+	return func(c *packet.Chat) {
+		if t == SystemMessageType {
+			c.Type = packet.SystemMessageType
+		} else {
+			c.Type = packet.ChatMessageType
+		}
+	}
+}
+
+func (p *connectedPlayer) SendMessage(msg component.Component) error { return p.SendMessageWith(msg) }
+func (p *connectedPlayer) SendMessageWith(msg component.Component, opts ...MessageOption) error {
 	if msg == nil {
 		return nil // skip nil message
 	}
-	var messageJson string
-	b := new(strings.Builder)
-	if position == packet.ActionBarMessage {
-		if p.Protocol().GreaterEqual(version.Minecraft_1_11) {
-			if err = util.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
-				return err
-			}
-			s := b.String()
-			// We can use the title packet instead
-			return p.WritePacket(&packet.Title{
-				Action:    packet.SetActionBar,
-				Component: &s,
-			})
-		}
-		// Due to issues with action bar packets, we'll need to convert the text message into a
-		// legacy message and then put the legacy text into a component... (╯°□°)╯︵ ┻━┻!
-		if err = (&legacy.Legacy{}).Marshal(b, msg); err != nil {
-			return err
-		}
-		j, err := json.Marshal(map[string]string{
-			"text": b.String(),
+	m := new(strings.Builder)
+	if err := util.JsonCodec(p.Protocol()).Marshal(m, msg); err != nil {
+		return err
+	}
+	chat := &packet.Chat{
+		Message: m.String(),
+		Type:    packet.ChatMessageType,
+		Sender:  uuid.Nil,
+	}
+	for _, o := range opts {
+		o(chat)
+	}
+	return p.WritePacket(chat)
+}
+
+var legacyJsonCodec = &legacy.Legacy{}
+
+func (p *connectedPlayer) SendActionBar(msg component.Component) error {
+	if msg == nil {
+		return nil // skip nil message
+	}
+	protocol := p.Protocol()
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
+		// Use the title packet instead.
+		pkt, err := title.New(protocol, &title.Builder{
+			Action:    title.SetActionBar,
+			Component: msg,
 		})
 		if err != nil {
 			return err
 		}
-		messageJson = string(j)
-	} else {
-		if err = util.JsonCodec(p.Protocol()).Marshal(b, msg); err != nil {
-			return err
-		}
-		messageJson = b.String()
+		return p.WritePacket(pkt)
 	}
 
+	// Due to issues with action bar packets, we'll need to convert the text message into a
+	// legacy message and then put the legacy text into a component... (╯°□°)╯︵ ┻━┻!
+	b := new(strings.Builder)
+	if err := legacyJsonCodec.Marshal(b, msg); err != nil {
+		return err
+	}
+	m, err := json.Marshal(map[string]string{"text": b.String()})
+	if err != nil {
+		return err
+	}
 	return p.WritePacket(&packet.Chat{
-		Message: messageJson,
-		Type:    position,
+		Message: string(m),
+		Type:    packet.GameInfoMessageType,
 		Sender:  uuid.Nil,
 	})
 }
@@ -268,7 +312,7 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 	})
 }
 
-// TODO add header/footer, action bar, title & boss bar methods
+// TODO add header/footer, title & boss bar methods
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.

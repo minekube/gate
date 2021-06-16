@@ -15,6 +15,7 @@ type ClientSettings struct {
 	Difficulty     bool // 1.7 Protocol
 	SkinParts      byte
 	MainHand       int
+	TextFiltering  bool // 1.17+
 }
 
 func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -48,6 +49,12 @@ func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
 		err = util.WriteVarInt(wr, s.MainHand)
 		if err != nil {
 			return err
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
+			err = util.WriteBool(wr, s.TextFiltering)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -84,6 +91,12 @@ func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error
 		s.MainHand, err = util.ReadVarInt(rd)
 		if err != nil {
 			return err
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
+			s.TextFiltering, err = util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

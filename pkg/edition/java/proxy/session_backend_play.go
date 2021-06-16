@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"errors"
-	"github.com/davecgh/go-spew/spew"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -54,10 +53,10 @@ func (b *backendPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	case *packet.AvailableCommands:
 		b.handleAvailableCommands(p)
 	case *packet.TabCompleteResponse:
-		spew.Dump(p)
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *packet.PlayerListItem:
 		b.handlePlayerListItem(p, pc)
+	// TODO case *packet.ResourcePackRequest:
 	default:
 		b.forwardToPlayer(pc, nil)
 	}

@@ -14,7 +14,7 @@ const (
 
 type Chat struct {
 	Message string
-	Type    MessagePosition
+	Type    MessageType
 	Sender  uuid.UUID // 1.16+, and can be empty UUID, all zeros
 }
 
@@ -46,7 +46,7 @@ func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-		ch.Type = MessagePosition(pos)
+		ch.Type = MessageType(pos)
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 			ch.Sender, err = util.ReadUUID(rd)
 			if err != nil {
@@ -57,18 +57,18 @@ func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	return
 }
 
-// MessagePosition is the position a chat message is going to be sent.
-type MessagePosition byte
+// MessageType is the position a chat message is going to be sent.
+type MessageType byte
 
 const (
-	// The chat message will appear in the client's HUD.
-	// These messages can be filtered out by the client.
-	ChatMessage MessagePosition = iota
-	// The chat message will appear in the client's HUD and can't be dismissed.
-	SystemMessage
-	// The chat message will appear above the player's main HUD.
+	// ChatMessageType lets the chat message appear in the client's HUD.
+	// These messages can be filtered out by the client's settings.
+	ChatMessageType MessageType = iota
+	// SystemMessageType lets the chat message appear in the client's HUD and can't be dismissed.
+	SystemMessageType
+	// GameInfoMessageType lets the chat message appear above the player's main HUD.
 	// This text format doesn't support many component features, such as hover events.
-	ActionBarMessage
+	GameInfoMessageType
 )
 
 var _ proto.Packet = (*Chat)(nil)

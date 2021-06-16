@@ -204,10 +204,11 @@ type serverConnection struct {
 	player *connectedPlayer
 	log    logr.Logger
 
-	completedJoin      atomic.Bool
-	gracefulDisconnect atomic.Bool
-	lastPingID         atomic.Int64
-	lastPingSent       atomic.Int64 // unix millis
+	completedJoin           atomic.Bool
+	gracefulDisconnect      atomic.Bool
+	lastPingID              atomic.Int64
+	lastPingSent            atomic.Int64              // unix millis
+	activeDimensionRegistry *packet.DimensionRegistry // updated by packet.JoinGame
 
 	mu         sync.RWMutex   // Protects following fields
 	connection *minecraftConn // the backend server connection

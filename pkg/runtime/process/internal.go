@@ -71,7 +71,7 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 			err = nil
 		}
 		stopErr := pm.engageStopProcedure(stopComplete)
-		if stopErr != nil {
+		if stopErr != nil && stopErr != errStopAll {
 			if err != nil {
 				// Aggregate allows to use errors.Is for all contained errors
 				// whereas fmt.Errorf allows wrapping at most one error which means the
@@ -122,7 +122,7 @@ func (pm *collection) engageStopProcedure(stopComplete chan struct{}) error {
 		for {
 			select {
 			case err, ok := <-pm.errChan:
-				if ok {
+				if ok && err != errStopAll {
 					pm.log.Error(err, "error received after stop sequence was engaged")
 				}
 			case <-stopComplete:

@@ -102,12 +102,30 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 	)
 	for i, current := range mappings {
 		from = current.Protocol
+		lastValid := current.LastValidProtocol
+		if lastValid != 0 {
+			if next != current {
+				panic("Cannot add a mapping after last valid mapping")
+			}
+			if from > lastValid {
+				panic("Last mapping version cannot be higher than highest mapping version")
+			}
+		}
+		// set "next"
 		if i < len(mappings)-1 {
 			next = mappings[i+1]
-			to = next.Protocol
 		} else {
 			next = current
-			to = version.MaximumVersion.Protocol
+		}
+		// set "to"
+		if current == next {
+			if lastValid != 0 {
+				to = lastValid
+			} else {
+				to = version.MaximumVersion.Protocol
+			}
+		} else {
+			to = next.Protocol
 		}
 
 		if from >= to && from != version.MaximumVersion.Protocol {
@@ -145,14 +163,31 @@ func FromDirection(direction proto.Direction, state *Registry, protocol proto.Pr
 }
 
 type PacketMapping struct {
-	ID       proto.PacketID
-	Protocol proto.Protocol
+	ID                proto.PacketID
+	Protocol          proto.Protocol
+	LastValidProtocol proto.Protocol // defaults to version.MaximumVersion.Protocol
 }
 
+// m returns new PacketMapping
 func m(id proto.PacketID, version *proto.Version) *PacketMapping {
+	return ml(id, version, nil)
+}
+
+// ml returns new PacketMapping with optional lastValidProtocolVersion
+//
+//  id         packet Id
+//  version    protocol version
+//  encodeOnly when true packet decoding will be disabled
+//  lastValidProtocolVersion last version this mapping is valid at
+func ml(id proto.PacketID, version, lastValidProtocol *proto.Version) *PacketMapping {
+	var last proto.Protocol
+	if lastValidProtocol != nil {
+		last = lastValidProtocol.Protocol
+	}
 	return &PacketMapping{
-		ID:       id,
-		Protocol: version.Protocol,
+		ID:                id,
+		Protocol:          version.Protocol,
+		LastValidProtocol: last,
 	}
 }
 

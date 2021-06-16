@@ -265,7 +265,7 @@ func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			if err != nil {
 				return err
 			}
-			j.CurrentDimensionData, err = decodeBaseCompoundTag(currentDimDataTag)
+			j.CurrentDimensionData, err = decodeBaseCompoundTag(currentDimDataTag, c.Protocol)
 			if err != nil {
 				return err
 			}

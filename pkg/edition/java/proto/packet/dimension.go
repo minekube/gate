@@ -26,17 +26,26 @@ type DimensionInfo struct {
 const UnknownDimensionID = "gate:unknown_dimension"
 
 type DimensionData struct {
-	RegistryIdentifier string
-	DimensionID        *int // nil-able
-	AmbientLight       float32
-	Shrunk, Natural, Ultrawarm, Ceiling, Skylight, PiglineSafe,
-	DoBedsWork, DoRespawnAnchorsWork, Raids bool
-	LogicalHeight              int32
-	BurningBehaviourIdentifier string
+	RegistryIdentifier         string   // the identifier for the dimension from the registry
+	DimensionID                *int     // nil-able, the dimension ID contained in the registry (the "id" tag)
+	Natural                    bool     // indicates if the dimension use natural world generation (e.g. overworld)
+	AmbientLight               float32  // the light level the client sees without external lighting
+	Shrunk                     bool     // indicates if the world is shrunk, aka not the full 256 blocks (e.g. nether)
+	Ultrawarm                  bool     // internal dimension warmth flag
+	Ceiling                    bool     // indicates if the dimension has a ceiling layer
+	Skylight                   bool     // indicates if the dimension should display the sun
+	PiglineSafe                bool     // indicates if piglins should naturally zombify in this dimension
+	DoBedsWork                 bool     // indicates if players should be able to sleep in beds in this dimension
+	DoRespawnAnchorsWork       bool     // indicates if player respawn points can be used in this dimension
+	Raids                      bool     // indicates if raids can be spawned in the dimension
+	LogicalHeight              int32    // the natural max height for the given dimension
+	BurningBehaviourIdentifier string   // the identifier for how burning blocks work in the dimension
 	FixedTime                  *int64   // nil-able
 	CreateDragonFight          *bool    // nil-able
 	CoordinateScale            *float64 // nil-able
 	Effects                    *string  // optional; unknown purpose
+	MinY                       *int     // Required since 1.17
+	Height                     *int     // Required since 1.17
 }
 
 // fromGameData decodes a CompoundTag storing a dimension registry.
@@ -80,7 +89,7 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 		details = dimTag
 	}
 
-	data, err := decodeBaseCompoundTag(details)
+	data, err := decodeBaseCompoundTag(details, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +100,7 @@ func decodeRegistryEntry(dimTag util.NBT, protocol proto.Protocol) (*DimensionDa
 
 // Parses CompoundTag to a DimensionData instance;
 // assumes the data only contains dimension details.
-func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
+func decodeBaseCompoundTag(details util.NBT, protocol proto.Protocol) (*DimensionData, error) {
 	if details == nil {
 		return nil, dimReadErr("dimension details must not be nil")
 	}
@@ -160,6 +169,22 @@ func decodeBaseCompoundTag(details util.NBT) (*DimensionData, error) {
 	if ok {
 		d.Effects = &effects
 	}
+	minY, ok := details.Int("min_y")
+	if ok {
+		d.MinY = &minY
+	}
+	height, ok := details.Int("height")
+	if ok {
+		d.Height = &height
+	}
+	if protocol.GreaterEqual(version.Minecraft_1_17) {
+		if d.MinY == nil {
+			return nil, dimMissKeyErr("min_y")
+		}
+		if d.Height == nil {
+			return nil, dimMissKeyErr("height")
+		}
+	}
 	return d, nil
 }
 
@@ -214,6 +239,12 @@ func (d *DimensionData) encodeDimensionDetails() util.NBT {
 	}
 	if d.Effects != nil {
 		c["effects"] = *d.Effects
+	}
+	if d.MinY != nil {
+		c["min_y"] = int32(*d.MinY)
+	}
+	if d.Height != nil {
+		c["height"] = int32(*d.Height)
 	}
 	return c
 }

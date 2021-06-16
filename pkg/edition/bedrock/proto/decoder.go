@@ -79,7 +79,7 @@ func (d *Decoder) decode(p []byte) (ctx *proto.PacketContext, err error) {
 
 	// Decode packet header containing the ID
 	var header Header
-	if err := header.Decode(ctx, payload); err != nil {
+	if err = header.Decode(ctx, payload); err != nil {
 		return nil, fmt.Errorf("error reading packet header: %w", err)
 	}
 	ctx.PacketID = proto.PacketID(header.PacketID)
