@@ -1,6 +1,7 @@
 package brigadier
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go.minekube.com/brigodier"
@@ -101,7 +102,13 @@ var _ brigodier.ArgumentType = (*PassthroughProperty)(nil)
 func (p *PassthroughProperty) Parse(*brigodier.StringReader) (interface{}, error) {
 	return nil, errors.New("calling PassthroughProperty.Parse is an unsupported operation")
 }
-func (p *PassthroughProperty) String() string { return "PassthroughProperty" }
+func (p *PassthroughProperty) String() string {
+	j, _ := json.Marshal(struct {
+		Identifier string
+		Result     interface{}
+	}{Identifier: p.Identifier, Result: p.Result})
+	return "*PassthroughProperty" + string(j)
+}
 
 func init() {
 	register := registry.register
@@ -110,10 +117,10 @@ func init() {
 
 	// Base Brigadier argument types
 	register("brigadier:string", brigodier.String, StringArgumentPropertyCodec)
-	register("brigadier:integer", brigodier.Int, IntArgumentPropertyCodec)
-	//register("brigadier:long", Int64, LONG);
+	register("brigadier:integer", brigodier.Int, Int32ArgumentPropertyCodec)
+	register("brigadier:long", brigodier.Int64, Int64ArgumentPropertyCodec)
+	register("brigadier:float", brigodier.Float32, Float32ArgumentPropertyCodec)
 	register("brigadier:double", brigodier.Float64, Float64ArgumentPropertyCodec)
-	//register("brigadier:float", brigodier.Float32, FLOAT);
 	register("brigadier:bool", brigodier.Bool, BoolArgumentPropertyCodec)
 
 	// Minecraft argument types with extra properties

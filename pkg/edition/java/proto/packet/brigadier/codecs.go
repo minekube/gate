@@ -5,7 +5,6 @@ import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
-	"math"
 )
 
 // ArgumentPropertyCodecFuncs implements ArgumentPropertyCodec.
@@ -33,14 +32,14 @@ var (
 
 	BoolArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v interface{}) error {
-			b, ok := v.(bool)
+			_, ok := v.(*brigodier.BoolArgumentType)
 			if !ok {
-				return fmt.Errorf("execpted bool but got %T", v)
+				return fmt.Errorf("execpted *brigodier.BoolArgumentType but got %T", v)
 			}
-			return util.WriteBool(wr, b)
+			return nil
 		},
 		DecodeFn: func(rd io.Reader) (interface{}, error) {
-			return util.ReadBool(rd)
+			return brigodier.Bool, nil
 		},
 	}
 	ByteArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
@@ -88,8 +87,8 @@ var (
 			if !ok {
 				return fmt.Errorf("expected *brigodier.Float64ArgumentType but got %T", v)
 			}
-			hasMin := i.Min != MinFloat64
-			hasMax := i.Max != MaxFloat64
+			hasMin := i.Min != brigodier.MinFloat64
+			hasMax := i.Max != brigodier.MaxFloat64
 			flag := flags(hasMin, hasMax)
 
 			err := util.WriteByte(wr, flag)
@@ -112,8 +111,8 @@ var (
 			if err != nil {
 				return nil, err
 			}
-			min := MinFloat64
-			max := MaxFloat64
+			min := brigodier.MinFloat64
+			max := brigodier.MaxFloat64
 			if flags&HasMinIntFlag != 0 {
 				min, err = util.ReadFloat64(rd)
 				if err != nil {
@@ -129,15 +128,14 @@ var (
 			return &brigodier.Float64ArgumentType{Min: min, Max: max}, nil
 		},
 	}
-
-	IntArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+	Float32ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v interface{}) error {
-			i, ok := v.(*brigodier.IntegerArgumentType)
+			i, ok := v.(*brigodier.Float32ArgumentType)
 			if !ok {
-				return fmt.Errorf("expected *brigodier.IntegerArgumentType but got %T", v)
+				return fmt.Errorf("expected *brigodier.Float32ArgumentType but got %T", v)
 			}
-			hasMin := i.Min != MinInt
-			hasMax := i.Max != MaxInt
+			hasMin := i.Min != brigodier.MinFloat32
+			hasMax := i.Max != brigodier.MaxFloat32
 			flag := flags(hasMin, hasMax)
 
 			err := util.WriteByte(wr, flag)
@@ -145,13 +143,13 @@ var (
 				return err
 			}
 			if hasMin {
-				err = util.WriteInt(wr, i.Min)
+				err = util.WriteFloat32(wr, i.Min)
 				if err != nil {
 					return err
 				}
 			}
 			if hasMax {
-				err = util.WriteInt(wr, i.Max)
+				err = util.WriteFloat32(wr, i.Max)
 			}
 			return err
 		},
@@ -160,21 +158,116 @@ var (
 			if err != nil {
 				return nil, err
 			}
-			min := MinInt
-			max := MaxInt
+			min := float32(brigodier.MinFloat32)
+			max := float32(brigodier.MaxFloat32)
 			if flags&HasMinIntFlag != 0 {
-				min, err = util.ReadInt(rd)
+				min, err = util.ReadFloat32(rd)
 				if err != nil {
 					return nil, err
 				}
 			}
 			if flags&HasMaxIntFlag != 0 {
-				max, err = util.ReadInt(rd)
+				max, err = util.ReadFloat32(rd)
 				if err != nil {
 					return nil, err
 				}
 			}
-			return &brigodier.IntegerArgumentType{Min: min, Max: max}, nil
+			return &brigodier.Float32ArgumentType{Min: min, Max: max}, nil
+		},
+	}
+
+	Int32ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v interface{}) error {
+			i, ok := v.(*brigodier.Int32ArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *brigodier.Int32ArgumentType but got %T", v)
+			}
+			hasMin := i.Min != brigodier.MinInt32
+			hasMax := i.Max != brigodier.MaxInt32
+			flag := flags(hasMin, hasMax)
+
+			err := util.WriteByte(wr, flag)
+			if err != nil {
+				return err
+			}
+			if hasMin {
+				err = util.WriteInt32(wr, i.Min)
+				if err != nil {
+					return err
+				}
+			}
+			if hasMax {
+				err = util.WriteInt32(wr, i.Max)
+			}
+			return err
+		},
+		DecodeFn: func(rd io.Reader) (interface{}, error) {
+			flags, err := util.ReadByte(rd)
+			if err != nil {
+				return nil, err
+			}
+			min := int32(brigodier.MinInt32)
+			max := int32(brigodier.MaxInt32)
+			if flags&HasMinIntFlag != 0 {
+				min, err = util.ReadInt32(rd)
+				if err != nil {
+					return nil, err
+				}
+			}
+			if flags&HasMaxIntFlag != 0 {
+				max, err = util.ReadInt32(rd)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return &brigodier.Int32ArgumentType{Min: min, Max: max}, nil
+		},
+	}
+	Int64ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v interface{}) error {
+			i, ok := v.(*brigodier.Int64ArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *brigodier.Int64ArgumentType but got %T", v)
+			}
+			hasMin := i.Min != brigodier.MinInt64
+			hasMax := i.Max != brigodier.MaxInt64
+			flag := flags(hasMin, hasMax)
+
+			err := util.WriteByte(wr, flag)
+			if err != nil {
+				return err
+			}
+			if hasMin {
+				err = util.WriteInt64(wr, i.Min)
+				if err != nil {
+					return err
+				}
+			}
+			if hasMax {
+				err = util.WriteInt64(wr, i.Max)
+			}
+			return err
+		},
+		DecodeFn: func(rd io.Reader) (interface{}, error) {
+			flags, err := util.ReadByte(rd)
+			if err != nil {
+				return nil, err
+			}
+			min := int64(brigodier.MinInt64)
+			max := int64(brigodier.MaxInt64)
+			if flags&HasMinIntFlag != 0 {
+				min, err = util.ReadInt64(rd)
+				if err != nil {
+					return nil, err
+				}
+			}
+			if flags&HasMaxIntFlag != 0 {
+				max, err = util.ReadInt64(rd)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return &brigodier.Int64ArgumentType{Min: min, Max: max}, nil
 		},
 	}
 )
@@ -182,12 +275,6 @@ var (
 const (
 	HasMinIntFlag byte = 0x01
 	HasMaxIntFlag byte = 0x02
-
-	MinInt = math.MinInt32
-	MaxInt = math.MaxInt32
-
-	MinFloat64 = -math.MaxFloat64
-	MaxFloat64 = math.MaxFloat64
 )
 
 func flags(hasMin, hasMax bool) (f byte) {

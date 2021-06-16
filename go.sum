@@ -518,8 +518,8 @@ github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738/go.mod h1:dnLIgRNXwCJa5e+c6mIZCrds/GIG4ncV9HhK5PX7jPg=
-go.minekube.com/brigodier v0.0.0-20210609110140-d63d50a4d576 h1:/0fNxuHIjKpnzP2s1h0exmiD4ZQTo4gxt7YmVntJNvc=
-go.minekube.com/brigodier v0.0.0-20210609110140-d63d50a4d576/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
+go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71 h1:OEeSNDk62kFTm83x2ATcofXrdRw5MO2j/3mcVkyJ3Bk=
+go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09 h1:E/AB72vPICyxqDcUQxC6SQyJ1jLF//GBG20Vw0wCDxE=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.mongodb.org/mongo-driver v1.0.3/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=

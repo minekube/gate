@@ -14,21 +14,21 @@ var (
 //
 // It is usually used to prevent spamming the default
 // log when Minecraft clients send invalid packets which cannot be read.
-type SilentError struct{ error }
+type SilentError struct{ Err error }
 
 func (e *SilentError) Error() string {
-	return e.error.Error()
+	return e.Err.Error()
 }
 
 func NewSilentErr(format string, a ...interface{}) error {
-	return &SilentError{fmt.Errorf(format, a...)}
+	return &SilentError{Err: fmt.Errorf(format, a...)}
 }
 
 func WrapSilent(wrappedErr error) error {
 	return &SilentError{wrappedErr}
 }
 
-func (e *SilentError) Unwrap() error { return e.error }
+func (e *SilentError) Unwrap() error { return e.Err }
 
 // see https://github.com/golang/go/issues/4373 for details
 func IsConnClosedErr(err error) bool {

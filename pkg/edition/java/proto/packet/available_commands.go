@@ -247,7 +247,7 @@ func (w *WireNode) decode(rd io.Reader) (err error) {
 		}
 		argBuilder := brigodier.Argument(name, argType)
 		if w.Flags&FlagHasSuggestions != 0 {
-			name, err = util.ReadString(rd) // name not needed
+			name, err = util.ReadString(rd)
 			if err != nil {
 				return err
 			}

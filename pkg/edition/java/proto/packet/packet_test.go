@@ -41,8 +41,9 @@ var packets = []proto.Packet{
 		cmd := brigodier.CommandFunc(func(*brigodier.CommandContext) error { return nil })
 		n.AddChild(brigodier.Literal("l1").
 			Executes(cmd).
-			Then(brigodier.Argument("a1", brigodier.String).Executes(cmd)).
-			Build())
+			Then(brigodier.Argument("a1", brigodier.String).Executes(cmd).Then(
+				brigodier.Argument("a2", brigodier.Bool).Executes(cmd),
+			)).Build())
 		n.AddChild(brigodier.Literal("l2").
 			Executes(cmd).
 			Build())
