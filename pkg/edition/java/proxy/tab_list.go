@@ -27,6 +27,18 @@ func newTabList(c *minecraftConn) *tabList {
 	return &tabList{c: c, entries: map[uuid.UUID]*tabListEntry{}}
 }
 
+func (t *tabList) Entries() map[uuid.UUID]player.TabListEntry {
+	t.mu.RLock()
+	entries := t.entries
+	t.mu.RUnlock()
+	// Convert to TabListEntry interface
+	m := make(map[uuid.UUID]player.TabListEntry, len(entries))
+	for id, e := range entries {
+		m[id] = e
+	}
+	return m
+}
+
 func (t *tabList) AddEntry(entry player.TabListEntry) error {
 	if entry == nil {
 		return errors.New("entry must not be nil")
@@ -39,11 +51,12 @@ func (t *tabList) AddEntry(entry player.TabListEntry) error {
 		return errors.New("provided entry must be created by the tab list")
 	}
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	if t.hasEntry(entry.Profile().ID) {
+		t.mu.Unlock()
 		return errors.New("tab list already has entry of same profile id")
 	}
 	t.entries[entry.Profile().ID] = e
+	t.mu.Unlock()
 	return t.c.WritePacket(&packet.PlayerListItem{
 		Action: packet.AddPlayerListItemAction,
 		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
@@ -52,13 +65,14 @@ func (t *tabList) AddEntry(entry player.TabListEntry) error {
 
 func (t *tabList) RemoveEntry(id uuid.UUID) error {
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	entry, ok := t.entries[id]
 	if !ok {
+		t.mu.Unlock()
 		// Ignore if not found
 		return nil
 	}
 	delete(t.entries, id)
+	t.mu.Unlock()
 	return t.c.WritePacket(&packet.PlayerListItem{
 		Action: packet.RemovePlayerListItemAction,
 		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
