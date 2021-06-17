@@ -282,7 +282,10 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 
 	// Clear any title from the previous server.
 	if playerVersion.GreaterEqual(version.Minecraft_1_8) {
-		resetTitle := &title.Clear{Action: title.Reset}
+		resetTitle, err := title.New(playerVersion, &title.Builder{Action: title.Reset})
+		if err != nil {
+			return err
+		}
 		if err = c.player.BufferPacket(resetTitle); err != nil {
 			return fmt.Errorf("error buffering %T for player: %w", resetTitle, err)
 		}
