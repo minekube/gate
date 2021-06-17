@@ -178,7 +178,6 @@ func init() {
 		m(0x32, version.Minecraft_1_16_2),
 		m(0x36, version.Minecraft_1_17),
 	)
-	// TODO add TitleSubtitle packet
 	Play.ClientBound.Register(&title.Legacy{},
 		m(0x45, version.Minecraft_1_8),
 		m(0x45, version.Minecraft_1_9),

@@ -128,13 +128,11 @@ func WriteStrings(wr io.Writer, a []string) error {
 // (or two unsigned 64-bit integers: the most
 // significant 64 bits and then the least significant 64 bits)
 func WriteUUID(wr io.Writer, uuid uuid.UUID) error {
-	l1 := binary.BigEndian.Uint64(uuid[:8])
-	l2 := binary.BigEndian.Uint64(uuid[8:])
-	err := WriteInt64(wr, int64(l1))
+	err := WriteUint64(wr, binary.BigEndian.Uint64(uuid[:8]))
 	if err != nil {
 		return err
 	}
-	return WriteInt64(wr, int64(l2))
+	return WriteUint64(wr, binary.BigEndian.Uint64(uuid[8:]))
 }
 
 func WriteProperties(wr io.Writer, properties []profile.Property) error {

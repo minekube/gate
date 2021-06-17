@@ -175,7 +175,9 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 
 func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem, pc *proto.PacketContext) {
 	// Track changes to tab list of player
-	b.serverConn.player.tabList.processBackendPacket(p)
+	if err := b.serverConn.player.tabList.processBackendPacket(p); err != nil {
+		b.serverConn.log.Error(err, "Error while processing backend PlayerListItem packet, ignored")
+	}
 	b.forwardToPlayer(pc, nil)
 }
 

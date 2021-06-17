@@ -124,11 +124,15 @@ func (t *tabList) hasEntry(id uuid.UUID) bool {
 }
 
 // Processes a tab list entry packet sent from the backend to the client.
-func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
+func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 	// Packet is already forwarded on, so no need to do that here
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	for _, item := range p.Items {
+		if item.ID == uuid.Nil {
+			return errors.New("1.7 tab list entry given to modern tab list handler")
+		}
+
 		if p.Action != packet.AddPlayerListItemAction && !t.hasEntry(item.ID) {
 			// Sometimes UpdateGameMode is sent before AddPlayer so don't want to warn here
 			continue
@@ -136,6 +140,10 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 
 		switch p.Action {
 		case packet.AddPlayerListItemAction:
+			// ensure that name and properties are available
+			if item.Name == "" || item.Properties == nil {
+				return errors.New("got null game profile for AddPlayerListItemAction")
+			}
 			t.entries[item.ID] = &tabListEntry{
 				tabList: t,
 				profile: &profile.GameProfile{
@@ -152,7 +160,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 		case packet.UpdateDisplayNamePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
-				e.SetDisplayName(item.DisplayName)
+				e.setDisplayName(item.DisplayName)
 			}
 		case packet.UpdateLatencyPlayerListItemAction:
 			e, ok := t.entries[item.ID]
@@ -162,12 +170,13 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) {
 		case packet.UpdateGameModePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
-				e.setGameMode(item.GameMode)
+				return e.setGameMode(item.GameMode)
 			}
 		default:
 			// Nothing we can do here
 		}
 	}
+	return nil
 }
 
 func (t *tabList) updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error {
@@ -214,7 +223,12 @@ func (t *tabListEntry) DisplayName() component.Component {
 	return t.displayName
 }
 
-func (t *tabListEntry) SetDisplayName(name component.Component) {
+func (t *tabListEntry) SetDisplayName(name component.Component) error {
+	t.setDisplayName(name)
+	return t.tabList.updateEntry(packet.UpdateDisplayNamePlayerListItemAction, t)
+}
+
+func (t *tabListEntry) setDisplayName(name component.Component) {
 	t.mu.Lock()
 	t.displayName = name
 	t.mu.Unlock()
@@ -238,11 +252,11 @@ func (t *tabListEntry) setLatency(latency time.Duration) {
 	t.mu.Unlock()
 }
 
-func (t *tabListEntry) setGameMode(gameMode int) {
+func (t *tabListEntry) setGameMode(gameMode int) error {
 	t.mu.Lock()
 	t.gameMode = gameMode
-	_ = t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
 	t.mu.Unlock()
+	return t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
 }
 
 func newPlayerListItemEntry(entry player.TabListEntry) *packet.PlayerListItemEntry {

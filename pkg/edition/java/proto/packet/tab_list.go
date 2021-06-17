@@ -86,6 +86,9 @@ func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error
 			return err
 		}
 		for _, item := range p.Items {
+			if item.ID == uuid.Nil {
+				return errors.New("UUID-less entry serialization attempt - 1.7 component")
+			}
 			err = util.WriteUUID(wr, item.ID)
 			if err != nil {
 				return err
