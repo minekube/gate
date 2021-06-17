@@ -184,7 +184,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 		case packet.UpdateGameModePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
-				return e.setGameMode(item.GameMode)
+				e.setGameMode(item.GameMode)
 			}
 		default:
 			// Nothing we can do here
@@ -214,7 +214,7 @@ type tabListEntry struct {
 
 	mu          sync.RWMutex // protects following fields
 	profile     *profile.GameProfile
-	displayName component.Component
+	displayName component.Component // nil-able
 	latency     time.Duration
 	gameMode    int
 }
@@ -260,17 +260,24 @@ func (t *tabListEntry) Latency() time.Duration {
 	return t.latency
 }
 
+func (t *tabListEntry) SetLatency(latency time.Duration) error {
+	t.setLatency(latency)
+	return t.tabList.updateEntry(packet.UpdateLatencyPlayerListItemAction, t)
+}
 func (t *tabListEntry) setLatency(latency time.Duration) {
 	t.mu.Lock()
 	t.latency = latency
 	t.mu.Unlock()
 }
 
-func (t *tabListEntry) setGameMode(gameMode int) error {
+func (t *tabListEntry) SetGameMode(gameMode int) error {
+	t.setGameMode(gameMode)
+	return t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
+}
+func (t *tabListEntry) setGameMode(gameMode int) {
 	t.mu.Lock()
 	t.gameMode = gameMode
 	t.mu.Unlock()
-	return t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
 }
 
 func newPlayerListItemEntry(entry player.TabListEntry) *packet.PlayerListItemEntry {

@@ -24,11 +24,21 @@ type TabListEntry interface {
 	// containing uuid, as well as deciding what is shown as the player head in the tab list.
 	Profile() profile.GameProfile
 	// DisplayName returns the optional text displayed for this entry in the TabList,
-	// otherwise profile.GameProfile.Names is shown and returns nil.
+	// otherwise if returns nil Profile().Name is shown (but not returned here).
 	DisplayName() component.Component
+	// SetDisplayName the text to be displayed for the entry.
+	// If nil Profile().Name will be shown.
+	SetDisplayName(component.Component) error
 	// GameMode returns the game mode the entry has been set to.
+	//  0 - Survival
+	//  1 - Creative
+	//  2 - Adventure
+	//  3 - Spectator
 	GameMode() int
-	// Latency returns the latency for the entry.
+	// SetGameMode sets the gamemode for the entry.
+	// See GameMode() for more details.
+	SetGameMode(int) error
+	// Latency returns the latency/ping for the entry.
 	//
 	// The icon shown in the tab list is calculated
 	// by the millisecond latency as follows:
@@ -40,7 +50,7 @@ type TabListEntry interface {
 	//  600-1000 will display 2 bars
 	//  A latency move than 1 second will display 1 bar
 	Latency() time.Duration
-	// TODO SetDisplayName
-	// TODO SetLatency(time.Duration)
-	// TODO more...
+	// SetLatency sets the latency/ping for the entry.
+	// See Latency() for how it is displayed.
+	SetLatency(time.Duration) error
 }
