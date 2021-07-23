@@ -16,8 +16,10 @@ limitations under the License.
 package gate
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/gate"
 	"os"
 	"strings"
@@ -80,7 +82,8 @@ func initConfig() error {
 	// If a config file is found, read it in.
 	// A config file is not required.
 	if err := v.ReadInConfig(); err != nil {
-		if os.IsNotExist(err) && !rootCmd.PersistentFlags().Changed("config") {
+		if (errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err)) &&
+			!rootCmd.PersistentFlags().Changed("config") {
 			return nil
 		}
 		return fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
