@@ -12,7 +12,7 @@ import (
 const (
 	// Clients attempting to connect to 1.8-1.12.2 Forge servers will have
 	// this token appended to the hostname in the initial handshake packet.
-	HandshakeHostnameToken = `\0FML\0`
+	HandshakeHostnameToken = "\000FML\000"
 	// The channel for legacy forge handshakes.
 	LegacyHandshakeChannel = "FML|HS"
 	// The reset packet discriminator.
