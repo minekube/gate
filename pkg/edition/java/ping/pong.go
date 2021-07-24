@@ -47,6 +47,6 @@ type Players struct {
 }
 
 type SamplePlayer struct {
-	Name string
-	ID   uuid.UUID
+	Name string    `json:"name"`
+	ID   uuid.UUID `json:"id"`
 }
