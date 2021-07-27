@@ -516,6 +516,15 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 			// additional tab completion support.
 			c.outstandingTabComplete = p
 		}
+		serverConn := c.player.connectedServer()
+		if serverConn == nil {
+			return
+		}
+		serverMc := serverConn.conn()
+		if serverMc == nil {
+			return
+		}
+		_ = serverMc.WritePacket(p)
 		return
 	}
 
