@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	guuid "github.com/google/uuid"
+	"strconv"
 )
 
 type UUID guuid.UUID
@@ -20,6 +21,10 @@ func (i UUID) String() string {
 // Undashed returns the undashed string form of the uuid.
 func (i UUID) Undashed() string {
 	return hex.EncodeToString(i[:])
+}
+
+func (i UUID) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.Quote(i.String())), nil
 }
 
 // Parse decodes s into a UUID or returns an error.  Both the standard UUID
