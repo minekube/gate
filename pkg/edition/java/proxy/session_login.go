@@ -17,6 +17,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"net"
+	"regexp"
 	"time"
 )
 
@@ -52,8 +53,16 @@ func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 	}
 }
 
+var playerNameRegex = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
+
 func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	l.login = login
+
+	// Validate username format
+	if !playerNameRegex.MatchString(login.Username) {
+		_ = l.conn.close()
+		return
+	}
 
 	e := newPreLoginEvent(l.inbound, l.login.Username)
 	l.event().Fire(e)
