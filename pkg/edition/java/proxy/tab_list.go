@@ -158,16 +158,18 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 			if item.Name == "" || item.Properties == nil {
 				return errors.New("got null game profile for AddPlayerListItemAction")
 			}
-			t.entries[item.ID] = &tabListEntry{
-				tabList: t,
-				profile: &profile.GameProfile{
-					ID:         item.ID,
-					Name:       item.Name,
-					Properties: item.Properties,
-				},
-				displayName: item.DisplayName,
-				latency:     time.Millisecond * time.Duration(item.Latency),
-				gameMode:    item.GameMode,
+			if _, ok := t.entries[item.ID]; !ok {
+				t.entries[item.ID] = &tabListEntry{
+					tabList: t,
+					profile: &profile.GameProfile{
+						ID:         item.ID,
+						Name:       item.Name,
+						Properties: item.Properties,
+					},
+					displayName: item.DisplayName,
+					latency:     time.Millisecond * time.Duration(item.Latency),
+					gameMode:    item.GameMode,
+				}
 			}
 		case packet.RemovePlayerListItemAction:
 			delete(t.entries, item.ID)

@@ -34,6 +34,15 @@ const (
 )
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+		// Minecraft 1.16 and above have significantly more complicated logic for reading this packet,
+		// so separate it out.
+		return j.encode116Up(c, wr)
+	}
+	return j.encodeLegacy(c, wr)
+}
+
+func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 	err := util.WriteInt32(wr, int32(j.EntityID))
 	if err != nil {
 		return err
@@ -57,72 +66,54 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		err = util.WriteByte(wr, byte(j.PreviousGamemode))
+	err = util.WriteByte(wr, byte(j.PreviousGamemode))
+	if err != nil {
+		return err
+	}
+	err = util.WriteStrings(wr, j.DimensionRegistry.LevelNames)
+	if err != nil {
+		return err
+	}
+	encodedDimensionRegistry, err := j.DimensionRegistry.encode(c.Protocol)
+	if err != nil {
+		return err
+	}
+	registryContainer := util.NBT{}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+		registryContainer[dimTypeKey] = util.NBT{
+			"type":  dimTypeKey,
+			"value": encodedDimensionRegistry,
+		}
+		if j.BiomeRegistry == nil {
+			return errors.New("missing biome registry")
+		}
+		registryContainer[biomeKey] = j.BiomeRegistry
+	} else {
+		registryContainer["dimension"] = encodedDimensionRegistry
+	}
+	nbtEncoder := nbt.NewEncoderWithEncoding(wr, nbt.BigEndian)
+	err = nbtEncoder.Encode(registryContainer)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+		err = nbtEncoder.Encode(j.CurrentDimensionData.encodeDimensionDetails())
 		if err != nil {
 			return err
 		}
-		err = util.WriteStrings(wr, j.DimensionRegistry.LevelNames)
-		if err != nil {
-			return err
-		}
-		encodedDimensionRegistry, err := j.DimensionRegistry.encode(c.Protocol)
-		if err != nil {
-			return err
-		}
-		registryContainer := util.NBT{}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
-			registryContainer[dimTypeKey] = util.NBT{
-				"type":  dimTypeKey,
-				"value": encodedDimensionRegistry,
-			}
-			if j.BiomeRegistry == nil {
-				return errors.New("missing biome registry")
-			}
-			registryContainer[biomeKey] = j.BiomeRegistry
-		} else {
-			registryContainer["dimension"] = encodedDimensionRegistry
-		}
-		nbtEncoder := nbt.NewEncoderWithEncoding(wr, nbt.BigEndian)
-		err = nbtEncoder.Encode(registryContainer)
-		if err != nil {
-			return err
-		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
-			err = nbtEncoder.Encode(j.CurrentDimensionData.encodeDimensionDetails())
-			if err != nil {
-				return err
-			}
-			err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
-			if err != nil {
-				return err
-			}
-			if j.DimensionInfo.LevelName == nil {
-				return errors.New("dimension info level name must not be nil")
-			}
-			err = util.WriteString(wr, *j.DimensionInfo.LevelName)
-			if err != nil {
-				return err
-			}
-		}
-	} else if c.Protocol.GreaterEqual(version.Minecraft_1_9_1) {
-		err = util.WriteInt32(wr, int32(j.Dimension))
+		err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
 		if err != nil {
 			return err
 		}
 	} else {
-		err = util.WriteByte(wr, byte(j.Dimension))
+		err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
 		if err != nil {
 			return err
 		}
-	}
-	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
-		err = util.WriteByte(wr, byte(j.Difficulty))
+		if j.DimensionInfo.LevelName == nil {
+			return errors.New("dimension info level name must not be nil")
+		}
+		err = util.WriteString(wr, *j.DimensionInfo.LevelName)
 		if err != nil {
 			return err
 		}
@@ -140,15 +131,6 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 		}
 	} else {
 		err = util.WriteByte(wr, byte(j.MaxPlayers))
-		if err != nil {
-			return err
-		}
-	}
-	if c.Protocol.Lower(version.Minecraft_1_16) {
-		if j.LevelType == nil {
-			return errors.New("no level type specified")
-		}
-		err = util.WriteString(wr, *j.LevelType)
 		if err != nil {
 			return err
 		}
@@ -177,6 +159,74 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 		err = util.WriteBool(wr, j.DimensionInfo.Flat)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (j *JoinGame) encodeLegacy(c *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteInt32(wr, int32(j.EntityID))
+	if err != nil {
+		return err
+	}
+	b := byte(j.Gamemode)
+	if j.Hardcore {
+		b = byte(j.Gamemode) | 0x8
+	}
+	err = util.WriteByte(wr, b)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_9_1) {
+		err = util.WriteInt32(wr, int32(j.Dimension))
+		if err != nil {
+			return err
+		}
+	} else {
+		err = util.WriteByte(wr, byte(j.Dimension))
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
+		err = util.WriteByte(wr, byte(j.Difficulty))
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
+		err = util.WriteInt64(wr, j.PartialHashedSeed)
+		if err != nil {
+			return err
+		}
+	}
+	err = util.WriteByte(wr, byte(j.MaxPlayers))
+	if err != nil {
+		return err
+	}
+	if j.LevelType == nil {
+		return errors.New("no level type specified")
+	}
+	err = util.WriteString(wr, *j.LevelType)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_14) {
+		err = util.WriteVarInt(wr, j.ViewDistance)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
+		err = util.WriteBool(wr, j.ReducedDebugInfo)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
+		err = util.WriteBool(wr, j.ShowRespawnScreen)
 		if err != nil {
 			return err
 		}

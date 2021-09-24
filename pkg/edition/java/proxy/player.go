@@ -324,9 +324,13 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 	if len(p.serversToTry) == 0 {
 		p.serversToTry = p.proxy.Config().ForcedHosts[p.virtualHost.String()]
 	}
-
 	if len(p.serversToTry) == 0 {
-		p.serversToTry = p.proxy.Config().Try
+		connOrder := p.proxy.Config().Try
+		if len(connOrder) == 0 {
+			return nil
+		} else {
+			p.serversToTry = connOrder
+		}
 	}
 
 	sameName := func(rs RegisteredServer, name string) bool {

@@ -257,6 +257,9 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 			if reason == nil {
 				reason = result.Message
 			}
+			if reason == nil {
+				reason = friendlyReason
+			}
 			p.Disconnect(reason)
 		case ServerDisconnectedConnectionStatus:
 			reason := redirect.Reason()
@@ -265,7 +268,11 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 			}
 			p.handleDisconnectWithReason(result.Server, reason, redirect.safe)
 		case SuccessConnectionStatus:
-			_ = p.SendMessage(&Text{Extra: []Component{movedToNewServer, friendlyReason}})
+			requestedMessage := result.Message
+			if requestedMessage == nil {
+				requestedMessage = friendlyReason
+			}
+			_ = p.SendMessage(requestedMessage)
 		default:
 			// The only remaining value is successful (no need to do anything!)
 		}
@@ -306,8 +313,8 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	if connected != nil && connected.server.ServerInfo().Equals(server.ServerInfo()) {
 		log.Info("Player was kicked from server")
 		p.handleConnectionErr2(server, reason, &Text{
-			Content: fmt.Sprintf("Kicked from %q: ", server.ServerInfo().Name()),
-			S:       Style{Color: Red},
+			Content: movedToNewServer.Content,
+			S:       movedToNewServer.S,
 			Extra:   []Component{reason},
 		}, safe)
 		return

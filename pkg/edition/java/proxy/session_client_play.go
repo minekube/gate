@@ -229,9 +229,9 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 	}
 	playerVersion := c.player.Protocol()
 	if c.spawned.CAS(false, true) {
-		// Nothing special to do with regards to spawning the player
+		// The player wasn't spawned in yet, so we don't need to do anything special.
+		// Just send JoinGame.
 
-		destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
 		if err = c.player.BufferPacket(joinGame); err != nil {
 			return fmt.Errorf("error buffering %T for player: %w", joinGame, err)
 		}
@@ -242,6 +242,8 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 		if err = c.player.tabList.clearEntries(); err != nil {
 			return fmt.Errorf("error clearing tablist entries: %w", err)
 		}
+		// The player is switching from a server already, so we need to tell the client to change
+		// entity IDs and send new dimension information.
 		if _, ok = c.player.Type().(*legacyForgeConnType); ok {
 			err = c.doSafeClientServerSwitch(joinGame)
 			if err != nil {
@@ -256,8 +258,8 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 		if err != nil {
 			return err
 		}
-		destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
 	}
+	destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
 
 	// TODO Remove previous boss bars.
 	// These don't get cleared when sending JoinGame, thus we need to track them.

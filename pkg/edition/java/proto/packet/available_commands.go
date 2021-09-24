@@ -45,6 +45,9 @@ func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err er
 				childrenQueue.PushBack(grantChild)
 				return true
 			})
+			if child.Redirect() != nil {
+				childrenQueue.PushBack(child.Redirect())
+			}
 		}
 	}
 

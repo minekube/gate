@@ -44,9 +44,11 @@ var packets = []proto.Packet{
 			Then(brigodier.Argument("a1", brigodier.String).Executes(cmd).Then(
 				brigodier.Argument("a2", brigodier.Bool).Executes(cmd),
 			)).Build())
-		n.AddChild(brigodier.Literal("l2").
+		l2 := brigodier.Literal("l2").
 			Executes(cmd).
-			Build())
+			Build()
+		n.AddChild(l2)
+		n.AddChild(brigodier.Literal("l3").Redirect(l2).Build())
 		return n
 	}()},
 	&ClientSettings{},
