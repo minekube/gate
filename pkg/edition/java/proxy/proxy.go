@@ -485,13 +485,21 @@ func (p *Proxy) Players() []Player {
 func (p *Proxy) Player(id uuid.UUID) Player {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
-	return p.playerIDs[id]
+	player, ok := p.playerIDs[id]
+	if !ok {
+		return nil // return correct nil
+	}
+	return player
 }
 
-// Player returns the online player by their Minecraft name (search is case-insensitive).
+// PlayerByName returns the online player by their Minecraft name (search is case-insensitive).
 // Returns nil if the player was not found.
 func (p *Proxy) PlayerByName(username string) Player {
-	return p.playerByName(username)
+	player := p.playerByName(username)
+	if player == (*connectedPlayer)(nil) {
+		return nil // return correct nil
+	}
+	return player
 }
 func (p *Proxy) playerByName(username string) *connectedPlayer {
 	p.muP.RLock()
