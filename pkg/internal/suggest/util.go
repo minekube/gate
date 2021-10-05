@@ -13,7 +13,10 @@ type suggestion struct {
 }
 
 func Build(builder *brigodier.SuggestionsBuilder, input string, candidates []string) *brigodier.Suggestions {
-	given := input[strings.Index(input, " ")+1:]
+	if input == "" {
+		return builder.Build()
+	}
+	given := input[strings.LastIndex(input, " ")+1:]
 	var result []suggestion
 	for _, text := range candidates {
 		score := Score(given, text)

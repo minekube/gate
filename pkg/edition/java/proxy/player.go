@@ -402,13 +402,9 @@ func (p *connectedPlayer) connectedServer() *serverConnection {
 	return p.connectedServer_
 }
 
-func (p *connectedPlayer) Username() string {
-	return p.profile.Name
-}
+func (p *connectedPlayer) Username() string { return p.profile.Name }
 
-func (p *connectedPlayer) ID() uuid.UUID {
-	return p.profile.ID
-}
+func (p *connectedPlayer) ID() uuid.UUID { return p.profile.ID }
 
 func (p *connectedPlayer) Disconnect(reason component.Component) {
 	if !p.Active() {
@@ -426,9 +422,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 	}
 }
 
-func (p *connectedPlayer) String() string {
-	return p.profile.Name
-}
+func (p *connectedPlayer) String() string { return p.profile.Name }
 
 func (p *connectedPlayer) sendLegacyForgeHandshakeResetPacket() {
 	p.phase().resetConnectionPhase(p)

@@ -234,7 +234,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 		return
 	}
 
-	l.log.Info("Player has connected, completing login", "player", player)
+	l.log.Info("Player has connected, completing login", "player", player, "id", player.ID())
 
 	// Setup permissions
 	permSetup := &PermissionsSetupEvent{

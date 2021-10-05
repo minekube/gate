@@ -504,8 +504,13 @@ func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabComplet
 }
 
 func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest) {
+	startPos := strings.LastIndex(p.Command, " ") + 1
+	if !(startPos > 0) {
+		return
+	}
+
 	// In 1.13+, we need to do additional work for the richer suggestions available.
-	cmd := p.Command[1:]
+	cmd := strings.TrimPrefix(p.Command, "/")
 	cmdEndPosition := strings.Index(cmd, " ")
 	if cmdEndPosition == -1 {
 		cmdEndPosition = len(cmd)
@@ -532,6 +537,9 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 	if len(suggestions) == 0 {
 		return
 	}
+	if c.log1.Enabled() {
+		c.log1.Info("Response to TabCompleteRequest", "cmd", cmd, "suggestions", suggestions)
+	}
 
 	offers := make([]packet.TabCompleteOffer, 0, len(suggestions))
 	for _, suggestion := range suggestions {
@@ -539,15 +547,14 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 			Text: suggestion,
 		})
 	}
-	startPos := strings.Index(p.Command, " ") + 1
-	if startPos > 0 {
-		_ = c.player.WritePacket(&packet.TabCompleteResponse{
-			TransactionID: p.TransactionID,
-			Start:         startPos,
-			Length:        len(p.Command) - startPos,
-			Offers:        offers,
-		})
-	}
+
+	// Send suggestions
+	_ = c.player.WritePacket(&packet.TabCompleteResponse{
+		TransactionID: p.TransactionID,
+		Start:         startPos,
+		Length:        len(p.Command) - startPos,
+		Offers:        offers,
+	})
 }
 
 func (c *clientPlaySessionHandler) handleRegularTabComplete(p *packet.TabCompleteRequest) {
