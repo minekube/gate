@@ -125,6 +125,9 @@ func init() {
 		m(0x24, version.Minecraft_1_16_2),
 		m(0x26, version.Minecraft_1_17),
 	)
+	Play.ClientBound.Register(&p.PlayerPosAndLook{},
+		m(0x38, version.Minecraft_1_17),
+	)
 	Play.ClientBound.Register(&p.Respawn{},
 		m(0x07, version.Minecraft_1_7_2),
 		m(0x33, version.Minecraft_1_9),

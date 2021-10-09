@@ -65,6 +65,11 @@ var packets = []proto.Packet{
 		Url:    "https://example.com/",
 		Prompt: &component.Text{Content: "Prompt"},
 	},
+	&PlayerPosAndLook{
+		X: 30,
+		Y: 20,
+		Z: -5,
+	},
 	&Respawn{},
 	&StatusRequest{},
 	&StatusResponse{},
