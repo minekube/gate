@@ -13,10 +13,9 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
-	"net"
-	"strconv"
 	"strings"
 )
 
@@ -171,36 +170,22 @@ func (r *bungeeCordMessageRecorder) processConnectOther(in io.Reader) {
 }
 
 func (r *bungeeCordMessageRecorder) processIP() {
-	ip, portS, err := net.SplitHostPort(r.RemoteAddr().String())
-	if err != nil {
-		return
-	}
-	port, err := strconv.Atoi(portS)
-	if err != nil {
-		return
-	}
+	hp := netutil.HostPort(r.RemoteAddr())
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "IP")
-	_ = util.WriteUTF(b, ip)
-	_ = util.WriteInt32(b, int32(port))
+	_ = util.WriteUTF(b, hp.Host())
+	_ = util.WriteInt32(b, int32(hp.Port()))
 	r.sendServerResponse(b.Bytes())
 }
 
 func (r *bungeeCordMessageRecorder) processIPOther(in io.Reader) {
 	r.readPlayer(in, func(p *connectedPlayer) {
-		ip, portS, err := net.SplitHostPort(p.RemoteAddr().String())
-		if err != nil {
-			return
-		}
-		port, err := strconv.Atoi(portS)
-		if err != nil {
-			return
-		}
+		hp := netutil.HostPort(p.RemoteAddr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "IPOther")
 		_ = util.WriteUTF(b, p.Username())
-		_ = util.WriteUTF(b, ip)
-		_ = util.WriteInt32(b, int32(port))
+		_ = util.WriteUTF(b, hp.Host())
+		_ = util.WriteInt32(b, int32(hp.Port()))
 		r.sendServerResponse(b.Bytes())
 	})
 }
@@ -343,20 +328,12 @@ func (r *bungeeCordMessageRecorder) processUUIDOther(in io.Reader) {
 
 func (r *bungeeCordMessageRecorder) processServerIP(in io.Reader) {
 	r.readServer(in, func(s *registeredServer) {
-		host, portS, err := net.SplitHostPort(s.ServerInfo().Addr().String())
-		if err != nil {
-			return
-		}
-		port, err := strconv.Atoi(portS)
-		if err != nil {
-			return
-		}
-
+		hp := netutil.HostPort(s.ServerInfo().Addr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "ServerIP")
 		_ = util.WriteUTF(b, s.ServerInfo().Name())
-		_ = util.WriteUTF(b, host)
-		_ = util.WriteInt16(b, int16(port))
+		_ = util.WriteUTF(b, hp.Host())
+		_ = util.WriteInt16(b, int16(hp.Port()))
 		r.sendServerResponse(b.Bytes())
 	})
 }

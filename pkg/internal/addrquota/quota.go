@@ -18,9 +18,9 @@ type Quota struct {
 	cache *lru.Cache
 }
 
-func (q *Quota) Blocked(addr net.Addr) bool {
+func (q *Quota) Blocked(ip string) bool {
 	var limiter *rate.Limiter
-	key := ipKey(addr)
+	key := ipKey(ip)
 	if key != "" {
 		q.mu.Lock()
 		if v, ok := q.cache.Get(key); ok {
@@ -42,9 +42,8 @@ func NewQuota(eventsPerSecond float32, burst, maxEntries int) *Quota {
 	}
 }
 
-func ipKey(addr net.Addr) string {
-	host, _, _ := net.SplitHostPort(addr.String())
-	ip := net.ParseIP(host)
+func ipKey(ipStr string) string {
+	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return ""
 	}

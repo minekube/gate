@@ -38,7 +38,7 @@ type sessionHandler interface {
 type minecraftConn struct {
 	proxy *Proxy      // convenient backreference
 	log   logr.Logger // connections own logger
-	c     net.Conn    // Underlying connection
+	c     net.Conn    // underlying connection
 
 	readBuf *bufio.Reader
 	decoder *codec.Decoder
@@ -59,7 +59,11 @@ type minecraftConn struct {
 }
 
 // newMinecraftConn returns a new Minecraft client connection.
-func newMinecraftConn(base net.Conn, proxy *Proxy, playerConn bool) (conn *minecraftConn) {
+func newMinecraftConn(
+	base net.Conn,
+	proxy *Proxy,
+	playerConn bool,
+) (conn *minecraftConn) {
 	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
 	out := proto.ClientBound // writes to client are client bound (proxy -> client)
 	logName := "client"
@@ -439,8 +443,8 @@ type Inbound interface {
 	Protocol() proto.Protocol // The current protocol version the connection uses.
 	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
 	RemoteAddr() net.Addr     // The player's IP address.
-	Active() bool             // Whether or not connection remains active.
-	// Closed returns a receive only channel that can be used to know when the connection was closed.
+	Active() bool             // Whether the connection remains active.
+	// Closed returns a receive-only channel that can be used to know when the connection was closed.
 	// (e.g. for canceling work in an event handler)
 	Closed() <-chan struct{}
 }

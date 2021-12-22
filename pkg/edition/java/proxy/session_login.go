@@ -43,6 +43,7 @@ func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 		return
 	}
 	switch t := p.Packet.(type) {
+	// TODO add LoginPluginResponse & fire ServerLoginPluginMessageEvent
 	case *packet.ServerLogin:
 		l.handleServerLogin(t)
 	case *packet.EncryptionResponse:

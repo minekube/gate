@@ -19,6 +19,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
@@ -210,21 +211,25 @@ func (p *Proxy) Shutdown(reason component.Component) {
 func (p *Proxy) preInit() (err error) {
 	// Load shutdown reason
 	if err = p.loadShutdownReason(); err != nil {
-		return fmt.Errorf("error loading shutdown reason: %v", err)
+		return fmt.Errorf("error loading shutdown reason: %w", err)
 	}
 	// Load status motd
 	if err = p.loadMotd(); err != nil {
-		return fmt.Errorf("error loading status motd: %v", err)
+		return fmt.Errorf("error loading status motd: %w", err)
 	}
 	// Load favicon
 	if err = p.loadFavicon(); err != nil {
-		return fmt.Errorf("error loading favicon: %v", err)
+		return fmt.Errorf("error loading favicon: %w", err)
 	}
 
 	c := p.config
 	// Register servers
 	for name, addr := range c.Servers {
-		p.Register(NewServerInfo(name, tcpAddr(addr)))
+		pAddr, err := netutil.Parse(addr, "tcp")
+		if err != nil {
+			return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
+		}
+		p.Register(NewServerInfo(name, pAddr))
 	}
 	if len(c.Servers) != 0 {
 		p.log.Info("Registered servers", "count", len(c.Servers))
@@ -449,9 +454,15 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 // handleRawConn handles a just-accepted connection that
 // has not had any I/O performed on it yet.
 func (p *Proxy) handleRawConn(raw net.Conn) {
-	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(raw.RemoteAddr()) {
+	raw, err := netutil.WrapConn(raw)
+	if err != nil {
+		p.log.Error(err, "Could not apply netutil.WrapConn on raw new connection")
 		_ = raw.Close()
+		return
+	}
+	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
+		_ = raw.Close()
 		return
 	}
 

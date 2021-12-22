@@ -12,10 +12,10 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -105,9 +105,9 @@ func (p *players) remove(players ...*connectedPlayer) {
 
 // ServerInfo is the info of a backend server.
 type ServerInfo interface {
-	Name() string   // Returns the server name.
-	Addr() net.Addr // Returns the server address.
-	Equals(ServerInfo) bool
+	Name() string           // Returns the server name.
+	Addr() net.Addr         // Returns the server address.
+	Equals(ServerInfo) bool // TODO move as function other package together with ServerInfo interface and make this method implementation optional and default to Name() & Addr.String() comparison
 }
 
 type serverInfo struct {
@@ -123,7 +123,7 @@ func (i *serverInfo) Equals(o ServerInfo) bool {
 }
 
 func NewServerInfo(name string, addr net.Addr) ServerInfo {
-	return &serverInfo{name: name, addr: addr}
+	return &serverInfo{name: name, addr: netutil.Addr(addr)}
 }
 
 func (i *serverInfo) Name() string {
@@ -285,11 +285,11 @@ func (c *connRequestCxt) result(result *connectionResult, err error) {
 }
 
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
-	addr := s.server.ServerInfo().Addr().String()
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil { // should never happen, as we validated addr already
-		return nil, fmt.Errorf("error split host port of server info address: %v", err)
+	destAddr, err := netutil.WrapAddr(s.server.ServerInfo().Addr())
+	if err != nil {
+		return nil, err
 	}
+	addr := destAddr.String()
 
 	// Connect proxy -> server
 	debug := s.log.V(1)
@@ -322,17 +322,23 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
 		NextStatus:      int(state.LoginState),
+		Port:            int16(netutil.Port(destAddr)),
 	}
 
-	if s.config().Forwarding.Mode == config.LegacyForwardingMode {
-		handshake.ServerAddress = s.createLegacyForwardingAddress()
-	} else if s.player.Type() == LegacyForge {
-		handshake.ServerAddress = fmt.Sprintf("%s%s", host, forge.HandshakeHostnameToken)
-	} else {
-		handshake.ServerAddress = host
+	// Set handshake ServerAddress
+	{
+		playerVhost := netutil.Host(s.player.virtualHost)
+		if playerVhost == "" {
+			playerVhost = netutil.Host(s.server.ServerInfo().Addr())
+		}
+		if s.config().Forwarding.Mode == config.LegacyForwardingMode {
+			handshake.ServerAddress = s.createLegacyForwardingAddress()
+		} else if s.player.Type() == LegacyForge {
+			handshake.ServerAddress = fmt.Sprintf("%s%s", playerVhost, forge.HandshakeHostnameToken)
+		} else {
+			handshake.ServerAddress = playerVhost
+		}
 	}
-	p, _ := strconv.Atoi(port)
-	handshake.Port = int16(p)
 
 	if err = serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
@@ -360,7 +366,7 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	// BungeeCord IP forwarding is simply a special injection after the "address" in the handshake,
 	// separated by \0 (the null byte). In order, you send the original host, the player's IP, their
 	// ID (undashed), and if you are in online-mode, their login properties (from Mojang).
-	playerIP, _, _ := net.SplitHostPort(s.player.RemoteAddr().String())
+	playerIP := netutil.Host(s.player.RemoteAddr())
 	b := new(strings.Builder)
 	b.WriteString(s.server.ServerInfo().Addr().String())
 	b.WriteString("\000")

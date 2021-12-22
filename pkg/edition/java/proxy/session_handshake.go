@@ -12,8 +12,8 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"net"
-	"strconv"
 	"strings"
 )
 
@@ -48,7 +48,7 @@ func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
-	vHost := tcpAddr(net.JoinHostPort(handshake.ServerAddress, strconv.Itoa(int(handshake.Port))))
+	vHost := netutil.NewAddr("tcp", handshake.ServerAddress, uint16(handshake.Port))
 	inbound := newInitialInbound(h.conn, vHost)
 
 	// The client sends the next wanted state in the Handshake packet.
@@ -85,7 +85,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 	}
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
-	if loginsQuota := h.loginsQuota(); loginsQuota != nil && loginsQuota.Blocked(inbound.RemoteAddr()) {
+	if loginsQuota := h.loginsQuota(); loginsQuota != nil && loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
 		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
@@ -140,18 +140,6 @@ func connTypeForHandshake(h *packet.Handshake) connectionType {
 	// itself using a slightly different hostname token.
 	return vanillaConnectionType
 }
-
-type tcpAddr string
-
-func (v tcpAddr) Network() string {
-	return "tcp"
-}
-
-func (v tcpAddr) String() string {
-	return string(v)
-}
-
-var _ net.Addr = (*tcpAddr)(nil)
 
 type initialInbound struct {
 	*minecraftConn
