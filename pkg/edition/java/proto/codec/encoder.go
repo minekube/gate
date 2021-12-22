@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	VanillaMaximumUncompressedSize = 2 * 1024 * 1024  // 2MiB
+	VanillaMaximumUncompressedSize = 8 * 1024 * 1024  // 8MiB
 	HardMaximumUncompressedSize    = 16 * 1024 * 1024 // 16MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
 )
