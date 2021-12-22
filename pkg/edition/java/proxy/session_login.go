@@ -223,6 +223,10 @@ var (
 		Content: "The server you were on kicked you: ",
 		S:       component.Style{Color: color.Red},
 	}
+	illegalChatCharacters = &component.Text{
+		Content: "Illegal characters in chat",
+		S:       component.Style{Color: color.Red},
+	}
 )
 
 func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMode bool) {

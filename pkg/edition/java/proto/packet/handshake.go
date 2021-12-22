@@ -10,7 +10,7 @@ import (
 type Handshake struct {
 	ProtocolVersion int
 	ServerAddress   string
-	Port            int16
+	Port            int16 // TODO use uint16?
 	NextStatus      int
 }
 

@@ -510,10 +510,9 @@ func (*DisconnectPlayerKickResult) isServerKickResult() {}
 
 // RedirectPlayerKickResult is a ServerKickResult and
 // tells the proxy to redirect the player to another server.
-// No messages will be sent from the proxy when this result is used.
 type RedirectPlayerKickResult struct {
 	Server  RegisteredServer    // The new server to redirect the kicked player to.
-	Message component.Component // Optional message to send to the kicked player.
+	Message component.Component // Optional message sent to the player after redirecting.
 }
 
 func (*RedirectPlayerKickResult) isServerKickResult() {}
@@ -569,7 +568,7 @@ func (s *ServerConnectedEvent) PreviousServer() RegisteredServer {
 //
 //
 
-// Fired after the player has connected to a server.
+// ServerPostConnectEvent is fired after the player has connected to a server.
 // The server the player is now connected to is available in Player().CurrentServer().
 type ServerPostConnectEvent struct {
 	player         Player
@@ -641,7 +640,7 @@ type PlayerSettingsChangedEvent struct {
 	settings player.Settings
 }
 
-// Player returns the player who's settings where updates/initialized.
+// Player returns the player whose settings where updates/initialized.
 func (s *PlayerSettingsChangedEvent) Player() Player {
 	return s.player
 }
@@ -802,6 +801,14 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 //
 
+// TODO PlayerClientBrandEvent
+// TODO ServerLoginPluginMessageEvent
+
+//
+//
+//
+//
+
 // PreShutdownEvent is fired before the proxy begins to shut down by
 // stopping to accept new connections and disconnect all players.
 type PreShutdownEvent struct {
@@ -814,7 +821,7 @@ func (s *PreShutdownEvent) Reason() component.Component {
 	return s.reason
 }
 
-// Reason returns the shutdown reason used to disconnect players with.
+// SetReason sets the shutdown reason used to disconnect players with.
 func (s *PreShutdownEvent) SetReason(reason component.Component) {
 	s.reason = reason
 }

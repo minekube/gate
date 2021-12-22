@@ -18,6 +18,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
+	"go.minekube.com/gate/pkg/util/validation"
 	"go.uber.org/atomic"
 	"sort"
 	"strings"
@@ -167,6 +168,7 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			})
 		}
 	} else if plugin.McBrand(packet) {
+		// TODO read brand message & fire PlayerClientBrandEvent & cache client brand
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
 	} else {
 		serverConnPhase := serverConn.phase()
@@ -213,7 +215,7 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		// non-FML handshake messages to be sent once the FML handshake has completed or the
 		// JoinGame packet has been received by the proxy, whichever comes first.
 		//
-		// We also need to make sure to retain these packets so they can be flushed
+		// We also need to make sure to retain these packets, so they can be flushed
 		// appropriately.
 		c.loginPluginMessages.PushBack(packet)
 	}
@@ -390,6 +392,11 @@ func (c *clientPlaySessionHandler) proxy() *Proxy {
 }
 
 func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
+	if validation.ContainsIllegalCharacter(p.Message) {
+		c.player.Disconnect(illegalChatCharacters)
+		return
+	}
+
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -545,6 +552,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 	for _, suggestion := range suggestions {
 		offers = append(offers, packet.TabCompleteOffer{
 			Text: suggestion,
+			// TODO support brigadier tooltip
 		})
 	}
 

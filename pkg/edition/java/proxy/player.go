@@ -533,7 +533,7 @@ func (c *minecraftConn) newContext(parent context.Context) (ctx context.Context,
 	go func() {
 		select {
 		case <-ctx.Done():
-		case <-c.closed:
+		case <-c.closed: // TODO use context.Context all along so we don't need to start a new goroutine
 			cancel()
 		}
 	}()
