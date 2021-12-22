@@ -9,13 +9,18 @@ import (
 // Settings are the client settings the player gave us.
 type Settings interface {
 	Locale() language.Tag // Locale of the Minecraft client.
-	// Returns the client's view distance. This does not guarantee the client will see this many
+	// ViewDistance returns the client's view distance. This does not guarantee the client will see this many
 	// chunks, since your servers are responsible for sending the chunks.
 	ViewDistance() uint8
 	ChatMode() ChatMode   // The chat setting of the client.
-	ChatColors() bool     // Whether or not the client has chat colors disabled.
-	SkinParts() SkinParts // The parts of player skins the client will show.
+	ChatColors() bool     // Whether the client has chat colors disabled.
+	SkinParts() SkinParts // The parts of player skin the client will show.
 	MainHand() MainHand   // The primary hand of the client.
+	// ClientListing returns whether the client explicitly
+	// allows listing on the TabList in anonymous tab list mode.
+	//
+	// This feature was introduced in 1.18.
+	ClientListing() bool
 }
 
 var DefaultSettings = NewSettings(&packet.ClientSettings{
@@ -69,6 +74,8 @@ type clientSettings struct {
 	locale language.Tag
 	s      *packet.ClientSettings
 }
+
+func (s *clientSettings) ClientListing() bool { return s.s.ClientListing }
 
 func (s *clientSettings) SkinParts() SkinParts {
 	return SkinParts(s.s.SkinParts)

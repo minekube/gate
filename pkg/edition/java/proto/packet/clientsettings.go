@@ -16,6 +16,7 @@ type ClientSettings struct {
 	SkinParts      byte
 	MainHand       int
 	TextFiltering  bool // 1.17+
+	ClientListing  bool // 1.18+, overwrites server-list "anonymous" mode
 }
 
 func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -52,6 +53,12 @@ func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
 			err = util.WriteBool(wr, s.TextFiltering)
+			if err != nil {
+				return err
+			}
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
+			err = util.WriteBool(wr, s.ClientListing)
 			if err != nil {
 				return err
 			}
@@ -94,6 +101,12 @@ func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
 			s.TextFiltering, err = util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
+			s.ClientListing, err = util.ReadBool(rd)
 			if err != nil {
 				return err
 			}
