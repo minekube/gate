@@ -315,21 +315,24 @@ func (c *clientPlaySessionHandler) doFastClientServerSwitch(joinGame *packet.Joi
 	// to perform entity ID rewrites, eliminating potential issues from rewriting packets and
 	// improving compatibility with mods.
 	respawn := respawnFromJoinGame(joinGame)
-	respawn.Dimension = 0
 
 	// Since 1.16 this dynamic changed:
 	// We don't need to send two dimension switches anymore!
 	if playerVersion.Lower(version.Minecraft_1_16) {
+		// Before Minecraft 1.16, we could not switch to the same dimension without sending an
+		// additional respawn. On older versions of Minecraft this forces the client to perform
+		// garbage collection which adds additional latency.
 		if joinGame.Dimension == 0 {
-			respawn.Dimension = -1
+			joinGame.Dimension = -1
+		} else {
+			joinGame.Dimension = 0
 		}
 	}
 	var err error
-	if err = c.player.BufferPacket(respawn); err != nil {
-		return fmt.Errorf("error buffering 1st %T for player: %w", respawn, err)
+	if err = c.player.BufferPacket(joinGame); err != nil {
+		return fmt.Errorf("error buffering 1st %T for player: %w", joinGame, err)
 	}
 
-	respawn.Dimension = joinGame.Dimension
 	if err = c.player.BufferPacket(respawn); err != nil {
 		return fmt.Errorf("error buffering 2nd %T for player: %w", respawn, err)
 	}
