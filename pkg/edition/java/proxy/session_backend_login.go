@@ -133,7 +133,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 }
 
 func createVelocityForwardingData(hmacSecret []byte, address string, profile *profile.GameProfile) ([]byte, error) {
-	forwarded := bytes.NewBuffer(make([]byte, 2048))
+	forwarded := bytes.NewBuffer(make([]byte, 0, 2048))
 	err := protoutil.WriteVarInt(forwarded, velocityForwardingVersion)
 	if err != nil {
 		return nil, err
