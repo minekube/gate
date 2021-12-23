@@ -104,6 +104,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		return
 	}
 
+	// TODO create LoginInboundConnection & Add support for sending and receiving login plugin messages from players and servers
 	h.proxy().Event().Fire(&ConnectionHandshakeEvent{inbound: inbound})
 	h.conn.setSessionHandler(newLoginSessionHandler(h.conn, inbound))
 }

@@ -9,17 +9,17 @@ require (
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
-	github.com/google/uuid v1.1.1
+	github.com/google/uuid v1.1.2
 	github.com/gookit/color v1.2.7
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/sandertv/go-raknet v1.7.8
-	github.com/sandertv/gophertunnel v1.7.14-0.20200925093235-d3d47c64a150
+	github.com/sandertv/go-raknet v1.10.2
+	github.com/sandertv/gophertunnel v1.17.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
 	go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.uber.org/atomic v1.6.0
+	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0

@@ -233,7 +233,6 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 	if c.spawned.CAS(false, true) {
 		// The player wasn't spawned in yet, so we don't need to do anything special.
 		// Just send JoinGame.
-
 		if err = c.player.BufferPacket(joinGame); err != nil {
 			return fmt.Errorf("error buffering %T for player: %w", joinGame, err)
 		}

@@ -153,7 +153,7 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 
 // Handles unexpected disconnects.
 // server - the server we disconnected from
-// safe - whether or not we can safely reconnect to a new server
+// safe - whether we can safely reconnect to a new server
 func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error, safe bool) {
 	log := p.log.WithValues(
 		"serverName", server.ServerInfo().Name(),

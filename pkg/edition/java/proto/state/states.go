@@ -166,6 +166,7 @@ func init() {
 		m(0x54, version.Minecraft_1_15),
 		m(0x53, version.Minecraft_1_16),
 		m(0x5E, version.Minecraft_1_17),
+		m(0x5F, version.Minecraft_1_18),
 	)
 	Play.ClientBound.Register(&p.PlayerListItem{},
 		m(0x38, version.Minecraft_1_7_2),
@@ -190,15 +191,18 @@ func init() {
 	)
 	Play.ClientBound.Register(&title.Subtitle{},
 		m(0x57, version.Minecraft_1_17),
+		m(0x58, version.Minecraft_1_18),
 	)
 	Play.ClientBound.Register(&title.Text{},
 		m(0x59, version.Minecraft_1_17),
+		m(0x5A, version.Minecraft_1_18),
 	)
 	Play.ClientBound.Register(&title.Actionbar{},
 		m(0x41, version.Minecraft_1_17),
 	)
 	Play.ClientBound.Register(&title.Times{},
 		m(0x5A, version.Minecraft_1_17),
+		m(0x5B, version.Minecraft_1_18),
 	)
 	Play.ClientBound.Register(&title.Clear{},
 		m(0x10, version.Minecraft_1_17),

@@ -104,7 +104,7 @@ func (d *Decoder) decode(p []byte) (ctx *proto.PacketContext, err error) {
 
 	// Payload buffer should now be empty.
 	if payload.Len() != 0 {
-		// packet decoder did not read all of the packet's data!
+		// packet decoder did not read all the packet's data!
 		d.log.V(1).Info("Packet's decoder did not read all of packet's data",
 			"ctx", ctx,
 			"decodedBytes", len(ctx.Payload),

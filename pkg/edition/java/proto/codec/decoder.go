@@ -179,7 +179,7 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 // and returns a PacketContext that is the result of the decoding or returns an error.
 //
 // As a special case, decide whether you want to ignore the error ErrDecoderLeftBytes,
-// that is returned when the payload's data had more bytes then the decoder has read,
+// that is returned when the payload's data had more bytes than the decoder has read,
 // or drop the packet.
 func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) {
 	ctx = &proto.PacketContext{
@@ -209,7 +209,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Packet is known, decode data into it.
 	ctx.KnownPacket = true
 	if err = ctx.Packet.Decode(ctx, payload); err != nil {
-		if err == io.EOF { // payload was to short or decoder has a bug
+		if err == io.EOF { // payload was too short or decoder has a bug
 			err = io.ErrUnexpectedEOF
 		}
 		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s): %w",
@@ -218,7 +218,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 
 	// Payload buffer should now be empty.
 	if payload.Len() != 0 {
-		// packet decoder did not read all of the packet's data!
+		// packet decoder did not read all the packet's data!
 		d.log.V(1).Info("Packet's decoder did not read all of packet's data",
 			"ctx", ctx,
 			"decodedBytes", len(ctx.Payload),

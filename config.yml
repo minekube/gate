@@ -14,12 +14,14 @@ editions:
         server1: localhost:25566
         server2: localhost:25567
         server3: localhost:25568
+        server4: localhost:25569
       # The list of servers to try (ordered) to connect a player to
       # upon login or fallback when a player is kicked from a server.
       try:
         - server1
         - server2
         - server3
+        - server4
       # Configure the response for server list pings.
       status:
         # The message of the day in legacy '§' format or modern text component '{"text":"...", ...}' json.
