@@ -12,17 +12,21 @@ import (
 )
 
 type backendTransitionSessionHandler struct {
-	serverConn    *serverConnection
-	requestCtx    *connRequestCxt
-	listenDoneCtx chan struct{}
-	log           logr.Logger
+	serverConn                *serverConnection
+	requestCtx                *connRequestCxt
+	bungeeCordMessageRecorder *bungeeCordMessageRecorder
+	listenDoneCtx             chan struct{}
+	log                       logr.Logger
 
 	nopSessionHandler
 }
 
 func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
-	return &backendTransitionSessionHandler{serverConn: serverConn, requestCtx: requestCtx,
-		log: serverConn.log.WithName("backendTransitionSession")}
+	return &backendTransitionSessionHandler{
+		serverConn:                serverConn,
+		requestCtx:                requestCtx,
+		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
+		log:                       serverConn.log.WithName("backendTransitionSession")}
 }
 
 func (b *backendTransitionSessionHandler) activated() {
@@ -103,19 +107,15 @@ func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect)
 }
 
 func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Message) {
-	conn, ok := b.serverConn.ensureConnected()
-	if !ok {
-		return
-	}
-	if !b.serverConn.player.canForwardPluginMessage(conn.Protocol(), packet) {
+	if b.bungeeCordMessageRecorder.process(packet) {
 		return
 	}
 
-	if plugin.Register(packet) {
+	if plugin.IsRegister(packet) {
 		b.serverConn.player.pluginChannelsMu.Lock()
 		b.serverConn.player.pluginChannels.Insert(plugin.Channels(packet)...)
 		b.serverConn.player.pluginChannelsMu.Unlock()
-	} else if plugin.Unregister(packet) {
+	} else if plugin.IsUnregister(packet) {
 		b.serverConn.player.pluginChannelsMu.Lock()
 		b.serverConn.player.pluginChannels.Delete(plugin.Channels(packet)...)
 		b.serverConn.player.pluginChannelsMu.Unlock()

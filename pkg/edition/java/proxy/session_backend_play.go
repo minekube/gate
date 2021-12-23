@@ -112,25 +112,15 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	serverMc, ok := b.serverConn.ensureConnected()
-	if !ok {
-		return
-	}
-
-	serverVersion := serverMc.Protocol()
-	if !b.serverConn.player.canForwardPluginMessage(serverVersion, packet) {
-		return
-	}
-
 	// We need to specially handle REGISTER and UNREGISTER packets.
 	// Later on, we'll write them to the client.
-	if plugin.Register(packet) {
+	if plugin.IsRegister(packet) {
 		b.serverConn.player.lockedKnownChannels(func(knownChannels sets.String) {
 			knownChannels.Insert(plugin.Channels(packet)...)
 		})
 		b.forwardToPlayer(pc, nil)
 		return
-	} else if plugin.Unregister(packet) {
+	} else if plugin.IsUnregister(packet) {
 		b.serverConn.player.lockedKnownChannels(func(knownChannels sets.String) {
 			knownChannels.Delete(plugin.Channels(packet)...)
 		})
@@ -139,6 +129,11 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 	}
 
 	if plugin.McBrand(packet) {
+		serverMc, ok := b.serverConn.ensureConnected()
+		if !ok {
+			return
+		}
+		serverVersion := serverMc.Protocol()
 		rewritten := plugin.RewriteMinecraftBrand(packet, serverVersion)
 		b.forwardToPlayer(nil, rewritten)
 		return

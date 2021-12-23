@@ -77,7 +77,7 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 	return
 }
 
-// Reads a non length-prefixed string from the Reader.
+// ReadStringWithoutLen reads a non length-prefixed string from the Reader.
 // We need this for the legacy 1.7 version, being inconsistent when sending the plugin message channel brand.
 func ReadStringWithoutLen(rd io.Reader) (string, error) {
 	b, err := ioutil.ReadAll(rd)
@@ -252,7 +252,7 @@ func ReadExtendedForgeShort(rd io.Reader) (int, error) {
 
 const ForgeMaxArrayLength = math.MaxInt32 & 0x1FFF9A
 
-// ReadRetainedByteBufSlice17 reads bytes with the Minecraft 1.7 style length.
+// ReadBytes17 reads bytes with the Minecraft 1.7 style length.
 func ReadBytes17(rd io.Reader) ([]byte, error) {
 	// Read in a 2 or 3 byte number that represents the length of the packet.
 	// (3 byte "shorts" for Forge only)

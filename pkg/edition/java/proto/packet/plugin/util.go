@@ -21,7 +21,7 @@ const (
 
 var InvalidIdentifierRegex = regexp.MustCompile(`[^a-z0-9\\-_]*`)
 
-// McBrand determines whether or not this is a brand plugin message.
+// McBrand determines whether this is a brand plugin message.
 // This is shown on the client.
 func McBrand(p *Message) bool {
 	return p != nil &&
@@ -29,35 +29,35 @@ func McBrand(p *Message) bool {
 			strings.EqualFold(p.Channel, BrandChannel))
 }
 
-// Register determines whether or not this plugin
+// IsRegister determines whether this plugin
 // message is being used to register plugin channels.
-func Register(p *Message) bool {
+func IsRegister(p *Message) bool {
 	return p != nil &&
 		(strings.EqualFold(p.Channel, RegisterChannelLegacy) ||
 			strings.EqualFold(p.Channel, RegisterChannel))
 }
 
-// Unregister determines whether or not this plugin
+// IsUnregister determines whether this plugin
 // message is being used to unregister plugin channels.
-func Unregister(p *Message) bool {
+func IsUnregister(p *Message) bool {
 	return p != nil &&
 		(strings.EqualFold(p.Channel, UnregisterChannelLegacy) ||
 			strings.EqualFold(p.Channel, UnregisterChannel))
 }
 
-// Determines whether or not this plugin message is a legacy (<1.13) registration plugin message.
+// LegacyRegister determines whether this plugin message is a legacy (<1.13) registration plugin message.
 func LegacyRegister(p *Message) bool {
 	return p != nil && strings.EqualFold(p.Channel, RegisterChannelLegacy)
 }
 
-// Determines whether or not this plugin message is a legacy (<1.13) un-registration plugin message.
+// LegacyUnregister determines whether this plugin message is a legacy (<1.13) un-registration plugin message.
 func LegacyUnregister(p *Message) bool {
 	return p != nil && strings.EqualFold(p.Channel, UnregisterChannelLegacy)
 }
 
 // Channels fetches all the channels in a register or unregister plugin message.
 func Channels(p *Message) (channels []string) {
-	if p == nil || len(p.Data) == 0 || !Register(p) || !Unregister(p) {
+	if p == nil || len(p.Data) == 0 || !IsRegister(p) || !IsUnregister(p) {
 		return
 	}
 	return strings.Split(string(p.Data), "\000") // split null-terminated
@@ -66,7 +66,7 @@ func Channels(p *Message) (channels []string) {
 // TransformLegacyToModernChannel transforms a plugin
 // message channel from a "legacy" (<1.13) form to a modern one.
 func TransformLegacyToModernChannel(name string) string {
-	if !strings.Contains(name, ":") {
+	if strings.Contains(name, ":") {
 		// Probably valid. We won't check this for now and go on faith.
 		return name
 	}
@@ -91,7 +91,7 @@ func TransformLegacyToModernChannel(name string) string {
 	}
 }
 
-// Constructs a channel (un)register packet.
+// ConstructChannelsPacket constructs a channel (un)register packet.
 // channels must not be empty! Note that the Message's Retained field remains nil.
 func ConstructChannelsPacket(protocol proto.Protocol, channels ...string) *Message {
 	if len(channels) == 0 {
@@ -110,14 +110,14 @@ func ConstructChannelsPacket(protocol proto.Protocol, channels ...string) *Messa
 	}
 }
 
-// Rewrites the brand message to indicate the presence of the proxy.
+// RewriteMinecraftBrand rewrites the brand message to indicate the presence of the proxy.
 func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 	if message == nil || !McBrand(message) {
 		return message
 	}
 
 	currentBrand := readBrandMessage(message.Data)
-	rewrittenBrand := fmt.Sprintf("%s (Minekube Proxy)", currentBrand)
+	rewrittenBrand := fmt.Sprintf("%s (Gate by Minekube)", currentBrand)
 
 	rewrittenBuf := new(bytes.Buffer)
 	if protocol.GreaterEqual(version.Minecraft_1_8) {
@@ -132,14 +132,14 @@ func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 	}
 }
 
+// Some clients (mostly poorly-implemented bots) do not send validly-formed brand messages.
+// In order to accommodate their broken behavior, we'll first try to read in the 1.8 format, and
+// if that fails, treat it as a 1.7-format message (which has no prefixed length).
+// (The message the proxy sends will be in the correct format depending on the protocol.)
 func readBrandMessage(data []byte) string {
-	// Some clients (mostly poorly-implemented bots) do not send validly-formed brand messages.
-	// In order to accommodate their broken behavior, we'll first try to read in the 1.8 format, and
-	// if that fails, treat it as a 1.7-format message (which has no prefixed length).
-	// (The message the proxy sends will be in the correct format depending on the protocol.)
-	if brand, err := util.ReadString(bytes.NewReader(data)); err != nil {
-		return brand
+	s, err := util.ReadString(bytes.NewReader(data))
+	if err != nil {
+		s, _ = util.ReadStringWithoutLen(bytes.NewReader(data))
 	}
-	s, _ := util.ReadStringWithoutLen(bytes.NewReader(data))
 	return s
 }

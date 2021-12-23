@@ -8,13 +8,13 @@ import (
 
 // ChannelIdentifier is a channel identifier for use with plugin messaging.
 type ChannelIdentifier interface {
-	// Returns the channel identifier.
+	// ID returns the channel identifier.
 	ID() string
 }
 
 // ChannelMessageSink can receive plugin messages.
 type ChannelMessageSink interface {
-	// Sends a plugin message to the channel with id.
+	// SendPluginMessage sends a plugin message to the channel with id.
 	SendPluginMessage(id ChannelIdentifier, data []byte) error
 }
 
@@ -24,10 +24,10 @@ type ChannelMessageSource interface{}
 // ChannelRegistrar is an interface to register and
 // unregister ChannelIdentifiers for the proxy to listen on.
 type ChannelRegistrar interface {
-	// Registers the specified message identifiers to listen on so you can
+	// Register registers the specified message identifiers to listen on so you can
 	// intercept plugin messages on the channel using the PluginMessageEvent.
 	Register(ids ...ChannelIdentifier)
-	// Removes the intent to listen for the specified channels.
+	// Unregister removes the intent to listen for the specified channels.
 	Unregister(ids ...ChannelIdentifier)
 }
 

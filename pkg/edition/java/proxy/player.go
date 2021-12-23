@@ -10,7 +10,6 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/command"
-	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -20,7 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
-	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/permission"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -467,25 +465,6 @@ func (p *connectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)
 	p.pluginChannelsMu.RUnlock()
 	defer p.pluginChannelsMu.RLock()
 	fn(p.pluginChannels)
-}
-
-// Determines whether or not we can forward a plugin message onto the client.
-// message - plugin message to forward to the client
-func (p *connectedPlayer) canForwardPluginMessage(protocol proto.Protocol, message *plugin.Message) bool {
-	var minecraftOrFmlMessage bool
-
-	// By default, all internal Minecraft and Forge channels are forwarded from the server.
-	if int(protocol) <= int(version.Minecraft_1_12_2.Protocol) {
-		channel := message.Channel
-		minecraftOrFmlMessage = strings.HasPrefix(channel, "MC|") ||
-			strings.HasPrefix(channel, forge.LegacyHandshakeChannel) ||
-			plugin.LegacyRegister(message) || plugin.LegacyUnregister(message)
-	} else {
-		minecraftOrFmlMessage = strings.HasPrefix(message.Channel, "minecraft:")
-	}
-
-	// Otherwise, we need to see if the player already knows this channel or it's known by the proxy.
-	return minecraftOrFmlMessage || p.knownChannels().Has(message.Channel)
 }
 
 func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {

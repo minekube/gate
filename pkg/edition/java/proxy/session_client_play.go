@@ -155,13 +155,13 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	if backendConn.State() != state.Play {
 		c.log.Info("A plugin message was received while the backend server was not ready. Packet discarded.",
 			"channel", packet.Channel)
-	} else if plugin.Register(packet) {
+	} else if plugin.IsRegister(packet) {
 		if backendConn.WritePacket(packet) != nil {
 			c.player.lockedKnownChannels(func(knownChannels sets.String) {
 				knownChannels.Insert(plugin.Channels(packet)...)
 			})
 		}
-	} else if plugin.Unregister(packet) {
+	} else if plugin.IsUnregister(packet) {
 		if backendConn.WritePacket(packet) != nil {
 			c.player.lockedKnownChannels(func(knownChannels sets.String) {
 				knownChannels.Delete(plugin.Channels(packet)...)

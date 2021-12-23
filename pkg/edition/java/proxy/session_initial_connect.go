@@ -34,11 +34,11 @@ func (i *initialConnectSessionHandler) handlePluginMessage(packet *plugin.Messag
 		return // Done
 	}
 
-	if plugin.Register(packet) {
+	if plugin.IsRegister(packet) {
 		i.player.pluginChannelsMu.Lock()
 		i.player.pluginChannels.Insert(plugin.Channels(packet)...)
 		i.player.pluginChannelsMu.Unlock()
-	} else if plugin.Unregister(packet) {
+	} else if plugin.IsUnregister(packet) {
 		i.player.pluginChannelsMu.Lock()
 		i.player.pluginChannels.Delete(plugin.Channels(packet)...)
 		i.player.pluginChannelsMu.Unlock()
