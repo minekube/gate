@@ -97,7 +97,7 @@ func (l *LoginPluginResponse) Decode(_ *proto.PacketContext, rd io.Reader) (err 
 	if err != nil {
 		return err
 	}
-	l.Data, err = util.ReadBytes(rd)
+	l.Data, err = util.ReadRawBytes(rd)
 	if errors.Is(err, io.EOF) {
 		// Ignore if we couldn't read data
 		return nil

@@ -5,11 +5,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"io/ioutil"
 	"math"
+
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 func ReadString(rd io.Reader) (string, error) {
@@ -75,6 +76,13 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 	bytes = make([]byte, length)
 	_, err = rd.Read(bytes)
 	return
+}
+
+// Reads a non length prefixed string from the reader. This is necessary for parsing
+// certain packets like the velocity login/hello packet (no length prefix).
+func ReadRawBytes(rd io.Reader) ([]byte, error) {
+	b, err := ioutil.ReadAll(rd)
+	return b, err
 }
 
 // ReadStringWithoutLen reads a non length-prefixed string from the Reader.

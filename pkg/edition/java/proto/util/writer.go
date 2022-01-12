@@ -111,7 +111,8 @@ func WriteBytes(wr io.Writer, b []byte) (err error) {
 	return err
 }
 
-// Like WriteBytes, but doesn't include the length prefix
+// Writes a raw strema of bytes to a file with no length prefix.
+// Necessary for the Velocity hello/login packet (it uses a non-standard packet format)
 func WriteRawBytes(wr io.Writer, b []byte) (err error) {
 	_, err = wr.Write(b)
 	return err
