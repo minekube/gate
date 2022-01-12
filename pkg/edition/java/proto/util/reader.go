@@ -81,8 +81,7 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 // Reads a non length prefixed string from the reader. This is necessary for parsing
 // certain packets like the velocity login/hello packet (no length prefix).
 func ReadRawBytes(rd io.Reader) ([]byte, error) {
-	b, err := ioutil.ReadAll(rd)
-	return b, err
+	return ioutil.ReadAll(rd)
 }
 
 // ReadStringWithoutLen reads a non length-prefixed string from the Reader.
