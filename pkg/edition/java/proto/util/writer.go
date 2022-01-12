@@ -3,10 +3,11 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"math"
+
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 func WriteString(writer io.Writer, val string) (err error) {
@@ -106,6 +107,13 @@ func WriteBytes(wr io.Writer, b []byte) (err error) {
 	if err != nil {
 		return err
 	}
+	_, err = wr.Write(b)
+	return err
+}
+
+// Writes a raw strema of bytes to a file with no length prefix.
+// Necessary for the Velocity hello/login packet (it uses a non-standard packet format)
+func WriteRawBytes(wr io.Writer, b []byte) (err error) {
 	_, err = wr.Write(b)
 	return err
 }

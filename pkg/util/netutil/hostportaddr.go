@@ -46,13 +46,12 @@ func WrapAddr(addr net.Addr) (net.Addr, error) {
 		return addr, nil
 	}
 	var (
-		host, port string
+		port string
 		err        error
 		p          int
 		a          = &address{Addr: addr}
 	)
 	a.host, port, err = net.SplitHostPort(addr.String())
-	a.host = host
 	if err == nil {
 		p, err = strconv.Atoi(port)
 	}

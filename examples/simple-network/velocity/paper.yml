@@ -1,0 +1,4 @@
+settings:
+  velocity-support:
+    enabled: true
+    secret: my-secret
