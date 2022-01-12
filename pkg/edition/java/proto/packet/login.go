@@ -3,12 +3,13 @@ package packet
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
 )
 
 type ServerLogin struct {
@@ -84,7 +85,7 @@ func (l *LoginPluginResponse) Encode(_ *proto.PacketContext, wr io.Writer) (err 
 	if err != nil {
 		return err
 	}
-	return util.WriteBytes(wr, l.Data)
+	return util.WriteRawBytes(wr, l.Data)
 }
 
 func (l *LoginPluginResponse) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {

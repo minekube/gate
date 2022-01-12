@@ -5,6 +5,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
+	"reflect"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -14,9 +17,8 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.uber.org/atomic"
-	"reflect"
-	"strings"
 )
 
 type backendLoginSessionHandler struct {
@@ -108,7 +110,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 	if cfg.Forwarding.Mode == config.VelocityForwardingMode &&
 		strings.EqualFold(p.Channel, velocityIpForwardingChannel) {
 		forwardingData, err := createVelocityForwardingData([]byte(cfg.Forwarding.VelocitySecret),
-			b.serverConn.Player().RemoteAddr().String(),
+			netutil.Host(b.serverConn.Player().RemoteAddr()),
 			b.serverConn.player.profile)
 		if err != nil {
 			b.log.Error(err, "Error creating velocity forwarding data")
@@ -162,7 +164,7 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 	}
 
 	// final
-	data := bytes.NewBuffer(make([]byte, mac.Size()+forwarded.Len()))
+	data := bytes.NewBuffer(make([]byte, 0, mac.Size()+forwarded.Len()))
 	_, err = data.Write(mac.Sum(nil))
 	if err != nil {
 		return nil, err

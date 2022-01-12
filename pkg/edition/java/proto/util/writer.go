@@ -3,10 +3,11 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/util/uuid"
 	"io"
 	"math"
+
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 func WriteString(writer io.Writer, val string) (err error) {
@@ -106,6 +107,12 @@ func WriteBytes(wr io.Writer, b []byte) (err error) {
 	if err != nil {
 		return err
 	}
+	_, err = wr.Write(b)
+	return err
+}
+
+// Like WriteBytes, but doesn't include the length prefix
+func WriteRawBytes(wr io.Writer, b []byte) (err error) {
 	_, err = wr.Write(b)
 	return err
 }
