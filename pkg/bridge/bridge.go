@@ -22,7 +22,7 @@ import (
 type Bridge struct {
 	Log logr.Logger // The logger used in bridging-code.
 
-	// At least two editions must be set.
+	// At least one edition must be set.
 	JavaProxy    *jproxy.Proxy // Holds java edition players.
 	BedrockProxy *bproxy.Proxy // Holds bedrock edition players
 
