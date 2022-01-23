@@ -9,16 +9,29 @@ service TunnelService {
 
 message TunnelRequest {
   oneof message {
-    // The session id from StartSession.
-    // Must only be set to stream initially.
+    // The session id gotten from StartSession by the Watch rpc.
+    // The first TunnelRequest message must specify this field initially
+    // and proceeding messages must provide the data field.
     string session_id = 1;
 
-    // Packet data sent from TunnelService to endpoint.
+    // This is a raw client bound data fragment sent from
+    // the connected endpoint to the TunnelService.
+    //
+    // This data may be an incomplete packet.
+    // The receiving side should cache this data inside a
+    // buffer before decoding actual packets from the stream.
     bytes data = 2;
   }
 }
 
 message TunnelResponse {
-  // The raw packet data.
+  // The raw packet data sent from TunnelService to endpoint.
+  //
+  // This is a raw server bound data fragment sent from
+  // the TunnelService to the connected endpoint.
+  //
+  // This data may be an incomplete packet.
+  // The receiving side should cache this data inside a
+  // buffer before decoding actual packets from the stream.
   bytes data = 1;
 }

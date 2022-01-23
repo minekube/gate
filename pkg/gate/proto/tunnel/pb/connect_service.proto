@@ -3,7 +3,7 @@ syntax = "proto3";
 package minekube.connect.v1alpha1;
 
 service ConnectService {
-  // Watch for incoming player connection intents.
+  // Watches for incoming player connection intents.
   rpc Watch(WatchRequest) returns (stream WatchResponse);
 }
 

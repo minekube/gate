@@ -178,7 +178,7 @@ type dialTunnelRequest struct {
 
 func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
 	// first message must receive session id
-	req, err := biStream.Recv()
+	req, err := biStream.Recv() // TODO add timout
 	if err != nil {
 		return err
 	}
