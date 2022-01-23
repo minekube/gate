@@ -11,6 +11,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/gate/proto/tunnel"
+	connectv1alpha1 "go.minekube.com/gate/pkg/gate/proto/tunnel/pb"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -284,20 +286,25 @@ func (c *connRequestCxt) result(result *connectionResult, err error) {
 	c.once.Do(func() { c.response <- &connResponse{connectionResult: result, error: err} })
 }
 
-func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
-	destAddr, err := netutil.WrapAddr(s.server.ServerInfo().Addr())
+func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
+	if d, ok := s.Server().(tunnel.Dialer); ok {
+		return d.Dial(ctx, &connectv1alpha1.StartSession{})
+	}
+	destAddr, err := netutil.WrapAddr(s.Server().ServerInfo().Addr())
 	if err != nil {
 		return nil, err
 	}
-	addr := destAddr.String()
+	var d net.Dialer
+	return d.DialContext(ctx, "tcp", destAddr.String())
+}
 
+func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	// Connect proxy -> server
 	debug := s.log.V(1)
 	debug.Info("Connecting to server...")
-	var d net.Dialer
-	conn, err := d.DialContext(ctx, "tcp", addr)
+	conn, err := s.dial(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to server %s: %w", addr, err)
+		return nil, fmt.Errorf("error connecting to server %q: %w", s.server.ServerInfo().Name(), err)
 	}
 	debug.Info("Connected to server")
 
@@ -322,7 +329,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
 		NextStatus:      int(state.LoginState),
-		Port:            int16(netutil.Port(destAddr)),
+		Port:            int16(netutil.Port(s.server.ServerInfo().Addr())),
 	}
 
 	// Set handshake ServerAddress

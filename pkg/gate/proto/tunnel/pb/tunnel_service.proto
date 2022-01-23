@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package minekube.connect.v1alpha1;
+
+service TunnelService {
+  // Tunnel the actual connection.
+  rpc Tunnel(stream TunnelRequest) returns (stream TunnelResponse);
+}
+
+message TunnelRequest {
+  oneof message {
+    // The session id from StartSession.
+    // Must only be set to stream initially.
+    string session_id = 1;
+
+    // Packet data sent from TunnelService to endpoint.
+    bytes data = 2;
+  }
+}
+
+message TunnelResponse {
+  // The raw packet data.
+  bytes data = 1;
+}

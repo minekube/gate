@@ -47,9 +47,9 @@ func WrapAddr(addr net.Addr) (net.Addr, error) {
 	}
 	var (
 		port string
-		err        error
-		p          int
-		a          = &address{Addr: addr}
+		err  error
+		p    int
+		a    = &address{Addr: addr}
 	)
 	a.host, port, err = net.SplitHostPort(addr.String())
 	if err == nil {

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package minekube.connect.v1alpha1;
+
+service ConnectService {
+  // Watch for incoming player connection intents.
+  rpc Watch(WatchRequest) returns (stream WatchResponse);
+}
+
+message WatchRequest {
+  // Details about the client that is calling Watch.
+  // This must be the initial message or the rpc is
+  // closed serverside after a timeout.
+  Endpoint endpoint = 1;
+}
+
+message Endpoint {
+  // It is the server name that players connect by.
+  // If there are multiple equally named endpoints
+  // player connections are multiplexed.
+  string name = 1;
+  // supported Minecraft protocol versions & more...
+}
+
+message WatchResponse {
+  oneof message {
+    StartSession start_session = 1;
+  }
+}
+
+message StartSession {
+  // The unique session id.
+  string id = 1;
+  // The address of the tunnel service
+  string tunnel_service_addr = 2;
+  // The player that will be connected.
+  Player player = 3;
+}
+
+message Player {
+  // The profile of the player.
+  GameProfile profile = 1;
+}
+
+message GameProfile {
+  // The Minecraft UUID of the player.
+  string id = 1;
+  // The Minecraft name of the player.
+  string name = 2;
+  // The profile properties that may contain skin data and more.
+  repeated GameProfileProperty properties = 3;
+}
+
+message GameProfileProperty {
+  string name = 1;
+  string value = 2;
+  string signature = 3;
+}

@@ -46,7 +46,7 @@ type Player interface {
 	// CreateConnectionRequest creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() profile.GameProfile // Returns the player's game profile.
-	Settings() player.Settings        // The players client settings. Returns player.DefaultSettings if known.
+	Settings() player.Settings        // The player's client settings. Returns player.DefaultSettings if unknown.
 	// Disconnect disconnects the player with a reason.
 	// Once called, further interface calls to this player become undefined.
 	Disconnect(reason component.Component)

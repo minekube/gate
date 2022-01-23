@@ -275,7 +275,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 			player.close()
 			return
 		}
-		if err := player.SetCompressionThreshold(threshold); err != nil {
+		if err = player.SetCompressionThreshold(threshold); err != nil {
 			l.log.Error(err, "Error setting compression threshold")
 			_ = player.closeWith(packet.DisconnectWith(internalServerConnectionError))
 			return

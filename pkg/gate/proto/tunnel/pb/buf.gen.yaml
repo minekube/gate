@@ -1,0 +1,19 @@
+version: v1
+managed:
+  enabled: true
+  java_multiple_files: false
+  go_package_prefix:
+    default: go.minekube.com/gate/pkg/gate/proto/tunnel
+plugins:
+  - remote: buf.build/library/plugins/go:v1.27.1-1
+    out: .
+    opt:
+      - paths=source_relative
+  - remote: buf.build/library/plugins/go-grpc:v1.1.0-2
+    out: .
+    opt:
+      - paths=source_relative
+#  - name: java
+#    out: gen/proto/java
+#  - name: grpc-java
+#    out: gen/proto/java
