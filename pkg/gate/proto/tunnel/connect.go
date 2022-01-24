@@ -51,6 +51,7 @@ func (c *Connect) ListenAndServer(ctx context.Context, localAddr, publicTunnelSv
 		tunnelSvcAddr: publicTunnelSvcAddr,
 		localAddr:     ln.Addr(),
 	}
+	c.svc.awaitingTunnel.sessions = map[string]*dialTunnelRequest{}
 	defer func() { c.svc = nil }()
 
 	svr := grpc.NewServer()
@@ -115,12 +116,12 @@ func (c *Connect) Dial(ctx context.Context, endpoint string, player *pb.Player) 
 		},
 	}})
 	if err != nil {
-		return nil, fmt.Errorf("could not send StartSession: %w", err)
+		return nil, fmt.Errorf("could not send StartSession to an endpoint: %w", err)
 	}
 
 	select {
 	case result := <-responseChan:
-		return result.conn, result.err
+		return result.conn, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -171,7 +172,6 @@ func (s *service) Watch(req *pb.WatchRequest, stream pb.ConnectService_WatchServ
 type dialTunnelRequest struct {
 	conn    net.Conn
 	dialCtx context.Context
-	err     error
 
 	responseChan chan<- *dialTunnelRequest
 }
@@ -207,13 +207,7 @@ func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
 	go func() {
 		// Setup connection
 		p, _ := peer.FromContext(biStream.Context())
-		awaiting.conn = &conn{
-			sessionID:   sessionID,
-			closeTunnel: closeTunnel,
-			bi:          biStream,
-			remoteAddr:  p.Addr,
-			localAddr:   s.localAddr,
-		}
+		awaiting.conn = newConn(sessionID, s.localAddr, p.Addr, biStream, closeTunnel)
 		// Send back to watcher
 		awaiting.responseChan <- awaiting
 	}()
@@ -246,6 +240,9 @@ func (m *watchers) add(e *pb.Endpoint, stream pb.ConnectService_WatchServer) *wa
 	set, ok := m.m[e.GetName()]
 	if !ok {
 		set = make(watcherSet, 1)
+		if m.m == nil {
+			m.m = map[string]watcherSet{}
+		}
 		m.m[e.GetName()] = set
 	}
 	set[w] = struct{}{}

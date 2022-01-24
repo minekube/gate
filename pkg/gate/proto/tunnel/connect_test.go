@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"io"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -44,35 +45,153 @@ func startLocalConnectServices(t testing.TB) {
 			}
 			require.NoError(t, err)
 		}()
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 300)
 	})
 }
 
-func TestConnect_Dial_NoActiveTunnel(t *testing.T) {
-	startLocalConnectServices(t)
+var (
+	setupClientsOnce sync.Once
+	tunnelCli        pb.TunnelServiceClient
+	connectCli       pb.ConnectServiceClient
+)
 
-	_, err := c.Dial(ctx, "not-exists", samplePlayer)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no active tunnel")
+func setupClients(t testing.TB) {
+	setupClientsOnce.Do(func() {
+		svcConn, err := grpc.Dial(listenAddr, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		tunnelCli = pb.NewTunnelServiceClient(svcConn)
+		connectCli = pb.NewConnectServiceClient(svcConn)
+	})
 }
 
-func TestService_Tunnel(t *testing.T) {
+func TestService_Tunnel_SessionID_Missing(t *testing.T) {
 	startLocalConnectServices(t)
-
-	svcConn, err := grpc.Dial(listenAddr, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err)
-	defer svcConn.Close()
-
-	tunnelCli := pb.NewTunnelServiceClient(svcConn)
+	setupClients(t)
 
 	biStream, err := tunnelCli.Tunnel(ctx)
 	require.NoError(t, err)
 
-	err = biStream.Send(&pb.TunnelRequest{})
+	err = biStream.Send(&pb.TunnelRequest{
+		Message: &pb.TunnelRequest_SessionId{
+			SessionId: "", // missing
+		},
+	})
 	require.NoError(t, err)
 	time.Sleep(time.Millisecond * 300)
 
 	err = biStream.Send(&pb.TunnelRequest{})
 	require.ErrorIs(t, err, io.EOF)
 	require.Equal(t, status.Code(biStream.RecvMsg(nil)), codes.InvalidArgument)
+}
+
+func TestService_Tunnel_SessionID_NotFound(t *testing.T) {
+	startLocalConnectServices(t)
+	setupClients(t)
+
+	biStream, err := tunnelCli.Tunnel(ctx)
+	require.NoError(t, err)
+
+	err = biStream.Send(&pb.TunnelRequest{
+		Message: &pb.TunnelRequest_SessionId{
+			SessionId: "not-existing",
+		},
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Millisecond * 300)
+
+	err = biStream.Send(&pb.TunnelRequest{})
+	require.ErrorIs(t, err, io.EOF)
+	require.Equal(t, status.Code(biStream.RecvMsg(nil)), codes.NotFound)
+}
+
+func TestService_Watch_Endpoint_Missing(t *testing.T) {
+	startLocalConnectServices(t)
+	setupClients(t)
+
+	stream, err := connectCli.Watch(ctx, &pb.WatchRequest{
+		Endpoint: nil, // missing
+	})
+	require.NoError(t, err)
+
+	_, err = stream.Recv()
+	require.Equal(t, status.Code(err), codes.InvalidArgument)
+}
+
+func TestConnect_Dial_NoActiveTunnel(t *testing.T) {
+	startLocalConnectServices(t)
+
+	_, err := c.Dial(ctx, "not-existing", samplePlayer)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no active tunnel")
+}
+
+const sampleEndpoint = "sampleEndpoint"
+
+func TestService_Watch_Dial_Tunnel(t *testing.T) {
+	startLocalConnectServices(t)
+	setupClients(t)
+
+	watchCtx, watchCancel := context.WithCancel(ctx)
+	defer watchCancel()
+	watchStream, err := connectCli.Watch(watchCtx, &pb.WatchRequest{
+		Endpoint: &pb.Endpoint{Name: sampleEndpoint},
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Millisecond * 300)
+
+	tunnelChan := make(chan net.Conn, 1)
+	go func() {
+		// Trigger tunnel creation
+		tunnelConn, err := c.Dial(ctx, sampleEndpoint, samplePlayer)
+		require.NoError(t, err)
+		tunnelChan <- tunnelConn
+	}()
+
+	resp, err := watchStream.Recv()
+	require.NoError(t, err)
+
+	// Test watching endpoint is removed
+	watchCancel()
+	time.Sleep(time.Millisecond * 300)
+	_, err = c.Dial(ctx, sampleEndpoint, samplePlayer)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no active tunnel")
+
+	// Create tunnel
+	session := resp.GetStartSession()
+	tunnelCtx, tunnelCancel := context.WithCancel(ctx)
+	defer tunnelCancel()
+	tunnelStream, err := tunnelCli.Tunnel(tunnelCtx)
+	require.NoError(t, err)
+
+	err = tunnelStream.Send(&pb.TunnelRequest{Message: &pb.TunnelRequest_SessionId{
+		SessionId: session.GetId(),
+	}})
+	require.NoError(t, err)
+
+	err = tunnelStream.Send(&pb.TunnelRequest{Message: &pb.TunnelRequest_Data{
+		Data: []byte("hello"),
+	}})
+	require.NoError(t, err)
+
+	// Test tunnel is still active and read from it
+	tunnelConn := <-tunnelChan
+	b := make([]byte, 2)
+	n, err := tunnelConn.Read(b)
+	require.NoError(t, err)
+	require.Equal(t, len(b), n)
+	require.Equal(t, "he", string(b))
+
+	b = make([]byte, 3)
+	n, err = tunnelConn.Read(b)
+	require.NoError(t, err)
+	require.Equal(t, len(b), n)
+	require.Equal(t, "llo", string(b))
+
+	// Deadline
+	b = make([]byte, 3)
+	n, err = tunnelConn.Read(b)
+	require.NoError(t, err)
+	require.Equal(t, len(b), n)
+	require.Equal(t, "llo", string(b))
 }
