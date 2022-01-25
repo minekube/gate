@@ -208,7 +208,7 @@ func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
 		// Setup connection
 		p, _ := peer.FromContext(biStream.Context())
 		awaiting.conn = newConn(sessionID, s.localAddr, p.Addr, biStream, closeTunnel)
-		// Send back to watcher
+		// Send back to Dial
 		awaiting.responseChan <- awaiting
 	}()
 

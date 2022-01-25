@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -142,7 +143,7 @@ func TestService_Watch_Dial_Tunnel(t *testing.T) {
 	tunnelChan := make(chan net.Conn, 1)
 	go func() {
 		// Trigger tunnel creation
-		tunnelConn, err := c.Dial(ctx, sampleEndpoint, samplePlayer)
+		tunnelConn, err := c.Dial(ctx, sampleEndpoint, samplePlayer) // server bound
 		require.NoError(t, err)
 		tunnelChan <- tunnelConn
 	}()
@@ -161,7 +162,7 @@ func TestService_Watch_Dial_Tunnel(t *testing.T) {
 	session := resp.GetStartSession()
 	tunnelCtx, tunnelCancel := context.WithCancel(ctx)
 	defer tunnelCancel()
-	tunnelStream, err := tunnelCli.Tunnel(tunnelCtx)
+	tunnelStream, err := tunnelCli.Tunnel(tunnelCtx) // client bound
 	require.NoError(t, err)
 
 	err = tunnelStream.Send(&pb.TunnelRequest{Message: &pb.TunnelRequest_SessionId{
@@ -176,6 +177,7 @@ func TestService_Watch_Dial_Tunnel(t *testing.T) {
 
 	// Test tunnel is still active and read from it
 	tunnelConn := <-tunnelChan
+	defer tunnelConn.Close()
 	b := make([]byte, 2)
 	n, err := tunnelConn.Read(b)
 	require.NoError(t, err)
@@ -189,9 +191,8 @@ func TestService_Watch_Dial_Tunnel(t *testing.T) {
 	require.Equal(t, "llo", string(b))
 
 	// Deadline
-	b = make([]byte, 3)
-	n, err = tunnelConn.Read(b)
+	err = tunnelConn.SetDeadline(time.Now().Add(time.Second))
 	require.NoError(t, err)
-	require.Equal(t, len(b), n)
-	require.Equal(t, "llo", string(b))
+	_, err = tunnelConn.Read(make([]byte, 3))
+	require.ErrorIs(t, err, os.ErrDeadlineExceeded)
 }
