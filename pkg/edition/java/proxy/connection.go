@@ -271,7 +271,7 @@ func (c *minecraftConn) close() error {
 	return c.closeKnown(true)
 }
 
-// Indicates a connection is already closed.
+// ErrClosedConn indicates a connection is already closed.
 var ErrClosedConn = errors.New("connection is closed")
 
 func (c *minecraftConn) closeKnown(markKnown bool) (err error) {

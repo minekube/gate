@@ -128,7 +128,7 @@ func TestConnect_Dial_NoActiveTunnel(t *testing.T) {
 
 const sampleEndpoint = "sampleEndpoint"
 
-func TestService_Watch_Dial_Tunnel(t *testing.T) {
+func TestService_Watch_Dial_Tunnel_RW(t *testing.T) {
 	startLocalConnectServices(t)
 	setupClients(t)
 
@@ -190,9 +190,28 @@ func TestService_Watch_Dial_Tunnel(t *testing.T) {
 	require.Equal(t, len(b), n)
 	require.Equal(t, "llo", string(b))
 
-	// Deadline
-	err = tunnelConn.SetDeadline(time.Now().Add(time.Second))
+	// Write to tunnel
+	writeB := []byte("holla")
+	n, err = tunnelConn.Write(writeB)
 	require.NoError(t, err)
-	_, err = tunnelConn.Read(make([]byte, 3))
-	require.ErrorIs(t, err, os.ErrDeadlineExceeded)
+	require.Equal(t, 5, n)
+
+	req, err := tunnelStream.Recv()
+	require.NoError(t, err)
+	require.Equal(t, writeB, req.GetData())
+
+	// Deadline
+	ok := make(chan struct{})
+	go func() {
+		defer close(ok)
+		err = tunnelConn.SetDeadline(time.Now().Add(time.Second))
+		require.NoError(t, err)
+		_, err = tunnelConn.Read(make([]byte, 3))
+		require.ErrorIs(t, err, os.ErrDeadlineExceeded)
+	}()
+	select {
+	case <-ok:
+	case <-time.After(time.Second + time.Millisecond*100):
+		require.Fail(t, "deadline did not exceed")
+	}
 }

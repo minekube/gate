@@ -66,6 +66,10 @@ func (c *Connect) ListenAndServer(ctx context.Context, localAddr, publicTunnelSv
 	return svr.Serve(ln)
 }
 
+type Dialer interface {
+	Dial(ctx context.Context, endpoint string, player *pb.Player) (net.Conn, error)
+}
+
 // Dial establishes a tunnel connection with the endpoint for a player.
 func (c *Connect) Dial(ctx context.Context, endpoint string, player *pb.Player) (net.Conn, error) {
 	// Validation
@@ -213,10 +217,6 @@ func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
 	}()
 
 	return <-closeTunnelErr
-}
-
-type Dialer interface {
-	Dial(ctx context.Context, intent *pb.StartSession) (net.Conn, error)
 }
 
 type watchers struct {

@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gookit/color v1.2.7
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/rs/xid v1.3.0 // indirect
+	github.com/rs/xid v1.3.0
 	github.com/sandertv/go-raknet v1.10.2
 	github.com/sandertv/gophertunnel v1.17.1
 	github.com/spf13/cobra v1.0.0
@@ -28,7 +28,7 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.43.0
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.27.1
 	k8s.io/apimachinery v0.19.2
 	sigs.k8s.io/controller-runtime v0.6.3
 )

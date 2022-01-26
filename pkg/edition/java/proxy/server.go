@@ -12,7 +12,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto/tunnel"
-	connectv1alpha1 "go.minekube.com/gate/pkg/gate/proto/tunnel/pb"
+	pb "go.minekube.com/gate/pkg/gate/proto/tunnel/pb"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -288,7 +288,7 @@ func (c *connRequestCxt) result(result *connectionResult, err error) {
 
 func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 	if d, ok := s.Server().(tunnel.Dialer); ok {
-		return d.Dial(ctx, &connectv1alpha1.StartSession{})
+		return d.Dial(ctx, s.Server().ServerInfo().Name(), newConnectPlayer(s.player))
 	}
 	destAddr, err := netutil.WrapAddr(s.Server().ServerInfo().Addr())
 	if err != nil {
@@ -296,6 +296,23 @@ func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 	}
 	var d net.Dialer
 	return d.DialContext(ctx, "tcp", destAddr.String())
+}
+
+func newConnectPlayer(p Player) *pb.Player {
+	profile := p.GameProfile()
+	props := make([]*pb.GameProfileProperty, len(profile.Properties))
+	for i, prop := range profile.Properties {
+		props[i] = &pb.GameProfileProperty{
+			Name:      prop.Name,
+			Value:     prop.Value,
+			Signature: prop.Signature,
+		}
+	}
+	return &pb.Player{Profile: &pb.GameProfile{
+		Id:         profile.ID.String(),
+		Name:       profile.Name,
+		Properties: props,
+	}}
 }
 
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {

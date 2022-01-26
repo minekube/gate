@@ -9,7 +9,9 @@ type deadline struct {
 
 func (d *deadline) SetDeadline(t time.Time) error {
 	if d.timeoutTimer != nil {
-		d.timeoutTimer.Stop()
+		if !d.timeoutTimer.Stop() {
+			<-d.timeoutTimer.C
+		}
 	}
 	d.timeoutTimer = time.AfterFunc(time.Until(t), func() {
 		select {

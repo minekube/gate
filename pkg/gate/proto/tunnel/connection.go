@@ -18,15 +18,6 @@ type conn struct {
 	r       deadline.Reader
 }
 
-type writeRequest struct {
-	data     []byte
-	response struct {
-		n   int
-		err error
-	}
-	responseChan chan<- *writeRequest
-}
-
 func newConn(
 	sessionID string,
 	localAddr, remoteAddr net.Addr,
