@@ -24,14 +24,14 @@ message Endpoint {
 
 message WatchResponse {
   oneof message {
-    StartSession start_session = 1;
+    Session session = 1;
   }
 }
 
-message StartSession {
+message Session {
   // The unique session id.
   string id = 1;
-  // The address of the tunnel service
+  // The address of the tunnel service to establish the connection.
   string tunnel_service_addr = 2;
   // The player that will be connected.
   Player player = 3;

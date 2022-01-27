@@ -190,7 +190,7 @@ func (c *minecraftConn) flush() (err error) {
 		// already closed and can't write to.
 		return err
 	}
-	// Must flush in sync with encoder or we may get an
+	// Must flush in sync with encoder, or we may get an
 	// io.ErrShortWrite when flushing while encoder is already writing.
 	return c.encoder.Sync(c.writeBuf.Flush)
 }

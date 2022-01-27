@@ -9,7 +9,8 @@ import (
 
 // conn implements net.Conn for a tunneled connection over gRPC
 type conn struct {
-	sessionID  string
+	s *pb.Session
+
 	localAddr  net.Addr
 	remoteAddr net.Addr
 
@@ -18,30 +19,37 @@ type conn struct {
 	r       deadline.Reader
 }
 
+func (c *conn) Session() *pb.Session { return c.s }
+
+type Conn interface {
+	net.Conn
+	Session() *pb.Session
+}
+
+func serverStreamRW(ss pb.TunnelService_TunnelServer) (r deadline.Reader, w deadline.Writer) {
+	return deadline.NewReader(func() ([]byte, error) { msg, err := ss.Recv(); return msg.GetData(), err }),
+		deadline.NewWriter(func(b []byte) (err error) { return ss.Send(&pb.TunnelResponse{Data: b}) })
+}
+
+func clientStreamRW(ss pb.TunnelService_TunnelClient) (r deadline.Reader, w deadline.Writer) {
+	return deadline.NewReader(func() ([]byte, error) { msg, err := ss.Recv(); return msg.GetData(), err }),
+		deadline.NewWriter(func(b []byte) (err error) {
+			return ss.Send(&pb.TunnelRequest{Message: &pb.TunnelRequest_Data{Data: b}})
+		})
+}
+
 func newConn(
-	sessionID string,
+	session *pb.Session,
 	localAddr, remoteAddr net.Addr,
-	biStream pb.TunnelService_TunnelServer,
+	r deadline.Reader, w deadline.Writer,
 	closeFn func(err error),
-) *conn {
+) Conn {
 	c := &conn{
-		sessionID:  sessionID,
+		s:          session,
 		localAddr:  localAddr,
 		remoteAddr: remoteAddr,
-		w: deadline.NewWriter(func() deadline.WriteFn {
-			msg := new(pb.TunnelResponse)
-			return func(b []byte) (err error) {
-				msg.Data = b
-				return biStream.Send(msg)
-			}
-		}()),
-		r: deadline.NewReader(func() deadline.ReadFn {
-			msg := new(pb.TunnelRequest)
-			return func() (b []byte, err error) {
-				err = biStream.RecvMsg(msg)
-				return msg.GetData(), err
-			}
-		}()),
+		w:          w,
+		r:          r,
 	}
 	c.closeFn = func(err error) {
 		_ = c.w.Close()
@@ -51,9 +59,6 @@ func newConn(
 }
 
 var _ net.Conn = (*conn)(nil)
-
-// SessionID returns the session id of the tunnel of this connection.
-func (c *conn) SessionID() string { return c.sessionID }
 
 func (c *conn) Read(b []byte) (n int, err error)  { return c.r.Read(b) }
 func (c *conn) Write(b []byte) (n int, err error) { return c.w.Write(b) }

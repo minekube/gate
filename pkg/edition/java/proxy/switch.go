@@ -391,10 +391,10 @@ func (c *connectionRequest) internalConnect(ctx context.Context) (result *connec
 		return plainConnectionResult(CanceledConnectionStatus, newDest), nil
 	}
 
-	con := newServerConnection(server, c.player)
-	c.player.setInFlightConnection(con)
-	defer c.resetIfInFlightIs(con)
-	return con.connect(ctx)
+	conn := newServerConnection(server, c.player)
+	c.player.setInFlightConnection(conn)
+	defer c.resetIfInFlightIs(conn)
+	return conn.connect(ctx)
 }
 
 func (c *connectionRequest) resetIfInFlightIs(establishedConnection *serverConnection) {

@@ -48,7 +48,7 @@ func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
-	vHost := netutil.NewAddr("tcp", handshake.ServerAddress, uint16(handshake.Port))
+	vHost := netutil.NewAddr(h.conn.c.LocalAddr().Network(), handshake.ServerAddress, uint16(handshake.Port))
 	inbound := newInitialInbound(h.conn, vHost)
 
 	// The client sends the next wanted state in the Handshake packet.

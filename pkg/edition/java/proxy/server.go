@@ -287,15 +287,11 @@ func (c *connRequestCxt) result(result *connectionResult, err error) {
 }
 
 func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
-	if d, ok := s.Server().(tunnel.Dialer); ok {
+	if d, ok := s.Server().ServerInfo().(tunnel.Dialer); ok {
 		return d.Dial(ctx, s.Server().ServerInfo().Name(), newConnectPlayer(s.player))
 	}
-	destAddr, err := netutil.WrapAddr(s.Server().ServerInfo().Addr())
-	if err != nil {
-		return nil, err
-	}
 	var d net.Dialer
-	return d.DialContext(ctx, "tcp", destAddr.String())
+	return d.DialContext(ctx, "tcp", s.Server().ServerInfo().Addr().String())
 }
 
 func newConnectPlayer(p Player) *pb.Player {

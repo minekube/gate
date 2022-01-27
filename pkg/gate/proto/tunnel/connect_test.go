@@ -40,7 +40,7 @@ var (
 func startLocalConnectServices(t testing.TB) {
 	startOnce.Do(func() {
 		go func() {
-			err := c.ListenAndServer(ctx, listenAddr, listenAddr)
+			err := c.ListenAndServe(ctx, listenAddr, listenAddr)
 			if errors.Is(err, context.Canceled) {
 				return
 			}
@@ -159,7 +159,7 @@ func TestService_Watch_Dial_Tunnel_RW(t *testing.T) {
 	require.Contains(t, err.Error(), "no active tunnel")
 
 	// Create tunnel
-	session := resp.GetStartSession()
+	session := resp.GetSession()
 	tunnelCtx, tunnelCancel := context.WithCancel(ctx)
 	defer tunnelCancel()
 	tunnelStream, err := tunnelCli.Tunnel(tunnelCtx) // client bound

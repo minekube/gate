@@ -87,11 +87,11 @@ func (b *backendLoginSessionHandler) handlePacket(pc *proto.PacketContext) {
 	}
 }
 
-// An error in a ConnectionRequest when the backend server is in online mode.
+// ErrServerOnlineMode indicates error in a ConnectionRequest when the backend server is in online mode.
 var ErrServerOnlineMode = errors.New("backend server is online mode, but should be offline")
 
 func (b *backendLoginSessionHandler) handleEncryptionRequest() {
-	// If we get an encryption request we know that the server is online mode!
+	// If we get an encryption request we know that the server is online mode or does not support tunneling!
 	// Server should be offline mode.
 	b.requestCtx.result(nil, ErrServerOnlineMode)
 }

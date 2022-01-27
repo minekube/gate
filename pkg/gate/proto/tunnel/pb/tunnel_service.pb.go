@@ -89,13 +89,19 @@ type isTunnelRequest_Message interface {
 }
 
 type TunnelRequest_SessionId struct {
-	// The session id from StartSession.
-	// Must only be set to stream initially.
+	// The session id gotten from StartSession by the Watch rpc.
+	// The first TunnelRequest message must specify this field initially
+	// and proceeding messages must provide the data field.
 	SessionId string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3,oneof"`
 }
 
 type TunnelRequest_Data struct {
-	// Packet data sent from TunnelService to endpoint.
+	// This is a raw client bound data fragment sent from
+	// the connected endpoint to the TunnelService.
+	//
+	// This data may be an incomplete packet.
+	// The receiving side should cache this data inside a
+	// buffer before decoding actual packets from the stream.
 	Data []byte `protobuf:"bytes,2,opt,name=data,proto3,oneof"`
 }
 
@@ -108,7 +114,14 @@ type TunnelResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The raw packet data.
+	// The raw packet data sent from TunnelService to endpoint.
+	//
+	// This is a raw server bound data fragment sent from
+	// the TunnelService to the connected endpoint.
+	//
+	// This data may be an incomplete packet.
+	// The receiving side should cache this data inside a
+	// buffer before decoding actual packets from the stream.
 	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 }
 

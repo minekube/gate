@@ -18,7 +18,7 @@ import (
 
 // EndpointAddedEvent is fired when an endpoint was added.
 // Note that multiple endpoints can have the same name.
-type EndpointAddedEvent struct {
+type EndpointAddedEvent struct { // TODO add server on this event implementing Dialer for server
 	Endpoint pb.Endpoint
 }
 
@@ -36,7 +36,7 @@ type Connect struct {
 	svc *service
 }
 
-func (c *Connect) ListenAndServer(ctx context.Context, localAddr, publicTunnelSvcAddr string) error {
+func (c *Connect) ListenAndServe(ctx context.Context, localAddr, publicTunnelSvcAddr string) error {
 	ln, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		return fmt.Errorf("error listening on %q: %w", localAddr, err)
@@ -67,14 +67,14 @@ func (c *Connect) ListenAndServer(ctx context.Context, localAddr, publicTunnelSv
 }
 
 type Dialer interface {
-	Dial(ctx context.Context, endpoint string, player *pb.Player) (net.Conn, error)
+	Dial(ctx context.Context, endpoint string, player *pb.Player) (Conn, error)
 }
 
 // Dial establishes a tunnel connection with the endpoint for a player.
-func (c *Connect) Dial(ctx context.Context, endpoint string, player *pb.Player) (net.Conn, error) {
+func (c *Connect) Dial(ctx context.Context, endpoint string, player *pb.Player) (Conn, error) {
 	// Validation
 	if c.svc == nil {
-		return nil, errors.New("ListenAndServer must be called before Dial")
+		return nil, errors.New("ListenAndServe must be called before Dial")
 	}
 	if player == nil {
 		return nil, errors.New("player must not be nil")
@@ -92,40 +92,42 @@ func (c *Connect) Dial(ctx context.Context, endpoint string, player *pb.Player) 
 		return nil, fmt.Errorf("no active tunnel for endpoint %q", endpoint)
 	}
 
-	sessionID := xid.New().String()
+	session := &pb.Session{
+		Id:                xid.New().String(),
+		TunnelServiceAddr: c.svc.tunnelSvcAddr,
+		Player:            player,
+	}
 
 	// await tunnel connection
 	responseChan := make(chan *dialTunnelRequest, 1)
-	c.svc.awaitingTunnel.Lock()
-	c.svc.awaitingTunnel.sessions[sessionID] = &dialTunnelRequest{
-		dialCtx:      ctx,
-		responseChan: responseChan,
+	request := &dialTunnelRequest{
+		session: session,
+		dialCtx: ctx,
 	}
+	request.response.c = responseChan
+	c.svc.awaitingTunnel.Lock()
+	c.svc.awaitingTunnel.sessions[session.Id] = request
 	c.svc.awaitingTunnel.Unlock()
 
 	defer func() {
 		// Insure session is removed if not already done by request to Tunnel rpc
 		c.svc.awaitingTunnel.Lock()
-		delete(c.svc.awaitingTunnel.sessions, sessionID)
+		delete(c.svc.awaitingTunnel.sessions, session.Id)
 		c.svc.awaitingTunnel.Unlock()
 	}()
 
 	// Inform the watcher that it should connect to the TunnelService
 	// to establish an outbound connection to start the session
-	err := w.stream.Send(&pb.WatchResponse{Message: &pb.WatchResponse_StartSession{
-		StartSession: &pb.StartSession{
-			Id:                sessionID,
-			TunnelServiceAddr: c.svc.tunnelSvcAddr,
-			Player:            player,
-		},
+	err := w.stream.Send(&pb.WatchResponse{Message: &pb.WatchResponse_Session{
+		Session: session,
 	}})
 	if err != nil {
-		return nil, fmt.Errorf("could not send StartSession to an endpoint: %w", err)
+		return nil, fmt.Errorf("could not initiate session to endpoint: %w", err)
 	}
 
 	select {
 	case result := <-responseChan:
-		return result.conn, nil
+		return result.response.conn, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -174,10 +176,12 @@ func (s *service) Watch(req *pb.WatchRequest, stream pb.ConnectService_WatchServ
 }
 
 type dialTunnelRequest struct {
-	conn    net.Conn
-	dialCtx context.Context
-
-	responseChan chan<- *dialTunnelRequest
+	session  *pb.Session
+	dialCtx  context.Context
+	response struct {
+		conn Conn
+		c    chan<- *dialTunnelRequest
+	}
 }
 
 func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
@@ -211,9 +215,10 @@ func (s *service) Tunnel(biStream pb.TunnelService_TunnelServer) error {
 	go func() {
 		// Setup connection
 		p, _ := peer.FromContext(biStream.Context())
-		awaiting.conn = newConn(sessionID, s.localAddr, p.Addr, biStream, closeTunnel)
+		r, w := serverStreamRW(biStream)
+		awaiting.response.conn = newConn(awaiting.session, s.localAddr, p.Addr, r, w, closeTunnel)
 		// Send back to Dial
-		awaiting.responseChan <- awaiting
+		awaiting.response.c <- awaiting
 	}()
 
 	return <-closeTunnelErr

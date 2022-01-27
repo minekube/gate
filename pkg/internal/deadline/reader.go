@@ -2,6 +2,7 @@ package deadline
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -34,7 +35,9 @@ func NewReader(read ReadFn) Reader {
 	}
 	go func() {
 		for {
+			fmt.Println("reading")
 			data, err := read()
+			fmt.Println("read")
 			if err != nil {
 				r.readErr <- err
 				return
@@ -50,10 +53,12 @@ func (r *reader) Read(b []byte) (int, error) {
 		return 0, r.errored
 	}
 	for r.readBuf.Len() < len(b) {
+		fmt.Println(r.readBuf.Len())
 		select {
 		case r.errored = <-r.readErr:
 			return 0, r.errored
 		case data := <-r.sink:
+			fmt.Println(string(data))
 			_, err := r.readBuf.Write(data)
 			if err != nil {
 				return 0, err
