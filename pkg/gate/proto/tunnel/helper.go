@@ -18,17 +18,17 @@ func Watch(ctx context.Context, endpoint string, connectCli pb.ConnectServiceCli
 		return err
 	}
 	for {
-		start, err := stream.Recv()
+		res, err := stream.Recv()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return err
 		}
-		if start.GetSession() == nil {
+		if res.GetSession() == nil {
 			continue
 		}
-		if err = fn(start.GetSession()); err != nil {
+		if err = fn(res.GetSession()); err != nil {
 			return err
 		}
 	}

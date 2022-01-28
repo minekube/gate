@@ -18,7 +18,7 @@ import (
 
 // EndpointAddedEvent is fired when an endpoint was added.
 // Note that multiple endpoints can have the same name.
-type EndpointAddedEvent struct { // TODO add server on this event implementing Dialer for server
+type EndpointAddedEvent struct {
 	Endpoint pb.Endpoint
 }
 

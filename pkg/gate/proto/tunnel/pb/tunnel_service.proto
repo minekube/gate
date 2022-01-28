@@ -9,7 +9,7 @@ service TunnelService {
 
 message TunnelRequest {
   oneof message {
-    // The session id gotten from StartSession by the Watch rpc.
+    // The session id gotten from WatchResponse.session by the Watch rpc.
     // The first TunnelRequest message must specify this field initially
     // and proceeding messages must provide the data field.
     string session_id = 1;

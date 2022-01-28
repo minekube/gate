@@ -89,7 +89,7 @@ type isTunnelRequest_Message interface {
 }
 
 type TunnelRequest_SessionId struct {
-	// The session id gotten from StartSession by the Watch rpc.
+	// The session id gotten from WatchResponse.session by the Watch rpc.
 	// The first TunnelRequest message must specify this field initially
 	// and proceeding messages must provide the data field.
 	SessionId string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3,oneof"`

@@ -4,14 +4,32 @@ package minekube.connect.v1alpha1;
 
 service ConnectService {
   // Watches for incoming player connection intents.
-  rpc Watch(WatchRequest) returns (stream WatchResponse);
+  rpc Watch(stream WatchRequest) returns (stream WatchResponse);
 }
 
 message WatchRequest {
-  // Details about the client that is calling Watch.
-  // This must be the initial message or the rpc is
-  // closed serverside after a timeout.
-  Endpoint endpoint = 1;
+  oneof message {
+    // Sending this endpoint adds the server to the list
+    // of multiplexed servers for this endpoint name.
+    //
+    // It is allowed to send other messages before this.
+    //
+    // If this is message is not sent the stream will
+    // be closed serverside after a timeout.
+    Endpoint endpoint = 1;
+
+    // Sending this message denies a session connect requested
+    // from WatchResponse.session. This message should be send
+    // to inform the WatchService that the server will not try
+    // to make a tunnel for the session. The only purpose of
+    // this message is to provide quicker feedback to the player
+    // that he will not be connected with an optional reason.
+    // If the session is not denied and the tunnel service does
+    // not get a request to establish the tunnel the session
+    // times out and the player receives a connection error
+    // indicating that the endpoint is currently inactive.
+    DenySession deny_session = 2;
+  }
 }
 
 message Endpoint {
@@ -19,13 +37,23 @@ message Endpoint {
   // If there are multiple equally named endpoints
   // player connections are multiplexed.
   string name = 1;
-  // supported Minecraft protocol versions & more...
+  // supported Minecraft protocol versions
+  // version/user agent like paper or velocity
+  // more...
 }
 
 message WatchResponse {
   oneof message {
     Session session = 1;
   }
+}
+
+message DenySession {
+  // The id of the session.
+  string id = 1;
+  // The optional reason why the session was denied
+  // to be shown to the player.
+  string reason = 2;
 }
 
 message Session {
@@ -40,6 +68,10 @@ message Session {
 message Player {
   // The profile of the player.
   GameProfile profile = 1;
+  // The optional IP address of the player.
+  // This field may be empty or is a fake address
+  // generated for this particular player.
+  string addr = 2;
 }
 
 message GameProfile {
