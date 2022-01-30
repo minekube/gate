@@ -464,12 +464,12 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 // handleRawConn handles a just-accepted connection that
 // has not had any I/O performed on it yet.
 func (p *Proxy) handleRawConn(raw net.Conn) {
-	raw, err := netutil.WrapConn(raw)
-	if err != nil {
-		p.log.Error(err, "Could not apply netutil.WrapConn on raw new connection")
-		_ = raw.Close()
-		return
-	}
+	//raw, err := netutil.WrapConn(raw) TODO dont hide TunnelConn
+	//if err != nil {
+	//	p.log.Error(err, "Could not apply netutil.WrapConn on raw new connection")
+	//	_ = raw.Close()
+	//	return
+	//}
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()

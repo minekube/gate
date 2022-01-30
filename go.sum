@@ -546,6 +546,8 @@ go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09 h1:E/AB72vPICyxqDcUQxC
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.minekube.com/connect v0.1.0 h1:wR8Btza3qQ96KOh60JyVFhFNGtNGf4JI69Jpn3eW7Uc=
 go.minekube.com/connect v0.1.0/go.mod h1:0n35XJxE7dO01LEVy1Td11PCIpRBnipdq24nLTmmlw0=
+go.minekube.com/connect v0.1.1-0.20220130144137-f962493c16ad h1:WR1ULYse4MUw3Uv+Nmege4cRAqW2Lcqm5sw3CYyUsWI=
+go.minekube.com/connect v0.1.1-0.20220130144137-f962493c16ad/go.mod h1:0n35XJxE7dO01LEVy1Td11PCIpRBnipdq24nLTmmlw0=
 go.mongodb.org/mongo-driver v1.0.3/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=
 go.mongodb.org/mongo-driver v1.1.1/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=
 go.mongodb.org/mongo-driver v1.1.2/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -81,7 +82,9 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 		// If this is a tunneled connection we skip encryption
 		// as it is already done by the tunnel service
+		fmt.Printf("receive tunnel login? %T\n", l.conn.c)
 		if tc, ok := l.conn.c.(TunnelConn); ok {
+			fmt.Println(1)
 			gp, err := gameProfileFromSessionGameProfile(tc.Session().GetPlayer().GetProfile())
 			if err != nil {
 				l.log.Error(err, "Could not parse game profile from tunnel session")

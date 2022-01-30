@@ -6,6 +6,7 @@ import (
 	"github.com/rs/xid"
 	"go.minekube.com/connect"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"google.golang.org/grpc"
@@ -18,6 +19,7 @@ import (
 
 // todo move somewhere appropriate
 type tunnelServerInfo struct {
+	log logr.Logger
 	ServerInfo
 	connect.Watcher
 
@@ -28,6 +30,7 @@ type tunnelServerInfo struct {
 }
 
 func (t *tunnelServerInfo) Dial(ctx context.Context, p Player) (connect.TunnelConn, error) {
+	t.log.Info("Creating tunnel for player")
 	session := &connect.Session{
 		Id:                xid.New().String(),
 		TunnelServiceAddr: ":8443",
@@ -55,6 +58,7 @@ func (t *tunnelServerInfo) Dial(ctx context.Context, p Player) (connect.TunnelCo
 	// Wait for inbound tunnel
 	select {
 	case tunnel := <-tunnelChan:
+		t.log.Info("Created tunnel for player")
 		return tunnel.Conn(), nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -71,11 +75,14 @@ func newConnectPlayer(p Player) *connect.Player {
 			Signature: prop.Signature,
 		}
 	}
-	return &connect.Player{Profile: &connect.GameProfile{
-		Id:         prof.ID.String(),
-		Name:       prof.Name,
-		Properties: props,
-	}}
+	return &connect.Player{
+		Addr: p.RemoteAddr().String(),
+		Profile: &connect.GameProfile{
+			Id:         prof.ID.String(),
+			Name:       prof.Name,
+			Properties: props,
+		},
+	}
 }
 
 func (p *Proxy) watchConnect(ctx context.Context) error {
@@ -86,6 +93,7 @@ func (p *Proxy) watchConnect(ctx context.Context) error {
 		}
 		defer ln.Close()
 		ts := &connect.TunnelService{
+			ReceiveSessionTimeout: connect.DefaultReceiveSessionTimeout,
 			AcceptTunnel: func(tunnel connect.InboundTunnel) error {
 				for _, s := range p.Servers() {
 					t, ok := s.ServerInfo().(*tunnelServerInfo)
@@ -96,6 +104,7 @@ func (p *Proxy) watchConnect(ctx context.Context) error {
 					ch, ok := t.mu.await[tunnel.SessionID()]
 					t.mu.RUnlock()
 					if ok {
+						p.log.Info("Accepted new tunnel")
 						ch <- tunnel
 						return nil
 					}
@@ -104,6 +113,7 @@ func (p *Proxy) watchConnect(ctx context.Context) error {
 			},
 		}
 		ws := &connect.WatchService{
+			ReceiveEndpointTimeout: connect.DefaultReceiveEndpointTimeout,
 			StartWatch: func(watcher connect.Watcher) error {
 				info := NewServerInfo(
 					watcher.Endpoint().GetName(),
@@ -111,8 +121,12 @@ func (p *Proxy) watchConnect(ctx context.Context) error {
 					netutil.NewAddr("tcp", watcher.Endpoint().GetName(), 0),
 				)
 				tsi := &tunnelServerInfo{
+					log:        p.log.WithName(info.Name()),
 					Watcher:    watcher,
 					ServerInfo: info,
+				}
+				if existing := p.Server(info.Name()); existing != nil {
+					p.Unregister(existing.ServerInfo())
 				}
 				p.Register(tsi)
 				<-watcher.Context().Done() // todo WHY IS THIS CONTEXT CANCELED?????
@@ -129,25 +143,26 @@ func (p *Proxy) watchConnect(ctx context.Context) error {
 		return svr.Serve(ln)
 	}
 
+	p.log.Info("Dialing watch...")
 	conn, err := grpc.DialContext(ctx, ":8443", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}
-	//defer conn.Close()
+	defer conn.Close()
 	p.log.Info("Watching...")
 	return connect.Watch(ctx, connect.WatchOptions{
 		Cli:      connect.NewWatchServiceClient(conn),
-		Endpoint: "endpoint1",
+		Endpoint: "server1",
 		Callback: func(proposal connect.SessionProposal) error {
 			p.log.Info("Establishing tunnel for new session")
-			tunnelCli, err := grpc.DialContext(ctx, proposal.Session().GetTunnelServiceAddr(), grpc.WithInsecure())
+			tunnelCli, err := grpc.DialContext(ctx, proposal.Session().GetTunnelServiceAddr(), grpc.WithInsecure(), grpc.WithBlock())
 			if err != nil {
 				return err
 			}
 			tc, err := connect.Tunnel(ctx, connect.TunnelOptions{
 				TunnelCli:  connect.NewTunnelServiceClient(tunnelCli),
 				SessionID:  proposal.Session().GetId(),
-				LocalAddr:  "endpoint1",
+				LocalAddr:  "server1:1234",
 				RemoteAddr: proposal.Session().GetPlayer().GetAddr(),
 			})
 			if err != nil {
