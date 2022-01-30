@@ -14,8 +14,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/gate/proto/tunnel"
-	pb "go.minekube.com/gate/pkg/gate/proto/tunnel/pb"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
@@ -25,10 +23,7 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -448,6 +443,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 		for {
 			err = p.watchConnect(context.Background())
 			fmt.Println(err)
+			time.Sleep(time.Second / 4)
 		}
 	}()
 
@@ -463,69 +459,6 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 		}
 		go p.handleRawConn(conn)
 	}
-}
-
-// todo move somewhere appropriate
-type tunnelServerInfo struct {
-	ServerInfo
-	*tunnel.Connect
-}
-
-var _ tunnel.Dialer = (*tunnelServerInfo)(nil)
-
-func (p *Proxy) watchConnect(ctx context.Context) error {
-	if os.Getenv("tunnelserver") == "true" {
-		c := &tunnel.Connect{
-			Event: p.Event(),
-		}
-		p.Event().Subscribe(&tunnel.EndpointAddedEvent{}, 0, func(ev event.Event) {
-			e := ev.(*tunnel.EndpointAddedEvent)
-			if s := p.Server(e.Endpoint.GetName()); s != nil {
-				p.Unregister(s.ServerInfo())
-			}
-			p.Register(&tunnelServerInfo{
-				Connect: c,
-				ServerInfo: NewServerInfo(
-					e.Endpoint.GetName(),
-					// todo don't need an address
-					netutil.NewAddr("tcp", e.Endpoint.GetName(), 0),
-				),
-			})
-			fmt.Println("Added", e.Endpoint.GetName())
-		})
-		p.Event().Subscribe(&tunnel.EndpointRemovedEvent{}, 0, func(ev event.Event) {
-			e := ev.(*tunnel.EndpointRemovedEvent)
-			s := p.Server(e.Endpoint.GetName())
-			if s == nil {
-				return
-			}
-			p.Unregister(s.ServerInfo())
-			fmt.Println("Removed", e.Endpoint.GetName())
-		})
-		p.log.Info("Serving Connect service...")
-		return c.ListenAndServe(ctx, ":8443", ":8443")
-	}
-	p.log.Info("Dialing Connect service...")
-	// todo with dial timeout
-	svcConn, err := grpc.DialContext(ctx, "localhost:8443", // TODO config target
-		grpc.WithBlock(),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return err
-	}
-	p.log.Info("Watching tunnel session requests...")
-	connectCli := pb.NewConnectServiceClient(svcConn)
-	// todo more concurrency
-	return tunnel.Watch(ctx, "server1", connectCli, func(session *pb.Session) error {
-		p.log.Info("Establishing tunnel for new session")
-		conn, err := tunnel.Tunnel(ctx, session)
-		if err != nil {
-			return err // todo log err and return nil to continue watching
-		}
-		p.log.Info("Established tunnel for new session")
-		go p.handleRawConn(conn)
-		return nil
-	})
 }
 
 // handleRawConn handles a just-accepted connection that

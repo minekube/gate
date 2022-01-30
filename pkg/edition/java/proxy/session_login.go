@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"fmt"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -14,8 +13,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/gate/proto/tunnel"
-	pb "go.minekube.com/gate/pkg/gate/proto/tunnel/pb"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -84,8 +81,8 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 		// If this is a tunneled connection we skip encryption
 		// as it is already done by the tunnel service
-		if tunnelConn, ok := l.conn.c.(tunnel.Conn); ok {
-			gp, err := gameProfileFromSessionGameProfile(tunnelConn.Session().GetPlayer().GetProfile())
+		if tc, ok := l.conn.c.(TunnelConn); ok {
+			gp, err := gameProfileFromSessionGameProfile(tc.Session().GetPlayer().GetProfile())
 			if err != nil {
 				l.log.Error(err, "Could not parse game profile from tunnel session")
 				_ = l.conn.closeWith(packet.DisconnectWithProtocol(internalServerConnectionError, l.conn.Protocol()))
@@ -106,26 +103,6 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	}
 	// Offline mode login
 	l.initPlayer(profile.NewOffline(l.login.Username), false)
-}
-
-func gameProfileFromSessionGameProfile(p *pb.GameProfile) (*profile.GameProfile, error) {
-	id, err := uuid.Parse(p.GetId())
-	if err != nil {
-		return nil, fmt.Errorf("invalid player id: %w", err)
-	}
-	props := make([]profile.Property, len(p.Properties))
-	for i, prop := range p.Properties {
-		props[i] = profile.Property{
-			Name:      prop.GetName(),
-			Value:     prop.GetValue(),
-			Signature: prop.GetSignature(),
-		}
-	}
-	return &profile.GameProfile{
-		ID:         id,
-		Name:       p.GetName(),
-		Properties: props,
-	}, nil
 }
 
 func (l *loginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequest {
