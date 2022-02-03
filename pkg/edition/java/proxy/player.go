@@ -463,7 +463,7 @@ func (p *connectedPlayer) knownChannels() sets.String {
 // runs fn while pluginChannels is locked. Used for modifying channel set.
 func (p *connectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)) {
 	p.pluginChannelsMu.RLock()
-	defer p.pluginChannelsMu.Unlock()
+	defer p.pluginChannelsMu.RUnlock()
 	fn(p.pluginChannels)
 }
 
