@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"net"
+	"regexp"
+	"time"
+
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -16,9 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"net"
-	"regexp"
-	"time"
 )
 
 type loginSessionHandler struct {
@@ -36,6 +37,15 @@ type loginSessionHandler struct {
 func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
 	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
 }
+
+var (
+	playerNameTooBig = &component.Text{
+		Content: "Your username isn't allowed to be over 16 characters or it's not a valid format.",
+		S: component.Style{
+			Color: color.Red,
+		},
+	}
+)
 
 func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
@@ -61,7 +71,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 	// Validate username format
 	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.conn.close()
+		_ = l.conn.closeWith(packet.DisconnectWithProtocol(playerNameTooBig, l.conn.Protocol()))
 		return
 	}
 
