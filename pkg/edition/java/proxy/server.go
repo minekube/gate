@@ -332,13 +332,18 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		if playerVhost == "" {
 			playerVhost = netutil.Host(s.server.ServerInfo().Addr())
 		}
-		if s.config().Forwarding.Mode == config.LegacyForwardingMode {
-			handshake.ServerAddress = s.createLegacyForwardingAddress()
+
+		//  if this is a tunnel server we enforce to set correct ServerAddress,
+		// no matter if the target server (e.g. spigot) is in bungee/velocity forwarding mode,
+		// the java Connect plugin takes care of injecting the correct player data from the session proposal
+		_, isTunnelServer := s.Server().ServerInfo().(*tunnelServerInfo) // todo improve checking is tunnel server
+
+		if !isTunnelServer && s.config().Forwarding.Mode == config.LegacyForwardingMode {
+			playerVhost = s.createLegacyForwardingAddress()
 		} else if s.player.Type() == LegacyForge {
-			handshake.ServerAddress = fmt.Sprintf("%s%s", playerVhost, forge.HandshakeHostnameToken)
-		} else {
-			handshake.ServerAddress = playerVhost
+			playerVhost = fmt.Sprintf("%s%s", playerVhost, forge.HandshakeHostnameToken)
 		}
+		handshake.ServerAddress = playerVhost
 	}
 
 	if err = serverMc.BufferPacket(handshake); err != nil {
