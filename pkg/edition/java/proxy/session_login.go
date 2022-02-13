@@ -29,7 +29,7 @@ type loginSessionHandler struct {
 
 	nopSessionHandler
 
-	// following fields are not goroutine-safe
+	// following fields are not safe for concurrency
 	login  *packet.ServerLogin
 	verify []byte
 }
@@ -206,7 +206,8 @@ var (
 	onlineModeOnly = &component.Text{
 		Content: `This server only accepts connections from online-mode clients.
 
-Did you change your username? Sign out of Minecraft, sign back in, and try again.`,
+Did you change your username?
+Restart your game or sign out of Minecraft, sign back in, and try again.`,
 		S: component.Style{Color: color.Red},
 	}
 )
@@ -265,7 +266,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 		defaultFunc: player.permFunc,
 	}
 	player.proxy.event.Fire(permSetup)
-	// Set the players permission function
+	// Set the player's permission function
 	player.permFunc = permSetup.Func()
 
 	if player.Active() {
@@ -345,6 +346,8 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	}
 	ctx, cancel := withConnectionTimeout(context.Background(), l.config())
 	defer cancel()
+	ctx, pcancel := player.newContext(ctx) // todo use player's connection context
+	defer pcancel()
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 

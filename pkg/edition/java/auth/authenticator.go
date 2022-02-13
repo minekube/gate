@@ -194,6 +194,9 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 
 	switch resp.StatusCode {
 	case http.StatusOK:
+	case http.StatusUnauthorized:
+		// Player has invalid/outdated session auth token and
+		// should restart/re-login to nwit Mojang is invalid and should restart the game
 	case http.StatusNoContent:
 		log.Info("Mojang could not find user, potentially offline mode")
 	default:
