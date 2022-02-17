@@ -177,7 +177,7 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 }
 
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
-	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, true)
+	result := disconnectResultForPacket(b.log.V(1), p, b.serverConn.player.Protocol(), b.serverConn.server, true)
 	b.requestCtx.result(result, nil)
 	b.serverConn.disconnect()
 }
@@ -197,6 +197,7 @@ var velocityIpForwardingFailure = &component.Text{
 }
 
 func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
+	// TODO don't do this for tunneled server(?)
 	if b.config().Forwarding.Mode == config.VelocityForwardingMode && !b.informationForwarded.Load() {
 		b.requestCtx.result(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
 		b.serverConn.disconnect()
@@ -228,6 +229,7 @@ This is usually because the remote server does not have BungeeCord IP forwarding
 }
 
 func disconnectResultForPacket(
+	errLog logr.Logger,
 	p *packet.Disconnect,
 	protocol proto.Protocol,
 	server RegisteredServer,
@@ -237,7 +239,12 @@ func disconnectResultForPacket(
 	if p != nil && p.Reason != nil {
 		reason = *p.Reason
 	}
-	r, _ := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
+	r, err := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
+	if errLog.Enabled() && err != nil {
+		errLog.Error(err, "Error unmarshal disconnect reason from server",
+			"safe", safe, "protocol", protocol,
+			"reason", reason, "server", server.ServerInfo().Name())
+	}
 	return disconnectResult(r, server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {
