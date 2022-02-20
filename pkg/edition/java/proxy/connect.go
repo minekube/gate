@@ -65,7 +65,10 @@ func (t *tunnelServerInfo) Dial(ctx context.Context, p Player) (connect.TunnelCo
 	}
 	// Wait for inbound tunnel
 	select {
-	case r := <-t.Watcher.Rejections():
+	case r, ok := <-t.Watcher.Rejections():
+		if !ok {
+			return nil, fmt.Errorf("watcher stopped: %w", t.Watcher.Context().Err())
+		}
 		t.log.Info("Session rejected", "sessionID", r.GetId(), "reason", r.GetReason())
 		return nil, status.FromProto(r.GetReason()).Err()
 	case tunnel := <-tunnelChan:

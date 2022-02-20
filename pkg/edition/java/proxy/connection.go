@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
@@ -171,7 +172,7 @@ func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 		}
 	}
 	// Immediately break for known unrecoverable errors
-	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, context.Canceled) ||
 		errors.Is(err, io.ErrNoProgress) || errors.Is(err, io.ErrClosedPipe) ||
 		errors.Is(err, io.ErrShortBuffer) || errors.Is(err, syscall.EBADF) ||
 		strings.Contains(err.Error(), "use of closed file") {

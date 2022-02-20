@@ -184,6 +184,13 @@ func (p *Proxy) Shutdown(reason component.Component) {
 			"shutdownTime", time.Since(shutdownTime).Round(time.Microsecond).String(),
 			"totalTime", time.Since(p.startTime.Load().(time.Time)).Round(time.Millisecond).String())
 	}()
+	//go func() {
+	//	for {
+	//		err = debugTCPServer(context.Background())
+	//		fmt.Println(err)
+	//		time.Sleep(time.Second / 4)
+	//	}
+	//}()
 
 	pre := &PreShutdownEvent{reason: reason}
 	p.event.Fire(pre)
@@ -375,7 +382,7 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 
-	p.log.V(1).Info("Registered new server",
+	p.log.Info("Registered new server",
 		"name", info.Name(), "addr", info.Addr())
 	return rs, true
 }
