@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"net"
+	"regexp"
+	"time"
+
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
@@ -16,9 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"net"
-	"regexp"
-	"time"
 )
 
 type loginSessionHandler struct {
@@ -35,6 +36,11 @@ type loginSessionHandler struct {
 
 func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
 	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
+}
+
+var invalidPlayerName = &component.Text{
+	Content: "Your username has an invalid format.",
+	S:       component.Style{Color: color.Red},
 }
 
 func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
@@ -61,7 +67,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 	// Validate username format
 	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.conn.close()
+		_ = l.conn.closeWith(packet.DisconnectWithProtocol(invalidPlayerName, l.conn.Protocol()))
 		return
 	}
 
