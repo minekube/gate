@@ -38,14 +38,10 @@ func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler
 	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
 }
 
-var (
-	playerNameTooBig = &component.Text{
-		Content: "Your username isn't allowed to be over 16 characters or it's not a valid format.",
-		S: component.Style{
-			Color: color.Red,
-		},
-	}
-)
+var invalidPlayerName = &component.Text{
+	Content: "Your username has an invalid format.",
+	S:       component.Style{Color: color.Red},
+}
 
 func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
@@ -71,7 +67,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 	// Validate username format
 	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.conn.closeWith(packet.DisconnectWithProtocol(playerNameTooBig, l.conn.Protocol()))
+		_ = l.conn.closeWith(packet.DisconnectWithProtocol(invalidPlayerName, l.conn.Protocol()))
 		return
 	}
 
