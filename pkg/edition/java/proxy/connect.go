@@ -40,7 +40,7 @@ func (t *tunnelServerInfo) Dial(ctx context.Context, p Player) (connect.TunnelCo
 	t.log.Info("Creating tunnel for player")
 	session := &connect.Session{
 		Id:                xid.New().String(),
-		TunnelServiceAddr: ":8443",
+		TunnelServiceAddr: "localhost:8443",
 		Player:            newConnectPlayer(p),
 	}
 	fmt.Println("created sessionid", session.Id)
@@ -91,7 +91,7 @@ func newConnectPlayer(p Player) *connect.Player {
 		}
 	}
 	return &connect.Player{
-		Addr: p.RemoteAddr().String(),
+		Addr: netutil.Host(p.RemoteAddr()),
 		Profile: &connect.GameProfile{
 			Id:         prof.ID.String(),
 			Name:       prof.Name,
