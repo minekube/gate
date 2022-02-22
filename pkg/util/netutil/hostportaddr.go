@@ -1,6 +1,7 @@
 package netutil
 
 import (
+	"errors"
 	"net"
 	"strconv"
 )
@@ -54,6 +55,8 @@ func WrapAddr(addr net.Addr) (net.Addr, error) {
 	a.host, port, err = net.SplitHostPort(addr.String())
 	if err == nil {
 		p, err = strconv.Atoi(port)
+	} else if isMissingPortErr(err) {
+		err = nil
 	}
 	a.port = uint16(p)
 	return a, err
@@ -132,3 +135,8 @@ func (s *address) Port() uint16 { return s.port }
 
 func (s *connection) RemoteAddr() net.Addr { return s.remoteAddr }
 func (s *connection) LocalAddr() net.Addr  { return s.localAddr }
+
+func isMissingPortErr(err error) bool {
+	var addrErr *net.AddrError
+	return err != nil && errors.As(err, &addrErr) && addrErr.Err == "missing port in address"
+}

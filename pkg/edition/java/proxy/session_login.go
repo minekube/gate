@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"fmt"
+	"regexp"
+	"time"
+
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -18,8 +21,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"regexp"
-	"time"
 )
 
 type loginSessionHandler struct {
@@ -57,6 +58,11 @@ func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 
 var playerNameRegex = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
 
+// GameProfileProvider provides the GameProfile for a player connection.
+type GameProfileProvider interface {
+	GameProfile() (profile *profile.GameProfile)
+}
+
 func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	l.login = login
 
@@ -80,18 +86,8 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 	if e.Result() != ForceOfflineModePreLogin && (e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
-		// If this is a tunneled connection we skip encryption
-		// as it is already done by the tunnel service
-		fmt.Printf("receive tunnel login? %T\n", l.conn.c)
-		if tc, ok := l.conn.c.(TunnelConn); ok {
-			fmt.Println(1)
-			gp, err := gameProfileFromSessionGameProfile(tc.Session().GetPlayer().GetProfile())
-			if err != nil {
-				l.log.Error(err, "Could not parse game profile from tunnel session")
-				_ = l.conn.closeWith(packet.DisconnectWithProtocol(internalServerConnectionError, l.conn.Protocol()))
-				return
-			}
-			l.initPlayer(gp, true)
+		if p, ok := l.conn.c.(GameProfileProvider); ok {
+			l.initPlayer(p.GameProfile(), false)
 			return
 		}
 
@@ -226,9 +222,9 @@ var (
 	internalServerConnectionError = &component.Text{
 		Content: "Internal server connection error",
 	}
-	//unexpectedDisconnect = &component.Text{
+	// unexpectedDisconnect = &component.Text{
 	//	Content: "Unexpectedly disconnected from remote server - crash?",
-	//}
+	// }
 	movedToNewServer = &component.Text{
 		Content: "The server you were on kicked you: ",
 		S:       component.Style{Color: color.Red},

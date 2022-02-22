@@ -4,8 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -23,11 +30,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -184,13 +186,6 @@ func (p *Proxy) Shutdown(reason component.Component) {
 			"shutdownTime", time.Since(shutdownTime).Round(time.Microsecond).String(),
 			"totalTime", time.Since(p.startTime.Load().(time.Time)).Round(time.Millisecond).String())
 	}()
-	//go func() {
-	//	for {
-	//		err = debugTCPServer(context.Background())
-	//		fmt.Println(err)
-	//		time.Sleep(time.Second / 4)
-	//	}
-	//}()
 
 	pre := &PreShutdownEvent{reason: reason}
 	p.event.Fire(pre)
@@ -359,6 +354,25 @@ func (p *Proxy) Servers() []RegisteredServer {
 	return l
 }
 
+// ServerRegistry is used to register and retrieve servers that players can connect to.
+type ServerRegistry interface { // TODO move to proxy package
+	// Server gets a registered server by name or returns nil if not found.
+	Server(name string) RegisteredServer
+	// Register registers a server with the proxy.
+	//
+	// Returns the new registered server and true on success.
+	//
+	// On failure either:
+	//  - if name already exists, returns the already registered server and false
+	//  - if the specified ServerInfo is invalid, returns nil and false.
+	Register(info ServerInfo) (RegisteredServer, bool)
+	// Unregister unregisters the server exactly matching the
+	// given ServerInfo and returns true if found.
+	Unregister(info ServerInfo) bool
+}
+
+var _ ServerRegistry = (*Proxy)(nil)
+
 // Register registers a server with the proxy.
 //
 // Returns the new registered server and true on success.
@@ -445,15 +459,6 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 	defer p.log.Info("Stopped listening for new connections")
 	p.log.Info("Listening for connections", "addr", addr)
 
-	// todo improve this code bit with graceful error returning
-	go func() {
-		for {
-			err = p.watchConnect(context.Background())
-			fmt.Println(err)
-			time.Sleep(time.Second / 4)
-		}
-	}()
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -471,12 +476,12 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 // handleRawConn handles a just-accepted connection that
 // has not had any I/O performed on it yet.
 func (p *Proxy) handleRawConn(raw net.Conn) {
-	//raw, err := netutil.WrapConn(raw) TODO dont hide TunnelConn
-	//if err != nil {
+	// raw, err := netutil.WrapConn(raw) TODO dont hide TunnelConn
+	// if err != nil {
 	//	p.log.Error(err, "Could not apply netutil.WrapConn on raw new connection")
 	//	_ = raw.Close()
 	//	return
-	//}
+	// }
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()
