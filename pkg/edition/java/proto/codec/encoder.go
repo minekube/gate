@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
+	"io"
+	"sync"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/bufpool"
-	"io"
-	"sync"
 )
 
 const (
