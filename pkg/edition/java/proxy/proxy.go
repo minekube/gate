@@ -355,7 +355,7 @@ func (p *Proxy) Servers() []RegisteredServer {
 }
 
 // ServerRegistry is used to register and retrieve servers that players can connect to.
-type ServerRegistry interface { // TODO move to proxy package
+type ServerRegistry interface {
 	// Server gets a registered server by name or returns nil if not found.
 	Server(name string) RegisteredServer
 	// Register registers a server with the proxy.
