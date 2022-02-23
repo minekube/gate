@@ -318,7 +318,7 @@ type HandshakeAddresser interface {
 	HandshakeAddr(defaultPlayerVirtualHost string, player Player) (newPlayerVirtualHost string)
 }
 
-func (s *serverConnection) handshakeAddr(defaultVHost string, player Player) string {
+func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
@@ -326,10 +326,15 @@ func (s *serverConnection) handshakeAddr(defaultVHost string, player Player) str
 			if s.config().Forwarding.Mode == config.LegacyForwardingMode {
 				return s.createLegacyForwardingAddress()
 			}
-			return defaultVHost
 		}
 	}
-	return ha.HandshakeAddr(defaultVHost, player)
+	if ha != nil {
+		vHost = ha.HandshakeAddr(vHost, player)
+	}
+	if s.player.Type() == LegacyForge {
+		vHost += forge.HandshakeHostnameToken
+	}
+	return vHost
 }
 
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
@@ -372,11 +377,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		if playerVHost == "" {
 			playerVHost = netutil.Host(s.server.ServerInfo().Addr())
 		}
-		playerVHost = s.handshakeAddr(playerVHost, s.player)
-		if s.player.Type() == LegacyForge {
-			playerVHost += forge.HandshakeHostnameToken
-		}
-		handshake.ServerAddress = playerVHost
+		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
 	}
 
 	if err = serverMc.BufferPacket(handshake); err != nil {
