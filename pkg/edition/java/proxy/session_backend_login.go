@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -18,7 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"go.uber.org/atomic"
 )
 
 type backendLoginSessionHandler struct {
@@ -197,7 +198,6 @@ var velocityIpForwardingFailure = &component.Text{
 }
 
 func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
-	// TODO don't do this for tunneled server(?)
 	if b.config().Forwarding.Mode == config.VelocityForwardingMode && !b.informationForwarded.Load() {
 		b.requestCtx.result(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
 		b.serverConn.disconnect()
@@ -222,7 +222,6 @@ func (b *backendLoginSessionHandler) disconnected() {
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
-		// TODO add link to player info forwarding instructions docs
 	} else {
 		b.requestCtx.result(nil, errs.NewSilentErr("The connection to the remote server was unexpectedly closed."))
 	}

@@ -26,7 +26,6 @@ import (
 type RegisteredServer interface {
 	ServerInfo() ServerInfo
 	Players() Players // The players connected to the server on THIS proxy.
-	// TODO Ping() (*ServerPing, error)
 	Equals(RegisteredServer) bool
 }
 
