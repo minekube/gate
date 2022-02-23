@@ -2,8 +2,12 @@ package proxy
 
 import (
 	"fmt"
+	"net"
+	"strings"
+
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -13,8 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"net"
-	"strings"
 )
 
 type handshakeSessionHandler struct {
@@ -48,7 +50,10 @@ func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
-	vHost := netutil.NewAddr(h.conn.c.LocalAddr().Network(), handshake.ServerAddress, uint16(handshake.Port))
+	vHost := netutil.NewAddr(
+		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
+		h.conn.c.LocalAddr().Network(),
+	)
 	inbound := newInitialInbound(h.conn, vHost)
 
 	// The client sends the next wanted state in the Handshake packet.

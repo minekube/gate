@@ -125,7 +125,7 @@ func (i *serverInfo) Equals(o ServerInfo) bool {
 }
 
 func NewServerInfo(name string, addr net.Addr) ServerInfo {
-	return &serverInfo{name: name, addr: netutil.Addr(addr)}
+	return &serverInfo{name: name, addr: addr}
 }
 
 func (i *serverInfo) Name() string {
