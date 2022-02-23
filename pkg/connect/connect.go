@@ -154,7 +154,6 @@ func (s *services) awaitTunnel(ctx context.Context, sessionID string) (tunnelCha
 	}
 }
 
-// todo move somewhere appropriate
 type server struct {
 	s   *services
 	log logr.Logger
