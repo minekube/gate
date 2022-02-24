@@ -6,7 +6,7 @@ import (
 
 func main() {
 	/*
-		if err := agent.Listen(agent.Options{
+		if err := agent.Listen(agent.ServeOptions{
 			ShutdownCleanup: true,
 		}); err != nil {
 			log.Fatal(err)

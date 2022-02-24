@@ -1,4 +1,4 @@
-package connect
+package embedded
 
 import (
 	"context"
@@ -9,46 +9,44 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/rs/xid"
 	"go.minekube.com/connect"
-	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-// Options are Start options.
-type Options struct {
-	PublicTunnelServiceAddr string // The tunnel service address announced by every connect.SessionProposal.
-	Log                     logr.Logger
-	ServerRegistry          ServerRegistry
+// ServeOptions are Serve options.
+type ServeOptions struct { // TODO split tunnel & watch service
+	PublicTunnelServiceAddr string         // The tunnel service address announced by every connect.SessionProposal.
+	ServerRegistry          ServerRegistry // Registry used to un-/register servers
+	Log                     logr.Logger    // Optional logger
 }
 
 // ServerRegistry is used to register and retrieve servers.
 type ServerRegistry interface {
 	// Server gets a registered server by name or returns nil if not found.
-	Server(name string) Server
+	Server(name string) (Server, error)
 	// Register registers a server with the proxy.
 	Register(Server) error
 	// Unregister unregisters the server and returns true if found.
-	Unregister(name string) bool
+	Unregister(name string) (bool, error)
 }
 
+// Server is a server watching for player sessions.
 type Server interface {
 	Name() string   // The endpoint name self-assigned by the Server.
 	connect.Watcher // The watcher representing this Server.
 }
 
-// Start starts Connect services WatchService and TunnelService until the context is canceled.
-func Start(ctx context.Context, addr string, opts Options) error {
+// Serve starts serving WatchService and TunnelService until the context is canceled.
+// ServeOptions.ServerRegistry is used to register new servers watching for session proposals.
+func Serve(ctx context.Context, addr string, opts ServeOptions, grpcServerOpts ...grpc.ServerOption) error {
 	// Validation
 	if addr == "" {
 		return errors.New("missing addr")
@@ -70,10 +68,10 @@ func Start(ctx context.Context, addr string, opts Options) error {
 	}
 	defer ln.Close()
 
-	s := services{Options: opts}
+	s := services{ServeOptions: opts}
 	s.mu.await = map[string]func(connect.InboundTunnel) error{}
 
-	svr := grpc.NewServer()
+	svr := grpc.NewServer(grpcServerOpts...)
 	s.register(svr)
 
 	opts.Log.Info("Serving Connect services WatchService & TunnelService")
@@ -82,7 +80,7 @@ func Start(ctx context.Context, addr string, opts Options) error {
 }
 
 type services struct {
-	Options
+	ServeOptions
 
 	mu struct {
 		sync.Mutex
@@ -96,7 +94,7 @@ func (s *services) register(r grpc.ServiceRegistrar) {
 }
 
 func (s *services) startWatch(watcher connect.Watcher) error {
-	endpoint := valueFromContext(watcher.Context(), connect.MDEndpoint, true)
+	endpoint := valueFrom(watcher.Context(), connect.MDEndpoint, metadata.FromIncomingContext)
 	if endpoint == "" {
 		return status.Error(codes.InvalidArgument, "missing endpoint in request metadata")
 	}
@@ -110,18 +108,22 @@ func (s *services) startWatch(watcher connect.Watcher) error {
 	if err := s.ServerRegistry.Register(svr); err != nil {
 		return err
 	}
+	defer func() {
+		_, err := s.ServerRegistry.Unregister(svr.Name())
+		if err != nil {
+			s.Log.Error(err, "Error unregistering server", "name", svr.Name())
+		}
+	}()
 	go svr.startRejectionMultiplexer()
 	<-watcher.Context().Done()
-	_ = s.ServerRegistry.Unregister(svr.Name())
 	return nil
 }
 
 func (s *services) acceptTunnel(tunnel connect.InboundTunnel) error {
-	sessionID := valueFromContext(tunnel.Context(), connect.MDSession, true)
+	sessionID := valueFrom(tunnel.Context(), connect.MDSession, metadata.FromIncomingContext)
 	if sessionID == "" {
 		return status.Error(codes.InvalidArgument, "missing session id in request metadata")
 	}
-
 	s.mu.Lock()
 	fn, ok := s.mu.await[sessionID]
 	if ok {
@@ -129,16 +131,14 @@ func (s *services) acceptTunnel(tunnel connect.InboundTunnel) error {
 	}
 	s.mu.Unlock()
 	if !ok {
-		return status.Error(codes.NotFound, "could not found session id")
+		return status.Error(codes.NotFound, "could not found session id, the session proposal might be canceled already")
 	}
-
 	return fn(tunnel)
 }
 
 func (s *services) awaitTunnel(ctx context.Context, sessionID string) (tunnelChan <-chan connect.InboundTunnel, remove func()) {
 	ch := make(chan connect.InboundTunnel)
-	s.mu.Lock()
-	s.mu.await[sessionID] = func(tunnel connect.InboundTunnel) error {
+	returnFn := func(tunnel connect.InboundTunnel) error {
 		select {
 		case ch <- tunnel:
 			return nil
@@ -146,6 +146,8 @@ func (s *services) awaitTunnel(ctx context.Context, sessionID string) (tunnelCha
 			return status.Error(codes.Canceled, "session proposal was canceled")
 		}
 	}
+	s.mu.Lock()
+	s.mu.await[sessionID] = returnFn
 	s.mu.Unlock()
 	return ch, func() {
 		s.mu.Lock()
@@ -180,7 +182,19 @@ func init() { rand.Seed(time.Now().UnixNano()) }
 
 var _ proxy.ServerDialer = (*server)(nil)
 
-// Dial returns a TunnelConn to the server accessible through Connect.
+// Dial proposes a session to the watching target server, waits for the target server
+// to create a TunnelConn with the TunnelService listening at ServeOptions.PublicTunnelServiceAddr
+// and returns the TunnelConn.
+//
+// It is recommended to always pass a timeout context because the target server might never
+// create the TunnelConn with the TunnelService.
+//
+// Dial unblocks on the following events:
+//  - If the target server has established a TunnelConn successfully.
+//  - If the passed context is canceled, cleans up and cancels the session proposal.
+//  - If the server rejected the session proposal wrapping the given status reason in the returned error if present.
+//  - If the server's watcher has disconnected.
+//
 func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 	session := &connect.Session{
 		Id:                xid.New().String(),
@@ -193,7 +207,8 @@ func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 		WithValues("sessionID", session.GetId())
 	log.Info("Proposing session for player")
 
-	ctx, cancel := context.WithCancel(ctx)
+	// Using a less timely context timeout if the parent ctx never cancels.
+	ctx, cancel := context.WithTimeout(ctx, time.Hour/2)
 	defer cancel()
 
 	tunnelChan, removeAwaitTunnel := s.s.awaitTunnel(ctx, session.GetId())
@@ -213,7 +228,10 @@ func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 		return tunnel.Conn(), nil
 	case r := <-rejectionChan:
 		s.log.Info("Session proposal rejected by server", "reason", r.GetReason())
-		return nil, fmt.Errorf("session proposal rejected by server: %w", status.FromProto(r.GetReason()).Err())
+		if r.GetReason() != nil {
+			return nil, fmt.Errorf("session proposal rejected by server: %w", status.FromProto(r.GetReason()).Err())
+		}
+		return nil, errors.New("session proposal rejected by server without reason")
 	case <-s.Watcher.Context().Done():
 		return nil, fmt.Errorf("server has disconnected: %w", s.Watcher.Context().Err())
 	case <-ctx.Done():
@@ -223,13 +241,14 @@ func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 
 func (s *server) listenForRejection(ctx context.Context, sessionID string) (rejectionChan <-chan *connect.SessionRejection, remove func()) {
 	ch := make(chan *connect.SessionRejection)
-	s.mu.Lock()
-	s.mu.rejectedFns[sessionID] = func(rejection *connect.SessionRejection) {
+	returnFn := func(rejection *connect.SessionRejection) {
 		select {
 		case ch <- rejection:
 		case <-ctx.Done():
 		}
 	}
+	s.mu.Lock()
+	s.mu.rejectedFns[sessionID] = returnFn
 	s.mu.Unlock()
 	return ch, func() {
 		s.mu.Lock()
@@ -280,122 +299,8 @@ func newConnectPlayer(p proxy.Player) *connect.Player {
 	}
 }
 
-// func watch() {
-// p.log.Info("Dialing watch...")
-// conn, err := grpc.DialContext(ctx, ":8443", grpc.WithInsecure(), grpc.WithBlock())
-// if err != nil {
-// 	return err
-// }
-// defer conn.Close()
-// p.log.Info("Watching...")
-// ctx = metadata.AppendToOutgoingContext(ctx, connect.MDEndpoint, "server1")
-// return connect.Watch(ctx, connect.WatchOptions{
-// 	Cli: connect.NewWatchServiceClient(conn),
-// 	Callback: func(proposal connect.SessionProposal) (err error) {
-// 		defer func() {
-// 			if err != nil {
-// 				_ = proposal.Reject(status.FromContextError(err).Proto())
-// 			}
-// 		}()
-// 		p.log.Info("Establishing tunnel for new session")
-// 		var tunnelCli *grpc.ClientConn
-// 		tunnelCli, err = grpc.DialContext(ctx, proposal.Session().GetTunnelServiceAddr(), grpc.WithInsecure(), grpc.WithBlock())
-// 		if err != nil {
-// 			return err
-// 		}
-// 		ctx := metadata.AppendToOutgoingContext(ctx, connect.MDSession, proposal.Session().GetId())
-// 		fmt.Println("sessionID:", valueFromContext(ctx, connect.MDSession, false))
-// 		tc, err := connect.Tunnel(ctx, connect.TunnelOptions{
-// 			TunnelCli:  connect.NewTunnelServiceClient(tunnelCli),
-// 			LocalAddr:  "server1:1234",
-// 			RemoteAddr: proposal.Session().GetPlayer().GetAddr(),
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		p.log.Info("Established tunnel for new session")
-// 		go p.handleRawConn(&tunnelConn{
-// 			TunnelConn: tc,
-// 			s:          proposal.Session(),
-// 		})
-// 		return nil
-// 	},
-// })
-// }
-
-type TunnelConn interface {
-	connect.TunnelConn
-	Session() *connect.Session
-}
-
-type tunnelConn struct {
-	connect.TunnelConn
-	s  *connect.Session
-	gp *profile.GameProfile
-
-	debugRead  func(b []byte) (int, error)
-	debugWrite func(b []byte) (int, error)
-	countRead  atomic.Uint64
-	countWrite atomic.Uint64
-	prefRead   string
-	prefWrite  atomic.String
-}
-
-func (t *tunnelConn) GameProfile() *profile.GameProfile { return t.gp }
-
-var _ proxy.GameProfileProvider = (*tunnelConn)(nil)
-
-func (t *tunnelConn) Session() *connect.Session { return t.s }
-func (t *tunnelConn) Read(b []byte) (n int, err error) {
-	defer func() {
-		s := humanize.Bytes(t.countRead.Add(uint64(n)))
-		if t.prefRead != s {
-			t.prefRead = s
-			fmt.Println("read", s)
-		}
-	}()
-	return t.TunnelConn.Read(b)
-}
-func (t *tunnelConn) Write(b []byte) (n int, err error) {
-	defer func() {
-		s := humanize.Bytes(t.countWrite.Add(uint64(n)))
-		if t.prefWrite.Load() != s {
-			t.prefWrite.Store(s)
-			fmt.Println("write", s)
-		}
-	}()
-	return t.TunnelConn.Write(b)
-}
-
-var _ TunnelConn = (*tunnelConn)(nil)
-
-func gameProfileFromSessionGameProfile(p *connect.GameProfile) (*profile.GameProfile, error) {
-	id, err := uuid.Parse(p.GetId())
-	if err != nil {
-		return nil, fmt.Errorf("invalid player id: %w", err)
-	}
-	props := make([]profile.Property, len(p.Properties))
-	for i, prop := range p.Properties {
-		props[i] = profile.Property{
-			Name:      prop.GetName(),
-			Value:     prop.GetValue(),
-			Signature: prop.GetSignature(),
-		}
-	}
-	return &profile.GameProfile{
-		ID:         id,
-		Name:       p.GetName(),
-		Properties: props,
-	}, nil
-}
-
-func valueFromContext(ctx context.Context, key string, incoming bool) string {
-	var md metadata.MD
-	if incoming {
-		md, _ = metadata.FromIncomingContext(ctx)
-	} else {
-		md, _ = metadata.FromOutgoingContext(ctx)
-	}
+func valueFrom(ctx context.Context, key string, mdFn func(ctx context.Context) (metadata.MD, bool)) string {
+	md, _ := mdFn(ctx)
 	if s := md.Get(key); len(s) != 0 {
 		return s[0]
 	}

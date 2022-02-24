@@ -111,3 +111,14 @@ editions:
   bedrock:
     # Bedrock edition is not yet supported!
     enabled: false
+
+# Configuration for Connect, a network that organizes all Minecraft servers/proxies
+# and makes them universally accessible for all players.
+# Among a lot of other features it even allows players to join locally hosted
+# Minecraft servers without having an open port or public IP address.
+#
+# TODO A link to the documentation will be added when available
+#  until then please refer to: https://github.com/minekube/connect-java
+connect:
+  # Enabling Connect makes Gate register itself to Connect network.
+  enabled: false

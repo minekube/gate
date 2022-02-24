@@ -13,3 +13,13 @@ editions:
         server1: localhost:25566
       try:
         - server1
+
+connect:
+  # Enabling Connect makes Gate register itself to Connect network.
+  enabled: false
+  services:
+    addr: localhost:8443
+    watch:
+      enabled: true
+    tunnel:
+      enabled: true

@@ -469,13 +469,13 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 			}
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
-		go p.handleRawConn(conn)
+		go p.HandleConn(conn)
 	}
 }
 
-// handleRawConn handles a just-accepted connection that
-// has not had any I/O performed on it yet.
-func (p *Proxy) handleRawConn(raw net.Conn) {
+// HandleConn handles a just-accepted client connection
+// that has not had any I/O performed on it yet.
+func (p *Proxy) HandleConn(raw net.Conn) {
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()

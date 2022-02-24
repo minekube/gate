@@ -13,3 +13,9 @@ editions:
         mcserver: localhost:25567
       try:
         - mcserver
+
+connect:
+  # Enabling Connect makes Gate register itself to Connect network.
+  enabled: true
+  insecure: true
+  watchServiceAddr: localhost:8443

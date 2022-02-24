@@ -3,9 +3,17 @@ package gate
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	"go.minekube.com/gate/pkg/bridge"
+	connectcfg "go.minekube.com/gate/pkg/connect/config"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
@@ -14,11 +22,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
 	errors "go.minekube.com/gate/pkg/util/errs"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 // Options are Gate options.
@@ -88,6 +91,20 @@ func New(options Options) (gate *Gate, err error) {
 		// More than one edition was enabled, setup bridge between them
 		if err = gate.bridge.Setup(); err != nil {
 			return nil, fmt.Errorf("error setting up bridge between proxy editions: %w", err)
+		}
+	}
+
+	if c.Editions.Java.Enabled { // Currently, only supporting Connect for java edition
+		runnable, err := connectcfg.New(
+			c.Connect,
+			log.WithName("connect"),
+			gate.Java(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up Connect: %w", err)
+		}
+		if err = gate.proc.Add(runnable); err != nil {
+			return nil, err
 		}
 	}
 
