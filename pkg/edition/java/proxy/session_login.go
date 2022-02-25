@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"net"
 	"regexp"
 	"time"
 
