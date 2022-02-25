@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
