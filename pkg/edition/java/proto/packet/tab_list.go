@@ -238,6 +238,11 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 				if err != nil {
 					return err
 				}
+			case UpdateDisplayNamePlayerListItemAction:
+				item.DisplayName, err = readOptionalComponent(rd, c.Protocol)
+				if err != nil {
+					return err
+				}
 			case RemovePlayerListItemAction:
 			// Do nothing, all that is needed is the uuid
 			default:

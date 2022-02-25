@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"net"
 	"regexp"
 	"time"
 
@@ -39,6 +40,11 @@ func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler
 	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
 }
 
+var invalidPlayerName = &component.Text{
+	Content: "Your username has an invalid format.",
+	S:       component.Style{Color: color.Red},
+}
+
 func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
 		_ = l.conn.close() // unknown packet, close connection
@@ -68,7 +74,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 
 	// Validate username format
 	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.conn.close()
+		_ = l.conn.closeWith(packet.DisconnectWithProtocol(invalidPlayerName, l.conn.Protocol()))
 		return
 	}
 
