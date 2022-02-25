@@ -22,26 +22,6 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-// RegisteredServer is a backend server that has been registered with the proxy.
-type RegisteredServer interface {
-	ServerInfo() ServerInfo
-	Players() Players // The players connected to the server on THIS proxy.
-	Equals(RegisteredServer) bool
-}
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
 // Players is a list of players safe for concurrent use.
 type Players interface {
 	Len() int                  // Returns the size of the player list.
@@ -106,25 +86,26 @@ func (p *players) remove(players ...*connectedPlayer) {
 
 // ServerInfo is the info of a backend server.
 type ServerInfo interface {
-	Name() string           // Returns the server name.
-	Addr() net.Addr         // Returns the server address.
-	Equals(ServerInfo) bool // TODO move as function other package together with ServerInfo interface and make this method implementation optional and default to Name() & Addr.String() comparison
+	Name() string   // Returns the server name.
+	Addr() net.Addr // Returns the server address.
+}
+
+func NewServerInfo(name string, addr net.Addr) ServerInfo {
+	return &serverInfo{name: name, addr: addr}
+}
+
+// ServerInfoEqual returns true if ServerInfo a and b are equal.
+// They are never equal if one of them is nil.
+func ServerInfoEqual(a, b ServerInfo) bool {
+	return a != nil && b != nil &&
+		a.Name() == b.Name() &&
+		a.Addr().String() == b.Addr().String() &&
+		a.Addr().Network() == b.Addr().Network()
 }
 
 type serverInfo struct {
 	name string
 	addr net.Addr
-}
-
-func (i *serverInfo) Equals(o ServerInfo) bool {
-	return i == nil && o == nil || (i != nil && o != nil &&
-		i.Name() == o.Name() &&
-		i.Addr().String() == o.Addr().String() &&
-		i.Addr().Network() == o.Addr().Network())
-}
-
-func NewServerInfo(name string, addr net.Addr) ServerInfo {
-	return &serverInfo{name: name, addr: addr}
 }
 
 func (i *serverInfo) Name() string {
@@ -135,6 +116,8 @@ func (i *serverInfo) Addr() net.Addr {
 	return i.addr
 }
 
+func (i *serverInfo) String() string { return fmt.Sprintf("%s (%s)", i.name, i.addr.String()) }
+
 //
 //
 //
@@ -145,6 +128,19 @@ func (i *serverInfo) Addr() net.Addr {
 //
 //
 //
+
+// RegisteredServer is a backend server that has been registered with the proxy.
+type RegisteredServer interface {
+	ServerInfo() ServerInfo
+	Players() Players             // The players connected to the server on THIS proxy.
+	Equals(RegisteredServer) bool // TODO remove
+}
+
+// RegisteredServerEqual returns true if RegisteredServer a and b are equal.
+// They are never equal if one of them is nil.
+func RegisteredServerEqual(a, b RegisteredServer) bool {
+	return a != nil && b != nil && ServerInfoEqual(a.ServerInfo(), b.ServerInfo())
+}
 
 type registeredServer struct {
 	info    ServerInfo
@@ -155,10 +151,8 @@ func newRegisteredServer(info ServerInfo) *registeredServer {
 	return &registeredServer{info: info, players: newPlayers()}
 }
 
-func (r *registeredServer) Equals(o RegisteredServer) bool {
-	return r == nil && o == nil || (r != nil && o != nil &&
-		r.ServerInfo().Equals(o.ServerInfo()))
-}
+// TODO remove
+func (r *registeredServer) Equals(o RegisteredServer) bool { return RegisteredServerEqual(r, o) }
 
 func (r *registeredServer) ServerInfo() ServerInfo {
 	return r.info

@@ -18,4 +18,5 @@ connect:
   # Enabling Connect makes Gate register itself to Connect network.
   enabled: true
   insecure: true
+  name: server1
   watchServiceAddr: localhost:8443

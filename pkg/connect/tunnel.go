@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// InboundTunnel is a tunnel initiated by a TunnelService client (server).
 type InboundTunnel interface {
 	connect.InboundTunnel
 	SessionID() string
@@ -14,18 +15,18 @@ type InboundTunnel interface {
 
 // TunnelAcceptor accepts InboundTunnel.
 type TunnelAcceptor interface {
-	AcceptTunnel(InboundTunnel) error // See TunnelService.AcceptTunnel
+	AcceptTunnel(InboundTunnel) error
 }
 
-// NewTunnelService returns a new tunnel service.
-func NewTunnelService(acceptor TunnelAcceptor) *connect.TunnelService {
-	return &connect.TunnelService{AcceptTunnel: func(tunnel connect.InboundTunnel) error {
+// AcceptInboundTunnel requires that an inbound tunnel provides a session id metadata and calls the TunnelAcceptor.
+func AcceptInboundTunnel(acceptor TunnelAcceptor) func(connect.InboundTunnel) error {
+	return func(tunnel connect.InboundTunnel) error {
 		sessionID := valueFrom(tunnel.Context(), connect.MDSession, metadata.FromIncomingContext)
 		if sessionID == "" {
 			return status.Errorf(codes.InvalidArgument, "missing request metadata %q", connect.MDSession)
 		}
 		return acceptor.AcceptTunnel(&inboundTunnel{InboundTunnel: tunnel, sessionID: sessionID})
-	}}
+	}
 }
 
 type inboundTunnel struct {

@@ -16,14 +16,11 @@ var DefaultConfig = Config{
 	Name:               xid.New().String(),
 	EnforcePassthrough: false,
 	Insecure:           false,
-	Services: Services{
-		Watch: Watch{
-			Enabled:                 false,
-			PublicTunnelServiceAddr: "your-routable-address",
-		},
-		Tunnel: Tunnel{
-			Enabled: false,
-		},
+	Service: Service{
+		Enabled:                 false,
+		Addr:                    "localhost:8443",
+		PublicTunnelServiceAddr: "localhost:8443",
+		OverrideRegistration:    false,
 	},
 }
 
@@ -35,26 +32,19 @@ type Config struct {
 	WatchServiceAddr   string
 	Insecure           bool // Whether to use transport security for dialing Connect services
 
-	Services Services
+	Service Service
 }
 
-// Services is a config for defining self-hosted Connect services.
-type Services struct {
-	Addr   string // The address all services listen on.
-	Watch  Watch
-	Tunnel Tunnel
+// Service is a config for defining self-hosted
+// Connect service for single-instance use.
+type Service struct {
+	Enabled bool
+	Addr    string // The address all services listen on.
+	// The address provided to endpoints in session proposals.
+	// If not specified falls back to Services.Addr.
+	PublicTunnelServiceAddr string
+	// Overrides servers with the same name.
+	OverrideRegistration bool
 }
-
-type (
-	Watch struct {
-		Enabled bool
-		// The address provided to watching clients in session proposals.
-		// If not specified falls back to Services.Addr.
-		PublicTunnelServiceAddr string
-	}
-	Tunnel struct {
-		Enabled bool
-	}
-)
 
 func init() { rand.Seed(time.Now().UnixNano()) }

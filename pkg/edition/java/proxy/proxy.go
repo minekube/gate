@@ -226,15 +226,19 @@ func (p *Proxy) preInit() (err error) {
 
 	c := p.config
 	// Register servers
+	if len(c.Servers) != 0 {
+		p.log.Info("Registering servers...", "count", len(c.Servers))
+	}
 	for name, addr := range c.Servers {
 		pAddr, err := netutil.Parse(addr, "tcp")
 		if err != nil {
 			return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 		}
-		p.Register(NewServerInfo(name, pAddr))
-	}
-	if len(c.Servers) != 0 {
-		p.log.Info("Registered servers", "count", len(c.Servers))
+		info := NewServerInfo(name, pAddr)
+		_, err = p.Register(info)
+		if err != nil {
+			p.log.Info("Could not register server", "server", info)
+		}
 	}
 
 	// Register builtin commands
@@ -354,36 +358,39 @@ func (p *Proxy) Servers() []RegisteredServer {
 	return l
 }
 
-// ServerRegistry is used to register and retrieve servers that players can connect to.
+// ServerRegistry is used to retrieve registered servers that players can connect to.
 type ServerRegistry interface {
 	// Server gets a registered server by name or returns nil if not found.
 	Server(name string) RegisteredServer
-	// Register registers a server with the proxy.
-	//
-	// Returns the new registered server and true on success.
-	//
-	// On failure either:
-	//  - if name already exists, returns the already registered server and false
-	//  - if the specified ServerInfo is invalid, returns nil and false.
-	Register(info ServerInfo) (RegisteredServer, bool)
+	ServerRegistrar
+}
+
+// ServerRegistrar is used to register servers.
+type ServerRegistrar interface {
+	// Register registers a server with the proxy and returns it.
+	// If the there is already a server with the same info
+	// error ErrServerAlreadyExists is returned and the already registered server.
+	Register(info ServerInfo) (RegisteredServer, error)
 	// Unregister unregisters the server exactly matching the
 	// given ServerInfo and returns true if found.
 	Unregister(info ServerInfo) bool
 }
 
+// ErrServerAlreadyExists indicates that a server is already registered in ServerRegistrar.
+var ErrServerAlreadyExists = errors.New("server already exists")
+
 var _ ServerRegistry = (*Proxy)(nil)
 
-// Register registers a server with the proxy.
-//
-// Returns the new registered server and true on success.
-//
-// On failure either:
-//  - if name already exists, returns the already registered server and false
-//  - if the specified ServerInfo is invalid, returns nil and false.
-func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
-	if info == nil || !validation.ValidServerName(info.Name()) ||
-		validation.ValidHostPort(info.Addr().String()) != nil {
-		return nil, false
+// Register - See ServerRegistrar
+func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
+	if info == nil {
+		return nil, errors.New("info must not be nil")
+	}
+	if !validation.ValidServerName(info.Name()) {
+		return nil, errors.New("invalid server name")
+	}
+	if err := validation.ValidHostPort(info.Addr().String()); err != nil {
+		return nil, fmt.Errorf("invalid address: %w", err)
 	}
 
 	name := strings.ToLower(info.Name())
@@ -391,14 +398,13 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	p.muS.Lock()
 	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
-		return exists, false
+		return exists, ErrServerAlreadyExists
 	}
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 
-	p.log.Info("Registered new server",
-		"name", info.Name(), "addr", info.Addr())
-	return rs, true
+	p.log.Info("Registered new server", "name", info.Name(), "addr", info.Addr())
+	return rs, nil
 }
 
 // Unregister unregisters the server exactly matching the
@@ -411,7 +417,7 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	p.muS.Lock()
 	defer p.muS.Unlock()
 	rs, ok := p.servers[name]
-	if !ok || !rs.ServerInfo().Equals(info) {
+	if !ok || !ServerInfoEqual(rs.ServerInfo(), info) {
 		return false
 	}
 	delete(p.servers, name)

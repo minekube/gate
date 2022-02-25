@@ -17,9 +17,7 @@ editions:
 connect:
   # Enabling Connect makes Gate register itself to Connect network.
   enabled: false
-  services:
+  service:
+    enabled: true
+    overrideRegistration: true
     addr: localhost:8443
-    watch:
-      enabled: true
-    tunnel:
-      enabled: true
