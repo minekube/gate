@@ -38,7 +38,8 @@ type endpoint struct {
 	name string
 }
 
-func (s *endpoint) Name() string { return s.name }
+func (s *endpoint) Name() string   { return s.name }
+func (s *endpoint) String() string { return s.name }
 
 func valueFrom(ctx context.Context, key string, mdFn func(ctx context.Context) (metadata.MD, bool)) string {
 	md, _ := mdFn(ctx)

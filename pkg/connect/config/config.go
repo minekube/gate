@@ -16,6 +16,7 @@ var DefaultConfig = Config{
 	Name:               xid.New().String(),
 	EnforcePassthrough: false,
 	Insecure:           false,
+	Transport:          "ws",
 	Service: Service{
 		Enabled:                 false,
 		Addr:                    "localhost:8443",
@@ -30,7 +31,8 @@ type Config struct {
 	Name               string
 	EnforcePassthrough bool // Setting to true will reject all sessions in non-passthrough mode.
 	WatchServiceAddr   string
-	Insecure           bool // Whether to use transport security for dialing Connect services
+	Insecure           bool   // Whether to use transport security for dialing Connect services
+	Transport          string // ws or grpc - Whether to use WebSocket or gRPC for underlying bidi-streams.
 
 	Service Service
 }

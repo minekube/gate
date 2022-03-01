@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"net/http"
 
 	"go.minekube.com/connect"
 	"google.golang.org/grpc"
@@ -27,7 +27,7 @@ type TunnelConn interface {
 // WatchOptions are Watch options.
 type WatchOptions struct {
 	Name              string                     // The name of this watching server endpoint.
-	Cli               connect.WatchServiceClient // The WatchService client to watch for session proposals.
+	Client            connect.WatchServiceClient // The WatchService client to watch for session proposals.
 	ConnHandler       func(conn TunnelConn)      // Called in parallel when a new tunnel connection is successfully established.
 	TunnelDialOptions []grpc.DialOption          // Dial options passed when dialing TunnelService for a new tunnel session.
 	Log               logr.Logger                // Optional logger
@@ -53,9 +53,9 @@ func DialWatchService(ctx context.Context, target string, opts ...grpc.DialOptio
 // WatchOptions is invalid or if it could not dial the WatchService using
 // the provided client.
 func Watch(ctx context.Context, opts WatchOptions) error {
-	if opts.Cli == nil {
-		return errors.New("missing WatchServiceClient")
-	}
+	// if opts.Client == nil {
+	// 	return errors.New("missing WatchServiceClient")
+	// }
 	if opts.Name == "" {
 		return errors.New("missing name")
 	}
@@ -71,13 +71,25 @@ func Watch(ctx context.Context, opts WatchOptions) error {
 
 	opts.Log.Info("Watching for session proposals...")
 	ctx = metadata.AppendToOutgoingContext(ctx, connect.MDEndpoint, opts.Name)
-	return connect.Watch(ctx, connect.WatchOptions{
-		Cli: opts.Cli,
+	return connect.WatchWebsocket(ctx, "wss://grpc.minekube.com/watchService", connect.WatchWebsocketOptions{
+		HTTPHeader: http.Header{
+			connect.MDEndpoint: []string{opts.Name},
+		},
+		HandshakeResult: func(res *http.Response) error {
+			return nil
+		},
 		Callback: func(proposal connect.SessionProposal) error {
 			go w.callback(proposal)
 			return nil
 		},
 	})
+	// return connect.Watch(ctx, connect.WatchOptions{
+	// 	Client: opts.Client,
+	// 	Callback: func(proposal connect.SessionProposal) error {
+	// 		go w.callback(proposal)
+	// 		return nil
+	// 	},
+	// })
 }
 
 type watcher struct {
@@ -121,23 +133,30 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 	}
 
 	// Dial TunnelService
-	dialCtx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	var tunnelCC *grpc.ClientConn
-	tunnelCC, err = grpc.DialContext(dialCtx, tunnelSvcAddr, t.dialOpts...)
-	if err != nil {
-		return fmt.Errorf("error dialing tunnel service at %q: %w", tunnelSvcAddr, err)
-	}
+	// dialCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	// defer cancel()
+	// var tunnelCC *grpc.ClientConn
+	// tunnelCC, err = grpc.DialContext(dialCtx, tunnelSvcAddr, t.dialOpts...)
+	// if err != nil {
+	// 	return fmt.Errorf("error dialing tunnel service at %q: %w", tunnelSvcAddr, err)
+	// }
 
 	t.log.Info("Establishing tunnel for proposed session", "tunnelServiceAddr", tunnelSvcAddr)
 
 	// Create tunnel connection
 	ctx = metadata.AppendToOutgoingContext(ctx, connect.MDSession, proposal.Session().GetId())
-	tc, err := connect.Tunnel(ctx, connect.TunnelOptions{
-		TunnelCli:  connect.NewTunnelServiceClient(tunnelCC),
+	tc, err := connect.TunnelWebsocket(ctx, tunnelSvcAddr, connect.TunnelWebsocketOptions{
 		LocalAddr:  t.localAddr,
 		RemoteAddr: proposal.Session().GetPlayer().GetAddr(),
+		HTTPHeader: http.Header{
+			connect.MDSession: []string{proposal.Session().GetId()},
+		},
 	})
+	// tc, err := connect.Tunnel(ctx, connect.TunnelOptions{
+	// 	TunnelClient:  connect.NewTunnelServiceClient(tunnelCC),
+	// 	LocalAddr:  t.localAddr,
+	// 	RemoteAddr: proposal.Session().GetPlayer().GetAddr(),
+	// })
 	if err != nil {
 		return err
 	}

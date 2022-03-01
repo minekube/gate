@@ -1,0 +1,21 @@
+# This is a simplified config where the rest of the
+# settings are omitted and will be set by default.
+# See config.yml for the full configuration options.
+#
+# The Minecraft editions Gate supports.
+editions:
+  # Java Minecraft edition is the first popular edition for desktops.
+  java:
+    enabled: true
+    config:
+      bind: 0.0.0.0:25566
+      servers:
+        mcserver: localhost:25567
+      try:
+        - mcserver
+
+connect:
+  enabled: true
+  insecure: true
+  name: proxy
+  watchServiceAddr: wss://grpc.minekube.com/watchService

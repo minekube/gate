@@ -5,17 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
+	"strings"
 	"time"
 
 	connct "go.minekube.com/connect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 
 	"go.minekube.com/gate/pkg/connect"
 	"go.minekube.com/gate/pkg/connect/single"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
+	"go.minekube.com/gate/pkg/util/netutil"
 )
 
 type Instance interface {
@@ -29,6 +34,15 @@ type ConnHandler interface {
 
 // New validates the config and creates a process collection from it.
 func New(c Config, log logr.Logger, inst Instance) (process.Collection, error) {
+	c.Transport = strings.ToLower(c.Transport)
+	switch c.Transport {
+	case "":
+		c.Transport = "ws" // default to WebSocket
+	case "ws", "grpc":
+	default:
+		return nil, fmt.Errorf("unsupported transport %q: choose ws or grpc", c.Transport)
+	}
+
 	coll := process.New(process.Options{AllOrNothing: true})
 
 	if c.Enabled {
@@ -69,25 +83,32 @@ func addConnectClient(coll process.Collection, c Config, log logr.Logger, connHa
 	return addRetried(coll, log, func(ctx context.Context) error {
 		log.Info("Connecting to watch service...",
 			"addr", c.WatchServiceAddr, "timeout", timeout.String())
-
-		dialCtx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
+		// dialCtx, cancel := context.WithTimeout(ctx, timeout)
+		// defer cancel()
 		t := time.Now()
-		cli, cc, err := connect.DialWatchService(dialCtx, c.WatchServiceAddr, dialOpts...)
-		if err != nil {
-			return err
-		}
-		defer cc.Close()
+		// cli, cc, err := connect.DialWatchService(dialCtx, c.WatchServiceAddr, dialOpts...)
+		// if err != nil {
+		// 	return err
+		// }
+		// defer cc.Close()
 
 		log.Info("Connected", "took", time.Since(t).String())
-
-		return connect.Watch(ctx, connect.WatchOptions{
-			Name:              c.Name,
-			Cli:               cli,
+		err := connect.Watch(ctx, connect.WatchOptions{
+			Name: c.Name,
+			// Client:            cli,
 			ConnHandler:       func(conn connect.TunnelConn) { connHandler.HandleConn(conn) },
 			TunnelDialOptions: dialOpts,
 			Log:               log,
 		})
+		if ctx.Err() == nil {
+			// Reconnect to WatchService
+			if err == nil {
+				// TODO Backoff reconnect without logging an error after 5 times
+				err = errors.New("disconnected by watch service")
+			}
+		}
+		fmt.Println("watch service closed after", time.Since(t))
+		return err
 	})
 }
 
@@ -114,19 +135,41 @@ func addService(ctx context.Context, coll process.Collection, c Config, log logr
 
 	return coll.Add(process.RunnableFunc(func(stop <-chan struct{}) error {
 		defer ln.Close()
+		defer log.Info("Stopped serving Connect services")
 
-		svr := grpc.NewServer()
+		// svr := grpc.NewServer()
 
-		(&connct.WatchService{
+		ws := &connct.WatchService{
 			StartWatch: connect.AcceptEndpoint(acceptor),
-		}).Register(svr)
-		(&connct.TunnelService{
+		}
+		ts := &connct.TunnelService{
 			AcceptTunnel: connect.AcceptInboundTunnel(acceptor),
 			LocalAddr:    ln.Addr(),
-		}).Register(svr)
+		}
+		svr := http.Server{
+			Addr: c.Service.Addr,
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Println(r.URL, r.RequestURI, r.UserAgent(),
+					r.Header, r.RemoteAddr, r.Trailer, r.Host, r.TLS)
+				r = r.WithContext(peer.NewContext(r.Context(), &peer.Peer{Addr: netutil.NewAddr(r.RemoteAddr, "tcp")}))
+				md := metadata.MD{}
+				r = r.WithContext(metadata.NewIncomingContext(r.Context(), md))
+				if strings.Contains(r.RequestURI, "watch") {
+					md.Set(connct.MDEndpoint, r.Header.Get(connct.MDEndpoint))
+					fmt.Println("handle watch")
+					ws.ServeHTTP(w, r)
+					fmt.Println("handled watch")
+					return
+				}
+				md.Set(connct.MDSession, r.Header.Get(connct.MDSession))
+				fmt.Println("handle tunnel")
+				ts.ServeHTTP(w, r)
+				fmt.Println("handled tunnel")
+			}),
+		}
 
 		log.Info("Serving Connect services")
-		go func() { <-stop; svr.Stop() }()
+		go func() { <-stop; _ = svr.Close() }()
 		return svr.Serve(ln)
 	}))
 }
