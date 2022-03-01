@@ -145,11 +145,20 @@ func (r *bungeeCordMessageRecorder) processForwardToServer(in io.Reader) {
 		r.proxy.muS.RLock()
 		servers := r.proxy.servers
 		r.proxy.muS.RUnlock()
+		var currentUserServer ServerInfo
+		if s := r.CurrentServer(); currentUserServer != nil {
+			currentUserServer = s.Server().ServerInfo()
+		}
 		for _, server := range servers {
+			if ServerInfoEqual(server.ServerInfo(), currentUserServer) {
+				continue
+			}
 			go server.sendPluginMessage(bungeeCordLegacyChannel, forward)
 		}
 	} else {
-		r.proxy.server(target).sendPluginMessage(bungeeCordLegacyChannel, forward)
+		if rs := r.proxy.server(target); rs != nil {
+			rs.sendPluginMessage(bungeeCordLegacyChannel, forward)
+		}
 	}
 }
 
