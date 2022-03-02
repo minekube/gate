@@ -1,8 +1,9 @@
 package process
 
 import (
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"time"
+
+	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 // Collection is a runtime utility to manage a collection of processes
@@ -27,7 +28,7 @@ type Runnable interface {
 
 // RunnableFunc implements Runnable using a function.
 // It's very important that it blocks until it's done running.
-type RunnableFunc func(<-chan struct{}) error
+type RunnableFunc func(stop <-chan struct{}) error
 
 // Start implements Runnable.
 func (r RunnableFunc) Start(stop <-chan struct{}) error { return r(stop) }

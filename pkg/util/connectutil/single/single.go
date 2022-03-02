@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.minekube.com/gate/pkg/connect"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	connect2 "go.minekube.com/gate/pkg/util/connectutil"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -29,8 +29,8 @@ type Options struct {
 }
 
 type Acceptor interface {
-	connect.EndpointAcceptor
-	connect.TunnelAcceptor
+	connect2.EndpointAcceptor
+	connect2.TunnelAcceptor
 }
 
 func New(opts Options) (Acceptor, error) {
@@ -49,7 +49,7 @@ func New(opts Options) (Acceptor, error) {
 	}, nil
 }
 
-type sessionTunnel map[string]func(connect.InboundTunnel) error
+type sessionTunnel map[string]func(connect2.InboundTunnel) error
 
 type acceptor struct {
 	Options
@@ -57,7 +57,7 @@ type acceptor struct {
 	pendingSessions sessionTunnel // sessions waiting for inbound tunnel
 }
 
-func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
+func (a *acceptor) AcceptEndpoint(endpoint connect2.Endpoint) error {
 	if a.OverrideRegistration {
 		if rs := a.ServerRegistry.Server(endpoint.Name()); rs != nil {
 			if s, ok := rs.ServerInfo().(*server); ok {
@@ -104,7 +104,7 @@ func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
 	return <-disconnect
 }
 
-func (a *acceptor) AcceptTunnel(tunnel connect.InboundTunnel) error {
+func (a *acceptor) AcceptTunnel(tunnel connect2.InboundTunnel) error {
 	a.mu.Lock()
 	accept, ok := a.pendingSessions[tunnel.SessionID()]
 	if ok {
@@ -121,7 +121,7 @@ type rejectSession map[string]func(rejection *connct.SessionRejection)
 
 type server struct {
 	a *acceptor
-	connect.Endpoint
+	connect2.Endpoint
 	addr            net.Addr
 	disconnect      func(err error)
 	log             logr.Logger
@@ -139,7 +139,7 @@ func (s *server) addPendingSession(ctx context.Context, sessionID string) (
 	tunnelCh := make(chan connct.InboundTunnel)
 	rejectCh := make(chan *connct.SessionRejection)
 
-	tunnel := func(tunnel connect.InboundTunnel) error {
+	tunnel := func(tunnel connect2.InboundTunnel) error {
 		select {
 		case tunnelCh <- tunnel:
 			return nil
@@ -180,17 +180,17 @@ func (s *server) addPendingSession(ctx context.Context, sessionID string) (
 // implementing Dial allows Gate to create a tunnel to a server for a player
 var _ proxy.ServerDialer = (*server)(nil)
 
-// Dial establishes a TunnelConn with an Endpoint.
+// Dial establishes a Tunnel with an Endpoint.
 //
 // It proposes a session to the endpoint, waits for the endpoint to create a
-// TunnelConn with the TunnelService listening at PublicTunnelServiceAddr
-// and returns the TunnelConn.
+// Tunnel with the TunnelService listening at PublicTunnelServiceAddr
+// and returns the Tunnel.
 //
 // It is recommended to always pass a timeout context because the endpoint might never
-// create the TunnelConn with the TunnelService.
+// create the Tunnel with the TunnelService.
 //
 // Dial unblocks on the following events:
-//  - If the endpoint has established a TunnelConn successfully.
+//  - If the endpoint has established a Tunnel successfully.
 //  - If the passed context is canceled, cleans up and cancels the session proposal.
 //  - If the endpoint rejected the session proposal wrapping the given status reason in the returned error if present.
 //  - If the endpoint's watcher has disconnected / was unregistered.

@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 
-	connect "go.minekube.com/gate/pkg/connect/config"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	connect "go.minekube.com/gate/pkg/util/connectutil/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 

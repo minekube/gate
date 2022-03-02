@@ -1,4 +1,4 @@
-package connect
+package connectutil
 
 import (
 	"go.minekube.com/connect"
@@ -6,6 +6,12 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+// Tunnel is a tunnel connection session.
+type Tunnel interface {
+	connect.Tunnel
+	Session() *connect.Session
+}
 
 // InboundTunnel is a tunnel initiated by a TunnelService client (server).
 type InboundTunnel interface {
