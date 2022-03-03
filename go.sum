@@ -582,6 +582,8 @@ go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71 h1:OEeSNDk62kFTm83x
 go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09 h1:E/AB72vPICyxqDcUQxC6SQyJ1jLF//GBG20Vw0wCDxE=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
+go.minekube.com/connect v0.4.1 h1:KQkODcofb4ztlnSpeIorxLxOkUlWpljmeFRHrRYxoyQ=
+go.minekube.com/connect v0.4.1/go.mod h1:UoJPzARtItNMD2IMGGRxKEwo3sibouOZwOh8pN3aBQ4=
 go.mongodb.org/mongo-driver v1.0.3/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=
 go.mongodb.org/mongo-driver v1.1.1/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=
 go.mongodb.org/mongo-driver v1.1.2/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qLUO4lqsUM=

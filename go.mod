@@ -2,8 +2,6 @@ module go.minekube.com/gate
 
 go 1.17
 
-replace go.minekube.com/connect => /home/robin/Desktop/minekube/connect
-
 require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/bxcodec/faker/v3 v3.6.0
@@ -22,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.minekube.com/connect v0.4.0
+	go.minekube.com/connect v0.4.1
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/text v0.3.7
