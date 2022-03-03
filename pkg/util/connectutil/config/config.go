@@ -7,30 +7,30 @@ import (
 	"github.com/rs/xid"
 )
 
-const DefaultWatchServiceAddr = "connect.api.minekube.com"
+const DefaultWatchServiceAddr = "wss://watch.connect.api.minekube.com"
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
-	Enabled:            false,
-	WatchServiceAddr:   DefaultWatchServiceAddr,
-	Name:               xid.New().String(),
-	EnforcePassthrough: false,
-	Insecure:           false,
+	Enabled:                false,
+	WatchServiceAddr:       DefaultWatchServiceAddr,
+	Name:                   xid.New().String(),
+	EnforcePassthrough:     false,
+	AllowUnencryptedTunnel: false,
 	Service: Service{
 		Enabled:                 false,
 		Addr:                    "localhost:8443",
-		PublicTunnelServiceAddr: "localhost:8443",
+		PublicTunnelServiceAddr: "ws://localhost:8080/tunnel",
 		OverrideRegistration:    false,
 	},
 }
 
 // Config is the config for Connect.
 type Config struct {
-	Enabled            bool // Whether to connect Gate to the WatchService
-	Name               string
-	EnforcePassthrough bool // Setting to true will reject all sessions in non-passthrough mode.
-	WatchServiceAddr   string
-	Insecure           bool // Whether to use transport security for dialing Connect services
+	Enabled                bool // Whether to connect Gate to the WatchService
+	Name                   string
+	EnforcePassthrough     bool // Setting to true will reject all sessions in non-passthrough mode.
+	WatchServiceAddr       string
+	AllowUnencryptedTunnel bool
 
 	Service Service
 }

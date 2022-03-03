@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/rs/xid"
-	connct "go.minekube.com/connect"
+	"go.minekube.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.minekube.com/gate/pkg/connect"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/util/connectutil"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -28,12 +28,12 @@ type Options struct {
 	OverrideRegistration    bool                 // Overrides endpoints with the same name.
 }
 
-type Acceptor interface {
-	connect.EndpointAcceptor
-	connect.TunnelAcceptor
+type Listener interface {
+	connectutil.EndpointListener
+	connectutil.TunnelListener
 }
 
-func New(opts Options) (Acceptor, error) {
+func New(opts Options) (Listener, error) {
 	if opts.ServerRegistry == nil {
 		return nil, errors.New("missing server registry")
 	}
@@ -43,21 +43,21 @@ func New(opts Options) (Acceptor, error) {
 	if opts.Log == nil {
 		opts.Log = logr.NopLog
 	}
-	return &acceptor{
+	return &listener{
 		Options:         opts,
 		pendingSessions: sessionTunnel{},
 	}, nil
 }
 
-type sessionTunnel map[string]func(connect.InboundTunnel) error
+type sessionTunnel map[string]func(context.Context, connectutil.InboundTunnel) error
 
-type acceptor struct {
+type listener struct {
 	Options
 	mu              sync.Mutex    // protects following
 	pendingSessions sessionTunnel // sessions waiting for inbound tunnel
 }
 
-func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
+func (a *listener) AcceptEndpoint(ctx context.Context, endpoint connectutil.Endpoint) error {
 	if a.OverrideRegistration {
 		if rs := a.ServerRegistry.Server(endpoint.Name()); rs != nil {
 			if s, ok := rs.ServerInfo().(*server); ok {
@@ -71,8 +71,8 @@ func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
 
 	// Prepare endpoint for registration as server
 	svr := &server{
-		a:               a,
-		Endpoint:        endpoint,
+		a:   a,
+		ctx: ctx, Endpoint: endpoint,
 		log:             a.Log.WithName("endpoint").WithName(endpoint.Name()),
 		addr:            netutil.NewAddr(endpoint.Name()+":25565", "connect"),
 		pendingSessions: rejectSession{},
@@ -86,7 +86,7 @@ func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
 			_ = a.ServerRegistry.Unregister(svr)
 			select {
 			case disconnect <- err:
-			case <-endpoint.Context().Done():
+			case <-ctx.Done():
 			}
 		})
 	}
@@ -99,12 +99,12 @@ func (a *acceptor) AcceptEndpoint(endpoint connect.Endpoint) error {
 		return status.Errorf(codes.InvalidArgument, "invalid endpoint definition: %v", err)
 	}
 
-	go func() { <-endpoint.Context().Done(); svr.disconnect(nil) }()
+	go func() { <-ctx.Done(); svr.disconnect(nil) }()
 	go svr.startRejectionMultiplexer()
 	return <-disconnect
 }
 
-func (a *acceptor) AcceptTunnel(tunnel connect.InboundTunnel) error {
+func (a *listener) AcceptTunnel(ctx context.Context, tunnel connectutil.InboundTunnel) error {
 	a.mu.Lock()
 	accept, ok := a.pendingSessions[tunnel.SessionID()]
 	if ok {
@@ -114,14 +114,15 @@ func (a *acceptor) AcceptTunnel(tunnel connect.InboundTunnel) error {
 	if !ok {
 		return status.Error(codes.NotFound, "could not found session id, the session proposal might be canceled already")
 	}
-	return accept(tunnel)
+	return accept(ctx, tunnel)
 }
 
-type rejectSession map[string]func(rejection *connct.SessionRejection)
+type rejectSession map[string]func(rejection *connect.SessionRejection)
 
 type server struct {
-	a *acceptor
-	connect.Endpoint
+	a   *listener
+	ctx context.Context // EndpointWatch context
+	connectutil.Endpoint
 	addr            net.Addr
 	disconnect      func(err error)
 	log             logr.Logger
@@ -134,12 +135,12 @@ var _ proxy.ServerInfo = (*server)(nil)
 func (s *server) Addr() net.Addr { return s.addr }
 
 func (s *server) addPendingSession(ctx context.Context, sessionID string) (
-	<-chan connct.InboundTunnel, <-chan *connct.SessionRejection, context.CancelFunc) {
+	<-chan connectutil.InboundTunnel, <-chan *connect.SessionRejection, context.CancelFunc) {
 
-	tunnelCh := make(chan connct.InboundTunnel)
-	rejectCh := make(chan *connct.SessionRejection)
+	tunnelCh := make(chan connectutil.InboundTunnel)
+	rejectCh := make(chan *connect.SessionRejection)
 
-	tunnel := func(tunnel connect.InboundTunnel) error {
+	tunnel := func(ctx context.Context, tunnel connectutil.InboundTunnel) error {
 		select {
 		case tunnelCh <- tunnel:
 			return nil
@@ -147,7 +148,7 @@ func (s *server) addPendingSession(ctx context.Context, sessionID string) (
 			return status.Error(codes.Canceled, "session proposal was canceled")
 		}
 	}
-	reject := func(rejection *connct.SessionRejection) {
+	reject := func(rejection *connect.SessionRejection) {
 		select {
 		case rejectCh <- rejection:
 		case <-ctx.Done():
@@ -180,23 +181,23 @@ func (s *server) addPendingSession(ctx context.Context, sessionID string) (
 // implementing Dial allows Gate to create a tunnel to a server for a player
 var _ proxy.ServerDialer = (*server)(nil)
 
-// Dial establishes a TunnelConn with an Endpoint.
+// Dial establishes a Tunnel with an Endpoint.
 //
 // It proposes a session to the endpoint, waits for the endpoint to create a
-// TunnelConn with the TunnelService listening at PublicTunnelServiceAddr
-// and returns the TunnelConn.
+// Tunnel with the TunnelService listening at PublicTunnelServiceAddr
+// and returns the Tunnel.
 //
 // It is recommended to always pass a timeout context because the endpoint might never
-// create the TunnelConn with the TunnelService.
+// create the Tunnel with the TunnelService.
 //
 // Dial unblocks on the following events:
-//  - If the endpoint has established a TunnelConn successfully.
+//  - If the endpoint has established a Tunnel successfully.
 //  - If the passed context is canceled, cleans up and cancels the session proposal.
 //  - If the endpoint rejected the session proposal wrapping the given status reason in the returned error if present.
 //  - If the endpoint's watcher has disconnected / was unregistered.
 //
 func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
-	session := &connct.Session{
+	session := &connect.Session{
 		Id:                xid.New().String(),
 		TunnelServiceAddr: s.a.PublicTunnelServiceAddr,
 		Player:            newConnectPlayer(p),
@@ -215,22 +216,22 @@ func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 	defer remove()
 
 	// Propose session to endpoint
-	if err := s.Propose(session); err != nil {
+	if err := s.Propose(ctx, session); err != nil {
 		return nil, fmt.Errorf("could not propose player session to target server: %w", err)
 	}
 	// Wait for response or cancellation
 	select {
 	case tunnel := <-tunnelChan:
 		s.log.Info("Prepared session for player")
-		return tunnel.Conn(), nil
+		return tunnel, nil
 	case r := <-rejectionChan:
 		s.log.Info("Session proposal rejected by server", "reason", r.GetReason())
 		if r.GetReason() != nil {
 			return nil, fmt.Errorf("session proposal rejected by server: %w", status.FromProto(r.GetReason()).Err())
 		}
 		return nil, errors.New("session proposal rejected by server without reason")
-	case <-s.Context().Done():
-		return nil, fmt.Errorf("server has disconnected: %w", s.Context().Err())
+	case <-s.ctx.Done():
+		return nil, fmt.Errorf("server has disconnected: %w", s.ctx.Err())
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -268,19 +269,19 @@ func (s *server) startRejectionMultiplexer() {
 	}
 }
 
-func newConnectPlayer(p proxy.Player) *connct.Player {
+func newConnectPlayer(p proxy.Player) *connect.Player {
 	prof := p.GameProfile()
-	props := make([]*connct.GameProfileProperty, len(prof.Properties))
+	props := make([]*connect.GameProfileProperty, len(prof.Properties))
 	for i, prop := range prof.Properties {
-		props[i] = &connct.GameProfileProperty{
+		props[i] = &connect.GameProfileProperty{
 			Name:      prop.Name,
 			Value:     prop.Value,
 			Signature: prop.Signature,
 		}
 	}
-	return &connct.Player{
+	return &connect.Player{
 		Addr: netutil.Host(p.RemoteAddr()),
-		Profile: &connct.GameProfile{
+		Profile: &connect.GameProfile{
 			Id:         prof.ID.String(),
 			Name:       prof.Name,
 			Properties: props,

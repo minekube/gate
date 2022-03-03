@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"go.minekube.com/gate/pkg/bridge"
-	connectcfg "go.minekube.com/gate/pkg/connect/config"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
@@ -21,6 +20,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
+	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errors "go.minekube.com/gate/pkg/util/errs"
 )
 
