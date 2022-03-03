@@ -13,6 +13,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
+	"go.minekube.com/gate/pkg/util/connectutil"
 	"go.minekube.com/gate/pkg/util/connectutil/single"
 )
 
@@ -21,7 +22,7 @@ func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runna
 		c.Service.PublicTunnelServiceAddr = c.Service.Addr
 	}
 
-	acceptor, err := single.New(single.Options{
+	ln, err := single.New(single.Options{
 		Log:                     log,
 		ServerRegistry:          reg,
 		PublicTunnelServiceAddr: c.Service.PublicTunnelServiceAddr,
@@ -32,12 +33,15 @@ func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runna
 	}
 
 	opts := ws.ServerOptions{}
-	e := opts.EndpointHandler()
-	t := opts.TunnelHandler()
-
 	mux := http.NewServeMux()
-	mux.Handle("/tunnel", e)
-	mux.Handle("/watch", t)
+	mux.Handle("/watch", requireHeader(
+		[]string{connect.MDEndpoint},
+		opts.EndpointHandler(connectutil.RequireEndpointName(ln)),
+	))
+	mux.Handle("/tunnel", requireHeader(
+		[]string{connect.MDSession},
+		opts.TunnelHandler(connectutil.RequireTunnelSessionID(ln)),
+	))
 
 	return ctxRunnable(func(ctx context.Context) error {
 		svr := http.Server{
@@ -50,10 +54,32 @@ func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runna
 				})
 			},
 		}
+
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		go func() { <-ctx.Done(); _ = svr.Close() }()
+
+		log.Info("Connect service started", "addr", c.Service.Addr)
+		defer log.Info("Stopped Connect service")
+
 		err = svr.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
 			err = nil
 		}
 		return err
 	}), nil
+}
+
+func requireHeader(header []string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, h := range header {
+			name := r.Header.Get(h)
+			if name == "" {
+				err := fmt.Sprintf("missing request %s header", h)
+				http.Error(w, err, http.StatusBadRequest)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

@@ -43,7 +43,8 @@ func connectClient(c Config, log logr.Logger, connHandler ConnHandler) (process.
 		EnforcePassthrough: c.EnforcePassthrough,
 	}
 
-	return retryingRunnable(log.WithName("retry"), ctxRunnable(func(ctx context.Context) error {
+	return retryingRunnable(log, ctxRunnable(func(ctx context.Context) error {
+		const timeout = time.Minute
 		log.Info("Connecting to watch service...", "addr", c.WatchServiceAddr, "timeout", timeout.String())
 		t := time.Now()
 
@@ -70,9 +71,9 @@ func connectClient(c Config, log logr.Logger, connHandler ConnHandler) (process.
 			if err == nil {
 				// TODO Backoff reconnect without logging an error after 5 times
 				err = errors.New("disconnected by watch service")
+				log.Info("Session watcher disconnected by server, reconnecting", "after", time.Since(t))
 			}
 		}
-		fmt.Println("watch service closed after", time.Since(t))
 		return err
 	})), nil
 }
@@ -154,9 +155,9 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		return status.Errorf(codes.Aborted, "could not connect to tunnel service: %v", err)
 	}
 
-	var conn connectutil.Tunnel = &tunnelConnWithSession{Tunnel: tunnel, s: proposal.Session()}
+	var conn connectutil.TunnelSession = &tunnelConnWithSession{Tunnel: tunnel, s: proposal.Session()}
 	if gp != nil {
-		conn = &tunnelConnWithGameProfile{Tunnel: conn, gp: gp}
+		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp}
 	}
 
 	t.log.Info("Established tunnel for session")
@@ -170,7 +171,7 @@ type (
 		s *connect.Session
 	}
 	tunnelConnWithGameProfile struct {
-		connectutil.Tunnel
+		connectutil.TunnelSession
 		gp *profile.GameProfile
 	}
 )

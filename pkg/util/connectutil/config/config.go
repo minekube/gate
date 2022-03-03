@@ -19,7 +19,7 @@ var DefaultConfig = Config{
 	Service: Service{
 		Enabled:                 false,
 		Addr:                    "localhost:8443",
-		PublicTunnelServiceAddr: "localhost:8443",
+		PublicTunnelServiceAddr: "ws://localhost:8080/tunnel",
 		OverrideRegistration:    false,
 	},
 }

@@ -2,9 +2,7 @@ module go.minekube.com/gate
 
 go 1.17
 
-replace (
-	go.minekube.com/connect => /home/robin/Desktop/minekube/connect
-)
+replace go.minekube.com/connect => /home/robin/Desktop/minekube/connect
 
 require (
 	github.com/agext/levenshtein v1.2.3
@@ -24,13 +22,14 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.minekube.com/connect v0.3.2-0.20220228230748-a9218c89c488
+	go.minekube.com/connect v0.4.0
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/grpc v1.44.0
 	k8s.io/apimachinery v0.19.2
+	nhooyr.io/websocket v1.8.7
 	sigs.k8s.io/controller-runtime v0.6.3
 )
 
@@ -43,7 +42,6 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
@@ -66,5 +64,4 @@ require (
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
 )

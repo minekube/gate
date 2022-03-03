@@ -8,14 +8,15 @@ editions:
   java:
     enabled: true
     config:
-      bind: 0.0.0.0:25566
+      bind: 0.0.0.0:25565
       servers:
-        mcserver: localhost:25567
+        proxy: endpoint-server:25565
       try:
-        - mcserver
+        - proxy
 
 connect:
-  enabled: true
-  insecure: true
-  name: proxy
-  watchServiceAddr: wss://grpc.minekube.com/watchService
+  service:
+    enabled: true
+    addr: localhost:8080
+    publicTunnelServiceAddr: ws://localhost:8080/tunnel
+    overrideRegistration: true

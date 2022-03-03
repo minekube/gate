@@ -1,43 +1,51 @@
 package connectutil
 
 import (
+	"context"
+
 	"go.minekube.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-// Tunnel is a tunnel connection session.
-type Tunnel interface {
+// TunnelSession is a tunnel with its session.
+type TunnelSession interface {
 	connect.Tunnel
 	Session() *connect.Session
 }
 
-// InboundTunnel is a tunnel initiated by a TunnelService client (server).
+// InboundTunnel is a tunnel with its session id.
 type InboundTunnel interface {
-	connect.InboundTunnel
+	connect.Tunnel
 	SessionID() string
 }
 
-// TunnelAcceptor accepts InboundTunnel.
-type TunnelAcceptor interface {
-	AcceptTunnel(InboundTunnel) error
+// TunnelListener accepts InboundTunnel.
+type TunnelListener interface {
+	AcceptTunnel(context.Context, InboundTunnel) error
 }
 
-// AcceptInboundTunnel requires that an inbound tunnel provides a session id metadata and calls the TunnelAcceptor.
-func AcceptInboundTunnel(acceptor TunnelAcceptor) func(connect.InboundTunnel) error {
-	return func(tunnel connect.InboundTunnel) error {
-		sessionID := valueFrom(tunnel.Context(), connect.MDSession, metadata.FromIncomingContext)
+// RequireTunnelSessionID requires that a tunnel provides session id metadata.
+func RequireTunnelSessionID(ln TunnelListener) connect.TunnelListener {
+	return acceptTunnel(func(ctx context.Context, tun connect.Tunnel) error {
+		sessionID := metaVal(ctx, connect.MDSession, metadata.FromIncomingContext)
 		if sessionID == "" {
-			return status.Errorf(codes.InvalidArgument, "missing request metadata %q", connect.MDSession)
+			return status.Errorf(codes.InvalidArgument, "missing request metadata %s", connect.MDSession)
 		}
-		return acceptor.AcceptTunnel(&inboundTunnel{InboundTunnel: tunnel, sessionID: sessionID})
-	}
+		return ln.AcceptTunnel(ctx, &tunnel{Tunnel: tun, sessionID: sessionID})
+	})
 }
 
-type inboundTunnel struct {
-	connect.InboundTunnel
+type tunnel struct {
+	connect.Tunnel
 	sessionID string
 }
 
-func (i *inboundTunnel) SessionID() string { return i.sessionID }
+func (i *tunnel) SessionID() string { return i.sessionID }
+
+type acceptTunnel func(ctx context.Context, tunnel connect.Tunnel) error
+
+func (fn acceptTunnel) AcceptTunnel(ctx context.Context, tunnel connect.Tunnel) error {
+	return fn(ctx, tunnel)
+}
