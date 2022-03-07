@@ -79,7 +79,7 @@ editions:
         # Options: legacy, none, velocity
         mode: legacy
         # The secret used if the mode is velocity.
-        velocitySecret: secret_here
+        #velocitySecret: secret_here
       # The section for health checking when Gate runs in a Kubernetes pod.
       # Refer to https://github.com/grpc-ecosystem/grpc-health-probe for more details.
       # Gate is also delivered with a docker image where the health check service is enabled by default.
