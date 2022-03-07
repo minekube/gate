@@ -8,11 +8,14 @@ editions:
   java:
     enabled: true
     config:
-      bind: 0.0.0.0:25565
+      bind: 0.0.0.0:25566
       servers:
-        velocityserver1: localhost:25568
+        mcserver: localhost:25567
       try:
-        - velocityserver1
-      forwarding:
-        mode: velocity
-        velocitySecret: my-secret
+        - mcserver
+
+connect:
+  enabled: true
+  insecure: true
+  name: proxy
+  watchServiceAddr: ws://localhost:8080/watch

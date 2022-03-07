@@ -3,22 +3,24 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"strings"
-	"time"
 )
 
 // ConnectionRequest can send a connection request to another server on the proxy.
 // A connection request is created using Player.CreateConnectionRequest(RegisteredServer).
 type ConnectionRequest interface {
-	// Returns the server that this connection request is for.
+	// Server returns the server that this connection request is for.
 	Server() RegisteredServer
-	// This method is blocking, initiates the connection to the
+	// Connect blocks, initiates the connection to the
 	// remote Server and returns a result after the user has logged on
 	// or an error when an error occurred (e.g. could not net.Dial the Server, ctx was canceled, etc.).
 	//
@@ -28,7 +30,7 @@ type ConnectionRequest interface {
 	// No messages will be communicated to the client:
 	// You are responsible for all error handling.
 	Connect(ctx context.Context) (ConnectionResult, error)
-	// This method is the same as Connect, but the proxy's built-in
+	// ConnectWithIndication is the same as Connect, but the proxy's built-in
 	// handling will be used to provide errors to the player and returns
 	// true if the player was successfully connected.
 	ConnectWithIndication(ctx context.Context) (successful bool)
@@ -37,23 +39,24 @@ type ConnectionRequest interface {
 // ConnectionResult is the result of a ConnectionRequest.
 type ConnectionResult interface {
 	Status() ConnectionStatus // The connection result status.
-	// May be nil!
-	Reason() Component // Returns a reason for the failure to connect to the server.
+	// Reason returns a reason for the failure to connect to the server.
+	// It is nil if not provided.
+	Reason() Component
 }
 
 // ConnectionStatus is the status for a ConnectionResult
 type ConnectionStatus uint8
 
 const (
-	// The player was successfully connected to the server.
+	// SuccessConnectionStatus indicates that the player was successfully connected to the server.
 	SuccessConnectionStatus ConnectionStatus = iota
-	// The player is already connected to this server.
+	// AlreadyConnectedConnectionStatus indicates that the player is already connected to this server.
 	AlreadyConnectedConnectionStatus
-	// A connection is already in progress.
+	// InProgressConnectionStatus indicates that a connection is already in progress.
 	InProgressConnectionStatus
-	// A plugin has cancelled this connection.
+	// CanceledConnectionStatus indicates that a plugin has cancelled this connection.
 	CanceledConnectionStatus
-	// The server disconnected the player.
+	// ServerDisconnectedConnectionStatus indicates that the server disconnected the player.
 	// A reason MAY be provided in the ConnectionResult.Reason().
 	ServerDisconnectedConnectionStatus
 )
@@ -118,12 +121,12 @@ func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, err
 	return result, err
 }
 
-// See ConnectionRequest interface.
+// Connect - See ConnectionRequest interface.
 func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, error) {
 	return c.connect(ctx)
 }
 
-// See ConnectionRequest interface.
+// ConnectWithIndication - See ConnectionRequest interface.
 func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
 	result, err := c.internalConnect(ctx)
 	if err != nil {
@@ -310,7 +313,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	log := p.log.WithValues("server", server.ServerInfo().Name(), "reason", plainReason)
 
 	connected := p.connectedServer()
-	if connected != nil && connected.server.ServerInfo().Equals(server.ServerInfo()) {
+	if connected != nil && ServerInfoEqual(connected.server.ServerInfo(), server.ServerInfo()) {
 		log.Info("Player was kicked from server")
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: movedToNewServer.Content,
@@ -391,10 +394,10 @@ func (c *connectionRequest) internalConnect(ctx context.Context) (result *connec
 		return plainConnectionResult(CanceledConnectionStatus, newDest), nil
 	}
 
-	con := newServerConnection(server, c.player)
-	c.player.setInFlightConnection(con)
-	defer c.resetIfInFlightIs(con)
-	return con.connect(ctx)
+	conn := newServerConnection(server, c.player)
+	c.player.setInFlightConnection(conn)
+	defer c.resetIfInFlightIs(conn)
+	return conn.connect(ctx)
 }
 
 func (c *connectionRequest) resetIfInFlightIs(establishedConnection *serverConnection) {

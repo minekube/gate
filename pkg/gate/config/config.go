@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	connect "go.minekube.com/gate/pkg/util/connectutil/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -23,6 +25,7 @@ var DefaultConfig = Config{
 		Enabled: false,
 		Bind:    "0.0.0.0:9090",
 	},
+	Connect: connect.DefaultConfig,
 }
 
 // Config is the root configuration of Gate.
@@ -31,9 +34,11 @@ type Config struct {
 	Editions Editions
 	// See HealthService struct.
 	HealthService HealthService
+	// See Connect struct.
+	Connect connect.Config
 }
 
-// Minecraft edition specific configs.
+// Editions provides Minecraft edition specific configs.
 // If multiple editions are enabled, cross-play is activated.
 // If no edition is enabled, all will be enabled.
 type Editions struct {

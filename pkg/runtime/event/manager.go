@@ -11,7 +11,7 @@ type Manager interface {
 	// Subscribe subscribes a handler to an event type with a priority
 	// and returns a func that can be run to unsubscribe the handler.
 	//
-	// HandlerFunc should return as soon as possible and start long running tasks in parallel.
+	// HandlerFunc should return as soon as possible and start long-running tasks in parallel.
 	// The Type can be any type, pointer to type or reflect.Type and the handler is only run for
 	// the exact type subscribed for.
 	//

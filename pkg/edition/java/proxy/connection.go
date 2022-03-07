@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
@@ -171,7 +172,7 @@ func (c *minecraftConn) handleReadErr(err error) (recoverable bool) {
 		}
 	}
 	// Immediately break for known unrecoverable errors
-	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, context.Canceled) ||
 		errors.Is(err, io.ErrNoProgress) || errors.Is(err, io.ErrClosedPipe) ||
 		errors.Is(err, io.ErrShortBuffer) || errors.Is(err, syscall.EBADF) ||
 		strings.Contains(err.Error(), "use of closed file") {
@@ -190,7 +191,7 @@ func (c *minecraftConn) flush() (err error) {
 		// already closed and can't write to.
 		return err
 	}
-	// Must flush in sync with encoder or we may get an
+	// Must flush in sync with encoder, or we may get an
 	// io.ErrShortWrite when flushing while encoder is already writing.
 	return c.encoder.Sync(c.writeBuf.Flush)
 }
@@ -271,7 +272,7 @@ func (c *minecraftConn) close() error {
 	return c.closeKnown(true)
 }
 
-// Indicates a connection is already closed.
+// ErrClosedConn indicates a connection is already closed.
 var ErrClosedConn = errors.New("connection is closed")
 
 func (c *minecraftConn) closeKnown(markKnown bool) (err error) {

@@ -10,9 +10,13 @@ editions:
     config:
       bind: 0.0.0.0:25565
       servers:
-        velocityserver1: localhost:25568
+        server1: endpoint-server:25565
       try:
-        - velocityserver1
-      forwarding:
-        mode: velocity
-        velocitySecret: my-secret
+        - server1
+
+connect:
+  service:
+    enabled: true
+    addr: localhost:8080
+    publicTunnelServiceAddr: wss://connect.minekube.net/tunnel
+    overrideRegistration: true

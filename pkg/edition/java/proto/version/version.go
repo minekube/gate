@@ -3,8 +3,9 @@ package version
 
 import (
 	"fmt"
-	"go.minekube.com/gate/pkg/gate/proto"
 	"strconv"
+
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 var (
@@ -33,7 +34,7 @@ var (
 	Minecraft_1_16_4 = &proto.Version{Protocol: 754, Names: s("1.16.4", "1.16.5")}
 	Minecraft_1_17   = &proto.Version{Protocol: 755, Names: s("1.17")}
 	Minecraft_1_17_1 = &proto.Version{Protocol: 756, Names: s("1.17.1")}
-	Minecraft_1_18   = &proto.Version{Protocol: 757, Names: s("1.18.1")}
+	Minecraft_1_18   = &proto.Version{Protocol: 757, Names: s("1.18", "1.18.1")}
 
 	// Versions ordered from lowest to highest
 	Versions = []*proto.Version{

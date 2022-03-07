@@ -4,10 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/gammazero/deque"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -19,10 +26,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/validation"
-	"go.uber.org/atomic"
-	"sort"
-	"strings"
-	"time"
 )
 
 // Handles communication with the connected Minecraft client.
@@ -391,6 +394,14 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 
 func (c *clientPlaySessionHandler) proxy() *Proxy {
 	return c.player.proxy
+}
+
+var spaceRegex = regexp.MustCompile(`\s+`)
+
+// trimSpaces removes too many spaces in between.
+func trimSpaces(s string) string {
+	s = strings.TrimSpace(s)
+	return spaceRegex.ReplaceAllString(s, " ")
 }
 
 func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {

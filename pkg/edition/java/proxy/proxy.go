@@ -4,8 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -23,11 +30,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -122,7 +124,7 @@ func New(options Options) (p *Proxy, err error) {
 	return p, nil
 }
 
-// Returned by Proxy.Run if the proxy instance was already run.
+// ErrProxyAlreadyRun is returned by Proxy.Run if the proxy instance was already run.
 var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 
 // Start runs the Java edition Proxy, blocks until the proxy is
@@ -224,15 +226,19 @@ func (p *Proxy) preInit() (err error) {
 
 	c := p.config
 	// Register servers
+	if len(c.Servers) != 0 {
+		p.log.Info("Registering servers...", "count", len(c.Servers))
+	}
 	for name, addr := range c.Servers {
 		pAddr, err := netutil.Parse(addr, "tcp")
 		if err != nil {
 			return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 		}
-		p.Register(NewServerInfo(name, pAddr))
-	}
-	if len(c.Servers) != 0 {
-		p.log.Info("Registered servers", "count", len(c.Servers))
+		info := NewServerInfo(name, pAddr)
+		_, err = p.Register(info)
+		if err != nil {
+			p.log.Info("Could not register server", "server", info)
+		}
 	}
 
 	// Register builtin commands
@@ -352,17 +358,39 @@ func (p *Proxy) Servers() []RegisteredServer {
 	return l
 }
 
-// Register registers a server with the proxy.
-//
-// Returns the new registered server and true on success.
-//
-// On failure either:
-//  - if name already exists, returns the already registered server and false
-//  - if the specified ServerInfo is invalid, returns nil and false.
-func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
-	if info == nil || !validation.ValidServerName(info.Name()) ||
-		validation.ValidHostPort(info.Addr().String()) != nil {
-		return nil, false
+// ServerRegistry is used to retrieve registered servers that players can connect to.
+type ServerRegistry interface {
+	// Server gets a registered server by name or returns nil if not found.
+	Server(name string) RegisteredServer
+	ServerRegistrar
+}
+
+// ServerRegistrar is used to register servers.
+type ServerRegistrar interface {
+	// Register registers a server with the proxy and returns it.
+	// If the there is already a server with the same info
+	// error ErrServerAlreadyExists is returned and the already registered server.
+	Register(info ServerInfo) (RegisteredServer, error)
+	// Unregister unregisters the server exactly matching the
+	// given ServerInfo and returns true if found.
+	Unregister(info ServerInfo) bool
+}
+
+// ErrServerAlreadyExists indicates that a server is already registered in ServerRegistrar.
+var ErrServerAlreadyExists = errors.New("server already exists")
+
+var _ ServerRegistry = (*Proxy)(nil)
+
+// Register - See ServerRegistrar
+func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
+	if info == nil {
+		return nil, errors.New("info must not be nil")
+	}
+	if !validation.ValidServerName(info.Name()) {
+		return nil, errors.New("invalid server name")
+	}
+	if err := validation.ValidHostPort(info.Addr().String()); err != nil {
+		return nil, fmt.Errorf("invalid address: %w", err)
 	}
 
 	name := strings.ToLower(info.Name())
@@ -370,14 +398,13 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, bool) {
 	p.muS.Lock()
 	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
-		return exists, false
+		return exists, ErrServerAlreadyExists
 	}
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 
-	p.log.V(1).Info("Registered new server",
-		"name", info.Name(), "addr", info.Addr())
-	return rs, true
+	p.log.Info("Registered new server", "name", info.Name(), "addr", info.Addr())
+	return rs, nil
 }
 
 // Unregister unregisters the server exactly matching the
@@ -390,7 +417,7 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	p.muS.Lock()
 	defer p.muS.Unlock()
 	rs, ok := p.servers[name]
-	if !ok || !rs.ServerInfo().Equals(info) {
+	if !ok || !ServerInfoEqual(rs.ServerInfo(), info) {
 		return false
 	}
 	delete(p.servers, name)
@@ -437,6 +464,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 
 	defer p.log.Info("Stopped listening for new connections")
 	p.log.Info("Listening for connections", "addr", addr)
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -447,19 +475,13 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 			}
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
-		go p.handleRawConn(conn)
+		go p.HandleConn(conn)
 	}
 }
 
-// handleRawConn handles a just-accepted connection that
-// has not had any I/O performed on it yet.
-func (p *Proxy) handleRawConn(raw net.Conn) {
-	raw, err := netutil.WrapConn(raw)
-	if err != nil {
-		p.log.Error(err, "Could not apply netutil.WrapConn on raw new connection")
-		_ = raw.Close()
-		return
-	}
+// HandleConn handles a just-accepted client connection
+// that has not had any I/O performed on it yet.
+func (p *Proxy) HandleConn(raw net.Conn) {
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()

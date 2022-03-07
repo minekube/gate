@@ -3,10 +3,14 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"io"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/common/minecraft/key"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -15,8 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"strings"
 )
 
 type bungeeCordMessageRecorder struct {
@@ -143,11 +145,20 @@ func (r *bungeeCordMessageRecorder) processForwardToServer(in io.Reader) {
 		r.proxy.muS.RLock()
 		servers := r.proxy.servers
 		r.proxy.muS.RUnlock()
+		var currentUserServer ServerInfo
+		if s := r.CurrentServer(); currentUserServer != nil {
+			currentUserServer = s.Server().ServerInfo()
+		}
 		for _, server := range servers {
+			if ServerInfoEqual(server.ServerInfo(), currentUserServer) {
+				continue
+			}
 			go server.sendPluginMessage(bungeeCordLegacyChannel, forward)
 		}
 	} else {
-		r.proxy.server(target).sendPluginMessage(bungeeCordLegacyChannel, forward)
+		if rs := r.proxy.server(target); rs != nil {
+			rs.sendPluginMessage(bungeeCordLegacyChannel, forward)
+		}
 	}
 }
 
@@ -170,22 +181,22 @@ func (r *bungeeCordMessageRecorder) processConnectOther(in io.Reader) {
 }
 
 func (r *bungeeCordMessageRecorder) processIP() {
-	hp := netutil.HostPort(r.RemoteAddr())
+	host, port := netutil.HostPort(r.RemoteAddr())
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "IP")
-	_ = util.WriteUTF(b, hp.Host())
-	_ = util.WriteInt32(b, int32(hp.Port()))
+	_ = util.WriteUTF(b, host)
+	_ = util.WriteInt32(b, int32(port))
 	r.sendServerResponse(b.Bytes())
 }
 
 func (r *bungeeCordMessageRecorder) processIPOther(in io.Reader) {
 	r.readPlayer(in, func(p *connectedPlayer) {
-		hp := netutil.HostPort(p.RemoteAddr())
+		host, port := netutil.HostPort(p.RemoteAddr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "IPOther")
 		_ = util.WriteUTF(b, p.Username())
-		_ = util.WriteUTF(b, hp.Host())
-		_ = util.WriteInt32(b, int32(hp.Port()))
+		_ = util.WriteUTF(b, host)
+		_ = util.WriteInt32(b, int32(port))
 		r.sendServerResponse(b.Bytes())
 	})
 }
@@ -328,12 +339,12 @@ func (r *bungeeCordMessageRecorder) processUUIDOther(in io.Reader) {
 
 func (r *bungeeCordMessageRecorder) processServerIP(in io.Reader) {
 	r.readServer(in, func(s *registeredServer) {
-		hp := netutil.HostPort(s.ServerInfo().Addr())
+		host, port := netutil.HostPort(s.ServerInfo().Addr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "ServerIP")
 		_ = util.WriteUTF(b, s.ServerInfo().Name())
-		_ = util.WriteUTF(b, hp.Host())
-		_ = util.WriteInt16(b, int16(hp.Port()))
+		_ = util.WriteUTF(b, host)
+		_ = util.WriteInt16(b, int16(port))
 		r.sendServerResponse(b.Bytes())
 	})
 }

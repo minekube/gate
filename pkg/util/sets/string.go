@@ -2,7 +2,7 @@ package sets
 
 type Empty struct{}
 
-// sets.String is a set of strings, implemented via map[string]struct{} for minimal memory consumption.
+// String is a set of strings, implemented via map[string]struct{} for minimal memory consumption.
 type String map[string]Empty
 
 // NewString creates a String from a list of values.

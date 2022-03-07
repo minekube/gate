@@ -3,6 +3,7 @@ package proxy
 import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
@@ -80,12 +81,12 @@ func NewGameProfileRequestEvent(
 	}
 }
 
-// minecraftConn returns the inbound connection that is connecting to the proxy.
+// Conn returns the inbound connection that is connecting to the proxy.
 func (e *GameProfileRequestEvent) Conn() Inbound {
 	return e.inbound
 }
 
-// OriginalServer returns the by the proxy created offline or online (Mojang authenticated) game profile.
+// Original returns the by the proxy created offline or online (Mojang authenticated) game profile.
 func (e *GameProfileRequestEvent) Original() profile.GameProfile {
 	return e.original
 }

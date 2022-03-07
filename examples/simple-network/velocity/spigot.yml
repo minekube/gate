@@ -1,3 +1,0 @@
-settings:
-  # Legacy player info forwarding mode (UUID, IP & game profile signatures)
-  bungeecord: false

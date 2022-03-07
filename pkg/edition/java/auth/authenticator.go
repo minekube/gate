@@ -11,14 +11,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	"go.minekube.com/gate/pkg/version"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/version"
 )
 
 // Authenticator can authenticate joining Minecraft clients.
@@ -194,6 +195,9 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 
 	switch resp.StatusCode {
 	case http.StatusOK:
+	case http.StatusUnauthorized:
+		// Player has invalid/outdated session auth token and
+		// should restart the game or re-login to Mojang.
 	case http.StatusNoContent:
 		log.Info("Mojang could not find user, potentially offline mode")
 	default:

@@ -4,12 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"net"
 	"regexp"
 	"time"
 
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -19,6 +19,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -29,7 +30,7 @@ type loginSessionHandler struct {
 
 	nopSessionHandler
 
-	// following fields are not goroutine-safe
+	// following fields are not safe for concurrency
 	login  *packet.ServerLogin
 	verify []byte
 }
@@ -62,6 +63,11 @@ func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
 
 var playerNameRegex = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
 
+// GameProfileProvider provides the GameProfile for a player connection.
+type GameProfileProvider interface {
+	GameProfile() (profile *profile.GameProfile)
+}
+
 func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	l.login = login
 
@@ -84,6 +90,12 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	}
 
 	if e.Result() != ForceOfflineModePreLogin && (e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
+
+		if p, ok := l.conn.c.(GameProfileProvider); ok {
+			l.initPlayer(p.GameProfile(), false)
+			return
+		}
+
 		// Online mode login, send encryption request
 		request := l.generateEncryptionRequest()
 		l.verify = make([]byte, len(request.VerifyToken))
@@ -122,7 +134,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	authn := l.auth().WithLogger(log)
 	valid, err := authn.Verify(resp.VerifyToken, l.verify)
 	if err != nil || !valid {
-		// Simple close the connection without much overhead.
+		// Simply close the connection without much overhead.
 		_ = l.conn.close()
 		return
 	}
@@ -142,17 +154,9 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 		return
 	}
 
-	var userIP string
-	getUserIP := func() string {
-		if len(userIP) == 0 {
-			userIP, _, _ = net.SplitHostPort(l.conn.RemoteAddr().String())
-		}
-		return userIP
-	}
-
 	var optionalUserIP string
 	if l.config().ShouldPreventClientProxyConnections {
-		optionalUserIP = getUserIP()
+		optionalUserIP = netutil.Host(l.conn.RemoteAddr())
 	}
 
 	serverID, err := authn.GenerateServerID(decryptedSharedSecret)
@@ -203,7 +207,8 @@ var (
 	onlineModeOnly = &component.Text{
 		Content: `This server only accepts connections from online-mode clients.
 
-Did you change your username? Sign out of Minecraft, sign back in, and try again.`,
+Did you change your username?
+Restart your game or sign out of Minecraft, sign back in, and try again.`,
 		S: component.Style{Color: color.Red},
 	}
 )
@@ -222,9 +227,9 @@ var (
 	internalServerConnectionError = &component.Text{
 		Content: "Internal server connection error",
 	}
-	//unexpectedDisconnect = &component.Text{
+	// unexpectedDisconnect = &component.Text{
 	//	Content: "Unexpectedly disconnected from remote server - crash?",
-	//}
+	// }
 	movedToNewServer = &component.Text{
 		Content: "The server you were on kicked you: ",
 		S:       component.Style{Color: color.Red},
@@ -262,7 +267,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 		defaultFunc: player.permFunc,
 	}
 	player.proxy.event.Fire(permSetup)
-	// Set the players permission function
+	// Set the player's permission function
 	player.permFunc = permSetup.Func()
 
 	if player.Active() {
@@ -281,7 +286,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 			player.close()
 			return
 		}
-		if err := player.SetCompressionThreshold(threshold); err != nil {
+		if err = player.SetCompressionThreshold(threshold); err != nil {
 			l.log.Error(err, "Error setting compression threshold")
 			_ = player.closeWith(packet.DisconnectWith(internalServerConnectionError))
 			return
@@ -342,6 +347,8 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	}
 	ctx, cancel := withConnectionTimeout(context.Background(), l.config())
 	defer cancel()
+	ctx, pcancel := player.newContext(ctx) // todo use player's connection context
+	defer pcancel()
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 

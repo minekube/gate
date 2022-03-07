@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -18,7 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"go.uber.org/atomic"
 )
 
 type backendLoginSessionHandler struct {
@@ -87,11 +88,11 @@ func (b *backendLoginSessionHandler) handlePacket(pc *proto.PacketContext) {
 	}
 }
 
-// An error in a ConnectionRequest when the backend server is in online mode.
+// ErrServerOnlineMode indicates error in a ConnectionRequest when the backend server is in online mode.
 var ErrServerOnlineMode = errors.New("backend server is online mode, but should be offline")
 
 func (b *backendLoginSessionHandler) handleEncryptionRequest() {
-	// If we get an encryption request we know that the server is online mode!
+	// If we get an encryption request we know that the server is online mode or does not support tunneling!
 	// Server should be offline mode.
 	b.requestCtx.result(nil, ErrServerOnlineMode)
 }
@@ -177,7 +178,7 @@ func createVelocityForwardingData(hmacSecret []byte, address string, profile *pr
 }
 
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
-	result := disconnectResultForPacket(p, b.serverConn.player.Protocol(), b.serverConn.server, true)
+	result := disconnectResultForPacket(b.log.V(1), p, b.serverConn.player.Protocol(), b.serverConn.server, true)
 	b.requestCtx.result(result, nil)
 	b.serverConn.disconnect()
 }
@@ -221,13 +222,13 @@ func (b *backendLoginSessionHandler) disconnected() {
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
-		// TODO add link to player info forwarding instructions docs
 	} else {
 		b.requestCtx.result(nil, errs.NewSilentErr("The connection to the remote server was unexpectedly closed."))
 	}
 }
 
 func disconnectResultForPacket(
+	errLog logr.Logger,
 	p *packet.Disconnect,
 	protocol proto.Protocol,
 	server RegisteredServer,
@@ -237,7 +238,12 @@ func disconnectResultForPacket(
 	if p != nil && p.Reason != nil {
 		reason = *p.Reason
 	}
-	r, _ := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
+	r, err := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
+	if errLog.Enabled() && err != nil {
+		errLog.Error(err, "Error unmarshal disconnect reason from server",
+			"safe", safe, "protocol", protocol,
+			"reason", reason, "server", server.ServerInfo().Name())
+	}
 	return disconnectResult(r, server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {

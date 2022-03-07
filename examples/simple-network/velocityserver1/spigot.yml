@@ -1,0 +1,3 @@
+settings:
+  # Disabled since Velocity proxy forwards the player data differently.
+  bungeecord: false
