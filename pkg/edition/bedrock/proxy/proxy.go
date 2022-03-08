@@ -5,14 +5,16 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
+	"net"
+	"sync"
+	"sync/atomic"
+
 	"github.com/sandertv/go-raknet"
+
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
-	"net"
-	"sync"
-	"sync/atomic"
 )
 
 // Options are the options for a new Bedrock edition Proxy.
@@ -33,10 +35,7 @@ func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
-	log := options.Logger
-	if log == nil {
-		log = logr.NopLog
-	}
+	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
@@ -108,6 +107,6 @@ func (p *Proxy) handleRawConn(raw net.Conn) {
 	defer raw.Close()
 	// Create client connection
 	conn := newMinecraftConn(raw, p, true)
-	//conn.setSessionHandler0()
+	// conn.setSessionHandler0()
 	conn.readLoop()
 }

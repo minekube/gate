@@ -5,11 +5,12 @@ package bridge
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/logr"
-	"sync"
 )
 
 // Bridge allows "cross-play" between different Minecraft edition (Bedrock <-> Java) proxies.
@@ -44,7 +45,7 @@ func (b *Bridge) valid() error {
 		return fmt.Errorf("proxy must run at least one edition (%s and/or %s)",
 			edition.Java, edition.Bedrock)
 	}
-	if b.Log == nil {
+	if b.Log.GetSink() == nil {
 		b.Log = logr.Log.WithName("bridge")
 	}
 	return nil

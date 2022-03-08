@@ -40,9 +40,7 @@ func New(opts Options) (Listener, error) {
 	if opts.PublicTunnelServiceAddr == "" {
 		return nil, errors.New("missing server public tunnel service address")
 	}
-	if opts.Log == nil {
-		opts.Log = logr.NopLog
-	}
+	opts.Log = logr.OrNop(opts.Log)
 	return &listener{
 		Options:         opts,
 		pendingSessions: sessionTunnel{},

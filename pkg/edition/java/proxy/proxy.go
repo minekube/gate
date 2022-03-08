@@ -83,10 +83,7 @@ func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
-	log := options.Logger
-	if log == nil {
-		log = logr.NopLog
-	}
+	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop

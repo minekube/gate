@@ -32,7 +32,7 @@ type Options struct {
 	// If none is set, no events are sent.
 	EventMgr event.Manager
 	// Logger is the logger used for Gate
-	// and potential sub-components.
+	// and potential subcomponents.
 	// If not set, no logging is done.
 	Logger logr.Logger
 }
@@ -43,10 +43,7 @@ func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errors.ErrMissingConfig
 	}
-	log := options.Logger
-	if log == nil {
-		log = logr.NopLog
-	}
+	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop

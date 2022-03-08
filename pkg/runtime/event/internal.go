@@ -1,9 +1,10 @@
 package event
 
 import (
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"sort"
 	"sync"
+
+	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 type manager struct {
@@ -85,7 +86,7 @@ func (m *manager) FireParallel(event Event, after ...HandlerFunc) {
 
 		var i int
 		defer func() {
-			if r := recover(); r != nil && m.log != nil {
+			if r := recover(); r != nil {
 				m.log.Error(nil,
 					"Recovered from panic by an 'after fire' func",
 					"panic", r,
@@ -109,7 +110,7 @@ func (m *manager) Fire(event Event) {
 	for _, sub := range list {
 		func() {
 			defer func() {
-				if r := recover(); r != nil && m.log != nil {
+				if r := recover(); r != nil {
 					m.log.Error(nil, "Recovered from panic from an event subscriber",
 						"panic", r,
 						"eventType", eventType,

@@ -76,8 +76,6 @@ func setOptionsDefaults(options Options) Options {
 		gracefulShutdownTimeout := DefaultGracefulShutdownPeriod
 		options.GracefulShutdownTimeout = &gracefulShutdownTimeout
 	}
-	if options.Logger == nil {
-		options.Logger = logr.NopLog
-	}
+	options.Logger = logr.OrNop(options.Logger)
 	return options
 }

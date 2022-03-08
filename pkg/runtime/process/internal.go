@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sync"
 	"time"
+
+	utilerrors "go.minekube.com/gate/pkg/internal/errors"
+	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 type collection struct {
