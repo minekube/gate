@@ -3,6 +3,8 @@ package errs
 import (
 	"errors"
 	"fmt"
+	"net"
+	"syscall"
 )
 
 var (
@@ -30,9 +32,8 @@ func WrapSilent(wrappedErr error) error {
 
 func (e *SilentError) Unwrap() error { return e.Err }
 
-// see https://github.com/golang/go/issues/4373 for details
+// IsConnClosedErr returns true if err indicates a closed connection error.
 func IsConnClosedErr(err error) bool {
-	return err != nil &&
-		(err.Error() == "use of closed network connection" ||
-			err.Error() == "read: connection reset by peer")
+	return err != nil && (errors.Is(err, net.ErrClosed) ||
+		errors.Is(err, syscall.ECONNRESET))
 }
