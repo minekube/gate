@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.uber.org/multierr"
 	"sync"
 	"time"
 
-	utilerrors "go.minekube.com/gate/pkg/internal/errors"
 	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
@@ -73,14 +73,10 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 		}
 		stopErr := pm.engageStopProcedure(stopComplete)
 		if stopErr != nil && stopErr != errStopAll {
-			if err != nil {
-				// Aggregate allows to use errors.Is for all contained errors
-				// whereas fmt.Errorf allows wrapping at most one error which means the
-				// other one can not be found anymore.
-				err = utilerrors.NewAggregate([]error{err, stopErr})
-			} else {
-				err = stopErr
-			}
+			// multierr allows using errors.Is for all contained errors
+			// whereas fmt.Errorf allows wrapping at most one error which means the
+			// other one can not be found anymore.
+			err = multierr.Combine(err, stopErr)
 		}
 	}()
 
@@ -181,7 +177,7 @@ func (pm *collection) startRunnables() {
 	// Start the Runnables
 	for _, c := range pm.runnables {
 		// Runnables block, but we want to return an error if any have an error starting.
-		// Write any Start errors to a channel so we can return them
+		// Write any Start errors to a channel, so we can return them
 		pm.startRunnable(c)
 	}
 }

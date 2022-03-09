@@ -22,6 +22,7 @@ require (
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
 	go.minekube.com/connect v0.4.1
 	go.uber.org/atomic v1.7.0
+	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.19.1
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
@@ -55,7 +56,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7 // indirect
