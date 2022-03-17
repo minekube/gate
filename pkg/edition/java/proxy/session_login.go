@@ -341,6 +341,10 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		initialServer: initialFromConfig,
 	}
 	l.event().Fire(chooseServer)
+	if !player.Active() || // player was disconnected
+		player.CurrentServer() != nil { // player was already connected to a server
+		return
+	}
 	if chooseServer.InitialServer() == nil {
 		player.Disconnect(noAvailableServers) // Will call disconnected() in InitialConnectSessionHandler
 		return
