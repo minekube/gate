@@ -276,8 +276,6 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 				requestedMessage = friendlyReason
 			}
 			_ = p.SendMessage(requestedMessage)
-		default:
-			// The only remaining value is successful (no need to do anything!)
 		}
 	case *NotifyKickResult:
 		if e.KickedDuringServerConnect() && previouslyConnected {

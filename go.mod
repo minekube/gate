@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71
 	go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09
-	go.minekube.com/connect v0.4.1
+	go.minekube.com/connect v0.4.2
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.19.1

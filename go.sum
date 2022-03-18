@@ -415,8 +415,8 @@ go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71 h1:OEeSNDk62kFTm83x
 go.minekube.com/brigodier v0.0.0-20210616142004-efe28271de71/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09 h1:E/AB72vPICyxqDcUQxC6SQyJ1jLF//GBG20Vw0wCDxE=
 go.minekube.com/common v0.0.0-20200811211844-401ee9d15c09/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
-go.minekube.com/connect v0.4.1 h1:KQkODcofb4ztlnSpeIorxLxOkUlWpljmeFRHrRYxoyQ=
-go.minekube.com/connect v0.4.1/go.mod h1:UoJPzARtItNMD2IMGGRxKEwo3sibouOZwOh8pN3aBQ4=
+go.minekube.com/connect v0.4.2 h1:flE3taQxaJdORRGXrHrN6zP6tfjryzNQ0ajb+7Y1WR0=
+go.minekube.com/connect v0.4.2/go.mod h1:UoJPzARtItNMD2IMGGRxKEwo3sibouOZwOh8pN3aBQ4=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
