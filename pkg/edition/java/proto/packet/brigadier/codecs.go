@@ -2,9 +2,11 @@ package brigadier
 
 import (
 	"fmt"
-	"go.minekube.com/brigodier"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
+
+	"go.minekube.com/brigodier"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
 
 // ArgumentPropertyCodecFuncs implements ArgumentPropertyCodec.
@@ -78,6 +80,22 @@ var (
 			default:
 				return nil, fmt.Errorf("invalid string argument type %d", t)
 			}
+		},
+	}
+	RegistryKeyArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v interface{}) error {
+			i, ok := v.(*RegistryKeyArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *RegistryKeyArgumentType but got %T", v)
+			}
+			return util.WriteString(wr, i.Identifier)
+		},
+		DecodeFn: func(rd io.Reader) (interface{}, error) {
+			id, err := util.ReadString(rd)
+			if err != nil {
+				return nil, err
+			}
+			return &RegistryKeyArgumentType{Identifier: id}, nil
 		},
 	}
 
