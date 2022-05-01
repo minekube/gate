@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/brigodier"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
+
+	"go.minekube.com/brigodier"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
 
 type ArgumentPropertyCodec interface {
@@ -122,6 +124,9 @@ func init() {
 	register("brigadier:float", brigodier.Float32, Float32ArgumentPropertyCodec)
 	register("brigadier:double", brigodier.Float64, Float64ArgumentPropertyCodec)
 	register("brigadier:bool", brigodier.Bool, BoolArgumentPropertyCodec)
+
+	register("minecraft:resource", RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)        // added in 1.18.2
+	register("minecraft:resource_or_tag", RegistryKeyArgument, RegistryKeyArgumentPropertyCodec) // added in 1.18.2                                            // added in 1.18.2
 
 	// Minecraft argument types with extra properties
 	emptyWithCodec("minecraft:entity", ByteArgumentPropertyCodec)

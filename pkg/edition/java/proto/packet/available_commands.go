@@ -3,12 +3,14 @@ package packet
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/gammazero/deque"
 	"go.minekube.com/brigodier"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/brigadier"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 const (

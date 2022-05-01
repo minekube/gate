@@ -35,6 +35,7 @@ var (
 	Minecraft_1_17   = &proto.Version{Protocol: 755, Names: s("1.17")}
 	Minecraft_1_17_1 = &proto.Version{Protocol: 756, Names: s("1.17.1")}
 	Minecraft_1_18   = &proto.Version{Protocol: 757, Names: s("1.18", "1.18.1")}
+	Minecraft_1_18_2 = &proto.Version{Protocol: 758, Names: s("1.18.2")}
 
 	// Versions ordered from lowest to highest
 	Versions = []*proto.Version{
@@ -51,7 +52,7 @@ var (
 		Minecraft_1_15,
 		Minecraft_1_16, Minecraft_1_16_1, Minecraft_1_16_2, Minecraft_1_16_3, Minecraft_1_16_4,
 		Minecraft_1_17, Minecraft_1_17_1,
-		Minecraft_1_18,
+		Minecraft_1_18, Minecraft_1_18_2,
 	}
 )
 
