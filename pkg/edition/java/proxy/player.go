@@ -7,6 +7,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net"
+	"strings"
+	"sync"
+	"time"
+
+	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/command"
@@ -24,10 +30,6 @@ import (
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
-	"net"
-	"strings"
-	"sync"
-	"time"
 )
 
 // Player is a connected Minecraft player.
@@ -67,6 +69,9 @@ type Player interface {
 	SendMessageWith(msg component.Component, opts ...MessageOption) error
 	player.TabList
 	// TODO add title and more
+
+	// Send new commands list for player at any time
+	SendCommandsList(cmds *brigodier.RootCommandNode) error
 }
 
 type connectedPlayer struct {
@@ -265,6 +270,14 @@ func (p *connectedPlayer) SendMessageWith(msg component.Component, opts ...Messa
 		o(chat)
 	}
 	return p.WritePacket(chat)
+}
+
+func (p *connectedPlayer) SendCommandsList(cmds *brigodier.RootCommandNode) error {
+	cmdsPacket := packet.AvailableCommands{
+		RootNode: cmds,
+	}
+
+	return p.WritePacket(&cmdsPacket)
 }
 
 var legacyJsonCodec = &legacy.Legacy{}
