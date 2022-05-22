@@ -18,15 +18,15 @@ _written in Go and ready for the cloud!_
 > but you can already start using it!
 > It is already being used by the Minekube network!
 
-## [Website & Documentation](https://gate.minekube.com)
+## [Website & Documentation](https://developers.minekube.com/gate)
 
 **There is a lot to discover on Gate's website.**
-Please refer to the website for the [documentation](https://gate.minekube.com/docs),
+Please refer to the website for the [documentation](https://developers.minekube.com/gate),
 guides and any more information needed!
 
 ## Quick Start
 
-Follow our quick guide on [creating a simple Minecraft network](https://gate.minekube.com)
+Follow our quick guide on [creating a simple Minecraft network](https://developers.minekube.com/gate)
 on our documentation website.
 
 ![Server list](site/static/images/server-list.png)
