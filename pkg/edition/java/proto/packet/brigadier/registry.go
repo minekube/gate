@@ -129,7 +129,7 @@ func init() {
 	register("minecraft:resource_or_tag", RegistryKeyArgument, RegistryKeyArgumentPropertyCodec) // added in 1.18.2                                            // added in 1.18.2
 
 	// Minecraft argument types with extra properties
-	emptyWithCodec("minecraft:entity", ByteArgumentPropertyCodec)
+	register("minecraft:entity", PlayerArgument, EntityArgumentPropertyCodec)
 	emptyWithCodec("minecraft:score_holder", ByteArgumentPropertyCodec)
 
 	// Minecraft argument types
