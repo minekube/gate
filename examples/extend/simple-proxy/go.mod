@@ -5,7 +5,7 @@ go 1.17
 require (
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.1
-	go.minekube.com/gate v0.17.1-0.20220308110816-86b9ecc74207
+	go.minekube.com/gate v0.18.3-0.20220603174800-35c9efdd603d
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gammazero/deque v0.1.1 // indirect
 	github.com/go-gl/mathgl v1.0.0 // indirect
-	github.com/go-logr/logr v1.2.2 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.10.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	go.minekube.com/connect v0.4.1 // indirect
+	go.minekube.com/connect v0.4.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
