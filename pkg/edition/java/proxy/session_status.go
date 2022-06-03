@@ -3,11 +3,13 @@ package proxy
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/go-logr/logr"
+
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 type statusSessionHandler struct {

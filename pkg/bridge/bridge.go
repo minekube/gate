@@ -10,7 +10,6 @@ import (
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
-	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 // Bridge allows "cross-play" between different Minecraft edition (Bedrock <-> Java) proxies.
@@ -21,8 +20,6 @@ import (
 //
 // This struct may only be useful until Setup was called and can get garbage collected afterwards.
 type Bridge struct {
-	Log logr.Logger // The logger used in bridging-code.
-
 	// At least one edition must be set.
 	JavaProxy    *jproxy.Proxy // Holds java edition players.
 	BedrockProxy *bproxy.Proxy // Holds bedrock edition players
@@ -44,9 +41,6 @@ func (b *Bridge) valid() error {
 	if b.BedrockProxy == nil && b.JavaProxy == nil {
 		return fmt.Errorf("proxy must run at least one edition (%s and/or %s)",
 			edition.Java, edition.Bedrock)
-	}
-	if b.Log.GetSink() == nil {
-		b.Log = logr.Log.WithName("bridge")
 	}
 	return nil
 }

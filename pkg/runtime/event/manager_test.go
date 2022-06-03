@@ -4,10 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 type myEvent struct{ s string }
@@ -19,7 +18,7 @@ func TestTypeOf(t *testing.T) {
 }
 
 func TestPriorityAndCorrectType(t *testing.T) {
-	m := New(logr.NopLog)
+	m := New(logr.Discard())
 	m.Subscribe(TypeOf(&myEvent{}), -1, func(e Event) {
 		ev := e.(*myEvent)
 		ev.s += "c"

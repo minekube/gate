@@ -2,13 +2,14 @@ package packet
 
 import (
 	"errors"
+	"io"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	"io"
-	"strings"
 )
 
 type Disconnect struct {
@@ -38,8 +39,6 @@ func DisconnectWith(reason component.Component) *Disconnect {
 	return DisconnectWithProtocol(reason, version.Minecraft_1_7_2.Protocol)
 }
 
-var log = logr.Log.WithName("packet")
-
 // DisconnectWithProtocol creates a new Disconnect packet for the given given protocol.
 func DisconnectWithProtocol(reason component.Component, protocol proto.Protocol) *Disconnect {
 	if reason == nil {
@@ -47,10 +46,6 @@ func DisconnectWithProtocol(reason component.Component, protocol proto.Protocol)
 	}
 	b := new(strings.Builder)
 	if err := util.JsonCodec(protocol).Marshal(b, reason); err != nil {
-		log.V(1).WithName("DisconnectWithProtocol").Error(err,
-			"Error marshal disconnect reason component to json",
-			"reason", reason,
-			"protocol", protocol)
 		b.Reset() // empty reason
 	}
 	s := b.String()

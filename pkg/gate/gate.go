@@ -2,15 +2,14 @@
 package gate
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/go-logr/zapr"
+	"github.com/go-logr/logr"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
@@ -18,7 +17,6 @@ import (
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errors "go.minekube.com/gate/pkg/util/errs"
@@ -31,10 +29,6 @@ type Options struct {
 	// The event manager to use.
 	// If none is set, no events are sent.
 	EventMgr event.Manager
-	// Logger is the logger used for Gate
-	// and potential subcomponents.
-	// If not set, no logging is done.
-	Logger logr.Logger
 }
 
 // New returns a new Gate instance.
@@ -43,17 +37,14 @@ func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errors.ErrMissingConfig
 	}
-	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
 	}
 
 	gate = &Gate{
-		proc: process.New(process.Options{Logger: log, AllOrNothing: true}),
-		bridge: &bridge.Bridge{
-			Log: log.WithName("bridge"),
-		},
+		proc:   process.New(process.Options{AllOrNothing: true}),
+		bridge: &bridge.Bridge{},
 	}
 
 	c := options.Config
@@ -61,12 +52,14 @@ func New(options Options) (gate *Gate, err error) {
 		gate.bridge.JavaProxy, err = jproxy.New(jproxy.Options{
 			Config:   &c.Editions.Java.Config,
 			EventMgr: eventMgr,
-			Logger:   log.WithName("java"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
 		}
-		if err = gate.proc.Add(gate.bridge.JavaProxy); err != nil {
+		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
+			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("java"))
+			return gate.bridge.JavaProxy.Start(ctx)
+		})); err != nil {
 			return nil, err
 		}
 	}
@@ -74,12 +67,14 @@ func New(options Options) (gate *Gate, err error) {
 		gate.bridge.BedrockProxy, err = bproxy.New(bproxy.Options{
 			Config:   &c.Editions.Bedrock.Config,
 			EventMgr: eventMgr,
-			Logger:   log.WithName("bedrock"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Bedrock, err)
 		}
-		if err = gate.proc.Add(gate.bridge.BedrockProxy); err != nil {
+		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
+			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("bedrock"))
+			return gate.bridge.BedrockProxy.Start(ctx)
+		})); err != nil {
 			return nil, err
 		}
 	}
@@ -94,13 +89,15 @@ func New(options Options) (gate *Gate, err error) {
 	if c.Editions.Java.Enabled { // Currently, only supporting Connect for java edition
 		runnable, err := connectcfg.New(
 			c.Connect,
-			log.WithName("connect"),
 			gate.Java(),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error setting up Connect: %w", err)
 		}
-		if err = gate.proc.Add(runnable); err != nil {
+		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
+			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("connect"))
+			return runnable.Start(ctx)
+		})); err != nil {
 			return nil, err
 		}
 	}
@@ -125,7 +122,7 @@ func (g *Gate) Bedrock() *bproxy.Proxy {
 }
 
 // Start starts the Gate instance and all underlying proc.
-func (g *Gate) Start(stop chan struct{}) error { return g.proc.Start(stop) }
+func (g *Gate) Start(ctx context.Context) error { return g.proc.Start(ctx) }
 
 // Viper is a viper instance initialized
 // with defaults for the Config struct.
@@ -141,20 +138,7 @@ var Viper = viper.New()
 //
 // The Gate is shutdown on stop channel close or on occurrence of any
 // significant error. Config validation warnings are logged but ignored.
-func Start(stop <-chan struct{}) (err error) {
-	// Set logger
-	setLogger := func(devMode bool) error {
-		zl, err := newZapLogger(devMode)
-		if err != nil {
-			return fmt.Errorf("error creating zap logger: %w", err)
-		}
-		logr.SetLogger(zapr.NewLogger(zl))
-		return nil
-	}
-	if err = setLogger(Viper.GetBool("debug")); err != nil {
-		return err
-	}
-
+func Start(ctx context.Context) error {
 	// Clone default config
 	cfg := func() config.Config { return config.DefaultConfig }()
 	// Load in Gate config
@@ -162,7 +146,8 @@ func Start(stop <-chan struct{}) (err error) {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	var configLog = logr.Log.WithName("config")
+	log := logr.FromContextOrDiscard(ctx)
+	configLog := log.WithName("config")
 
 	// Validate Gate config
 	warns, errs := cfg.Validate()
@@ -179,11 +164,9 @@ func Start(stop <-chan struct{}) (err error) {
 			len(errs), len(warns))
 	}
 
-	log := logr.Log.WithName("gate")
 	// Setup new Gate instance with loaded config.
 	gate, err := New(Options{
 		Config:   &cfg,
-		Logger:   log,
 		EventMgr: event.New(log.WithName("event")),
 	})
 	if err != nil {
@@ -195,11 +178,12 @@ func Start(stop <-chan struct{}) (err error) {
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer func() { signal.Stop(sig); close(sig) }()
 
-	childStop := make(chan struct{})
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	go func() {
-		defer close(childStop)
+		defer cancel()
 		select {
-		case <-stop:
+		case <-ctx.Done():
 		case s, ok := <-sig:
 			if !ok {
 				// Sig chan was closed
@@ -210,26 +194,5 @@ func Start(stop <-chan struct{}) (err error) {
 	}()
 
 	// Start everything
-	return gate.Start(childStop)
-}
-
-// newZapLogger returns a new zap logger with a modified production
-// or development default config to ensure human readability.
-func newZapLogger(dev bool) (l *zap.Logger, err error) {
-	var cfg zap.Config
-	if dev {
-		cfg = zap.NewDevelopmentConfig()
-	} else {
-		cfg = zap.NewProductionConfig()
-	}
-
-	cfg.Encoding = "console"
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	l, err = cfg.Build()
-	if err != nil {
-		return nil, err
-	}
-	return l, nil
+	return gate.Start(ctx)
 }

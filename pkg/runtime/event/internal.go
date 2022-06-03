@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"go.minekube.com/gate/pkg/runtime/logr"
+	"github.com/go-logr/logr"
 )
 
 type manager struct {

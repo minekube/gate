@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/gammazero/deque"
+	"github.com/go-logr/logr"
 	"github.com/sandertv/go-raknet"
 	packetutil "github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
-	"io"
 )
 
 type Decoder struct {

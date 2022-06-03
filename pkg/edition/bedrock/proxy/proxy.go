@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -9,11 +10,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/go-logr/logr"
 	"github.com/sandertv/go-raknet"
 
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 
@@ -35,7 +36,6 @@ func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
-	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
@@ -43,7 +43,7 @@ func New(options Options) (p *Proxy, err error) {
 
 	p = &Proxy{
 		event:  eventMgr,
-		log:    log,
+		log:    logr.Discard(),
 		config: options.Config,
 	}
 
@@ -70,8 +70,9 @@ type Proxy struct {
 	listenerKey *ecdsa.PrivateKey
 }
 
-func (p *Proxy) Start(stop <-chan struct{}) error {
-	<-stop
+func (p *Proxy) Start(ctx context.Context) error {
+	<-ctx.Done()
+	p.log = logr.FromContextOrDiscard(ctx)
 	// TODO
 	return nil
 }
