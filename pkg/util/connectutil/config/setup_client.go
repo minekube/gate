@@ -44,6 +44,14 @@ func connectClient(c Config, log logr.Logger, connHandler ConnHandler) (process.
 	}
 
 	return retryingRunnable(log, ctxRunnable(func(ctx context.Context) error {
+		// Load auth token
+		token, err := loadToken(tokenFilename)
+		if err != nil {
+			return err
+		}
+		// Set auth metadata
+		ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", fmt.Sprintf("Bearer %s", token))
+
 		const timeout = time.Minute
 		log.Info("Connecting to watch service...", "addr", c.WatchServiceAddr, "timeout", timeout.String())
 		t := time.Now()
@@ -52,7 +60,7 @@ func connectClient(c Config, log logr.Logger, connHandler ConnHandler) (process.
 
 		dialCtx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		err := ws.ClientOptions{
+		err = ws.ClientOptions{
 			URL:         c.WatchServiceAddr,
 			DialContext: dialCtx,
 			DialOptions: websocket.DialOptions{
