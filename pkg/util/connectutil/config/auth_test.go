@@ -25,9 +25,3 @@ func Test_loadToken(t *testing.T) {
 	})
 
 }
-
-func Test_generateSecureToken(t *testing.T) {
-	for i := 0; i < 5; i++ {
-		require.Len(t, generateSecureToken(i), i)
-	}
-}
