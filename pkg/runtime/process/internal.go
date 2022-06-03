@@ -4,26 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/multierr"
 	"sync"
 	"time"
 
-	"go.minekube.com/gate/pkg/runtime/logr"
+	"github.com/go-logr/logr"
+	"go.uber.org/multierr"
 )
 
 type collection struct {
 	// runnables is the set of proxies that the collection injects deps into and Starts.
 	runnables []Runnable
 
-	// internalStop is the stop channel *actually* used by everything involved
-	// with the collection as a stop channel, so that we can pass a stop channel
-	// to things that need it off the bat (like the Channel source).
-	internalStop chan struct{}
-
-	// The logger that should be used by this collection.
-	log logr.Logger
-
 	mu      sync.Mutex // Protects these fields
+	ctx     context.Context
 	started bool
 	errChan chan error
 
@@ -53,7 +46,7 @@ func (pm *collection) Add(r Runnable) error {
 	pm.runnables = append(pm.runnables, r)
 	if pm.started {
 		// If collection already started, start the runnable
-		pm.startRunnable(r)
+		pm.startRunnable(pm.ctx, r)
 	}
 
 	return nil
@@ -62,7 +55,11 @@ func (pm *collection) Add(r Runnable) error {
 // internal error returned by Runnable to trigger shutdown of the whole Collection.
 var errStopAll = errors.New("stop all")
 
-func (pm *collection) Start(stop <-chan struct{}) (err error) {
+func (pm *collection) Start(ctx context.Context) (err error) {
+	var internalStop context.CancelFunc
+	pm.mu.Lock()
+	pm.ctx, internalStop = context.WithCancel(ctx)
+	pm.mu.Unlock()
 	// This chan indicates that stop is complete,
 	// in other words all runnables have returned or timeout on stop request
 	stopComplete := make(chan struct{})
@@ -71,7 +68,8 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 		if err == errStopAll {
 			err = nil
 		}
-		stopErr := pm.engageStopProcedure(stopComplete)
+		internalStop()
+		stopErr := pm.engageStopProcedure(stopComplete, logr.FromContextOrDiscard(ctx))
 		if stopErr != nil && stopErr != errStopAll {
 			// multierr allows using errors.Is for all contained errors
 			// whereas fmt.Errorf allows wrapping at most one error which means the
@@ -86,10 +84,10 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 	// and will not be able to enter the deferred pm.engageStopProcedure() which drains it.
 	pm.errChan = make(chan error)
 
-	go pm.startRunnables()
+	go pm.startRunnables(ctx)
 
 	select {
-	case <-stop:
+	case <-ctx.Done():
 		// We are done
 		return nil
 	case err = <-pm.errChan:
@@ -100,7 +98,7 @@ func (pm *collection) Start(stop <-chan struct{}) (err error) {
 
 // engageStopProcedure signals all runnables to stop, reads potential errors
 // from the errChan and waits for them to end. It must not be called more than once.
-func (pm *collection) engageStopProcedure(stopComplete chan struct{}) error {
+func (pm *collection) engageStopProcedure(stopComplete chan struct{}, log logr.Logger) error {
 	var (
 		shutdownCtx context.Context
 		cancel      context.CancelFunc
@@ -111,7 +109,6 @@ func (pm *collection) engageStopProcedure(stopComplete chan struct{}) error {
 		shutdownCtx, cancel = context.WithCancel(context.Background())
 	}
 	defer cancel()
-	close(pm.internalStop)
 	// Start draining the errors before acquiring the lock to make sure we don't deadlock
 	// if something that has the lock is blocked on trying to write into the unbuffered
 	// channel after something else already wrote into it.
@@ -120,7 +117,7 @@ func (pm *collection) engageStopProcedure(stopComplete chan struct{}) error {
 			select {
 			case err, ok := <-pm.errChan:
 				if ok && err != errStopAll {
-					pm.log.Error(err, "error received after stop sequence was engaged")
+					log.Error(err, "error received after stop sequence was engaged")
 				}
 			case <-stopComplete:
 				return
@@ -156,11 +153,11 @@ func (pm *collection) waitForRunnableToEnd(ctx context.Context, cancel context.C
 	return nil
 }
 
-func (pm *collection) startRunnable(r Runnable) {
+func (pm *collection) startRunnable(ctx context.Context, r Runnable) {
 	pm.waitForRunnable.Add(1)
 	go func() {
 		defer pm.waitForRunnable.Done()
-		if err := r.Start(pm.internalStop); err != nil {
+		if err := r.Start(ctx); err != nil {
 			pm.errChan <- err
 		} else if pm.allOrNothing {
 			pm.errChan <- errStopAll
@@ -168,7 +165,7 @@ func (pm *collection) startRunnable(r Runnable) {
 	}()
 }
 
-func (pm *collection) startRunnables() {
+func (pm *collection) startRunnables(ctx context.Context) {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
 
@@ -178,6 +175,6 @@ func (pm *collection) startRunnables() {
 	for _, c := range pm.runnables {
 		// Runnables block, but we want to return an error if any have an error starting.
 		// Write any Start errors to a channel, so we can return them
-		pm.startRunnable(c)
+		pm.startRunnable(ctx, c)
 	}
 }

@@ -1,9 +1,8 @@
 package process
 
 import (
+	"context"
 	"time"
-
-	"go.minekube.com/gate/pkg/runtime/logr"
 )
 
 // Collection is a runtime utility to manage a collection of processes
@@ -12,32 +11,29 @@ type Collection interface {
 	// Add will cause the Runnable to be started when Start is called.
 	// It is started automatically if the Collection was already started.
 	Add(Runnable) error
-	// Start starts all registered Runnables and blocks until the stop channel is closed.
+	// Start starts all registered Runnables and blocks until the context is canceled.
 	// Returns an error if there is an error starting any Runnable.
-	Start(stop <-chan struct{}) error
+	Start(ctx context.Context) error
 }
 
 // Runnable allows a component to be started.
 // It's very important that Start blocks until it's done running.
 type Runnable interface {
 	// Start starts running the component. The component will stop running
-	// when the channel is closed. Start blocks until the channel is closed or
+	// when the context is closed. Start blocks until the context is canceled or
 	// an error occurs.
-	Start(stop <-chan struct{}) error
+	Start(ctx context.Context) error
 }
 
 // RunnableFunc implements Runnable using a function.
 // It's very important that it blocks until it's done running.
-type RunnableFunc func(stop <-chan struct{}) error
+type RunnableFunc func(ctx context.Context) error
 
 // Start implements Runnable.
-func (r RunnableFunc) Start(stop <-chan struct{}) error { return r(stop) }
+func (r RunnableFunc) Start(ctx context.Context) error { return r(ctx) }
 
 // Options are the arguments for creating a new Collection
 type Options struct {
-	// The logger that should be used by the Collection.
-	// If none is set, no logging is done.
-	Logger logr.Logger
 	// Whether all Runnables in the Collection should be running or none.
 	// The complete Collection will be stopped if one Runnable returns.
 	AllOrNothing bool
@@ -59,8 +55,6 @@ func New(options Options, runnables ...Runnable) Collection {
 	options = setOptionsDefaults(options)
 
 	coll := &collection{
-		internalStop:            make(chan struct{}),
-		log:                     options.Logger,
 		allOrNothing:            options.AllOrNothing,
 		gracefulShutdownTimeout: *options.GracefulShutdownTimeout,
 	}
@@ -76,6 +70,5 @@ func setOptionsDefaults(options Options) Options {
 		gracefulShutdownTimeout := DefaultGracefulShutdownPeriod
 		options.GracefulShutdownTimeout = &gracefulShutdownTimeout
 	}
-	options.Logger = logr.OrNop(options.Logger)
 	return options
 }

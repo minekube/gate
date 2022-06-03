@@ -4,21 +4,23 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/proto/codec"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
-	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	"go.minekube.com/gate/pkg/util/errs"
-	"go.uber.org/atomic"
 	"io"
 	"net"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/go-logr/logr"
+	"go.uber.org/atomic"
+
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/codec"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/errs"
 )
 
 // sessionHandler handles received packets from the associated connection.

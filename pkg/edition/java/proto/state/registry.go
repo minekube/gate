@@ -2,10 +2,10 @@ package state
 
 import (
 	"fmt"
+	"reflect"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
-	"reflect"
 )
 
 // Registry stores server/client bound packets for a specific State.
@@ -73,8 +73,6 @@ func (r *ProtocolRegistry) PacketID(of proto.Packet) (id proto.PacketID, found b
 	return
 }
 
-var log = logr.Log.WithName("proto-registry")
-
 // CreatePacket returns a new zero valued instance of the type
 // of the mapped packet id or nil if not found.
 func (r *ProtocolRegistry) CreatePacket(id proto.PacketID) proto.Packet {
@@ -84,9 +82,8 @@ func (r *ProtocolRegistry) CreatePacket(id proto.PacketID) proto.Packet {
 	}
 	p, ok := reflect.New(packetType).Interface().(proto.Packet)
 	if !ok {
-		// Shall not happen, but let's be extra sure
-		log.Info("Tried to create packet that does not implement Packet interface",
-			"type", packetType, "id", id)
+		// Shall never happen...
+		// Tried to create packet that does not implement Packet interface
 		return nil
 	}
 	return p

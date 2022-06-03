@@ -18,11 +18,17 @@ package gate
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"go.minekube.com/gate/pkg/gate"
 	"os"
 	"strings"
+
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
+	"go.minekube.com/gate/pkg/gate"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,11 +39,46 @@ var rootCmd = &cobra.Command{
 	scalability, flexibility & excelled server version support.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error { return initErr },
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := gate.Start(cmd.Context().Done()); err != nil {
+		ctx := cmd.Context()
+		// Set logger
+		setLogger := func(devMode bool) error {
+			zl, err := newZapLogger(devMode)
+			if err != nil {
+				return fmt.Errorf("error creating zap logger: %w", err)
+			}
+			ctx = logr.NewContext(ctx, zapr.NewLogger(zl))
+			return nil
+		}
+		if err := setLogger(gate.Viper.GetBool("debug")); err != nil {
+			return err
+		}
+
+		if err := gate.Start(ctx); err != nil {
 			return fmt.Errorf("error running Gate: %w", err)
 		}
 		return nil
 	},
+}
+
+// newZapLogger returns a new zap logger with a modified production
+// or development default config to ensure human readability.
+func newZapLogger(dev bool) (l *zap.Logger, err error) {
+	var cfg zap.Config
+	if dev {
+		cfg = zap.NewDevelopmentConfig()
+	} else {
+		cfg = zap.NewProductionConfig()
+	}
+
+	cfg.Encoding = "console"
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	l, err = cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

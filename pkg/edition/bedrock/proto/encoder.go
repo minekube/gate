@@ -1,10 +1,12 @@
 package proto
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"io"
+
+	"github.com/go-logr/logr"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 type Encoder struct {
