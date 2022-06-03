@@ -7,23 +7,22 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/connect"
 	"go.minekube.com/connect/ws"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/runtime/process"
 	"go.minekube.com/gate/pkg/util/connectutil"
 	"go.minekube.com/gate/pkg/util/connectutil/single"
 )
 
-func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runnable, error) {
+func service(c Config, reg proxy.ServerRegistry) (process.Runnable, error) {
 	if c.Service.PublicTunnelServiceAddr == "" {
 		c.Service.PublicTunnelServiceAddr = c.Service.Addr
 	}
 
 	ln, err := single.New(single.Options{
-		Log:                     log,
 		ServerRegistry:          reg,
 		PublicTunnelServiceAddr: c.Service.PublicTunnelServiceAddr,
 		OverrideRegistration:    c.Service.OverrideRegistration,
@@ -43,7 +42,7 @@ func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runna
 		opts.TunnelHandler(connectutil.RequireTunnelSessionID(ln)),
 	))
 
-	return ctxRunnable(func(ctx context.Context) error {
+	return process.RunnableFunc(func(ctx context.Context) error {
 		svr := http.Server{
 			Addr:    c.Service.Addr,
 			Handler: mux,
@@ -59,6 +58,7 @@ func service(c Config, log logr.Logger, reg proxy.ServerRegistry) (process.Runna
 		defer cancel()
 		go func() { <-ctx.Done(); _ = svr.Close() }()
 
+		log := logr.FromContextOrDiscard(ctx)
 		log.Info("Connect service started", "addr", c.Service.Addr)
 		defer log.Info("Stopped Connect service")
 

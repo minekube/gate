@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
+	"io"
+	"sync"
+
+	"github.com/go-logr/logr"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
-	"io"
-	"sync"
 )
 
 // Decoder is a synchronized packet decoder

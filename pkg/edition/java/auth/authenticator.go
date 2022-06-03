@@ -17,8 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/version"
 )
 
@@ -126,7 +127,6 @@ func New(options Options) (Authenticator, error) {
 	}
 
 	return &authn{
-		log:            logr.NopLog,
 		private:        private,
 		public:         public,
 		cli:            cli,
@@ -135,7 +135,6 @@ func New(options Options) (Authenticator, error) {
 }
 
 type authn struct {
-	log            logr.Logger
 	private        *rsa.PrivateKey
 	public         []byte // ASN.1 DER form encoded
 	cli            *http.Client
@@ -144,7 +143,6 @@ type authn struct {
 
 func (a *authn) WithLogger(logger logr.Logger) Authenticator {
 	return &authn{
-		log:            logger,
 		private:        a.private,
 		public:         a.public,
 		cli:            a.cli,
@@ -177,7 +175,7 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 		return nil, fmt.Errorf("error creating authentication request: %w", err)
 	}
 
-	log := a.log.V(1).WithName("authnJoin").WithName("request")
+	log := logr.FromContextOrDiscard(ctx).V(1).WithName("authnJoin").WithName("request")
 	log.Info("Sending http request to Mojang sessionserver", "url", hasJoinedURL)
 
 	start := time.Now()

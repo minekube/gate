@@ -10,19 +10,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/rs/xid"
 	"go.minekube.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/connectutil"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
 type Options struct {
-	Log                     logr.Logger          // Optional logger
 	ServerRegistry          proxy.ServerRegistry // Registry used to un-/register servers
 	PublicTunnelServiceAddr string               // The tunnel service address announced endpoints.
 	OverrideRegistration    bool                 // Overrides endpoints with the same name.
@@ -40,7 +39,6 @@ func New(opts Options) (Listener, error) {
 	if opts.PublicTunnelServiceAddr == "" {
 		return nil, errors.New("missing server public tunnel service address")
 	}
-	opts.Log = logr.OrNop(opts.Log)
 	return &listener{
 		Options:         opts,
 		pendingSessions: sessionTunnel{},
@@ -71,7 +69,7 @@ func (a *listener) AcceptEndpoint(ctx context.Context, endpoint connectutil.Endp
 	svr := &server{
 		a:   a,
 		ctx: ctx, Endpoint: endpoint,
-		log:             a.Log.WithName("endpoint").WithName(endpoint.Name()),
+		log:             logr.FromContextOrDiscard(ctx).WithName("endpoint").WithName(endpoint.Name()),
 		addr:            netutil.NewAddr(endpoint.Name()+":25565", "connect"),
 		pendingSessions: rejectSession{},
 	}

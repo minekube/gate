@@ -3,7 +3,7 @@ package event
 import (
 	"reflect"
 
-	"go.minekube.com/gate/pkg/runtime/logr"
+	"github.com/go-logr/logr"
 )
 
 // Manager is an event manager to subscribe, fire events and
@@ -44,7 +44,7 @@ type Type reflect.Type
 // New returns a new event Manager optionally
 // using a logger to log handler panics.
 func New(log logr.Logger) Manager {
-	return &manager{log: logr.OrNop(log), subscribers: map[Type][]*subscriber{}}
+	return &manager{log: log, subscribers: map[Type][]*subscriber{}}
 }
 
 // TypeOf is a helper func to get the reflect.Type from i.

@@ -1,13 +1,13 @@
 package config
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+
+	"go.minekube.com/gate/pkg/internal/randstr"
 )
 
 const tokenFilename = "connect.json"
@@ -25,7 +25,7 @@ func loadToken(filename string) (string, error) {
 		return "", fmt.Errorf("could not read %s: %w", filename, err)
 	}
 	if t.Token == "" {
-		t.Token = "T-" + generateSecureToken(29)
+		t.Token = "T-" + randstr.String(20)
 		_ = f.Truncate(0)
 		_, _ = f.Seek(0, 0)
 		if err = json.NewEncoder(f).Encode(t); err != nil {
@@ -37,15 +37,4 @@ func loadToken(filename string) (string, error) {
 
 type tokenFile struct {
 	Token string `json:"token"`
-}
-
-func generateSecureToken(length int) string {
-	if length <= 0 {
-		return ""
-	}
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return ""
-	}
-	return hex.EncodeToString(b)
 }

@@ -2,13 +2,15 @@ package proxy
 
 import (
 	"bufio"
-	"go.minekube.com/gate/pkg/edition/bedrock/config"
-	"go.minekube.com/gate/pkg/edition/bedrock/proto"
-	protoutil "go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"io"
 	"net"
 	"sync"
+
+	"github.com/go-logr/logr"
+
+	"go.minekube.com/gate/pkg/edition/bedrock/config"
+	"go.minekube.com/gate/pkg/edition/bedrock/proto"
+	protoutil "go.minekube.com/gate/pkg/gate/proto"
 )
 
 type sessionHandler interface {

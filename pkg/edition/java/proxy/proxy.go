@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 
@@ -23,7 +24,6 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/runtime/event"
-	"go.minekube.com/gate/pkg/runtime/logr"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -70,9 +70,6 @@ type Options struct {
 	// The event manager to use.
 	// If none is set, no events are sent.
 	EventMgr event.Manager
-	// Logger is the logger to be used by the Proxy.
-	// If none is set, does no logging at all.
-	Logger logr.Logger
 	// Authenticator to authenticate users in online mode.
 	// If not set, creates a default one.
 	Authenticator auth.Authenticator
@@ -83,7 +80,6 @@ func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
-	log := logr.OrNop(options.Logger)
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
@@ -97,7 +93,7 @@ func New(options Options) (p *Proxy, err error) {
 	}
 
 	p = &Proxy{
-		log:              log,
+		log:              logr.Discard(), // updated by Proxy.Start
 		config:           options.Config,
 		event:            eventMgr,
 		channelRegistrar: NewChannelRegistrar(),
@@ -129,7 +125,7 @@ var ErrProxyAlreadyRun = errors.New("proxy was already run, create a new one")
 // The Proxy is already shutdown on method return.
 // Another method of stopping the Proxy is to call Shutdown.
 // A Proxy can only be run once or ErrProxyAlreadyRun is returned.
-func (p *Proxy) Start(stop <-chan struct{}) error {
+func (p *Proxy) Start(ctx context.Context) error {
 	p.closeMu.Lock()
 	if p.started {
 		p.closeMu.Unlock()
@@ -137,10 +133,13 @@ func (p *Proxy) Start(stop <-chan struct{}) error {
 	}
 	p.started = true
 	p.startTime.Store(time.Now().UTC())
+	p.log = logr.FromContextOrDiscard(ctx)
 
 	stopListener := make(chan struct{})
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	go func() {
-		<-stop
+		<-ctx.Done()
 		select {
 		case <-stopListener:
 		default:
