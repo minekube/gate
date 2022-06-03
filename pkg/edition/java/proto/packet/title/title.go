@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -213,9 +214,9 @@ func (l *Legacy) Decode(c *proto.PacketContext, rd io.Reader) error {
 	switch l.Action {
 	default:
 		return fmt.Errorf("unknown action %d", l.Action)
-	case SetTitle, SetSubtitle, Hide, Reset:
+	case Hide, Reset:
 		return nil
-	case SetActionBar:
+	case SetTitle, SetSubtitle, SetActionBar:
 		l.Component, err = util.ReadString(rd)
 	case SetTimes:
 		l.FadeIn, err = util.ReadInt(rd)
