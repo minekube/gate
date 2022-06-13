@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-  "go.minekube.com/brigodier"
+	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.uber.org/atomic"
@@ -69,10 +69,17 @@ type Player interface {
 	// SendMessageWith sends a chat message with optional modifications.
 	SendMessageWith(msg component.Component, opts ...MessageOption) error
 	player.TabList
-	// TODO add title and more
-
-	// Send new commands list for player at any time
+	// Send new commands list for player at any time if needed
 	SendCommandsList(cmds *brigodier.RootCommandNode) error
+	// SendTitle sends big message for player with fade effect
+	SendTitle(title, subtitle component.Component, fadeIn, fadeOut, stay int) error
+	// Hide title
+	HideTitle() error
+	// Attach custom data for player if needed in code
+	SetData(data interface{})
+	GetData() interface{}
+
+	// TODO add more
 }
 
 type connectedPlayer struct {
@@ -102,6 +109,8 @@ type connectedPlayer struct {
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
+
+	data interface{} // its custom data for player, for example some additinal parameters
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -317,6 +326,62 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 	})
 }
 
+func (p *connectedPlayer) HideTitle() error {
+	protocol := p.Protocol()
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
+		pkt, err := title.New(protocol, &title.Builder{
+			Action: title.Hide,
+		})
+		if err != nil {
+			return err
+		}
+		return p.WritePacket(pkt)
+	}
+
+	return errors.New("title messages are only supported on 1.11+")
+}
+
+func (p *connectedPlayer) SendTitle(msg, subtitle component.Component, fadeIn, fadeOut, stay int) error {
+	protocol := p.Protocol()
+	if protocol.GreaterEqual(version.Minecraft_1_11) {
+		pkt1, err := title.New(protocol, &title.Builder{
+			Action:    title.SetTitle,
+			Component: msg,
+		})
+		if err != nil {
+			return err
+		}
+		pkt2, err := title.New(protocol, &title.Builder{
+			Action:    title.SetSubtitle,
+			Component: subtitle,
+		})
+		if err != nil {
+			return err
+		}
+		pkt3, err := title.New(protocol, &title.Builder{
+			Action:  title.SetTimes,
+			FadeIn:  fadeIn,
+			FadeOut: fadeOut,
+			Stay:    stay,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err = p.WritePacket(pkt3); err != nil {
+			return err
+		}
+
+		if err = p.WritePacket(pkt1); err != nil {
+			return err
+		}
+
+		return p.WritePacket(pkt2)
+	}
+
+	return errors.New("title messages are only supported on 1.11+")
+}
+
 func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier, data []byte) error {
 	return p.WritePacket(&plugin.Message{
 		Channel: identifier.ID(),
@@ -516,6 +581,14 @@ func (p *connectedPlayer) Settings() player.Settings {
 		return p.settings
 	}
 	return player.DefaultSettings
+}
+
+func (p *connectedPlayer) SetData(data interface{}) {
+	p.data = data
+}
+
+func (p *connectedPlayer) GetData() interface{} {
+	return p.data
 }
 
 // returns a new player context that is canceled when:
