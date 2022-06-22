@@ -3,8 +3,9 @@ package uuid
 import (
 	"crypto/md5"
 	"encoding/hex"
-	guuid "github.com/google/uuid"
 	"strconv"
+
+	guuid "github.com/google/uuid"
 )
 
 type UUID guuid.UUID
@@ -57,3 +58,6 @@ func OfflinePlayerUUID(username string) UUID {
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // RFC 4122 variant
 	return uuid
 }
+
+// New creates a new random UUID or panics.
+func New() UUID { return UUID(guuid.New()) }

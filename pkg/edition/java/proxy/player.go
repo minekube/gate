@@ -15,6 +15,8 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/command"
@@ -67,7 +69,7 @@ type Player interface {
 	SendActionBar(msg component.Component) error
 	// SendMessageWith sends a chat message with optional modifications.
 	SendMessageWith(msg component.Component, opts ...MessageOption) error
-	player.TabList
+	TabList() tablist.TabList // Returns the player's tab list.
 	// TODO add title and more
 }
 
@@ -79,6 +81,7 @@ type connectedPlayer struct {
 	profile     *profile.GameProfile
 	ping        atomic.Duration
 	permFunc    permission.Func
+	playerKey   crypto.IdentifiedKey // 1.19+
 
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
@@ -87,7 +90,7 @@ type connectedPlayer struct {
 	pluginChannelsMu sync.RWMutex // Protects following field
 	pluginChannels   sets.String  // Known plugin channels
 
-	*tabList // Player's tab list
+	tabList tablist.TabList // Player's tab list
 
 	mu               sync.RWMutex // Protects following fields
 	connectedServer_ *serverConnection
@@ -107,9 +110,18 @@ func newConnectedPlayer(
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
+	playerKey crypto.IdentifiedKey, // nil-able
 ) *connectedPlayer {
 	ping := atomic.Duration{}
 	ping.Store(-1)
+
+	var tabList tablist.TabList
+	if conn.protocol.GreaterEqual(version.Minecraft_1_8) {
+		tabList = tablist.New(conn, conn.protocol, &tabListPlayerKeyStore{p: conn.proxy})
+	} else {
+		tabList = tablist.NewLegacy(conn, conn.protocol)
+	}
+
 	return &connectedPlayer{
 		minecraftConn: conn,
 		log: conn.log.WithName("player").WithValues(
@@ -120,9 +132,18 @@ func newConnectedPlayer(
 		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
 		connPhase:      conn.Type().initialClientPhase(),
 		ping:           ping,
-		tabList:        newTabList(conn),
+		tabList:        tabList,
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
+		playerKey:      playerKey,
 	}
+}
+
+type tabListPlayerKeyStore struct{ p *Proxy }
+
+var _ tablist.PlayerKey = (*tabListPlayerKeyStore)(nil)
+
+func (t *tabListPlayerKeyStore) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
+	return t.p.player(playerID).playerKey
 }
 
 func (p *connectedPlayer) connectionInFlight() *serverConnection {
@@ -157,6 +178,8 @@ func (p *connectedPlayer) GameProfile() profile.GameProfile {
 	return *p.profile
 }
 
+func (p *connectedPlayer) TabList() tablist.TabList { return p.tabList }
+
 var (
 	ErrNoBackendConnection = errors.New("player has no backend server connection yet")
 	ErrTooLongChatMessage  = errors.New("server bound chat message can not exceed 256 characters")
@@ -171,7 +194,7 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 	if !ok {
 		return ErrNoBackendConnection
 	}
-	return serverMc.WritePacket(&packet.Chat{
+	return serverMc.WritePacket(&packet.LegacyChat{
 		Message: input,
 		Type:    packet.ChatMessageType,
 	})
@@ -218,11 +241,11 @@ func (p *connectedPlayer) Active() bool {
 }
 
 // MessageOption is an option for Player.SendMessageWith.
-type MessageOption func(c *packet.Chat)
+type MessageOption func(c *packet.LegacyChat)
 
 // MessageWithSender modifies the sender identity of the chat message.
 func MessageWithSender(id uuid.UUID) MessageOption {
-	return func(c *packet.Chat) { c.Sender = id }
+	return func(c *packet.LegacyChat) { c.Sender = id }
 }
 
 // MessageType is a chat message type.
@@ -240,7 +263,7 @@ const (
 
 // MessageWithType modifies chat message type.
 func MessageWithType(t MessageType) MessageOption {
-	return func(c *packet.Chat) {
+	return func(c *packet.LegacyChat) {
 		if t == SystemMessageType {
 			c.Type = packet.SystemMessageType
 		} else {
@@ -258,7 +281,7 @@ func (p *connectedPlayer) SendMessageWith(msg component.Component, opts ...Messa
 	if err := util.JsonCodec(p.Protocol()).Marshal(m, msg); err != nil {
 		return err
 	}
-	chat := &packet.Chat{
+	chat := &packet.LegacyChat{
 		Message: m.String(),
 		Type:    packet.ChatMessageType,
 		Sender:  uuid.Nil,
@@ -298,7 +321,7 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 	if err != nil {
 		return err
 	}
-	return p.WritePacket(&packet.Chat{
+	return p.WritePacket(&packet.LegacyChat{ // TODO 1.19 chat
 		Message: string(m),
 		Type:    packet.GameInfoMessageType,
 		Sender:  uuid.Nil,

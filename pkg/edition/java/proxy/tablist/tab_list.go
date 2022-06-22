@@ -1,45 +1,79 @@
-package proxy
+package tablist
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/edition/java/proxy/player"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"sync"
-	"time"
 )
 
-type tabList struct {
-	c *minecraftConn
-
-	mu      sync.RWMutex
-	entries map[uuid.UUID]*tabListEntry
+// TabList is the tab list of a player.
+type TabList interface {
+	SetHeaderFooter(header, footer component.Component) error // Sets the tab list header and footer for the player.
+	ClearHeaderFooter() error                                 // Clears the tab list header and footer for the player.
+	AddEntry(Entry) error                                     // Adds an entry to the tab list.
+	RemoveEntry(id uuid.UUID) error                           // Removes an entry from the tab list.
+	HasEntry(id uuid.UUID) bool                               // Determines if the specified entry exists in the tab list.
+	Entries() map[uuid.UUID]Entry                             // Returns the entries in the tab list.
+	ProcessBackendPacket(*packet.PlayerListItem) error        // Processes a packet.PlayerListItem sent from the backend to the client.
 }
 
-var _ player.TabList = (*tabList)(nil)
+type (
+	// tabList is the tab list of one player connection.
+	tabList struct {
+		keyStore PlayerKey
+		w        PacketWriter
+		p        proto.Protocol
 
-func newTabList(c *minecraftConn) *tabList {
-	return &tabList{c: c, entries: map[uuid.UUID]*tabListEntry{}}
+		mu      sync.RWMutex
+		entries map[uuid.UUID]*tabListEntry
+	}
+	PacketWriter interface {
+		WritePacket(proto.Packet) error
+	}
+	PlayerKey interface {
+		PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey // May return nil if player not found
+	}
+)
+
+var _ TabList = (*tabList)(nil)
+
+// New creates a new TabList for versions >= 1.8.
+func New(w PacketWriter, p proto.Protocol, keyStore PlayerKey) TabList {
+	return newTabList(w, p, keyStore)
 }
 
-func (t *tabList) Entries() map[uuid.UUID]player.TabListEntry {
+func newTabList(w PacketWriter, p proto.Protocol, keyStore PlayerKey) *tabList {
+	return &tabList{
+		keyStore: keyStore,
+		w:        w,
+		p:        p,
+		entries:  make(map[uuid.UUID]*tabListEntry),
+	}
+}
+
+func (t *tabList) Entries() map[uuid.UUID]Entry {
 	t.mu.RLock()
 	entries := t.entries
 	t.mu.RUnlock()
 	// Convert to TabListEntry interface
-	m := make(map[uuid.UUID]player.TabListEntry, len(entries))
+	m := make(map[uuid.UUID]Entry, len(entries))
 	for id, e := range entries {
 		m[id] = e
 	}
 	return m
 }
 
-func (t *tabList) AddEntry(entry player.TabListEntry) error {
+func (t *tabList) AddEntry(entry Entry) error {
 	if entry == nil {
 		return errors.New("entry must not be nil")
 	}
@@ -57,32 +91,35 @@ func (t *tabList) AddEntry(entry player.TabListEntry) error {
 	}
 	t.entries[entry.Profile().ID] = e
 	t.mu.Unlock()
-	return t.c.WritePacket(&packet.PlayerListItem{
+	return t.w.WritePacket(&packet.PlayerListItem{
 		Action: packet.AddPlayerListItemAction,
 		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
 	})
 }
 
 func (t *tabList) RemoveEntry(id uuid.UUID) error {
+	_, err := t.removeEntry(id)
+	return err
+}
+
+func (t *tabList) removeEntry(id uuid.UUID) (*tabListEntry, error) {
 	t.mu.Lock()
 	entry, ok := t.entries[id]
-	if !ok {
-		t.mu.Unlock()
-		// Ignore if not found
-		return nil
-	}
 	delete(t.entries, id)
 	t.mu.Unlock()
-	return t.c.WritePacket(&packet.PlayerListItem{
-		Action: packet.RemovePlayerListItemAction,
-		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
-	})
+	if ok {
+		return entry, t.w.WritePacket(&packet.PlayerListItem{
+			Action: packet.RemovePlayerListItemAction,
+			Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+		})
+	}
+	return entry, nil
 }
 
 func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	b := new(bytes.Buffer)
 	p := new(packet.HeaderAndFooter)
-	j := util2.JsonCodec(t.c.protocol)
+	j := util2.JsonCodec(t.p)
 
 	if err := j.Marshal(b, header); err != nil {
 		return fmt.Errorf("error marshal header: %w", err)
@@ -94,11 +131,11 @@ func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	}
 	p.Footer = b.String()
 
-	return t.c.WritePacket(p)
+	return t.w.WritePacket(p)
 }
 
 func (t *tabList) ClearHeaderFooter() error {
-	return t.c.WritePacket(packet.ResetHeaderAndFooter)
+	return t.w.WritePacket(packet.ResetHeaderAndFooter)
 }
 
 // removes all player entries shown in the tab list
@@ -121,7 +158,7 @@ func (t *tabList) clearEntries() error {
 		return nil
 	}
 
-	return t.c.WritePacket(&packet.PlayerListItem{
+	return t.w.WritePacket(&packet.PlayerListItem{
 		Action: packet.RemovePlayerListItemAction,
 		Items:  items,
 	})
@@ -137,8 +174,7 @@ func (t *tabList) hasEntry(id uuid.UUID) bool {
 	return ok
 }
 
-// Processes a tab list entry packet sent from the backend to the client.
-func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
+func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 	// Packet is already forwarded on, so no need to do that here
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -158,6 +194,22 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 			if item.Name == "" || item.Properties == nil {
 				return errors.New("got null game profile for AddPlayerListItemAction")
 			}
+
+			// Verify key
+			providedKey := item.PlayerKey
+			if expectedKey := t.keyStore.PlayerKey(item.ID); expectedKey != nil {
+				if providedKey == nil {
+					// Substitute the key
+					// It shouldn't be propagated to remove the signature.
+					providedKey = expectedKey
+				} else {
+					if !crypto.Equal(expectedKey, providedKey) {
+						return fmt.Errorf("server provided incorrect player key in playerlist"+
+							" for player %s UUID: %s", item.Name, item.ID)
+					}
+				}
+			}
+
 			if _, ok := t.entries[item.ID]; !ok {
 				t.entries[item.ID] = &tabListEntry{
 					tabList: t,
@@ -176,7 +228,7 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 		case packet.UpdateDisplayNamePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
-				e.setDisplayName(item.DisplayName)
+				e.setDisplayNameNoUpdate(item.DisplayName)
 			}
 		case packet.UpdateLatencyPlayerListItemAction:
 			e, ok := t.entries[item.ID]
@@ -196,100 +248,21 @@ func (t *tabList) processBackendPacket(p *packet.PlayerListItem) error {
 }
 
 func (t *tabList) updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error {
-	if _, ok := t.entries[entry.Profile().ID]; !ok {
+	if !t.HasEntry(entry.Profile().ID) {
 		return nil
 	}
 	packetItem := newPlayerListItemEntry(entry)
-	return t.c.WritePacket(&packet.PlayerListItem{
+	if existing := t.keyStore.PlayerKey(entry.Profile().ID); existing != nil {
+		packetItem.PlayerKey = existing
+	}
+	return t.w.WritePacket(&packet.PlayerListItem{
 		Action: action,
 		Items:  []packet.PlayerListItemEntry{*packetItem},
 	})
 }
 
-//
-//
-//
-//
-
-type tabListEntry struct {
-	tabList *tabList
-
-	mu          sync.RWMutex // protects following fields
-	profile     *profile.GameProfile
-	displayName component.Component // nil-able
-	latency     time.Duration
-	gameMode    int
-}
-
-var _ player.TabListEntry = (*tabListEntry)(nil)
-
-func (t *tabListEntry) TabList() player.TabList {
-	return t.tabList
-}
-
-func (t *tabListEntry) Profile() profile.GameProfile {
+func (t *tabList) entry(id uuid.UUID) *tabListEntry {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return *t.profile
-}
-
-func (t *tabListEntry) DisplayName() component.Component {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.displayName
-}
-
-func (t *tabListEntry) SetDisplayName(name component.Component) error {
-	t.setDisplayName(name)
-	return t.tabList.updateEntry(packet.UpdateDisplayNamePlayerListItemAction, t)
-}
-
-func (t *tabListEntry) setDisplayName(name component.Component) {
-	t.mu.Lock()
-	t.displayName = name
-	t.mu.Unlock()
-}
-
-func (t *tabListEntry) GameMode() int {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.gameMode
-}
-
-func (t *tabListEntry) Latency() time.Duration {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.latency
-}
-
-func (t *tabListEntry) SetLatency(latency time.Duration) error {
-	t.setLatency(latency)
-	return t.tabList.updateEntry(packet.UpdateLatencyPlayerListItemAction, t)
-}
-func (t *tabListEntry) setLatency(latency time.Duration) {
-	t.mu.Lock()
-	t.latency = latency
-	t.mu.Unlock()
-}
-
-func (t *tabListEntry) SetGameMode(gameMode int) error {
-	t.setGameMode(gameMode)
-	return t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
-}
-func (t *tabListEntry) setGameMode(gameMode int) {
-	t.mu.Lock()
-	t.gameMode = gameMode
-	t.mu.Unlock()
-}
-
-func newPlayerListItemEntry(entry player.TabListEntry) *packet.PlayerListItemEntry {
-	p := entry.Profile()
-	return &packet.PlayerListItemEntry{
-		ID:          p.ID,
-		Name:        p.Name,
-		Properties:  p.Properties,
-		GameMode:    entry.GameMode(),
-		Latency:     int(entry.Latency().Milliseconds()),
-		DisplayName: entry.DisplayName(),
-	}
+	return t.entries[id]
 }

@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"reflect"
+	"testing"
+
 	"github.com/bxcodec/faker/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,9 +20,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"reflect"
-	"testing"
 )
 
 // All packets to test.
@@ -27,7 +28,7 @@ import (
 // can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
-	&Chat{},
+	&LegacyChat{},
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{

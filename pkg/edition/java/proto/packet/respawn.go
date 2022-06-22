@@ -1,11 +1,12 @@
 package packet
 
 import (
+	"io"
+
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type Respawn struct {
@@ -18,6 +19,7 @@ type Respawn struct {
 	DimensionInfo        *DimensionInfo // 1.16-1.16.1
 	PreviousGamemode     int16          // 1.16+
 	CurrentDimensionData *DimensionData // 1.16.2+
+	LastDeathPosition    *DeathPosition // 1.19+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -86,13 +88,21 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 			return err
 		}
 	}
+
+	// optional death location
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err = r.LastDeathPosition.encode(wr)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
 			dimDataTag := util.NBT{}
 			err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&dimDataTag)
 			if err != nil {
@@ -167,6 +177,12 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 	} else {
 		r.LevelType, err = util.ReadStringMax(rd, 16)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		r.LastDeathPosition, err = decodeDeathPosition(rd)
 		if err != nil {
 			return err
 		}

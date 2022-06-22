@@ -1,24 +1,25 @@
 package packet
 
 import (
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
 )
 
 const (
 	MaxServerBoundMessageLength = 256
 )
 
-type Chat struct {
+type LegacyChat struct {
 	Message string
 	Type    MessageType
 	Sender  uuid.UUID // 1.16+, and can be empty UUID, all zeros
 }
 
-func (ch *Chat) Encode(c *proto.PacketContext, wr io.Writer) error {
+func (ch *LegacyChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	err := util.WriteString(wr, ch.Message)
 	if err != nil {
 		return err
@@ -35,7 +36,7 @@ func (ch *Chat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	return err
 }
 
-func (ch *Chat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+func (ch *LegacyChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	ch.Message, err = util.ReadString(rd)
 	if err != nil {
 		return err
@@ -71,4 +72,4 @@ const (
 	GameInfoMessageType
 )
 
-var _ proto.Packet = (*Chat)(nil)
+var _ proto.Packet = (*LegacyChat)(nil)

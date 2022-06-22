@@ -61,7 +61,7 @@ func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		c.handleKeepAlive(p)
-	case *packet.Chat:
+	case *packet.LegacyChat:
 		c.handleChat(p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p)
@@ -390,6 +390,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		DimensionInfo:        joinGame.DimensionInfo,
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,
+		LastDeathPosition:    joinGame.LastDeadPosition,
 	}
 }
 
@@ -405,7 +406,7 @@ func trimSpaces(s string) string {
 	return spaceRegex.ReplaceAllString(s, " ")
 }
 
-func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
+func (c *clientPlaySessionHandler) handleChat(p *packet.LegacyChat) {
 	if validation.ContainsIllegalCharacter(p.Message) {
 		c.player.Disconnect(illegalChatCharacters)
 		return
@@ -455,7 +456,7 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 	}
 
 	// Forward message/command to server
-	_ = serverMc.WritePacket(&packet.Chat{
+	_ = serverMc.WritePacket(&packet.LegacyChat{
 		Message: p.Message,
 		Type:    packet.ChatMessageType,
 		Sender:  c.player.ID(),

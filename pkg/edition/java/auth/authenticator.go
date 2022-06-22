@@ -35,8 +35,6 @@ type Authenticator interface {
 	GenerateServerID(decryptedSharedSecret []byte) (serverID string, err error)
 	// 4) Authenticates a joining user. The ip is optional.
 	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error)
-	// Returns a new Authenticator that uses the specified logger.
-	WithLogger(logger logr.Logger) Authenticator
 }
 
 // Response is the authentication response.
@@ -139,15 +137,6 @@ type authn struct {
 	public         []byte // ASN.1 DER form encoded
 	cli            *http.Client
 	hasJoinedURLFn HasJoinedURLFn
-}
-
-func (a *authn) WithLogger(logger logr.Logger) Authenticator {
-	return &authn{
-		private:        a.private,
-		public:         a.public,
-		cli:            a.cli,
-		hasJoinedURLFn: a.hasJoinedURLFn,
-	}
 }
 
 func (a *authn) PublicKey() []byte {

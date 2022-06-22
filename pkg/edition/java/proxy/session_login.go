@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"regexp"
 	"time"
@@ -24,20 +25,34 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-type loginSessionHandler struct {
+type initialLoginSessionHandler struct {
 	conn    *minecraftConn
-	inbound Inbound
+	inbound *loginInboundConn
 	log     logr.Logger
 
 	nopSessionHandler
 
-	// following fields are not safe for concurrency
-	login  *packet.ServerLogin
-	verify []byte
+	currentState loginState
+	login        *packet.ServerLogin
+	verify       []byte
 }
 
-func newLoginSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
-	return &loginSessionHandler{conn: conn, inbound: inbound, log: conn.log}
+type loginState string
+
+const (
+	loginPacketExpectedLoginState        loginState = "loginPacketExpected"
+	loginPacketReceivedLoginState        loginState = "loginPacketReceived"
+	encryptionRequestSentLoginState      loginState = "encryptionRequestSent"
+	encryptionResponseReceivedLoginState loginState = "encryptionResponseReceived"
+)
+
+func newInitialLoginSessionHandler(conn *minecraftConn, inbound *loginInboundConn) sessionHandler {
+	return &initialLoginSessionHandler{
+		conn:         conn,
+		inbound:      inbound,
+		log:          conn.log.WithName("loginSession"),
+		currentState: loginPacketExpectedLoginState,
+	}
 }
 
 var invalidPlayerName = &component.Text{
@@ -45,9 +60,10 @@ var invalidPlayerName = &component.Text{
 	S:       component.Style{Color: color.Red},
 }
 
-func (l *loginSessionHandler) handlePacket(p *proto.PacketContext) {
+func (l *initialLoginSessionHandler) handlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
-		_ = l.conn.close() // unknown packet, close connection
+		// unknown packet, close connection
+		_ = l.conn.closeKnown(true)
 		return
 	}
 	switch t := p.Packet.(type) {
@@ -69,12 +85,40 @@ type GameProfileProvider interface {
 	GameProfile() (profile *profile.GameProfile)
 }
 
-func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
+func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
+	if !l.assertState(loginPacketExpectedLoginState) {
+		return
+	}
+	l.currentState = loginPacketReceivedLoginState
+
+	playerKey := login.PlayerKey
+	if playerKey != nil {
+		if playerKey.Expired() {
+			_ = l.inbound.disconnect(&component.Translation{
+				Key: "multiplayer.disconnect.invalid_public_key_signature",
+			})
+			return
+		}
+
+		if !playerKey.SignatureValid() {
+			_ = l.inbound.disconnect(&component.Translation{
+				Key: "multiplayer.disconnect.invalid_public_key",
+			})
+			return
+		}
+	} else if l.conn.Protocol().GreaterEqual(version.Minecraft_1_19) &&
+		l.proxy().config.ForceKeyAuthentication {
+		_ = l.inbound.disconnect(&component.Translation{
+			Key: "multiplayer.disconnect.missing_public_key",
+		})
+		return
+	}
+	l.inbound.playerKey = playerKey
 	l.login = login
 
 	// Validate username format
 	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.conn.closeWith(packet.DisconnectWithProtocol(invalidPlayerName, l.conn.Protocol()))
+		_ = l.inbound.disconnect(invalidPlayerName)
 		return
 	}
 
@@ -86,11 +130,12 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	}
 
 	if e.Result() == DeniedPreLogin {
-		_ = l.conn.closeWith(packet.DisconnectWithProtocol(e.Reason(), l.conn.Protocol()))
+		_ = l.inbound.disconnect(e.Reason())
 		return
 	}
 
-	if e.Result() != ForceOfflineModePreLogin && (e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
+	if e.Result() != ForceOfflineModePreLogin &&
+		(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
 		if p, ok := l.conn.c.(GameProfileProvider); ok {
 			l.initPlayer(p.GameProfile(), false)
@@ -110,7 +155,7 @@ func (l *loginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
 	l.initPlayer(profile.NewOffline(l.login.Username), false)
 }
 
-func (l *loginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequest {
+func (l *initialLoginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequest {
 	verify := make([]byte, 4)
 	_, _ = rand.Read(verify)
 	return &packet.EncryptionRequest{
@@ -124,22 +169,51 @@ var unableAuthWithMojang = &component.Text{
 	S:       component.Style{Color: color.Red},
 }
 
-func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionResponse) {
-	if l.login == nil || // No ServerLogin packet received yet
-		len(l.verify) == 0 { // No EncryptionRequest packet sent yet
-		_ = l.conn.close()
+func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionResponse) {
+	if !l.assertState(encryptionRequestSentLoginState) {
+		return
+	}
+	l.currentState = encryptionResponseReceivedLoginState
+
+	if l.login == nil {
+		l.conn.log.V(1).Info("no ServerLogin packet received yet, disconnecting")
+		_ = l.conn.closeKnown(true)
+		return
+	}
+	if len(l.verify) == 0 {
+		l.conn.log.V(1).Info("no EncryptionRequest packet sent yet, disconnecting")
+		_ = l.conn.closeKnown(true)
 		return
 	}
 
-	log := l.log.WithName("authn")
-	authn := l.auth().WithLogger(log)
-	valid, err := authn.Verify(resp.VerifyToken, l.verify)
-	if err != nil || !valid {
-		// Simply close the connection without much overhead.
-		_ = l.conn.close()
-		return
+	if playerKey := l.inbound.IdentifiedKey(); playerKey != nil {
+		if resp.Salt == nil {
+			l.conn.log.V(1).Info("encryption response did not contain salt")
+			_ = l.conn.closeKnown(true)
+			return
+		}
+		salt := make([]byte, 8)
+		binary.LittleEndian.PutUint64(salt, uint64(*resp.Salt))
+		if !playerKey.VerifyDataSignature(resp.VerifyToken, l.verify, salt) {
+			l.conn.log.Info("invalid client public signature")
+			_ = l.conn.closeKnown(true)
+			return
+		}
+	} else {
+		valid, err := l.auth().Verify(resp.VerifyToken, l.verify)
+		if err != nil {
+			// Simply close the connection without much overhead.
+			_ = l.conn.closeKnown(true)
+			return
+		}
+		if !valid {
+			l.conn.log.Info("invalid verification token")
+			_ = l.conn.closeKnown(true)
+			return
+		}
 	}
 
+	authn := l.auth()
 	decryptedSharedSecret, err := authn.DecryptSharedSecret(resp.SharedSecret)
 	if err != nil {
 		// Simple close the connection without much overhead.
@@ -150,7 +224,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	// Enable encryption.
 	// Once the client sends EncryptionResponse, encryption is enabled.
 	if err = l.conn.enableEncryption(decryptedSharedSecret); err != nil {
-		l.log.Error(err, "Error enabling encryption for connecting player")
+		l.log.Error(err, "error enabling encryption for connecting player")
 		_ = l.conn.closeWith(packet.DisconnectWith(internalServerConnectionError))
 		return
 	}
@@ -163,12 +237,14 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	serverID, err := authn.GenerateServerID(decryptedSharedSecret)
 	if err != nil {
 		// Simple close the connection without much overhead.
-		_ = l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang))
+		_ = l.inbound.disconnect(unableAuthWithMojang)
 		return
 	}
 
+	log := l.log.WithName("authn")
 	ctx, cancel := func() (context.Context, func()) {
-		tCtx, tCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx := logr.NewContext(context.Background(), log)
+		tCtx, tCancel := context.WithTimeout(ctx, 30*time.Second)
 		ctx, cancel := l.conn.newContext(tCtx)
 		return ctx, func() { tCancel(); cancel() }
 	}()
@@ -185,7 +261,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	}
 
 	if !authResp.OnlineMode() {
-		log.Info("Disconnect offline mode player")
+		log.Info("disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
 		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))
 		return
@@ -195,7 +271,7 @@ func (l *loginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionRe
 	gameProfile, err := authResp.GameProfile()
 	if err != nil {
 		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
-			log.Error(err, "Unable get GameProfile from Mojang authentication response")
+			log.Error(err, "unable get GameProfile from Mojang authentication response")
 		}
 		return
 	}
@@ -241,7 +317,7 @@ var (
 	}
 )
 
-func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMode bool) {
+func (l *initialLoginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMode bool) {
 	// Some connection types may need to alter the game profile.
 	profile = l.conn.Type().addGameProfileTokensIfRequired(profile,
 		l.proxy().Config().Forwarding.Mode)
@@ -254,7 +330,8 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 	gameProfile := profileRequest.GameProfile()
 
 	// Initiate a regular connection and move over to it.
-	player := newConnectedPlayer(l.conn, &gameProfile, l.inbound.VirtualHost(), onlineMode)
+	player := newConnectedPlayer(l.conn, &gameProfile,
+		l.inbound.VirtualHost(), onlineMode, l.inbound.IdentifiedKey())
 	if !l.proxy().canRegisterConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return
@@ -276,7 +353,7 @@ func (l *loginSessionHandler) initPlayer(profile *profile.GameProfile, onlineMod
 	}
 }
 
-func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connectedPlayer) {
+func (l *initialLoginSessionHandler) completeLoginProtocolPhaseAndInit(player *connectedPlayer) {
 	cfg := l.config()
 
 	// Send compression threshold
@@ -284,12 +361,12 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 	if threshold >= 0 && player.Protocol().GreaterEqual(version.Minecraft_1_8) {
 		err := player.WritePacket(&packet.SetCompression{Threshold: threshold})
 		if err != nil {
-			player.close()
+			_ = player.close()
 			return
 		}
 		if err = player.SetCompressionThreshold(threshold); err != nil {
 			l.log.Error(err, "Error setting compression threshold")
-			_ = player.closeWith(packet.DisconnectWith(internalServerConnectionError))
+			_ = l.inbound.disconnect(internalServerConnectionError))
 			return
 		}
 	}
@@ -335,7 +412,7 @@ func (l *loginSessionHandler) completeLoginProtocolPhaseAndInit(player *connecte
 	l.connectToInitialServer(player)
 }
 
-func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
+func (l *initialLoginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	initialFromConfig := player.nextServerToTry(nil)
 	chooseServer := &PlayerChooseInitialServerEvent{
 		player:        player,
@@ -357,18 +434,33 @@ func (l *loginSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 
-func (l *loginSessionHandler) proxy() *Proxy {
+func (l *initialLoginSessionHandler) proxy() *Proxy {
 	return l.conn.proxy
 }
 
-func (l *loginSessionHandler) event() event.Manager {
+func (l *initialLoginSessionHandler) event() event.Manager {
 	return l.proxy().event
 }
 
-func (l *loginSessionHandler) config() *config.Config {
+func (l *initialLoginSessionHandler) config() *config.Config {
 	return l.proxy().config
 }
 
-func (l *loginSessionHandler) auth() auth.Authenticator {
+func (l *initialLoginSessionHandler) auth() auth.Authenticator {
 	return l.proxy().authenticator
+}
+
+func (l *initialLoginSessionHandler) disconnected() {
+	l.inbound.cleanup()
+}
+
+func (l *initialLoginSessionHandler) assertState(expectedState loginState) bool {
+	if l.currentState == expectedState {
+		return true
+	}
+	l.log.Info("received an unexpected packet during initial login session",
+		"currentState", l.currentState,
+		"expectedState", expectedState)
+	_ = l.conn.closeKnown(true)
+	return false
 }

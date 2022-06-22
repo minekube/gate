@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -338,4 +339,20 @@ func ReadUTF(rd io.Reader) (string, error) {
 	p := make([]byte, length)
 	_, err = io.ReadFull(rd, p)
 	return string(p), err
+}
+
+func ReadPlayerKey(rd io.Reader) (crypto.IdentifiedKey, error) {
+	expiry, err := ReadInt64(rd)
+	if err != nil {
+		return nil, err
+	}
+	key, err := ReadBytes(rd)
+	if err != nil {
+		return nil, err
+	}
+	signature, err := ReadBytesLen(rd, 4096)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.NewIdentifiedKey(key, expiry, signature)
 }

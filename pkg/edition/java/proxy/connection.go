@@ -292,7 +292,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 			sh.disconnected()
 
 			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
-				p.player_().log.Info("Player has disconnected")
+				p.player_().log.Info("player has disconnected")
 			}
 		}
 	})

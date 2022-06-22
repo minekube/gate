@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -170,7 +171,7 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 
 func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem, pc *proto.PacketContext) {
 	// Track changes to tab list of player
-	if err := b.serverConn.player.tabList.processBackendPacket(p); err != nil {
+	if err := b.serverConn.player.tabList.ProcessBackendPacket(p); err != nil {
 		b.serverConn.log.Error(err, "Error while processing backend PlayerListItem packet, ignored")
 	}
 	b.forwardToPlayer(pc, nil)

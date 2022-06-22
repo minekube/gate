@@ -5,29 +5,64 @@ import (
 	"fmt"
 	"io"
 
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 type ServerLogin struct {
-	Username string
+	Username  string
+	PlayerKey crypto.IdentifiedKey // 1.19+
 }
 
 var errEmptyUsername = errs.NewSilentErr("empty username")
 
 const maxUsernameLen = 16
 
-func (s *ServerLogin) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	return util.WriteString(wr, s.Username)
+func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
+	if s.Username == "" {
+		return errors.New("username not specified")
+	}
+	err := util.WriteString(wr, s.Username)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err = util.WriteBool(wr, s.PlayerKey != nil)
+		if err != nil {
+			return err
+		}
+		if s.PlayerKey != nil {
+			err = util.WritePlayerKey(wr, s.PlayerKey)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (s *ServerLogin) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	s.Username, err = util.ReadStringMax(rd, maxUsernameLen)
 	if len(s.Username) == 0 {
 		return errEmptyUsername
+	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		ok, err := util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+		if ok {
+			s.PlayerKey, err = util.ReadPlayerKey(rd)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return
 }
@@ -35,6 +70,7 @@ func (s *ServerLogin) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 type EncryptionResponse struct {
 	SharedSecret []byte
 	VerifyToken  []byte
+	Salt         *int64 // 1.19+
 }
 
 func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -42,6 +78,18 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 		err := util.WriteBytes(wr, e.SharedSecret)
 		if err != nil {
 			return err
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+			err = util.WriteBool(wr, e.Salt != nil)
+			if err != nil {
+				return err
+			}
+			if e.Salt != nil {
+				err = util.WriteInt64(wr, *e.Salt)
+				if err != nil {
+					return err
+				}
+			}
 		}
 		return util.WriteBytes(wr, e.VerifyToken)
 	} else {
@@ -59,7 +107,22 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		if err != nil {
 			return
 		}
-		e.VerifyToken, err = util.ReadBytesLen(rd, 128)
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+			ok, err := util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
+			if ok {
+				salt, err := util.ReadInt64(rd)
+				if err != nil {
+					return err
+				}
+				e.Salt = &salt
+			}
+			e.VerifyToken, err = util.ReadBytesLen(rd, 256)
+		} else {
+			e.VerifyToken, err = util.ReadBytesLen(rd, 128)
+		}
 	} else {
 		e.SharedSecret, err = util.ReadBytes17(rd)
 		if err != nil {
@@ -137,12 +200,18 @@ func (e *EncryptionRequest) Decode(_ *proto.PacketContext, rd io.Reader) (err er
 }
 
 type ServerLoginSuccess struct {
-	UUID     uuid.UUID
-	Username string
+	UUID       uuid.UUID
+	Username   string
+	Properties []profile.Property // 1.19+
 }
 
 func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+	if s.Username == "" {
+		return fmt.Errorf("no username specified")
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err = util.WriteUUID(wr, s.UUID)
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		err = util.WriteUUID(wr, s.UUID)
 	} else if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
 		err = util.WriteString(wr, s.UUID.String())
@@ -152,14 +221,26 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 	if err != nil {
 		return err
 	}
-	return util.WriteString(wr, s.Username)
+	err = util.WriteString(wr, s.Username)
+	if err != nil {
+		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err = util.WriteProperties(wr, s.Properties)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	var uuidString string
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		s.UUID, err = util.ReadUUID(rd)
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+		s.UUID, err = util.ReadUUID(rd) // readUUIDIntArray?
 	} else {
+		var uuidString string
 		if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
 			uuidString, err = util.ReadStringMax(rd, 36)
 		} else {
@@ -177,6 +258,15 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		return
 	}
 	s.Username, err = util.ReadStringMax(rd, maxUsernameLen)
+	if err != nil {
+		return
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		s.Properties, err = util.ReadProperties(rd)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

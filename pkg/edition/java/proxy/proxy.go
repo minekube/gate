@@ -521,6 +521,16 @@ func (p *Proxy) Player(id uuid.UUID) Player {
 	return player
 }
 
+func (p *Proxy) player(id uuid.UUID) *connectedPlayer {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	player, ok := p.playerIDs[id]
+	if !ok {
+		return nil // return correct nil
+	}
+	return player
+}
+
 // PlayerByName returns the online player by their Minecraft name (search is case-insensitive).
 // Returns nil if the player was not found.
 func (p *Proxy) PlayerByName(username string) Player {
@@ -533,7 +543,11 @@ func (p *Proxy) PlayerByName(username string) Player {
 func (p *Proxy) playerByName(username string) *connectedPlayer {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
-	return p.playerNames[strings.ToLower(username)]
+	player, ok := p.playerNames[strings.ToLower(username)]
+	if !ok {
+		return nil
+	}
+	return player
 }
 
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {

@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"go.minekube.com/brigodier"
-
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
 
@@ -17,7 +16,7 @@ type ArgumentPropertyCodec interface {
 }
 
 var registry = &argPropReg{
-	byId:     map[string]ArgumentPropertyCodec{},
+	byId:     map[argIdentifier]ArgumentPropertyCodec{},
 	byType:   map[string]ArgumentPropertyCodec{},
 	typeToID: map[string]string{},
 }
