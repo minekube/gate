@@ -51,6 +51,10 @@ editions:
       # Declares the proxy commands to 1.13+ clients.
       # Default: true
       announceProxyCommands: true
+      # Should the proxy enforce the new public key
+      # security standard added in Minecraft 1.19?
+      # Default: true
+      forceKeyAuthentication: true
       # The default disconnect reason to kick player on proxy shutdown when no other reason was given.
       # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
       shutdownReason: |

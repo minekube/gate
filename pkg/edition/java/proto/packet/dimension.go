@@ -3,6 +3,7 @@ package packet
 import (
 	"errors"
 	"fmt"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -189,7 +190,7 @@ func decodeBaseCompoundTag(details util.NBT, protocol proto.Protocol) (*Dimensio
 }
 
 // utility func to create dimension decode error
-func dimReadErr(format string, a ...interface{}) error {
+func dimReadErr(format string, a ...any) error {
 	return fmt.Errorf("error decoding dimension: %v", fmt.Sprintf(format, a...))
 }
 func dimMissKeyErr(key string) error {

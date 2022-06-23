@@ -159,7 +159,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 		return
 	}
 
-	failResult := func(format string, a ...interface{}) {
+	failResult := func(format string, a ...any) {
 		err := fmt.Errorf(format, a...)
 		b.log.Error(err, "Unable to switch player to new server, disconnecting")
 		b.serverConn.player.Disconnect(internalServerConnectionError)

@@ -13,6 +13,7 @@ import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
@@ -35,7 +36,8 @@ type clientPlaySessionHandler struct {
 	log, log1           logr.Logger
 	player              *connectedPlayer
 	spawned             atomic.Bool
-	loginPluginMessages deque.Deque
+	loginPluginMessages deque.Deque[*plugin.Message]
+	lastChatMessage     time.Time // Added in 1.19
 
 	// TODO serverBossBars
 	outstandingTabComplete *packet.TabCompleteRequest
@@ -62,7 +64,11 @@ func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	case *packet.KeepAlive:
 		c.handleKeepAlive(p)
 	case *packet.LegacyChat:
-		c.handleChat(p)
+		c.handleLegacyChat(p)
+	case *packet.PlayerChat:
+		c.handlePlayerChat(p)
+	case *packet.PlayerCommand:
+		c.handlePlayerCommand(p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p)
 	case *plugin.Message:
@@ -362,13 +368,13 @@ func (c *clientPlaySessionHandler) doSafeClientServerSwitch(joinGame *packet.Joi
 	} else {
 		respawn.Dimension = 0
 	}
-	if err = c.player.BufferPacket(joinGame); err != nil {
+	if err = c.player.BufferPacket(respawn); err != nil {
 		return fmt.Errorf("error buffering 2dn %T for player: %w", joinGame, err)
 	}
 
 	// Now send a respawn packet in the correct dimension.
 	respawn.Dimension = correctDim
-	if err = c.player.BufferPacket(joinGame); err != nil {
+	if err = c.player.BufferPacket(respawn); err != nil {
 		return fmt.Errorf("error buffering 3rd %T for player: %w", joinGame, err)
 	}
 	return nil
@@ -406,12 +412,73 @@ func trimSpaces(s string) string {
 	return spaceRegex.ReplaceAllString(s, " ")
 }
 
-func (c *clientPlaySessionHandler) handleChat(p *packet.LegacyChat) {
-	if validation.ContainsIllegalCharacter(p.Message) {
-		c.player.Disconnect(illegalChatCharacters)
+func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
+	if !c.validateChat(p.Message) {
 		return
 	}
 
+	if strings.HasPrefix(p.Message, "/") {
+		c.processCommandMessage(strings.TrimPrefix(p.Message, "/"), nil, p)
+	} else {
+		c.processPlayerChat(p.Message, nil, p)
+	}
+}
+
+func (c *clientPlaySessionHandler) handlePlayerCommand(p *packet.PlayerCommand) {
+	if !c.validateChat(p.Command) {
+		return
+	}
+
+	if !p.Unsigned {
+		// Bad if spoofed
+		signedCommand, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
+		if err != nil {
+			c.log.Error(err, "invalid signed command message")
+			c.player.Disconnect(&component.Text{
+				Content: "Invalid signed chat message",
+				S:       component.Style{Color: color.Red},
+			})
+			return
+		}
+		if signedCommand != nil {
+			c.processCommandMessage(p.Command, signedCommand, p)
+			return
+		}
+	}
+
+	c.processCommandMessage(p.Command, nil, p)
+}
+
+func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
+	if !c.validateChat(p.Message) {
+		return
+	}
+
+	if !p.Unsigned {
+		// Bad if spoofed
+		signedChat, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
+		if err != nil {
+			c.log.Error(err, "invalid signed chat message")
+			c.player.Disconnect(&component.Text{
+				Content: "Invalid signed chat message",
+				S:       component.Style{Color: color.Red},
+			})
+			return
+		}
+		if signedChat != nil {
+			// Server doesn't care for expiry as long as order is correct
+			if !c.tickLastMessage(signedChat) {
+				return
+			}
+			c.processPlayerChat(p.Message, signedChat, p)
+			return
+		}
+	}
+
+	c.processPlayerChat(p.Message, nil, p)
+}
+
+func (c *clientPlaySessionHandler) processCommandMessage(command string, signedCommand *crypto.SignedChatCommand, p *packet.PlayerCommand) {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -461,6 +528,43 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.LegacyChat) {
 		Type:    packet.ChatMessageType,
 		Sender:  c.player.ID(),
 	})
+}
+
+// todo
+func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedMsg *crypto.SignedChatMessage, p *packet.PlayerChat) {
+	serverConn := c.player.connectedServer()
+	if serverConn == nil {
+		return
+	}
+	serverMc := serverConn.conn()
+	if serverMc == nil {
+		return
+	}
+	e := &PlayerChatEvent{
+		player:  c.player,
+		message: msg,
+	}
+	c.proxy().Event().Fire(e)
+	if !e.Allowed() || !c.player.Active() {
+		return
+	}
+	c.log1.Info("player sent chat message", "chat", msg)
+	if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
+		c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+	}
+	_ = serverMc.WritePacket(&packet.LegacyChat{
+		Message: p.Message,
+		Type:    packet.ChatMessageType,
+		Sender:  c.player.ID(),
+	})
+}
+
+func (c *clientPlaySessionHandler) validateChat(msg string) bool {
+	if validation.ContainsIllegalCharacter(msg) {
+		c.player.Disconnect(illegalChatCharacters)
+		return false
+	}
+	return true
 }
 
 func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecuteEvent) (forward bool, err error) {

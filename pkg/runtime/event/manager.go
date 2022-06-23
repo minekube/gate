@@ -18,7 +18,7 @@ type Manager interface {
 	//
 	// HandlerFunc always gets the fired event of the same subscribed eventType or the same type as
 	// represented by reflect.Type.
-	Subscribe(eventType interface{}, priority int, fn HandlerFunc) (unsubscribe func())
+	Subscribe(eventType any, priority int, fn HandlerFunc) (unsubscribe func())
 	// Fire fires an event in the calling goroutine and returns after all subscribers are complete handling it.
 	// Any panic by a subscriber is caught so firing the event to the next subscriber can proceed.
 	Fire(Event)
@@ -29,14 +29,14 @@ type Manager interface {
 	FireParallel(event Event, after ...HandlerFunc)
 	// Wait blocks until no event handlers are running.
 	Wait()
-	// TODO consider adding HasSubscribers(eventType interface{}) bool
+	// TODO consider adding HasSubscribers(eventType any) bool
 }
 
 // HandlerFunc is an event handler func.
 type HandlerFunc func(e Event)
 
 // Event is the event interface.
-type Event interface{}
+type Event any
 
 // Type is an event type.
 type Type reflect.Type
@@ -49,7 +49,7 @@ func New(log logr.Logger) Manager {
 
 // TypeOf is a helper func to get the reflect.Type from i.
 // If i is nil returns nil.
-func TypeOf(i interface{}) (t Type) {
+func TypeOf(i any) (t Type) {
 	if i == nil {
 		return
 	}

@@ -40,6 +40,7 @@ type Player interface {
 	command.Source
 	message.ChannelMessageSource
 	message.ChannelMessageSink
+	crypto.KeyIdentifiable
 
 	ID() uuid.UUID    // The Minecraft ID of the player.
 	Username() string // The username of the player.
@@ -145,6 +146,8 @@ var _ tablist.PlayerKey = (*tabListPlayerKeyStore)(nil)
 func (t *tabListPlayerKeyStore) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
 	return t.p.player(playerID).playerKey
 }
+
+func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }
 
 func (p *connectedPlayer) connectionInFlight() *serverConnection {
 	p.mu.RLock()

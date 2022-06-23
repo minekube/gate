@@ -24,7 +24,7 @@ type Respawn struct {
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
 			err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(r.CurrentDimensionData.encodeDimensionDetails())
 			if err != nil {
 				return err

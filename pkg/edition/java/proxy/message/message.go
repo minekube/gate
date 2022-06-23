@@ -19,7 +19,7 @@ type ChannelMessageSink interface {
 }
 
 // ChannelMessageSource is a source of plugin messages.
-type ChannelMessageSource interface{}
+type ChannelMessageSource any
 
 // ChannelRegistrar is an interface to register and
 // unregister ChannelIdentifiers for the proxy to listen on.

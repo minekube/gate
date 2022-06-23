@@ -5,7 +5,7 @@ var Nop Manager = &nopMgr{}
 
 type nopMgr struct{}
 
-func (n *nopMgr) Subscribe(interface{}, int, HandlerFunc) (unsubscribe func()) {
+func (n *nopMgr) Subscribe(any, int, HandlerFunc) (unsubscribe func()) {
 	return func() {}
 }
 func (n *nopMgr) Fire(Event)                         {}

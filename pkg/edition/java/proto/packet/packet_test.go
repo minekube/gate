@@ -2,11 +2,16 @@ package packet
 
 import (
 	"bytes"
+	crypto2 "crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/stretchr/testify/assert"
@@ -18,6 +23,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -56,7 +62,27 @@ var packets = []proto.Packet{
 	&Disconnect{},
 	&Handshake{},
 	&KeepAlive{},
-	&ServerLogin{},
+	&ServerLogin{
+		Username: "Foo",
+		PlayerKey: func() crypto.IdentifiedKey {
+			pk, err := rsa.GenerateKey(rand.Reader, 512)
+			if err != nil {
+				panic(err)
+			}
+			public := x509.MarshalPKCS1PublicKey(&pk.PublicKey)
+			hashed := crypto2.SHA1.New()
+			hashed.Write([]byte("message"))
+			signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
+			if err != nil {
+				panic(err)
+			}
+			k, err := crypto.NewIdentifiedKey(public, time.Now().UnixMilli(), signature)
+			if err != nil {
+				panic(err)
+			}
+			return k
+		}(),
+	},
 	&EncryptionResponse{},
 	&LoginPluginResponse{},
 	&ServerLoginSuccess{},
@@ -66,6 +92,7 @@ var packets = []proto.Packet{
 		Url:    "https://example.com/",
 		Prompt: &component.Text{Content: "Prompt"},
 	},
+	&ResourcePackResponse{},
 	&Respawn{},
 	&StatusRequest{},
 	&StatusResponse{},
@@ -130,9 +157,27 @@ var packets = []proto.Packet{
 		DimensionInfo:        mustFake(&DimensionInfo{}).(*DimensionInfo),
 		CurrentDimensionData: mustFake(&DimensionData{}).(*DimensionData),
 		PreviousGamemode:     2,
-		BiomeRegistry: map[string]interface{}{
+		BiomeRegistry: map[string]any{
 			"k": "v",
 		},
+	},
+	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
+	&PlayerChat{
+		Message:       "test message",
+		SignedPreview: false,
+		Unsigned:      false,
+		Expiry:        time.Now(),
+		Signature:     nil,
+		Salt:          nil,
+	},
+	&PlayerChatPreview{},
+	&ServerChatPreview{
+		ID:      3,
+		Preview: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
+	},
+	&SystemChat{
+		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
+		Type:      1,
 	},
 }
 
@@ -256,7 +301,7 @@ func vRange(start, endInclusive *proto.Version) (vers []*proto.Version) {
 	return
 }
 func strPtr(s string) *string { return &s }
-func mustFake(a interface{}) interface{} {
+func mustFake(a any) any {
 	if err := faker.FakeData(a); err != nil {
 		panic(fmt.Sprintf("error faking %T: %v", a, err))
 	}

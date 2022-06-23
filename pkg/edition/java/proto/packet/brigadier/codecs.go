@@ -3,61 +3,70 @@ package brigadier
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"go.minekube.com/brigodier"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
 
-// ArgumentPropertyCodecFuncs implements ArgumentPropertyCodec.
-type ArgumentPropertyCodecFuncs struct {
-	EncodeFn func(wr io.Writer, v interface{}) error
-	DecodeFn func(rd io.Reader) (interface{}, error)
+type ArgumentPropertyCodec interface {
+	Encode(wr io.Writer, v any, protocol proto.Protocol) error
+	Decode(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error)
 }
 
-func (c *ArgumentPropertyCodecFuncs) Encode(wr io.Writer, v interface{}) error {
+// ArgumentPropertyCodecFuncs implements ArgumentPropertyCodec.
+type ArgumentPropertyCodecFuncs struct {
+	EncodeFn func(wr io.Writer, v any, protocol proto.Protocol) error
+	DecodeFn func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error)
+}
+
+func (c *ArgumentPropertyCodecFuncs) Encode(wr io.Writer, v any, protocol proto.Protocol) error {
 	if c.EncodeFn == nil {
 		return nil
 	}
-	return c.EncodeFn(wr, v)
+	return c.EncodeFn(wr, v, protocol)
 }
 
-func (c *ArgumentPropertyCodecFuncs) Decode(rd io.Reader) (interface{}, error) {
+func (c *ArgumentPropertyCodecFuncs) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 	if c.DecodeFn == nil {
 		return nil, nil
 	}
-	return c.DecodeFn(rd)
+	return c.DecodeFn(rd, protocol)
 }
 
 var (
 	EmptyArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{}
 
 	BoolArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			_, ok := v.(*brigodier.BoolArgumentType)
 			if !ok {
 				return fmt.Errorf("execpted *brigodier.BoolArgumentType but got %T", v)
 			}
 			return nil
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			return brigodier.Bool, nil
 		},
 	}
 	ByteArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			b, ok := v.(byte)
 			if !ok {
 				return fmt.Errorf("execpted byte but got %T", v)
 			}
 			return util.WriteByte(wr, b)
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
-			return util.ReadByte(rd)
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+			b, err := util.ReadByte(rd)
+			return ByteArgumentType(b), err
 		},
 	}
 	StringArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			t, ok := v.(brigodier.StringType)
 			if !ok {
 				return fmt.Errorf("expected brigodier.StringType but got %T", v)
@@ -69,7 +78,7 @@ var (
 				return fmt.Errorf("invalid string argument type %d", t)
 			}
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			t, err := util.ReadVarInt(rd)
 			if err != nil {
 				return nil, err
@@ -83,14 +92,14 @@ var (
 		},
 	}
 	RegistryKeyArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			i, ok := v.(*RegistryKeyArgumentType)
 			if !ok {
 				return fmt.Errorf("expected *RegistryKeyArgumentType but got %T", v)
 			}
 			return util.WriteString(wr, i.Identifier)
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			id, err := util.ReadString(rd)
 			if err != nil {
 				return nil, err
@@ -100,7 +109,7 @@ var (
 	}
 
 	Float64ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			i, ok := v.(*brigodier.Float64ArgumentType)
 			if !ok {
 				return fmt.Errorf("expected *brigodier.Float64ArgumentType but got %T", v)
@@ -124,7 +133,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -147,7 +156,7 @@ var (
 		},
 	}
 	Float32ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			i, ok := v.(*brigodier.Float32ArgumentType)
 			if !ok {
 				return fmt.Errorf("expected *brigodier.Float32ArgumentType but got %T", v)
@@ -171,7 +180,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -195,7 +204,7 @@ var (
 	}
 
 	Int32ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			i, ok := v.(*brigodier.Int32ArgumentType)
 			if !ok {
 				return fmt.Errorf("expected *brigodier.Int32ArgumentType but got %T", v)
@@ -219,7 +228,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -242,7 +251,7 @@ var (
 		},
 	}
 	Int64ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
-		EncodeFn: func(wr io.Writer, v interface{}) error {
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			i, ok := v.(*brigodier.Int64ArgumentType)
 			if !ok {
 				return fmt.Errorf("expected *brigodier.Int64ArgumentType but got %T", v)
@@ -266,7 +275,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader) (interface{}, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -288,6 +297,52 @@ var (
 			return &brigodier.Int64ArgumentType{Min: min, Max: max}, nil
 		},
 	}
+	ModArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			// This is special-cased by ArgumentPropertyRegistry
+			return fmt.Errorf("unsupported operation")
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+			var identifier *ArgumentIdentifier
+			if protocol.GreaterEqual(version.Minecraft_1_19) {
+				idx, err := util.ReadVarInt(rd)
+				if err != nil {
+					return nil, err
+				}
+				var suffix string
+				if idx < 0 {
+					suffix = fmt.Sprintf("n%d", -idx)
+				} else {
+					suffix = strconv.Itoa(idx)
+				}
+				identifier, err = newArgIdentifier("crossstitch:identified_"+suffix, versionSet{
+					version: protocol,
+					id:      idx,
+				})
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				id, err := util.ReadString(rd)
+				if err != nil {
+					return nil, err
+				}
+				identifier, err = newArgIdentifier(id)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			extraData, err := util.ReadBytes(rd)
+			if err != nil {
+				return nil, err
+			}
+			return &ModArgumentProperty{
+				Identifier: identifier,
+				Data:       extraData,
+			}, nil
+		},
+	}
 )
 
 const (
@@ -304,3 +359,16 @@ func flags(hasMin, hasMax bool) (f byte) {
 	}
 	return
 }
+
+type ModArgumentProperty struct {
+	Identifier *ArgumentIdentifier
+	Data       []byte
+}
+
+func (m *ModArgumentProperty) Parse(*brigodier.StringReader) (any, error) {
+	return nil, fmt.Errorf("unsupported operation for %T", m)
+}
+
+func (m *ModArgumentProperty) String() string { return "mod" }
+
+var _ brigodier.ArgumentType = (*ModArgumentProperty)(nil)

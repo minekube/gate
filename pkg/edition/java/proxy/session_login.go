@@ -379,6 +379,7 @@ func (l *initialLoginSessionHandler) completeLoginProtocolPhaseAndInit(player *c
 	if player.WritePacket(&packet.ServerLoginSuccess{
 		UUID:     playerID,
 		Username: player.Username(),
+		Properties: player.GameProfile().Properties,
 	}) != nil {
 		return
 	}

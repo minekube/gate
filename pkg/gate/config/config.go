@@ -67,7 +67,7 @@ type HealthService struct {
 
 // Validate validates a Config and all enabled edition configs (Java / Bedrock).
 func (c *Config) Validate() (warns []error, errs []error) {
-	e := func(m string, args ...interface{}) { errs = append(errs, fmt.Errorf(m, args...)) }
+	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
 	if c == nil {
 		e("config must not be nil")
 		return

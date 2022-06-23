@@ -148,8 +148,8 @@ const (
 
 // Validate validates Config.
 func (c *Config) Validate() (warns []error, errs []error) {
-	e := func(m string, args ...interface{}) { errs = append(errs, fmt.Errorf(m, args...)) }
-	w := func(m string, args ...interface{}) { warns = append(warns, fmt.Errorf(m, args...)) }
+	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
+	w := func(m string, args ...any) { warns = append(warns, fmt.Errorf(m, args...)) }
 
 	if c == nil {
 		e("config must not be nil")

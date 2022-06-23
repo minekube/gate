@@ -189,3 +189,24 @@ func generatePublicPemFromKey(publicKey *rsa.PublicKey) (string, error) {
 	b.WriteString("-----END RSA PUBLIC KEY-----\n")
 	return b.String(), nil
 }
+
+type (
+	SignedChatMessage struct {
+		Message       string
+		Signer        *rsa.PublicKey
+		Signature     []byte
+		Expiry        time.Time
+		Salt          []byte
+		Sender        uuid.UUID
+		SignedPreview bool
+	}
+	SignedChatCommand struct {
+		Command       string
+		Signer        *rsa.PublicKey
+		Expiry        time.Time
+		Salt          []byte
+		Sender        uuid.UUID
+		SignedPreview bool
+		Signatures    map[string][]byte
+	}
+)

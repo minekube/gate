@@ -1,13 +1,17 @@
 package util
 
 import (
+	"crypto/x509"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"math"
+	"strings"
 
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -266,9 +270,18 @@ func WritePlayerKey(wr io.Writer, playerKey crypto.IdentifiedKey) error {
 	if err != nil {
 		return err
 	}
-	err = WriteBytes(wr, playerKey.SignedPublicKey().N.Bytes())
+	err = WriteBytes(wr, x509.MarshalPKCS1PublicKey(playerKey.SignedPublicKey()))
 	if err != nil {
 		return err
 	}
 	return WriteBytes(wr, playerKey.Signature())
+}
+
+func WriteComponent(wr io.Writer, protocol proto.Protocol, c component.Component) error {
+	buf := new(strings.Builder)
+	err := JsonCodec(protocol).Marshal(buf, c)
+	if err != nil {
+		return err
+	}
+	return WriteString(wr, buf.String())
 }

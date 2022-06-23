@@ -22,7 +22,7 @@ func (e *SilentError) Error() string {
 	return e.Err.Error()
 }
 
-func NewSilentErr(format string, a ...interface{}) error {
+func NewSilentErr(format string, a ...any) error {
 	return &SilentError{Err: fmt.Errorf(format, a...)}
 }
 

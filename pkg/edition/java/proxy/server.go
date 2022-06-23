@@ -384,7 +384,10 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 
 	// Kick off the connection process
 	// connection from proxy -> server (backend)
-	err = serverMc.WritePacket(&packet.ServerLogin{Username: s.player.Username()})
+	err = serverMc.WritePacket(&packet.ServerLogin{
+		Username:  s.player.Username(),
+		PlayerKey: s.player.IdentifiedKey(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}

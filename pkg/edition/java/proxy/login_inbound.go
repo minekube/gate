@@ -60,10 +60,7 @@ func (l *loginInboundConn) Active() bool { return l.delegate.Active() }
 
 func (l *loginInboundConn) Closed() <-chan struct{} { return l.delegate.Closed() }
 
-func (l *loginInboundConn) IdentifiedKey() crypto.IdentifiedKey {
-	//TODO implement me
-	panic("implement me")
-}
+func (l *loginInboundConn) IdentifiedKey() crypto.IdentifiedKey { return l.playerKey }
 
 func (l *loginInboundConn) SendLoginPluginMessage(identifier message.ChannelIdentifier, contents []byte, consumer MessageConsumer) error {
 	if identifier == nil {
