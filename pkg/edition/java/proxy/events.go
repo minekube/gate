@@ -3,6 +3,8 @@ package proxy
 import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
@@ -802,8 +804,131 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 //
 
+// ResourcePackResponseStatus is the status for a resource pack.
+type ResourcePackResponseStatus = packet.ResourcePackResponseStatus
+
+// Possible statuses for a resource pack.
+const (
+	SuccessfulResourcePackResponseStatus     ResourcePackResponseStatus = packet.SuccessfulResourcePackResponseStatus
+	DeclinedResourcePackResponseStatus       ResourcePackResponseStatus = packet.DeclinedResourcePackResponseStatus
+	FailedDownloadResourcePackResponseStatus ResourcePackResponseStatus = packet.FailedDownloadResourcePackResponseStatus
+	AcceptedResourcePackResponseStatus       ResourcePackResponseStatus = packet.AcceptedResourcePackResponseStatus
+)
+
+// PlayerResourcePackStatusEvent is fired when the status of a resource pack sent to the player by the server is
+// changed. Depending on the result of this event (which the proxy will wait until completely fired),
+// the player may be kicked from the server.
+type PlayerResourcePackStatusEvent struct {
+	player        Player
+	status        ResourcePackResponseStatus
+	packInfo      ResourcePackInfo
+	overwriteKick bool
+}
+
+// Player returns the player affected by the change in resource pack status.
+func (p *PlayerResourcePackStatusEvent) Player() Player {
+	return p.player
+}
+
+// Status returns the new status for the resource pack.
+func (p *PlayerResourcePackStatusEvent) Status() ResourcePackResponseStatus {
+	return p.status
+}
+
+// PackInfo returns the ResourcePackInfo this response is for.
+func (p *PlayerResourcePackStatusEvent) PackInfo() ResourcePackInfo {
+	return p.packInfo
+}
+
+// OverwriteKick returns whether to override the kick resulting from ResourcePackInfo.ShouldForce() being true.
+func (p *PlayerResourcePackStatusEvent) OverwriteKick() bool {
+	return p.overwriteKick
+}
+
+// SetOverwriteKick can set to true to prevent ResourcePackInfo.ShouldForce()
+// from kicking the player. Overwriting this kick is only possible on versions older than 1.17,
+// as the client or server will enforce this regardless. Cancelling the resulting
+// kick-events will not prevent the player from disconnecting from the proxy.
+func (p *PlayerResourcePackStatusEvent) SetOverwriteKick(overwriteKick bool) {
+	if p.player.Protocol().LowerEqual(version.Minecraft_1_17) {
+		return // overwriteKick is not supported on 1.17 or newer
+	}
+	p.overwriteKick = overwriteKick
+}
+
 // TODO PlayerClientBrandEvent
-// TODO ServerLoginPluginMessageEvent
+
+//
+//
+//
+//
+
+// PlayerChannelRegisterEvent is fired when a client Player sends a plugin message through the
+// register channel. The proxy will not wait on this event to finish firing.
+type PlayerChannelRegisterEvent struct {
+	channels []message.ChannelIdentifier
+	player   Player
+}
+
+func (e *PlayerChannelRegisterEvent) Channels() []message.ChannelIdentifier {
+	return e.channels
+}
+
+func (e *PlayerChannelRegisterEvent) Player() Player {
+	return e.player
+}
+
+//
+//
+//
+//
+
+// ServerLoginPluginMessageEvent is fired when a server sends a login plugin message to the proxy.
+// Plugins have the opportunity to respond to the messages as needed. The proxy will wait on this
+// event to finish. The server will be responsible for continuing the login process once the server
+// is satisfied with any login plugin responses sent by proxy plugins (or messages indicating a lack of response).
+type ServerLoginPluginMessageEvent struct {
+	conn       *serverConnection
+	id         message.ChannelIdentifier
+	contents   []byte
+	sequenceID int
+
+	result ServerLoginPluginMessageResult
+}
+
+// Contents returns the contents of the login plugin message sent by the server.
+func (e *ServerLoginPluginMessageEvent) Contents() []byte {
+	return e.contents
+}
+
+// SequenceID returns the sequence id of the login plugin message sent by the server.
+func (e *ServerLoginPluginMessageEvent) SequenceID() int {
+	return e.sequenceID
+}
+
+func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {
+	return &e.result
+}
+
+type ServerLoginPluginMessageResult struct {
+	Response []byte
+}
+
+func (r *ServerLoginPluginMessageResult) Allowed() bool {
+	return r.Response != nil
+}
+
+func (r *ServerLoginPluginMessageResult) Copy() []byte {
+	res := make([]byte, len(r.Response))
+	copy(res, r.Response)
+	return res
+}
+
+func (r *ServerLoginPluginMessageResult) Reply(response []byte) *ServerLoginPluginMessageResult {
+	return &ServerLoginPluginMessageResult{
+		Response: response,
+	}
+}
 
 //
 //

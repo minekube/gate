@@ -19,6 +19,8 @@ func TestTypeOf(t *testing.T) {
 
 func TestPriorityAndCorrectType(t *testing.T) {
 	m := New(logr.Discard())
+	require.False(t, m.HasSubscribers(&myEvent{}))
+
 	m.Subscribe(TypeOf(&myEvent{}), -1, func(e Event) {
 		ev := e.(*myEvent)
 		ev.s += "c"
@@ -46,4 +48,5 @@ func TestPriorityAndCorrectType(t *testing.T) {
 	m.Fire(e)
 	require.False(t, noPtr)
 	require.Equal(t, "_abc", e.s)
+	require.True(t, m.HasSubscribers(&myEvent{}))
 }

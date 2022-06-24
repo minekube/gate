@@ -366,7 +366,7 @@ type ChatBuilder struct {
 	message           string
 	signedChatMessage *crypto.SignedChatMessage
 	signedCommand     *crypto.SignedChatCommand
-	type_             ChatType
+	type_             MessageType
 	sender            *uuid.UUID
 }
 
@@ -378,28 +378,28 @@ func (b *ChatBuilder) Message(msg string) *ChatBuilder {
 	b.message = msg
 	return b
 }
+func (b *ChatBuilder) Component(c component.Component) *ChatBuilder {
+	b.component = c
+	return b
+}
 func (b *ChatBuilder) SignedChatMessage(msg *crypto.SignedChatMessage) *ChatBuilder {
 	b.message = msg.Message
 	b.signedChatMessage = msg
 	return b
 }
-
 func (b *ChatBuilder) SignedCommandMessage(cmd *crypto.SignedChatCommand) *ChatBuilder {
 	b.message = cmd.Command // root literal
 	b.signedCommand = cmd
 	return b
 }
-
-func (b *ChatBuilder) Type(t ChatType) *ChatBuilder {
+func (b *ChatBuilder) Type(t MessageType) *ChatBuilder {
 	b.type_ = t
 	return b
 }
-
 func (b *ChatBuilder) AsPlayer(sender uuid.UUID) *ChatBuilder {
 	b.sender = &sender
 	return b
 }
-
 func (b *ChatBuilder) AsServer() *ChatBuilder {
 	b.sender = nil
 	return b

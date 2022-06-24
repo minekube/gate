@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
+	"go.uber.org/multierr"
 )
 
 // TabList is the tab list of a player.
@@ -139,7 +140,7 @@ func (t *tabList) ClearHeaderFooter() error {
 }
 
 // removes all player entries shown in the tab list
-func (t *tabList) clearEntries() error {
+func (t *tabList) clearEntries(bufferPacket func(proto.Packet) error) error {
 	items, ok := func() ([]packet.PlayerListItemEntry, bool) {
 		t.mu.Lock()
 		defer t.mu.Unlock()
@@ -158,7 +159,7 @@ func (t *tabList) clearEntries() error {
 		return nil
 	}
 
-	return t.w.WritePacket(&packet.PlayerListItem{
+	return bufferPacket(&packet.PlayerListItem{
 		Action: packet.RemovePlayerListItemAction,
 		Items:  items,
 	})
@@ -221,6 +222,7 @@ func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 					displayName: item.DisplayName,
 					latency:     time.Millisecond * time.Duration(item.Latency),
 					gameMode:    item.GameMode,
+					playerKey:   providedKey,
 				}
 			}
 		case packet.RemovePlayerListItemAction:
@@ -265,4 +267,18 @@ func (t *tabList) entry(id uuid.UUID) *tabListEntry {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.entries[id]
+}
+
+// BufferClearTabListEntries clears all entries from the tab list.
+// The packet entries are written with bufferPacket, so make sure to do an explicit flush.
+func BufferClearTabListEntries(list TabList, bufferPacket func(proto.Packet) error) error {
+	if internal, ok := list.(tabListInternal); ok {
+		return internal.clearEntries(bufferPacket)
+	}
+	// fallback implementation
+	var err error
+	for id := range list.Entries() {
+		err = multierr.Append(err, list.RemoveEntry(id))
+	}
+	return err
 }

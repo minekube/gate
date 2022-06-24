@@ -153,6 +153,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
+	if p.config.Debug {
+		p.log.Info("running in debug mode")
+	}
 	return p.listenAndServe(p.config.Bind, stopListener)
 }
 

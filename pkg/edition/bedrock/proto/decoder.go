@@ -21,7 +21,7 @@ type Decoder struct {
 	log       logr.Logger
 	direction proto.Direction
 	// not yet processed raw packets containing packet id + data
-	queue deque.Deque
+	queue deque.Deque[[]byte]
 
 	// TODO move this pkg to common gate/proto
 	registry *state.ProtocolRegistry
@@ -45,7 +45,7 @@ func (d *Decoder) Decode() (*proto.PacketContext, error) {
 			return nil, err
 		}
 	}
-	rawPacket := d.queue.PopBack().([]byte)
+	rawPacket := d.queue.PopBack()
 	return d.decode(rawPacket)
 }
 

@@ -39,7 +39,7 @@ func (a *AvailableCommands) Encode(c *proto.PacketContext, wr io.Writer) (err er
 	idMappings := map[brigodier.CommandNode]int{}
 	var ordered []brigodier.CommandNode // nodes order, since Go map is unordered
 	for childrenQueue.Len() != 0 {
-		child := childrenQueue.PopFront().(brigodier.CommandNode)
+		child := childrenQueue.PopFront()
 		if _, ok := idMappings[child]; !ok {
 			idMappings[child] = len(idMappings)
 			ordered = append(ordered, child)

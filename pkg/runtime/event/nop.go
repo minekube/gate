@@ -11,3 +11,4 @@ func (n *nopMgr) Subscribe(any, int, HandlerFunc) (unsubscribe func()) {
 func (n *nopMgr) Fire(Event)                         {}
 func (n *nopMgr) FireParallel(Event, ...HandlerFunc) {}
 func (n *nopMgr) Wait()                              {}
+func (n *nopMgr) HasSubscribers(event Event) bool    { return false }

@@ -29,7 +29,8 @@ type Manager interface {
 	FireParallel(event Event, after ...HandlerFunc)
 	// Wait blocks until no event handlers are running.
 	Wait()
-	// TODO consider adding HasSubscribers(eventType any) bool
+	// HasSubscribers determines whether the given event has any subscribers.
+	HasSubscribers(event Event) bool
 }
 
 // HandlerFunc is an event handler func.

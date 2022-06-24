@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // ChannelIdentifier is a channel identifier for use with plugin messaging.
@@ -77,3 +78,22 @@ func (m *channelIdentifier) ID() string {
 }
 
 var _ ChannelIdentifier = (*channelIdentifier)(nil)
+
+var (
+	errIdentifierNoColon = errors.New("identifier does not contain a colon")
+	errIdentifierEmpty   = errors.New("identifier is empty")
+)
+
+// ChannelIdentifierFrom creates a channel identifier from the specified Minecraft identifier string.
+func ChannelIdentifierFrom(identifier string) (ChannelIdentifier, error) {
+	colonPos := strings.Index(identifier, ":")
+	if colonPos == -1 {
+		return nil, errIdentifierNoColon
+	}
+	if colonPos+1 == len(identifier) {
+		return nil, errIdentifierEmpty
+	}
+	namespace := identifier[:colonPos]
+	name := identifier[colonPos+1:]
+	return NewChannelIdentifier(namespace, name)
+}

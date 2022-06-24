@@ -27,6 +27,12 @@ func (m *manager) Wait() {
 	m.activeSubscribers.Wait()
 }
 
+func (m *manager) HasSubscribers(event Event) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.subscribers[TypeOf(event)]) != 0
+}
+
 func (m *manager) Subscribe(eventType any, priority int, fn HandlerFunc) (unsubscribe func()) {
 	eType := TypeOf(eventType)
 	if eType == nil {

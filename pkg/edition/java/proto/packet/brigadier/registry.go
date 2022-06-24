@@ -1,8 +1,6 @@
 package brigadier
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 
@@ -48,18 +46,6 @@ func Encode(wr io.Writer, argType brigodier.ArgumentType, protocol proto.Protoco
 }
 func (r *argPropReg) Encode(wr io.Writer, argType brigodier.ArgumentType, protocol proto.Protocol) error {
 	switch property := argType.(type) {
-	case *PassthroughProperty:
-		err := r.writeIdentifier(wr, property.Identifier, protocol)
-		if err != nil {
-			return err
-		}
-		if property.Result != nil {
-			err = property.Codec.Encode(wr, property.Result, protocol)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
 	case *ModArgumentProperty:
 		err := r.writeIdentifier(wr, property.Identifier, protocol)
 		if err != nil {
@@ -92,18 +78,7 @@ func (r *argPropReg) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.Ar
 	if codec == nil {
 		return nil, fmt.Errorf("unknown argument type identifier %q", identifier)
 	}
-	result, err := codec.Decode(rd, protocol)
-	if err != nil {
-		return nil, err
-	}
-	if a, ok := result.(brigodier.ArgumentType); ok {
-		return a, nil
-	}
-	return &PassthroughProperty{
-		Identifier: identifier,
-		Codec:      codec,
-		Result:     result,
-	}, nil
+	return codec.Decode(rd, protocol)
 }
 
 func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifier, protocol proto.Protocol) error {
@@ -140,26 +115,6 @@ func (r *argPropReg) readIdentifier(rd io.Reader, protocol proto.Protocol) (*Arg
 		}
 	}
 	return nil, nil
-}
-
-type PassthroughProperty struct {
-	Identifier *ArgumentIdentifier
-	Codec      ArgumentPropertyCodec
-	Result     any
-}
-
-var _ brigodier.ArgumentType = (*PassthroughProperty)(nil)
-
-// Parse is unsupported.
-func (p *PassthroughProperty) Parse(*brigodier.StringReader) (any, error) {
-	return nil, errors.New("calling PassthroughProperty.Parse is an unsupported operation")
-}
-func (p *PassthroughProperty) String() string {
-	j, _ := json.Marshal(struct {
-		Identifier string
-		Result     any
-	}{Identifier: p.Identifier.String(), Result: p.Result})
-	return "*PassthroughProperty" + string(j)
 }
 
 func init() {

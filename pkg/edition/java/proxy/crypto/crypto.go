@@ -83,12 +83,16 @@ type identifiedKey struct {
 var _ IdentifiedKey = (*identifiedKey)(nil)
 
 func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey, error) {
-	pk, err := x509.ParsePKCS1PublicKey(key)
+	pk, err := x509.ParsePKIXPublicKey(key)
 	if err != nil {
 		return nil, fmt.Errorf("error parse public key: %w", err)
 	}
+	rsaKey, ok := pk.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("expected rsa public key, but got %T", pk)
+	}
 	return &identifiedKey{
-		p:              pk,
+		p:              rsaKey,
 		signature:      signature,
 		expiryTemporal: time.UnixMilli(expiry),
 	}, nil

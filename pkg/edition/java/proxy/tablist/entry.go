@@ -8,6 +8,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 // Entry is a single entry/player in a TabList.
@@ -52,6 +53,7 @@ type Entry interface {
 type tabListInternal interface {
 	TabList
 	updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error
+	clearEntries(bufferPacket func(proto.Packet) error) error
 }
 
 type tabListEntry struct {
@@ -135,11 +137,6 @@ func (t *tabListEntry) setGameMode(gameMode int) {
 
 func (t *tabListEntry) IdentifiedKey() crypto.IdentifiedKey {
 	return t.playerKey
-}
-func (t *tabListEntry) setPlayerKey(playerKey crypto.IdentifiedKey) {
-	t.mu.Lock()
-	t.playerKey = playerKey
-	t.mu.Unlock()
 }
 
 func newPlayerListItemEntry(entry Entry) *packet.PlayerListItemEntry {

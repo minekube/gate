@@ -108,7 +108,8 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			return
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-			ok, err := util.ReadBool(rd)
+			var ok bool
+			ok, err = util.ReadBool(rd)
 			if err != nil {
 				return err
 			}
@@ -120,8 +121,14 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 				e.Salt = &salt
 			}
 			e.VerifyToken, err = util.ReadBytesLen(rd, 256)
+			if err != nil {
+				return
+			}
 		} else {
 			e.VerifyToken, err = util.ReadBytesLen(rd, 128)
+			if err != nil {
+				return
+			}
 		}
 	} else {
 		e.SharedSecret, err = util.ReadBytes17(rd)

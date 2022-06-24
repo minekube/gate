@@ -14,7 +14,7 @@ import (
 )
 
 type legacyTabList struct {
-	t *tabList
+	*tabList
 
 	mu          sync.RWMutex
 	nameMapping map[string]uuid.UUID
@@ -23,7 +23,7 @@ type legacyTabList struct {
 // NewLegacy returns a new legacy TabList for version <= 1.7.
 func NewLegacy(w PacketWriter, p proto.Protocol) TabList {
 	return &legacyTabList{
-		t:           newTabList(w, p, &nopKeyStore{}),
+		tabList:     newTabList(w, p, &nopKeyStore{}),
 		nameMapping: map[string]uuid.UUID{},
 	}
 }
@@ -35,7 +35,7 @@ func (t *legacyTabList) SetHeaderFooter(_, _ component.Component) error { return
 func (t *legacyTabList) ClearHeaderFooter() error { return nil }
 
 func (t *legacyTabList) AddEntry(entry Entry) error {
-	err := t.t.AddEntry(entry)
+	err := t.tabList.AddEntry(entry)
 	if err != nil {
 		t.mu.Lock()
 		t.nameMapping[entry.Profile().Name] = entry.Profile().ID
@@ -45,7 +45,7 @@ func (t *legacyTabList) AddEntry(entry Entry) error {
 }
 
 func (t *legacyTabList) RemoveEntry(id uuid.UUID) error {
-	entry, err := t.t.removeEntry(id)
+	entry, err := t.tabList.removeEntry(id)
 	if entry != nil {
 		t.mu.Lock()
 		delete(t.nameMapping, entry.Profile().Name)
@@ -55,11 +55,11 @@ func (t *legacyTabList) RemoveEntry(id uuid.UUID) error {
 }
 
 func (t *legacyTabList) HasEntry(id uuid.UUID) bool {
-	return t.t.HasEntry(id)
+	return t.tabList.HasEntry(id)
 }
 
 func (t *legacyTabList) Entries() map[uuid.UUID]Entry {
-	return t.t.Entries()
+	return t.tabList.Entries()
 }
 
 func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
@@ -73,7 +73,7 @@ func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 		t.mu.Lock()
 		if id, ok := t.nameMapping[item.Name]; ok { // ADD_PLAYER also used for updating ping
 			t.mu.Unlock()
-			if entry := t.t.entry(id); entry != nil {
+			if entry := t.tabList.entry(id); entry != nil {
 				entry.setLatency(time.Millisecond * time.Duration(item.Latency))
 			}
 		} else {
@@ -95,7 +95,7 @@ func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 		removedID := t.nameMapping[item.Name]
 		t.mu.Unlock()
 		if removedID != uuid.Nil {
-			return t.t.RemoveEntry(removedID)
+			return t.tabList.RemoveEntry(removedID)
 		}
 	default:
 		// For 1.7 there is only add and remove
@@ -109,7 +109,7 @@ func (t *legacyTabList) updateEntry(action packet.PlayerListItemAction, entry *t
 	}
 	switch action {
 	case packet.UpdateLatencyPlayerListItemAction, packet.UpdateDisplayNamePlayerListItemAction:
-		return t.t.w.WritePacket(&packet.PlayerListItem{
+		return t.tabList.w.WritePacket(&packet.PlayerListItem{
 			Action: packet.AddPlayerListItemAction,
 			Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
 		})

@@ -1,13 +1,16 @@
 package packet
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 const (
@@ -139,6 +142,26 @@ func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error)
 		return errPreviewSignatureMissing
 	}
 	return nil
+}
+
+func (p *PlayerCommand) SignedContainer(signer crypto.IdentifiedKey, sender uuid.UUID, mustSign bool) (*crypto.SignedChatCommand, error) {
+	if p.Unsigned {
+		if mustSign {
+			return nil, errInvalidSignature
+		}
+		return nil, nil
+	}
+	salt := new(bytes.Buffer)
+	_ = util.WriteInt64(salt, p.Salt)
+	return &crypto.SignedChatCommand{
+		Command:       p.Command,
+		Signer:        signer.SignedPublicKey(),
+		Expiry:        p.Timestamp,
+		Salt:          salt.Bytes(),
+		Sender:        sender,
+		SignedPreview: p.SignedPreview,
+		Signatures:    p.Arguments,
+	}, nil
 }
 
 var _ proto.Packet = (*PlayerCommand)(nil)

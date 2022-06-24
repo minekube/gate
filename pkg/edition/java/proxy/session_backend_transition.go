@@ -74,6 +74,8 @@ func (b *backendTransitionSessionHandler) handlePacket(pc *proto.PacketContext) 
 		b.handleDisconnect(p)
 	case *plugin.Message:
 		b.handlePluginMessage(p)
+	case *packet.ResourcePackResponse:
+		b.serverConn.player.onResourcePackResponse(p.Status)
 	default:
 		b.log.V(1).Info("Received unexpected packet from backend server while transitioning",
 			"type", reflect.TypeOf(p))

@@ -9,6 +9,7 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
@@ -144,7 +145,35 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 		}
 		b.informationForwarded.Store(true)
 	} else {
-		// Don't understand
+		// Don't understand, fire event if we have subscribers
+		if !b.serverConn.conn().proxy.event.HasSubscribers(&ServerLoginPluginMessageEvent{}) {
+			_ = mc.WritePacket(&packet.LoginPluginResponse{
+				ID:      p.ID,
+				Success: false,
+			})
+			return
+		}
+
+		identifier, err := message.ChannelIdentifierFrom(p.Channel)
+		if err != nil {
+			b.log.V(1).Error(err, "could not parse channel from LoginPluginResponse")
+			return
+		}
+		e := &ServerLoginPluginMessageEvent{
+			conn:       b.serverConn,
+			id:         identifier,
+			contents:   p.Data,
+			sequenceID: p.ID,
+		}
+		b.serverConn.conn().proxy.event.Fire(e)
+		if e.Result().Allowed() {
+			_ = mc.WritePacket(&packet.LoginPluginResponse{
+				ID:      p.ID,
+				Success: true,
+				Data:    e.Result().Response,
+			})
+			return
+		}
 		_ = mc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: false,
