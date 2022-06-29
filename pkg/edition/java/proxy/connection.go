@@ -79,6 +79,7 @@ func newMinecraftConn(
 	log := proxy.log.WithName(logName)
 	writeBuf := bufio.NewWriter(base)
 	readBuf := bufio.NewReader(base)
+
 	return &minecraftConn{
 		proxy:    proxy,
 		log:      log,
@@ -86,8 +87,8 @@ func newMinecraftConn(
 		closed:   make(chan struct{}),
 		writeBuf: writeBuf,
 		readBuf:  readBuf,
-		encoder:  codec.NewEncoder(writeBuf, out),
-		decoder:  codec.NewDecoder(readBuf, in, log.WithName("decoder")),
+		encoder:  codec.NewEncoder(writeBuf, out, log.V(2).WithName("encoder"), proxy.config.Debug),
+		decoder:  codec.NewDecoder(readBuf, in, log.V(2).WithName("decoder"), proxy.config.Debug),
 		state:    state.Handshake,
 		protocol: version.Minecraft_1_7_2.Protocol,
 		connType: undeterminedConnectionType,
@@ -409,10 +410,10 @@ func (c *minecraftConn) setSessionHandler0(handler sessionHandler) {
 	handler.activated()
 }
 
-// Sets the compression threshold on the connection.
+// SetCompressionThreshold sets the compression threshold on the connection.
 // You are responsible for sending packet.SetCompression beforehand.
 func (c *minecraftConn) SetCompressionThreshold(threshold int) error {
-	c.log.V(1).Info("Update compression", "threshold", threshold)
+	c.log.V(1).Info("update compression", "threshold", threshold)
 	c.decoder.SetCompressionThreshold(threshold)
 	return c.encoder.SetCompression(threshold, c.config().Compression.Level)
 }

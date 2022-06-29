@@ -1,7 +1,6 @@
 package util
 
 import (
-	"crypto/x509"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -48,9 +47,9 @@ func WriteInt8(writer io.Writer, val int8) (err error) {
 
 // equal to WriteByte
 func WriteUint8(writer io.Writer, val uint8) (err error) {
-	var protocol [1]byte
-	protocol[0] = val
-	_, err = writer.Write(protocol[:1])
+	var buf [1]byte
+	buf[0] = val
+	_, err = writer.Write(buf[:1])
 	return
 }
 
@@ -65,9 +64,9 @@ func WriteInt16(writer io.Writer, val int16) (err error) {
 }
 
 func WriteUint16(writer io.Writer, val uint16) (err error) {
-	var protocol [2]byte
-	binary.BigEndian.PutUint16(protocol[:2], val)
-	_, err = writer.Write(protocol[:2])
+	var buf [2]byte
+	binary.BigEndian.PutUint16(buf[:2], val)
+	_, err = writer.Write(buf[:2])
 	return
 }
 
@@ -81,9 +80,9 @@ func WriteInt(writer io.Writer, val int) (err error) {
 }
 
 func WriteUint32(writer io.Writer, val uint32) (err error) {
-	var protocol [4]byte
-	binary.BigEndian.PutUint32(protocol[:4], val)
-	_, err = writer.Write(protocol[:4])
+	var buf [4]byte
+	binary.BigEndian.PutUint32(buf[:4], val)
+	_, err = writer.Write(buf[:4])
 	return
 }
 
@@ -93,9 +92,9 @@ func WriteInt64(writer io.Writer, val int64) (err error) {
 }
 
 func WriteUint64(writer io.Writer, val uint64) (err error) {
-	var protocol [8]byte
-	binary.BigEndian.PutUint64(protocol[:8], val)
-	_, err = writer.Write(protocol[:8])
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:8], val)
+	_, err = writer.Write(buf[:8])
 	return
 }
 
@@ -270,7 +269,7 @@ func WritePlayerKey(wr io.Writer, playerKey crypto.IdentifiedKey) error {
 	if err != nil {
 		return err
 	}
-	err = WriteBytes(wr, x509.MarshalPKCS1PublicKey(playerKey.SignedPublicKey()))
+	err = WriteBytes(wr, playerKey.SignedPublicKeyBytes())
 	if err != nil {
 		return err
 	}

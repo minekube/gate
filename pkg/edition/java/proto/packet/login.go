@@ -80,7 +80,7 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 			return err
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-			err = util.WriteBool(wr, e.Salt != nil)
+			err = util.WriteBool(wr, e.Salt == nil) // yes, write true if no salt
 			if err != nil {
 				return err
 			}
@@ -103,7 +103,7 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 
 func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		e.SharedSecret, err = util.ReadBytesLen(rd, 256)
+		e.SharedSecret, err = util.ReadBytesLen(rd, 128)
 		if err != nil {
 			return
 		}
@@ -113,7 +113,7 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			if err != nil {
 				return err
 			}
-			if ok {
+			if !ok { // yes, bool must be false
 				salt, err := util.ReadInt64(rd)
 				if err != nil {
 					return err

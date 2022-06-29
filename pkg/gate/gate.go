@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/viper"
+	"go.uber.org/multierr"
 
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
@@ -37,6 +38,14 @@ func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errors.ErrMissingConfig
 	}
+
+	// Require no config validation errors
+	warns, errs := options.Config.Validate()
+	if err = multierr.Combine(errs...); err != nil {
+		return nil, fmt.Errorf("config validation errors "+
+			"(errors: %d, warns: %d)", len(errs), len(warns))
+	}
+
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
@@ -124,38 +133,64 @@ func (g *Gate) Bedrock() *bproxy.Proxy {
 // Start starts the Gate instance and all underlying proc.
 func (g *Gate) Start(ctx context.Context) error { return g.proc.Start(ctx) }
 
-// Viper is a viper instance initialized
-// with defaults for the Config struct.
-// It can be used to load in config files.
+// Viper is the default viper instance used by Start to load in a config.Config.
 var Viper = viper.New()
 
-// TODO remove: func init() { config.SetDefaults(Viper) }
+type StartOption func(o *startOptions)
 
-// Start is a convenience function to setup and run a Gate instance.
+type startOptions struct {
+	Config *config.Config
+}
+
+// LoadConfig loads in config.Config from viper.
+// It is used by Start with the packages Viper if no WithConfig option is given.
+func LoadConfig(v *viper.Viper) (*config.Config, error) {
+	// Clone default config
+	cfg := func() config.Config { return config.DefaultConfig }()
+	// Load in Gate config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("error loading config: %w", err)
+	}
+	return &cfg, nil
+}
+
+// WithConfig StartOption for Start.
+func WithConfig(c config.Config) StartOption {
+	return func(o *startOptions) {
+		o.Config = &c
+	}
+}
+
+// Start is a convenience function to set up and run a Gate instance.
 //
 // It sets up a Logger, reads in a Config, validates it and sets up
 // os signal handling before starting the instance.
 //
 // The Gate is shutdown on stop channel close or on occurrence of any
 // significant error. Config validation warnings are logged but ignored.
-func Start(ctx context.Context) error {
-	// Clone default config
-	cfg := func() config.Config { return config.DefaultConfig }()
-	// Load in Gate config
-	if err := Viper.Unmarshal(&cfg); err != nil {
-		return fmt.Errorf("error loading config: %w", err)
+func Start(ctx context.Context, opts ...StartOption) error {
+	c := &startOptions{}
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.Config == nil {
+		cfg, err := LoadConfig(Viper)
+		if err != nil {
+			return err
+		}
+		c.Config = cfg
 	}
 
 	log := logr.FromContextOrDiscard(ctx)
 	configLog := log.WithName("config")
 
 	// Validate Gate config
-	warns, errs := cfg.Validate()
+	warns, errs := c.Config.Validate()
 	for _, e := range errs {
-		configLog.Info("Config validation error", "error", e.Error())
+		configLog.Info("config validation error", "error", e.Error())
 	}
 	for _, w := range warns {
-		configLog.Info("Config validation warn", "warn", w.Error())
+		configLog.Info("config validation warn", "warn", w.Error())
 	}
 	if len(errs) != 0 {
 		// Shouldn't run Gate with validation errors
@@ -166,7 +201,7 @@ func Start(ctx context.Context) error {
 
 	// Setup new Gate instance with loaded config.
 	gate, err := New(Options{
-		Config:   &cfg,
+		Config:   c.Config,
 		EventMgr: event.New(log.WithName("event")),
 	})
 	if err != nil {

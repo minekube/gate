@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -302,9 +303,15 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	}
 
 	b := new(strings.Builder)
-	err := (&codec.Plain{}).Marshal(b, reason)
-	if err != nil {
-		p.log.V(1).Info("Error marshal disconnect reason to plain", "err", err)
+	if t, ok := reason.(*Translation); ok {
+		j, _ := json.Marshal(t)
+		b.WriteString("plain reason: ")
+		b.WriteString(string(j))
+	} else {
+		err := (&codec.Plain{}).Marshal(b, reason)
+		if err != nil {
+			p.log.V(1).Info("Error marshal disconnect reason to plain", "err", err)
+		}
 	}
 	plainReason := b.String()
 

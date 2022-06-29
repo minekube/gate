@@ -3,10 +3,12 @@ package codec
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -26,6 +28,8 @@ var pool = &bufpool.Pool{DisableCalibration: true}
 // Encoder is a synchronized packet encoder.
 type Encoder struct {
 	direction proto.Direction
+	log       logr.Logger
+	hexDump   bool // for debugging
 
 	mu          sync.Mutex // Protects following fields
 	wr          io.Writer  // to underlying writer to write successfully encoded packet to
@@ -38,8 +42,10 @@ type Encoder struct {
 	}
 }
 
-func NewEncoder(w io.Writer, direction proto.Direction) *Encoder {
+func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger, hexDump bool) *Encoder {
 	return &Encoder{
+		log:       log,
+		hexDump:   hexDump,
 		wr:        w,
 		direction: direction,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
@@ -83,6 +89,13 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 
 	if err = packet.Encode(ctx, buf); err != nil {
 		return
+	}
+
+	if e.log.Enabled() { // check enabled for performance reason
+		e.log.Info("encoded packet", "context", ctx.String(), "bytes", buf.Len())
+		if e.hexDump {
+			fmt.Println(hex.Dump(ctx.Payload))
+		}
 	}
 
 	return e.writeBuf(buf) // packet id + data

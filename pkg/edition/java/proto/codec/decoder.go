@@ -3,6 +3,7 @@ package codec
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"sync"
@@ -20,6 +21,7 @@ import (
 // for the Minecraft Java edition.
 type Decoder struct {
 	log       logr.Logger
+	hexDump   bool // for debugging
 	direction proto.Direction
 
 	mu                   sync.Mutex // Protects following field and locked while reading a packet.
@@ -33,17 +35,14 @@ type Decoder struct {
 
 var _ proto.PacketDecoder = (*Decoder)(nil)
 
-func NewDecoder(
-	r io.Reader,
-	direction proto.Direction,
-	log logr.Logger,
-) *Decoder {
+func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger, hexDump bool) *Decoder {
 	return &Decoder{
 		rd:        &fullReader{r}, // using the fullReader is essential here!
 		direction: direction,
 		state:     state.Handshake,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		log:       log,
+		hexDump:   hexDump,
 	}
 }
 
@@ -90,6 +89,17 @@ func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 }
 
 func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
+	if d.log.Enabled() { // check enabled for performance reason
+		defer func() {
+			if err == nil {
+				d.log.Info("decoded packet", "context", ctx.String())
+				if d.hexDump {
+					fmt.Println(hex.Dump(ctx.Payload))
+				}
+			}
+		}()
+	}
+
 	payload, err := d.readPayload()
 	if err != nil {
 		return nil, err
@@ -221,7 +231,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Payload buffer should now be empty.
 	if payload.Len() != 0 {
 		// packet decoder did not read all the packet's data!
-		d.log.V(1).Info("Packet's decoder did not read all of packet's data",
+		d.log.Info("Packet's decoder did not read all of packet's data",
 			"ctx", ctx,
 			"decodedBytes", len(ctx.Payload),
 			"unreadBytes", payload.Len())

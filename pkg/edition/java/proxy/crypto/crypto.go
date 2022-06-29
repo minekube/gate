@@ -4,14 +4,10 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/rsa"
-	"crypto/sha1"
-	"crypto/sha256"
 	"crypto/x509"
 	_ "embed"
-	"encoding/ascii85"
+	"encoding/pem"
 	"fmt"
-	"hash"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +20,7 @@ type IdentifiedKey interface {
 	// SignedPublicKey returns RSA public key.
 	// Note: this key is at least 2048 bits but may be larger.
 	SignedPublicKey() *rsa.PublicKey
+	SignedPublicKeyBytes() []byte
 	// VerifyDataSignature validates a signature against this public key.
 	VerifyDataSignature(signature []byte, toVerify ...[]byte) bool
 }
@@ -69,7 +66,8 @@ type SignedMessage interface {
 }
 
 type identifiedKey struct {
-	p              *rsa.PublicKey
+	publicKeyBytes []byte
+	publicKey      *rsa.PublicKey
 	signature      []byte
 	expiryTemporal time.Time
 
@@ -92,7 +90,8 @@ func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey
 		return nil, fmt.Errorf("expected rsa public key, but got %T", pk)
 	}
 	return &identifiedKey{
-		p:              rsaKey,
+		publicKeyBytes: key,
+		publicKey:      rsaKey,
 		signature:      signature,
 		expiryTemporal: time.UnixMilli(expiry),
 	}, nil
@@ -103,9 +102,15 @@ var yggdrasilSessionPubKeyDER []byte
 
 var yggdrasilSessionPubKey *rsa.PublicKey
 
-func init() {
-	yggdrasilSessionPubKey, _ = x509.ParsePKCS1PublicKey(yggdrasilSessionPubKeyDER)
+func parseYggdrasilSessionPubKey() *rsa.PublicKey {
+	pk, err := x509.ParsePKIXPublicKey(yggdrasilSessionPubKeyDER)
+	if err != nil {
+		panic(err)
+	}
+	return pk.(*rsa.PublicKey)
 }
+
+func init() { yggdrasilSessionPubKey = parseYggdrasilSessionPubKey() }
 
 func (i *identifiedKey) Signer() *rsa.PublicKey {
 	return yggdrasilSessionPubKey
@@ -128,46 +133,51 @@ func (i *identifiedKey) Salt() []byte {
 }
 
 func (i *identifiedKey) SignedPublicKey() *rsa.PublicKey {
-	return i.p
+	return i.publicKey
+}
+
+func (i *identifiedKey) SignedPublicKeyBytes() []byte {
+	return i.publicKeyBytes
 }
 
 func (i *identifiedKey) SignatureValid() bool {
 	i.once.Do(func() {
-		pemKey, err := generatePublicPemFromKey(i.p)
-		if err != nil {
-			i.once.err = err
-			return
-		}
+		pemKey := pemEncodeKey(i.publicKey)
 		expires := i.expiryTemporal.UnixMilli()
-		toVerify := new(bytes.Buffer)
-		asciiEnc := ascii85.NewEncoder(toVerify)
-		_, err = asciiEnc.Write([]byte(fmt.Sprintf("%d%s", expires, pemKey)))
-		if err != nil {
-			i.once.err = err
-			return
-		}
-		if err = asciiEnc.Close(); err != nil {
-			i.once.err = err
-			return
-		}
-		i.once.isSignatureValid = verifySignature(crypto.SHA1, i.p,
-			yggdrasilSessionPubKeyDER, sha1.New(), toVerify.Bytes())
+		toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
+		//exp := new(bytes.Buffer)
+		//_ = util.WriteBytes(exp, expires)
+
+		//data := make([]byte, len(pemKey), len(pemKey)+len(toVerify))
+		//copy(data, pemKey)
+		//data = append(data, toVerify...)
+		//digest := sha1.Sum(data)
+		//i.once.err = rsa.VerifyPKCS1v15(yggdrasilSessionPubKey, crypto.SHA1, digest[:], i.Signature())
+		//if err != nil {
+		//	return
+		//}
+		//i.once.isSignatureValid = err == nil
+
+		i.once.isSignatureValid = verifySignature(
+			crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
 	})
 	return i.once.isSignatureValid
 }
 
 func (i *identifiedKey) VerifyDataSignature(signature []byte, toVerify ...[]byte) bool {
-	return verifySignature(crypto.SHA256, i.p, signature, sha256.New(), toVerify...)
+	return verifySignature(crypto.SHA256, i.publicKey, signature, toVerify...)
 }
 
-func verifySignature(algorithm crypto.Hash, key *rsa.PublicKey, signature []byte, hash hash.Hash, toVerify ...[]byte) bool {
+func verifySignature(algorithm crypto.Hash, key *rsa.PublicKey, signature []byte, toVerify ...[]byte) bool {
 	if len(toVerify) == 0 {
 		return false
 	}
+	hash := algorithm.New()
 	for _, b := range toVerify {
 		_, _ = hash.Write(b)
 	}
-	return nil == rsa.VerifyPKCS1v15(key, algorithm, hash.Sum(nil), signature)
+	err := rsa.VerifyPKCS1v15(key, algorithm, hash.Sum(nil), signature)
+	return err == nil
 }
 
 // Equal checks whether a and b are equal.
@@ -181,17 +191,12 @@ func Equal(a, b IdentifiedKey) bool {
 		a.Signer().Equal(b.Signer())
 }
 
-func generatePublicPemFromKey(publicKey *rsa.PublicKey) (string, error) {
-	encoded, err := x509.MarshalPKIXPublicKey(publicKey)
-	if err != nil {
-		return "", err
-	}
-	b := new(strings.Builder)
-	b.WriteString("-----BEGIN RSA PUBLIC KEY-----\n")
-	b.WriteString(string(encoded))
-	b.WriteRune('\n')
-	b.WriteString("-----END RSA PUBLIC KEY-----\n")
-	return b.String(), nil
+func pemEncodeKey(publicKey *rsa.PublicKey) string {
+	encoded := x509.MarshalPKCS1PublicKey(publicKey)
+	return string(pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: encoded,
+	}))
 }
 
 type (

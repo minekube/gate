@@ -13,7 +13,6 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
-
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -132,7 +131,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return ErrProxyAlreadyRun
 	}
 	p.started = true
-	p.startTime.Store(time.Now().UTC())
+	p.startTime.Store(time.Now())
 	p.log = logr.FromContextOrDiscard(ctx)
 
 	stopListener := make(chan struct{})

@@ -1,15 +1,16 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/binary"
 	"errors"
 	"regexp"
 	"time"
 
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 
 	"github.com/go-logr/logr"
 
@@ -94,18 +95,21 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	playerKey := login.PlayerKey
 	if playerKey != nil {
 		if playerKey.Expired() {
+			l.log.V(1).Info("expired player public key")
 			_ = l.inbound.disconnect(&component.Translation{
 				Key: "multiplayer.disconnect.invalid_public_key_signature",
 			})
 			return
 		}
 
-		if !playerKey.SignatureValid() {
-			_ = l.inbound.disconnect(&component.Translation{
-				Key: "multiplayer.disconnect.invalid_public_key",
-			})
-			return
-		}
+		// todo SignatureValid
+		//if !playerKey.SignatureValid() {
+		//	l.log.V(1).Info("invalid player public key signature")
+		//	_ = l.inbound.disconnect(&component.Translation{
+		//		Key: "multiplayer.disconnect.invalid_public_key",
+		//	})
+		//	return
+		//}
 	} else if l.conn.Protocol().GreaterEqual(version.Minecraft_1_19) &&
 		l.proxy().config.ForceKeyAuthentication {
 		_ = l.inbound.disconnect(&component.Translation{
@@ -144,7 +148,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 			if p, ok := l.conn.c.(GameProfileProvider); ok {
 				sh := newAuthSessionHandler(l.inbound, p.GameProfile(), false)
-				l.conn.setSessionHandler(sh)
+				l.conn.setSessionHandler0(sh)
 				return nil
 			}
 
@@ -163,7 +167,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 		// Offline mode login
 		sh := newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
-		l.conn.setSessionHandler(sh)
+		l.conn.setSessionHandler0(sh)
 		return nil
 	})
 }
@@ -205,9 +209,10 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 			_ = l.conn.closeKnown(true)
 			return
 		}
-		salt := make([]byte, 8)
-		binary.LittleEndian.PutUint64(salt, uint64(*resp.Salt))
-		if !playerKey.VerifyDataSignature(resp.VerifyToken, l.verify, salt) {
+		salt := new(bytes.Buffer)
+		_ = util.WriteInt64(salt, *resp.Salt)
+		valid := playerKey.VerifyDataSignature(resp.VerifyToken, l.verify, salt.Bytes())
+		if !valid {
 			l.conn.log.Info("invalid client public signature")
 			_ = l.conn.closeKnown(true)
 			return
@@ -291,7 +296,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 
 	// All went well, initialize the session.
 	sh := newAuthSessionHandler(l.inbound, gameProfile, true)
-	l.conn.setSessionHandler(sh)
+	l.conn.setSessionHandler0(sh)
 }
 
 var (
