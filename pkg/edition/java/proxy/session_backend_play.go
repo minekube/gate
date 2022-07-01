@@ -263,11 +263,12 @@ func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableC
 		})
 	}
 
-	b.proxy().event.Fire(&PlayerAvailableCommandsEvent{
+	b.proxy().event.FireParallel(&PlayerAvailableCommandsEvent{
 		player:   b.serverConn.player,
 		rootNode: rootNode,
+	}, func(e event.Event) {
+		_ = b.serverConn.player.WritePacket(p)
 	})
-	_ = b.serverConn.player.WritePacket(p)
 }
 
 func filterNode(src brigodier.CommandNode, cmdSrc command.Source) brigodier.CommandNode {

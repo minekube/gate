@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	_ "embed"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,6 +29,20 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
+
+// TODO write utility that records all known packets into gob for use in testing.
+var (
+	//go:embed testdata/PlayerChat-1.19.gob
+	playerChatPacketGob []byte
+	playerChatPacket    = new(PlayerChat)
+)
+
+func init() {
+	err := gob.NewDecoder(bytes.NewReader(playerChatPacketGob)).Decode(&playerChatPacket)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // All packets to test.
 // Empty packets are being initialized with random fake data at runtime.
@@ -171,14 +187,7 @@ var packets = []proto.Packet{
 		ChatTypeRegistry: nil,
 	},
 	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
-	&PlayerChat{
-		Message:       "test message",
-		SignedPreview: false,
-		Unsigned:      false,
-		Expiry:        time.Now(),
-		Signature:     nil,
-		Salt:          nil,
-	},
+	playerChatPacket,
 	&PlayerChatPreview{},
 	&ServerChatPreview{
 		ID:      3,

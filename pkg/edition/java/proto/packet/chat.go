@@ -433,7 +433,7 @@ func (b *ChatBuilder) ToClient() proto.Packet {
 	_ = util.JsonCodec(b.protocol).Marshal(buf, msg)
 	return &LegacyChat{
 		Message: buf.String(),
-		Type:    MessageType(b.type_),
+		Type:    b.type_,
 		Sender:  id,
 	}
 }

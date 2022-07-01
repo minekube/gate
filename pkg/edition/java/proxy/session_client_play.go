@@ -527,16 +527,18 @@ func (c *clientPlaySessionHandler) processCommandMessage(command string, signedC
 		commandline:     command,
 		originalCommand: command,
 	}
-	c.proxy().event.Fire(e)
-	err := c.processCommandExecuteResult(e, signedCommand)
-	if err != nil {
-		c.log.Error(err, "error while running command", "command", command)
-		_ = c.player.SendMessage(&component.Text{
-			Content: "An error occurred while running this command.",
-			S:       component.Style{Color: color.Red},
-		})
-		return
-	}
+	c.proxy().event.FireParallel(e, func(ev event.Event) {
+		e = ev.(*CommandExecuteEvent)
+		err := c.processCommandExecuteResult(e, signedCommand)
+		if err != nil {
+			c.log.Error(err, "error while running command", "command", command)
+			_ = c.player.SendMessage(&component.Text{
+				Content: "An error occurred while running this command.",
+				S:       component.Style{Color: color.Red},
+			})
+			return
+		}
+	})
 }
 
 func (c *clientPlaySessionHandler) processPlayerChat(msg string, original proto.Packet) {
@@ -544,29 +546,36 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, original proto.
 	if serverConn == nil {
 		return
 	}
-	serverMc := serverConn.conn()
-	if serverMc == nil {
+	_, ok := serverConn.ensureConnected()
+	if !ok {
 		return
 	}
 	e := &PlayerChatEvent{
 		player:   c.player,
 		original: msg,
 	}
-	c.proxy().Event().Fire(e)
-	if !e.Allowed() || !c.player.Active() {
-		return
-	}
-	if e.modified != "" {
-		c.log1.Info("player sent chat message",
-			"original", e.Original(), "modified", e.modified)
-		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
-			c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+	c.proxy().Event().FireParallel(e, func(ev event.Event) {
+		e = ev.(*PlayerChatEvent)
+
+		if !e.Allowed() || !c.player.Active() {
+			return
 		}
-		_ = serverMc.WritePacket(packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer())
-		return
-	}
-	c.log1.Info("player sent chat message", "chat", e.Message())
-	_ = serverMc.WritePacket(original)
+		serverMc, ok := serverConn.ensureConnected()
+		if !ok {
+			return
+		}
+		if e.modified != "" {
+			c.log1.Info("player sent chat message",
+				"original", e.Original(), "modified", e.modified)
+			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
+				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+			}
+			_ = serverMc.WritePacket(packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer())
+			return
+		}
+		c.log1.Info("player sent chat message", "chat", e.Message())
+		_ = serverMc.WritePacket(original)
+	})
 }
 
 func (c *clientPlaySessionHandler) validateChat(msg string) bool {

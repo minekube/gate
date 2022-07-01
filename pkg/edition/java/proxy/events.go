@@ -344,8 +344,11 @@ func (e *PostLoginEvent) Player() Player {
 //
 //
 
-// PlayerChooseInitialServerEvent is fired when a player has finished
-// connecting to the proxy and we need to choose the first server to connect to.
+// PlayerChooseInitialServerEvent is fired when a player has finished the login process,
+// and we need to choose the first server to connect to.
+// The proxy will wait on this event to finish firing before initiating the connection
+// but you should try to limit the work done in this event.
+// Failures will be handled by KickedFromServerEvent as normal.
 type PlayerChooseInitialServerEvent struct {
 	player        Player
 	initialServer RegisteredServer // May be nil if no server is configured.
@@ -630,9 +633,6 @@ func (p *PluginMessageEvent) SetForward(forward bool) {
 }
 func (p *PluginMessageEvent) Allowed() bool {
 	return p.forward
-}
-
-type PluginMessageForwardResult struct {
 }
 
 //

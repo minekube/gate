@@ -107,31 +107,33 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 
 	player.setState(state.Play)
 	loginEvent := &LoginEvent{player: player}
-	a.event().Fire(loginEvent)
+	a.event().FireParallel(loginEvent, func(ev event.Event) {
+		loginEvent = ev.(*LoginEvent)
 
-	if !player.Active() {
-		a.event().Fire(&DisconnectEvent{
-			player:      player,
-			loginStatus: CanceledByUserBeforeCompleteLoginStatus,
-		})
-		return
-	}
+		if !player.Active() {
+			a.event().Fire(&DisconnectEvent{
+				player:      player,
+				loginStatus: CanceledByUserBeforeCompleteLoginStatus,
+			})
+			return
+		}
 
-	if !loginEvent.Allowed() {
-		player.Disconnect(loginEvent.Reason())
-		return
-	}
+		if !loginEvent.Allowed() {
+			player.Disconnect(loginEvent.Reason())
+			return
+		}
 
-	if !a.proxy().registerConnection(player) {
-		player.Disconnect(alreadyConnected)
-		return
-	}
+		if !a.proxy().registerConnection(player) {
+			player.Disconnect(alreadyConnected)
+			return
+		}
 
-	// Login is done now, just connect player to first server and
-	// let InitialConnectSessionHandler do further work.
-	player.setSessionHandler(newInitialConnectSessionHandler(player))
-	a.event().Fire(&PostLoginEvent{player: player})
-	a.connectToInitialServer(player)
+		// Login is done now, just connect player to first server and
+		// let InitialConnectSessionHandler do further work.
+		player.setSessionHandler(newInitialConnectSessionHandler(player))
+		a.event().Fire(&PostLoginEvent{player: player})
+		a.connectToInitialServer(player)
+	})
 }
 
 func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
