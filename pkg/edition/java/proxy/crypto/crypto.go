@@ -6,8 +6,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	_ "embed"
-	"encoding/pem"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -142,28 +144,15 @@ func (i *identifiedKey) SignedPublicKeyBytes() []byte {
 
 func (i *identifiedKey) SignatureValid() bool {
 	i.once.Do(func() {
-		pemKey := pemEncodeKey(i.publicKey)
+		pemKey := pemEncodeKey(i.publicKeyBytes, "RSA PUBLIC KEY")
 		expires := i.expiryTemporal.UnixMilli()
 		toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
-		//exp := new(bytes.Buffer)
-		//_ = util.WriteBytes(exp, expires)
-
-		//data := make([]byte, len(pemKey), len(pemKey)+len(toVerify))
-		//copy(data, pemKey)
-		//data = append(data, toVerify...)
-		//digest := sha1.Sum(data)
-		//i.once.err = rsa.VerifyPKCS1v15(yggdrasilSessionPubKey, crypto.SHA1, digest[:], i.Signature())
-		//if err != nil {
-		//	return
-		//}
-		//i.once.isSignatureValid = err == nil
 
 		i.once.isSignatureValid = verifySignature(
 			crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
 	})
 	return i.once.isSignatureValid
 }
-
 func (i *identifiedKey) VerifyDataSignature(signature []byte, toVerify ...[]byte) bool {
 	return verifySignature(crypto.SHA256, i.publicKey, signature, toVerify...)
 }
@@ -176,7 +165,8 @@ func verifySignature(algorithm crypto.Hash, key *rsa.PublicKey, signature []byte
 	for _, b := range toVerify {
 		_, _ = hash.Write(b)
 	}
-	err := rsa.VerifyPKCS1v15(key, algorithm, hash.Sum(nil), signature)
+	hashed := hash.Sum(nil)
+	err := rsa.VerifyPKCS1v15(key, algorithm, hashed, signature)
 	return err == nil
 }
 
@@ -191,12 +181,12 @@ func Equal(a, b IdentifiedKey) bool {
 		a.Signer().Equal(b.Signer())
 }
 
-func pemEncodeKey(publicKey *rsa.PublicKey) string {
-	encoded := x509.MarshalPKCS1PublicKey(publicKey)
-	return string(pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: encoded,
-	}))
+func pemEncodeKey(key []byte, header string) string {
+	w := new(strings.Builder)
+	enc := base64.NewEncoder(base64.StdEncoding, newLineSplitterWriter(76, []byte("\n"), w))
+	_, _ = io.Copy(enc, bytes.NewReader(key))
+	const format = "-----BEGIN %s-----\n%s\n-----END %s-----\n"
+	return fmt.Sprintf(format, header, w.String(), header)
 }
 
 type (

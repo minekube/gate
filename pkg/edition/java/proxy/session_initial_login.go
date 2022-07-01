@@ -102,14 +102,13 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			return
 		}
 
-		// todo SignatureValid
-		//if !playerKey.SignatureValid() {
-		//	l.log.V(1).Info("invalid player public key signature")
-		//	_ = l.inbound.disconnect(&component.Translation{
-		//		Key: "multiplayer.disconnect.invalid_public_key",
-		//	})
-		//	return
-		//}
+		if !playerKey.SignatureValid() {
+			l.log.V(1).Info("invalid player public key signature")
+			_ = l.inbound.disconnect(&component.Translation{
+				Key: "multiplayer.disconnect.invalid_public_key",
+			})
+			return
+		}
 	} else if l.conn.Protocol().GreaterEqual(version.Minecraft_1_19) &&
 		l.proxy().config.ForceKeyAuthentication {
 		_ = l.inbound.disconnect(&component.Translation{
