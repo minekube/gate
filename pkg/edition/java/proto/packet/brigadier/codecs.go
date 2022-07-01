@@ -44,7 +44,7 @@ var (
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			_, ok := v.(*brigodier.BoolArgumentType)
 			if !ok {
-				return fmt.Errorf("execpted *brigodier.BoolArgumentType but got %T", v)
+				return fmt.Errorf("expected *brigodier.BoolArgumentType but got %T", v)
 			}
 			return nil
 		},
@@ -54,11 +54,11 @@ var (
 	}
 	ByteArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
-			b, ok := v.(byte)
+			b, ok := v.(ByteArgumentType)
 			if !ok {
-				return fmt.Errorf("execpted byte but got %T", v)
+				return fmt.Errorf("expected byte but got %T", v)
 			}
-			return util.WriteByte(wr, b)
+			return util.WriteByte(wr, byte(b))
 		},
 		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
 			b, err := util.ReadByte(rd)

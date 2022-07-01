@@ -47,6 +47,12 @@ func Encode(wr io.Writer, argType brigodier.ArgumentType, protocol proto.Protoco
 }
 func (r *argPropReg) Encode(wr io.Writer, argType brigodier.ArgumentType, protocol proto.Protocol) error {
 	switch property := argType.(type) {
+	case *passthroughProperty:
+		err := r.writeIdentifier(wr, property.identifier, protocol)
+		if err != nil {
+			return err
+		}
+		return nil
 	case *ModArgumentProperty:
 		err := r.writeIdentifier(wr, property.Identifier, protocol)
 		if err != nil {
@@ -79,14 +85,32 @@ func (r *argPropReg) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.Ar
 	if codec == nil {
 		return nil, fmt.Errorf("unknown argument type identifier %q", identifier)
 	}
-	return codec.Decode(rd, protocol)
+	result, err := codec.Decode(rd, protocol)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return &passthroughProperty{
+			identifier: identifier,
+		}, nil
+	}
+	return result, nil
 }
+
+type passthroughProperty struct{ identifier *ArgumentIdentifier }
+
+var _ brigodier.ArgumentType = (*passthroughProperty)(nil)
+
+func (p *passthroughProperty) Parse(rd *brigodier.StringReader) (any, error) {
+	return nil, errors.New("unsupported operation")
+}
+func (p *passthroughProperty) String() string { return p.identifier.id }
 
 func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifier, protocol proto.Protocol) error {
 	if protocol.GreaterEqual(version.Minecraft_1_19) {
 		id, ok := identifier.idByProtocol[protocol]
 		if !ok {
-			return fmt.Errorf("don't know how to encode type %d", id)
+			return fmt.Errorf("don't know how to encode type %s", identifier)
 		}
 		return util.WriteVarInt(wr, id)
 	}
@@ -102,10 +126,8 @@ func (r *argPropReg) readIdentifier(rd io.Reader, protocol proto.Protocol) (*Arg
 			return nil, err
 		}
 		for _, i := range r.byIdentifier {
-			fmt.Println(i)
 			v, ok := i.idByProtocol[protocol]
 			if ok && v == id {
-				fmt.Println(i, v)
 				return i, nil
 			}
 		}
@@ -149,7 +171,7 @@ func init() {
 	register(id("brigadier:string", mapSet(version.Minecraft_1_19, 5)), brigodier.String, StringArgumentPropertyCodec)
 
 	// Minecraft argument types
-	emptyWithCodec(id("minecraft:entity", mapSet(version.Minecraft_1_19, 6)), ByteArgumentPropertyCodec)
+	register(id("minecraft:entity", mapSet(version.Minecraft_1_19, 6)), ByteArgumentType(0), ByteArgumentPropertyCodec)
 	empty(id("minecraft:game_profile", mapSet(version.Minecraft_1_19, 7)))
 	empty(id("minecraft:block_pos", mapSet(version.Minecraft_1_19, 8)))
 	empty(id("minecraft:column_pos", mapSet(version.Minecraft_1_19, 9)))
@@ -172,7 +194,7 @@ func init() {
 	empty(id("minecraft:angle", mapSet(version.Minecraft_1_19, 26))) // added in 1.16.2
 	empty(id("minecraft:rotation", mapSet(version.Minecraft_1_19, 27)))
 	empty(id("minecraft:scoreboard_slot", mapSet(version.Minecraft_1_19, 28)))
-	emptyWithCodec(id("minecraft:score_holder", mapSet(version.Minecraft_1_19, 29)), ByteArgumentPropertyCodec)
+	register(id("minecraft:score_holder", mapSet(version.Minecraft_1_19, 29)), ByteArgumentType(0), ByteArgumentPropertyCodec)
 	empty(id("minecraft:swizzle", mapSet(version.Minecraft_1_19, 30)))
 	empty(id("minecraft:team", mapSet(version.Minecraft_1_19, 31)))
 	empty(id("minecraft:item_slot", mapSet(version.Minecraft_1_19, 32)))
