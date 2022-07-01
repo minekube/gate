@@ -50,9 +50,10 @@ type minecraftConn struct {
 	writeBuf *bufio.Writer
 	encoder  *codec.Encoder
 
-	closed          chan struct{} // indicates connection is closed
-	closeOnce       sync.Once     // Makes sure the connection is closed once, while blocking proceeding calls.
-	knownDisconnect atomic.Bool   // Silences disconnect (any error is known)
+	ctx             context.Context // is canceled when connection closed
+	cancelCtx       context.CancelFunc
+	closeOnce       sync.Once   // Makes sure the connection is closed once, while blocking proceeding calls.
+	knownDisconnect atomic.Bool // Silences disconnect (any error is known)
 
 	protocol proto.Protocol // Client's protocol version.
 
@@ -64,6 +65,7 @@ type minecraftConn struct {
 
 // newMinecraftConn returns a new Minecraft client connection.
 func newMinecraftConn(
+	ctx context.Context,
 	base net.Conn,
 	proxy *Proxy,
 	playerConn bool,
@@ -81,18 +83,20 @@ func newMinecraftConn(
 	writeBuf := bufio.NewWriter(base)
 	readBuf := bufio.NewReader(base)
 
+	ctx, cancel := context.WithCancel(ctx)
 	return &minecraftConn{
-		proxy:    proxy,
-		log:      log,
-		c:        base,
-		closed:   make(chan struct{}),
-		writeBuf: writeBuf,
-		readBuf:  readBuf,
-		encoder:  codec.NewEncoder(writeBuf, out, log.V(2).WithName("encoder")),
-		decoder:  codec.NewDecoder(readBuf, in, log.V(2).WithName("decoder")),
-		state:    state.Handshake,
-		protocol: version.Minecraft_1_7_2.Protocol,
-		connType: undeterminedConnectionType,
+		proxy:     proxy,
+		log:       log,
+		c:         base,
+		ctx:       ctx,
+		cancelCtx: cancel,
+		writeBuf:  writeBuf,
+		readBuf:   readBuf,
+		encoder:   codec.NewEncoder(writeBuf, out, log.V(2).WithName("encoder")),
+		decoder:   codec.NewDecoder(readBuf, in, log.V(2).WithName("decoder")),
+		state:     state.Handshake,
+		protocol:  version.Minecraft_1_7_2.Protocol,
+		connType:  undeterminedConnectionType,
 	}
 }
 
@@ -263,6 +267,8 @@ func (c *minecraftConn) BufferPayload(payload []byte) (err error) {
 	return err
 }
 
+func (c *minecraftConn) Context() context.Context { return c.ctx }
+
 // returns the proxy's config
 func (c *minecraftConn) config() *config.Config {
 	return c.proxy.config
@@ -287,7 +293,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 			c.knownDisconnect.Store(true)
 		}
 
-		close(c.closed)
+		c.cancelCtx()
 		err = c.c.Close()
 
 		if sh := c.SessionHandler(); sh != nil {
@@ -340,7 +346,7 @@ func (c *minecraftConn) closeWith(packet proto.Packet) (err error) {
 // Closed returns true if the connection is closed.
 func (c *minecraftConn) Closed() bool {
 	select {
-	case <-c.closed:
+	case <-c.ctx.Done():
 		return true
 	default:
 		return false
@@ -450,7 +456,7 @@ type Inbound interface {
 	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
 	RemoteAddr() net.Addr     // The player's IP address.
 	Active() bool             // Whether the connection remains active.
-	// Closed returns a receive-only channel that can be used to know when the connection was closed.
+	// Context returns the connection's context that can be used to know when the connection was closed.
 	// (e.g. for canceling work in an event handler)
-	Closed() <-chan struct{}
+	Context() context.Context
 }

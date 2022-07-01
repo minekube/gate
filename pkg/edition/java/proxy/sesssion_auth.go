@@ -1,8 +1,6 @@
 package proxy
 
 import (
-	"context"
-
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
@@ -151,10 +149,8 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		player.Disconnect(noAvailableServers) // Will call disconnected() in InitialConnectSessionHandler
 		return
 	}
-	ctx, cancel := withConnectionTimeout(context.Background(), a.proxy().config)
+	ctx, cancel := withConnectionTimeout(player.Context(), a.proxy().config)
 	defer cancel()
-	ctx, pcancel := player.newContext(ctx) // todo use player's connection context
-	defer pcancel()
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 

@@ -486,8 +486,16 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		return
 	}
 
+	// Create context for connection
+	ctx, ok := raw.(context.Context)
+	if !ok {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Create client connection
-	conn := newMinecraftConn(raw, p, true)
+	conn := newMinecraftConn(ctx, raw, p, true)
 	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
 	// Read packets in loop
 	conn.readLoop()

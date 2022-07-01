@@ -260,12 +260,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	}
 
 	log := l.log.WithName("authn")
-	ctx, cancel := func() (context.Context, func()) {
-		ctx := logr.NewContext(context.Background(), log)
-		tCtx, tCancel := context.WithTimeout(ctx, 30*time.Second)
-		ctx, cancel := l.conn.newContext(tCtx)
-		return ctx, func() { tCancel(); cancel() }
-	}()
+	ctx, cancel := context.WithTimeout(logr.NewContext(l.conn.Context(), log), 30*time.Second)
 	defer cancel()
 
 	authResp, err := authn.AuthenticateJoin(ctx, serverID, l.login.Username, optionalUserIP)

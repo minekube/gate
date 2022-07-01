@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -665,10 +664,6 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 	})
 }
 
-func (p *connectedPlayer) Closed() <-chan struct{} {
-	return p.minecraftConn.closed
-}
-
 // Settings returns the players client settings.
 // If not known already, returns player.DefaultSettings.
 func (p *connectedPlayer) Settings() player.Settings {
@@ -678,21 +673,6 @@ func (p *connectedPlayer) Settings() player.Settings {
 		return p.settings
 	}
 	return player.DefaultSettings
-}
-
-// returns a new player context that is canceled when:
-//  - connection disconnects
-//  - parent was canceled
-func (c *minecraftConn) newContext(parent context.Context) (ctx context.Context, cancel func()) {
-	ctx, cancel = context.WithCancel(parent)
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-c.closed: // TODO use context.Context all along so we don't need to start a new goroutine
-			cancel()
-		}
-	}()
-	return ctx, cancel
 }
 
 func randomUint64() uint64 {

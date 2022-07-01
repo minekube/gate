@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -58,9 +59,9 @@ func (l *loginInboundConn) RemoteAddr() net.Addr { return l.delegate.RemoteAddr(
 
 func (l *loginInboundConn) Active() bool { return l.delegate.Active() }
 
-func (l *loginInboundConn) Closed() <-chan struct{} { return l.delegate.Closed() }
-
 func (l *loginInboundConn) IdentifiedKey() crypto.IdentifiedKey { return l.playerKey }
+
+func (l *loginInboundConn) Context() context.Context { return l.delegate.Context() }
 
 func (l *loginInboundConn) SendLoginPluginMessage(identifier message.ChannelIdentifier, contents []byte, consumer MessageConsumer) error {
 	if identifier == nil {

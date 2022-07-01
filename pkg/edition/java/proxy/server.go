@@ -341,7 +341,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	debug.Info("Connected to server")
 
 	// Wrap server connection
-	serverMc := newMinecraftConn(conn, s.player.proxy, false)
+	serverMc := newMinecraftConn(context.Background(), conn, s.player.proxy, false)
 	resultChan := make(chan *connResponse, 1)
 	serverMc.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
 		Context:  ctx,

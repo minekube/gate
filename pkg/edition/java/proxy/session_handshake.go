@@ -165,10 +165,6 @@ func newInitialInbound(c *minecraftConn, virtualHost net.Addr) *initialInbound {
 	}
 }
 
-func (i *initialInbound) Closed() <-chan struct{} {
-	return i.minecraftConn.closed
-}
-
 func (i *initialInbound) VirtualHost() net.Addr {
 	return i.virtualHost
 }

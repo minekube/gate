@@ -627,7 +627,7 @@ func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandEx
 
 func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err error) {
 	// Make invoke context
-	ctx, cancel := c.player.newContext(context.Background())
+	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
 
 	// Dispatch command
@@ -681,7 +681,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 		return
 	}
 
-	ctx, cancel := c.player.newContext(context.Background())
+	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
 	suggestions, err := c.proxy().command.OfferSuggestions(ctx, c.player, cmd)
 	if err != nil {
