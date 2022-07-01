@@ -664,8 +664,9 @@ func (s *PlayerSettingsChangedEvent) Settings() player.Settings {
 // PlayerChatEvent is fired when a player sends a chat message.
 // Note that messages with a leading "/" do not trigger this event, but instead CommandExecuteEvent.
 type PlayerChatEvent struct {
-	player  Player
-	message string
+	player   Player
+	original string
+	modified string
 
 	denied bool
 }
@@ -675,9 +676,25 @@ func (c *PlayerChatEvent) Player() Player {
 	return c.player
 }
 
-// Message returns the message the player sent.
+// Message returns the message that will be sent by the player.
 func (c *PlayerChatEvent) Message() string {
-	return c.message
+	if c.modified == "" {
+		return c.original
+	}
+	return c.modified
+}
+
+// SetMessage modifies the message of the player.
+func (c *PlayerChatEvent) SetMessage(msg string) {
+	if msg == c.original {
+		return // not modified
+	}
+	c.modified = msg
+}
+
+// Original returns the original message the player sent.
+func (c *PlayerChatEvent) Original() string {
+	return c.original
 }
 
 // SetAllowed sets whether the chat message is allowed.

@@ -441,7 +441,7 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
 	if strings.HasPrefix(p.Message, "/") {
 		c.processCommandMessage(strings.TrimPrefix(p.Message, "/"), nil)
 	} else {
-		c.processPlayerChat(p.Message)
+		c.processPlayerChat(p.Message, p)
 	}
 }
 
@@ -504,12 +504,12 @@ func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
 			if !c.tickLastMessage(signedChat) {
 				return
 			}
-			c.processPlayerChat(p.Message)
+			c.processPlayerChat(p.Message, p)
 			return
 		}
 	}
 
-	c.processPlayerChat(p.Message)
+	c.processPlayerChat(p.Message, p)
 }
 
 func (c *clientPlaySessionHandler) processCommandMessage(command string, signedCommand *crypto.SignedChatCommand) {
@@ -539,7 +539,7 @@ func (c *clientPlaySessionHandler) processCommandMessage(command string, signedC
 	}
 }
 
-func (c *clientPlaySessionHandler) processPlayerChat(msg string) {
+func (c *clientPlaySessionHandler) processPlayerChat(msg string, original proto.Packet) {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -549,18 +549,24 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string) {
 		return
 	}
 	e := &PlayerChatEvent{
-		player:  c.player,
-		message: msg,
+		player:   c.player,
+		original: msg,
 	}
 	c.proxy().Event().Fire(e)
 	if !e.Allowed() || !c.player.Active() {
 		return
 	}
-	c.log1.Info("player sent chat message", "chat", msg)
-	if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
-		c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+	if e.modified != "" {
+		c.log1.Info("player sent chat message",
+			"original", e.Original(), "modified", e.modified)
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
+			c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+		}
+		_ = serverMc.WritePacket(packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer())
+		return
 	}
-	_ = serverMc.WritePacket(packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer())
+	c.log1.Info("player sent chat message", "chat", e.Message())
+	_ = serverMc.WritePacket(original)
 }
 
 func (c *clientPlaySessionHandler) validateChat(msg string) bool {

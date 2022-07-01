@@ -10,8 +10,8 @@ import (
 
 type (
 	ArgumentIdentifier struct {
-		id          string
-		versionByID map[proto.Protocol]int
+		id           string
+		idByProtocol map[proto.Protocol]int
 	}
 	versionSet struct {
 		version proto.Protocol
@@ -21,22 +21,22 @@ type (
 
 func newArgIdentifier(id string, versions ...versionSet) (*ArgumentIdentifier, error) {
 	identifier := &ArgumentIdentifier{
-		id:          id,
-		versionByID: map[proto.Protocol]int{},
+		id:           id,
+		idByProtocol: map[proto.Protocol]int{},
 	}
 
 	var previous *proto.Protocol
 	for i := range versions {
 		current := versions[i]
 		if !current.version.GreaterEqual(version.Minecraft_1_19) {
-			return identifier, fmt.Errorf("version %s too old for ID index", current)
+			return nil, fmt.Errorf("version %s too old for ID index", current)
 		}
-		if !(previous == nil || *previous < current.version) {
-			return identifier, errors.New("invalid protocol version order")
+		if !(previous == nil || *previous > current.version) {
+			return nil, errors.New("invalid protocol version order")
 		}
 		for _, v := range version.Versions {
 			if v.Protocol >= current.version {
-				identifier.versionByID[v.Protocol] = current.id
+				identifier.idByProtocol[v.Protocol] = current.id
 			}
 		}
 		previous = &current.version

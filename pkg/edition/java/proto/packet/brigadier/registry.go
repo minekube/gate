@@ -1,6 +1,7 @@
 package brigadier
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -11,23 +12,23 @@ import (
 )
 
 var registry = &argPropReg{
-	byId:     map[string]ArgumentPropertyCodec{},
-	byType:   map[string]ArgumentPropertyCodec{},
-	typeToID: map[string]*ArgumentIdentifier{},
-	id:       map[string]*ArgumentIdentifier{},
+	byId:         map[string]ArgumentPropertyCodec{},
+	byType:       map[string]ArgumentPropertyCodec{},
+	typeToID:     map[string]*ArgumentIdentifier{},
+	byIdentifier: map[string]*ArgumentIdentifier{},
 }
 
 // argument property registry
 type argPropReg struct {
-	byId     map[string]ArgumentPropertyCodec
-	byType   map[string]ArgumentPropertyCodec
-	typeToID map[string]*ArgumentIdentifier
-
-	id map[string]*ArgumentIdentifier
+	byId         map[string]ArgumentPropertyCodec
+	byType       map[string]ArgumentPropertyCodec
+	typeToID     map[string]*ArgumentIdentifier
+	byIdentifier map[string]*ArgumentIdentifier
 }
 
 func (r *argPropReg) empty(identifier *ArgumentIdentifier, codec ArgumentPropertyCodec) {
 	r.byId[identifier.id] = codec
+	r.byIdentifier[identifier.id] = identifier
 }
 
 func (r *argPropReg) register(
@@ -35,7 +36,7 @@ func (r *argPropReg) register(
 	argType brigodier.ArgumentType,
 	codec ArgumentPropertyCodec,
 ) {
-	r.id[identifier.id] = identifier
+	r.byIdentifier[identifier.id] = identifier
 	r.byId[identifier.id] = codec
 	r.byType[argType.String()] = codec
 	r.typeToID[argType.String()] = identifier
@@ -83,7 +84,7 @@ func (r *argPropReg) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.Ar
 
 func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifier, protocol proto.Protocol) error {
 	if protocol.GreaterEqual(version.Minecraft_1_19) {
-		id, ok := identifier.versionByID[protocol]
+		id, ok := identifier.idByProtocol[protocol]
 		if !ok {
 			return fmt.Errorf("don't know how to encode type %d", id)
 		}
@@ -91,15 +92,20 @@ func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifie
 	}
 	return util.WriteString(wr, identifier.id)
 }
+
+var errIdentifierNotFound = errors.New("identifier not found")
+
 func (r *argPropReg) readIdentifier(rd io.Reader, protocol proto.Protocol) (*ArgumentIdentifier, error) {
 	if protocol.GreaterEqual(version.Minecraft_1_19) {
 		id, err := util.ReadVarInt(rd)
 		if err != nil {
 			return nil, err
 		}
-		for _, i := range r.id {
-			v, ok := i.versionByID[protocol]
+		for _, i := range r.byIdentifier {
+			fmt.Println(i)
+			v, ok := i.idByProtocol[protocol]
 			if ok && v == id {
+				fmt.Println(i, v)
 				return i, nil
 			}
 		}
@@ -108,13 +114,12 @@ func (r *argPropReg) readIdentifier(rd io.Reader, protocol proto.Protocol) (*Arg
 		if err != nil {
 			return nil, err
 		}
-		for _, i := range r.id {
-			if i.id == identifier {
-				return i, nil
-			}
+		i, ok := r.byIdentifier[identifier]
+		if ok {
+			return i, nil
 		}
 	}
-	return nil, nil
+	return nil, errIdentifierNotFound
 }
 
 func init() {

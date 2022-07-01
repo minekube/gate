@@ -92,7 +92,7 @@ func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 	if d.log.Enabled() { // check enabled for performance reason
 		defer func() {
-			if ctx != nil {
+			if ctx != nil && ctx.KnownPacket {
 				d.log.Info("decoded packet", "context", ctx.String())
 				if d.hexDump {
 					fmt.Println(hex.Dump(ctx.Payload))
