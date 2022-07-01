@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -35,14 +36,14 @@ type Decoder struct {
 
 var _ proto.PacketDecoder = (*Decoder)(nil)
 
-func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger, hexDump bool) *Decoder {
+func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger) *Decoder {
 	return &Decoder{
 		rd:        &fullReader{r}, // using the fullReader is essential here!
 		direction: direction,
 		state:     state.Handshake,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		log:       log,
-		hexDump:   hexDump,
+		hexDump:   os.Getenv("HEXDUMP") == "true",
 	}
 }
 
@@ -91,7 +92,7 @@ func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 	if d.log.Enabled() { // check enabled for performance reason
 		defer func() {
-			if err == nil {
+			if ctx != nil {
 				d.log.Info("decoded packet", "context", ctx.String())
 				if d.hexDump {
 					fmt.Println(hex.Dump(ctx.Payload))

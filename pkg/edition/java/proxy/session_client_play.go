@@ -259,8 +259,7 @@ func (c *clientPlaySessionHandler) parseChannels(packet *plugin.Message) ([]mess
 
 // Handles the JoinGame packet and is responsible for handling the client-side
 // switching servers in the proxy.
-func (c *clientPlaySessionHandler) handleBackendJoinGame(
-	joinGame *packet.JoinGame, destination *serverConnection) (err error) {
+func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext, joinGame *packet.JoinGame, destination *serverConnection) (err error) {
 	serverMc, ok := destination.ensureConnected()
 	if !ok {
 		return errors.New("no backend server connection")
@@ -431,6 +430,10 @@ func (c *clientPlaySessionHandler) proxy() *Proxy {
 }
 
 func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
 	if !c.validateChat(p.Message) {
 		return
 	}
@@ -477,6 +480,10 @@ func (c *clientPlaySessionHandler) tickLastMessage(nextMessage *crypto.SignedCha
 }
 
 func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
 	if !c.validateChat(p.Message) {
 		return
 	}
@@ -564,8 +571,14 @@ func (c *clientPlaySessionHandler) validateChat(msg string) bool {
 	return true
 }
 
-func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandExecuteEvent, signedCommand *crypto.SignedChatCommand) (err error) {
+func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandExecuteEvent, signedCommand *crypto.SignedChatCommand) error {
 	if !result.Allowed() || !c.player.Active() {
+		return nil
+	}
+
+	smc, ok := c.player.ensureBackendConnection()
+	if !ok {
+		c.player.Disconnect(internalServerConnectionError)
 		return nil
 	}
 
@@ -587,7 +600,7 @@ func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandEx
 		} else {
 			write.Message("/" + result.Command())
 		}
-		return c.player.WritePacket(write.ToServer())
+		return smc.WritePacket(write.ToServer())
 	}
 
 	if result.Forward() {

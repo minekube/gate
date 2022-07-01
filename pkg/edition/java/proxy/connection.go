@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -87,8 +88,8 @@ func newMinecraftConn(
 		closed:   make(chan struct{}),
 		writeBuf: writeBuf,
 		readBuf:  readBuf,
-		encoder:  codec.NewEncoder(writeBuf, out, log.V(2).WithName("encoder"), proxy.config.Debug),
-		decoder:  codec.NewDecoder(readBuf, in, log.V(2).WithName("decoder"), proxy.config.Debug),
+		encoder:  codec.NewEncoder(writeBuf, out, log.V(2).WithName("encoder")),
+		decoder:  codec.NewDecoder(readBuf, in, log.V(2).WithName("decoder")),
 		state:    state.Handshake,
 		protocol: version.Minecraft_1_7_2.Protocol,
 		connType: undeterminedConnectionType,
@@ -211,7 +212,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
-	c.log.V(1).Info("Error writing packet, closing connection", "err", err)
+	c.log.V(1).Info("error writing packet, closing connection", "err", err)
 }
 
 // WritePacket writes a packet to the connection's
@@ -293,7 +294,8 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 			sh.disconnected()
 
 			if p, ok := sh.(interface{ player_() *connectedPlayer }); ok && !c.knownDisconnect.Load() {
-				p.player_().log.Info("player has disconnected")
+				p.player_().log.Info("player has disconnected",
+					"sessionHandler", fmt.Sprintf("%T", sh))
 			}
 		}
 	})

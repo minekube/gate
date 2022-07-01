@@ -372,7 +372,6 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		}
 		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
 	}
-
 	if err = serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
 	}

@@ -312,7 +312,7 @@ func (p *connectedPlayer) tickResourcePackQueue() error {
 	}
 
 	req := &packet.ResourcePackRequest{
-		Url:      queued.URL,
+		URL:      queued.URL,
 		Required: queued.ShouldForce,
 		Prompt:   queued.Prompt,
 	}

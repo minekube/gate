@@ -67,7 +67,7 @@ func (b *backendTransitionSessionHandler) handlePacket(pc *proto.PacketContext) 
 	}
 	switch p := pc.Packet.(type) {
 	case *packet.JoinGame:
-		b.handleJoinGame(p)
+		b.handleJoinGame(pc, p)
 	case *packet.KeepAlive:
 		b.handleKeepAlive(p)
 	case *packet.Disconnect:
@@ -155,7 +155,7 @@ func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Mes
 	_ = b.serverConn.player.WritePacket(packet)
 }
 
-func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
+func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext, p *packet.JoinGame) {
 	smc, ok := b.serverConn.ensureConnected()
 	if !ok {
 		return
@@ -163,7 +163,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 
 	failResult := func(format string, a ...any) {
 		err := fmt.Errorf(format, a...)
-		b.log.Error(err, "Unable to switch player to new server, disconnecting")
+		b.log.Error(err, "unable to switch player to new server, disconnecting")
 		b.serverConn.player.Disconnect(internalServerConnectionError)
 		b.requestCtx.result(nil, err)
 	}
@@ -205,9 +205,9 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	}
 
 	if previousServer == nil {
-		b.log.Info("Player joining initial server")
+		b.log.Info("player joining initial server")
 	} else {
-		b.log.Info("Player switching the server",
+		b.log.Info("player switching the server",
 			"previous", previousServer.ServerInfo().Name(),
 			"previousAddr", previousServer.ServerInfo().Addr())
 	}
@@ -221,7 +221,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(p *packet.JoinGame) {
 	}
 	b.serverConn.player.minecraftConn.mu.Unlock()
 
-	if err := playHandler.handleBackendJoinGame(p, b.serverConn); err != nil {
+	if err := playHandler.handleBackendJoinGame(pc, p, b.serverConn); err != nil {
 		failResult("JoinGame packet could not be handled, client-side switching server failed: %w", err)
 		return // not handled
 	}

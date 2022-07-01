@@ -2,7 +2,10 @@ package proxy
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"reflect"
+	"regexp"
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
@@ -57,7 +60,10 @@ func (b *backendPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *packet.PlayerListItem:
 		b.handlePlayerListItem(p, pc)
-	// TODO case *packet.ResourcePackRequest:
+	case *packet.ResourcePackRequest:
+		b.handleResourcePacketRequest(p)
+	case *packet.ServerData:
+		b.handleServerData(p)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -167,6 +173,67 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 			})
 		}
 	})
+}
+
+func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
+	ping := newInitialPing(b.proxy(), b.serverConn.player.protocol)
+	e := &PingEvent{
+		inbound: b.serverConn.player,
+		ping:    ping,
+	}
+	b.proxy().event.FireParallel(e, func(ev event.Event) {
+		e = ev.(*PingEvent)
+		if e.ping == nil {
+			return
+		}
+		if !e.Connection().Active() {
+			return
+		}
+		_ = b.serverConn.player.WritePacket(&packet.ServerData{
+			Description:  e.Ping().Description,
+			Favicon:      e.Ping().Favicon,
+			PreviewsChat: p.PreviewsChat,
+		})
+	})
+}
+
+var sha1HexRegex = regexp.MustCompile(`[0-9a-fA-F]{40}`)
+
+func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.ResourcePackRequest) {
+	packInfo := ResourcePackInfo{
+		URL:         p.URL,
+		ShouldForce: p.Required,
+		Prompt:      p.Prompt,
+		Origin:      DownstreamServerResourcePackOrigin,
+	}
+
+	if p.Hash != "" && sha1HexRegex.MatchString(p.Hash) {
+		packInfo.Hash, _ = hex.DecodeString(p.Hash)
+	}
+
+	e := &ServerResourcePackSendEvent{
+		receivedResourcePack: packInfo,
+		providedResourcePack: packInfo,
+		serverConn:           b.serverConn,
+	}
+	b.proxy().event.Fire(e)
+
+	if b.serverConn.player.minecraftConn.Closed() {
+		return
+	}
+	if e.Allowed() {
+		toSend := e.ProvidedResourcePack()
+		if reflect.DeepEqual(toSend, e.ReceivedResourcePack()) {
+			toSend.Origin = DownstreamServerResourcePackOrigin
+		}
+
+		_ = b.serverConn.player.queueResourcePack(toSend)
+	} else if smc, ok := b.serverConn.ensureConnected(); ok {
+		_ = smc.WritePacket(&packet.ResourcePackResponse{
+			Hash:   p.Hash,
+			Status: DeclinedResourcePackResponseStatus,
+		})
+	}
 }
 
 func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem, pc *proto.PacketContext) {

@@ -47,6 +47,11 @@ type DimensionData struct {
 	Effects                    *string  // optional; unknown purpose
 	MinY                       *int     // Required since 1.17
 	Height                     *int     // Required since 1.17
+	// Controls the block light needed to prevent monster spawns.
+	MonsterSpawnBlockLightLimit *int // nil-able: Required and added by 1.19
+	// An int provider which is evaluated to find a value to compare the current
+	// overall brightness with to determine if a monster should be allowed to spawn.
+	MonsterSpawnLightLevel *int // nil-able: Required and added by 1.19
 }
 
 // fromGameData decodes a CompoundTag storing a dimension registry.
@@ -178,12 +183,28 @@ func decodeBaseCompoundTag(details util.NBT, protocol proto.Protocol) (*Dimensio
 	if ok {
 		d.Height = &height
 	}
+	monsterSpawnBlockLightLimit, ok := details.Int("monster_spawn_block_light_limit")
+	if ok {
+		d.MonsterSpawnBlockLightLimit = &monsterSpawnBlockLightLimit
+	}
+	_, ok = details["monster_spawn_light_level"]
+	if ok {
+		d.MonsterSpawnLightLevel = &monsterSpawnBlockLightLimit // yes, set it to monsterSpawnBlockLightLimit
+	}
 	if protocol.GreaterEqual(version.Minecraft_1_17) {
 		if d.MinY == nil {
 			return nil, dimMissKeyErr("min_y")
 		}
 		if d.Height == nil {
 			return nil, dimMissKeyErr("height")
+		}
+	}
+	if protocol.GreaterEqual(version.Minecraft_1_19) {
+		if d.MonsterSpawnBlockLightLimit == nil {
+			return nil, dimMissKeyErr("monster_spawn_block_light_limit")
+		}
+		if d.MonsterSpawnLightLevel == nil {
+			return nil, dimMissKeyErr("monster_spawn_light_level")
 		}
 	}
 	return d, nil
@@ -246,6 +267,12 @@ func (d *DimensionData) encodeDimensionDetails() util.NBT {
 	}
 	if d.Height != nil {
 		c["height"] = int32(*d.Height)
+	}
+	if d.MonsterSpawnBlockLightLimit != nil {
+		c["monster_spawn_block_light_limit"] = int32(*d.MonsterSpawnBlockLightLimit)
+	}
+	if d.MonsterSpawnLightLevel != nil {
+		c["monster_spawn_light_level"] = int32(*d.MonsterSpawnLightLevel)
 	}
 	return c
 }

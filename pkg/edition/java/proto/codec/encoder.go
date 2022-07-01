@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -42,10 +43,10 @@ type Encoder struct {
 	}
 }
 
-func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger, hexDump bool) *Encoder {
+func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger) *Encoder {
 	return &Encoder{
 		log:       log,
-		hexDump:   hexDump,
+		hexDump:   os.Getenv("HEXDUMP") == "true",
 		wr:        w,
 		direction: direction,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),

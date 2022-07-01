@@ -12,17 +12,17 @@ import (
 )
 
 type ResourcePackRequest struct {
-	Url      string
+	URL      string
 	Hash     string
 	Required bool                // 1.17+
 	Prompt   component.Component // (nil-able) 1.17+
 }
 
 func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
-	if len(r.Url) == 0 {
+	if len(r.URL) == 0 {
 		return errors.New("url is missing")
 	}
-	err := util.WriteString(wr, r.Url)
+	err := util.WriteString(wr, r.URL)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error
 }
 
 func (r *ResourcePackRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	r.Url, err = util.ReadString(rd)
+	r.URL, err = util.ReadString(rd)
 	if err != nil {
 		return err
 	}

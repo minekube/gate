@@ -15,8 +15,11 @@ import (
 	"go.minekube.com/gate/pkg/util/permission"
 )
 
-// PingEvent is fired when a server list ping
-// request is sent by a remote client.
+// PingEvent is fired when a request for server information is sent by a remote client,
+// or when the server sends the MOTD and favicon to the client after a successful login.
+// The proxy will wait on this event to finish firing before delivering the results to
+// the remote client, but you are urged to handle this event as quickly as possible when
+// handling this event due to the amount of ping packets a client can send.
 type PingEvent struct {
 	inbound Inbound
 	ping    *ping.ServerPing
@@ -854,6 +857,52 @@ func (p *PlayerResourcePackStatusEvent) SetOverwriteKick(overwriteKick bool) {
 		return // overwriteKick is not supported on 1.17 or newer
 	}
 	p.overwriteKick = overwriteKick
+}
+
+//
+//
+//
+//
+
+// ServerResourcePackSendEvent is fired when the downstream server tries to send a player a ResourcePack packet.
+// The proxy will wait on this event to finish before forwarding the resource pack to the user.
+// If this event is denied, it will retroactively send a DENIED status to the downstream server in response.
+// If the downstream server has it set to "forced" it will forcefully disconnect the user.
+type ServerResourcePackSendEvent struct {
+	denied               bool
+	receivedResourcePack ResourcePackInfo
+	providedResourcePack ResourcePackInfo
+	serverConn           *serverConnection
+}
+
+// Allowed indicated whether sending the resource pack to the client is allowed.
+func (e *ServerResourcePackSendEvent) Allowed() bool {
+	return !e.denied
+}
+
+// SetAllowed allows or denies sending the resource pack to the client.
+func (e *ServerResourcePackSendEvent) SetAllowed(allowed bool) {
+	e.denied = !allowed
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerResourcePackSendEvent) ServerConnection() ServerConnection {
+	return e.serverConn
+}
+
+// ReceivedResourcePack returns the resource pack send by the server.
+func (e *ServerResourcePackSendEvent) ReceivedResourcePack() ResourcePackInfo {
+	return e.receivedResourcePack
+}
+
+// ProvidedResourcePack returns the resource pack provided to the client if allowed.
+func (e *ServerResourcePackSendEvent) ProvidedResourcePack() ResourcePackInfo {
+	return e.providedResourcePack
+}
+
+// SetProvidedResourcePack sets the resource pack provided to the client if allowed.
+func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackInfo) {
+	e.providedResourcePack = pack
 }
 
 // TODO PlayerClientBrandEvent

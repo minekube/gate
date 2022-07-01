@@ -162,7 +162,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	log := p.log.WithValues(
 		"serverName", server.ServerInfo().Name(),
 		"serverAddr", server.ServerInfo().Addr())
-	log.V(1).Info("Could not connect player to server", "err", err)
+	log.V(1).Info("could not connect player to server", "err", err)
 
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.

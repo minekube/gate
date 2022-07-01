@@ -69,7 +69,10 @@ var packets = []proto.Packet{
 			if err != nil {
 				panic(err)
 			}
-			public := x509.MarshalPKCS1PublicKey(&pk.PublicKey)
+			public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+			if err != nil {
+				panic(err)
+			}
 			hashed := crypto2.SHA1.New()
 			hashed.Write([]byte("message"))
 			signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
@@ -89,7 +92,7 @@ var packets = []proto.Packet{
 	&SetCompression{},
 	&LoginPluginMessage{},
 	&ResourcePackRequest{
-		Url:    "https://example.com/",
+		URL:    "https://example.com/",
 		Prompt: &component.Text{Content: "Prompt"},
 	},
 	&ResourcePackResponse{},
@@ -160,6 +163,12 @@ var packets = []proto.Packet{
 		BiomeRegistry: map[string]any{
 			"k": "v",
 		},
+		SimulationDistance: 3,
+		LastDeadPosition: &DeathPosition{
+			Key:   "k",
+			Value: 3,
+		},
+		ChatTypeRegistry: nil,
 	},
 	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	&PlayerChat{

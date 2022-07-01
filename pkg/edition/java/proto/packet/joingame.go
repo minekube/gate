@@ -99,7 +99,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteInt32(wr, int32(j.EntityID))
+	err := util.WriteInt(wr, j.EntityID)
 	if err != nil {
 		return err
 	}
