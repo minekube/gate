@@ -491,8 +491,6 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 	if !ok {
 		ctx = context.Background()
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	// Create client connection
 	conn := newMinecraftConn(ctx, raw, p, true)
