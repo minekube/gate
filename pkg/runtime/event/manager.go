@@ -34,7 +34,7 @@ type Manager interface {
 }
 
 // HandlerFunc is an event handler func.
-type HandlerFunc func(e Event) // TODO make generic
+type HandlerFunc func(e Event)
 
 // Event is the event interface.
 type Event any
@@ -49,7 +49,7 @@ func New(log logr.Logger) Manager {
 }
 
 // TypeOf is a helper func to get the reflect.Type from i.
-// If i is nil returns nil.
+// If it is nil returns nil.
 func TypeOf(i any) (t Type) {
 	if i == nil {
 		return
