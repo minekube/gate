@@ -149,7 +149,7 @@ func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {
 	if err != nil {
 		return err
 	}
-	return e.compression.writer.Flush()
+	return e.compression.writer.Close()
 }
 
 func (e *Encoder) SetProtocol(protocol proto.Protocol) {
