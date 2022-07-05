@@ -34,7 +34,7 @@ type Manager interface {
 }
 
 // HandlerFunc is an event handler func.
-type HandlerFunc func(e Event)
+type HandlerFunc func(e Event) // TODO make generic
 
 // Event is the event interface.
 type Event any

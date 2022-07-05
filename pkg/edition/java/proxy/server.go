@@ -333,12 +333,12 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	// Connect proxy -> server
 	debug := s.log.V(1)
-	debug.Info("Connecting to server...")
+	debug.Info("connecting to server...")
 	conn, err := s.dial(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to server %q: %w", s.server.ServerInfo().Name(), err)
 	}
-	debug.Info("Connected to server")
+	debug.Info("connected to server")
 
 	// Wrap server connection
 	serverMc := newMinecraftConn(context.Background(), conn, s.player.proxy, false)
@@ -354,7 +354,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
-	debug.Info("Establishing player connection with server...")
+	debug.Info("establishing player connection with server...")
 
 	// Initiate the handshake.
 	protocol := s.player.Protocol()

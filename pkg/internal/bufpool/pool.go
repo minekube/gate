@@ -1,4 +1,4 @@
-// All credits go to https://github.com/valyala/bytebufferpool.
+// Package bufpool - All credits go to https://github.com/valyala/bytebufferpool.
 // This package uses []byte instead.
 package bufpool
 
@@ -22,7 +22,7 @@ const (
 // Pool represents byte buffer pool.
 //
 // Distinct pools may be used for distinct types of byte buffers.
-// Properly determined byte buffer types with their own pools may help reducing
+// Properly determined byte buffer types with their own pools may help to reduce
 // memory waste.
 type Pool struct {
 	DisableCalibration bool

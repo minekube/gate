@@ -11,7 +11,8 @@ editions:
       # Registers servers with the proxy by giving the address of backend server a custom reference name.
       servers:
         # Server name: server address
-        server1: localhost:25566
+        server1: localhost:25577
+        #        server1: localhost:25566
         server2: localhost:25567
         server3: localhost:25568
         server4: localhost:25569
@@ -81,7 +82,7 @@ editions:
       # See the documentation for more information.
       forwarding:
         # Options: legacy, none, velocity
-        mode: legacy
+        mode: none
         # The secret used if the mode is velocity.
         #velocitySecret: secret_here
       # The section for health checking when Gate runs in a Kubernetes pod.

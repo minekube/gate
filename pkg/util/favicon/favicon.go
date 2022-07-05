@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/nfnt/resize"
 	"image"
 	_ "image/jpeg"
 	"image/png"
 	"os"
+
+	"github.com/nfnt/resize"
 )
 
 // Favicon is 64x64 sized data uri image send in response to a server list ping.

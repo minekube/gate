@@ -2,15 +2,11 @@ package proxy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
-	"go.minekube.com/common/minecraft/component/codec"
-
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/runtime/event"
@@ -302,24 +298,17 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 		return
 	}
 
-	b := new(strings.Builder)
-	if t, ok := reason.(*Translation); ok {
-		j, _ := json.Marshal(t)
-		b.WriteString("plain reason: ")
-		b.WriteString(string(j))
-	} else {
-		err := (&codec.Plain{}).Marshal(b, reason)
-		if err != nil {
-			p.log.V(1).Info("Error marshal disconnect reason to plain", "err", err)
-		}
-	}
-	plainReason := b.String()
+	log := p.log.WithValues("server", server.ServerInfo().Name())
 
-	log := p.log.WithValues("server", server.ServerInfo().Name(), "reason", plainReason)
+	if plainReason, err := util2.MarshalPlain(reason); err != nil {
+		p.log.V(1).Info("error marshal disconnect reason to plain", "err", err)
+	} else {
+		log = log.WithValues("reason", plainReason)
+	}
 
 	connected := p.connectedServer()
 	if connected != nil && ServerInfoEqual(connected.server.ServerInfo(), server.ServerInfo()) {
-		log.Info("Player was kicked from server")
+		log.Info("player was kicked from server")
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: movedToNewServer.Content,
 			S:       movedToNewServer.S,
@@ -328,7 +317,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 		return
 	}
 
-	log.Info("Player disconnected from server while connecting")
+	log.Info("player disconnected from server while connecting")
 	p.handleConnectionErr2(server, reason, &Text{
 		Content: fmt.Sprintf("Can't connect to server %q: ", server.ServerInfo().Name()),
 		S:       Style{Color: Red},

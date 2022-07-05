@@ -141,7 +141,10 @@ type tabListPlayerKeyStore struct{ p *Proxy }
 var _ tablist.PlayerKey = (*tabListPlayerKeyStore)(nil)
 
 func (t *tabListPlayerKeyStore) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
-	return t.p.player(playerID).playerKey
+	if p := t.p.player(playerID); p != nil {
+		return p.playerKey
+	}
+	return nil
 }
 
 func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }

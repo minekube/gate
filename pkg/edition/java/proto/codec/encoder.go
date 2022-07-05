@@ -33,7 +33,7 @@ type Encoder struct {
 	hexDump   bool // for debugging
 
 	mu          sync.Mutex // Protects following fields
-	wr          io.Writer  // to underlying writer to write successfully encoded packet to
+	wr          io.Writer  // the underlying writer to write successfully encoded packet to
 	registry    *state.ProtocolRegistry
 	state       *state.Registry
 	compression struct {
@@ -111,10 +111,10 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 		uncompressedSize := payload.Len()
 		if uncompressedSize < e.compression.threshold {
 			// Under the threshold, there is nothing to do.
-			_ = util.WriteVarInt(compressed, 0)
+			_ = util.WriteVarInt(compressed, 0) // indicate not compressed
 			_, _ = payload.WriteTo(compressed)
 		} else {
-			_ = util.WriteVarInt(compressed, uncompressedSize)
+			_ = util.WriteVarInt(compressed, uncompressedSize) // data length
 			if err = e.compress(payload.Bytes(), compressed); err != nil {
 				return 0, err
 			}
@@ -125,10 +125,10 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 
 	frame := bytes.NewBuffer(pool.Get())
 	defer func() { pool.Put(frame.Bytes()) }()
-	frame.Grow(payload.Len() + 5)
+	frame.Grow(payload.Len() + 4)
 
-	_ = util.WriteVarInt(frame, payload.Len())
-	_, _ = payload.WriteTo(frame)
+	_ = util.WriteVarInt(frame, payload.Len()) // packet length
+	_, _ = payload.WriteTo(frame)              // body
 
 	m, err := frame.WriteTo(e.wr)
 	return int(m), err

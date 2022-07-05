@@ -441,7 +441,7 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
 	if strings.HasPrefix(p.Message, "/") {
 		c.processCommandMessage(strings.TrimPrefix(p.Message, "/"), nil)
 	} else {
-		c.processPlayerChat(p.Message, p)
+		c.processPlayerChat(p.Message, nil, p)
 	}
 }
 
@@ -504,12 +504,12 @@ func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
 			if !c.tickLastMessage(signedChat) {
 				return
 			}
-			c.processPlayerChat(p.Message, p)
+			c.processPlayerChat(p.Message, signedChat, p)
 			return
 		}
 	}
 
-	c.processPlayerChat(p.Message, p)
+	c.processPlayerChat(p.Message, nil, p)
 }
 
 func (c *clientPlaySessionHandler) processCommandMessage(command string, signedCommand *crypto.SignedChatCommand) {
@@ -541,7 +541,7 @@ func (c *clientPlaySessionHandler) processCommandMessage(command string, signedC
 	})
 }
 
-func (c *clientPlaySessionHandler) processPlayerChat(msg string, original proto.Packet) {
+func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessage *crypto.SignedChatMessage, original proto.Packet) {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -570,10 +570,13 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, original proto.
 			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
 				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
 			}
-			_ = serverMc.WritePacket(packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer())
+			write := packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer()
+			_ = serverMc.WritePacket(write)
 			return
 		}
 		c.log1.Info("player sent chat message", "chat", e.Message())
+		// TODO fix server disconnect player due to
+		//  Internal Exception: io.netty.handler.codec.DecoderException: java.util.zip.DataFormatException: inflate data is bad
 		_ = serverMc.WritePacket(original)
 	})
 }
