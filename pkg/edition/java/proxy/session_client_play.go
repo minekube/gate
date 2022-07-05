@@ -575,8 +575,6 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessa
 			return
 		}
 		c.log1.Info("player sent chat message", "chat", e.Message())
-		// TODO fix server disconnect player due to
-		//  Internal Exception: io.netty.handler.codec.DecoderException: java.util.zip.DataFormatException: inflate data is bad
 		_ = serverMc.WritePacket(original)
 	})
 }

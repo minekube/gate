@@ -132,8 +132,7 @@ func (i *serverInfo) String() string { return fmt.Sprintf("%s (%s)", i.name, i.a
 // RegisteredServer is a backend server that has been registered with the proxy.
 type RegisteredServer interface {
 	ServerInfo() ServerInfo
-	Players() Players             // The players connected to the server on THIS proxy.
-	Equals(RegisteredServer) bool // TODO remove
+	Players() Players // The players connected to the server on THIS proxy.
 }
 
 // RegisteredServerEqual returns true if RegisteredServer a and b are equal.
@@ -150,9 +149,6 @@ type registeredServer struct {
 func newRegisteredServer(info ServerInfo) *registeredServer {
 	return &registeredServer{info: info, players: newPlayers()}
 }
-
-// TODO remove
-func (r *registeredServer) Equals(o RegisteredServer) bool { return RegisteredServerEqual(r, o) }
 
 func (r *registeredServer) ServerInfo() ServerInfo {
 	return r.info
@@ -361,7 +357,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
 		NextStatus:      int(state.LoginState),
-		Port:            int16(netutil.Port(s.server.ServerInfo().Addr())),
+		Port:            int(netutil.Port(s.server.ServerInfo().Addr())),
 	}
 
 	// Set handshake ServerAddress

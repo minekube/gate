@@ -11,8 +11,7 @@ editions:
       # Registers servers with the proxy by giving the address of backend server a custom reference name.
       servers:
         # Server name: server address
-        server1: localhost:25577
-        #        server1: localhost:25566
+        server1: localhost:25566
         server2: localhost:25567
         server3: localhost:25568
         server4: localhost:25569
@@ -82,15 +81,9 @@ editions:
       # See the documentation for more information.
       forwarding:
         # Options: legacy, none, velocity
-        mode: none
+        mode: legacy
         # The secret used if the mode is velocity.
         #velocitySecret: secret_here
-      # The section for health checking when Gate runs in a Kubernetes pod.
-      # Refer to https://github.com/grpc-ecosystem/grpc-health-probe for more details.
-      # Gate is also delivered with a docker image where the health check service is enabled by default.
-      health:
-        enabled: false
-        bind: 0.0.0.0:8080
       # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
       # ops: The allowed operations per second.
       # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
@@ -122,8 +115,7 @@ editions:
 # Among a lot of other features it even allows players to join locally hosted
 # Minecraft servers without having an open port or public IP address.
 #
-# TODO A link to the documentation will be added when available
-#  until then please refer to: https://github.com/minekube/connect-java
+# Visit https://developers.minekube.com/connect
 connect:
   # Enabling Connect makes Gate register itself to Connect network.
   # This feature is disabled by default, but you are encouraged to

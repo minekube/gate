@@ -1,9 +1,4 @@
-FROM golang:1.15 AS build
-
-# Health probe client
-RUN GRPC_HEALTH_PROBE_VERSION=v0.3.2 && \
-    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
-    chmod +x /bin/grpc_health_probe
+FROM golang:1.18 AS build
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -25,6 +20,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o gate gate.go
 # Final image
 FROM alpine:latest
 WORKDIR /gate
-COPY --from=build /bin/grpc_health_probe bin/
 COPY --from=build /workspace/gate .
 CMD ["./gate"]

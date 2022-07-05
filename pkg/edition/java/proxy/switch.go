@@ -167,7 +167,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 
 	var userMsg string
 	connectedServer := p.CurrentServer()
-	if connectedServer != nil && connectedServer.Server().Equals(server) {
+	if connectedServer != nil && RegisteredServerEqual(connectedServer.Server(), server) {
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",
 			server.ServerInfo().Name())
 	} else {
@@ -195,7 +195,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 		return
 	}
 	currentServer := p.CurrentServer()
-	kickedFromCurrent := currentServer == nil || currentServer.Server().Equals(rs)
+	kickedFromCurrent := currentServer == nil || RegisteredServerEqual(currentServer.Server(), rs)
 	var result ServerKickResult
 	if kickedFromCurrent {
 		next := p.nextServerToTry(rs)
@@ -207,7 +207,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 	} else {
 		// If we were kicked by going to another server, the connection should not be in flight
 		p.mu.Lock()
-		if p.connInFlight != nil && p.connInFlight.Server().Equals(rs) {
+		if p.connInFlight != nil && RegisteredServerEqual(p.connInFlight.Server(), rs) {
 			p.resetInFlightConnection0()
 		}
 		p.mu.Unlock()
@@ -352,7 +352,7 @@ func (c *connectionRequest) checkServer(server RegisteredServer) (s ConnectionSt
 		!p.connectedServer_.completedJoin.Load()) {
 		return InProgressConnectionStatus, false
 	}
-	if p.connectedServer_ != nil && p.connectedServer_.Server().Equals(server) {
+	if p.connectedServer_ != nil && RegisteredServerEqual(p.connectedServer_.Server(), server) {
 		return AlreadyConnectedConnectionStatus, false
 	}
 	return 0, true

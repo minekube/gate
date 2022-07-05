@@ -66,7 +66,6 @@ func (l *initialLoginSessionHandler) handlePacket(p *proto.PacketContext) {
 		return
 	}
 	switch t := p.Packet.(type) {
-	// TODO fire ServerLoginPluginMessageEvent
 	case *packet.ServerLogin:
 		l.handleServerLogin(t)
 	case *packet.LoginPluginResponse:
