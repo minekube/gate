@@ -19,15 +19,23 @@ func WriteString(writer io.Writer, val string) (err error) {
 }
 
 func WriteVarInt(writer io.Writer, val int) (err error) {
+	_, err = WriteVarIntN(writer, val)
+	return err
+}
+
+func WriteVarIntN(writer io.Writer, val int) (n int, err error) {
+	var m int
 	uval := uint32(val)
 	for uval >= 0x80 {
-		err = WriteUint8(writer, byte(uval)|0x80)
+		m, err = WriteUint8N(writer, byte(uval)|0x80)
 		if err != nil {
 			return
 		}
+		n += m
 		uval >>= 7
 	}
-	err = WriteUint8(writer, byte(uval))
+	m, err = WriteUint8N(writer, byte(uval))
+	n += m
 	return
 }
 
@@ -47,10 +55,21 @@ func WriteInt8(writer io.Writer, val int8) (err error) {
 
 // equal to WriteByte
 func WriteUint8(writer io.Writer, val uint8) (err error) {
+	_, err = WriteUint8N(writer, val)
+	return
+}
+
+func WriteUint8N(writer io.Writer, val uint8) (n int, err error) {
+	if w, ok := writer.(io.ByteWriter); ok {
+		err = w.WriteByte(val)
+		if err == nil {
+			n = 1
+		}
+		return
+	}
 	var buf [1]byte
 	buf[0] = val
-	_, err = writer.Write(buf[:1])
-	return
+	return writer.Write(buf[:1])
 }
 
 // equal to WriteUint8

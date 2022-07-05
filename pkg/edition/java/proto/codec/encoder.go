@@ -105,33 +105,48 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 // see https://wiki.vg/Protocol#Packet_format for details
 func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	if e.compression.enabled {
-		compressed := bytes.NewBuffer(pool.Get())
-		defer func() { pool.Put(compressed.Bytes()) }()
-
-		uncompressedSize := payload.Len()
-		if uncompressedSize < e.compression.threshold {
-			// Under the threshold, there is nothing to do.
-			_ = util.WriteVarInt(compressed, 0) // indicate not compressed
-			_, _ = payload.WriteTo(compressed)
-		} else {
-			_ = util.WriteVarInt(compressed, uncompressedSize) // data length
-			if err = e.compress(payload.Bytes(), compressed); err != nil {
-				return 0, err
-			}
-		}
-		// uncompressed length + packet id + data
-		payload = compressed
+		return e.writeCompressed(payload)
 	}
+	n, err = util.WriteVarIntN(e.wr, payload.Len()) // packet length
+	if err != nil {
+		return n, err
+	}
+	m, err := payload.WriteTo(e.wr) // body
+	return int(m) + n, err
+}
 
-	frame := bytes.NewBuffer(pool.Get())
-	defer func() { pool.Put(frame.Bytes()) }()
-	frame.Grow(payload.Len() + 4)
-
-	_ = util.WriteVarInt(frame, payload.Len()) // packet length
-	_, _ = payload.WriteTo(frame)              // body
-
-	m, err := frame.WriteTo(e.wr)
-	return int(m), err
+func (e *Encoder) writeCompressed(payload *bytes.Buffer) (n int, err error) {
+	uncompressedSize := payload.Len()
+	if uncompressedSize < e.compression.threshold {
+		// Under the threshold, there is nothing to do.
+		n, err = util.WriteVarIntN(e.wr, uncompressedSize+1) // packet length
+		if err != nil {
+			return n, err
+		}
+		n2, err := util.WriteVarIntN(e.wr, 0) // indicate not compressed
+		if err != nil {
+			return n + n2, err
+		}
+		n3, err := payload.WriteTo(e.wr) // body
+		return n + n2 + int(n3), err
+	}
+	// >= threshold, compress packet id + data
+	compressed := bytes.NewBuffer(pool.Get())
+	defer func() { pool.Put(compressed.Bytes()) }()
+	_, err = util.WriteVarIntN(compressed, uncompressedSize) // data length
+	if err != nil {
+		return 0, err
+	}
+	_, err = e.compress(payload.Bytes(), compressed)
+	if err != nil {
+		return 0, err
+	}
+	n, err = util.WriteVarIntN(e.wr, compressed.Len()) // packet length
+	if err != nil {
+		return n, err
+	}
+	m, err := compressed.WriteTo(e.wr) // body
+	return int(m) + n, err
 }
 
 // Write encodes payload and writes it to the underlying writer.
@@ -143,13 +158,13 @@ func (e *Encoder) Write(payload []byte) (n int, err error) {
 	return e.writeBuf(bytes.NewBuffer(payload))
 }
 
-func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {
+func (e *Encoder) compress(payload []byte, w io.Writer) (n int, err error) {
 	e.compression.writer.Reset(w)
-	_, err = e.compression.writer.Write(payload)
+	n, err = e.compression.writer.Write(payload)
 	if err != nil {
-		return err
+		return n, err
 	}
-	return e.compression.writer.Close()
+	return n, e.compression.writer.Close()
 }
 
 func (e *Encoder) SetProtocol(protocol proto.Protocol) {
