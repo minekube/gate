@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -59,6 +60,7 @@ var DefaultConfig = Config{
 	AnnounceProxyCommands:               true,
 	Debug:                               false,
 	ShutdownReason:                      "§cGate proxy is shutting down...\nPlease reconnect in a moment!",
+	ForceKeyAuthentication:              true,
 }
 
 // Config is the configuration of the proxy.
@@ -92,6 +94,7 @@ type Config struct {
 	BuiltinCommands                  bool
 	RequireBuiltinCommandPermissions bool // Whether builtin commands require player permissions
 	AnnounceProxyCommands            bool
+	ForceKeyAuthentication           bool // Added in 1.19
 
 	Debug          bool
 	ShutdownReason string
@@ -145,8 +148,8 @@ const (
 
 // Validate validates Config.
 func (c *Config) Validate() (warns []error, errs []error) {
-	e := func(m string, args ...interface{}) { errs = append(errs, fmt.Errorf(m, args...)) }
-	w := func(m string, args ...interface{}) { warns = append(warns, fmt.Errorf(m, args...)) }
+	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
+	w := func(m string, args ...any) { warns = append(warns, fmt.Errorf(m, args...)) }
 
 	if c == nil {
 		e("config must not be nil")

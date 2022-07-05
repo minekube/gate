@@ -3,10 +3,13 @@ package codec
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -26,9 +29,11 @@ var pool = &bufpool.Pool{DisableCalibration: true}
 // Encoder is a synchronized packet encoder.
 type Encoder struct {
 	direction proto.Direction
+	log       logr.Logger
+	hexDump   bool // for debugging
 
 	mu          sync.Mutex // Protects following fields
-	wr          io.Writer  // to underlying writer to write successfully encoded packet to
+	wr          io.Writer  // the underlying writer to write successfully encoded packet to
 	registry    *state.ProtocolRegistry
 	state       *state.Registry
 	compression struct {
@@ -38,8 +43,10 @@ type Encoder struct {
 	}
 }
 
-func NewEncoder(w io.Writer, direction proto.Direction) *Encoder {
+func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger) *Encoder {
 	return &Encoder{
+		log:       log,
+		hexDump:   os.Getenv("HEXDUMP") == "true",
 		wr:        w,
 		direction: direction,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
@@ -85,6 +92,13 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		return
 	}
 
+	if e.log.Enabled() { // check enabled for performance reason
+		e.log.Info("encoded packet", "context", ctx.String(), "bytes", buf.Len())
+		if e.hexDump {
+			fmt.Println(hex.Dump(ctx.Payload))
+		}
+	}
+
 	return e.writeBuf(buf) // packet id + data
 }
 
@@ -97,10 +111,10 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 		uncompressedSize := payload.Len()
 		if uncompressedSize < e.compression.threshold {
 			// Under the threshold, there is nothing to do.
-			_ = util.WriteVarInt(compressed, 0)
+			_ = util.WriteVarInt(compressed, 0) // indicate not compressed
 			_, _ = payload.WriteTo(compressed)
 		} else {
-			_ = util.WriteVarInt(compressed, uncompressedSize)
+			_ = util.WriteVarInt(compressed, uncompressedSize) // data length
 			if err = e.compress(payload.Bytes(), compressed); err != nil {
 				return 0, err
 			}
@@ -111,10 +125,10 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 
 	frame := bytes.NewBuffer(pool.Get())
 	defer func() { pool.Put(frame.Bytes()) }()
-	frame.Grow(payload.Len() + 5)
+	frame.Grow(payload.Len() + 4)
 
-	_ = util.WriteVarInt(frame, payload.Len())
-	_, _ = payload.WriteTo(frame)
+	_ = util.WriteVarInt(frame, payload.Len()) // packet length
+	_, _ = payload.WriteTo(frame)              // body
 
 	m, err := frame.WriteTo(e.wr)
 	return int(m), err
@@ -135,7 +149,7 @@ func (e *Encoder) compress(payload []byte, w io.Writer) (err error) {
 	if err != nil {
 		return err
 	}
-	return e.compression.writer.Flush()
+	return e.compression.writer.Close()
 }
 
 func (e *Encoder) SetProtocol(protocol proto.Protocol) {

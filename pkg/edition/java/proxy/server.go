@@ -132,8 +132,7 @@ func (i *serverInfo) String() string { return fmt.Sprintf("%s (%s)", i.name, i.a
 // RegisteredServer is a backend server that has been registered with the proxy.
 type RegisteredServer interface {
 	ServerInfo() ServerInfo
-	Players() Players             // The players connected to the server on THIS proxy.
-	Equals(RegisteredServer) bool // TODO remove
+	Players() Players // The players connected to the server on THIS proxy.
 }
 
 // RegisteredServerEqual returns true if RegisteredServer a and b are equal.
@@ -150,9 +149,6 @@ type registeredServer struct {
 func newRegisteredServer(info ServerInfo) *registeredServer {
 	return &registeredServer{info: info, players: newPlayers()}
 }
-
-// TODO remove
-func (r *registeredServer) Equals(o RegisteredServer) bool { return RegisteredServerEqual(r, o) }
 
 func (r *registeredServer) ServerInfo() ServerInfo {
 	return r.info
@@ -333,15 +329,15 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	// Connect proxy -> server
 	debug := s.log.V(1)
-	debug.Info("Connecting to server...")
+	debug.Info("connecting to server...")
 	conn, err := s.dial(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to server %q: %w", s.server.ServerInfo().Name(), err)
 	}
-	debug.Info("Connected to server")
+	debug.Info("connected to server")
 
 	// Wrap server connection
-	serverMc := newMinecraftConn(conn, s.player.proxy, false)
+	serverMc := newMinecraftConn(context.Background(), conn, s.player.proxy, false)
 	resultChan := make(chan *connResponse, 1)
 	serverMc.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
 		Context:  ctx,
@@ -354,14 +350,14 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	s.connPhase = serverMc.connType.initialBackendPhase()
 	s.mu.Unlock()
 
-	debug.Info("Establishing player connection with server...")
+	debug.Info("establishing player connection with server...")
 
 	// Initiate the handshake.
 	protocol := s.player.Protocol()
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
 		NextStatus:      int(state.LoginState),
-		Port:            int16(netutil.Port(s.server.ServerInfo().Addr())),
+		Port:            int(netutil.Port(s.server.ServerInfo().Addr())),
 	}
 
 	// Set handshake ServerAddress
@@ -372,7 +368,6 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		}
 		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
 	}
-
 	if err = serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
 	}
@@ -384,7 +379,10 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 
 	// Kick off the connection process
 	// connection from proxy -> server (backend)
-	err = serverMc.WritePacket(&packet.ServerLogin{Username: s.player.Username()})
+	err = serverMc.WritePacket(&packet.ServerLogin{
+		Username:  s.player.Username(),
+		PlayerKey: s.player.IdentifiedKey(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}

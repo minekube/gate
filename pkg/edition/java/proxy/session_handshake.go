@@ -5,10 +5,9 @@ import (
 	"net"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-
-	"github.com/go-logr/logr"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
@@ -29,7 +28,10 @@ type handshakeSessionHandler struct {
 
 // newHandshakeSessionHandler returns a handler used for clients in the handshake state.
 func newHandshakeSessionHandler(conn *minecraftConn) sessionHandler {
-	return &handshakeSessionHandler{conn: conn, log: conn.log.WithName("handshakeSession")}
+	return &handshakeSessionHandler{
+		conn: conn,
+		log:  conn.log.WithName("handshakeSession"),
+	}
 }
 
 func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
@@ -81,12 +83,12 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	}
 }
 
-func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbound) {
+func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *initialInbound) {
 	// Check for supported client version.
 	if !version.Protocol(p.ProtocolVersion).Supported() {
-		_ = h.conn.closeWith(packet.DisconnectWith(&component.Translation{
+		_ = inbound.disconnect(&component.Translation{
 			Key: "multiplayer.disconnect.outdated_client",
-		}))
+		})
 		return
 	}
 
@@ -98,6 +100,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		}))
 		return
 	}
+
 	h.conn.setType(connTypeForHandshake(p))
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
@@ -110,9 +113,9 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound Inbou
 		return
 	}
 
-	// TODO create LoginInboundConnection & Add support for sending and receiving login plugin messages from players and servers
-	h.proxy().Event().Fire(&ConnectionHandshakeEvent{inbound: inbound})
-	h.conn.setSessionHandler(newLoginSessionHandler(h.conn, inbound))
+	lic := newLoginInboundConn(inbound)
+	h.proxy().Event().Fire(&ConnectionHandshakeEvent{inbound: lic})
+	h.conn.setSessionHandler(newInitialLoginSessionHandler(h.conn, lic))
 }
 
 func (h *handshakeSessionHandler) proxy() *Proxy {
@@ -155,15 +158,11 @@ type initialInbound struct {
 
 var _ Inbound = (*initialInbound)(nil)
 
-func newInitialInbound(c *minecraftConn, virtualHost net.Addr) Inbound {
+func newInitialInbound(c *minecraftConn, virtualHost net.Addr) *initialInbound {
 	return &initialInbound{
 		minecraftConn: c,
 		virtualHost:   virtualHost,
 	}
-}
-
-func (i *initialInbound) Closed() <-chan struct{} {
-	return i.minecraftConn.closed
 }
 
 func (i *initialInbound) VirtualHost() net.Addr {
@@ -176,6 +175,11 @@ func (i *initialInbound) Active() bool {
 
 func (i *initialInbound) String() string {
 	return fmt.Sprintf("[initial connection] %s -> %s", i.RemoteAddr(), i.virtualHost)
+}
+
+func (i *initialInbound) disconnect(reason component.Component) error {
+	// TODO add config option to log player connections to log "player disconnected"
+	return i.closeWith(packet.DisconnectWithProtocol(reason, i.protocol))
 }
 
 //

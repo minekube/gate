@@ -13,7 +13,6 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
-
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -132,7 +131,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return ErrProxyAlreadyRun
 	}
 	p.started = true
-	p.startTime.Store(time.Now().UTC())
+	p.startTime.Store(time.Now())
 	p.log = logr.FromContextOrDiscard(ctx)
 
 	stopListener := make(chan struct{})
@@ -153,6 +152,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
+	if p.config.Debug {
+		p.log.Info("running in debug mode")
+	}
 	return p.listenAndServe(p.config.Bind, stopListener)
 }
 
@@ -484,8 +486,14 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		return
 	}
 
+	// Create context for connection
+	ctx, ok := raw.(context.Context)
+	if !ok {
+		ctx = context.Background()
+	}
+
 	// Create client connection
-	conn := newMinecraftConn(raw, p, true)
+	conn := newMinecraftConn(ctx, raw, p, true)
 	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
 	// Read packets in loop
 	conn.readLoop()
@@ -521,6 +529,16 @@ func (p *Proxy) Player(id uuid.UUID) Player {
 	return player
 }
 
+func (p *Proxy) player(id uuid.UUID) *connectedPlayer {
+	p.muP.RLock()
+	defer p.muP.RUnlock()
+	player, ok := p.playerIDs[id]
+	if !ok {
+		return nil // return correct nil
+	}
+	return player
+}
+
 // PlayerByName returns the online player by their Minecraft name (search is case-insensitive).
 // Returns nil if the player was not found.
 func (p *Proxy) PlayerByName(username string) Player {
@@ -533,7 +551,11 @@ func (p *Proxy) PlayerByName(username string) Player {
 func (p *Proxy) playerByName(username string) *connectedPlayer {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
-	return p.playerNames[strings.ToLower(username)]
+	player, ok := p.playerNames[strings.ToLower(username)]
+	if !ok {
+		return nil
+	}
+	return player
 }
 
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {

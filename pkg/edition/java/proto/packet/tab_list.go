@@ -3,14 +3,16 @@ package packet
 import (
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"strings"
 )
 
 type HeaderAndFooter struct {
@@ -52,8 +54,9 @@ var (
 //
 
 type PlayerListItem struct {
-	Action PlayerListItemAction
-	Items  []PlayerListItemEntry
+	Action    PlayerListItemAction
+	Items     []PlayerListItemEntry
+	PlayerKey crypto.IdentifiedKey // 1.19+
 }
 
 type PlayerListItemAction int
@@ -72,7 +75,8 @@ type PlayerListItemEntry struct {
 	Properties  []profile.Property
 	GameMode    int
 	Latency     int
-	DisplayName component.Component // nil-able
+	DisplayName component.Component  // nil-able
+	PlayerKey   crypto.IdentifiedKey // nil-able - 1.19
 }
 
 func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -114,6 +118,18 @@ func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error
 				err = writeDisplayName(wr, item.DisplayName, c.Protocol)
 				if err != nil {
 					return err
+				}
+				if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+					err = util.WriteBool(wr, item.PlayerKey != nil)
+					if err != nil {
+						return err
+					}
+					if item.PlayerKey != nil {
+						err = util.WritePlayerKey(wr, item.PlayerKey)
+						if err != nil {
+							return err
+						}
+					}
 				}
 			case UpdateLatencyPlayerListItemAction:
 				err = util.WriteVarInt(wr, item.Latency)
@@ -227,6 +243,18 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 				item.DisplayName, err = readOptionalComponent(rd, c.Protocol)
 				if err != nil {
 					return err
+				}
+				if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+					ok, err := util.ReadBool(rd)
+					if err != nil {
+						return err
+					}
+					if ok {
+						p.PlayerKey, err = util.ReadPlayerKey(rd)
+						if err != nil {
+							return err
+						}
+					}
 				}
 			case UpdateGameModePlayerListItemAction:
 				item.GameMode, err = util.ReadVarInt(rd)

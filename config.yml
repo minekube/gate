@@ -51,6 +51,10 @@ editions:
       # Declares the proxy commands to 1.13+ clients.
       # Default: true
       announceProxyCommands: true
+      # Should the proxy enforce the new public key
+      # security standard added in Minecraft 1.19?
+      # Default: true
+      forceKeyAuthentication: true
       # The default disconnect reason to kick player on proxy shutdown when no other reason was given.
       # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
       shutdownReason: |
@@ -80,12 +84,6 @@ editions:
         mode: legacy
         # The secret used if the mode is velocity.
         #velocitySecret: secret_here
-      # The section for health checking when Gate runs in a Kubernetes pod.
-      # Refer to https://github.com/grpc-ecosystem/grpc-health-probe for more details.
-      # Gate is also delivered with a docker image where the health check service is enabled by default.
-      health:
-        enabled: false
-        bind: 0.0.0.0:8080
       # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
       # ops: The allowed operations per second.
       # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
@@ -117,8 +115,7 @@ editions:
 # Among a lot of other features it even allows players to join locally hosted
 # Minecraft servers without having an open port or public IP address.
 #
-# TODO A link to the documentation will be added when available
-#  until then please refer to: https://github.com/minekube/connect-java
+# Visit https://developers.minekube.com/connect
 connect:
   # Enabling Connect makes Gate register itself to Connect network.
   # This feature is disabled by default, but you are encouraged to

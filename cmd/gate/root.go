@@ -1,134 +1,147 @@
-/*
-Copyright © 2020 Minekube Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package gate
 
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/urfave/cli/v2"
+	"go.minekube.com/gate/pkg/gate"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"go.minekube.com/gate/pkg/gate"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "gate",
-	Short: "Gate is an extensible Minecraft proxy.",
-	Long: `A high performant & paralleled Minecraft proxy server with
-	scalability, flexibility & excelled server version support.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error { return initErr },
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-		// Set logger
-		setLogger := func(devMode bool) error {
-			zl, err := newZapLogger(devMode)
-			if err != nil {
-				return fmt.Errorf("error creating zap logger: %w", err)
-			}
-			ctx = logr.NewContext(ctx, zapr.NewLogger(zl))
-			return nil
-		}
-		if err := setLogger(gate.Viper.GetBool("debug")); err != nil {
-			return err
-		}
-
-		if err := gate.Start(ctx); err != nil {
-			return fmt.Errorf("error running Gate: %w", err)
-		}
-		return nil
-	},
-}
-
-// newZapLogger returns a new zap logger with a modified production
-// or development default config to ensure human readability.
-func newZapLogger(dev bool) (l *zap.Logger, err error) {
-	var cfg zap.Config
-	if dev {
-		cfg = zap.NewDevelopmentConfig()
-	} else {
-		cfg = zap.NewProductionConfig()
-	}
-
-	cfg.Encoding = "console"
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	l, err = cfg.Build()
-	if err != nil {
-		return nil, err
-	}
-	return l, nil
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute runs App() and calls os.Exit when finished.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := App().Run(os.Args); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 	os.Exit(0)
 }
 
-var initErr error
+func App() *cli.App {
+	app := cli.NewApp()
+	app.Name = "gate"
+	app.Usage = "Gate is an extensible Minecraft proxy."
+	app.Description = `A high performant & paralleled Minecraft proxy server with
+	scalability, flexibility & excelled server version support.
 
-func init() {
-	cobra.OnInitialize(func() { initErr = initConfig() })
+Visit the website https://minekube.com/gate`
 
-	rootCmd.PersistentFlags().StringP("config", "c", "", `config file (default: ./config.yml)
-Supports: yaml/yml, json, toml, hcl, ini, prop/properties/props, env/dotenv`)
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
+	var (
+		debug      bool
+		configFile string
+		verbosity  int
+	)
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "config",
+			Aliases: []string{"c"},
+			Usage: `config file (default: ./config.yml)
+Supports: yaml/yml, json, toml, hcl, ini, prop/properties/props, env/dotenv`,
+			EnvVars:     []string{"GATE_CONFIG"},
+			Destination: &configFile,
+		},
+		&cli.BoolFlag{
+			Name:        "debug",
+			Aliases:     []string{"d"},
+			Usage:       "Enable debug mode and highest log verbosity",
+			Destination: &debug,
+			EnvVars:     []string{"GATE_DEBUG"},
+		},
+		&cli.IntFlag{
+			Name:        "verbosity",
+			Aliases:     []string{"v"},
+			Usage:       "The higher the verbosity the more logs are shown",
+			EnvVars:     []string{"GATE_VERBOSITY"},
+			Destination: &verbosity,
+		},
+	}
+	app.Action = func(c *cli.Context) error {
+		// Init viper
+		v, err := initViper(c, configFile)
+		if err != nil {
+			return cli.Exit(err, 1)
+		}
+		// Load config
+		cfg, err := gate.LoadConfig(v)
+		if err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		// Flags overwrite config
+		debug = debug || cfg.Editions.Java.Config.Debug
+		cfg.Editions.Java.Config.Debug = debug
+
+		if !c.IsSet("verbosity") && debug {
+			verbosity = math.MaxInt8
+		}
+
+		// Create logger
+		log, err := newLogger(debug, verbosity)
+		if err != nil {
+			return cli.Exit(fmt.Errorf("error creating zap logger: %w", err), 1)
+		}
+		c.Context = logr.NewContext(c.Context, log)
+
+		log.Info("logging verbosity", "verbosity", verbosity)
+		log.Info("using config file", "config", v.ConfigFileUsed())
+
+		// Start Gate
+		if err = gate.Start(c.Context, gate.WithConfig(*cfg)); err != nil {
+			return cli.Exit(fmt.Errorf("error running Gate: %w", err), 1)
+		}
+		return nil
+	}
+	return app
 }
 
-// initConfig binds flags, reads in config file and ENV variables if set.
-func initConfig() error {
+func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
 	v := gate.Viper
-
-	_ = v.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
-	_ = v.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-
-	// Load Environment Variables
-	v.SetEnvPrefix("GATE")
-	v.AutomaticEnv() // read in environment variables that match
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	if cfgFile := v.GetString("config"); cfgFile != "" {
-		v.SetConfigFile(cfgFile)
+	if c.IsSet("config") {
+		v.SetConfigFile(configFile)
 	} else {
 		v.SetConfigName("config")
 		v.AddConfigPath(".")
 	}
-
-	// If a config file is found, read it in.
-	// A config file is not required.
+	// Load Environment Variables
+	v.SetEnvPrefix("GATE")
+	v.AutomaticEnv() // read in environment variables that match
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	// Read in config.
 	if err := v.ReadInConfig(); err != nil {
-		if (errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err)) &&
-			!rootCmd.PersistentFlags().Changed("config") {
-			return nil
+		// A config file is only required to exist when explicit config flag was specified.
+		if !(errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err)) || c.IsSet("config") {
+			return nil, fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
 		}
-		return fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
 	}
-	fmt.Println("Using config file:", v.ConfigFileUsed())
-	return nil
+	return v, nil
+}
+
+// newLogger returns a new zap logger with a modified production
+// or development default config to ensure human readability.
+func newLogger(debug bool, v int) (l logr.Logger, err error) {
+	var cfg zap.Config
+	if debug {
+		cfg = zap.NewDevelopmentConfig()
+	} else {
+		cfg = zap.NewProductionConfig()
+	}
+	cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(-v))
+
+	cfg.Encoding = "console"
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	zl, err := cfg.Build()
+	if err != nil {
+		return logr.Discard(), err
+	}
+	return zapr.NewLogger(zl), nil
 }

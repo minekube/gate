@@ -2,11 +2,13 @@ package packet
 
 import (
 	"errors"
+	"fmt"
+	"io"
+
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type JoinGame struct {
@@ -27,11 +29,64 @@ type JoinGame struct {
 	PreviousGamemode     int16              // 1.16+
 	BiomeRegistry        util.NBT           // 1.16.2+
 	SimulationDistance   int                // 1.18+
+	LastDeadPosition     *DeathPosition     // 1.19+
+	ChatTypeRegistry     util.NBT           // placeholder, 1.19+ // compound binary tag
+}
+
+type DeathPosition struct {
+	Key   string
+	Value int64
+}
+
+func (d *DeathPosition) encode(wr io.Writer) error {
+	err := util.WriteBool(wr, d != nil)
+	if err != nil {
+		return err
+	}
+	if d != nil {
+		err = util.WriteString(wr, d.Key)
+		if err != nil {
+			return err
+		}
+		err = util.WriteInt64(wr, d.Value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func decodeDeathPosition(rd io.Reader) (*DeathPosition, error) {
+	ok, err := util.ReadBool(rd)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	dp := new(DeathPosition)
+	dp.Key, err = util.ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	dp.Value, err = util.ReadInt64(rd)
+	if err != nil {
+		return nil, err
+	}
+	return dp, nil
+}
+
+func (d *DeathPosition) String() string {
+	if d == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s %d", d.Key, d.Value)
 }
 
 const (
-	dimTypeKey = "minecraft:dimension_type"
-	biomeKey   = "minecraft:worldgen/biome"
+	dimTypeKey  = "minecraft:dimension_type"
+	biomeKey    = "minecraft:worldgen/biome"
+	chatTypeKey = "minecraft:chat_type"
 )
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -44,7 +99,7 @@ func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteInt32(wr, int32(j.EntityID))
+	err := util.WriteInt(wr, j.EntityID)
 	if err != nil {
 		return err
 	}
@@ -89,6 +144,9 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 			return errors.New("missing biome registry")
 		}
 		registryContainer[biomeKey] = j.BiomeRegistry
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+			registryContainer[chatTypeKey] = j.ChatTypeRegistry
+		}
 	} else {
 		registryContainer["dimension"] = encodedDimensionRegistry
 	}
@@ -97,7 +155,7 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
 		err = nbtEncoder.Encode(j.CurrentDimensionData.encodeDimensionDetails())
 		if err != nil {
 			return err
@@ -144,6 +202,7 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
+
 	err = util.WriteBool(wr, j.ReducedDebugInfo)
 	if err != nil {
 		return err
@@ -159,6 +218,13 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 	err = util.WriteBool(wr, j.DimensionInfo.Flat)
 	if err != nil {
 		return err
+	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err = j.LastDeadPosition.encode(wr)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -363,6 +429,14 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 		if !ok {
 			return dimReadErr("%q not a compound tag, is %T", biomeKey, dimType[biomeKey])
 		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+			j.ChatTypeRegistry, ok = registryContainer.NBT(chatTypeKey)
+			if !ok {
+				return dimReadErr("%q not a compound tag, is %T", chatTypeKey, registryContainer[chatTypeKey])
+			}
+		} else {
+			j.ChatTypeRegistry = util.NBT{} // empty
+		}
 	} else {
 		var ok bool
 		dimensionRegistryContainer, ok = registryContainer.List("dimension")
@@ -379,7 +453,8 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 		LevelNames: levelNames,
 	}
 	var dimensionIdentifier, levelName string
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) &&
+		c.Protocol.Lower(version.Minecraft_1_19) {
 		currentDimDataTag := util.NBT{}
 		err = nbtDecoder.Decode(&currentDimDataTag)
 		if err != nil {
@@ -453,6 +528,13 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 		LevelName:          &levelName,
 		Flat:               flat,
 		DebugType:          debug,
+	}
+	// optional death location
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		j.LastDeadPosition, err = decodeDeathPosition(rd)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

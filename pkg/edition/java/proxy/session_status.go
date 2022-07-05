@@ -31,9 +31,13 @@ func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandle
 
 func (h *statusSessionHandler) activated() {
 	cfg := h.conn.proxy.Config()
+	var log logr.Logger
 	if cfg.Status.LogPingRequests || cfg.Debug {
-		h.log.Info("Got server list status request")
+		log = h.log
+	} else {
+		log = h.log.V(1)
 	}
+	log.Info("got server list status request")
 }
 
 func (h *statusSessionHandler) handlePacket(pc *proto.PacketContext) {
@@ -56,9 +60,9 @@ func (h *statusSessionHandler) handlePacket(pc *proto.PacketContext) {
 
 var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
 
-func (h *statusSessionHandler) newInitialPing() *ping.ServerPing {
-	shownVersion := h.conn.Protocol()
-	if !version.Protocol(h.conn.Protocol()).Supported() {
+func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
+	shownVersion := protocol
+	if !version.Protocol(protocol).Supported() {
 		shownVersion = version.MaximumVersion.Protocol
 	}
 	return &ping.ServerPing{
@@ -67,11 +71,11 @@ func (h *statusSessionHandler) newInitialPing() *ping.ServerPing {
 			Name:     versionName,
 		},
 		Players: &ping.Players{
-			Online: h.proxy().PlayerCount(),
-			Max:    h.proxy().config.Status.ShowMaxPlayers,
+			Online: p.PlayerCount(),
+			Max:    p.config.Status.ShowMaxPlayers,
 		},
-		Description: h.proxy().motd,
-		Favicon:     h.proxy().favicon,
+		Description: p.motd,
+		Favicon:     p.favicon,
 	}
 }
 
@@ -85,13 +89,13 @@ func (h *statusSessionHandler) handleStatusRequest() {
 
 	e := &PingEvent{
 		inbound: h.inbound,
-		ping:    h.newInitialPing(),
+		ping:    newInitialPing(h.proxy(), h.conn.protocol),
 	}
 	h.proxy().event.Fire(e)
 
 	if e.ping == nil {
 		_ = h.conn.close()
-		h.log.V(1).Info("Ping response was set to nil by an event handler, no response is sent")
+		h.log.V(1).Info("ping response was set to nil by an event handler, no response is sent")
 		return
 	}
 	if !h.inbound.Active() {
@@ -101,7 +105,7 @@ func (h *statusSessionHandler) handleStatusRequest() {
 	response, err := json.Marshal(e.ping)
 	if err != nil {
 		_ = h.conn.close()
-		h.log.Error(err, "Error marshaling ping response to json")
+		h.log.Error(err, "error marshaling ping response to json")
 		return
 	}
 	_ = h.conn.WritePacket(&packet.StatusResponse{
@@ -113,7 +117,7 @@ func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
 	// Just return again and close
 	defer h.conn.close()
 	if err := h.conn.WritePacket(p); err != nil {
-		h.log.V(1).Info("Error writing StatusPing response", "err", err)
+		h.log.V(1).Info("error writing StatusPing response", "err", err)
 	}
 }
 

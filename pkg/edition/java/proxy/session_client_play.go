@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -13,6 +12,9 @@ import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
@@ -35,7 +37,8 @@ type clientPlaySessionHandler struct {
 	log, log1           logr.Logger
 	player              *connectedPlayer
 	spawned             atomic.Bool
-	loginPluginMessages deque.Deque
+	loginPluginMessages deque.Deque[*plugin.Message]
+	lastChatMessage     time.Time // Added in 1.19
 
 	// TODO serverBossBars
 	outstandingTabComplete *packet.TabCompleteRequest
@@ -61,8 +64,12 @@ func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		c.handleKeepAlive(p)
-	case *packet.Chat:
-		c.handleChat(p)
+	case *packet.LegacyChat:
+		c.handleLegacyChat(p)
+	case *packet.PlayerChat:
+		c.handlePlayerChat(p)
+	case *packet.PlayerCommand:
+		c.handlePlayerCommand(p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p)
 	case *plugin.Message:
@@ -125,7 +132,7 @@ func (c *clientPlaySessionHandler) flushQueuedMessages() {
 		return
 	}
 	for c.loginPluginMessages.Len() != 0 {
-		pm := c.loginPluginMessages.PopFront().(*plugin.Message)
+		pm := c.loginPluginMessages.PopFront()
 		_ = serverMc.BufferPacket(pm)
 	}
 	_ = serverMc.flush()
@@ -161,8 +168,14 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			"channel", packet.Channel)
 	} else if plugin.IsRegister(packet) {
 		if backendConn.WritePacket(packet) != nil {
+			channelsIDs, channels := c.parseChannels(packet)
 			c.player.lockedKnownChannels(func(knownChannels sets.String) {
-				knownChannels.Insert(plugin.Channels(packet)...)
+				knownChannels.Insert(channels...)
+			})
+
+			c.proxy().event.Fire(&PlayerChannelRegisterEvent{
+				channels: channelsIDs,
+				player:   c.player,
 			})
 		}
 	} else if plugin.IsUnregister(packet) {
@@ -225,10 +238,28 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	}
 }
 
+func (c *clientPlaySessionHandler) parseChannels(packet *plugin.Message) ([]message.ChannelIdentifier, []string) {
+	var channels []string
+	var channelsIDs []message.ChannelIdentifier
+	channelIdentifiers := make(map[string]message.ChannelIdentifier)
+	for _, channel := range plugin.Channels(packet) {
+		id, err := message.ChannelIdentifierFrom(channel)
+		if err != nil {
+			c.log.V(1).Error(err, "got invalid channel in plugin message")
+			continue
+		}
+		if _, ok := channelIdentifiers[id.ID()]; !ok { // deduplicate
+			channelsIDs = append(channelsIDs, id)
+			channels = append(channels, id.ID())
+			channelIdentifiers[id.ID()] = id
+		}
+	}
+	return channelsIDs, channels
+}
+
 // Handles the JoinGame packet and is responsible for handling the client-side
 // switching servers in the proxy.
-func (c *clientPlaySessionHandler) handleBackendJoinGame(
-	joinGame *packet.JoinGame, destination *serverConnection) (err error) {
+func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext, joinGame *packet.JoinGame, destination *serverConnection) (err error) {
 	serverMc, ok := destination.ensureConnected()
 	if !ok {
 		return errors.New("no backend server connection")
@@ -244,7 +275,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 		c.player.phase().onFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
-		if err = c.player.tabList.clearEntries(); err != nil {
+		if err = tablist.BufferClearTabListEntries(c.player.tabList, c.player.BufferPacket); err != nil {
 			return fmt.Errorf("error clearing tablist entries: %w", err)
 		}
 		// The player is switching from a server already, so we need to tell the client to change
@@ -281,7 +312,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(
 
 	// If we had plugin messages queued during login/FML handshake, send them now.
 	for c.loginPluginMessages.Len() != 0 {
-		pm := c.loginPluginMessages.PopFront().(*plugin.Message)
+		pm := c.loginPluginMessages.PopFront()
 		if err = serverMc.BufferPacket(pm); err != nil {
 			return fmt.Errorf("error buffering %T for backend: %w", pm, err)
 		}
@@ -362,13 +393,13 @@ func (c *clientPlaySessionHandler) doSafeClientServerSwitch(joinGame *packet.Joi
 	} else {
 		respawn.Dimension = 0
 	}
-	if err = c.player.BufferPacket(joinGame); err != nil {
+	if err = c.player.BufferPacket(respawn); err != nil {
 		return fmt.Errorf("error buffering 2dn %T for player: %w", joinGame, err)
 	}
 
 	// Now send a respawn packet in the correct dimension.
 	respawn.Dimension = correctDim
-	if err = c.player.BufferPacket(joinGame); err != nil {
+	if err = c.player.BufferPacket(respawn); err != nil {
 		return fmt.Errorf("error buffering 3rd %T for player: %w", joinGame, err)
 	}
 	return nil
@@ -390,6 +421,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		DimensionInfo:        joinGame.DimensionInfo,
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,
+		LastDeathPosition:    joinGame.LastDeadPosition,
 	}
 }
 
@@ -397,20 +429,90 @@ func (c *clientPlaySessionHandler) proxy() *Proxy {
 	return c.player.proxy
 }
 
-var spaceRegex = regexp.MustCompile(`\s+`)
-
-// trimSpaces removes too many spaces in between.
-func trimSpaces(s string) string {
-	s = strings.TrimSpace(s)
-	return spaceRegex.ReplaceAllString(s, " ")
-}
-
-func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
-	if validation.ContainsIllegalCharacter(p.Message) {
-		c.player.Disconnect(illegalChatCharacters)
+func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
+	if !c.validateChat(p.Message) {
 		return
 	}
 
+	if strings.HasPrefix(p.Message, "/") {
+		c.processCommandMessage(strings.TrimPrefix(p.Message, "/"), nil)
+	} else {
+		c.processPlayerChat(p.Message, nil, p)
+	}
+}
+
+func (c *clientPlaySessionHandler) handlePlayerCommand(p *packet.PlayerCommand) {
+	if !c.validateChat(p.Command) {
+		return
+	}
+
+	if !p.Unsigned {
+		// Bad if spoofed
+		signedCommand, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
+		if err != nil {
+			c.log.Error(err, "invalid signed command message")
+			c.player.Disconnect(&component.Text{
+				Content: "Invalid signed chat message",
+				S:       component.Style{Color: color.Red},
+			})
+			return
+		}
+		if signedCommand != nil {
+			c.processCommandMessage(p.Command, signedCommand)
+			return
+		}
+	}
+
+	c.processCommandMessage(p.Command, nil)
+}
+
+func (c *clientPlaySessionHandler) tickLastMessage(nextMessage *crypto.SignedChatMessage) bool {
+	if !c.lastChatMessage.IsZero() && c.lastChatMessage.After(nextMessage.Expiry) {
+		c.player.Disconnect(&component.Translation{Key: "multiplayer.disconnect.out_of_order_chat"})
+		return false
+	}
+	c.lastChatMessage = nextMessage.Expiry
+	return true
+}
+
+func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
+	if !c.validateChat(p.Message) {
+		return
+	}
+
+	if !p.Unsigned {
+		// Bad if spoofed
+		signedChat, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
+		if err != nil {
+			c.log.Error(err, "invalid signed chat message")
+			c.player.Disconnect(&component.Text{
+				Content: "Invalid signed chat message",
+				S:       component.Style{Color: color.Red},
+			})
+			return
+		}
+		if signedChat != nil {
+			// Server doesn't care for expiry as long as order is correct
+			if !c.tickLastMessage(signedChat) {
+				return
+			}
+			c.processPlayerChat(p.Message, signedChat, p)
+			return
+		}
+	}
+
+	c.processPlayerChat(p.Message, nil, p)
+}
+
+func (c *clientPlaySessionHandler) processCommandMessage(command string, signedCommand *crypto.SignedChatCommand) {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -420,80 +522,122 @@ func (c *clientPlaySessionHandler) handleChat(p *packet.Chat) {
 		return
 	}
 
-	// Is it a command?
-	if strings.HasPrefix(p.Message, "/") {
-		commandline := trimSpaces(strings.TrimPrefix(p.Message, "/"))
-
-		e := &CommandExecuteEvent{
-			source:          c.player,
-			commandline:     commandline,
-			originalCommand: commandline,
-		}
-		c.proxy().event.Fire(e)
-		forward, err := c.processCommandExecuteResult(e)
+	e := &CommandExecuteEvent{
+		source:          c.player,
+		commandline:     command,
+		originalCommand: command,
+	}
+	c.proxy().event.FireParallel(e, func(ev event.Event) {
+		e = ev.(*CommandExecuteEvent)
+		err := c.processCommandExecuteResult(e, signedCommand)
 		if err != nil {
-			c.log.Error(err, "Error while running command", "cmd", commandline)
+			c.log.Error(err, "error while running command", "command", command)
 			_ = c.player.SendMessage(&component.Text{
 				Content: "An error occurred while running this command.",
 				S:       component.Style{Color: color.Red},
 			})
 			return
 		}
-		if !forward {
-			return
-		}
-	} else { // Is chat message
-		e := &PlayerChatEvent{
-			player:  c.player,
-			message: p.Message,
-		}
-		c.proxy().Event().Fire(e)
-		if !e.Allowed() || !c.player.Active() {
-			return
-		}
-		c.log1.Info("Player sent chat message", "chat", p.Message)
-	}
-
-	// Forward message/command to server
-	_ = serverMc.WritePacket(&packet.Chat{
-		Message: p.Message,
-		Type:    packet.ChatMessageType,
-		Sender:  c.player.ID(),
 	})
 }
 
-func (c *clientPlaySessionHandler) processCommandExecuteResult(e *CommandExecuteEvent) (forward bool, err error) {
-	if !e.Allowed() || !c.player.Active() {
-		return false, nil
+func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessage *crypto.SignedChatMessage, original proto.Packet) {
+	serverConn := c.player.connectedServer()
+	if serverConn == nil {
+		return
+	}
+	_, ok := serverConn.ensureConnected()
+	if !ok {
+		return
+	}
+	e := &PlayerChatEvent{
+		player:   c.player,
+		original: msg,
+	}
+	c.proxy().Event().FireParallel(e, func(ev event.Event) {
+		e = ev.(*PlayerChatEvent)
+
+		if !e.Allowed() || !c.player.Active() {
+			return
+		}
+		serverMc, ok := serverConn.ensureConnected()
+		if !ok {
+			return
+		}
+		if e.modified != "" {
+			c.log1.Info("player sent chat message",
+				"original", e.Original(), "modified", e.modified)
+			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
+				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+			}
+			write := packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer()
+			_ = serverMc.WritePacket(write)
+			return
+		}
+		c.log1.Info("player sent chat message", "chat", e.Message())
+		_ = serverMc.WritePacket(original)
+	})
+}
+
+func (c *clientPlaySessionHandler) validateChat(msg string) bool {
+	if validation.ContainsIllegalCharacter(msg) {
+		c.player.Disconnect(illegalChatCharacters)
+		return false
+	}
+	return true
+}
+
+func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandExecuteEvent, signedCommand *crypto.SignedChatCommand) error {
+	if !result.Allowed() || !c.player.Active() {
+		return nil
+	}
+
+	smc, ok := c.player.ensureBackendConnection()
+	if !ok {
+		c.player.Disconnect(internalServerConnectionError)
+		return nil
 	}
 
 	// Log player executed command
 	log := c.log
-	if e.Command() == e.OriginalCommand() {
-		log = log.WithValues("command", e.Command())
+	if result.Command() == result.OriginalCommand() {
+		log = log.WithValues("command", result.Command())
 	} else {
-		log = log.WithValues("original", e.OriginalCommand(),
-			"changed", e.Command())
+		log = log.WithValues("original", result.OriginalCommand(),
+			"changed", result.Command())
 	}
-	log.Info("Player executed command")
+	log.Info("player executing command")
 
-	if !e.Forward() {
-		hasRun, err := c.executeCommand(e.Command())
-		if err != nil {
-			return false, err
+	forwardToServer := func() error {
+		write := packet.NewChatBuilder(c.player.Protocol()).AsPlayer(c.player.ID())
+
+		if signedCommand != nil && result.Command() == signedCommand.Command {
+			write.SignedCommandMessage(signedCommand)
+		} else {
+			write.Message("/" + result.Command())
 		}
-		if hasRun {
-			return false, nil // ran command, done
-		}
+		return smc.WritePacket(write.ToServer())
 	}
 
-	// Forward command to server
-	return true, nil
+	if result.Forward() {
+		return forwardToServer()
+	}
+
+	// Exec command
+	hasRun, err := c.executeCommand(result.Command())
+	if err != nil {
+		return err
+	}
+	if !hasRun {
+		return forwardToServer()
+	}
+
+	return nil
 }
 
 func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err error) {
 	// Make invoke context
-	ctx, cancel := c.player.newContext(context.Background())
+	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
 
 	// Dispatch command
@@ -547,7 +691,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 		return
 	}
 
-	ctx, cancel := c.player.newContext(context.Background())
+	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
 	suggestions, err := c.proxy().command.OfferSuggestions(ctx, c.player, cmd)
 	if err != nil {

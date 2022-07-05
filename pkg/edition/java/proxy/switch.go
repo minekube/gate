@@ -3,13 +3,10 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
-	"go.minekube.com/common/minecraft/component/codec"
-
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/runtime/event"
@@ -161,7 +158,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	log := p.log.WithValues(
 		"serverName", server.ServerInfo().Name(),
 		"serverAddr", server.ServerInfo().Addr())
-	log.V(1).Info("Could not connect player to server", "err", err)
+	log.V(1).Info("could not connect player to server", "err", err)
 
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
@@ -170,7 +167,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 
 	var userMsg string
 	connectedServer := p.CurrentServer()
-	if connectedServer != nil && connectedServer.Server().Equals(server) {
+	if connectedServer != nil && RegisteredServerEqual(connectedServer.Server(), server) {
 		userMsg = fmt.Sprintf("Your connection to %q encountered an error.",
 			server.ServerInfo().Name())
 	} else {
@@ -198,7 +195,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 		return
 	}
 	currentServer := p.CurrentServer()
-	kickedFromCurrent := currentServer == nil || currentServer.Server().Equals(rs)
+	kickedFromCurrent := currentServer == nil || RegisteredServerEqual(currentServer.Server(), rs)
 	var result ServerKickResult
 	if kickedFromCurrent {
 		next := p.nextServerToTry(rs)
@@ -210,7 +207,7 @@ func (p *connectedPlayer) handleConnectionErr2(
 	} else {
 		// If we were kicked by going to another server, the connection should not be in flight
 		p.mu.Lock()
-		if p.connInFlight != nil && p.connInFlight.Server().Equals(rs) {
+		if p.connInFlight != nil && RegisteredServerEqual(p.connInFlight.Server(), rs) {
 			p.resetInFlightConnection0()
 		}
 		p.mu.Unlock()
@@ -301,18 +298,17 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 		return
 	}
 
-	b := new(strings.Builder)
-	err := (&codec.Plain{}).Marshal(b, reason)
-	if err != nil {
-		p.log.V(1).Info("Error marshal disconnect reason to plain", "err", err)
-	}
-	plainReason := b.String()
+	log := p.log.WithValues("server", server.ServerInfo().Name())
 
-	log := p.log.WithValues("server", server.ServerInfo().Name(), "reason", plainReason)
+	if plainReason, err := util2.MarshalPlain(reason); err != nil {
+		p.log.V(1).Info("error marshal disconnect reason to plain", "err", err)
+	} else {
+		log = log.WithValues("reason", plainReason)
+	}
 
 	connected := p.connectedServer()
 	if connected != nil && ServerInfoEqual(connected.server.ServerInfo(), server.ServerInfo()) {
-		log.Info("Player was kicked from server")
+		log.Info("player was kicked from server")
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: movedToNewServer.Content,
 			S:       movedToNewServer.S,
@@ -321,7 +317,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 		return
 	}
 
-	log.Info("Player disconnected from server while connecting")
+	log.Info("player disconnected from server while connecting")
 	p.handleConnectionErr2(server, reason, &Text{
 		Content: fmt.Sprintf("Can't connect to server %q: ", server.ServerInfo().Name()),
 		S:       Style{Color: Red},
@@ -356,7 +352,7 @@ func (c *connectionRequest) checkServer(server RegisteredServer) (s ConnectionSt
 		!p.connectedServer_.completedJoin.Load()) {
 		return InProgressConnectionStatus, false
 	}
-	if p.connectedServer_ != nil && p.connectedServer_.Server().Equals(server) {
+	if p.connectedServer_ != nil && RegisteredServerEqual(p.connectedServer_.Server(), server) {
 		return AlreadyConnectedConnectionStatus, false
 	}
 	return 0, true

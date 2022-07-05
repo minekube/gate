@@ -2,26 +2,27 @@ package packet
 
 import (
 	"errors"
+	"io"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
-	"strings"
 )
 
 type ResourcePackRequest struct {
-	Url      string
+	URL      string
 	Hash     string
 	Required bool                // 1.17+
 	Prompt   component.Component // (nil-able) 1.17+
 }
 
 func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
-	if len(r.Url) == 0 {
+	if len(r.URL) == 0 {
 		return errors.New("url is missing")
 	}
-	err := util.WriteString(wr, r.Url)
+	err := util.WriteString(wr, r.URL)
 	if err != nil {
 		return err
 	}
@@ -53,7 +54,7 @@ func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error
 }
 
 func (r *ResourcePackRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	r.Url, err = util.ReadString(rd)
+	r.URL, err = util.ReadString(rd)
 	if err != nil {
 		return err
 	}
@@ -86,3 +87,42 @@ func (r *ResourcePackRequest) Decode(c *proto.PacketContext, rd io.Reader) (err 
 }
 
 var _ proto.Packet = (*ResourcePackRequest)(nil)
+
+type (
+	ResourcePackResponse struct {
+		Hash   string
+		Status ResourcePackResponseStatus
+	}
+	ResourcePackResponseStatus int
+)
+
+const (
+	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = iota
+	DeclinedResourcePackResponseStatus
+	FailedDownloadResourcePackResponseStatus
+	AcceptedResourcePackResponseStatus
+)
+
+func (r *ResourcePackResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		err := util.WriteString(wr, r.Hash)
+		if err != nil {
+			return err
+		}
+	}
+	return util.WriteVarInt(wr, int(r.Status))
+}
+
+func (r *ResourcePackResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		r.Hash, err = util.ReadString(rd)
+		if err != nil {
+			return err
+		}
+	}
+	status, err := util.ReadVarInt(rd)
+	r.Status = ResourcePackResponseStatus(status)
+	return
+}
+
+var _ proto.Packet = (*ResourcePackResponse)(nil)

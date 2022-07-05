@@ -3,6 +3,8 @@ package proxy
 import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
@@ -13,8 +15,11 @@ import (
 	"go.minekube.com/gate/pkg/util/permission"
 )
 
-// PingEvent is fired when a server list ping
-// request is sent by a remote client.
+// PingEvent is fired when a request for server information is sent by a remote client,
+// or when the server sends the MOTD and favicon to the client after a successful login.
+// The proxy will wait on this event to finish firing before delivering the results to
+// the remote client, but you are urged to handle this event as quickly as possible when
+// handling this event due to the amount of ping packets a client can send.
 type PingEvent struct {
 	inbound Inbound
 	ping    *ping.ServerPing
@@ -339,8 +344,11 @@ func (e *PostLoginEvent) Player() Player {
 //
 //
 
-// PlayerChooseInitialServerEvent is fired when a player has finished
-// connecting to the proxy and we need to choose the first server to connect to.
+// PlayerChooseInitialServerEvent is fired when a player has finished the login process,
+// and we need to choose the first server to connect to.
+// The proxy will wait on this event to finish firing before initiating the connection
+// but you should try to limit the work done in this event.
+// Failures will be handled by KickedFromServerEvent as normal.
 type PlayerChooseInitialServerEvent struct {
 	player        Player
 	initialServer RegisteredServer // May be nil if no server is configured.
@@ -627,9 +635,6 @@ func (p *PluginMessageEvent) Allowed() bool {
 	return p.forward
 }
 
-type PluginMessageForwardResult struct {
-}
-
 //
 //
 //
@@ -659,8 +664,9 @@ func (s *PlayerSettingsChangedEvent) Settings() player.Settings {
 // PlayerChatEvent is fired when a player sends a chat message.
 // Note that messages with a leading "/" do not trigger this event, but instead CommandExecuteEvent.
 type PlayerChatEvent struct {
-	player  Player
-	message string
+	player   Player
+	original string
+	modified string
 
 	denied bool
 }
@@ -670,9 +676,25 @@ func (c *PlayerChatEvent) Player() Player {
 	return c.player
 }
 
-// Message returns the message the player sent.
+// Message returns the message that will be sent by the player.
 func (c *PlayerChatEvent) Message() string {
-	return c.message
+	if c.modified == "" {
+		return c.original
+	}
+	return c.modified
+}
+
+// SetMessage modifies the message of the player.
+func (c *PlayerChatEvent) SetMessage(msg string) {
+	if msg == c.original {
+		return // not modified
+	}
+	c.modified = msg
+}
+
+// Original returns the original message the player sent.
+func (c *PlayerChatEvent) Original() string {
+	return c.original
 }
 
 // SetAllowed sets whether the chat message is allowed.
@@ -802,8 +824,177 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 //
 
+// ResourcePackResponseStatus is the status for a resource pack.
+type ResourcePackResponseStatus = packet.ResourcePackResponseStatus
+
+// Possible statuses for a resource pack.
+const (
+	SuccessfulResourcePackResponseStatus     ResourcePackResponseStatus = packet.SuccessfulResourcePackResponseStatus
+	DeclinedResourcePackResponseStatus       ResourcePackResponseStatus = packet.DeclinedResourcePackResponseStatus
+	FailedDownloadResourcePackResponseStatus ResourcePackResponseStatus = packet.FailedDownloadResourcePackResponseStatus
+	AcceptedResourcePackResponseStatus       ResourcePackResponseStatus = packet.AcceptedResourcePackResponseStatus
+)
+
+// PlayerResourcePackStatusEvent is fired when the status of a resource pack sent to the player by the server is
+// changed. Depending on the result of this event (which the proxy will wait until completely fired),
+// the player may be kicked from the server.
+type PlayerResourcePackStatusEvent struct {
+	player        Player
+	status        ResourcePackResponseStatus
+	packInfo      ResourcePackInfo
+	overwriteKick bool
+}
+
+// Player returns the player affected by the change in resource pack status.
+func (p *PlayerResourcePackStatusEvent) Player() Player {
+	return p.player
+}
+
+// Status returns the new status for the resource pack.
+func (p *PlayerResourcePackStatusEvent) Status() ResourcePackResponseStatus {
+	return p.status
+}
+
+// PackInfo returns the ResourcePackInfo this response is for.
+func (p *PlayerResourcePackStatusEvent) PackInfo() ResourcePackInfo {
+	return p.packInfo
+}
+
+// OverwriteKick returns whether to override the kick resulting from ResourcePackInfo.ShouldForce() being true.
+func (p *PlayerResourcePackStatusEvent) OverwriteKick() bool {
+	return p.overwriteKick
+}
+
+// SetOverwriteKick can set to true to prevent ResourcePackInfo.ShouldForce()
+// from kicking the player. Overwriting this kick is only possible on versions older than 1.17,
+// as the client or server will enforce this regardless. Cancelling the resulting
+// kick-events will not prevent the player from disconnecting from the proxy.
+func (p *PlayerResourcePackStatusEvent) SetOverwriteKick(overwriteKick bool) {
+	if p.player.Protocol().LowerEqual(version.Minecraft_1_17) {
+		return // overwriteKick is not supported on 1.17 or newer
+	}
+	p.overwriteKick = overwriteKick
+}
+
+//
+//
+//
+//
+
+// ServerResourcePackSendEvent is fired when the downstream server tries to send a player a ResourcePack packet.
+// The proxy will wait on this event to finish before forwarding the resource pack to the user.
+// If this event is denied, it will retroactively send a DENIED status to the downstream server in response.
+// If the downstream server has it set to "forced" it will forcefully disconnect the user.
+type ServerResourcePackSendEvent struct {
+	denied               bool
+	receivedResourcePack ResourcePackInfo
+	providedResourcePack ResourcePackInfo
+	serverConn           *serverConnection
+}
+
+// Allowed indicated whether sending the resource pack to the client is allowed.
+func (e *ServerResourcePackSendEvent) Allowed() bool {
+	return !e.denied
+}
+
+// SetAllowed allows or denies sending the resource pack to the client.
+func (e *ServerResourcePackSendEvent) SetAllowed(allowed bool) {
+	e.denied = !allowed
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerResourcePackSendEvent) ServerConnection() ServerConnection {
+	return e.serverConn
+}
+
+// ReceivedResourcePack returns the resource pack send by the server.
+func (e *ServerResourcePackSendEvent) ReceivedResourcePack() ResourcePackInfo {
+	return e.receivedResourcePack
+}
+
+// ProvidedResourcePack returns the resource pack provided to the client if allowed.
+func (e *ServerResourcePackSendEvent) ProvidedResourcePack() ResourcePackInfo {
+	return e.providedResourcePack
+}
+
+// SetProvidedResourcePack sets the resource pack provided to the client if allowed.
+func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackInfo) {
+	e.providedResourcePack = pack
+}
+
 // TODO PlayerClientBrandEvent
-// TODO ServerLoginPluginMessageEvent
+
+//
+//
+//
+//
+
+// PlayerChannelRegisterEvent is fired when a client Player sends a plugin message through the
+// register channel. The proxy will not wait on this event to finish firing.
+type PlayerChannelRegisterEvent struct {
+	channels []message.ChannelIdentifier
+	player   Player
+}
+
+func (e *PlayerChannelRegisterEvent) Channels() []message.ChannelIdentifier {
+	return e.channels
+}
+
+func (e *PlayerChannelRegisterEvent) Player() Player {
+	return e.player
+}
+
+//
+//
+//
+//
+
+// ServerLoginPluginMessageEvent is fired when a server sends a login plugin message to the proxy.
+// Plugins have the opportunity to respond to the messages as needed. The proxy will wait on this
+// event to finish. The server will be responsible for continuing the login process once the server
+// is satisfied with any login plugin responses sent by proxy plugins (or messages indicating a lack of response).
+type ServerLoginPluginMessageEvent struct {
+	conn       *serverConnection
+	id         message.ChannelIdentifier
+	contents   []byte
+	sequenceID int
+
+	result ServerLoginPluginMessageResult
+}
+
+// Contents returns the contents of the login plugin message sent by the server.
+func (e *ServerLoginPluginMessageEvent) Contents() []byte {
+	return e.contents
+}
+
+// SequenceID returns the sequence id of the login plugin message sent by the server.
+func (e *ServerLoginPluginMessageEvent) SequenceID() int {
+	return e.sequenceID
+}
+
+func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {
+	return &e.result
+}
+
+type ServerLoginPluginMessageResult struct {
+	Response []byte
+}
+
+func (r *ServerLoginPluginMessageResult) Allowed() bool {
+	return r.Response != nil
+}
+
+func (r *ServerLoginPluginMessageResult) Copy() []byte {
+	res := make([]byte, len(r.Response))
+	copy(res, r.Response)
+	return res
+}
+
+func (r *ServerLoginPluginMessageResult) Reply(response []byte) *ServerLoginPluginMessageResult {
+	return &ServerLoginPluginMessageResult{
+		Response: response,
+	}
+}
 
 //
 //

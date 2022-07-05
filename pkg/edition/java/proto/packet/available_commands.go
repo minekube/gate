@@ -32,14 +32,14 @@ type AvailableCommands struct {
 
 var _ proto.Packet = (*AvailableCommands)(nil)
 
-func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err error) {
+func (a *AvailableCommands) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	// Assign all the children an index.
-	var childrenQueue deque.Deque
+	var childrenQueue deque.Deque[brigodier.CommandNode]
 	childrenQueue.PushFront(a.RootNode)
 	idMappings := map[brigodier.CommandNode]int{}
 	var ordered []brigodier.CommandNode // nodes order, since Go map is unordered
 	for childrenQueue.Len() != 0 {
-		child := childrenQueue.PopFront().(brigodier.CommandNode)
+		child := childrenQueue.PopFront()
 		if _, ok := idMappings[child]; !ok {
 			idMappings[child] = len(idMappings)
 			ordered = append(ordered, child)
@@ -59,7 +59,7 @@ func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err er
 		return err
 	}
 	for _, child := range ordered {
-		err = encodeNode(wr, child, idMappings)
+		err = encodeNode(wr, c.Protocol, child, idMappings)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (a *AvailableCommands) Encode(_ *proto.PacketContext, wr io.Writer) (err er
 	return util.WriteVarInt(wr, idMappings[a.RootNode])
 }
 
-func encodeNode(wr io.Writer, node brigodier.CommandNode, idMappings map[brigodier.CommandNode]int) error {
+func encodeNode(wr io.Writer, protocol proto.Protocol, node brigodier.CommandNode, idMappings map[brigodier.CommandNode]int) error {
 	var flags byte
 	if node.Redirect() != nil {
 		flags |= FlagIsRedirect
@@ -117,7 +117,7 @@ func encodeNode(wr io.Writer, node brigodier.CommandNode, idMappings map[brigodi
 		if err != nil {
 			return err
 		}
-		err = brigadier.Encode(wr, n.Type())
+		err = brigadier.Encode(wr, n.Type(), protocol)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func encodeNode(wr io.Writer, node brigodier.CommandNode, idMappings map[brigodi
 	return nil
 }
 
-func (a *AvailableCommands) Decode(_ *proto.PacketContext, rd io.Reader) error {
+func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
 	commands, err := util.ReadVarInt(rd)
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func (a *AvailableCommands) Decode(_ *proto.PacketContext, rd io.Reader) error {
 	wireNodes := make([]*WireNode, commands)
 	for i := 0; i < commands; i++ {
 		wn := &WireNode{IDx: i}
-		if err = wn.decode(rd); err != nil {
+		if err = wn.decode(rd, c.Protocol); err != nil {
 			return err
 		}
 		wireNodes[i] = wn
@@ -216,7 +216,7 @@ type WireNode struct {
 	Validated  bool
 }
 
-func (w *WireNode) decode(rd io.Reader) (err error) {
+func (w *WireNode) decode(rd io.Reader, protocol proto.Protocol) (err error) {
 	w.Flags, err = util.ReadByte(rd)
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func (w *WireNode) decode(rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-		argType, err := brigadier.Decode(rd)
+		argType, err := brigadier.Decode(rd, protocol)
 		if err != nil {
 			return err
 		}

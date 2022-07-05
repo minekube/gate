@@ -8,13 +8,21 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"time"
 
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
+const (
+	DefaultMaxStringSize = bufio.MaxScanTokenSize
+)
+
 func ReadString(rd io.Reader) (string, error) {
-	return ReadStringMax(rd, bufio.MaxScanTokenSize)
+	return ReadStringMax(rd, DefaultMaxStringSize)
 }
 
 func ReadStringMax(rd io.Reader, max int) (string, error) {
@@ -57,7 +65,7 @@ func ReadStringArray(rd io.Reader) ([]string, error) {
 }
 
 func ReadBytes(rd io.Reader) ([]byte, error) {
-	return ReadBytesLen(rd, bufio.MaxScanTokenSize)
+	return ReadBytesLen(rd, DefaultMaxStringSize)
 }
 
 func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
@@ -338,4 +346,33 @@ func ReadUTF(rd io.Reader) (string, error) {
 	p := make([]byte, length)
 	_, err = io.ReadFull(rd, p)
 	return string(p), err
+}
+
+func ReadPlayerKey(rd io.Reader) (crypto.IdentifiedKey, error) {
+	expiry, err := ReadInt64(rd)
+	if err != nil {
+		return nil, err
+	}
+	key, err := ReadBytes(rd)
+	if err != nil {
+		return nil, err
+	}
+	signature, err := ReadBytesLen(rd, 4096)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.NewIdentifiedKey(key, expiry, signature)
+}
+
+func ReadUnixMilli(rd io.Reader) (time.Time, error) {
+	milli, err := ReadInt64(rd)
+	return time.UnixMilli(milli), err
+}
+
+func ReadComponent(rd io.Reader, protocol proto.Protocol) (component.Component, error) {
+	str, err := ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	return JsonCodec(protocol).Unmarshal([]byte(str))
 }

@@ -1,16 +1,17 @@
 package packet
 
 import (
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 // https://wiki.vg/Protocol#Handshaking
 type Handshake struct {
 	ProtocolVersion int
 	ServerAddress   string
-	Port            int16 // TODO use uint16?
+	Port            int
 	NextStatus      int
 }
 
@@ -23,7 +24,7 @@ func (h *Handshake) Encode(_ *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = util.WriteInt16(wr, h.Port)
+	err = util.WriteInt16(wr, int16(h.Port))
 	if err != nil {
 		return err
 	}
@@ -39,10 +40,11 @@ func (h *Handshake) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	h.Port, err = util.ReadInt16(rd)
+	port, err := util.ReadInt16(rd)
 	if err != nil {
 		return err
 	}
+	h.Port = int(port)
 	h.NextStatus, err = util.ReadVarInt(rd)
 	return err
 }

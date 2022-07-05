@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-// Indicates a packet was known and successfully decoded by it's registered decoder,
-// but the decoder has not read all of the packet's bytes.
+// ErrDecoderLeftBytes indicates a packet was known and successfully decoded by it's registered decoder,
+// but the decoder has not read all the packet's bytes.
 //
 // This may happen in cases where
 //  - the decoder has a bug

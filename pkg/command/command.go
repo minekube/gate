@@ -3,10 +3,11 @@ package command
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/util/permission"
-	"strings"
 )
 
 // Manager is a command manager for
@@ -18,7 +19,11 @@ type Manager struct{ brigodier.Dispatcher }
 type Source interface {
 	permission.Subject
 	// SendMessage sends a message component to the invoker.
-	SendMessage(msg component.Component) error
+	SendMessage(msg component.Component, opts ...MessageOption) error
+}
+
+type MessageOption interface {
+	Apply(o any)
 }
 
 // SourceFromContext retrieves the Source from a command's context.

@@ -2,8 +2,19 @@ package packet
 
 import (
 	"bytes"
+	crypto2 "crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	_ "embed"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"io"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/bxcodec/faker/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,12 +25,24 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"reflect"
-	"testing"
 )
+
+// TODO write utility that records all known packets into gob for use in testing.
+var (
+	//go:embed testdata/PlayerChat-1.19.gob
+	playerChatPacketGob []byte
+	playerChatPacket    = new(PlayerChat)
+)
+
+func init() {
+	err := gob.NewDecoder(bytes.NewReader(playerChatPacketGob)).Decode(&playerChatPacket)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // All packets to test.
 // Empty packets are being initialized with random fake data at runtime.
@@ -27,7 +50,7 @@ import (
 // can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
-	&Chat{},
+	&LegacyChat{},
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
@@ -55,16 +78,40 @@ var packets = []proto.Packet{
 	&Disconnect{},
 	&Handshake{},
 	&KeepAlive{},
-	&ServerLogin{},
+	&ServerLogin{
+		Username: "Foo",
+		PlayerKey: func() crypto.IdentifiedKey {
+			pk, err := rsa.GenerateKey(rand.Reader, 512)
+			if err != nil {
+				panic(err)
+			}
+			public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+			if err != nil {
+				panic(err)
+			}
+			hashed := crypto2.SHA1.New()
+			hashed.Write([]byte("message"))
+			signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
+			if err != nil {
+				panic(err)
+			}
+			k, err := crypto.NewIdentifiedKey(public, time.Now().UnixMilli(), signature)
+			if err != nil {
+				panic(err)
+			}
+			return k
+		}(),
+	},
 	&EncryptionResponse{},
 	&LoginPluginResponse{},
 	&ServerLoginSuccess{},
 	&SetCompression{},
 	&LoginPluginMessage{},
 	&ResourcePackRequest{
-		Url:    "https://example.com/",
+		URL:    "https://example.com/",
 		Prompt: &component.Text{Content: "Prompt"},
 	},
+	&ResourcePackResponse{},
 	&Respawn{},
 	&StatusRequest{},
 	&StatusResponse{},
@@ -129,9 +176,26 @@ var packets = []proto.Packet{
 		DimensionInfo:        mustFake(&DimensionInfo{}).(*DimensionInfo),
 		CurrentDimensionData: mustFake(&DimensionData{}).(*DimensionData),
 		PreviousGamemode:     2,
-		BiomeRegistry: map[string]interface{}{
+		BiomeRegistry: map[string]any{
 			"k": "v",
 		},
+		SimulationDistance: 3,
+		LastDeadPosition: &DeathPosition{
+			Key:   "k",
+			Value: 3,
+		},
+		ChatTypeRegistry: nil,
+	},
+	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
+	playerChatPacket,
+	&PlayerChatPreview{},
+	&ServerChatPreview{
+		ID:      3,
+		Preview: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
+	},
+	&SystemChat{
+		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
+		Type:      1,
 	},
 }
 
@@ -255,7 +319,7 @@ func vRange(start, endInclusive *proto.Version) (vers []*proto.Version) {
 	return
 }
 func strPtr(s string) *string { return &s }
-func mustFake(a interface{}) interface{} {
+func mustFake(a any) any {
 	if err := faker.FakeData(a); err != nil {
 		panic(fmt.Sprintf("error faking %T: %v", a, err))
 	}
