@@ -68,6 +68,7 @@ type tabListEntry struct {
 	gameMode    int
 	// This is only intended and only works for players currently not connected to this proxy.
 	// For any player currently connected to this proxy this will be filled automatically.
+	// Will ignore mismatching key revision data.
 	playerKey crypto.IdentifiedKey // nil-able
 }
 

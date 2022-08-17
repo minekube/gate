@@ -8,14 +8,14 @@ import (
 	"reflect"
 
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	protoutil "go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -100,9 +100,11 @@ func (b *backendLoginSessionHandler) handleEncryptionRequest() {
 }
 
 const (
-	velocityIpForwardingChannel      = "velocity:player_info"
-	velocityDefaultForwardingVersion = 1
-	velocityWithKeyForwardingVersion = 2
+	velocityIpForwardingChannel        = "velocity:player_info"
+	velocityDefaultForwardingVersion   = 1
+	velocityWithKeyForwardingVersion   = 2
+	velocityWithKeyV2ForwardingVersion = 3
+	velocityForwardingMaxVersion       = velocityWithKeyV2ForwardingVersion
 )
 
 func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPluginMessage) {
@@ -113,23 +115,16 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 	cfg := b.config()
 	if cfg.Forwarding.Mode == config.VelocityForwardingMode && p.Channel == velocityIpForwardingChannel {
 
-		proposedForwardingVersion := velocityDefaultForwardingVersion
+		requestedForwardingVersion := velocityDefaultForwardingVersion
 		// Check version
 		if len(p.Data) == 1 {
-			requested := int(p.Data[0])
-			if !(requested >= velocityDefaultForwardingVersion) {
-				b.log.Info("invalid modern forwarding version", "requested", requested)
-				b.serverConn.disconnect()
-				return
-			}
-			proposedForwardingVersion = min(requested, velocityWithKeyForwardingVersion)
+			requestedForwardingVersion = int(p.Data[0])
 		}
 
 		forwardingData, err := createVelocityForwardingData(
 			[]byte(cfg.Forwarding.VelocitySecret),
 			netutil.Host(b.serverConn.Player().RemoteAddr()),
-			b.serverConn.player.profile,
-			b.serverConn.player.playerKey, proposedForwardingVersion,
+			b.serverConn.player, requestedForwardingVersion,
 		)
 		if err != nil {
 			b.log.Error(err, "error creating velocity forwarding data")
@@ -181,16 +176,34 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 	}
 }
 
+// find velocity forwarding version
+func findForwardingVersion(requested int, player *connectedPlayer) int {
+	// Ensure we are in range
+	requested = min(requested, velocityForwardingMaxVersion)
+	if requested > velocityDefaultForwardingVersion {
+		if revision := player.IdentifiedKey().KeyRevision(); revision != nil {
+			switch revision {
+			case keyrevision.GenericV1:
+				return velocityWithKeyForwardingVersion
+			// Since V2 is not backwards compatible we have to throw the key if v2 and requested is v1
+			case keyrevision.LinkedV2:
+				if requested >= velocityWithKeyV2ForwardingVersion {
+					return velocityWithKeyV2ForwardingVersion
+				}
+				return velocityDefaultForwardingVersion
+			}
+		}
+	}
+	return velocityDefaultForwardingVersion
+}
+
 func createVelocityForwardingData(
-	hmacSecret []byte, address string, profile *profile.GameProfile,
-	playerKey crypto.IdentifiedKey, requestedVersion int,
+	hmacSecret []byte, address string,
+	player *connectedPlayer, requestedVersion int,
 ) ([]byte, error) {
 	forwarded := bytes.NewBuffer(make([]byte, 0, 2048))
 
-	actualVersion := requestedVersion
-	if requestedVersion >= velocityWithKeyForwardingVersion && playerKey == nil {
-		actualVersion = velocityDefaultForwardingVersion
-	}
+	actualVersion := findForwardingVersion(requestedVersion, player)
 
 	err := protoutil.WriteVarInt(forwarded, actualVersion)
 	if err != nil {
@@ -200,15 +213,15 @@ func createVelocityForwardingData(
 	if err != nil {
 		return nil, err
 	}
-	err = protoutil.WriteUUID(forwarded, profile.ID)
+	err = protoutil.WriteUUID(forwarded, player.ID())
 	if err != nil {
 		return nil, err
 	}
-	err = protoutil.WriteString(forwarded, profile.Name)
+	err = protoutil.WriteString(forwarded, player.Username())
 	if err != nil {
 		return nil, err
 	}
-	err = protoutil.WriteProperties(forwarded, profile.Properties)
+	err = protoutil.WriteProperties(forwarded, player.GameProfile().Properties)
 	if err != nil {
 		return nil, err
 	}
@@ -216,9 +229,27 @@ func createVelocityForwardingData(
 	// This serves as additional redundancy. The key normally is stored in the
 	// login start to the server, but some setups require this.
 	if actualVersion >= velocityWithKeyForwardingVersion {
+		playerKey := player.IdentifiedKey()
+		if playerKey == nil {
+			return nil, errors.New("player auth key missing")
+		}
 		err = protoutil.WritePlayerKey(forwarded, playerKey)
 		if err != nil {
 			return nil, err
+		}
+
+		// Provide the signer UUID since the UUID may differ from the
+		// assigned UUID. Doing that breaks the signatures anyway but the server
+		// should be able to verify the key independently.
+		if actualVersion >= velocityWithKeyV2ForwardingVersion {
+			if playerKey.SignatureHolder() != uuid.Nil {
+				_ = protoutil.WriteBool(forwarded, true)
+				_ = protoutil.WriteUUID(forwarded, playerKey.SignatureHolder())
+			} else {
+				// Should only not be provided if the player was connected
+				// as offline-mode and the signer UUID was not backfilled
+				_ = protoutil.WriteBool(forwarded, false)
+			}
 		}
 	}
 

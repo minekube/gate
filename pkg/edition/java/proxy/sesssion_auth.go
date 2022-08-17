@@ -97,6 +97,15 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 	if cfg.Forwarding.Mode == config.NoneForwardingMode {
 		playerID = uuid.OfflinePlayerUUID(player.Username())
 	}
+
+	if playerKey := player.IdentifiedKey(); playerKey != nil {
+		if playerKey.SignatureHolder() != uuid.Nil {
+			if playerKey
+		} else {
+
+		}
+	}
+
 	if player.WritePacket(&packet.ServerLoginSuccess{
 		UUID:       playerID,
 		Username:   player.Username(),

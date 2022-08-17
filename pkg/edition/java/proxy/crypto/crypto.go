@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -25,6 +26,11 @@ type IdentifiedKey interface {
 	SignedPublicKeyBytes() []byte
 	// VerifyDataSignature validates a signature against this public key.
 	VerifyDataSignature(signature []byte, toVerify ...[]byte) bool
+	// SignatureHolder retrieves the signature holders UUID.
+	// Returns null before the LoginEvent.
+	SignatureHolder() uuid.UUID
+	// KeyRevision retrieves the key revision.
+	KeyRevision() keyrevision.Revision
 }
 
 // KeyIdentifiable identifies a type with a public RSA signature.
@@ -54,6 +60,8 @@ type KeySigned interface {
 	// Note: This will not check for expiry.
 	//
 	// DOES NOT WORK YET FOR MESSAGES AND COMMANDS!
+	//
+	// Does not work for 1.19.1 until the user has authenticated.
 	SignatureValid() bool
 
 	// Salt returns the signature salt or empty if not salted.
