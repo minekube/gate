@@ -278,9 +278,14 @@ func init() {
 	)
 	Play.ClientBound.Register(&p.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
+		m(0x62, version.Minecraft_1_19_1),
+	)
+	Play.ClientBound.Register(&p.PlayerChatCompletion{},
+		m(0x15, version.Minecraft_1_19),
 	)
 	Play.ClientBound.Register(&p.ServerData{},
 		m(0x3F, version.Minecraft_1_19),
+		m(0x42, version.Minecraft_1_19_1),
 	)
 	// coming soon...
 	// BossBar

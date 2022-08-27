@@ -197,6 +197,13 @@ var packets = []proto.Packet{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
 		Type:      1,
 	},
+	&PlayerChatCompletion{},
+	&ServerData{
+		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},
+		Favicon:            "Favicon",
+		PreviewsChat:       true,
+		SecureChatEnforced: true,
+	},
 }
 
 // fill packets with fake data
