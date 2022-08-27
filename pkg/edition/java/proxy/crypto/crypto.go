@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/signaturepair"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -31,6 +32,11 @@ type IdentifiedKey interface {
 	SignatureHolder() uuid.UUID
 	// KeyRevision retrieves the key revision.
 	KeyRevision() keyrevision.Revision
+
+	// Sets the uuid for this key.
+	// Returns false if incorrect.
+	// TODO: this should maybe be somewhere else
+	InternalAddHolder(uuid.UUID) bool
 }
 
 // KeyIdentifiable identifies a type with a public RSA signature.
@@ -80,6 +86,8 @@ type identifiedKey struct {
 	publicKey      *rsa.PublicKey
 	signature      []byte
 	expiryTemporal time.Time
+	keyRevision    keyrevision.Revision
+	holder         uuid.UUID
 
 	once struct {
 		sync.Once
@@ -90,7 +98,7 @@ type identifiedKey struct {
 
 var _ IdentifiedKey = (*identifiedKey)(nil)
 
-func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey, error) {
+func NewIdentifiedKey(revision keyrevision.Revision, key []byte, expiry int64, signature []byte) (IdentifiedKey, error) {
 	pk, err := x509.ParsePKIXPublicKey(key)
 	if err != nil {
 		return nil, fmt.Errorf("error parse public key: %w", err)
@@ -104,6 +112,8 @@ func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey
 		publicKey:      rsaKey,
 		signature:      signature,
 		expiryTemporal: time.UnixMilli(expiry),
+		keyRevision:    revision,
+		holder:         uuid.Nil,
 	}, nil
 }
 
@@ -150,17 +160,69 @@ func (i *identifiedKey) SignedPublicKeyBytes() []byte {
 	return i.publicKeyBytes
 }
 
+func (i *identifiedKey) SignatureHolder() uuid.UUID {
+	return i.holder
+}
+
+func (i *identifiedKey) KeyRevision() keyrevision.Revision {
+	return i.keyRevision
+}
+
+func (i *identifiedKey) InternalAddHolder(holder uuid.UUID) bool {
+	if holder == uuid.Nil {
+		return false
+	}
+	if i.holder == uuid.Nil {
+		// validateData will set i.once.isSignatureValid
+		if !i.validateData(holder) {
+			return false
+		}
+
+		i.holder = holder
+		return true
+	}
+
+	return i.holder == holder && i.SignatureValid()
+}
+
 func (i *identifiedKey) SignatureValid() bool {
 	i.once.Do(func() {
-		pemKey := pemEncodeKey(i.publicKeyBytes, "RSA PUBLIC KEY")
-		expires := i.expiryTemporal.UnixMilli()
-		toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
-
-		i.once.isSignatureValid = verifySignature(
-			crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
+		i.validateData(i.holder)
 	})
+
 	return i.once.isSignatureValid
 }
+
+// TODO: fix, most likely the once function is not used correctly
+// and the new validation for new key revision is most likely wrong.
+// ensure it is correct
+func (i *identifiedKey) validateData(verify uuid.UUID) bool {
+	// TODO: remove this hack
+	i.once.isSignatureValid = true
+	return true
+
+	if i.keyRevision == keyrevision.GenericV1 {
+		i.once.Do(func() {
+			pemKey := pemEncodeKey(i.publicKeyBytes, "RSA PUBLIC KEY")
+			expires := i.expiryTemporal.UnixMilli()
+			toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
+
+			i.once.isSignatureValid = verifySignature(
+				crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
+		})
+	} else {
+		if verify == uuid.Nil {
+			return false
+		}
+
+		expires := i.expiryTemporal.UnixMilli()
+		toVerify := []byte(fmt.Sprintf("%s%s%d%s", verify[0:8], verify[8:16], expires, i.publicKeyBytes))
+		i.once.isSignatureValid = verifySignature(crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
+	}
+
+	return i.once.isSignatureValid
+}
+
 func (i *identifiedKey) VerifyDataSignature(signature []byte, toVerify ...[]byte) bool {
 	return verifySignature(crypto.SHA256, i.publicKey, signature, toVerify...)
 }
@@ -199,21 +261,25 @@ func pemEncodeKey(key []byte, header string) string {
 
 type (
 	SignedChatMessage struct {
-		Message       string
-		Signer        *rsa.PublicKey
-		Signature     []byte
-		Expiry        time.Time
-		Salt          []byte
-		Sender        uuid.UUID
-		SignedPreview bool
+		Message            string
+		Signer             *rsa.PublicKey
+		Signature          []byte
+		Expiry             time.Time
+		Salt               []byte
+		Sender             uuid.UUID
+		PreviousSignatures []signaturepair.SignaturePair
+		LastSignature      signaturepair.SignaturePair
+		SignedPreview      bool
 	}
 	SignedChatCommand struct {
-		Command       string
-		Signer        *rsa.PublicKey
-		Expiry        time.Time
-		Salt          []byte
-		Sender        uuid.UUID
-		SignedPreview bool
-		Signatures    map[string][]byte
+		Command            string
+		Signer             *rsa.PublicKey
+		Expiry             time.Time
+		Salt               []byte
+		Sender             uuid.UUID
+		SignedPreview      bool
+		Signatures         map[string][]byte
+		PreviousSignatures []signaturepair.SignaturePair
+		LastSignature      signaturepair.SignaturePair
 	}
 )

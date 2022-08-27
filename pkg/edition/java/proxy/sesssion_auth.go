@@ -100,7 +100,7 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 
 	if playerKey := player.IdentifiedKey(); playerKey != nil {
 		if playerKey.SignatureHolder() != uuid.Nil {
-			if playerKey
+			// if playerKey
 		} else {
 
 		}

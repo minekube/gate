@@ -12,7 +12,9 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -348,7 +350,7 @@ func ReadUTF(rd io.Reader) (string, error) {
 	return string(p), err
 }
 
-func ReadPlayerKey(rd io.Reader) (crypto.IdentifiedKey, error) {
+func ReadPlayerKey(protocolVersion proto.Protocol, rd io.Reader) (crypto.IdentifiedKey, error) {
 	expiry, err := ReadInt64(rd)
 	if err != nil {
 		return nil, err
@@ -361,7 +363,13 @@ func ReadPlayerKey(rd io.Reader) (crypto.IdentifiedKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	return crypto.NewIdentifiedKey(key, expiry, signature)
+
+	revision := keyrevision.GenericV1
+	if protocolVersion.GreaterEqual(version.Minecraft_1_19_1) {
+		revision = keyrevision.LinkedV2
+	}
+
+	return crypto.NewIdentifiedKey(revision, key, expiry, signature)
 }
 
 func ReadUnixMilli(rd io.Reader) (time.Time, error) {

@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/signaturepair"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -82,17 +83,24 @@ const (
 var _ proto.Packet = (*LegacyChat)(nil)
 
 type PlayerChat struct {
-	Message       string
-	SignedPreview bool
-	Unsigned      bool
-	Expiry        time.Time // may be zero if no salt or signature specified
-	Signature     []byte
-	Salt          []byte
+	Message          string
+	SignedPreview    bool
+	Unsigned         bool
+	Expiry           time.Time // may be zero if no salt or signature specified
+	Signature        []byte
+	Salt             []byte
+	PreviousMessages []signaturepair.SignaturePair
+	LastMessage      signaturepair.SignaturePair
 }
+
+const (
+	MaximumPreviousMessageCount = 5
+)
 
 var (
 	errInvalidSignature        = errs.NewSilentErr("incorrectly signed chat message")
 	errPreviewSignatureMissing = errs.NewSilentErr("unsigned chat message requested signed preview")
+	errInvalidPreviousMessages = errs.NewSilentErr("invalid previous messages")
 )
 
 func (p *PlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -129,7 +137,54 @@ func (p *PlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	return util.WriteBool(wr, p.SignedPreview)
+
+	err = util.WriteBool(wr, p.SignedPreview)
+	if err != nil {
+		return err
+	}
+
+	if c.Protocol.Greater(version.Minecraft_1_19_1) {
+		err = util.WriteVarInt(wr, len(p.PreviousMessages))
+		if err != nil {
+			return err
+		}
+
+		for _, previousMessage := range p.PreviousMessages {
+			err = util.WriteUUID(wr, previousMessage.Signer)
+			if err != nil {
+				return err
+			}
+
+			err = util.WriteBytes(wr, previousMessage.Signature)
+			if err != nil {
+				return err
+			}
+		}
+
+		if !p.LastMessage.IsEmpty() {
+			err = util.WriteBool(wr, true)
+			if err != nil {
+				return err
+			}
+
+			err = util.WriteUUID(wr, p.LastMessage.Signer)
+			if err != nil {
+				return err
+			}
+
+			err = util.WriteBytes(wr, p.LastMessage.Signature)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = util.WriteBool(wr, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -170,6 +225,59 @@ func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if p.SignedPreview && p.Unsigned {
 		return errPreviewSignatureMissing
 	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		size, err := util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+
+		if size < 0 || size > MaximumPreviousMessageCount {
+			return errInvalidPreviousMessages
+		}
+
+		var lastSignatures []signaturepair.SignaturePair
+		for i := 0; i < size; i++ {
+			signer, err := util.ReadUUID(rd)
+			if err != nil {
+				return err
+			}
+
+			signature, err := util.ReadBytes(rd)
+			if err != nil {
+				return err
+			}
+
+			lastSignatures = append(lastSignatures, signaturepair.SignaturePair{
+				Signer:    signer,
+				Signature: signature,
+			})
+		}
+		p.PreviousMessages = lastSignatures
+
+		readLastMessage, err := util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+
+		if readLastMessage {
+			signer, err := util.ReadUUID(rd)
+			if err != nil {
+				return err
+			}
+
+			signature, err := util.ReadBytes(rd)
+			if err != nil {
+				return err
+			}
+
+			p.LastMessage = signaturepair.SignaturePair{
+				Signer:    signer,
+				Signature: signature,
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -181,13 +289,15 @@ func (p *PlayerChat) SignedContainer(signer crypto.IdentifiedKey, sender uuid.UU
 		return nil, nil
 	}
 	return &crypto.SignedChatMessage{
-		Message:       p.Message,
-		Signer:        signer.SignedPublicKey(),
-		Signature:     p.Signature,
-		Expiry:        p.Expiry,
-		Salt:          p.Salt,
-		Sender:        sender,
-		SignedPreview: p.SignedPreview,
+		Message:            p.Message,
+		Signer:             signer.SignedPublicKey(),
+		Signature:          p.Signature,
+		Expiry:             p.Expiry,
+		Salt:               p.Salt,
+		Sender:             sender,
+		SignedPreview:      p.SignedPreview,
+		PreviousSignatures: p.PreviousMessages,
+		LastSignature:      p.LastMessage,
 	}, nil
 }
 
@@ -458,6 +568,9 @@ func (b *ChatBuilder) ToServer() proto.Packet {
 		return &PlayerChat{
 			Message:  b.message,
 			Unsigned: true,
+			// TODO: needed?
+			PreviousMessages: []signaturepair.SignaturePair{},
+			LastMessage:      signaturepair.Empty,
 		}
 	}
 	return &LegacyChat{Message: b.message}
@@ -465,23 +578,27 @@ func (b *ChatBuilder) ToServer() proto.Packet {
 
 func toPlayerChat(m *crypto.SignedChatMessage) *PlayerChat {
 	return &PlayerChat{
-		Message:       m.Message,
-		SignedPreview: m.SignedPreview,
-		Unsigned:      false,
-		Expiry:        m.Expiry,
-		Signature:     m.Signature,
-		Salt:          m.Salt,
+		Message:          m.Message,
+		SignedPreview:    m.SignedPreview,
+		Unsigned:         false,
+		Expiry:           m.Expiry,
+		Signature:        m.Signature,
+		Salt:             m.Salt,
+		PreviousMessages: m.PreviousSignatures,
+		LastMessage:      m.LastSignature,
 	}
 }
 
 func toPlayerCommand(m *crypto.SignedChatCommand) *PlayerCommand {
 	salt, _ := util.ReadInt64(bytes.NewReader(m.Salt))
 	return &PlayerCommand{
-		Unsigned:      false,
-		Command:       m.Command,
-		Timestamp:     time.Time{},
-		Salt:          salt,
-		SignedPreview: m.SignedPreview,
-		Arguments:     nil,
+		Unsigned:         false,
+		Command:          m.Command,
+		Timestamp:        time.Time{},
+		Salt:             salt,
+		SignedPreview:    m.SignedPreview,
+		PreviousMessages: m.PreviousSignatures,
+		LastMessage:      m.LastSignature,
+		Arguments:        nil,
 	}
 }

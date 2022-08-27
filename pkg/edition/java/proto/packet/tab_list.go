@@ -250,7 +250,7 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 						return err
 					}
 					if ok {
-						p.PlayerKey, err = util.ReadPlayerKey(rd)
+						p.PlayerKey, err = util.ReadPlayerKey(c.Protocol, rd)
 						if err != nil {
 							return err
 						}

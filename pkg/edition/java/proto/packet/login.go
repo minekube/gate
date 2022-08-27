@@ -15,8 +15,9 @@ import (
 )
 
 type ServerLogin struct {
-	Username  string
-	PlayerKey crypto.IdentifiedKey // 1.19+
+	Username   string
+	PlayerKey  crypto.IdentifiedKey // 1.19+
+	HolderUUID uuid.UUID            // Used for key revision 2
 }
 
 var errEmptyUsername = errs.NewSilentErr("empty username")
@@ -42,6 +43,21 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 				return err
 			}
 		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+			fmt.Println("ServerLogin Encode", s.HolderUUID, s.HolderUUID != uuid.Nil)
+			err = util.WriteBool(wr, s.HolderUUID != uuid.Nil)
+			if err != nil {
+				return err
+			}
+
+			if s.HolderUUID != uuid.Nil {
+				err = util.WriteUUID(wr, s.HolderUUID)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -58,12 +74,26 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 		if ok {
-			s.PlayerKey, err = util.ReadPlayerKey(rd)
+			s.PlayerKey, err = util.ReadPlayerKey(c.Protocol, rd)
 			if err != nil {
 				return err
 			}
 		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+			ok, err := util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
+			if ok {
+				s.HolderUUID, err = util.ReadUUID(rd)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
+
 	return
 }
 
@@ -332,3 +362,5 @@ var _ proto.Packet = (*LoginPluginResponse)(nil)
 var _ proto.Packet = (*EncryptionRequest)(nil)
 var _ proto.Packet = (*EncryptionResponse)(nil)
 var _ proto.Packet = (*SetCompression)(nil)
+
+// TODO: No expectedMaxLength anywhere??

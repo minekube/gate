@@ -5,12 +5,14 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 
 	"github.com/go-logr/logr"
 
@@ -65,6 +67,7 @@ func (l *initialLoginSessionHandler) handlePacket(p *proto.PacketContext) {
 		_ = l.conn.closeKnown(true)
 		return
 	}
+	fmt.Printf("handlePacket type: %T\n", p.Packet)
 	switch t := p.Packet.(type) {
 	case *packet.ServerLogin:
 		l.handleServerLogin(t)
@@ -101,7 +104,14 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			return
 		}
 
-		if !playerKey.SignatureValid() {
+		var isKeyValid bool
+		if playerKey.KeyRevision() == keyrevision.LinkedV2 {
+			isKeyValid = playerKey.InternalAddHolder(login.HolderUUID)
+		} else {
+			isKeyValid = playerKey.SignatureValid()
+		}
+
+		if !isKeyValid {
 			l.log.V(1).Info("invalid player public key signature")
 			_ = l.inbound.disconnect(&component.Translation{
 				Key: "multiplayer.disconnect.invalid_public_key",
@@ -179,10 +189,12 @@ func (l *initialLoginSessionHandler) generateEncryptionRequest() *packet.Encrypt
 	}
 }
 
-var unableAuthWithMojang = &component.Text{
-	Content: "Unable to authenticate you with Mojang.\nPlease try again!",
-	S:       component.Style{Color: color.Red},
-}
+var (
+	unableAuthWithMojang = &component.Text{
+		Content: "Unable to authenticate you with Mojang.\nPlease try again!",
+		S:       component.Style{Color: color.Red},
+	}
+)
 
 func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.EncryptionResponse) {
 	if !l.assertState(encryptionRequestSentLoginState) {
@@ -285,6 +297,16 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 			log.Error(err, "unable get GameProfile from Mojang authentication response")
 		}
 		return
+	}
+
+	// Not so fast, now we verify the public key for 1.19.1+
+	if l.inbound.playerKey.KeyRevision() == keyrevision.LinkedV2 {
+		fmt.Println("bs new reason", gameProfile.ID, gameProfile)
+		if !l.inbound.playerKey.InternalAddHolder(gameProfile.ID) {
+			_ = l.inbound.disconnect(&component.Translation{
+				Key: "multiplayer.disconnect.invalid_public_key",
+			})
+		}
 	}
 
 	// All went well, initialize the session.

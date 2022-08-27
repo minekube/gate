@@ -190,9 +190,10 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 			return
 		}
 		_ = b.serverConn.player.WritePacket(&packet.ServerData{
-			Description:  e.Ping().Description,
-			Favicon:      e.Ping().Favicon,
-			PreviewsChat: p.PreviewsChat,
+			Description:        e.Ping().Description,
+			Favicon:            e.Ping().Favicon,
+			PreviewsChat:       p.PreviewsChat,
+			SecureChatEnforced: p.SecureChatEnforced,
 		})
 	})
 }

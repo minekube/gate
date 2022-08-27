@@ -13,6 +13,7 @@ import (
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.uber.org/atomic"
@@ -29,6 +30,13 @@ import (
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/validation"
+)
+
+var (
+	serverPluginIllegalState = &component.Text{
+		Content: "A proxy plugin caused an illegal protocol state. Contact your network administrator.",
+		S:       component.Style{Color: color.Red},
+	}
 )
 
 // Handles communication with the connected Minecraft client.
@@ -564,18 +572,29 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessa
 		if !ok {
 			return
 		}
+
+		// TODO: needs the last bit of logic
 		if e.modified != "" {
 			c.log1.Info("player sent chat message",
 				"original", e.Original(), "modified", e.modified)
-			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
-				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+			if msg != signedChatMessage.Message {
+				if keyrevision.GreaterEqual(c.player.IdentifiedKey().KeyRevision(), keyrevision.LinkedV2) {
+					c.log1.Info("A plugin tried to change a signed chat message. This is no longer possible in 1.19.1 and newer. Disconnecting player", "player", c.player.Username())
+
+					c.player.Disconnect(serverPluginIllegalState)
+				} else {
+					if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
+						c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
+					}
+					write := packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer()
+					_ = serverMc.WritePacket(write)
+				}
+			} else {
+				_ = serverMc.WritePacket(original)
 			}
-			write := packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer()
-			_ = serverMc.WritePacket(write)
-			return
+		} else {
 		}
-		c.log1.Info("player sent chat message", "chat", e.Message())
-		_ = serverMc.WritePacket(original)
+
 	})
 }
 
