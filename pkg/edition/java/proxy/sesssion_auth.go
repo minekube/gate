@@ -2,11 +2,13 @@ package proxy
 
 import (
 	"github.com/go-logr/logr"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -99,10 +101,23 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 	}
 
 	if playerKey := player.IdentifiedKey(); playerKey != nil {
-		if playerKey.SignatureHolder() != uuid.Nil {
-			if playerKey
+		if playerKey.SignatureHolder() == uuid.Nil {
+			// Failsafe
+			if !crypto.SetHolder(playerKey, playerID) {
+				if a.onlineMode {
+					_ = a.inbound.disconnect(&component.Translation{
+						Key: "multiplayer.disconnect.invalid_public_key",
+					})
+					return
+				}
+				a.log.Info("key for player could not be verified", "player", player.Username())
+			}
 		} else {
-
+			if playerKey.SignatureHolder() != playerID {
+				a.log.Info("uuid for player mismatches, "+
+					"chat/commands signatures will not work correctly for this player",
+					"player", player.Username())
+			}
 		}
 	}
 

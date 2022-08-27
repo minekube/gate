@@ -7,12 +7,14 @@ import (
 	"crypto/x509"
 	_ "embed"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
 	"time"
 
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -80,6 +82,8 @@ type identifiedKey struct {
 	publicKey      *rsa.PublicKey
 	signature      []byte
 	expiryTemporal time.Time
+	revision       keyrevision.Revision
+	holder         uuid.UUID
 
 	once struct {
 		sync.Once
@@ -149,20 +153,57 @@ func (i *identifiedKey) SignedPublicKey() *rsa.PublicKey {
 func (i *identifiedKey) SignedPublicKeyBytes() []byte {
 	return i.publicKeyBytes
 }
-
+func (i *identifiedKey) SignatureHolder() uuid.UUID {
+	return i.holder
+}
 func (i *identifiedKey) SignatureValid() bool {
 	i.once.Do(func() {
-		pemKey := pemEncodeKey(i.publicKeyBytes, "RSA PUBLIC KEY")
-		expires := i.expiryTemporal.UnixMilli()
-		toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
-
-		i.once.isSignatureValid = verifySignature(
-			crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
+		i.once.isSignatureValid = i.validateData(i.holder)
 	})
 	return i.once.isSignatureValid
 }
 func (i *identifiedKey) VerifyDataSignature(signature []byte, toVerify ...[]byte) bool {
 	return verifySignature(crypto.SHA256, i.publicKey, signature, toVerify...)
+}
+
+func (i *identifiedKey) KeyRevision() keyrevision.Revision {
+	return i.revision
+}
+
+func (i *identifiedKey) validateData(verify uuid.UUID) bool {
+	if i.revision == keyrevision.GenericV1 {
+		pemKey := pemEncodeKey(i.publicKeyBytes, publicPemEncodeHeader)
+		expires := i.expiryTemporal.UnixMilli()
+		toVerify := []byte(fmt.Sprintf("%d%s", expires, pemKey))
+		return verifySignature(crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify)
+	}
+	if verify == uuid.Nil {
+		return false
+	}
+	keyBytes := i.SignedPublicKeyBytes()
+	toVerify := new(bytes.Buffer)
+	_ = binary.Write(toVerify, binary.BigEndian, make([]byte, len(keyBytes)+28)) // length long * 3
+	_ = util.WriteUUID(toVerify, verify)
+	_ = util.WriteInt64(toVerify, i.expiryTemporal.UnixMilli())
+	_, _ = toVerify.Write(keyBytes)
+	return verifySignature(crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify.Bytes())
+}
+
+// SetHolder sets the holder uuid for a key or returns false if incorrect.
+func SetHolder(key IdentifiedKey, holder uuid.UUID) bool {
+	if key == nil {
+		return false
+	}
+	if key.SignatureHolder() == uuid.Nil {
+		k, ok := key.(*identifiedKey)
+		if !ok || !k.validateData(holder) {
+			return false
+		}
+		k.once.isSignatureValid = true
+		k.holder = holder
+		return true
+	}
+	return key.SignatureHolder() == holder && key.SignatureValid()
 }
 
 func verifySignature(algorithm crypto.Hash, key *rsa.PublicKey, signature []byte, toVerify ...[]byte) bool {
@@ -188,6 +229,10 @@ func Equal(a, b IdentifiedKey) bool {
 		bytes.Equal(a.Signature(), b.Signature()) &&
 		a.Signer().Equal(b.Signer())
 }
+
+const (
+	publicPemEncodeHeader = "RSA PUBLIC KEY"
+)
 
 func pemEncodeKey(key []byte, header string) string {
 	w := new(strings.Builder)
