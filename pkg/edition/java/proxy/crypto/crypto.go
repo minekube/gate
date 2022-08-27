@@ -16,6 +16,7 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -270,4 +271,21 @@ type (
 type SignaturePair struct {
 	Signer    uuid.UUID
 	Signature []byte
+}
+
+func (p *SignaturePair) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	p.Signer, err = util.ReadUUID(rd)
+	if err != nil {
+		return err
+	}
+	p.Signature, err = util.ReadBytes(rd)
+	return err
+}
+
+func (p *SignaturePair) Encode(c *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteUUID(wr, p.Signer)
+	if err != nil {
+		return err
+	}
+	return util.WriteBytes(wr, p.Signature)
 }

@@ -82,13 +82,19 @@ const (
 var _ proto.Packet = (*LegacyChat)(nil)
 
 type PlayerChat struct {
-	Message       string
-	SignedPreview bool
-	Unsigned      bool
-	Expiry        time.Time // may be zero if no salt or signature specified
-	Signature     []byte
-	Salt          []byte
+	Message          string
+	SignedPreview    bool
+	Unsigned         bool
+	Expiry           time.Time // may be zero if no salt or signature specified
+	Signature        []byte
+	Salt             []byte
+	PreviousMessages []*crypto.SignaturePair
+	LastMessage      *crypto.SignaturePair
 }
+
+const MaxPreviousMessageCount = 5
+
+var errInvalidPreviousMessages = errs.NewSilentErr("invalid previous messages")
 
 var (
 	errInvalidSignature        = errs.NewSilentErr("incorrectly signed chat message")
@@ -129,7 +135,37 @@ func (p *PlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	return util.WriteBool(wr, p.SignedPreview)
+
+	err = util.WriteBool(wr, p.SignedPreview)
+	if err != nil {
+		return err
+	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		err = util.WriteVarInt(wr, len(p.PreviousMessages))
+		if err != nil {
+			return err
+		}
+		for _, pm := range p.PreviousMessages {
+			err = pm.Encode(c, wr)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = util.WriteBool(wr, p.LastMessage != nil)
+		if err != nil {
+			return err
+		}
+		if p.LastMessage != nil {
+			err = p.LastMessage.Encode(c, wr)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -157,7 +193,7 @@ func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		p.Salt = buf.Bytes()
 		p.Signature = signature
 		p.Expiry = time.UnixMilli(expiry)
-	} else if salt == 0 && len(signature) == 0 {
+	} else if (c.Protocol.GreaterEqual(version.Minecraft_1_19_1) || salt == 0) && len(signature) == 0 {
 		p.Unsigned = true
 	} else {
 		return errInvalidSignature
@@ -170,6 +206,37 @@ func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if p.SignedPreview && p.Unsigned {
 		return errPreviewSignatureMissing
 	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		size, err := util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+		if size < 0 || size > MaxPreviousMessageCount {
+			return errInvalidPreviousMessages
+		}
+
+		lastSignatures := make([]*crypto.SignaturePair, size)
+		for i := 0; i < size; i++ {
+			pair := new(crypto.SignaturePair)
+			if err = pair.Decode(c, rd); err != nil {
+				return err
+			}
+			lastSignatures[i] = pair
+		}
+		p.PreviousMessages = lastSignatures
+
+		ok, err := util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+		if ok {
+			p.LastMessage = new(crypto.SignaturePair)
+			if err = p.LastMessage.Decode(c, rd); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -181,13 +248,15 @@ func (p *PlayerChat) SignedContainer(signer crypto.IdentifiedKey, sender uuid.UU
 		return nil, nil
 	}
 	return &crypto.SignedChatMessage{
-		Message:       p.Message,
-		Signer:        signer.SignedPublicKey(),
-		Signature:     p.Signature,
-		Expiry:        p.Expiry,
-		Salt:          p.Salt,
-		Sender:        sender,
-		SignedPreview: p.SignedPreview,
+		Message:            p.Message,
+		Signer:             signer.SignedPublicKey(),
+		Signature:          p.Signature,
+		Expiry:             p.Expiry,
+		Salt:               p.Salt,
+		Sender:             sender,
+		SignedPreview:      p.SignedPreview,
+		PreviousSignatures: p.PreviousMessages,
+		LastSignature:      p.LastMessage,
 	}, nil
 }
 
@@ -472,13 +541,19 @@ func (b *ChatBuilder) ToServer() proto.Packet {
 }
 
 func toPlayerChat(m *crypto.SignedChatMessage) *PlayerChat {
+	var lastMsg *crypto.SignaturePair
+	if len(m.PreviousSignatures) != 0 {
+		lastMsg = m.PreviousSignatures[0]
+	}
 	return &PlayerChat{
-		Message:       m.Message,
-		SignedPreview: m.SignedPreview,
-		Unsigned:      false,
-		Expiry:        m.Expiry,
-		Signature:     m.Signature,
-		Salt:          m.Salt,
+		Message:          m.Message,
+		SignedPreview:    m.SignedPreview,
+		Unsigned:         false,
+		Expiry:           m.Expiry,
+		Signature:        m.Signature,
+		Salt:             m.Salt,
+		LastMessage:      lastMsg,
+		PreviousMessages: m.PreviousSignatures,
 	}
 }
 
