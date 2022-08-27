@@ -368,10 +368,14 @@ type ChatBuilder struct {
 	signedCommand     *crypto.SignedChatCommand
 	type_             MessageType
 	sender            *uuid.UUID
+	timestamp         time.Time
 }
 
 func NewChatBuilder(version proto.Protocol) *ChatBuilder {
-	return &ChatBuilder{protocol: version}
+	return &ChatBuilder{
+		protocol:  version,
+		timestamp: time.Now(),
+	}
 }
 
 func (b *ChatBuilder) Message(msg string) *ChatBuilder {
@@ -394,6 +398,10 @@ func (b *ChatBuilder) SignedCommandMessage(cmd *crypto.SignedChatCommand) *ChatB
 }
 func (b *ChatBuilder) Type(t MessageType) *ChatBuilder {
 	b.type_ = t
+	return b
+}
+func (b *ChatBuilder) Time(timestamp time.Time) *ChatBuilder {
+	b.timestamp = timestamp
 	return b
 }
 func (b *ChatBuilder) AsPlayer(sender uuid.UUID) *ChatBuilder {

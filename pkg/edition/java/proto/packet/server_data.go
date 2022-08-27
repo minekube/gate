@@ -10,9 +10,10 @@ import (
 )
 
 type ServerData struct {
-	Description  component.Component // nil-able
-	Favicon      favicon.Favicon     // may be empty
-	PreviewsChat bool
+	Description        component.Component // nil-able
+	Favicon            favicon.Favicon     // may be empty
+	PreviewsChat       bool
+	SecureChatEnforced bool // Added in 1.19.1
 }
 
 func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
