@@ -3,6 +3,7 @@ package keyrevision
 import "go.minekube.com/gate/pkg/gate/proto"
 
 type Revision interface {
+	ApplicableTo() []proto.Protocol
 }
 
 var (
@@ -11,6 +12,16 @@ var (
 )
 
 type aKeyRevision struct {
-	backwardsCompatibleTo map[Revision]struct{}
-	applicableTo          map[*proto.Version]struct{}
+	backwardsCompatibleTo []Revision
+	applicableTo          []proto.Protocol
+}
+
+// Applicable returns whether the revision is applicable to the protocol version.
+func Applicable(rev Revision, protocol proto.Protocol) bool {
+	for _, p := range rev.ApplicableTo() {
+		if p == protocol {
+			return true
+		}
+	}
+	return false
 }

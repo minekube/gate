@@ -125,7 +125,12 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 			to = next.Protocol
 		}
 
-		if from >= to && from != version.MaximumVersion.Protocol {
+		lastInList := lastValid
+		if lastValid == 0 {
+			lastInList = last(version.SupportedVersions).Protocol
+		}
+
+		if from >= to && from != lastInList {
 			panic(fmt.Sprintf("Next mapping version (%s) should be lower then current (%s)", to, from))
 		}
 
@@ -222,4 +227,12 @@ func (s State) String() string {
 		return "Play"
 	}
 	return "UnknownState"
+}
+
+// returns last element of the slice or nil if slice is empty
+func last[T any](s []T) T {
+	if len(s) == 0 {
+		return nil
+	}
+	return s[len(s)-1]
 }

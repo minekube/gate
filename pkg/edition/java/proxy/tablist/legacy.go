@@ -123,4 +123,4 @@ type nopKeyStore struct{}
 
 func (*nopKeyStore) PlayerKey(uuid.UUID) crypto.IdentifiedKey { return nil }
 
-var _ PlayerKey = (*nopKeyStore)(nil)
+var _ PlayerKeyProvider = (*nopKeyStore)(nil)
