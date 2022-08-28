@@ -38,7 +38,7 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 		if s.PlayerKey != nil {
-			err = util.WritePlayerKey(wr, s.PlayerKey)
+			err = crypto.WritePlayerKey(wr, s.PlayerKey)
 			if err != nil {
 				return err
 			}
@@ -70,7 +70,7 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 		if ok {
-			s.PlayerKey, err = util.ReadPlayerKey(c.Protocol, rd)
+			s.PlayerKey, err = crypto.ReadPlayerKey(c.Protocol, rd)
 			if err != nil {
 				return err
 			}

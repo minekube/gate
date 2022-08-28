@@ -232,7 +232,8 @@ func (s State) String() string {
 // returns last element of the slice or nil if slice is empty
 func last[T any](s []T) T {
 	if len(s) == 0 {
-		return nil
+		var t T
+		return t
 	}
 	return s[len(s)-1]
 }

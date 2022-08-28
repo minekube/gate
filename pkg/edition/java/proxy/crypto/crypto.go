@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -289,4 +290,36 @@ func (p *SignaturePair) Encode(c *proto.PacketContext, wr io.Writer) error {
 		return err
 	}
 	return util.WriteBytes(wr, p.Signature)
+}
+
+func ReadPlayerKey(protocol proto.Protocol, rd io.Reader) (IdentifiedKey, error) {
+	expiry, err := util.ReadInt64(rd)
+	if err != nil {
+		return nil, err
+	}
+	key, err := util.ReadBytes(rd)
+	if err != nil {
+		return nil, err
+	}
+	signature, err := util.ReadBytesLen(rd, 4096)
+	if err != nil {
+		return nil, err
+	}
+	revision := keyrevision.LinkedV2
+	if protocol == version.Minecraft_1_19.Protocol {
+		revision = keyrevision.GenericV1
+	}
+	return NewIdentifiedKey(revision, key, expiry, signature)
+}
+
+func WritePlayerKey(wr io.Writer, playerKey IdentifiedKey) error {
+	err := util.WriteInt64(wr, playerKey.ExpiryTemporal().UnixMilli())
+	if err != nil {
+		return err
+	}
+	err = util.WriteBytes(wr, playerKey.SignedPublicKeyBytes())
+	if err != nil {
+		return err
+	}
+	return util.WriteBytes(wr, playerKey.Signature())
 }

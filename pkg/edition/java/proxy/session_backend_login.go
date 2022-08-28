@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -233,7 +234,7 @@ func createVelocityForwardingData(
 		if playerKey == nil {
 			return nil, errors.New("player auth key missing")
 		}
-		err = protoutil.WritePlayerKey(forwarded, playerKey)
+		err = crypto.WritePlayerKey(forwarded, playerKey)
 		if err != nil {
 			return nil, err
 		}

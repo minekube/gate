@@ -125,7 +125,7 @@ func (p *PlayerListItem) Encode(c *proto.PacketContext, wr io.Writer) (err error
 						return err
 					}
 					if item.PlayerKey != nil {
-						err = util.WritePlayerKey(wr, item.PlayerKey)
+						err = crypto.WritePlayerKey(wr, item.PlayerKey)
 						if err != nil {
 							return err
 						}
@@ -250,7 +250,7 @@ func (p *PlayerListItem) Decode(c *proto.PacketContext, rd io.Reader) (err error
 						return err
 					}
 					if ok {
-						p.PlayerKey, err = util.ReadPlayerKey(c.Protocol, rd)
+						p.PlayerKey, err = crypto.ReadPlayerKey(c.Protocol, rd)
 						if err != nil {
 							return err
 						}
