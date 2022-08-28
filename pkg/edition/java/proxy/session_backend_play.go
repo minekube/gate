@@ -158,14 +158,13 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 
 	clone := make([]byte, len(packet.Data))
 	copy(clone, packet.Data)
-	b.proxy().Event().FireParallel(&PluginMessageEvent{
+	event.FireParallel(b.proxy().Event(), &PluginMessageEvent{
 		source:     b.serverConn,
 		target:     b.serverConn.player,
 		identifier: id,
 		data:       clone,
 		forward:    true,
-	}, func(e event.Event) {
-		pme := e.(*PluginMessageEvent)
+	}, func(pme *PluginMessageEvent) {
 		if pme.Allowed() && b.serverConn.player.Active() {
 			b.forwardToPlayer(nil, &plugin.Message{
 				Channel: packet.Channel,
@@ -181,8 +180,7 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 		inbound: b.serverConn.player,
 		ping:    ping,
 	}
-	b.proxy().event.FireParallel(e, func(ev event.Event) {
-		e = ev.(*PingEvent)
+	event.FireParallel(b.proxy().Event(), e, func(e *PingEvent) {
 		if e.ping == nil {
 			return
 		}
@@ -264,12 +262,13 @@ func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableC
 		})
 	}
 
-	b.proxy().event.FireParallel(&PlayerAvailableCommandsEvent{
-		player:   b.serverConn.player,
-		rootNode: rootNode,
-	}, func(e event.Event) {
-		_ = b.serverConn.player.WritePacket(p)
-	})
+	event.FireParallel(b.proxy().Event(),
+		&PlayerAvailableCommandsEvent{
+			player:   b.serverConn.player,
+			rootNode: rootNode,
+		}, func(e *PlayerAvailableCommandsEvent) {
+			_ = b.serverConn.player.WritePacket(p)
+		})
 }
 
 func filterNode(src brigodier.CommandNode, cmdSrc command.Source) brigodier.CommandNode {

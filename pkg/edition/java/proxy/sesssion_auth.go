@@ -131,9 +131,7 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 
 	player.setState(state.Play)
 	loginEvent := &LoginEvent{player: player}
-	a.event().FireParallel(loginEvent, func(ev event.Event) {
-		loginEvent = ev.(*LoginEvent)
-
+	event.FireParallel(a.event(), loginEvent, func(e *LoginEvent) {
 		if !player.Active() {
 			a.event().Fire(&DisconnectEvent{
 				player:      player,

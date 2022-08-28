@@ -33,8 +33,7 @@ func TestPriorityAndCorrectType(t *testing.T) {
 		ev := e.(myEvent)
 		ev.s += "d"
 	})
-	m.Subscribe(&myEvent{}, 0, func(e Event) {
-		ev := e.(*myEvent)
+	Subscribe(m, 0, func(ev *myEvent) {
 		ev.s += "b"
 	})
 

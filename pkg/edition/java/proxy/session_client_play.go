@@ -210,14 +210,13 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			}
 			clone := make([]byte, len(packet.Data))
 			copy(clone, packet.Data)
-			c.proxy().Event().FireParallel(&PluginMessageEvent{
+			event.FireParallel(c.proxy().Event(), &PluginMessageEvent{
 				source:     c.player,
 				target:     serverConn,
 				identifier: id,
 				data:       clone,
 				forward:    true,
-			}, func(ev event.Event) {
-				e := ev.(*PluginMessageEvent)
+			}, func(e *PluginMessageEvent) {
 				if e.Allowed() {
 					_ = backendConn.WritePacket(&plugin.Message{
 						Channel: packet.Channel,
@@ -527,8 +526,7 @@ func (c *clientPlaySessionHandler) processCommandMessage(command string, signedC
 		commandline:     command,
 		originalCommand: command,
 	}
-	c.proxy().event.FireParallel(e, func(ev event.Event) {
-		e = ev.(*CommandExecuteEvent)
+	event.FireParallel(c.proxy().Event(), e, func(e *CommandExecuteEvent) {
 		err := c.processCommandExecuteResult(e, signedCommand)
 		if err != nil {
 			c.log.Error(err, "error while running command", "command", command)
@@ -554,9 +552,7 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessa
 		player:   c.player,
 		original: msg,
 	}
-	c.proxy().Event().FireParallel(e, func(ev event.Event) {
-		e = ev.(*PlayerChatEvent)
-
+	event.FireParallel(c.proxy().Event(), e, func(e *PlayerChatEvent) {
 		if !e.Allowed() || !c.player.Active() {
 			return
 		}

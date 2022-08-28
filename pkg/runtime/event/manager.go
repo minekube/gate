@@ -33,6 +33,26 @@ type Manager interface {
 	HasSubscribers(event Event) bool
 }
 
+// Subscribe subscribes a handler to an event type with a priority.
+// The event type is inferred from the argument of the handler.
+// See Manager.Subscribe for more details.
+func Subscribe[T Event](mgr Manager, priority int, handler func(T)) (unsubscribe func()) {
+	var typ T
+	return mgr.Subscribe(typ, priority, func(e Event) { handler(e.(T)) })
+}
+
+// FireParallel fires an event in a new goroutine and returns immediately.
+// The event type is inferred from the argument of the handler.
+// See Manager.FireParallel for more details.
+func FireParallel[T Event](mgr Manager, event T, after ...func(T)) {
+	mgr.FireParallel(event, func(e Event) {
+		ev := e.(T)
+		for _, fn := range after {
+			fn(ev)
+		}
+	})
+}
+
 // HandlerFunc is an event handler func.
 type HandlerFunc func(e Event)
 
