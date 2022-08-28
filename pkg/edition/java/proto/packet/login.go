@@ -17,6 +17,7 @@ import (
 type ServerLogin struct {
 	Username  string
 	PlayerKey crypto.IdentifiedKey // 1.19+
+	HolderID  uuid.UUID            // Used for key revision 2
 }
 
 var errEmptyUsername = errs.NewSilentErr("empty username")
@@ -42,6 +43,17 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 				return err
 			}
 		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+			ok := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
+			err = util.WriteBool(wr, ok)
+			if ok {
+				err = util.WriteUUID(wr, s.PlayerKey.SignatureHolder())
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -59,6 +71,13 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 		if ok {
 			s.PlayerKey, err = util.ReadPlayerKey(rd)
+			if err != nil {
+				return err
+			}
+		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+			s.HolderID, err = util.ReadUUID(rd)
 			if err != nil {
 				return err
 			}
