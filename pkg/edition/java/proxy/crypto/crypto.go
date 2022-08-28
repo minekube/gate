@@ -95,7 +95,7 @@ type identifiedKey struct {
 
 var _ IdentifiedKey = (*identifiedKey)(nil)
 
-func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey, error) {
+func NewIdentifiedKey(revision keyrevision.Revision, key []byte, expiry int64, signature []byte) (IdentifiedKey, error) {
 	pk, err := x509.ParsePKIXPublicKey(key)
 	if err != nil {
 		return nil, fmt.Errorf("error parse public key: %w", err)
@@ -109,6 +109,7 @@ func NewIdentifiedKey(key []byte, expiry int64, signature []byte) (IdentifiedKey
 		publicKey:      rsaKey,
 		signature:      signature,
 		expiryTemporal: time.UnixMilli(expiry),
+		revision:       revision,
 	}, nil
 }
 

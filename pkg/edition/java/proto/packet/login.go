@@ -70,7 +70,7 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 		if ok {
-			s.PlayerKey, err = util.ReadPlayerKey(rd)
+			s.PlayerKey, err = util.ReadPlayerKey(c.Protocol, rd)
 			if err != nil {
 				return err
 			}
