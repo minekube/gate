@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
@@ -21,12 +22,14 @@ const (
 var errLimitsViolation = errs.NewSilentErr("command arguments incorrect size")
 
 type PlayerCommand struct {
-	Unsigned      bool
-	Command       string
-	Timestamp     time.Time
-	Salt          int64
-	SignedPreview bool // Good god. Please no.
-	Arguments     map[string][]byte
+	Unsigned         bool
+	Command          string
+	Timestamp        time.Time
+	Salt             int64
+	SignedPreview    bool // Good god. Please no.
+	Arguments        map[string][]byte
+	PreviousMessages []*crypto.SignaturePair
+	LastMessage      *crypto.SignaturePair
 }
 
 // NewPlayerCommand returns a new PlayerCommand packet based on a command and list of arguments.
@@ -85,7 +88,13 @@ func (p *PlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
-	return util.WriteBool(wr, p.SignedPreview)
+
+	err = util.WriteBool(wr, p.SignedPreview)
+	if err != nil {
+		return err
+	}
+
+	return encodePreviousAndLastMessages(c, wr, p.PreviousMessages, p.LastMessage)
 }
 
 func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -102,9 +111,6 @@ func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error)
 	p.Salt, err = util.ReadInt64(rd)
 	if err != nil {
 		return err
-	}
-	if p.Salt == 0 {
-		p.Unsigned = true
 	}
 
 	mapSize, err := util.ReadVarInt(rd)
@@ -141,11 +147,29 @@ func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error)
 	if p.Unsigned && p.SignedPreview {
 		return errPreviewSignatureMissing
 	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		p.PreviousMessages, p.LastMessage, err = decodePreviousAndLastMessages(c, rd)
+		if err != nil {
+			return err
+		}
+	}
+
+	if p.Salt == 0 && len(p.PreviousMessages) == 0 {
+		p.Unsigned = true
+	}
 	return nil
 }
 
-func (p *PlayerCommand) SignedContainer(signer crypto.IdentifiedKey, sender uuid.UUID, mustSign bool) (*crypto.SignedChatCommand, error) {
-	if p.Unsigned {
+func (p *PlayerCommand) SignedContainer(
+	signer crypto.IdentifiedKey,
+	sender uuid.UUID,
+	mustSign bool,
+) (*crypto.SignedChatCommand, error) {
+	// There's a certain mod that is very broken that still signs messages but
+	// doesn't provide the player key. This is broken and wrong, but we need to
+	// work around that.
+	if p.Unsigned || signer == nil {
 		if mustSign {
 			return nil, errInvalidSignature
 		}
@@ -154,13 +178,15 @@ func (p *PlayerCommand) SignedContainer(signer crypto.IdentifiedKey, sender uuid
 	salt := new(bytes.Buffer)
 	_ = util.WriteInt64(salt, p.Salt)
 	return &crypto.SignedChatCommand{
-		Command:       p.Command,
-		Signer:        signer.SignedPublicKey(),
-		Expiry:        p.Timestamp,
-		Salt:          salt.Bytes(),
-		Sender:        sender,
-		SignedPreview: p.SignedPreview,
-		Signatures:    p.Arguments,
+		Command:            p.Command,
+		Signer:             signer.SignedPublicKey(),
+		Expiry:             p.Timestamp,
+		Salt:               salt.Bytes(),
+		Sender:             sender,
+		SignedPreview:      p.SignedPreview,
+		Signatures:         p.Arguments,
+		PreviousSignatures: p.PreviousMessages,
+		LastSignature:      p.LastMessage,
 	}, nil
 }
 

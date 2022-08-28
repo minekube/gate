@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -142,30 +143,40 @@ func (p *PlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	}
 
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-		err = util.WriteVarInt(wr, len(p.PreviousMessages))
+		err = encodePreviousAndLastMessages(c, wr, p.PreviousMessages, p.LastMessage)
 		if err != nil {
 			return err
-		}
-		for _, pm := range p.PreviousMessages {
-			err = pm.Encode(c, wr)
-			if err != nil {
-				return err
-			}
-		}
-
-		err = util.WriteBool(wr, p.LastMessage != nil)
-		if err != nil {
-			return err
-		}
-		if p.LastMessage != nil {
-			err = p.LastMessage.Encode(c, wr)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
 	return nil
+}
+
+func encodePreviousAndLastMessages(
+	c *proto.PacketContext,
+	wr io.Writer,
+	previousMessages []*crypto.SignaturePair,
+	lastMessage *crypto.SignaturePair,
+) error {
+	err := util.WriteVarInt(wr, len(previousMessages))
+	if err != nil {
+		return err
+	}
+	for _, pm := range previousMessages {
+		err = pm.Encode(c, wr)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = util.WriteBool(wr, lastMessage != nil)
+	if err != nil {
+		return err
+	}
+	if lastMessage == nil {
+		return nil
+	}
+	return lastMessage.Encode(c, wr)
 }
 
 func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -208,36 +219,48 @@ func (p *PlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	}
 
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-		size, err := util.ReadVarInt(rd)
+		p.PreviousMessages, p.LastMessage, err = decodePreviousAndLastMessages(c, rd)
 		if err != nil {
 			return err
-		}
-		if size < 0 || size > MaxPreviousMessageCount {
-			return errInvalidPreviousMessages
-		}
-
-		lastSignatures := make([]*crypto.SignaturePair, size)
-		for i := 0; i < size; i++ {
-			pair := new(crypto.SignaturePair)
-			if err = pair.Decode(c, rd); err != nil {
-				return err
-			}
-			lastSignatures[i] = pair
-		}
-		p.PreviousMessages = lastSignatures
-
-		ok, err := util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
-		if ok {
-			p.LastMessage = new(crypto.SignaturePair)
-			if err = p.LastMessage.Decode(c, rd); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
+}
+
+func decodePreviousAndLastMessages(c *proto.PacketContext, rd io.Reader) (
+	previousMessages []*crypto.SignaturePair,
+	lastMessage *crypto.SignaturePair,
+	err error,
+) {
+	size, err := util.ReadVarInt(rd)
+	if err != nil {
+		return nil, nil, err
+	}
+	if size < 0 || size > MaxPreviousMessageCount {
+		return nil, nil, fmt.Errorf("%w: max is %d but was %d",
+			errInvalidPreviousMessages, MaxServerBoundMessageLength, size)
+	}
+
+	lastSignatures := make([]*crypto.SignaturePair, size)
+	for i := 0; i < size; i++ {
+		pair := new(crypto.SignaturePair)
+		if err = pair.Decode(c, rd); err != nil {
+			return nil, nil, err
+		}
+		lastSignatures[i] = pair
+	}
+
+	ok, err := util.ReadBool(rd)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ok {
+		lastMessage = new(crypto.SignaturePair)
+		if err = lastMessage.Decode(c, rd); err != nil {
+			return nil, nil, err
+		}
+	}
+	return lastSignatures, lastMessage, nil
 }
 
 func (p *PlayerChat) SignedContainer(signer crypto.IdentifiedKey, sender uuid.UUID, mustSign bool) (*crypto.SignedChatMessage, error) {
