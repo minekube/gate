@@ -311,7 +311,7 @@ var _ proto.Packet = (*PlayerChatPreview)(nil)
 
 type SystemChat struct {
 	Component component.Component
-	Type      int
+	Type      MessageType
 }
 
 func (p *SystemChat) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -319,7 +319,18 @@ func (p *SystemChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	return util.WriteVarInt(wr, p.Type)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		switch p.Type {
+		case SystemMessageType:
+			err = util.WriteBool(wr, true)
+		case GameInfoMessageType:
+			err = util.WriteBool(wr, false)
+		default:
+			return fmt.Errorf("invalid chat type: %d", p.Type)
+		}
+		return err
+	}
+	return util.WriteVarInt(wr, int(p.Type))
 }
 
 func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
@@ -327,7 +338,9 @@ func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	p.Type, err = util.ReadVarInt(rd)
+	// System chat is never decoded so this doesn't matter for now
+	typ, err := util.ReadVarInt(rd)
+	p.Type = MessageType(typ)
 	return
 }
 
@@ -458,7 +471,7 @@ type ChatBuilder struct {
 	message           string
 	signedChatMessage *crypto.SignedChatMessage
 	signedCommand     *crypto.SignedChatCommand
-	type_             MessageType
+	typ               MessageType
 	sender            *uuid.UUID
 	timestamp         time.Time
 }
@@ -489,7 +502,7 @@ func (b *ChatBuilder) SignedCommandMessage(cmd *crypto.SignedChatCommand) *ChatB
 	return b
 }
 func (b *ChatBuilder) Type(t MessageType) *ChatBuilder {
-	b.type_ = t
+	b.typ = t
 	return b
 }
 func (b *ChatBuilder) Time(timestamp time.Time) *ChatBuilder {
@@ -515,13 +528,13 @@ func (b *ChatBuilder) ToClient() proto.Packet {
 
 	if b.protocol.GreaterEqual(version.Minecraft_1_19) {
 		// hard override chat > system for now
-		t := b.type_
+		t := b.typ
 		if t == ChatMessageType {
 			t = SystemMessageType
 		}
 		return &SystemChat{
 			Component: msg,
-			Type:      int(t),
+			Type:      t,
 		}
 	}
 
@@ -533,7 +546,7 @@ func (b *ChatBuilder) ToClient() proto.Packet {
 	_ = util.JsonCodec(b.protocol).Marshal(buf, msg)
 	return &LegacyChat{
 		Message: buf.String(),
-		Type:    b.type_,
+		Type:    b.typ,
 		Sender:  id,
 	}
 }
