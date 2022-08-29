@@ -447,9 +447,9 @@ type KickedFromServerEvent struct {
 
 // ServerKickResult is the result of a KickedFromServerEvent and is implemented by
 //
-// DisconnectPlayerKickResult
+// # DisconnectPlayerKickResult
 //
-// RedirectPlayerKickResult
+// # RedirectPlayerKickResult
 //
 // NotifyKickResult
 type ServerKickResult interface {

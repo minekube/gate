@@ -264,7 +264,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 		return errors.New("no backend server connection")
 	}
 	playerVersion := c.player.Protocol()
-	if c.spawned.CAS(false, true) {
+	if c.spawned.CompareAndSwap(false, true) {
 		// The player wasn't spawned in yet, so we don't need to do anything special.
 		// Just send JoinGame.
 		if err = c.player.BufferPacket(joinGame); err != nil {

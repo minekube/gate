@@ -187,11 +187,10 @@ var _ proxy.ServerDialer = (*server)(nil)
 // create the Tunnel with the TunnelService.
 //
 // Dial unblocks on the following events:
-//  - If the endpoint has established a Tunnel successfully.
-//  - If the passed context is canceled, cleans up and cancels the session proposal.
-//  - If the endpoint rejected the session proposal wrapping the given status reason in the returned error if present.
-//  - If the endpoint's watcher has disconnected / was unregistered.
-//
+//   - If the endpoint has established a Tunnel successfully.
+//   - If the passed context is canceled, cleans up and cancels the session proposal.
+//   - If the endpoint rejected the session proposal wrapping the given status reason in the returned error if present.
+//   - If the endpoint's watcher has disconnected / was unregistered.
 func (s *server) Dial(ctx context.Context, p proxy.Player) (net.Conn, error) {
 	session := &connect.Session{
 		Id:                xid.New().String(),
