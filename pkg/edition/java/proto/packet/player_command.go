@@ -94,7 +94,10 @@ func (p *PlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {
 		return err
 	}
 
-	return encodePreviousAndLastMessages(c, wr, p.PreviousMessages, p.LastMessage)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		return encodePreviousAndLastMessages(c, wr, p.PreviousMessages, p.LastMessage)
+	}
+	return nil
 }
 
 func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
