@@ -452,7 +452,7 @@ func (s *serverConnection) disconnect0() {
 
 // Indicates that we have completed the plugin process.
 func (s *serverConnection) completeJoin() {
-	if s.completedJoin.CAS(false, true) {
+	if s.completedJoin.CompareAndSwap(false, true) {
 		s.mu.Lock()
 		if s.connPhase == unknownBackendPhase {
 			// Now we know
