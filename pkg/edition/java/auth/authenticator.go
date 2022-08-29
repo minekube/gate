@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -23,55 +24,50 @@ import (
 	"go.minekube.com/gate/pkg/version"
 )
 
-// Authenticator can authenticate joining Minecraft clients.
+// Authenticator is a Mojang user authenticator.
 type Authenticator interface {
-	// Returns the public key encoded in ASN.1 DER form.
+	// PublicKey returns the public key encoded in ASN.1 DER form.
 	PublicKey() []byte
-	// 1) Verifies the verify token sent by joining client.
+	// Verify verifies the "verify token" sent by joining client.
 	Verify(encryptedVerifyToken, actualVerifyToken []byte) (equal bool, err error)
-	// 2) Decrypt shared secret sent by client.
+	// DecryptSharedSecret Decrypt shared secret sent by client.
 	DecryptSharedSecret(encrypted []byte) (decrypted []byte, err error)
-	// 3) Generate server id to be used with AuthenticateJoin.
+	// GenerateServerID Generate server id to be used with AuthenticateJoin.
 	GenerateServerID(decryptedSharedSecret []byte) (serverID string, err error)
-	// 4) Authenticates a joining user. The ip is optional.
+	// AuthenticateJoin Authenticates a joining user. The ip is optional.
 	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error)
 }
 
 // Response is the authentication response.
 type Response interface {
 	OnlineMode() bool // Whether the user is in online mode
-	// Extracts the GameProfile from an authenticated client.
-	// Returns nil if OnlineMode is false.
+	// GameProfile extracts the GameProfile from an authenticated client.
+	// Returns nil, nil if OnlineMode is false.
 	GameProfile() (*profile.GameProfile, error)
 }
 
-//
-//
-//
-//
-
 const defaultHasJoinedEndpoint = `https://sessionserver.mojang.com/session/minecraft/hasJoined`
 
-// DefaultHasJoinedURL is the default implementation of a HasJoinedURLFn.
+var defaultHasJoinedBaseURL, _ = url.Parse(defaultHasJoinedEndpoint)
+
+// DefaultHasJoinedURL returns the default hasJoined URL for the given serverID and username.
+// The userIP is optional.
 func DefaultHasJoinedURL(serverID, username, userIP string) string {
-	s := new(strings.Builder)
-	s.WriteString(defaultHasJoinedEndpoint + "?serverId=")
-	s.WriteString(serverID)
-	s.WriteString("&username=")
-	s.WriteString(username)
+	query := url.Values{}
+	query.Set("serverId", serverID)
+	query.Set("username", username)
 	if userIP != "" {
-		s.WriteString("&ip=")
-		s.WriteString(userIP)
+		query.Set("ip", userIP)
 	}
-	return s.String()
+	return defaultHasJoinedBaseURL.ResolveReference(&url.URL{RawQuery: query.Encode()}).String()
 }
 
 // HasJoinedURLFn returns the url to authenticate a
-// joining online mode user. Note that userIP may be empty.
+// joining online mode user. Note that userIP is optional.
 // See DefaultHasJoinedURL for the default implementation.
 type HasJoinedURLFn func(serverID, username, userIP string) string
 
-// Default bit size of a generated private key.
+// DefaultPrivateKeyBits is the default bit size of a generated private key.
 const DefaultPrivateKeyBits = 1024
 
 // Options to create a new Authenticator.
@@ -94,7 +90,7 @@ type Options struct {
 	Client *http.Client
 }
 
-// New returns a new basic Mojang user authenticator.
+// New returns a new Authenticator.
 func New(options Options) (Authenticator, error) {
 	var err error
 	private := options.PrivateKey
@@ -115,7 +111,9 @@ func New(options Options) (Authenticator, error) {
 
 	cli := options.Client
 	if cli == nil {
-		cli = &http.Client{}
+		cli = &http.Client{
+			Timeout: time.Second * 10,
+		}
 	}
 	cli.Transport = withHeader(cli.Transport, version.UserAgentHeader())
 
@@ -124,7 +122,7 @@ func New(options Options) (Authenticator, error) {
 		hasJoinedURLFn = DefaultHasJoinedURL
 	}
 
-	return &authn{
+	return &authenticator{
 		private:        private,
 		public:         public,
 		cli:            cli,
@@ -132,20 +130,20 @@ func New(options Options) (Authenticator, error) {
 	}, nil
 }
 
-type authn struct {
+type authenticator struct {
 	private        *rsa.PrivateKey
 	public         []byte // ASN.1 DER form encoded
 	cli            *http.Client
 	hasJoinedURLFn HasJoinedURLFn
 }
 
-func (a *authn) PublicKey() []byte {
+func (a *authenticator) PublicKey() []byte {
 	return a.public
 }
 
-var _ Authenticator = (*authn)(nil)
+var _ Authenticator = (*authenticator)(nil)
 
-func (a *authn) Verify(encryptedVerifyToken, actualVerifyToken []byte) (bool, error) {
+func (a *authenticator) Verify(encryptedVerifyToken, actualVerifyToken []byte) (bool, error) {
 	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, a.private, encryptedVerifyToken)
 	if err != nil {
 		return false, fmt.Errorf("error descrypt verify token: %v", err)
@@ -153,11 +151,11 @@ func (a *authn) Verify(encryptedVerifyToken, actualVerifyToken []byte) (bool, er
 	return bytes.Equal(decryptedVerifyToken, actualVerifyToken), nil
 }
 
-func (a *authn) DecryptSharedSecret(encrypted []byte) (decrypted []byte, err error) {
+func (a *authenticator) DecryptSharedSecret(encrypted []byte) (decrypted []byte, err error) {
 	return rsa.DecryptPKCS1v15(rand.Reader, a.private, encrypted)
 }
 
-func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error) {
+func (a *authenticator) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error) {
 	hasJoinedURL := a.hasJoinedURLFn(serverID, username, ip)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hasJoinedURL, nil)
 	if err != nil {
@@ -165,12 +163,11 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 	}
 
 	log := logr.FromContextOrDiscard(ctx).V(1).WithName("authnJoin").WithName("request")
-	log.Info("Sending http request to Mojang sessionserver", "url", hasJoinedURL)
+	log.Info("authenticating user against sessionserver", "url", hasJoinedURL)
 
 	start := time.Now()
 	resp, err := a.cli.Do(req)
 	if err != nil {
-		log.Error(err, "Error with http request", "time", time.Since(start).String())
 		return nil, fmt.Errorf("error authenticating join with Mojang sessionserver: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -186,16 +183,14 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 		// Player has invalid/outdated session auth token and
 		// should restart the game or re-login to Mojang.
 	case http.StatusNoContent:
-		log.Info("Mojang could not find user, potentially offline mode")
+		log.Info("sessionserver could not find user, potentially offline mode")
 	default:
-		log.Info("Got unexpected status code from Mojang sessionserver",
-			"responseBody", string(body), "statusCode", resp.StatusCode)
 		return nil, fmt.Errorf("got unexpected status code (%d) from Mojang sessionserver", resp.StatusCode)
 	}
 
 	onlineMode := resp.StatusCode == http.StatusOK && len(body) != 0
 
-	log.Info("User was tested against Mojang sessionserver",
+	log.Info("user authenticated against sessionserver",
 		"onlineMode", onlineMode,
 		"time", time.Since(start).String(),
 		"statusCode", resp.StatusCode)
@@ -206,7 +201,7 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 	}, nil
 }
 
-func (a *authn) GenerateServerID(decryptedSharedSecret []byte) (string, error) {
+func (a *authenticator) GenerateServerID(decryptedSharedSecret []byte) (string, error) {
 	hash, err := func() (hash []byte, err error) {
 		h := sha1.New()
 		_, err = h.Write(decryptedSharedSecret)
