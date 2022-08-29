@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -10,7 +9,7 @@ import (
 
 func Test_loadToken(t *testing.T) {
 	t.Run("file should be overwritten when empty", func(t *testing.T) {
-		f, err := ioutil.TempFile("", tokenFilename)
+		f, err := os.CreateTemp("", tokenFilename)
 		require.NoError(t, err)
 		_ = f.Close()
 		defer os.Remove(f.Name())

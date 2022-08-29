@@ -141,7 +141,7 @@ type ForwardingMode string
 const (
 	NoneForwardingMode   ForwardingMode = "none"
 	LegacyForwardingMode ForwardingMode = "legacy"
-	// A forwarding mode specified by the Velocity java proxy and
+	// VelocityForwardingMode is a forwarding mode specified by the Velocity java proxy and
 	// supported by PaperSpigot for versions starting at 1.13.
 	VelocityForwardingMode ForwardingMode = "velocity"
 )

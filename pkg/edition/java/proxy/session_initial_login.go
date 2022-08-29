@@ -11,6 +11,8 @@ import (
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 
 	"github.com/go-logr/logr"
 
@@ -101,7 +103,14 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			return
 		}
 
-		if !playerKey.SignatureValid() {
+		var isKeyValid bool
+		if playerKey.KeyRevision() == keyrevision.LinkedV2 && crypto.CanSetHolder(playerKey) {
+			isKeyValid = crypto.SetHolder(playerKey, login.HolderID)
+		} else {
+			isKeyValid = playerKey.SignatureValid()
+		}
+
+		if !isKeyValid {
 			l.log.V(1).Info("invalid player public key signature")
 			_ = l.inbound.disconnect(&component.Translation{
 				Key: "multiplayer.disconnect.invalid_public_key",

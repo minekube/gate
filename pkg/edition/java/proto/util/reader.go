@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"time"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -89,13 +87,13 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 // Reads a non length prefixed string from the reader. This is necessary for parsing
 // certain packets like the velocity login/hello packet (no length prefix).
 func ReadRawBytes(rd io.Reader) ([]byte, error) {
-	return ioutil.ReadAll(rd)
+	return io.ReadAll(rd)
 }
 
 // ReadStringWithoutLen reads a non length-prefixed string from the Reader.
 // We need this for the legacy 1.7 version, being inconsistent when sending the plugin message channel brand.
 func ReadStringWithoutLen(rd io.Reader) (string, error) {
-	b, err := ioutil.ReadAll(rd)
+	b, err := io.ReadAll(rd)
 	return string(b), err
 }
 
@@ -346,22 +344,6 @@ func ReadUTF(rd io.Reader) (string, error) {
 	p := make([]byte, length)
 	_, err = io.ReadFull(rd, p)
 	return string(p), err
-}
-
-func ReadPlayerKey(rd io.Reader) (crypto.IdentifiedKey, error) {
-	expiry, err := ReadInt64(rd)
-	if err != nil {
-		return nil, err
-	}
-	key, err := ReadBytes(rd)
-	if err != nil {
-		return nil, err
-	}
-	signature, err := ReadBytesLen(rd, 4096)
-	if err != nil {
-		return nil, err
-	}
-	return crypto.NewIdentifiedKey(key, expiry, signature)
 }
 
 func ReadUnixMilli(rd io.Reader) (time.Time, error) {

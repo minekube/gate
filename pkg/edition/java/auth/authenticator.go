@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -175,7 +175,7 @@ func (a *authn) AuthenticateJoin(ctx context.Context, serverID, username, ip str
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}

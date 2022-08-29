@@ -9,7 +9,6 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -281,18 +280,6 @@ func WriteUTF(wr io.Writer, s string) error {
 	}
 	_, err = wr.Write([]byte(s))
 	return err
-}
-
-func WritePlayerKey(wr io.Writer, playerKey crypto.IdentifiedKey) error {
-	err := WriteInt64(wr, playerKey.ExpiryTemporal().UnixMilli())
-	if err != nil {
-		return err
-	}
-	err = WriteBytes(wr, playerKey.SignedPublicKeyBytes())
-	if err != nil {
-		return err
-	}
-	return WriteBytes(wr, playerKey.Signature())
 }
 
 func WriteComponent(wr io.Writer, protocol proto.Protocol, c component.Component) error {

@@ -115,7 +115,7 @@ func newConnectedPlayer(
 
 	var tabList tablist.TabList
 	if conn.protocol.GreaterEqual(version.Minecraft_1_8) {
-		tabList = tablist.New(conn, conn.protocol, &tabListPlayerKeyStore{p: conn.proxy})
+		tabList = tablist.New(conn, conn.protocol, &tabListPlayerKeyProvider{p: conn.proxy})
 	} else {
 		tabList = tablist.NewLegacy(conn, conn.protocol)
 	}
@@ -136,11 +136,11 @@ func newConnectedPlayer(
 	}
 }
 
-type tabListPlayerKeyStore struct{ p *Proxy }
+type tabListPlayerKeyProvider struct{ p *Proxy }
 
-var _ tablist.PlayerKey = (*tabListPlayerKeyStore)(nil)
+var _ tablist.PlayerKeyProvider = (*tabListPlayerKeyProvider)(nil)
 
-func (t *tabListPlayerKeyStore) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
+func (t *tabListPlayerKeyProvider) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
 	if p := t.p.player(playerID); p != nil {
 		return p.playerKey
 	}

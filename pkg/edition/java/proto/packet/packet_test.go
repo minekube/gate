@@ -26,6 +26,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -95,7 +96,7 @@ var packets = []proto.Packet{
 			if err != nil {
 				panic(err)
 			}
-			k, err := crypto.NewIdentifiedKey(public, time.Now().UnixMilli(), signature)
+			k, err := crypto.NewIdentifiedKey(keyrevision.LinkedV2, public, time.Now().UnixMilli(), signature)
 			if err != nil {
 				panic(err)
 			}
@@ -197,6 +198,13 @@ var packets = []proto.Packet{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
 		Type:      1,
 	},
+	&PlayerChatCompletion{},
+	&ServerData{
+		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},
+		Favicon:            "Favicon",
+		PreviewsChat:       true,
+		SecureChatEnforced: true,
+	},
 }
 
 // fill packets with fake data
@@ -265,8 +273,10 @@ func PacketCodings(t *testing.T,
 				}
 
 				// Both decode buffs should be emptied by packets decode method
-				assert.Equal(t, 0, bufA1.Len(), msg, "bufA1 not empty")
-				assert.Equal(t, 0, bufB1.Len(), msg, "bufB1 not empty")
+				assert.Equal(t, 0, bufA1.Len(), msg, fmt.Sprintf(
+					"bufA1 not empty: %d bytes left by decoder", bufA1.Len()))
+				assert.Equal(t, 0, bufB1.Len(), msg, fmt.Sprintf(
+					"bufB1 not empty: %d bytes left by decoder", bufB1.Len()))
 
 				bufA1.Reset()
 				bufA2.Reset()

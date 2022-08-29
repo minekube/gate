@@ -125,7 +125,12 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 			to = next.Protocol
 		}
 
-		if from >= to && from != version.MaximumVersion.Protocol {
+		lastInList := lastValid
+		if lastValid == 0 {
+			lastInList = last(version.SupportedVersions).Protocol
+		}
+
+		if from >= to && from != lastInList {
 			panic(fmt.Sprintf("Next mapping version (%s) should be lower then current (%s)", to, from))
 		}
 
@@ -174,7 +179,7 @@ func m(id proto.PacketID, version *proto.Version) *PacketMapping {
 //
 //  id         packet Id
 //  version    protocol version
-//  encodeOnly when true packet decoding will be disabled
+//  encodeOnly when true packet decoding will be disabled // *removed
 //  lastValidProtocolVersion last version this mapping is valid at
 func ml(id proto.PacketID, version, lastValidProtocol *proto.Version) *PacketMapping {
 	var last proto.Protocol
@@ -222,4 +227,13 @@ func (s State) String() string {
 		return "Play"
 	}
 	return "UnknownState"
+}
+
+// returns last element of the slice or nil if slice is empty
+func last[T any](s []T) T {
+	if len(s) == 0 {
+		var t T
+		return t
+	}
+	return s[len(s)-1]
 }
