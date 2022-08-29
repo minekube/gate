@@ -563,9 +563,7 @@ func (b *ChatBuilder) ToServer() proto.Packet {
 		}
 		// Well crap
 		if strings.HasPrefix(b.message, "/") {
-			return NewPlayerCommand(
-				strings.TrimPrefix(b.message, "/"),
-				nil, time.Now())
+			return NewPlayerCommand(strings.TrimPrefix(b.message, "/"), nil, b.timestamp)
 		}
 		// This will produce an error on the server, but needs to be here.
 		return &PlayerChat{
@@ -596,11 +594,13 @@ func toPlayerChat(m *crypto.SignedChatMessage) *PlayerChat {
 func toPlayerCommand(m *crypto.SignedChatCommand) *PlayerCommand {
 	salt, _ := util.ReadInt64(bytes.NewReader(m.Salt))
 	return &PlayerCommand{
-		Unsigned:      false,
-		Command:       m.Command,
-		Timestamp:     time.Time{},
-		Salt:          salt,
-		SignedPreview: m.SignedPreview,
-		Arguments:     nil,
+		Unsigned:         false,
+		Command:          m.Command,
+		Timestamp:        m.Expiry,
+		Salt:             salt,
+		SignedPreview:    m.SignedPreview,
+		Arguments:        nil,
+		PreviousMessages: m.PreviousSignatures,
+		LastMessage:      m.LastSignature,
 	}
 }
