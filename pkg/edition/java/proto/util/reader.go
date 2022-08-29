@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"time"
 
@@ -88,13 +87,13 @@ func ReadBytesLen(rd io.Reader, maxLength int) (bytes []byte, err error) {
 // Reads a non length prefixed string from the reader. This is necessary for parsing
 // certain packets like the velocity login/hello packet (no length prefix).
 func ReadRawBytes(rd io.Reader) ([]byte, error) {
-	return ioutil.ReadAll(rd)
+	return io.ReadAll(rd)
 }
 
 // ReadStringWithoutLen reads a non length-prefixed string from the Reader.
 // We need this for the legacy 1.7 version, being inconsistent when sending the plugin message channel brand.
 func ReadStringWithoutLen(rd io.Reader) (string, error) {
-	b, err := ioutil.ReadAll(rd)
+	b, err := io.ReadAll(rd)
 	return string(b), err
 }
 

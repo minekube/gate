@@ -1,11 +1,11 @@
 package plugin
 
 import (
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
-	"io/ioutil"
 )
 
 // Message is a Minecraft plugin message packet.
@@ -40,7 +40,7 @@ func (p *Message) Decode(c *proto.PacketContext, r io.Reader) (err error) {
 		p.Channel = TransformLegacyToModernChannel(p.Channel)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		p.Data, err = ioutil.ReadAll(r)
+		p.Data, err = io.ReadAll(r)
 	} else {
 		p.Data, err = util.ReadBytes17(r)
 	}
