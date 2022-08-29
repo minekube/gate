@@ -127,6 +127,7 @@ func init() {
 		m(0x20, version.Minecraft_1_16),
 		m(0x21, version.Minecraft_1_16_2),
 		m(0x23, version.Minecraft_1_19),
+		m(0x24, version.Minecraft_1_19_1),
 	)
 	// coming soon...
 
@@ -166,6 +167,7 @@ func init() {
 		m(0x39, version.Minecraft_1_16_2),
 		m(0x3D, version.Minecraft_1_17),
 		m(0x3B, version.Minecraft_1_19),
+		m(0x3E, version.Minecraft_1_19_1),
 	)
 	Play.ClientBound.Register(&p.Disconnect{},
 		m(0x40, version.Minecraft_1_7_2),
@@ -227,8 +229,8 @@ func init() {
 	)
 	Play.ClientBound.Register(&title.Subtitle{},
 		m(0x57, version.Minecraft_1_17),
-		m(0x58, version.Minecraft_1_18),
-		m(0x50, version.Minecraft_1_19_1),
+		m(0x50, version.Minecraft_1_18),
+		m(0x58, version.Minecraft_1_19_1),
 	)
 	Play.ClientBound.Register(&title.Text{},
 		m(0x59, version.Minecraft_1_17),

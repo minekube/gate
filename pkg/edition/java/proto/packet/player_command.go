@@ -122,16 +122,16 @@ func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error)
 	}
 	// Mapped as Argument : signature
 	entries := make(map[string][]byte, mapSize)
+	readBytes := util.DefaultMaxStringSize
+	if p.Unsigned {
+		readBytes = 0
+	}
 	for i := 0; i < mapSize; i++ {
 		a, err := util.ReadStringMax(rd, maxLengthArguments)
 		if err != nil {
 			return err
 		}
 		var b []byte
-		readBytes := util.DefaultMaxStringSize
-		if p.Unsigned {
-			readBytes = 0
-		}
 		b, err = util.ReadBytesLen(rd, readBytes)
 		if err != nil {
 			return err

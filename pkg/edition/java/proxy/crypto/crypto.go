@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	_ "embed"
 	"encoding/base64"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"strings"
@@ -87,10 +86,10 @@ type identifiedKey struct {
 	revision       keyrevision.Revision
 	holder         uuid.UUID
 
-	once struct {
-		sync.Once
+	mu struct {
+		sync.Mutex
+		run              bool // is true if validation has been run
 		isSignatureValid bool
-		err              error
 	}
 }
 
@@ -109,7 +108,7 @@ func NewIdentifiedKey(revision keyrevision.Revision, key []byte, expiry int64, s
 		publicKeyBytes: key,
 		publicKey:      rsaKey,
 		signature:      signature,
-		expiryTemporal: time.UnixMilli(expiry),
+		expiryTemporal: time.UnixMilli(expiry).UTC(),
 		revision:       revision,
 	}, nil
 }
@@ -160,10 +159,13 @@ func (i *identifiedKey) SignatureHolder() uuid.UUID {
 	return i.holder
 }
 func (i *identifiedKey) SignatureValid() bool {
-	i.once.Do(func() {
-		i.once.isSignatureValid = i.validateData(i.holder)
-	})
-	return i.once.isSignatureValid
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if !i.mu.run {
+		i.mu.isSignatureValid = i.validateData(i.holder)
+		i.mu.run = true
+	}
+	return i.mu.isSignatureValid
 }
 func (i *identifiedKey) VerifyDataSignature(signature []byte, toVerify ...[]byte) bool {
 	return verifySignature(crypto.SHA256, i.publicKey, signature, toVerify...)
@@ -183,12 +185,10 @@ func (i *identifiedKey) validateData(verify uuid.UUID) bool {
 	if verify == uuid.Nil {
 		return false
 	}
-	keyBytes := i.SignedPublicKeyBytes()
-	toVerify := new(bytes.Buffer)
-	_ = binary.Write(toVerify, binary.BigEndian, make([]byte, len(keyBytes)+28)) // length long * 3
+	toVerify := bytes.NewBuffer(make([]byte, 0, len(i.publicKeyBytes)+3*8))
 	_ = util.WriteUUID(toVerify, verify)
 	_ = util.WriteInt64(toVerify, i.expiryTemporal.UnixMilli())
-	_, _ = toVerify.Write(keyBytes)
+	_, _ = toVerify.Write(i.publicKeyBytes)
 	return verifySignature(crypto.SHA1, yggdrasilSessionPubKey, i.signature, toVerify.Bytes())
 }
 
@@ -202,11 +202,21 @@ func SetHolder(key IdentifiedKey, holder uuid.UUID) bool {
 		if !ok || !k.validateData(holder) {
 			return false
 		}
-		k.once.isSignatureValid = true
 		k.holder = holder
+
+		k.mu.Lock()
+		k.mu.run = true
+		k.mu.isSignatureValid = true
+		k.mu.Unlock()
 		return true
 	}
 	return key.SignatureHolder() == holder && key.SignatureValid()
+}
+
+// CanSetHolder returns true if the holder of the key can be updated.
+func CanSetHolder(key IdentifiedKey) bool {
+	_, ok := key.(*identifiedKey)
+	return ok
 }
 
 func verifySignature(algorithm crypto.Hash, key *rsa.PublicKey, signature []byte, toVerify ...[]byte) bool {
