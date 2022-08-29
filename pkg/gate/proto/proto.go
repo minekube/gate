@@ -12,10 +12,10 @@ import (
 // but the decoder has not read all the packet's bytes.
 //
 // This may happen in cases where
-//  - the decoder has a bug
-//  - the decoder does not handle the case for the new protocol version of the packet changed by Mojang/Minecraft
-//  - someone (server/client) has sent valid bytes in the beginning of the packet's data that the packet's
-//    decoder could successfully decode, but then the data contains even more bytes (the left bytes)
+//   - the decoder has a bug
+//   - the decoder does not handle the case for the new protocol version of the packet changed by Mojang/Minecraft
+//   - someone (server/client) has sent valid bytes in the beginning of the packet's data that the packet's
+//     decoder could successfully decode, but then the data contains even more bytes (the left bytes)
 var ErrDecoderLeftBytes = errors.New("decoder did not read all bytes of packet")
 
 // PacketDecoder decodes packets from an underlying
@@ -86,10 +86,10 @@ func (c *PacketContext) String() string {
 }
 
 // Direction is the direction a packet is bound to.
-//  - Receiving a packet from a client is ServerBound.
-//  - Receiving a packet from a server is ClientBound.
-//  - Sending a packet to a client is ClientBound.
-//  - Sending a packet to a server is ServerBound.
+//   - Receiving a packet from a client is ServerBound.
+//   - Receiving a packet from a server is ClientBound.
+//   - Sending a packet to a client is ClientBound.
+//   - Sending a packet to a server is ServerBound.
 type Direction uint8
 
 // Available packet bound directions.

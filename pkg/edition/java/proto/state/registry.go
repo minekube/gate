@@ -177,10 +177,10 @@ func m(id proto.PacketID, version *proto.Version) *PacketMapping {
 
 // ml returns new PacketMapping with optional lastValidProtocolVersion
 //
-//  id         packet Id
-//  version    protocol version
-//  encodeOnly when true packet decoding will be disabled // *removed
-//  lastValidProtocolVersion last version this mapping is valid at
+//	id         packet Id
+//	version    protocol version
+//	encodeOnly when true packet decoding will be disabled // *removed
+//	lastValidProtocolVersion last version this mapping is valid at
 func ml(id proto.PacketID, version, lastValidProtocol *proto.Version) *PacketMapping {
 	var last proto.Protocol
 	if lastValidProtocol != nil {
