@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -18,10 +19,10 @@ import (
 )
 
 type backendPlaySessionHandler struct {
-	serverConn                *serverConnection
-	bungeeCordMessageRecorder *bungeeCordMessageRecorder
-	exceptionTriggered        atomic.Bool
-	playerSessionHandler      *clientPlaySessionHandler
+	serverConn                 *serverConnection
+	bungeeCordMessageResponder bungeecord.MessageResponder
+	exceptionTriggered         atomic.Bool
+	playerSessionHandler       *clientPlaySessionHandler
 
 	nopSessionHandler
 }
@@ -32,9 +33,12 @@ func newBackendPlaySessionHandler(serverConn *serverConnection) (sessionHandler,
 		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
 	}
 	return &backendPlaySessionHandler{
-		serverConn:                serverConn,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
-		playerSessionHandler:      cpsh,
+		serverConn: serverConn,
+		bungeeCordMessageResponder: bungeeCordMessageResponder(
+			serverConn.config().BungeePluginChannelEnabled,
+			serverConn.player, serverConn.player.proxy,
+		),
+		playerSessionHandler: cpsh,
 	}, nil
 }
 
@@ -84,8 +88,7 @@ func (b *backendPlaySessionHandler) activated() {
 		serverMc, ok := b.serverConn.ensureConnected()
 		if ok {
 			protocol := serverMc.Protocol()
-			channelsPacket := plugin.ConstructChannelsPacket(protocol,
-				b.bungeeCordMessageRecorder.bungeeCordChannel(protocol))
+			channelsPacket := plugin.ConstructChannelsPacket(protocol, bungeecord.Channel(protocol))
 			_ = serverMc.WritePacket(channelsPacket)
 		}
 	}
@@ -115,7 +118,7 @@ func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 }
 
 func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, pc *proto.PacketContext) {
-	if b.bungeeCordMessageRecorder.process(packet) {
+	if b.bungeeCordMessageResponder.Process(packet) {
 		return
 	}
 

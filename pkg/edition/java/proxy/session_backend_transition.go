@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -16,7 +17,7 @@ import (
 type backendTransitionSessionHandler struct {
 	serverConn                *serverConnection
 	requestCtx                *connRequestCxt
-	bungeeCordMessageRecorder *bungeeCordMessageRecorder
+	bungeeCordMessageRecorder bungeecord.MessageResponder
 	listenDoneCtx             chan struct{}
 	log                       logr.Logger
 
@@ -25,10 +26,13 @@ type backendTransitionSessionHandler struct {
 
 func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
 	return &backendTransitionSessionHandler{
-		serverConn:                serverConn,
-		requestCtx:                requestCtx,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
-		log:                       serverConn.log.WithName("backendTransitionSession")}
+		serverConn: serverConn,
+		requestCtx: requestCtx,
+		bungeeCordMessageRecorder: bungeeCordMessageResponder(
+			serverConn.config().BungeePluginChannelEnabled,
+			serverConn.player, serverConn.player.proxy,
+		),
+		log: serverConn.log.WithName("backendTransitionSession")}
 }
 
 func (b *backendTransitionSessionHandler) activated() {
@@ -112,7 +116,7 @@ func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect)
 }
 
 func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Message) {
-	if b.bungeeCordMessageRecorder.process(packet) {
+	if b.bungeeCordMessageRecorder.Process(packet) {
 		return
 	}
 

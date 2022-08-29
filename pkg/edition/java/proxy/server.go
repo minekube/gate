@@ -56,6 +56,16 @@ func (p *players) Range(fn func(p Player) bool) {
 	}
 }
 
+// PlayersToSlice returns a slice of all players.
+func PlayersToSlice[R Player](p Players) []R {
+	var s []R
+	p.Range(func(p Player) bool {
+		s = append(s, p.(R))
+		return true
+	})
+	return s
+}
+
 func (p *players) add(players ...*connectedPlayer) {
 	p.mu.Lock()
 	for _, player := range players {
@@ -160,15 +170,11 @@ func (r *registeredServer) Players() Players {
 
 var _ RegisteredServer = (*registeredServer)(nil)
 
-// sends the a plugin message to all players on this server.
-func (r *registeredServer) sendPluginMessage(identifier message.ChannelIdentifier, data []byte) {
-	if r == nil {
-		return
+// BroadcastPluginMessage sends the plugin message to all players on the server.
+func BroadcastPluginMessage(sinks []message.ChannelMessageSink, identifier message.ChannelIdentifier, data []byte) {
+	for _, sink := range sinks {
+		go func(s message.ChannelMessageSink) { _ = s.SendPluginMessage(identifier, data) }(sink)
 	}
-	r.Players().Range(func(p Player) bool {
-		go func(p Player) { _ = p.SendPluginMessage(identifier, data) }(p)
-		return true
-	})
 }
 
 //

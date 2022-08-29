@@ -695,13 +695,16 @@ func (r *ChannelRegistrar) FromID(channel string) (message.ChannelIdentifier, bo
 //
 //
 
-// sends msg to all players on this proxy
-func (p *Proxy) sendMessage(msg component.Component) {
-	p.muP.RLock()
-	players := p.playerIDs
-	p.muP.RUnlock()
-	for _, p := range players {
-		go func(p Player) { _ = p.SendMessage(msg) }(p)
+// MessageSink is a message sink.
+type MessageSink interface {
+	// SendMessage sends a message component to the entity.
+	SendMessage(msg component.Component, opts ...command.MessageOption) error
+}
+
+// BroadcastMessage broadcasts a message to all given sinks (e.g. Player).
+func BroadcastMessage(sinks []MessageSink, msg component.Component) {
+	for _, sink := range sinks {
+		go func(s MessageSink) { _ = s.SendMessage(msg) }(sink)
 	}
 }
 

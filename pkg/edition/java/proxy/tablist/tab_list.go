@@ -33,14 +33,11 @@ type (
 	// tabList is the tab list of one player connection.
 	tabList struct {
 		keyProvider PlayerKeyProvider
-		w           PacketWriter
+		w           proto.PacketWriter
 		protocol    proto.Protocol
 
 		mu      sync.RWMutex
 		entries map[uuid.UUID]*tabListEntry
-	}
-	PacketWriter interface {
-		WritePacket(proto.Packet) error
 	}
 	PlayerKeyProvider interface {
 		PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey // May return nil if player not found
@@ -50,11 +47,11 @@ type (
 var _ TabList = (*tabList)(nil)
 
 // New creates a new TabList for versions >= 1.8.
-func New(w PacketWriter, protocol proto.Protocol, keyProvider PlayerKeyProvider) TabList {
+func New(w proto.PacketWriter, protocol proto.Protocol, keyProvider PlayerKeyProvider) TabList {
 	return newTabList(w, protocol, keyProvider)
 }
 
-func newTabList(w PacketWriter, protocol proto.Protocol, keyProvider PlayerKeyProvider) *tabList {
+func newTabList(w proto.PacketWriter, protocol proto.Protocol, keyProvider PlayerKeyProvider) *tabList {
 	return &tabList{
 		keyProvider: keyProvider,
 		w:           w,

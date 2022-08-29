@@ -954,7 +954,6 @@ func (e *PlayerChannelRegisterEvent) Player() Player {
 // event to finish. The server will be responsible for continuing the login process once the server
 // is satisfied with any login plugin responses sent by proxy plugins (or messages indicating a lack of response).
 type ServerLoginPluginMessageEvent struct {
-	conn       *serverConnection
 	id         message.ChannelIdentifier
 	contents   []byte
 	sequenceID int
