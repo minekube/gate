@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -14,7 +15,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/internal/bufpool"
 )
 
 const (
@@ -22,9 +22,6 @@ const (
 	HardMaximumUncompressedSize    = 16 * 1024 * 1024 // 16MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
 )
-
-// disable calibration, since most minecraft packets size is smaller than 64 bytes
-var pool = &bufpool.Pool{DisableCalibration: true}
 
 // Encoder is a synchronized packet encoder.
 type Encoder struct {
@@ -74,8 +71,9 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 			packet, e.registry.Protocol, e.state)
 	}
 
-	buf := bytes.NewBuffer(pool.Get())
-	defer func() { pool.Put(buf.Bytes()) }()
+	pk := reflect.TypeOf(packet)
+	buf, release := encodePool.getBuf(pk)
+	defer release()
 
 	_ = util.WriteVarInt(buf, int(packetID))
 
@@ -99,13 +97,13 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		}
 	}
 
-	return e.writeBuf(buf) // packet id + data
+	return e.writeBuf(buf, pk) // packet id + data
 }
 
 // see https://wiki.vg/Protocol#Packet_format for details
-func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
+func (e *Encoder) writeBuf(payload *bytes.Buffer, pk reflect.Type) (n int, err error) {
 	if e.compression.enabled {
-		return e.writeCompressed(payload)
+		return e.writeCompressed(payload, pk.String())
 	}
 	n, err = util.WriteVarIntN(e.wr, payload.Len()) // packet length
 	if err != nil {
@@ -115,7 +113,7 @@ func (e *Encoder) writeBuf(payload *bytes.Buffer) (n int, err error) {
 	return int(m) + n, err
 }
 
-func (e *Encoder) writeCompressed(payload *bytes.Buffer) (n int, err error) {
+func (e *Encoder) writeCompressed(payload *bytes.Buffer, pk any) (n int, err error) {
 	uncompressedSize := payload.Len()
 	if uncompressedSize < e.compression.threshold {
 		// Under the threshold, there is nothing to do.
@@ -131,8 +129,10 @@ func (e *Encoder) writeCompressed(payload *bytes.Buffer) (n int, err error) {
 		return n + n2 + int(n3), err
 	}
 	// >= threshold, compress packet id + data
-	compressed := bytes.NewBuffer(pool.Get())
-	defer func() { pool.Put(compressed.Bytes()) }()
+
+	compressed, release := compressedPool.getBuf(pk)
+	defer release()
+
 	_, err = util.WriteVarIntN(compressed, uncompressedSize) // data length
 	if err != nil {
 		return 0, err
@@ -155,8 +155,10 @@ func (e *Encoder) writeCompressed(payload *bytes.Buffer) (n int, err error) {
 func (e *Encoder) Write(payload []byte) (n int, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	return e.writeBuf(bytes.NewBuffer(payload))
+	return e.writeBuf(bytes.NewBuffer(payload), compressedKey)
 }
+
+var compressedKey = reflect.TypeOf((*complex128)(nil))
 
 func (e *Encoder) compress(payload []byte, w io.Writer) (n int, err error) {
 	e.compression.writer.Reset(w)
