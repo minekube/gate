@@ -3,6 +3,7 @@
 package bufpool
 
 import (
+	"bytes"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -43,31 +44,31 @@ var defaultPool Pool
 // Got byte buffer may be returned to the pool via Put call.
 // This reduces the number of memory allocations required for byte buffer
 // management.
-func Get() []byte { return defaultPool.Get() }
+func Get() *bytes.Buffer { return defaultPool.Get() }
 
 // Get returns new byte buffer with zero length.
 //
 // The byte buffer may be returned to the pool via Put after the use
 // in order to minimize GC overhead.
-func (p *Pool) Get() []byte {
+func (p *Pool) Get() *bytes.Buffer {
 	v := p.pool.Get()
 	if v != nil {
-		return *v.(*[]byte)
+		return v.(*bytes.Buffer)
 	}
-	return make([]byte, 0, atomic.LoadUint64(&p.defaultSize))
+	return bytes.NewBuffer(make([]byte, 0, atomic.LoadUint64(&p.defaultSize)))
 }
 
 // Put returns byte buffer to the pool.
 //
 // ByteBuffer.B mustn't be touched after returning it to the pool.
 // Otherwise data races will occur.
-func Put(b []byte) { defaultPool.Put(b) }
+func Put(b *bytes.Buffer) { defaultPool.Put(b) }
 
 // Put releases byte buffer obtained via Get to the pool.
 //
 // The buffer mustn't be accessed after returning to the pool.
-func (p *Pool) Put(b []byte) {
-	idx := index(len(b))
+func (p *Pool) Put(b *bytes.Buffer) {
+	idx := index(b.Len())
 
 	if !p.DisableCalibration &&
 		atomic.AddUint64(&p.calls[idx], 1) > calibrateCallsThreshold {
@@ -75,9 +76,9 @@ func (p *Pool) Put(b []byte) {
 	}
 
 	maxSize := int(atomic.LoadUint64(&p.maxSize))
-	if maxSize == 0 || cap(b) <= maxSize {
-		b = b[:0]
-		p.pool.Put(&b)
+	if maxSize == 0 || b.Cap() <= maxSize {
+		b.Reset()
+		p.pool.Put(b)
 	}
 }
 
