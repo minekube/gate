@@ -7,7 +7,7 @@ import (
 	"go.minekube.com/gate/pkg/internal/bufpool"
 )
 
-var encodePool, compressedPool poolMap
+var encodePool, compressPool poolMap
 
 type poolMap struct {
 	// using sync.Map since optimized for:
@@ -22,9 +22,10 @@ var bufpoolPool = sync.Pool{New: func() any {
 }}
 
 func (p *poolMap) getBuf(key any) (*bytes.Buffer, func()) {
-	actual, loaded := p.pools.LoadOrStore(key, bufpoolPool.Get())
+	valPool := bufpoolPool.Get()
+	actual, loaded := p.pools.LoadOrStore(key, valPool)
 	if loaded {
-		bufpoolPool.Put(actual)
+		bufpoolPool.Put(valPool)
 	}
 	pool := actual.(*bufpool.Pool)
 	buf := pool.Get()

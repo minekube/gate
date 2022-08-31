@@ -130,7 +130,7 @@ func (e *Encoder) writeCompressed(payload *bytes.Buffer, pk any) (n int, err err
 	}
 	// >= threshold, compress packet id + data
 
-	compressed, release := compressedPool.getBuf(pk)
+	compressed, release := compressPool.getBuf(pk)
 	defer release()
 
 	_, err = util.WriteVarIntN(compressed, uncompressedSize) // data length
