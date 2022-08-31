@@ -2,23 +2,21 @@ package bungeecord
 
 import (
 	"bytes"
-	"context"
 	"io"
+	"net"
 	"strings"
-	"time"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/common/minecraft/key"
-	"go.minekube.com/gate/pkg/edition/java/proxy"
-
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/netutil"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 // MessageResponder is a message responder for BungeeCord plugin channels.
@@ -33,16 +31,22 @@ var NopMessageResponder MessageResponder = &nopMessageResponder{}
 
 // Dependencies required by NewMessageResponder.
 type (
+	Providers interface {
+		PlayerProvider
+		ServerProvider
+		ServerConnectionProvider
+	}
 	// PlayerProvider provides a player by its name.
 	PlayerProvider interface {
-		PlayerByName(username string) proxy.Player
+		PlayerByName(username string) Player
 		PlayerCount() int // Total number of players online
-		Players() []proxy.Player
+		Players() []Player
+		BroadcastMessage(component.Component)
 	}
 	// ServerProvider provides servers.
 	ServerProvider interface {
-		Server(name string) proxy.RegisteredServer
-		Servers() []proxy.RegisteredServer
+		Server(name string) Server
+		Servers() []Server
 	}
 	// ServerConnectionProvider provides the currently connected server connection for a player.
 	ServerConnectionProvider interface {
@@ -54,31 +58,37 @@ type (
 		Protocol() proto.Protocol
 		proto.PacketWriter
 	}
+	Player interface {
+		ID() uuid.UUID
+		Username() string
+		RemoteAddr() net.Addr
+		Disconnect(reason component.Component)
+	}
+	Server interface {
+		Name() string
+		PlayerCount() int
+		BroadcastPluginMessage(message.ChannelIdentifier, []byte)
+		Connect(Player)
+		Players() []Player
+		BroadcastMessage(component.Component)
+		Addr() net.Addr
+	}
 )
 
 // NewMessageResponder returns a new MessageResponder.
 func NewMessageResponder(
-	player proxy.Player,
-	connectionTimeout time.Duration,
-	playerProvider PlayerProvider,
-	serverProvider ServerProvider,
-	serverConnectionProvider ServerConnectionProvider,
+	player Player,
+	providers Providers,
 ) MessageResponder {
 	return &bungeeCordMessageResponder{
-		Player:                   player,
-		ConnectionTimeout:        connectionTimeout,
-		PlayerProvider:           playerProvider,
-		ServerProvider:           serverProvider,
-		ServerConnectionProvider: serverConnectionProvider,
+		player:    player,
+		Providers: providers,
 	}
 }
 
 type bungeeCordMessageResponder struct {
-	Player                   proxy.Player // The player of this responder.
-	ConnectionTimeout        time.Duration
-	PlayerProvider           PlayerProvider
-	ServerProvider           ServerProvider
-	ServerConnectionProvider ServerConnectionProvider
+	player Player // The player of this responder.
+	Providers
 }
 
 var (
@@ -170,7 +180,7 @@ func (r *bungeeCordMessageResponder) sendServerResponse(in []byte) {
 	if len(in) == 0 {
 		return
 	}
-	serverConn := r.ServerConnectionProvider.ConnectedServer()
+	serverConn := r.ConnectedServer()
 	if serverConn == nil {
 		return
 	}
@@ -179,7 +189,7 @@ func (r *bungeeCordMessageResponder) sendServerResponse(in []byte) {
 }
 
 func (r *bungeeCordMessageResponder) processForwardToPlayer(in io.Reader) {
-	r.readPlayer(in, func(player proxy.Player) {
+	r.readPlayer(in, func(player Player) {
 		r.sendServerResponse(r.prepareForwardMessage(in))
 	})
 }
@@ -192,45 +202,41 @@ func (r *bungeeCordMessageResponder) processForwardToServer(in io.Reader) {
 	forward := r.prepareForwardMessage(in)
 	if strings.EqualFold(target, "ALL") {
 		var currentUserServer string
-		if s := r.ServerConnectionProvider.ConnectedServer(); s != nil {
+		if s := r.ConnectedServer(); s != nil {
 			currentUserServer = s.Name()
 		}
 		// Broadcast message to players on all servers except the current one
-		for _, server := range r.ServerProvider.Servers() {
-			if server.ServerInfo().Name() == currentUserServer {
+		for _, server := range r.Servers() {
+			if server.Name() == currentUserServer {
 				continue // skip current server
 			}
-			sinks := proxy.PlayersToSlice[message.ChannelMessageSink](server.Players())
-			proxy.BroadcastPluginMessage(sinks, bungeeCordLegacyChannel, forward)
+			server.BroadcastPluginMessage(bungeeCordLegacyChannel, forward)
 		}
 	} else {
-		if server := r.ServerProvider.Server(target); server != nil {
-			sinks := proxy.PlayersToSlice[message.ChannelMessageSink](server.Players())
-			proxy.BroadcastPluginMessage(sinks, bungeeCordLegacyChannel, forward)
+		if server := r.Server(target); server != nil {
+			server.BroadcastPluginMessage(bungeeCordLegacyChannel, forward)
 		}
 	}
 }
 
 func (r *bungeeCordMessageResponder) processConnect(in io.Reader) {
-	r.readServer(in, func(server proxy.RegisteredServer) {
-		r.connect(r.Player, server)
+	r.readServer(in, func(server Server) {
+		r.connect(r.player, server)
 	})
 }
 func (r *bungeeCordMessageResponder) processConnectOther(in io.Reader) {
-	r.readPlayer(in, func(player proxy.Player) {
-		r.readServer(in, func(server proxy.RegisteredServer) {
+	r.readPlayer(in, func(player Player) {
+		r.readServer(in, func(server Server) {
 			r.connect(player, server)
 		})
 	})
 }
-func (r *bungeeCordMessageResponder) connect(cr proxy.Player, server proxy.RegisteredServer) {
-	ctx, cancel := context.WithTimeout(context.TODO(), r.ConnectionTimeout)
-	defer cancel()
-	_ = cr.CreateConnectionRequest(server).ConnectWithIndication(ctx)
+func (r *bungeeCordMessageResponder) connect(cr Player, server Server) {
+	server.Connect(cr)
 }
 
 func (r *bungeeCordMessageResponder) processIP() {
-	host, port := netutil.HostPort(r.Player.RemoteAddr())
+	host, port := netutil.HostPort(r.player.RemoteAddr())
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "IP")
 	_ = util.WriteUTF(b, host)
@@ -239,7 +245,7 @@ func (r *bungeeCordMessageResponder) processIP() {
 }
 
 func (r *bungeeCordMessageResponder) processIPOther(in io.Reader) {
-	r.readPlayer(in, func(player proxy.Player) {
+	r.readPlayer(in, func(player Player) {
 		host, port := netutil.HostPort(player.RemoteAddr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "IPOther")
@@ -260,14 +266,14 @@ func (r *bungeeCordMessageResponder) processPlayerCount(in io.Reader) {
 		name  = "ALL"
 	)
 	if strings.EqualFold(target, name) {
-		count = r.PlayerProvider.PlayerCount()
+		count = r.PlayerCount()
 	} else {
-		s := r.ServerProvider.Server(target)
+		s := r.Server(target)
 		if s == nil {
 			return
 		}
-		name = s.ServerInfo().Name()
-		count = s.Players().Len()
+		name = s.Name()
+		count = s.PlayerCount()
 	}
 
 	b := new(bytes.Buffer)
@@ -285,17 +291,17 @@ func (r *bungeeCordMessageResponder) processPlayerList(in io.Reader) {
 	}
 	var (
 		name    = "ALL"
-		players []proxy.Player
+		players []Player
 	)
 	if target == name {
-		players = r.PlayerProvider.Players()
+		players = r.Players()
 	} else {
-		server := r.ServerProvider.Server(target)
+		server := r.Server(target)
 		if server == nil {
 			return
 		}
-		name = server.ServerInfo().Name()
-		players = proxy.PlayersToSlice[proxy.Player](server.Players())
+		name = server.Name()
+		players = server.Players()
 	}
 
 	list := joiner{split: ", "}
@@ -313,8 +319,8 @@ func (r *bungeeCordMessageResponder) processPlayerList(in io.Reader) {
 
 func (r *bungeeCordMessageResponder) processGetServers() {
 	list := joiner{split: ", "}
-	for _, server := range r.ServerProvider.Servers() {
-		list.write(server.ServerInfo().Name())
+	for _, server := range r.Servers() {
+		list.write(server.Name())
 	}
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "GetServers")
@@ -335,13 +341,10 @@ func (r *bungeeCordMessageResponder) processMessage0(in io.Reader, decoder codec
 	if err != nil {
 		return
 	}
-	if strings.EqualFold(target, "ALL") {
-		sinks := convertSlice[proxy.Player, proxy.MessageSink](r.PlayerProvider.Players())
-		proxy.BroadcastMessage(sinks, comp)
+	if target == "ALL" {
+		r.BroadcastMessage(comp)
 	} else {
-		players := proxy.PlayersToSlice[proxy.Player](r.ServerProvider.Server(target).Players())
-		sinks := convertSlice[proxy.Player, proxy.MessageSink](players)
-		proxy.BroadcastMessage(sinks, comp)
+		r.Server(target).BroadcastMessage(comp)
 	}
 }
 func (r *bungeeCordMessageResponder) processMessage(in io.Reader) {
@@ -352,7 +355,7 @@ func (r *bungeeCordMessageResponder) processMessageRaw(in io.Reader) {
 }
 
 func (r *bungeeCordMessageResponder) processGetServer() {
-	s := r.ServerConnectionProvider.ConnectedServer()
+	s := r.ConnectedServer()
 	if s == nil {
 		return
 	}
@@ -365,11 +368,11 @@ func (r *bungeeCordMessageResponder) processGetServer() {
 func (r *bungeeCordMessageResponder) processUUID() {
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "UUID")
-	_ = util.WriteUTF(b, r.Player.ID().Undashed())
+	_ = util.WriteUTF(b, r.player.ID().Undashed())
 	r.sendServerResponse(b.Bytes())
 }
 func (r *bungeeCordMessageResponder) processUUIDOther(in io.Reader) {
-	r.readPlayer(in, func(player proxy.Player) {
+	r.readPlayer(in, func(player Player) {
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "UUIDOther")
 		_ = util.WriteUTF(b, player.Username())
@@ -379,11 +382,11 @@ func (r *bungeeCordMessageResponder) processUUIDOther(in io.Reader) {
 }
 
 func (r *bungeeCordMessageResponder) processServerIP(in io.Reader) {
-	r.readServer(in, func(server proxy.RegisteredServer) {
-		host, port := netutil.HostPort(server.ServerInfo().Addr())
+	r.readServer(in, func(server Server) {
+		host, port := netutil.HostPort(server.Addr())
 		b := new(bytes.Buffer)
 		_ = util.WriteUTF(b, "ServerIP")
-		_ = util.WriteUTF(b, server.ServerInfo().Name())
+		_ = util.WriteUTF(b, server.Name())
 		_ = util.WriteUTF(b, host)
 		_ = util.WriteInt16(b, int16(port))
 		r.sendServerResponse(b.Bytes())
@@ -391,7 +394,7 @@ func (r *bungeeCordMessageResponder) processServerIP(in io.Reader) {
 }
 
 func (r *bungeeCordMessageResponder) processKick(in io.Reader) {
-	r.readPlayer(in, func(player proxy.Player) {
+	r.readPlayer(in, func(player Player) {
 		msg, err := util.ReadUTF(in)
 		if err != nil {
 			return
@@ -409,8 +412,8 @@ func (r *bungeeCordMessageResponder) processKick(in io.Reader) {
 //
 
 type (
-	playerFn func(p proxy.Player)
-	serverFn func(s proxy.RegisteredServer)
+	playerFn func(p Player)
+	serverFn func(s Server)
 )
 
 func (r *bungeeCordMessageResponder) readServer(in io.Reader, fn serverFn) {
@@ -418,7 +421,7 @@ func (r *bungeeCordMessageResponder) readServer(in io.Reader, fn serverFn) {
 	if err != nil {
 		return
 	}
-	server := r.ServerProvider.Server(name)
+	server := r.Server(name)
 	if server != nil {
 		fn(server)
 	}
@@ -428,7 +431,7 @@ func (r *bungeeCordMessageResponder) readPlayer(in io.Reader, fn playerFn) {
 	if err != nil {
 		return
 	}
-	player := r.PlayerProvider.PlayerByName(name)
+	player := r.PlayerByName(name)
 	if player != nil {
 		fn(player)
 	}
@@ -456,11 +459,3 @@ type nopMessageResponder struct{}
 func (n *nopMessageResponder) Process(*plugin.Message) bool { return false }
 
 var _ MessageResponder = (*nopMessageResponder)(nil)
-
-func convertSlice[T any, R T](a []T) []R {
-	b := make([]R, len(a))
-	for i, v := range a {
-		b[i] = v.(R)
-	}
-	return b
-}

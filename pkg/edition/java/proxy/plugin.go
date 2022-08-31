@@ -29,7 +29,7 @@ var Plugins []Plugin
 //   - Subscribe to proxy.ShutdownEvent for de-initializing your plugin.
 //
 // By running cmd/gate.Execute, Gate will do the whole rest.
-//   - load the config (parse found file, flags and env vars)
+//   - load the cfg (parse found file, flags and env vars)
 //   - make and run the proxy.Proxy that will call the Plugins init hooks.
 //
 // Script languages:

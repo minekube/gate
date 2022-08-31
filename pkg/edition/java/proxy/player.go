@@ -1,8 +1,6 @@
 package proxy
 
 import (
-	"crypto/rand"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -15,8 +13,12 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/command"
@@ -69,7 +71,9 @@ type Player interface {
 }
 
 type connectedPlayer struct {
-	*minecraftConn
+	netmc.MinecraftConn
+	*sessionHandlerDeps
+
 	log         logr.Logger
 	virtualHost net.Addr
 	onlineMode  bool
@@ -92,7 +96,7 @@ type connectedPlayer struct {
 	connInFlight             *serverConnection
 	settings                 player.Settings
 	modInfo                  *modinfo.ModInfo
-	connPhase                clientConnectionPhase
+	connPhase                phase.ClientConnectionPhase
 	outstandingResourcePacks deque.Deque[*ResourcePackInfo]
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
@@ -104,47 +108,32 @@ type connectedPlayer struct {
 var _ Player = (*connectedPlayer)(nil)
 
 func newConnectedPlayer(
-	conn *minecraftConn,
+	conn netmc.MinecraftConn,
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
 	onlineMode bool,
 	playerKey crypto.IdentifiedKey, // nil-able
+	tabList tablist.TabList,
+	sessionHandlerDeps *sessionHandlerDeps,
 ) *connectedPlayer {
-	ping := atomic.Duration{}
+	var ping atomic.Duration
 	ping.Store(-1)
 
-	var tabList tablist.TabList
-	if conn.protocol.GreaterEqual(version.Minecraft_1_8) {
-		tabList = tablist.New(conn, conn.protocol, &tabListPlayerKeyProvider{p: conn.proxy})
-	} else {
-		tabList = tablist.NewLegacy(conn, conn.protocol)
-	}
-
 	return &connectedPlayer{
-		minecraftConn: conn,
-		log: conn.log.WithName("player").WithValues(
+		sessionHandlerDeps: sessionHandlerDeps,
+		MinecraftConn:      conn,
+		log: logr.FromContextOrDiscard(conn.Context()).WithName("player").WithValues(
 			"name", profile.Name, "id", profile.ID),
 		profile:        profile,
 		virtualHost:    virtualHost,
 		onlineMode:     onlineMode,
 		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
-		connPhase:      conn.Type().initialClientPhase(),
+		connPhase:      conn.Type().InitialClientPhase(),
 		ping:           ping,
 		tabList:        tabList,
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
 		playerKey:      playerKey,
 	}
-}
-
-type tabListPlayerKeyProvider struct{ p *Proxy }
-
-var _ tablist.PlayerKeyProvider = (*tabListPlayerKeyProvider)(nil)
-
-func (t *tabListPlayerKeyProvider) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
-	if p := t.p.player(playerID); p != nil {
-		return p.playerKey
-	}
-	return nil
 }
 
 func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }
@@ -155,7 +144,7 @@ func (p *connectedPlayer) connectionInFlight() *serverConnection {
 	return p.connInFlight
 }
 
-func (p *connectedPlayer) phase() clientConnectionPhase {
+func (p *connectedPlayer) phase() phase.ClientConnectionPhase {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.connPhase
@@ -201,7 +190,7 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 	return serverMc.WritePacket(write)
 }
 
-func (p *connectedPlayer) ensureBackendConnection() (*minecraftConn, bool) {
+func (p *connectedPlayer) ensureBackendConnection() (netmc.MinecraftConn, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.connectedServer_ == nil {
@@ -348,7 +337,7 @@ func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStat
 		packInfo:      *queued,
 		overwriteKick: false,
 	}
-	p.proxy.Event().Fire(e)
+	p.eventMgr.Fire(e)
 
 	if e.Status() == DeclinedResourcePackResponseStatus &&
 		e.PackInfo().ShouldForce &&
@@ -386,7 +375,7 @@ func (p *connectedPlayer) VirtualHost() net.Addr {
 }
 
 func (p *connectedPlayer) Active() bool {
-	return !p.minecraftConn.Closed()
+	return !netmc.Closed(p.MinecraftConn)
 }
 
 // WithMessageSender modifies the sender identity of the chat message.
@@ -421,6 +410,9 @@ const (
 func WithMessageType(t MessageType) command.MessageOption {
 	return messageApplyOption(func(o any) {
 		if b, ok := o.(*packet.ChatBuilder); ok {
+			if t != ChatMessageType {
+				t = SystemMessageType
+			}
 			b.Type(t)
 		}
 	})
@@ -438,7 +430,10 @@ func (p *connectedPlayer) SendMessage(msg component.Component, opts ...command.M
 	if err := util.JsonCodec(p.Protocol()).Marshal(m, msg); err != nil {
 		return err
 	}
-	chat := packet.NewChatBuilder(p.Protocol()).Component(msg).AsPlayer(p.ID()).Type(ChatMessageType)
+	chat := packet.NewChatBuilder(p.Protocol()).
+		Component(msg).
+		AsPlayer(p.ID()).
+		Type(ChatMessageType)
 	for _, o := range opts {
 		o.Apply(chat)
 	}
@@ -498,10 +493,10 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(p.serversToTry) == 0 {
-		p.serversToTry = p.proxy.Config().ForcedHosts[p.virtualHost.String()]
+		p.serversToTry = p.config().ForcedHosts[p.virtualHost.String()]
 	}
 	if len(p.serversToTry) == 0 {
-		connOrder := p.proxy.Config().Try
+		connOrder := p.config().Try
 		if len(connOrder) == 0 {
 			return nil
 		} else {
@@ -544,20 +539,20 @@ func (p *connectedPlayer) teardown() {
 	}
 
 	var status LoginStatus
-	if p.proxy.unregisterConnection(p) {
+	if p.registrar.unregisterConnection(p) {
 		if p.disconnectDueToDuplicateConnection.Load() {
 			status = ConflictingLoginStatus
 		} else {
 			status = SuccessfulLoginStatus
 		}
 	} else {
-		if p.knownDisconnect.Load() {
+		if netmc.KnownDisconnect(p) {
 			status = CanceledByProxyLoginStatus
 		} else {
 			status = CanceledByUserLoginStatus
 		}
 	}
-	p.proxy.event.Fire(&DisconnectEvent{
+	p.eventMgr.Fire(&DisconnectEvent{
 		player:      p,
 		loginStatus: status,
 	})
@@ -593,18 +588,18 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if p.closeWith(packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
+	if netmc.CloseWith(p, packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
 		p.log.Info("Player has been disconnected", "reason", r)
 	}
 }
 
 func (p *connectedPlayer) String() string { return p.profile.Name }
 
-func (p *connectedPlayer) sendLegacyForgeHandshakeResetPacket() {
-	p.phase().resetConnectionPhase(p)
+func (p *connectedPlayer) SendLegacyForgeHandshakeResetPacket() {
+	p.phase().ResetConnectionPhase(p, p)
 }
 
-func (p *connectedPlayer) setPhase(phase *legacyForgeHandshakeClientPhase) {
+func (p *connectedPlayer) SetPhase(phase phase.ClientConnectionPhase) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.connPhase = phase
@@ -617,13 +612,13 @@ func (p *connectedPlayer) ModInfo() *modinfo.ModInfo {
 	return p.modInfo
 }
 
-func (p *connectedPlayer) setModInfo(info *modinfo.ModInfo) {
+func (p *connectedPlayer) SetModInfo(info *modinfo.ModInfo) {
 	p.mu.Lock()
 	p.modInfo = info
 	p.mu.Unlock()
 
 	if info != nil {
-		p.proxy.Event().Fire(&PlayerModInfoEvent{
+		p.eventMgr.Fire(&PlayerModInfoEvent{
 			player:  p,
 			modInfo: *info,
 		})
@@ -661,7 +656,7 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 	p.settings = wrapped
 	p.mu.Unlock()
 
-	p.proxy.Event().Fire(&PlayerSettingsChangedEvent{
+	p.eventMgr.Fire(&PlayerSettingsChangedEvent{
 		player:   p,
 		settings: wrapped,
 	})
@@ -678,8 +673,24 @@ func (p *connectedPlayer) Settings() player.Settings {
 	return player.DefaultSettings
 }
 
-func randomUint64() uint64 {
-	buf := make([]byte, 8)
-	_, _ = rand.Read(buf) // Always succeeds, no need to check error
-	return binary.LittleEndian.Uint64(buf)
+func (p *connectedPlayer) config() *config.Config {
+	return p.configProvider.config()
+}
+
+func newTabList(conn proto.PacketWriter, protocol proto.Protocol, players playerProvider) tablist.TabList {
+	if protocol.GreaterEqual(version.Minecraft_1_8) {
+		return tablist.New(conn, protocol, &tabListPlayerKeyProvider{players})
+	}
+	return tablist.NewLegacy(conn, protocol)
+}
+
+type tabListPlayerKeyProvider struct{ playerProvider }
+
+var _ tablist.PlayerKeyProvider = (*tabListPlayerKeyProvider)(nil)
+
+func (t *tabListPlayerKeyProvider) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
+	if p := t.Player(playerID); p != nil {
+		return p.IdentifiedKey()
+	}
+	return nil
 }

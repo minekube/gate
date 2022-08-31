@@ -12,6 +12,6 @@ func (p *Proxy) registerBuiltinCommands() {
 
 func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {
 	return command.Requires(func(c *command.RequiresContext) bool {
-		return !proxy.config.RequireBuiltinCommandPermissions || c.Source.HasPermission(perm)
+		return !proxy.cfg.RequireBuiltinCommandPermissions || c.Source.HasPermission(perm)
 	})
 }

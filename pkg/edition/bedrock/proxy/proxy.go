@@ -106,8 +106,4 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 
 func (p *Proxy) handleRawConn(raw net.Conn) {
 	defer raw.Close()
-	// Create client connection
-	conn := newMinecraftConn(raw, p, true)
-	// conn.setSessionHandler0()
-	conn.readLoop()
 }

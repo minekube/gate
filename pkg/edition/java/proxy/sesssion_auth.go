@@ -4,6 +4,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -15,6 +16,8 @@ import (
 )
 
 type authSessionHandler struct {
+	*sessionHandlerDeps
+
 	log        logr.Logger
 	inbound    *loginInboundConn
 	profile    *profile.GameProfile
@@ -23,39 +26,59 @@ type authSessionHandler struct {
 	connectedPlayer *connectedPlayer
 }
 
-func newAuthSessionHandler(inbound *loginInboundConn, profile *profile.GameProfile, onlineMode bool) sessionHandler {
+type playerRegistrar interface {
+	canRegisterConnection(player *connectedPlayer) bool
+	registerConnection(player *connectedPlayer) bool
+	unregisterConnection(player *connectedPlayer) bool
+}
+
+func newAuthSessionHandler(
+	inbound *loginInboundConn,
+	profile *profile.GameProfile,
+	onlineMode bool,
+	sessionHandlerDeps *sessionHandlerDeps,
+) netmc.SessionHandler {
 	return &authSessionHandler{
-		log:        inbound.delegate.log.WithName("authSession"),
-		inbound:    inbound,
-		profile:    profile,
-		onlineMode: onlineMode,
+		sessionHandlerDeps: sessionHandlerDeps,
+		log:                logr.FromContextOrDiscard(inbound.Context()).WithName("authSession"),
+		inbound:            inbound,
+		profile:            profile,
+		onlineMode:         onlineMode,
 	}
 }
 
-func (a *authSessionHandler) disconnected() {
+func (a *authSessionHandler) Disconnected() {
 	defer a.inbound.cleanup()
 	if a.connectedPlayer != nil {
 		a.connectedPlayer.teardown()
 	}
 }
 
-func (a *authSessionHandler) activated() {
+func (a *authSessionHandler) Activated() {
 	// Some connection types may need to alter the game profile.
-	gameProfile := *a.inbound.delegate.Type().addGameProfileTokensIfRequired(a.profile,
-		a.proxy().Config().Forwarding.Mode)
+	gameProfile := *a.inbound.delegate.Type().AddGameProfileTokensIfRequired(
+		a.profile, a.config().Forwarding.Mode)
 
 	profileRequest := NewGameProfileRequestEvent(a.inbound, gameProfile, a.onlineMode)
-	a.event().Fire(profileRequest)
-	if a.inbound.delegate.minecraftConn.Closed() {
+	a.eventMgr.Fire(profileRequest)
+	conn := a.inbound.delegate.MinecraftConn
+	if netmc.Closed(conn) {
 		return // Player disconnected after authentication
 	}
 	gameProfile = profileRequest.GameProfile()
 
 	// Initiate a regular connection and move over to it.
-	player := newConnectedPlayer(a.inbound.delegate.minecraftConn, &gameProfile,
-		a.inbound.VirtualHost(), a.onlineMode, a.inbound.IdentifiedKey())
+	player := newConnectedPlayer(
+		conn,
+		&gameProfile,
+		a.inbound.VirtualHost(),
+		a.onlineMode,
+		a.inbound.IdentifiedKey(),
+		newTabList(conn, conn.Protocol(), a.players),
+		a.sessionHandlerDeps,
+	)
 	a.connectedPlayer = player
-	if !a.proxy().canRegisterConnection(player) {
+	if !a.registrar.canRegisterConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return
 	}
@@ -67,7 +90,7 @@ func (a *authSessionHandler) activated() {
 		subject:     player,
 		defaultFunc: player.permFunc,
 	}
-	a.event().Fire(permSetup)
+	a.eventMgr.Fire(permSetup)
 	// Set the player's permission function
 	player.permFunc = permSetup.Func()
 
@@ -77,14 +100,14 @@ func (a *authSessionHandler) activated() {
 }
 
 func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connectedPlayer) {
-	cfg := a.proxy().config
+	cfg := a.config()
 
 	// Send compression threshold
 	threshold := cfg.Compression.Threshold
 	if threshold >= 0 && player.Protocol().GreaterEqual(version.Minecraft_1_8) {
 		err := player.WritePacket(&packet.SetCompression{Threshold: threshold})
 		if err != nil {
-			_ = player.close()
+			_ = player.Close()
 			return
 		}
 		if err = player.SetCompressionThreshold(threshold); err != nil {
@@ -129,11 +152,11 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 		return
 	}
 
-	player.setState(state.Play)
+	player.SetState(state.Play)
 	loginEvent := &LoginEvent{player: player}
-	event.FireParallel(a.event(), loginEvent, func(e *LoginEvent) {
+	event.FireParallel(a.eventMgr, loginEvent, func(e *LoginEvent) {
 		if !player.Active() {
-			a.event().Fire(&DisconnectEvent{
+			a.eventMgr.Fire(&DisconnectEvent{
 				player:      player,
 				loginStatus: CanceledByUserBeforeCompleteLoginStatus,
 			})
@@ -145,15 +168,15 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 			return
 		}
 
-		if !a.proxy().registerConnection(player) {
+		if !a.registrar.registerConnection(player) {
 			player.Disconnect(alreadyConnected)
 			return
 		}
 
 		// Login is done now, just connect player to first server and
 		// let InitialConnectSessionHandler do further work.
-		player.setSessionHandler(newInitialConnectSessionHandler(player))
-		a.event().Fire(&PostLoginEvent{player: player})
+		player.SetSessionHandler(newInitialConnectSessionHandler(player))
+		a.eventMgr.Fire(&PostLoginEvent{player: player})
 		a.connectToInitialServer(player)
 	})
 }
@@ -164,26 +187,27 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		player:        player,
 		initialServer: initialFromConfig,
 	}
-	a.event().Fire(chooseServer)
+	a.eventMgr.Fire(chooseServer)
 	if !player.Active() || // player was disconnected
 		player.CurrentServer() != nil { // player was already connected to a server
 		return
 	}
 	if chooseServer.InitialServer() == nil {
-		player.Disconnect(noAvailableServers) // Will call disconnected() in InitialConnectSessionHandler
+		player.Disconnect(noAvailableServers) // Will call Disconnected() in InitialConnectSessionHandler
 		return
 	}
-	ctx, cancel := withConnectionTimeout(player.Context(), a.proxy().config)
+	ctx, cancel := withConnectionTimeout(player.Context(), a.config())
 	defer cancel()
 	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 
-func (a *authSessionHandler) deactivated() {}
+func (a *authSessionHandler) Deactivated() {}
 
-func (a *authSessionHandler) handlePacket(pc *proto.PacketContext) {
+func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	// no packet expected during auth session
-	_ = a.inbound.delegate.closeKnown(true)
+	_ = a.inbound.delegate.Close()
 }
 
-func (a *authSessionHandler) proxy() *Proxy        { return a.inbound.delegate.proxy }
-func (a *authSessionHandler) event() event.Manager { return a.proxy().Event() }
+func (a *authSessionHandler) config() *config.Config {
+	return a.configProvider.config()
+}

@@ -42,7 +42,7 @@ func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger) *Decode
 		direction: direction,
 		state:     state.Handshake,
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
-		log:       log,
+		log:       log.WithName("decoder"),
 		hexDump:   os.Getenv("HEXDUMP") == "true",
 	}
 }
@@ -116,7 +116,7 @@ func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 func (d *Decoder) readPayload() (payload []byte, err error) {
 	payload, err = readVarIntFrame(d.rd)
 	if err != nil {
-		return nil, fmt.Errorf("error reading varint frame: %w", err)
+		return nil, fmt.Errorf("error reading packet frame: %w", err)
 	}
 	if len(payload) == 0 {
 		return

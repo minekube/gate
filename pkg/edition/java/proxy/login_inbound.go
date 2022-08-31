@@ -31,6 +31,17 @@ type (
 	}
 )
 
+// Inbound is an incoming connection to the proxy.
+type Inbound interface {
+	Protocol() proto.Protocol // The current protocol version the connection uses.
+	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
+	RemoteAddr() net.Addr     // The player's IP address.
+	Active() bool             // Whether the connection remains active.
+	// Context returns the connection's context that can be used to know when the connection was closed.
+	// (e.g. for canceling work in an event handler)
+	Context() context.Context
+}
+
 type loginInboundConn struct {
 	delegate             *initialInbound
 	outstandingResponses map[int]MessageConsumer
@@ -123,7 +134,7 @@ func (l *loginInboundConn) loginEventFired(onAllMessagesHandled func() error) er
 			return err
 		}
 	}
-	return l.delegate.flush()
+	return l.delegate.Flush()
 }
 
 func (l *loginInboundConn) disconnect(reason component.Component) error {

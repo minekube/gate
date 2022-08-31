@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
@@ -11,11 +13,11 @@ type initialConnectSessionHandler struct {
 	nopSessionHandler
 }
 
-func newInitialConnectSessionHandler(player *connectedPlayer) sessionHandler {
+func newInitialConnectSessionHandler(player *connectedPlayer) netmc.SessionHandler {
 	return &initialConnectSessionHandler{player: player}
 }
 
-func (i *initialConnectSessionHandler) handlePacket(p *proto.PacketContext) {
+func (i *initialConnectSessionHandler) HandlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
 		return
 	}
@@ -30,7 +32,7 @@ func (i *initialConnectSessionHandler) handlePluginMessage(packet *plugin.Messag
 	if serverConn == nil {
 		return // Do nothing
 	}
-	if i.player.phase().handle(serverConn, packet) {
+	if phaseHandle(i.player, serverConn.conn(), packet) {
 		return // Done
 	}
 
@@ -48,7 +50,7 @@ func (i *initialConnectSessionHandler) handlePluginMessage(packet *plugin.Messag
 	}
 }
 
-func (i *initialConnectSessionHandler) disconnected() {
+func (i *initialConnectSessionHandler) Disconnected() {
 	// Just after we registered the player connection,
 	// the user canceled login process or
 	// we did not find an initial server to connect the player to
@@ -56,8 +58,8 @@ func (i *initialConnectSessionHandler) disconnected() {
 	i.player.teardown()
 }
 
-var _ sessionHandler = (*initialConnectSessionHandler)(nil)
+var _ netmc.SessionHandler = (*initialConnectSessionHandler)(nil)
 
-func (i *initialConnectSessionHandler) player_() *connectedPlayer {
-	return i.player
+func (i *initialConnectSessionHandler) PlayerLog() logr.Logger {
+	return i.player.log
 }

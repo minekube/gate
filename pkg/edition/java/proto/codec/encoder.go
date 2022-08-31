@@ -45,7 +45,7 @@ type Encoder struct {
 
 func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger) *Encoder {
 	return &Encoder{
-		log:       log,
+		log:       log.WithName("encoder"),
 		hexDump:   os.Getenv("HEXDUMP") == "true",
 		wr:        w,
 		direction: direction,

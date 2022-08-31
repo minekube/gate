@@ -3,13 +3,12 @@ package proxy
 import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
-
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/util/permission"

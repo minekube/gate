@@ -21,7 +21,7 @@ type legacyTabList struct {
 }
 
 // NewLegacy returns a new legacy TabList for version <= 1.7.
-func NewLegacy(w PacketWriter, p proto.Protocol) TabList {
+func NewLegacy(w proto.PacketWriter, p proto.Protocol) TabList {
 	return &legacyTabList{
 		tabList:     newTabList(w, p, &nopKeyStore{}),
 		nameMapping: map[string]uuid.UUID{},
