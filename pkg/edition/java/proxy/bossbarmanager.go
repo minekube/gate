@@ -20,27 +20,27 @@ type BossBarManager interface {
 }
 
 type bossBarManager struct {
-	bars map[uuid.UUID]BossBarHolder
+	bars map[uuid.UUID]*BossBarHolder
 	sync.Mutex
 
-	fnPlayer func(id uuid.UUID) *connectedPlayer
+	// fnPlayer func(id uuid.UUID) *connectedPlayer
 }
 
-func (m *bossBarManager) get(bar packet.BossBar) (BossBarHolder, bool) {
+func (m *bossBarManager) get(bar packet.BossBar) (*BossBarHolder, bool) {
 	barholder, ok := m.bars[bar.UUID]
 	return barholder, ok
 }
 
-func (m *bossBarManager) getOrCreate(bar packet.BossBar) (BossBarHolder, error) {
+func (m *bossBarManager) getOrCreate(bar packet.BossBar) (*BossBarHolder, error) {
 	if bar.UUID == uuid.Nil {
-		return BossBarHolder{}, errBossBarNoUUID
+		return nil, errBossBarNoUUID
 	}
 
 	if barholder, ok := m.bars[bar.UUID]; ok {
 		return barholder, nil
 	}
 
-	barholder := BossBarHolder{
+	barholder := &BossBarHolder{
 		subscribers: make(map[uuid.UUID]*connectedPlayer),
 	}
 	barholder.Register()

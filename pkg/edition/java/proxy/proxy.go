@@ -104,7 +104,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		bossBarManager:   &bossBarManager{bars: make(map[uuid.UUID]BossBarHolder)},
+		bossBarManager:   &bossBarManager{bars: make(map[uuid.UUID]*BossBarHolder)},
 	}
 
 	c := options.Config
