@@ -322,9 +322,9 @@ func (p *SystemChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
 		switch p.Type {
 		case SystemMessageType:
-			err = util.WriteBool(wr, true)
-		case GameInfoMessageType:
 			err = util.WriteBool(wr, false)
+		case GameInfoMessageType:
+			err = util.WriteBool(wr, true)
 		default:
 			return fmt.Errorf("invalid chat type: %d", p.Type)
 		}
