@@ -76,6 +76,7 @@ func (a *authSessionHandler) Activated() {
 		a.inbound.IdentifiedKey(),
 		newTabList(conn, conn.Protocol(), a.players),
 		a.sessionHandlerDeps,
+		a.proxy.bossBarManager,
 	)
 	a.connectedPlayer = player
 	if !a.registrar.canRegisterConnection(player) {

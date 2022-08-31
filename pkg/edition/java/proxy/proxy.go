@@ -60,6 +60,9 @@ type Proxy struct {
 
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
+
+	// TODO: maybe remove?
+	bossBarManager *bossBarManager
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -101,6 +104,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
+		bossBarManager:   &bossBarManager{bars: make(map[uuid.UUID]BossBarHolder)},
 	}
 
 	c := options.Config
@@ -115,6 +119,10 @@ func New(options Options) (p *Proxy, err error) {
 	}
 
 	return p, nil
+}
+
+func (p *Proxy) BossBarManager() BossBarManager {
+	return p.bossBarManager
 }
 
 // ErrProxyAlreadyRun is returned by Proxy.Run if the proxy instance was already run.
