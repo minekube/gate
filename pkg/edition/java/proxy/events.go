@@ -3,13 +3,12 @@ package proxy
 import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
-
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/util/permission"
@@ -954,7 +953,6 @@ func (e *PlayerChannelRegisterEvent) Player() Player {
 // event to finish. The server will be responsible for continuing the login process once the server
 // is satisfied with any login plugin responses sent by proxy plugins (or messages indicating a lack of response).
 type ServerLoginPluginMessageEvent struct {
-	conn       *serverConnection
 	id         message.ChannelIdentifier
 	contents   []byte
 	sequenceID int

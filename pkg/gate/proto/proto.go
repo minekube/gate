@@ -30,6 +30,11 @@ type PacketEncoder interface {
 	Encode(*PacketContext) error
 }
 
+// PacketWriter can write packets.
+type PacketWriter interface {
+	WritePacket(Packet) error
+}
+
 // Packet represents a packet type in a Minecraft edition.
 //
 // It is the data layer of a packet in a and shall support

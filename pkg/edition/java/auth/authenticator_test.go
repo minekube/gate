@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestHasJoinedURL(t *testing.T) {
@@ -11,7 +12,7 @@ func TestHasJoinedURL(t *testing.T) {
 		expected               string
 	}{
 		{serverID: "123456789", username: "Bob", ip: "", expected: defaultHasJoinedEndpoint + "?serverId=123456789&username=Bob"},
-		{serverID: "987654321", username: "Alice", ip: "0.0.0.0", expected: defaultHasJoinedEndpoint + "?serverId=987654321&username=Alice&ip=0.0.0.0"},
+		{serverID: "987654321", username: "Alice", ip: "0.0.0.0", expected: defaultHasJoinedEndpoint + "?ip=0.0.0.0&serverId=987654321&username=Alice"},
 	} {
 		actual := DefaultHasJoinedURL(e.serverID, e.username, e.ip)
 		require.Equal(t, e.expected, actual)

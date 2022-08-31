@@ -8,37 +8,63 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-
+	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
+	netmc "go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
+	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
+type sessionHandlerDeps struct {
+	proxy          *Proxy
+	registrar      playerRegistrar
+	players        playerProvider
+	eventMgr       event.Manager
+	configProvider configProvider
+	authenticator  auth.Authenticator
+	loginsQuota    *addrquota.Quota
+}
+
+func (d *sessionHandlerDeps) config() *config.Config {
+	return d.configProvider.config()
+}
+func (d *sessionHandlerDeps) auth() auth.Authenticator {
+	return d.authenticator
+}
+
 type handshakeSessionHandler struct {
-	conn *minecraftConn
+	*sessionHandlerDeps
+
+	conn netmc.MinecraftConn
 	log  logr.Logger
 
 	nopSessionHandler
 }
 
 // newHandshakeSessionHandler returns a handler used for clients in the handshake state.
-func newHandshakeSessionHandler(conn *minecraftConn) sessionHandler {
+func newHandshakeSessionHandler(
+	conn netmc.MinecraftConn,
+	deps *sessionHandlerDeps,
+) netmc.SessionHandler {
 	return &handshakeSessionHandler{
-		conn: conn,
-		log:  conn.log.WithName("handshakeSession"),
+		sessionHandlerDeps: deps,
+		conn:               conn,
+		log:                logr.FromContextOrDiscard(conn.Context()).WithName("handshakeSession"),
 	}
 }
 
-func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
+func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
 		// Unknown packet received.
 		// Better to close the connection.
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		return
 	}
 	switch typed := p.Packet.(type) {
@@ -48,14 +74,14 @@ func (h *handshakeSessionHandler) handlePacket(p *proto.PacketContext) {
 	default:
 		// Unknown packet received.
 		// Better to close the connection.
-		_ = h.conn.close()
+		_ = h.conn.Close()
 	}
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	vHost := netutil.NewAddr(
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
-		h.conn.c.LocalAddr().Network(),
+		h.conn.LocalAddr().Network(),
 	)
 	inbound := newInitialInbound(h.conn, vHost)
 
@@ -64,19 +90,19 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	if nextState == nil {
 		h.log.V(1).Info("Client provided invalid next status state, closing connection",
 			"nextStatus", handshake.NextStatus)
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		return
 	}
 
 	// Update connection to requested state and protocol sent in the packet.
-	h.conn.setState(nextState)
-	h.conn.setProtocol(proto.Protocol(handshake.ProtocolVersion))
+	h.conn.SetState(nextState)
+	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
 	switch nextState {
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
 		// Just update the session handler and wait for the StatusRequest packet.
-		h.conn.setSessionHandler(newStatusSessionHandler(h.conn, inbound))
+		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps))
 	case state.Login:
 		// Client wants to join.
 		h.handleLogin(handshake, inbound)
@@ -93,37 +119,29 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 	}
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
-	if loginsQuota := h.loginsQuota(); loginsQuota != nil && loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
-		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
+	if h.loginsQuota != nil && h.loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
+		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
 		}))
 		return
 	}
 
-	h.conn.setType(connTypeForHandshake(p))
+	h.conn.SetType(connTypeForHandshake(p))
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
-	if h.proxy().Config().Forwarding.Mode == config.VelocityForwardingMode &&
+	if h.config().Forwarding.Mode == config.VelocityForwardingMode &&
 		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
-		_ = h.conn.closeWith(packet.DisconnectWith(&component.Text{
+		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
 		}))
 		return
 	}
 
 	lic := newLoginInboundConn(inbound)
-	h.proxy().Event().Fire(&ConnectionHandshakeEvent{inbound: lic})
-	h.conn.setSessionHandler(newInitialLoginSessionHandler(h.conn, lic))
-}
-
-func (h *handshakeSessionHandler) proxy() *Proxy {
-	return h.conn.proxy
-}
-
-func (h *handshakeSessionHandler) loginsQuota() *addrquota.Quota {
-	return h.proxy().loginsQuota
+	h.eventMgr.Fire(&ConnectionHandshakeEvent{inbound: lic})
+	h.conn.SetSessionHandler(newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps))
 }
 
 func stateForProtocol(status int) *state.Registry {
@@ -136,31 +154,31 @@ func stateForProtocol(status int) *state.Registry {
 	return nil
 }
 
-func connTypeForHandshake(h *packet.Handshake) connectionType {
+func connTypeForHandshake(h *packet.Handshake) phase.ConnectionType {
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
 	if h.ProtocolVersion < int(version.Minecraft_1_13.Protocol) &&
 		strings.HasSuffix(h.ServerAddress, forge.HandshakeHostnameToken) {
-		return LegacyForge
+		return phase.LegacyForge
 	} else if h.ProtocolVersion <= int(version.Minecraft_1_7_6.Protocol) {
 		// 1.7 Forge will not notify us during handshake. UNDETERMINED will listen for incoming
 		// forge handshake attempts. Also sends a reset handshake packet on every transition.
-		return undetermined17ConnectionType
+		return phase.Undetermined17
 	}
 	// Note for future implementation: Forge 1.13+ identifies
 	// itself using a slightly different hostname token.
-	return vanillaConnectionType
+	return phase.Vanilla
 }
 
 type initialInbound struct {
-	*minecraftConn
+	netmc.MinecraftConn
 	virtualHost net.Addr
 }
 
 var _ Inbound = (*initialInbound)(nil)
 
-func newInitialInbound(c *minecraftConn, virtualHost net.Addr) *initialInbound {
+func newInitialInbound(c netmc.MinecraftConn, virtualHost net.Addr) *initialInbound {
 	return &initialInbound{
-		minecraftConn: c,
+		MinecraftConn: c,
 		virtualHost:   virtualHost,
 	}
 }
@@ -170,7 +188,7 @@ func (i *initialInbound) VirtualHost() net.Addr {
 }
 
 func (i *initialInbound) Active() bool {
-	return !i.minecraftConn.Closed()
+	return !netmc.Closed(i.MinecraftConn)
 }
 
 func (i *initialInbound) String() string {
@@ -178,8 +196,8 @@ func (i *initialInbound) String() string {
 }
 
 func (i *initialInbound) disconnect(reason component.Component) error {
-	// TODO add config option to log player connections to log "player disconnected"
-	return i.closeWith(packet.DisconnectWithProtocol(reason, i.protocol))
+	// TODO add cfg option to log player connections to log "player disconnected"
+	return netmc.CloseWith(i.MinecraftConn, packet.DisconnectWithProtocol(reason, i.Protocol()))
 }
 
 //
@@ -193,9 +211,9 @@ func (i *initialInbound) disconnect(reason component.Component) error {
 // implement the sessionHandler interface.
 type nopSessionHandler struct{}
 
-var _ sessionHandler = (*nopSessionHandler)(nil)
+var _ netmc.SessionHandler = (*nopSessionHandler)(nil)
 
-func (nopSessionHandler) handlePacket(*proto.PacketContext) {}
-func (nopSessionHandler) disconnected()                     {}
-func (nopSessionHandler) deactivated()                      {}
-func (nopSessionHandler) activated()                        {}
+func (nopSessionHandler) HandlePacket(*proto.PacketContext) {}
+func (nopSessionHandler) Disconnected()                     {}
+func (nopSessionHandler) Deactivated()                      {}
+func (nopSessionHandler) Activated()                        {}

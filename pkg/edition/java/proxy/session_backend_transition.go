@@ -6,39 +6,52 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
+	phase "go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/event"
 )
 
 type backendTransitionSessionHandler struct {
+	eventMgr event.Manager
+
 	serverConn                *serverConnection
 	requestCtx                *connRequestCxt
-	bungeeCordMessageRecorder *bungeeCordMessageRecorder
+	bungeeCordMessageRecorder bungeecord.MessageResponder
 	listenDoneCtx             chan struct{}
 	log                       logr.Logger
 
 	nopSessionHandler
 }
 
-func newBackendTransitionSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
+func newBackendTransitionSessionHandler(
+	serverConn *serverConnection,
+	requestCtx *connRequestCxt,
+	eventMgr event.Manager,
+	proxy *Proxy,
+) netmc.SessionHandler {
 	return &backendTransitionSessionHandler{
-		serverConn:                serverConn,
-		requestCtx:                requestCtx,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
-		log:                       serverConn.log.WithName("backendTransitionSession")}
+		eventMgr:   eventMgr,
+		serverConn: serverConn,
+		requestCtx: requestCtx,
+		bungeeCordMessageRecorder: bungeeCordMessageResponder(
+			serverConn.config().BungeePluginChannelEnabled,
+			serverConn.player, proxy,
+		),
+		log: serverConn.log.WithName("backendTransitionSession")}
 }
 
-func (b *backendTransitionSessionHandler) activated() {
+func (b *backendTransitionSessionHandler) Activated() {
 	b.listenDoneCtx = make(chan struct{})
 	go func() {
 		select {
 		case <-b.listenDoneCtx:
 		case <-b.requestCtx.Done():
 			// We must check again since request context
-			// may be canceled before deactivated() was run.
+			// may be canceled before Deactivated() was run.
 			select {
 			case <-b.listenDoneCtx:
 				return
@@ -51,13 +64,13 @@ func (b *backendTransitionSessionHandler) activated() {
 	}()
 }
 
-func (b *backendTransitionSessionHandler) deactivated() {
+func (b *backendTransitionSessionHandler) Deactivated() {
 	if b.listenDoneCtx != nil {
 		close(b.listenDoneCtx)
 	}
 }
 
-func (b *backendTransitionSessionHandler) handlePacket(pc *proto.PacketContext) {
+func (b *backendTransitionSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
 		return // ignore unknown packet
 	}
@@ -95,7 +108,7 @@ func (b *backendTransitionSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	_ = b.serverConn.conn().WritePacket(p)
 }
 func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect) {
-	var connType connectionType
+	var connType phase.ConnectionType
 	b.serverConn.mu.Lock()
 	if b.serverConn.connection != nil {
 		connType = b.serverConn.connection.Type()
@@ -104,7 +117,7 @@ func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect)
 
 	// If we were in the middle of the Forge handshake, it is not safe to proceed.
 	// We must kick the client.
-	safe := connType != LegacyForge || b.serverConn.phase().consideredComplete()
+	safe := connType != phase.LegacyForge || b.serverConn.phase().ConsideredComplete()
 	result := disconnectResultForPacket(b.log.V(1), p, b.serverConn.player.Protocol(), b.serverConn.server, safe)
 	b.requestCtx.result(result, nil)
 
@@ -112,7 +125,7 @@ func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect)
 }
 
 func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Message) {
-	if b.bungeeCordMessageRecorder.process(packet) {
+	if b.bungeeCordMessageRecorder.Process(packet) {
 		return
 	}
 
@@ -127,25 +140,27 @@ func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Mes
 	}
 
 	// We always need to handle plugin messages, for Forge compatibility.
-	if b.serverConn.phase().handle(b.serverConn, packet) {
+	player := b.serverConn.player
+	backendConn := b.serverConn.conn()
+	if b.serverConn.phase().Handle(player, b.serverConn, backendConn, player, packet) {
 		// Handled, but check the server connection phase.
-		if b.serverConn.phase() == helloLegacyForgeHandshakeBackendPhase {
+		if b.serverConn.phase() == phase.HelloLegacyForgeHandshakeBackendPhase {
 
-			phase, existingConn := func() (backendConnectionPhase, *serverConnection) {
-				b.serverConn.player.mu.Lock()
-				defer b.serverConn.player.mu.Unlock()
+			phase, _ := func() (phase.BackendConnectionPhase, *serverConnection) {
+				player.mu.Lock()
+				defer player.mu.Unlock()
 
-				existingConn := b.serverConn.player.connectedServer_
-				if existingConn != nil && existingConn.connPhase != inTransitionBackendPhase {
+				existingConn := player.connectedServer_
+				if existingConn != nil && existingConn.connPhase != phase.InTransitionBackendPhase {
 					// Indicate that this connection is "in transition"
-					existingConn.connPhase = inTransitionBackendPhase
+					existingConn.connPhase = phase.InTransitionBackendPhase
 					return existingConn.connPhase, existingConn
 				}
 				return nil, nil
 			}()
 			if phase != nil {
 				// Tell the player that we're leaving and we just aren't coming back.
-				phase.onDepartForNewServer(existingConn)
+				phase.OnDepartForNewServer(player, player.phase(), player)
 			}
 
 		}
@@ -179,7 +194,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		existingConn.disconnect()
 
 		// Send keep alive to try to avoid timeouts
-		if err := b.serverConn.player.SendKeepAlive(); err != nil {
+		if err := netmc.SendKeepAlive(b.serverConn.player); err != nil {
 			failResult("could not send keep alive packet, player might have disconnected: %w", err)
 			return
 		}
@@ -196,7 +211,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 	// Fire event in same goroutine as we don't want to read
 	// more incoming packets while we process the JoinGame!
-	b.event().Fire(connectedEvent)
+	b.eventMgr.Fire(connectedEvent)
 	// Make sure we can still transition,
 	// event handler might have disconnected player.
 	if !b.serverConn.player.Active() {
@@ -213,13 +228,11 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 
 	// Change client to use ClientPlaySessionHandler if required.
-	b.serverConn.player.minecraftConn.mu.Lock()
-	playHandler, ok := b.serverConn.player.minecraftConn.sessionHandler.(*clientPlaySessionHandler)
+	playHandler, ok := b.serverConn.player.MinecraftConn.SessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		playHandler = newClientPlaySessionHandler(b.serverConn.player)
-		b.serverConn.player.minecraftConn.setSessionHandler0(playHandler)
+		b.serverConn.player.MinecraftConn.SetSessionHandler(playHandler)
 	}
-	b.serverConn.player.minecraftConn.mu.Unlock()
 
 	if err := playHandler.handleBackendJoinGame(pc, p, b.serverConn); err != nil {
 		failResult("JoinGame packet could not be handled, client-side switching server failed: %w", err)
@@ -233,21 +246,17 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		failResult("error creating backend play session handler: %w", err)
 		return
 	}
-	smc.setSessionHandler(backendPlay)
+	smc.SetSessionHandler(backendPlay)
 
 	// Now set the connected server.
 	b.serverConn.player.setConnectedServer(b.serverConn)
 
 	// We're done!
 	postConnectEvent := newServerPostConnectEvent(b.serverConn.player, previousServer)
-	b.event().Fire(postConnectEvent)
+	b.eventMgr.Fire(postConnectEvent)
 	b.requestCtx.result(plainConnectionResult(SuccessConnectionStatus, b.serverConn.server), nil)
 }
 
-func (b *backendTransitionSessionHandler) disconnected() {
+func (b *backendTransitionSessionHandler) Disconnected() {
 	b.requestCtx.result(nil, errors.New("unexpectedly disconnected from remote server"))
-}
-
-func (b *backendTransitionSessionHandler) event() event.Manager {
-	return b.serverConn.player.proxy.Event()
 }

@@ -16,8 +16,9 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
-	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	protoutil "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -34,7 +35,7 @@ import (
 // Proxy is Gate's Java edition Minecraft proxy.
 type Proxy struct {
 	log              logr.Logger
-	config           *config.Config
+	cfg              *config.Config
 	event            event.Manager
 	command          command.Manager
 	channelRegistrar *ChannelRegistrar
@@ -64,7 +65,7 @@ type Proxy struct {
 // Options are the options for a new Java edition Proxy.
 type Options struct {
 	// Config requires configuration
-	// validated by config.Validate.
+	// validated by cfg.Validate.
 	Config *config.Config
 	// The event manager to use.
 	// If none is set, no events are sent.
@@ -93,7 +94,7 @@ func New(options Options) (p *Proxy, err error) {
 
 	p = &Proxy{
 		log:              logr.Discard(), // updated by Proxy.Start
-		config:           options.Config,
+		cfg:              options.Config,
 		event:            eventMgr,
 		channelRegistrar: NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
@@ -152,10 +153,10 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
-	if p.config.Debug {
+	if p.cfg.Debug {
 		p.log.Info("running in debug mode")
 	}
-	return p.listenAndServe(p.config.Bind, stopListener)
+	return p.listenAndServe(p.cfg.Bind, stopListener)
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
@@ -222,7 +223,7 @@ func (p *Proxy) preInit() (err error) {
 		return fmt.Errorf("error loading favicon: %w", err)
 	}
 
-	c := p.config
+	c := p.cfg
 	// Register servers
 	if len(c.Servers) != 0 {
 		p.log.Info("Registering servers...", "count", len(c.Servers))
@@ -248,9 +249,9 @@ func (p *Proxy) preInit() (err error) {
 	return p.initPlugins()
 }
 
-// loads shutdown kick reason on proxy shutdown from the config
+// loads shutdown kick reason on proxy shutdown from the cfg
 func (p *Proxy) loadShutdownReason() (err error) {
-	c := p.config
+	c := p.cfg
 	if len(c.ShutdownReason) == 0 {
 		return nil
 	}
@@ -259,7 +260,7 @@ func (p *Proxy) loadShutdownReason() (err error) {
 }
 
 func (p *Proxy) loadMotd() (err error) {
-	c := p.config
+	c := p.cfg
 	if len(c.Status.Motd) == 0 {
 		return nil
 	}
@@ -270,7 +271,7 @@ func (p *Proxy) loadMotd() (err error) {
 func parseTextComponentFromConfig(s string) (t *component.Text, err error) {
 	var c component.Component
 	if strings.HasPrefix(s, "{") {
-		c, err = util2.LatestJsonCodec().Unmarshal([]byte(s))
+		c, err = protoutil.LatestJsonCodec().Unmarshal([]byte(s))
 	} else {
 		c, err = (&legacy.Legacy{}).Unmarshal([]byte(s))
 	}
@@ -284,9 +285,9 @@ func parseTextComponentFromConfig(s string) (t *component.Text, err error) {
 	return t, nil
 }
 
-// initializes favicon from the config
+// initializes favicon from the cfg
 func (p *Proxy) loadFavicon() (err error) {
-	c := p.config
+	c := p.cfg
 	if len(c.Status.Favicon) == 0 {
 		return nil
 	}
@@ -322,9 +323,13 @@ func (p *Proxy) Command() *command.Manager {
 	return &p.command
 }
 
-// Config returns the config used by the Proxy.
+// Config returns the cfg used by the Proxy.
 func (p *Proxy) Config() config.Config {
-	return *p.config
+	return *p.cfg
+}
+
+func (p *Proxy) config() *config.Config {
+	return p.cfg
 }
 
 // Server gets a backend server registered with the proxy by name.
@@ -491,12 +496,25 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 	if !ok {
 		ctx = context.Background()
 	}
+	ctx = logr.NewContext(ctx, p.log)
 
 	// Create client connection
-	conn := newMinecraftConn(ctx, raw, p, true)
-	conn.setSessionHandler0(newHandshakeSessionHandler(conn))
-	// Read packets in loop
-	conn.readLoop()
+	conn, readLoop := netmc.NewMinecraftConn(
+		ctx, raw, proto.ServerBound,
+		time.Duration(p.cfg.ReadTimeout)*time.Millisecond,
+		time.Duration(p.cfg.ConnectionTimeout)*time.Millisecond,
+		p.cfg.Compression.Level,
+	)
+	conn.SetSessionHandler(newHandshakeSessionHandler(conn, &sessionHandlerDeps{
+		proxy:          p,
+		registrar:      p,
+		players:        p,
+		configProvider: p,
+		eventMgr:       p.event,
+		authenticator:  p.authenticator,
+		loginsQuota:    p.loginsQuota,
+	}))
+	readLoop()
 }
 
 // PlayerCount returns the number of players on the proxy.
@@ -509,9 +527,10 @@ func (p *Proxy) PlayerCount() int {
 // Players returns all players on the proxy.
 func (p *Proxy) Players() []Player {
 	p.muP.RLock()
-	defer p.muP.RUnlock()
-	pls := make([]Player, 0, len(p.playerIDs))
-	for _, player := range p.playerIDs {
+	playerIDs := p.playerIDs
+	p.muP.RUnlock()
+	pls := make([]Player, 0, len(playerIDs))
+	for _, player := range playerIDs {
 		pls = append(pls, player)
 	}
 	return pls
@@ -520,16 +539,6 @@ func (p *Proxy) Players() []Player {
 // Player returns the online player by their Minecraft id.
 // Returns nil if the player was not found.
 func (p *Proxy) Player(id uuid.UUID) Player {
-	p.muP.RLock()
-	defer p.muP.RUnlock()
-	player, ok := p.playerIDs[id]
-	if !ok {
-		return nil // return correct nil
-	}
-	return player
-}
-
-func (p *Proxy) player(id uuid.UUID) *connectedPlayer {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
 	player, ok := p.playerIDs[id]
@@ -559,7 +568,7 @@ func (p *Proxy) playerByName(username string) *connectedPlayer {
 }
 
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
-	c := p.config
+	c := p.cfg
 	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
 		return true
 	}
@@ -572,7 +581,7 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 // Attempts to register the connection with the proxy.
 func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
-	c := p.config
+	c := p.cfg
 
 retry:
 	p.muP.Lock()
@@ -695,13 +704,16 @@ func (r *ChannelRegistrar) FromID(channel string) (message.ChannelIdentifier, bo
 //
 //
 
-// sends msg to all players on this proxy
-func (p *Proxy) sendMessage(msg component.Component) {
-	p.muP.RLock()
-	players := p.playerIDs
-	p.muP.RUnlock()
-	for _, p := range players {
-		go func(p Player) { _ = p.SendMessage(msg) }(p)
+// MessageSink is a message sink.
+type MessageSink interface {
+	// SendMessage sends a message component to the entity.
+	SendMessage(msg component.Component, opts ...command.MessageOption) error
+}
+
+// BroadcastMessage broadcasts a message to all given sinks (e.g. Player).
+func BroadcastMessage(sinks []MessageSink, msg component.Component) {
+	for _, sink := range sinks {
+		go func(s MessageSink) { _ = s.SendMessage(msg) }(sink)
 	}
 }
 
@@ -712,3 +724,12 @@ func (p *Proxy) sendMessage(msg component.Component) {
 func withConnectionTimeout(parent context.Context, cfg *config.Config) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout)*time.Millisecond)
 }
+
+type (
+	configProvider interface {
+		config() *config.Config
+	}
+	playerProvider interface {
+		Player(id uuid.UUID) Player
+	}
+)

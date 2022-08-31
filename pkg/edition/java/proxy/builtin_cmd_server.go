@@ -3,13 +3,14 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"go.minekube.com/brigodier"
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/internal/suggest"
-	"sort"
-	"time"
 )
 
 const serverCmdPermission = "gate.command.server"
@@ -40,7 +41,7 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 				}
 
 				ctx, cancel := context.WithTimeout(context.Background(),
-					time.Millisecond*time.Duration(proxy.config.ConnectionTimeout))
+					time.Millisecond*time.Duration(proxy.cfg.ConnectionTimeout))
 				defer cancel()
 				player.CreateConnectionRequest(rs).ConnectWithIndication(ctx)
 				return nil

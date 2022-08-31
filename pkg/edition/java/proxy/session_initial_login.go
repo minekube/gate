@@ -8,26 +8,25 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 
-	"github.com/go-logr/logr"
-
-	"go.minekube.com/gate/pkg/edition/java/auth"
-	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
 type initialLoginSessionHandler struct {
-	conn    *minecraftConn
+	*sessionHandlerDeps
+
+	conn    netmc.MinecraftConn
 	inbound *loginInboundConn
 	log     logr.Logger
 
@@ -47,12 +46,17 @@ const (
 	encryptionResponseReceivedLoginState loginState = "encryptionResponseReceived"
 )
 
-func newInitialLoginSessionHandler(conn *minecraftConn, inbound *loginInboundConn) sessionHandler {
+func newInitialLoginSessionHandler(
+	conn netmc.MinecraftConn,
+	inbound *loginInboundConn,
+	deps *sessionHandlerDeps,
+) netmc.SessionHandler {
 	return &initialLoginSessionHandler{
-		conn:         conn,
-		inbound:      inbound,
-		log:          conn.log.WithName("loginSession"),
-		currentState: loginPacketExpectedLoginState,
+		sessionHandlerDeps: deps,
+		conn:               conn,
+		inbound:            inbound,
+		log:                logr.FromContextOrDiscard(conn.Context()).WithName("loginSession"),
+		currentState:       loginPacketExpectedLoginState,
 	}
 }
 
@@ -61,10 +65,10 @@ var invalidPlayerName = &component.Text{
 	S:       component.Style{Color: color.Red},
 }
 
-func (l *initialLoginSessionHandler) handlePacket(p *proto.PacketContext) {
+func (l *initialLoginSessionHandler) HandlePacket(p *proto.PacketContext) {
 	if !p.KnownPacket {
 		// unknown packet, close connection
-		_ = l.conn.closeKnown(true)
+		_ = l.conn.Close()
 		return
 	}
 	switch t := p.Packet.(type) {
@@ -75,8 +79,8 @@ func (l *initialLoginSessionHandler) handlePacket(p *proto.PacketContext) {
 	case *packet.EncryptionResponse:
 		l.handleEncryptionResponse(t)
 	default:
-		// got unexpected packet, simple close
-		_ = l.conn.close()
+		// got unexpected packet, simply close
+		_ = l.conn.Close()
 	}
 }
 
@@ -118,7 +122,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			return
 		}
 	} else if l.conn.Protocol().GreaterEqual(version.Minecraft_1_19) &&
-		l.proxy().config.ForceKeyAuthentication {
+		l.config().ForceKeyAuthentication {
 		_ = l.inbound.disconnect(&component.Translation{
 			Key: "multiplayer.disconnect.missing_public_key",
 		})
@@ -134,9 +138,9 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	}
 
 	e := newPreLoginEvent(l.inbound, l.login.Username)
-	l.event().Fire(e)
+	l.eventMgr.Fire(e)
 
-	if l.conn.Closed() {
+	if netmc.Closed(l.conn) {
 		return // Player was disconnected
 	}
 
@@ -146,16 +150,16 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	}
 
 	_ = l.inbound.loginEventFired(func() error {
-		if l.conn.Closed() {
+		if netmc.Closed(l.conn) {
 			return nil // Player was disconnected
 		}
 
 		if e.Result() != ForceOfflineModePreLogin &&
 			(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
-			if p, ok := l.conn.c.(GameProfileProvider); ok {
-				sh := newAuthSessionHandler(l.inbound, p.GameProfile(), false)
-				l.conn.setSessionHandler0(sh)
+			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
+				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false)
+				l.conn.SetSessionHandler(sh)
 				return nil
 			}
 
@@ -173,10 +177,23 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		}
 
 		// Offline mode login
-		sh := newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
-		l.conn.setSessionHandler0(sh)
+		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
+		l.conn.SetSessionHandler(sh)
 		return nil
 	})
+}
+
+func (l *initialLoginSessionHandler) newAuthSessionHandler(
+	inbound *loginInboundConn,
+	profile *profile.GameProfile,
+	onlineMode bool,
+) netmc.SessionHandler {
+	return newAuthSessionHandler(
+		inbound,
+		profile,
+		onlineMode,
+		l.sessionHandlerDeps,
+	)
 }
 
 func (l *initialLoginSessionHandler) generateEncryptionRequest() *packet.EncryptionRequest {
@@ -200,40 +217,40 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	l.currentState = encryptionResponseReceivedLoginState
 
 	if l.login == nil {
-		l.conn.log.V(1).Info("no ServerLogin packet received yet, disconnecting")
-		_ = l.conn.closeKnown(true)
+		l.log.V(1).Info("no ServerLogin packet received yet, disconnecting")
+		_ = l.conn.Close()
 		return
 	}
 	if len(l.verify) == 0 {
-		l.conn.log.V(1).Info("no EncryptionRequest packet sent yet, disconnecting")
-		_ = l.conn.closeKnown(true)
+		l.log.V(1).Info("no EncryptionRequest packet sent yet, disconnecting")
+		_ = l.conn.Close()
 		return
 	}
 
 	if playerKey := l.inbound.IdentifiedKey(); playerKey != nil {
 		if resp.Salt == nil {
-			l.conn.log.V(1).Info("encryption response did not contain salt")
-			_ = l.conn.closeKnown(true)
+			l.log.V(1).Info("encryption response did not contain salt")
+			_ = l.conn.Close()
 			return
 		}
 		salt := new(bytes.Buffer)
 		_ = util.WriteInt64(salt, *resp.Salt)
 		valid := playerKey.VerifyDataSignature(resp.VerifyToken, l.verify, salt.Bytes())
 		if !valid {
-			l.conn.log.Info("invalid client public signature")
-			_ = l.conn.closeKnown(true)
+			l.log.Info("invalid client public signature")
+			_ = l.conn.Close()
 			return
 		}
 	} else {
 		valid, err := l.auth().Verify(resp.VerifyToken, l.verify)
 		if err != nil {
 			// Simply close the connection without much overhead.
-			_ = l.conn.closeKnown(true)
+			_ = l.conn.Close()
 			return
 		}
 		if !valid {
-			l.conn.log.Info("invalid verification token")
-			_ = l.conn.closeKnown(true)
+			l.log.Info("invalid verification token")
+			_ = l.conn.Close()
 			return
 		}
 	}
@@ -242,15 +259,15 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	decryptedSharedSecret, err := authn.DecryptSharedSecret(resp.SharedSecret)
 	if err != nil {
 		// Simple close the connection without much overhead.
-		_ = l.conn.close()
+		_ = l.conn.Close()
 		return
 	}
 
 	// Enable encryption.
 	// Once the client sends EncryptionResponse, encryption is enabled.
-	if err = l.conn.enableEncryption(decryptedSharedSecret); err != nil {
+	if err = l.conn.EnableEncryption(decryptedSharedSecret); err != nil {
 		l.log.Error(err, "error enabling encryption for connecting player")
-		_ = l.conn.closeWith(packet.DisconnectWith(internalServerConnectionError))
+		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(internalServerConnectionError))
 		return
 	}
 
@@ -276,29 +293,29 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 			// The player disconnected before receiving we could authenticate.
 			return
 		}
-		_ = l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang))
+		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(unableAuthWithMojang))
 		return
 	}
 
 	if !authResp.OnlineMode() {
 		log.Info("disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
-		_ = l.conn.closeWith(packet.DisconnectWith(onlineModeOnly))
+		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(onlineModeOnly))
 		return
 	}
 
 	// Extract game profile from response.
 	gameProfile, err := authResp.GameProfile()
 	if err != nil {
-		if l.conn.closeWith(packet.DisconnectWith(unableAuthWithMojang)) == nil {
+		if netmc.CloseWith(l.conn, packet.DisconnectWith(unableAuthWithMojang)) == nil {
 			log.Error(err, "unable get GameProfile from Mojang authentication response")
 		}
 		return
 	}
 
 	// All went well, initialize the session.
-	sh := newAuthSessionHandler(l.inbound, gameProfile, true)
-	l.conn.setSessionHandler0(sh)
+	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true)
+	l.conn.SetSessionHandler(sh)
 }
 
 var (
@@ -338,23 +355,7 @@ var (
 	}
 )
 
-func (l *initialLoginSessionHandler) proxy() *Proxy {
-	return l.conn.proxy
-}
-
-func (l *initialLoginSessionHandler) event() event.Manager {
-	return l.proxy().event
-}
-
-func (l *initialLoginSessionHandler) config() *config.Config {
-	return l.proxy().config
-}
-
-func (l *initialLoginSessionHandler) auth() auth.Authenticator {
-	return l.proxy().authenticator
-}
-
-func (l *initialLoginSessionHandler) disconnected() {
+func (l *initialLoginSessionHandler) Disconnected() {
 	l.inbound.cleanup()
 }
 
@@ -365,6 +366,6 @@ func (l *initialLoginSessionHandler) assertState(expectedState loginState) bool 
 	l.log.Info("received an unexpected packet during initial login session",
 		"currentState", l.currentState,
 		"expectedState", expectedState)
-	_ = l.conn.closeKnown(true)
+	_ = l.conn.Close()
 	return false
 }

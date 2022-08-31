@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
@@ -26,6 +27,8 @@ import (
 )
 
 type backendLoginSessionHandler struct {
+	*sessionHandlerDeps
+
 	serverConn    *serverConnection
 	requestCtx    *connRequestCxt
 	listenDoneCtx chan struct{}
@@ -36,21 +39,29 @@ type backendLoginSessionHandler struct {
 	nopSessionHandler
 }
 
-var _ sessionHandler = (*backendLoginSessionHandler)(nil)
+var _ netmc.SessionHandler = (*backendLoginSessionHandler)(nil)
 
-func newBackendLoginSessionHandler(serverConn *serverConnection, requestCtx *connRequestCxt) sessionHandler {
-	return &backendLoginSessionHandler{serverConn: serverConn, requestCtx: requestCtx,
-		log: serverConn.log.WithName("backendLoginSession")}
+func newBackendLoginSessionHandler(
+	serverConn *serverConnection,
+	requestCtx *connRequestCxt,
+	sessionHandlerDeps *sessionHandlerDeps,
+) netmc.SessionHandler {
+	return &backendLoginSessionHandler{
+		serverConn:         serverConn,
+		requestCtx:         requestCtx,
+		log:                serverConn.log.WithName("backendLoginSession"),
+		sessionHandlerDeps: sessionHandlerDeps,
+	}
 }
 
-func (b *backendLoginSessionHandler) activated() {
+func (b *backendLoginSessionHandler) Activated() {
 	b.listenDoneCtx = make(chan struct{})
 	go func() {
 		select {
 		case <-b.listenDoneCtx:
 		case <-b.requestCtx.Done():
 			// We must check again since request context
-			// may be canceled before deactivated() was run.
+			// may be canceled before Deactivated() was run.
 			select {
 			case <-b.listenDoneCtx:
 				return
@@ -63,13 +74,13 @@ func (b *backendLoginSessionHandler) activated() {
 	}()
 }
 
-func (b *backendLoginSessionHandler) deactivated() {
+func (b *backendLoginSessionHandler) Deactivated() {
 	if b.listenDoneCtx != nil {
 		close(b.listenDoneCtx)
 	}
 }
 
-func (b *backendLoginSessionHandler) handlePacket(pc *proto.PacketContext) {
+func (b *backendLoginSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
 		return // ignore unknown
 	}
@@ -142,7 +153,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 		b.informationForwarded.Store(true)
 	} else {
 		// Don't understand, fire event if we have subscribers
-		if !b.serverConn.conn().proxy.event.HasSubscribers(&ServerLoginPluginMessageEvent{}) {
+		if !b.eventMgr.HasSubscribers(&ServerLoginPluginMessageEvent{}) {
 			_ = mc.WritePacket(&packet.LoginPluginResponse{
 				ID:      p.ID,
 				Success: false,
@@ -156,12 +167,11 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			return
 		}
 		e := &ServerLoginPluginMessageEvent{
-			conn:       b.serverConn,
 			id:         identifier,
 			contents:   p.Data,
 			sequenceID: p.ID,
 		}
-		b.serverConn.conn().proxy.event.Fire(e)
+		b.eventMgr.Fire(e)
 		if e.Result().Allowed() {
 			_ = mc.WritePacket(&packet.LoginPluginResponse{
 				ID:      p.ID,
@@ -308,13 +318,13 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	if !ok {
 		return
 	}
-	serverMc.setState(state.Play)
+	serverMc.SetState(state.Play)
 
 	// Switch to the transition handler.
-	serverMc.setSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.requestCtx))
+	serverMc.SetSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
 }
 
-func (b *backendLoginSessionHandler) disconnected() {
+func (b *backendLoginSessionHandler) Disconnected() {
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
@@ -352,7 +362,7 @@ func disconnectResult(reason component.Component, server RegisteredServer, safe 
 }
 
 func (b *backendLoginSessionHandler) config() *config.Config {
-	return b.serverConn.player.proxy.config
+	return b.configProvider.config()
 }
 
 func min(x, y int) int {

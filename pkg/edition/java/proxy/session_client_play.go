@@ -12,8 +12,10 @@ import (
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.uber.org/atomic"
 
@@ -53,9 +55,9 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 	}
 }
 
-var _ sessionHandler = (*clientPlaySessionHandler)(nil)
+var _ netmc.SessionHandler = (*clientPlaySessionHandler)(nil)
 
-func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
+func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
 		c.forwardToServer(pc)
 		return
@@ -82,11 +84,11 @@ func (c *clientPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
 	}
 }
 
-func (c *clientPlaySessionHandler) deactivated() {
+func (c *clientPlaySessionHandler) Deactivated() {
 	c.loginPluginMessages.Clear()
 }
 
-func (c *clientPlaySessionHandler) activated() {
+func (c *clientPlaySessionHandler) Activated() {
 	protocol := c.player.Protocol()
 	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(protocol)
 	if len(channels) != 0 {
@@ -104,25 +106,25 @@ func (c *clientPlaySessionHandler) forwardToServer(pc *proto.PacketContext) {
 	}
 }
 
-func (c *clientPlaySessionHandler) canForward() *minecraftConn {
+func (c *clientPlaySessionHandler) canForward() netmc.MinecraftConn {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		// No server connection yet, probably transitioning.
 		return nil
 	}
 	serverMc := serverConn.conn()
-	if serverMc != nil && serverConn.phase().consideredComplete() {
+	if serverMc != nil && serverConn.phase().ConsideredComplete() {
 		return serverMc
 	}
 	return nil
 }
 
-func (c *clientPlaySessionHandler) disconnected() {
+func (c *clientPlaySessionHandler) Disconnected() {
 	c.player.teardown()
 }
 
-// Immediately send any queued messages to the server.
-func (c *clientPlaySessionHandler) flushQueuedMessages() {
+// FlushQueuedPluginMessages immediately sends any queued messages to the server.
+func (c *clientPlaySessionHandler) FlushQueuedPluginMessages() {
 	serverConn := c.player.connectedServer()
 	if serverConn == nil {
 		return
@@ -135,7 +137,40 @@ func (c *clientPlaySessionHandler) flushQueuedMessages() {
 		pm := c.loginPluginMessages.PopFront()
 		_ = serverMc.BufferPacket(pm)
 	}
-	_ = serverMc.flush()
+	_ = serverMc.Flush()
+}
+
+type (
+	backendConnAdapter struct{ netmc.MinecraftConn }
+	keepAliveAdapter   struct{ *connectedPlayer }
+)
+
+var (
+	_ phase.BackendConn = (*backendConnAdapter)(nil)
+	_ phase.KeepAlive   = (*keepAliveAdapter)(nil)
+)
+
+func (b *backendConnAdapter) FlushQueuedPluginMessages() {
+	if h, ok := b.SessionHandler().(interface{ FlushQueuedPluginMessages() }); ok {
+		h.FlushQueuedPluginMessages()
+	}
+}
+func (k *keepAliveAdapter) SendKeepAlive() error {
+	return netmc.SendKeepAlive(k)
+}
+
+func phaseHandle(
+	player *connectedPlayer,
+	backendConn netmc.MinecraftConn,
+	msg *plugin.Message,
+) bool {
+	return player.phase().Handle(
+		player,
+		player,
+		&keepAliveAdapter{player},
+		&backendConnAdapter{backendConn},
+		msg,
+	)
 }
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
@@ -154,7 +189,7 @@ func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	serverConn := c.player.connectedServer()
-	var backendConn *minecraftConn
+	var backendConn netmc.MinecraftConn
 	if serverConn != nil {
 		backendConn = serverConn.conn()
 	}
@@ -189,20 +224,19 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
 	} else {
 		serverConnPhase := serverConn.phase()
-		if serverConnPhase == inTransitionBackendPhase {
+		if serverConnPhase == phase.InTransitionBackendPhase {
 			// We must bypass the currently-connected server when forwarding Forge packets.
 			inFlight := c.player.connectionInFlight()
 			if inFlight != nil {
-				c.player.phase().handle(inFlight, packet)
+				phaseHandle(c.player, inFlight.conn(), packet)
 			}
 			return
 		}
 
-		playerPhase := c.player.phase()
-		if playerPhase.handle(serverConn, packet) {
+		if phaseHandle(c.player, backendConn, packet) {
 			return
 		}
-		if playerPhase.consideredComplete() && serverConnPhase.consideredComplete() {
+		if c.player.phase().ConsideredComplete() && serverConnPhase.ConsideredComplete() {
 			id, ok := c.proxy().ChannelRegistrar().FromID(packet.Channel)
 			if !ok {
 				_ = backendConn.WritePacket(packet)
@@ -271,7 +305,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 			return fmt.Errorf("error buffering %T for player: %w", joinGame, err)
 		}
 		// Required for Legacy Forge
-		c.player.phase().onFirstJoin(c.player)
+		c.player.phase().OnFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
 		if err = tablist.BufferClearTabListEntries(c.player.tabList, c.player.BufferPacket); err != nil {
@@ -279,7 +313,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 		}
 		// The player is switching from a server already, so we need to tell the client to change
 		// entity IDs and send new dimension information.
-		if _, ok = c.player.Type().(*legacyForgeConnType); ok {
+		if c.player.Type() == phase.LegacyForge {
 			err = c.doSafeClientServerSwitch(joinGame)
 			if err != nil {
 				err = fmt.Errorf("error during safe client-server-switch: %w", err)
@@ -329,10 +363,10 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	}
 
 	// Flush everything
-	if err = c.player.flush(); err != nil {
+	if err = c.player.Flush(); err != nil {
 		return fmt.Errorf("error flushing buffered player packets: %w", err)
 	}
-	if serverMc.flush() != nil {
+	if serverMc.Flush() != nil {
 		return fmt.Errorf("error flushing buffered backend packets: %w", err)
 	}
 	destination.completeJoin()
@@ -679,7 +713,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 
 	commandLabel := cmd[:cmdEndPosition]
 	if !c.proxy().command.Has(commandLabel) {
-		if c.player.protocol.Lower(version.Minecraft_1_13) {
+		if c.player.Protocol().Lower(version.Minecraft_1_13) {
 			// Outstanding tab completes are recorded for use with 1.12 clients and below to provide
 			// additional tab completion support.
 			c.outstandingTabComplete = p
@@ -720,7 +754,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 }
 
 func (c *clientPlaySessionHandler) handleRegularTabComplete(p *packet.TabCompleteRequest) {
-	if c.player.protocol.Lower(version.Minecraft_1_13) {
+	if c.player.Protocol().Lower(version.Minecraft_1_13) {
 		// Outstanding tab completes are recorded for use with 1.12 clients and below to provide
 		// additional tab completion support.
 		c.outstandingTabComplete = p
@@ -751,7 +785,7 @@ func (c *clientPlaySessionHandler) finishCommandTabComplete(request *packet.TabC
 			"request", request, "response", response)
 		return
 	}
-	legacy := c.player.protocol.Lower(version.Minecraft_1_13)
+	legacy := c.player.Protocol().Lower(version.Minecraft_1_13)
 	for _, offer := range offers {
 		if legacy && !strings.HasPrefix(offer, "/") {
 			offer = "/" + offer
@@ -770,8 +804,8 @@ func (c *clientPlaySessionHandler) finishCommandTabComplete(request *packet.TabC
 	_ = c.player.WritePacket(response)
 }
 
-func (c *clientPlaySessionHandler) player_() *connectedPlayer {
-	return c.player
+func (c *clientPlaySessionHandler) PlayerLog() logr.Logger {
+	return c.player.log
 }
 
 func (c *clientPlaySessionHandler) finishRegularTabComplete(request *packet.TabCompleteRequest, response *packet.TabCompleteResponse) {

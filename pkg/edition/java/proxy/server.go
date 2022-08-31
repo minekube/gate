@@ -8,8 +8,12 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -54,6 +58,19 @@ func (p *players) Range(fn func(p Player) bool) {
 			return
 		}
 	}
+}
+
+// PlayersToSlice returns a slice of all players.
+func PlayersToSlice[R any](p Players) []R {
+	var s []R
+	p.Range(func(p Player) bool {
+		r, ok := p.(R)
+		if ok {
+			s = append(s, r)
+		}
+		return true
+	})
+	return s
 }
 
 func (p *players) add(players ...*connectedPlayer) {
@@ -160,15 +177,11 @@ func (r *registeredServer) Players() Players {
 
 var _ RegisteredServer = (*registeredServer)(nil)
 
-// sends the a plugin message to all players on this server.
-func (r *registeredServer) sendPluginMessage(identifier message.ChannelIdentifier, data []byte) {
-	if r == nil {
-		return
+// BroadcastPluginMessage sends the plugin message to all players on the server.
+func BroadcastPluginMessage(sinks []message.ChannelMessageSink, identifier message.ChannelIdentifier, data []byte) {
+	for _, sink := range sinks {
+		go func(s message.ChannelMessageSink) { _ = s.SendPluginMessage(identifier, data) }(sink)
 	}
-	r.Players().Range(func(p Player) bool {
-		go func(p Player) { _ = p.SendPluginMessage(identifier, data) }(p)
-		return true
-	})
 }
 
 //
@@ -201,13 +214,15 @@ type serverConnection struct {
 	lastPingSent            atomic.Int64              // unix millis
 	activeDimensionRegistry *packet.DimensionRegistry // updated by packet.JoinGame
 
-	mu         sync.RWMutex   // Protects following fields
-	connection *minecraftConn // the backend server connection
-	connPhase  backendConnectionPhase
+	mu         sync.RWMutex        // Protects following fields
+	connection netmc.MinecraftConn // the backend server connection
+	connPhase  phase.BackendConnectionPhase
 }
 
 func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
-	return &serverConnection{server: server, player: player,
+	return &serverConnection{
+		server: server,
+		player: player,
 		log: player.log.WithName("serverConn").WithValues(
 			"serverName", server.info.Name(),
 			"serverAddr", server.info.Addr()),
@@ -217,7 +232,7 @@ func newServerConnection(server *registeredServer, player *connectedPlayer) *ser
 var _ ServerConnection = (*serverConnection)(nil)
 
 // returns the backend server connection, nil-able
-func (s *serverConnection) conn() *minecraftConn {
+func (s *serverConnection) conn() netmc.MinecraftConn {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.connection
@@ -232,7 +247,7 @@ func (s *serverConnection) SendPluginMessage(id message.ChannelIdentifier, data 
 	}
 	mc, ok := s.ensureConnected()
 	if !ok {
-		return ErrClosedConn
+		return netmc.ErrClosedConn
 	}
 	return mc.WritePacket(&plugin.Message{
 		Channel: id.ID(),
@@ -248,12 +263,12 @@ func (s *serverConnection) Player() Player {
 	return s.player
 }
 
-func (s *serverConnection) setConnectionPhase(phase backendConnectionPhase) {
+func (s *serverConnection) SetPhase(phase phase.BackendConnectionPhase) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.connPhase = phase
 }
-func (s *serverConnection) phase() backendConnectionPhase {
+func (s *serverConnection) phase() phase.BackendConnectionPhase {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.connPhase
@@ -302,7 +317,7 @@ func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 // implementing this interface.
 // A ServerInfo of a registered server or a RegisteredServer can implement this interface.
 // If no ServerInfo or RegisteredServer implements this interface the ServerInfo.Addr the default ServerAddress is used
-// or the BungeeCord forwarding scheme if the proxy is in config.LegacyForwardingMode.
+// or the BungeeCord forwarding scheme if the proxy is in cfg.LegacyForwardingMode.
 type HandshakeAddresser interface {
 	HandshakeAddr(defaultPlayerVirtualHost string, player Player) (newPlayerVirtualHost string)
 }
@@ -320,7 +335,7 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	if ha != nil {
 		vHost = ha.HandshakeAddr(vHost, player)
 	}
-	if s.player.Type() == LegacyForge {
+	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
 	}
 	return vHost
@@ -337,17 +352,26 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	debug.Info("connected to server")
 
 	// Wrap server connection
-	serverMc := newMinecraftConn(context.Background(), conn, s.player.proxy, false)
+	logCtx := logr.NewContext(
+		context.Background(),
+		logr.FromContextOrDiscard(s.player.MinecraftConn.Context()),
+	)
+	serverMc, readLoop := netmc.NewMinecraftConn(
+		logCtx, conn, proto.ClientBound,
+		time.Duration(s.config().ReadTimeout)*time.Millisecond,
+		time.Duration(s.config().ConnectionTimeout)*time.Millisecond,
+		s.config().Compression.Level,
+	)
 	resultChan := make(chan *connResponse, 1)
-	serverMc.setSessionHandler0(newBackendLoginSessionHandler(s, &connRequestCxt{
+	serverMc.SetSessionHandler(newBackendLoginSessionHandler(s, &connRequestCxt{
 		Context:  ctx,
 		response: resultChan,
-	}))
+	}, s.player.sessionHandlerDeps))
 
 	// Update serverConnection
 	s.mu.Lock()
 	s.connection = serverMc
-	s.connPhase = serverMc.connType.initialBackendPhase()
+	s.connPhase = serverMc.Type().InitialBackendPhase()
 	s.mu.Unlock()
 
 	debug.Info("establishing player connection with server...")
@@ -374,8 +398,8 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 
 	// Set server's protocol & state
 	// after writing handshake, but before writing ServerLogin
-	serverMc.setProtocol(protocol)
-	serverMc.setState(state.Login)
+	serverMc.SetProtocol(protocol)
+	serverMc.SetState(state.Login)
 
 	// Kick off the connection process
 	// connection from proxy -> server (backend)
@@ -386,7 +410,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	if err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}
-	go serverMc.readLoop()
+	go readLoop()
 
 	// Block
 	r := <-resultChan
@@ -414,7 +438,7 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 }
 
 // Returns the active backend server connection or false if inactive.
-func (s *serverConnection) ensureConnected() (backend *minecraftConn, connected bool) {
+func (s *serverConnection) ensureConnected() (backend netmc.MinecraftConn, connected bool) {
 	if s == nil {
 		return nil, false
 	}
@@ -429,7 +453,7 @@ func (s *serverConnection) active() bool {
 	s.mu.RLock()
 	conn := s.connection
 	s.mu.RUnlock()
-	return conn != nil && !conn.Closed() &&
+	return conn != nil && !netmc.Closed(conn) &&
 		!s.gracefulDisconnect.Load() &&
 		s.player.Active()
 }
@@ -443,8 +467,8 @@ func (s *serverConnection) disconnect() {
 func (s *serverConnection) disconnect0() {
 	if s.connection != nil {
 		s.gracefulDisconnect.Store(true)
-		if !s.connection.Closed() { // only close if not already closing to prevent deadlock
-			_ = s.connection.closeKnown(false)
+		if !netmc.Closed(s.connection) { // only close if not already closing to prevent deadlock
+			_ = netmc.CloseUnknown(s.connection)
 		}
 		s.connection = nil // nil means not connected
 	}
@@ -454,11 +478,11 @@ func (s *serverConnection) disconnect0() {
 func (s *serverConnection) completeJoin() {
 	if s.completedJoin.CompareAndSwap(false, true) {
 		s.mu.Lock()
-		if s.connPhase == unknownBackendPhase {
+		if s.connPhase == phase.UnknownBackendPhase {
 			// Now we know
-			s.connPhase = vanillaBackendPhase
+			s.connPhase = phase.VanillaBackendPhase
 			if s.connection != nil {
-				s.connection.setType(vanillaConnectionType)
+				s.connection.SetType(phase.Vanilla)
 			}
 		}
 		s.mu.Unlock()
@@ -466,5 +490,5 @@ func (s *serverConnection) completeJoin() {
 }
 
 func (s *serverConnection) config() *config.Config {
-	return s.player.proxy.config
+	return s.player.config()
 }

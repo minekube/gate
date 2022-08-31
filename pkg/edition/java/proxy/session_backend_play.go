@@ -9,8 +9,10 @@ import (
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -18,27 +20,30 @@ import (
 )
 
 type backendPlaySessionHandler struct {
-	serverConn                *serverConnection
-	bungeeCordMessageRecorder *bungeeCordMessageRecorder
-	exceptionTriggered        atomic.Bool
-	playerSessionHandler      *clientPlaySessionHandler
+	serverConn                 *serverConnection
+	bungeeCordMessageResponder bungeecord.MessageResponder
+	exceptionTriggered         atomic.Bool
+	playerSessionHandler       *clientPlaySessionHandler
 
 	nopSessionHandler
 }
 
-func newBackendPlaySessionHandler(serverConn *serverConnection) (sessionHandler, error) {
+func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHandler, error) {
 	cpsh, ok := serverConn.player.SessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
 	}
 	return &backendPlaySessionHandler{
-		serverConn:                serverConn,
-		bungeeCordMessageRecorder: &bungeeCordMessageRecorder{connectedPlayer: serverConn.player},
-		playerSessionHandler:      cpsh,
+		serverConn: serverConn,
+		bungeeCordMessageResponder: bungeeCordMessageResponder(
+			serverConn.config().BungeePluginChannelEnabled,
+			serverConn.player, serverConn.player.proxy,
+		),
+		playerSessionHandler: cpsh,
 	}, nil
 }
 
-func (b *backendPlaySessionHandler) handlePacket(pc *proto.PacketContext) {
+func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
 		// forward unknown packet to player
 		b.forwardToPlayer(pc, nil)
@@ -78,20 +83,19 @@ func (b *backendPlaySessionHandler) shouldHandle() bool {
 	return false
 }
 
-func (b *backendPlaySessionHandler) activated() {
+func (b *backendPlaySessionHandler) Activated() {
 	b.serverConn.server.players.add(b.serverConn.player)
-	if b.proxy().config.BungeePluginChannelEnabled {
+	if b.proxy().cfg.BungeePluginChannelEnabled {
 		serverMc, ok := b.serverConn.ensureConnected()
 		if ok {
 			protocol := serverMc.Protocol()
-			channelsPacket := plugin.ConstructChannelsPacket(protocol,
-				b.bungeeCordMessageRecorder.bungeeCordChannel(protocol))
+			channelsPacket := plugin.ConstructChannelsPacket(protocol, bungeecord.Channel(protocol))
 			_ = serverMc.WritePacket(channelsPacket)
 		}
 	}
 }
 
-func (b *backendPlaySessionHandler) disconnected() {
+func (b *backendPlaySessionHandler) Disconnected() {
 	b.serverConn.server.players.remove(b.serverConn.player)
 	if b.serverConn.gracefulDisconnect.Load() || b.exceptionTriggered.Load() {
 		return
@@ -115,7 +119,7 @@ func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 }
 
 func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, pc *proto.PacketContext) {
-	if b.bungeeCordMessageRecorder.process(packet) {
+	if b.bungeeCordMessageResponder.Process(packet) {
 		return
 	}
 
@@ -146,7 +150,13 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	if b.serverConn.phase().handle(b.serverConn, packet) {
+	if b.serverConn.phase().Handle(
+		b.serverConn.player,
+		b.serverConn,
+		b.serverConn.conn(),
+		b.serverConn.player,
+		packet,
+	) {
 		return // handled
 	}
 
@@ -175,7 +185,7 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 }
 
 func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
-	ping := newInitialPing(b.proxy(), b.serverConn.player.protocol)
+	ping := newInitialPing(b.proxy(), b.serverConn.player.Protocol())
 	e := &PingEvent{
 		inbound: b.serverConn.player,
 		ping:    ping,
@@ -217,7 +227,7 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 	}
 	b.proxy().event.Fire(e)
 
-	if b.serverConn.player.minecraftConn.Closed() {
+	if netmc.Closed(b.serverConn.player) {
 		return
 	}
 	if e.Allowed() {
@@ -245,7 +255,7 @@ func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListIte
 
 func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
 	rootNode := p.RootNode
-	if b.proxy().config.AnnounceProxyCommands {
+	if b.proxy().cfg.AnnounceProxyCommands {
 		// Inject commands from the proxy.
 		dispatcherRootNode := filterNode(&b.proxy().command.Root, b.serverConn.player)
 		if dispatcherRootNode == nil {
@@ -316,4 +326,4 @@ func (b *backendPlaySessionHandler) proxy() *Proxy {
 	return b.serverConn.player.proxy
 }
 
-var _ sessionHandler = (*backendPlaySessionHandler)(nil)
+var _ netmc.SessionHandler = (*backendPlaySessionHandler)(nil)

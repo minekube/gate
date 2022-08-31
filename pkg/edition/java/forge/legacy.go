@@ -3,10 +3,10 @@ package forge
 import (
 	"bytes"
 	"errors"
+
 	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	"strings"
 )
 
 const (
@@ -29,13 +29,13 @@ const (
 	RegistryDiscriminator = 3
 )
 
-// The payload for the reset packet.
+// LegacyHandshakeResetData is the payload for the reset packet.
 var LegacyHandshakeResetData = []byte{ResetDataDiscriminator & 0xff, 0}
 
 // HandshakePacketDiscriminator returns the discriminator from the
 // FML|HS packet (the first byte in the data).
 func HandshakePacketDiscriminator(message *plugin.Message) (byte, bool) {
-	if !strings.EqualFold(message.Channel, LegacyHandshakeChannel) {
+	if message.Channel != LegacyHandshakeChannel {
 		return 0, false
 	}
 	data := message.Data
@@ -61,7 +61,7 @@ func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 	if message == nil {
 		return nil, errors.New("message must not be nil")
 	}
-	if !strings.EqualFold(message.Channel, LegacyHandshakeChannel) {
+	if message.Channel != LegacyHandshakeChannel {
 		return nil, errors.New("message is not a FML HS plugin message")
 	}
 	buf := bytes.NewBuffer(message.Data)

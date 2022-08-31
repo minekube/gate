@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -13,7 +13,9 @@ import (
 )
 
 type statusSessionHandler struct {
-	conn    *minecraftConn
+	*sessionHandlerDeps
+
+	conn    netmc.MinecraftConn
 	inbound Inbound
 	log     logr.Logger
 
@@ -22,15 +24,23 @@ type statusSessionHandler struct {
 	nopSessionHandler
 }
 
-func newStatusSessionHandler(conn *minecraftConn, inbound Inbound) sessionHandler {
-	return &statusSessionHandler{conn: conn, inbound: inbound,
-		log: conn.log.WithName("statusSession").WithValues(
+func newStatusSessionHandler(
+	conn netmc.MinecraftConn,
+	inbound Inbound,
+	sessionHandlerDeps *sessionHandlerDeps,
+) netmc.SessionHandler {
+	return &statusSessionHandler{
+		sessionHandlerDeps: sessionHandlerDeps,
+		conn:               conn,
+		inbound:            inbound,
+		log: logr.FromContextOrDiscard(conn.Context()).WithName("statusSession").WithValues(
 			"inbound", inbound,
-			"protocol", conn.protocol)}
+			"protocol", conn.Protocol()),
+	}
 }
 
-func (h *statusSessionHandler) activated() {
-	cfg := h.conn.proxy.Config()
+func (h *statusSessionHandler) Activated() {
+	cfg := h.config()
 	var log logr.Logger
 	if cfg.Status.LogPingRequests || cfg.Debug {
 		log = h.log
@@ -40,10 +50,10 @@ func (h *statusSessionHandler) activated() {
 	log.Info("got server list status request")
 }
 
-func (h *statusSessionHandler) handlePacket(pc *proto.PacketContext) {
+func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket {
 		// What even is going on? ;D
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		return
 	}
 
@@ -54,7 +64,7 @@ func (h *statusSessionHandler) handlePacket(pc *proto.PacketContext) {
 		h.handleStatusPing(p)
 	default:
 		// unexpected packet, simply close
-		_ = h.conn.close()
+		_ = h.conn.Close()
 	}
 }
 
@@ -72,7 +82,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		},
 		Players: &ping.Players{
 			Online: p.PlayerCount(),
-			Max:    p.config.Status.ShowMaxPlayers,
+			Max:    p.cfg.Status.ShowMaxPlayers,
 		},
 		Description: p.motd,
 		Favicon:     p.favicon,
@@ -82,19 +92,19 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 func (h *statusSessionHandler) handleStatusRequest() {
 	if h.receivedRequest {
 		// Already sent response
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		return
 	}
 	h.receivedRequest = true
 
 	e := &PingEvent{
 		inbound: h.inbound,
-		ping:    newInitialPing(h.proxy(), h.conn.protocol),
+		ping:    newInitialPing(h.proxy, h.conn.Protocol()),
 	}
-	h.proxy().event.Fire(e)
+	h.eventMgr.Fire(e)
 
 	if e.ping == nil {
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		h.log.V(1).Info("ping response was set to nil by an event handler, no response is sent")
 		return
 	}
@@ -104,7 +114,7 @@ func (h *statusSessionHandler) handleStatusRequest() {
 
 	response, err := json.Marshal(e.ping)
 	if err != nil {
-		_ = h.conn.close()
+		_ = h.conn.Close()
 		h.log.Error(err, "error marshaling ping response to json")
 		return
 	}
@@ -115,12 +125,8 @@ func (h *statusSessionHandler) handleStatusRequest() {
 
 func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
 	// Just return again and close
-	defer h.conn.close()
+	defer h.conn.Close()
 	if err := h.conn.WritePacket(p); err != nil {
 		h.log.V(1).Info("error writing StatusPing response", "err", err)
 	}
-}
-
-func (h *statusSessionHandler) proxy() *Proxy {
-	return h.conn.proxy
 }
