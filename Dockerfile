@@ -1,4 +1,4 @@
-FROM golang:1.18 AS build
+FROM golang:1.19 AS build
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
