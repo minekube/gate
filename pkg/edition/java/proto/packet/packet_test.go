@@ -196,7 +196,7 @@ var packets = []proto.Packet{
 	},
 	&SystemChat{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
-		Type:      1,
+		Type:      SystemMessageType,
 	},
 	&PlayerChatCompletion{},
 	&ServerData{

@@ -338,7 +338,17 @@ func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	// System chat is never decoded so this doesn't matter for now
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+		typ, err := util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+		p.Type = SystemMessageType
+		if typ {
+			p.Type = GameInfoMessageType
+		}
+		return nil
+	}
 	typ, err := util.ReadVarInt(rd)
 	p.Type = MessageType(typ)
 	return
