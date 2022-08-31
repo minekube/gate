@@ -68,6 +68,10 @@ type Player interface {
 	SendActionBar(msg component.Component) error
 	TabList() tablist.TabList // Returns the player's tab list.
 	// TODO add title and more
+
+	// boss bar
+	ShowBossBar(bar packet.BossBar) error
+	HideBossBar(bar packet.BossBar) error
 }
 
 type connectedPlayer struct {
@@ -103,6 +107,8 @@ type connectedPlayer struct {
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
+
+	bossBarManager *bossBarManager
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -115,6 +121,7 @@ func newConnectedPlayer(
 	playerKey crypto.IdentifiedKey, // nil-able
 	tabList tablist.TabList,
 	sessionHandlerDeps *sessionHandlerDeps,
+	bbManager *bossBarManager,
 ) *connectedPlayer {
 	var ping atomic.Duration
 	ping.Store(-1)
@@ -133,6 +140,8 @@ func newConnectedPlayer(
 		tabList:        tabList,
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
 		playerKey:      playerKey,
+
+		bossBarManager: bbManager,
 	}
 }
 
@@ -481,6 +490,20 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 		Channel: identifier.ID(),
 		Data:    data,
 	})
+}
+
+func (p *connectedPlayer) ShowBossBar(bar packet.BossBar) error {
+	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
+		return p.bossBarManager.Add(p, bar)
+	}
+	return nil
+}
+
+func (p *connectedPlayer) HideBossBar(bar packet.BossBar) error {
+	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
+		return p.bossBarManager.Remove(p, bar)
+	}
+	return nil
 }
 
 // TODO add header/footer, title & boss bar methods
