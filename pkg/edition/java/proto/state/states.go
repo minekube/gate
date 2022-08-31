@@ -229,8 +229,8 @@ func init() {
 	)
 	Play.ClientBound.Register(&title.Subtitle{},
 		m(0x57, version.Minecraft_1_17),
-		m(0x50, version.Minecraft_1_18),
-		m(0x58, version.Minecraft_1_19_1),
+		m(0x58, version.Minecraft_1_18),
+		m(0x5B, version.Minecraft_1_19_1),
 	)
 	Play.ClientBound.Register(&title.Text{},
 		m(0x59, version.Minecraft_1_17),
