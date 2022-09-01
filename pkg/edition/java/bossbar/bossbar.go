@@ -29,9 +29,9 @@ type Viewer interface {
 
 const (
 	// MinProgress is the minimum value the progress can be.
-	MinProgress = 0.0
+	MinProgress float32 = 0.0
 	// MaxProgress is the maximum value the progress can be.
-	MaxProgress = 1.0
+	MaxProgress float32 = 1.0
 )
 
 // Color is a color for a boss bar.
