@@ -7,33 +7,31 @@ import (
 
 var (
 	// NotStartedLegacyForgeHandshakeBackendPhase indicates that the handshake has not started, used for UnknownBackendPhase.
-	NotStartedLegacyForgeHandshakeBackendPhase BackendConnectionPhase = &notStarted{}
+	NotStartedLegacyForgeHandshakeBackendPhase BackendConnectionPhase = &notStartedBackend{}
 	// HelloLegacyForgeHandshakeBackendPhase sent a hello to the client, waiting for a hello back before sending the mod list.
-	HelloLegacyForgeHandshakeBackendPhase backendConnectionPhase = &hello{}
+	HelloLegacyForgeHandshakeBackendPhase backendConnectionPhase = &helloBackend{}
 	// SentModListLegacyForgeHandshakeBackendPhase is the mod list from the client has been accepted and a server mod list
 	// has been sent. Waiting for the client to acknowledge.
-	SentModListLegacyForgeHandshakeBackendPhase backendConnectionPhase = &sentModList{}
+	SentModListLegacyForgeHandshakeBackendPhase backendConnectionPhase = &sentModListBackend{}
 	// SentServerDataLegacyForgeHandshakeBackendPhase is the server data is being sent or has been sent, and is waiting for
 	// the client to acknowledge it has processed this.
-	SentServerDataLegacyForgeHandshakeBackendPhase backendConnectionPhase = &sentServerData{}
+	SentServerDataLegacyForgeHandshakeBackendPhase backendConnectionPhase = &sentServerDataBackend{}
 	// WaitingAckLegacyForgeHandshakeBackendPhase is waiting for the client to acknowledge before completing handshake.
-	WaitingAckLegacyForgeHandshakeBackendPhase backendConnectionPhase = &waitingAck{}
+	WaitingAckLegacyForgeHandshakeBackendPhase backendConnectionPhase = &waitingAckBackend{}
 	// CompleteLegacyForgeHandshakeBackendPhase is the server has completed the handshake and will continue after the client ACK.
-	CompleteLegacyForgeHandshakeBackendPhase backendConnectionPhase = &complete{}
+	CompleteLegacyForgeHandshakeBackendPhase backendConnectionPhase = &completeBackend{}
 )
 
 type (
-	notStarted     struct{ unimplementedBackendPhase }
-	hello          struct{ unimplementedBackendPhase }
-	sentModList    struct{ unimplementedBackendPhase }
-	sentServerData struct{ unimplementedBackendPhase }
-	waitingAck     struct{ unimplementedBackendPhase }
-	complete       struct{ unimplementedBackendPhase }
-
-	unimplementedBackendPhase struct{}
+	notStartedBackend     struct{ unimplementedBackendPhase }
+	helloBackend          struct{ unimplementedBackendPhase }
+	sentModListBackend    struct{ unimplementedBackendPhase }
+	sentServerDataBackend struct{ unimplementedBackendPhase }
+	waitingAckBackend     struct{ unimplementedBackendPhase }
+	completeBackend       struct{ unimplementedBackendPhase }
 )
 
-func (notStarted) Handle(
+func (notStartedBackend) Handle(
 	player PacketWriter,
 	backend BackendConnectionPhaseSetter,
 	server ConnectionTypeSetter,
@@ -45,7 +43,7 @@ func (notStarted) Handle(
 		HelloLegacyForgeHandshakeBackendPhase,
 	)
 }
-func (hello) Handle(
+func (helloBackend) Handle(
 	player PacketWriter,
 	backend BackendConnectionPhaseSetter,
 	server ConnectionTypeSetter,
@@ -57,7 +55,7 @@ func (hello) Handle(
 		SentModListLegacyForgeHandshakeBackendPhase,
 	)
 }
-func (hello) onTransitionToNewPhase(
+func (helloBackend) onTransitionToNewPhase(
 	server ConnectionTypeSetter,
 	resetter LegacyForgeHandshakeResetter,
 ) {
@@ -66,7 +64,7 @@ func (hello) onTransitionToNewPhase(
 	server.SetType(LegacyForge)
 	resetter.SendLegacyForgeHandshakeResetPacket()
 }
-func (sentModList) Handle(
+func (sentModListBackend) Handle(
 	player PacketWriter,
 	backend BackendConnectionPhaseSetter,
 	server ConnectionTypeSetter,
@@ -78,7 +76,7 @@ func (sentModList) Handle(
 		SentServerDataLegacyForgeHandshakeBackendPhase,
 	)
 }
-func (sentServerData) Handle(
+func (sentServerDataBackend) Handle(
 	player PacketWriter,
 	backend BackendConnectionPhaseSetter,
 	server ConnectionTypeSetter,
@@ -90,7 +88,7 @@ func (sentServerData) Handle(
 		WaitingAckLegacyForgeHandshakeBackendPhase,
 	)
 }
-func (waitingAck) Handle(
+func (waitingAckBackend) Handle(
 	player PacketWriter,
 	backend BackendConnectionPhaseSetter,
 	server ConnectionTypeSetter,
@@ -143,27 +141,3 @@ func handleLegacyForgeBackendMessage(
 }
 
 func intPtr(i int) *int { return &i }
-
-func (unimplementedBackendPhase) Handle(
-	player PacketWriter,
-	backend BackendConnectionPhaseSetter,
-	server ConnectionTypeSetter,
-	resetter LegacyForgeHandshakeResetter,
-	msg *plugin.Message,
-) bool {
-	return false
-}
-func (unimplementedBackendPhase) ConsideredComplete() bool { return false }
-func (unimplementedBackendPhase) OnDepartForNewServer(
-	player PacketWriter,
-	phase ClientConnectionPhase,
-	setter ClientConnectionPhaseSetter,
-) {
-	// If the server we are departing is modded, we must always reset the client's handshake.
-	phase.ResetConnectionPhase(player, setter)
-}
-func (unimplementedBackendPhase) onTransitionToNewPhase(
-	server ConnectionTypeSetter,
-	resetter LegacyForgeHandshakeResetter,
-) {
-}

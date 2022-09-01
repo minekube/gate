@@ -59,7 +59,19 @@ type (
 type (
 	unknownBackendPhase      struct{ unimplementedBackendPhase }
 	inTransitionBackendPhase struct{ unimplementedBackendPhase }
+
+	unimplementedBackendPhase struct{}
 )
+
+func (unimplementedBackendPhase) ConsideredComplete() bool { return true }
+func (inTransitionBackendPhase) ConsideredComplete() bool  { return true }
+func (unknownBackendPhase) ConsideredComplete() bool       { return false }
+func (notStartedBackend) ConsideredComplete() bool         { return false }
+func (helloBackend) ConsideredComplete() bool              { return false }
+func (sentModListBackend) ConsideredComplete() bool        { return false }
+func (sentServerDataBackend) ConsideredComplete() bool     { return false }
+func (waitingAckBackend) ConsideredComplete() bool         { return false }
+func (completeBackend) ConsideredComplete() bool           { return true }
 
 func (unknownBackendPhase) Handle(
 	player PacketWriter,
@@ -71,4 +83,27 @@ func (unknownBackendPhase) Handle(
 	// The connection may be legacy forge. If so, the Forge handler will deal with this
 	// for us. Otherwise, we have nothing to do.
 	return NotStartedLegacyForgeHandshakeBackendPhase.Handle(player, backend, server, resetter, msg)
+}
+
+func (unimplementedBackendPhase) Handle(
+	player PacketWriter,
+	backend BackendConnectionPhaseSetter,
+	server ConnectionTypeSetter,
+	resetter LegacyForgeHandshakeResetter,
+	msg *plugin.Message,
+) bool {
+	return false
+}
+func (unimplementedBackendPhase) OnDepartForNewServer(
+	player PacketWriter,
+	phase ClientConnectionPhase,
+	setter ClientConnectionPhaseSetter,
+) {
+	// If the server we are departing is modded, we must always reset the client's handshake.
+	phase.ResetConnectionPhase(player, setter)
+}
+func (unimplementedBackendPhase) onTransitionToNewPhase(
+	server ConnectionTypeSetter,
+	resetter LegacyForgeHandshakeResetter,
+) {
 }
