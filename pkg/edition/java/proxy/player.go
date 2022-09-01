@@ -13,6 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -108,7 +109,7 @@ type connectedPlayer struct {
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
 
-	bossBarManager *bossBarManager
+	bossBarManager *bossbar.bossBarManager
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -121,7 +122,7 @@ func newConnectedPlayer(
 	playerKey crypto.IdentifiedKey, // nil-able
 	tabList tablist.TabList,
 	sessionHandlerDeps *sessionHandlerDeps,
-	bbManager *bossBarManager,
+	bbManager *bossbar.bossBarManager,
 ) *connectedPlayer {
 	var ping atomic.Duration
 	ping.Store(-1)

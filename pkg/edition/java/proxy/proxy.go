@@ -15,6 +15,7 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
+	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -62,7 +63,7 @@ type Proxy struct {
 	loginsQuota      *addrquota.Quota
 
 	// TODO: maybe remove?
-	bossBarManager *bossBarManager
+	bossBarManager *bossbar.bossBarManager
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -104,7 +105,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		bossBarManager:   &bossBarManager{bars: make(map[uuid.UUID]*BossBarHolder)},
+		bossBarManager:   &bossbar.bossBarManager{bars: make(map[uuid.UUID]*bossbar.BossBarHolder)},
 	}
 
 	c := options.Config
@@ -121,7 +122,7 @@ func New(options Options) (p *Proxy, err error) {
 	return p, nil
 }
 
-func (p *Proxy) BossBarManager() BossBarManager {
+func (p *Proxy) BossBarManager() bossbar.Manager {
 	return p.bossBarManager
 }
 

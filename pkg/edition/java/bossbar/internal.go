@@ -1,11 +1,13 @@
-package proxy
+package bossbar
 
 import (
 	"errors"
 	"fmt"
 	"sync"
 
+	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -13,11 +15,14 @@ var (
 	errBossBarNoUUID = errors.New("no uuid specified for boss bar")
 )
 
-type BossBarManager interface {
-	Add(player Player, bar packet.BossBar) error
-	Remove(player Player, bar packet.BossBar) error
-	Broadcast(bar packet.BossBar) error
-}
+type (
+	barColor struct {
+		color.Color
+		id ColorID
+	}
+)
+
+func (b *barColor) ID() ColorID { return b.id }
 
 type bossBarManager struct {
 	bars map[uuid.UUID]*BossBarHolder
@@ -41,7 +46,7 @@ func (m *bossBarManager) getOrCreate(bar packet.BossBar) (*BossBarHolder, error)
 	}
 
 	barholder := &BossBarHolder{
-		subscribers: make(map[uuid.UUID]*connectedPlayer),
+		subscribers: make(map[uuid.UUID]*proxy.connectedPlayer),
 	}
 	barholder.Register()
 
@@ -51,15 +56,15 @@ func (m *bossBarManager) getOrCreate(bar packet.BossBar) (*BossBarHolder, error)
 }
 
 // TODO: impl
-func (m *bossBarManager) onDisconnect(player Player) {
+func (m *bossBarManager) onDisconnect(player proxy.Player) {
 }
 
-func (m *bossBarManager) Add(player Player, bar packet.BossBar) error {
+func (m *bossBarManager) Add(player proxy.Player, bar packet.BossBar) error {
 	m.Lock()
 	defer m.Unlock()
 
 	// this
-	p, ok := player.(*connectedPlayer)
+	p, ok := player.(*proxy.connectedPlayer)
 	if !ok {
 		fmt.Println("Add() failed to get player")
 		return nil
@@ -77,11 +82,11 @@ func (m *bossBarManager) Add(player Player, bar packet.BossBar) error {
 	return p.WritePacket(&bar)
 }
 
-func (m *bossBarManager) Remove(player Player, bar packet.BossBar) error {
+func (m *bossBarManager) Remove(player proxy.Player, bar packet.BossBar) error {
 	m.Lock()
 	defer m.Unlock()
 
-	p, ok := player.(*connectedPlayer)
+	p, ok := player.(*proxy.connectedPlayer)
 	if !ok {
 		fmt.Println("Remove() failed to get player")
 		return nil
@@ -123,7 +128,7 @@ func (m *bossBarManager) Broadcast(bar packet.BossBar) error {
 }
 
 type BossBarHolder struct {
-	subscribers map[uuid.UUID]*connectedPlayer
+	subscribers map[uuid.UUID]*proxy.connectedPlayer
 
 	// register once
 	sync.Once
