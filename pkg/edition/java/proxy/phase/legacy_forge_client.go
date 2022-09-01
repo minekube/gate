@@ -51,6 +51,15 @@ type (
 	unimplementedClient struct{}
 )
 
+func (unimplementedClient) ConsideredComplete() bool         { return true }
+func (notStartedClient) ConsideredComplete() bool            { return false }
+func (helloClient) ConsideredComplete() bool                 { return false }
+func (modListClient) ConsideredComplete() bool               { return false }
+func (waitingServerDataClient) ConsideredComplete() bool     { return false }
+func (waitingServerCompleteClient) ConsideredComplete() bool { return false }
+func (pendingCompleteClient) ConsideredComplete() bool       { return false }
+func (completeClient) ConsideredComplete() bool              { return true }
+
 func (notStartedClient) Handle(
 	mi ModInfo,
 	client ClientConnectionPhaseSetter,
@@ -264,13 +273,7 @@ func (unimplementedClient) Handle(
 	return false
 }
 func (unimplementedClient) ResetConnectionPhase(PacketWriter, ClientConnectionPhaseSetter) {}
-
-// OnFirstJoin performs actions just as the player joins the server.
-func (unimplementedClient) OnFirstJoin(setter ClientConnectionPhaseSetter) {}
-
-// ConsideredComplete indicates whether the connection is considered complete.
-func (unimplementedClient) ConsideredComplete() bool { return false }
-
+func (unimplementedClient) OnFirstJoin(setter ClientConnectionPhaseSetter)                 {}
 func (unimplementedClient) onHandle(
 	mi ModInfo,
 	player KeepAlive,
