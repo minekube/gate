@@ -490,14 +490,18 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 
 func (p *connectedPlayer) ShowBossBar(bar bossbar.BossBar) error {
 	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		return bar.AddViewer(p)
+		err := bar.AddViewer(p)
+		if err == nil {
+			p.proxy.bossBarManager.Register(bar) // in case not already registered
+		}
+		return err
 	}
 	return nil
 }
 
 func (p *connectedPlayer) HideBossBar(bar bossbar.BossBar) error {
 	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		return bar.AddViewer(p)
+		return bar.RemoveViewer(p)
 	}
 	return nil
 }

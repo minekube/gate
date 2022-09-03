@@ -39,7 +39,6 @@ func (p *Proxy) BossBarManager() BossBarManager {
 
 func (b *bossBarManager) Register(bar bossbar.BossBar) {
 	b.Lock()
-	defer b.Unlock()
 	_, ok := b.bars[bar.ID()]
 	if !ok {
 		b.bars[bar.ID()] = bar
