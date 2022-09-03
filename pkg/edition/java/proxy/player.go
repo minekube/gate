@@ -40,6 +40,7 @@ import (
 // Player is a connected Minecraft player.
 type Player interface {
 	Inbound
+	netmc.PacketWriter
 	command.Source
 	message.ChannelMessageSource
 	message.ChannelMessageSink
