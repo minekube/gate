@@ -194,14 +194,11 @@ func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
 		// Show it to player
 		_ = playerBar.AddViewer(player)
 
-		// Update boss bars every second,
-		// run in new goroutine to not unblock login event handler.
-		go func() {
-			// Blocking until player disconnects
-			tick(player.Context(), time.Second, func() {
-				updateBossBar(playerBar, player)
-			})
-		}()
+		// Update boss bars every second until player disconnects.
+		// Run in new goroutine to not unblock login event handler!
+		go tick(player.Context(), time.Second, func() {
+			updateBossBar(playerBar, player)
+		})
 	}
 }
 
