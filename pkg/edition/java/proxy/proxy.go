@@ -15,7 +15,6 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
-	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
@@ -42,6 +41,8 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    auth.Authenticator
 
+	bossBarManager *bossBarManager
+
 	startTime atomic.Value
 
 	closeMu       sync.Mutex
@@ -61,9 +62,6 @@ type Proxy struct {
 
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
-
-	// TODO: maybe remove?
-	bossBarManager *bossbar.bossBarManager
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -105,8 +103,9 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		bossBarManager:   &bossbar.bossBarManager{bars: make(map[uuid.UUID]*bossbar.BossBarHolder)},
 	}
+
+	p.bossBarManager = newBossBarManager(p)
 
 	c := options.Config
 	// Connection & login rate limiters
@@ -120,10 +119,6 @@ func New(options Options) (p *Proxy, err error) {
 	}
 
 	return p, nil
-}
-
-func (p *Proxy) BossBarManager() bossbar.Manager {
-	return p.bossBarManager
 }
 
 // ErrProxyAlreadyRun is returned by Proxy.Run if the proxy instance was already run.
@@ -633,12 +628,13 @@ retry:
 
 // unregisters a connected player
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
+	defer p.bossBarManager.removeViewer(player)
+
 	p.muP.Lock()
 	defer p.muP.Unlock()
 	_, found = p.playerIDs[player.ID()]
 	delete(p.playerNames, strings.ToLower(player.Username()))
 	delete(p.playerIDs, player.ID())
-	// TODO p.s.bossBarManager.onDisconnect(player)?
 	return found
 }
 

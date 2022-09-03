@@ -22,6 +22,7 @@ import (
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -204,6 +205,15 @@ var packets = []proto.Packet{
 		Favicon:            "Favicon",
 		PreviewsChat:       true,
 		SecureChatEnforced: true,
+	},
+	&bossbar.BossBar{
+		ID:      uuid.New(),
+		Action:  bossbar.UpdateStyleAction,
+		Name:    &component.Text{Content: "BossBar", S: component.Style{Color: color.Red}},
+		Percent: 0.5,
+		Color:   bossbar.PurpleColor,
+		Overlay: bossbar.Notched10Overlay,
+		Flags:   bossbar.ConvertFlags(bossbar.DarkenScreenFlag, bossbar.PlayBossMusicFlag),
 	},
 }
 

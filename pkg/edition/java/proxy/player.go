@@ -68,11 +68,11 @@ type Player interface {
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
 	TabList() tablist.TabList // Returns the player's tab list.
+	// ShowBossBar shows the specified boss bar to the player.
+	ShowBossBar(bar bossbar.BossBar) error
+	// HideBossBar hides the specified boss bar from the player.
+	HideBossBar(bar bossbar.BossBar) error
 	// TODO add title and more
-
-	// boss bar
-	ShowBossBar(bar packet.BossBar) error
-	HideBossBar(bar packet.BossBar) error
 }
 
 type connectedPlayer struct {
@@ -108,8 +108,6 @@ type connectedPlayer struct {
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
-
-	bossBarManager *bossbar.bossBarManager
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -122,7 +120,6 @@ func newConnectedPlayer(
 	playerKey crypto.IdentifiedKey, // nil-able
 	tabList tablist.TabList,
 	sessionHandlerDeps *sessionHandlerDeps,
-	bbManager *bossbar.bossBarManager,
 ) *connectedPlayer {
 	var ping atomic.Duration
 	ping.Store(-1)
@@ -141,8 +138,6 @@ func newConnectedPlayer(
 		tabList:        tabList,
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
 		playerKey:      playerKey,
-
-		bossBarManager: bbManager,
 	}
 }
 
@@ -493,21 +488,21 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 	})
 }
 
-func (p *connectedPlayer) ShowBossBar(bar packet.BossBar) error {
+func (p *connectedPlayer) ShowBossBar(bar bossbar.BossBar) error {
 	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		return p.bossBarManager.Add(p, bar)
+		return bar.AddViewer(p)
 	}
 	return nil
 }
 
-func (p *connectedPlayer) HideBossBar(bar packet.BossBar) error {
+func (p *connectedPlayer) HideBossBar(bar bossbar.BossBar) error {
 	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		return p.bossBarManager.Remove(p, bar)
+		return bar.AddViewer(p)
 	}
 	return nil
 }
 
-// TODO add header/footer, title & boss bar methods
+// TODO add header/footer, title
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.

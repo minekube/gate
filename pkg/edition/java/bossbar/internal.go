@@ -1,37 +1,68 @@
 package bossbar
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 
-	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-var (
-	errBossBarNoUUID = errors.New("no uuid specified for boss bar")
-)
+type bossBar struct {
+	mu      sync.RWMutex // protects following fields
+	viewers map[uuid.UUID]Viewer
+	bossbar.BossBar
+	flags []Flag
+}
 
-type (
-	barColor struct {
-		color.Color
-		id ColorID
-	}
-	bossBar struct {
-		id uuid.UUID
+func (b *bossBar) ID() uuid.UUID {
+	return b.BossBar.ID // immutable, no lock needed
+}
 
-		mu       sync.RWMutex // protects following fields
-		name     component.Component
-		progress float32
-		color    ColorID
-		viewers  map[uuid.UUID]Viewer
+func (b *bossBar) RemoveViewer(viewer Viewer) error {
+	b.mu.Lock()
+	_, ok := b.viewers[viewer.ID()]
+	if !ok {
+		b.mu.Unlock()
+		return nil
 	}
-)
+	delete(b.viewers, viewer.ID())
+	p := b.createRemovePacket()
+	b.mu.Unlock()
+
+	return viewer.WritePacket(p)
+}
+
+func (b *bossBar) AddViewer(viewer Viewer) error {
+	b.mu.Lock()
+	_, ok := b.viewers[viewer.ID()]
+	if ok {
+		b.mu.Unlock()
+		return nil
+	}
+	b.viewers[viewer.ID()] = viewer
+	p := b.createAddPacket()
+	b.mu.Unlock()
+
+	err := viewer.WritePacket(p)
+	if err != nil {
+		b.mu.Lock()
+		delete(b.viewers, viewer.ID())
+		b.mu.Unlock()
+		return err
+	}
+	return nil
+}
+
+func (b *bossBar) Viewers() []Viewer {
+	b.mu.RLock()
+	viewers := b.viewers
+	b.mu.RUnlock()
+	return toSlice(viewers)
+}
+
+var _ BossBar = (*bossBar)(nil)
 
 func (b *bossBar) writeToViewers(p proto.Packet) {
 	for _, viewer := range b.viewers {
@@ -42,175 +73,137 @@ func (b *bossBar) writeToViewers(p proto.Packet) {
 func (b *bossBar) Name() component.Component {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-	return b.name
+	return b.BossBar.Name
 }
 func (b *bossBar) SetName(name component.Component) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if name == nil || b.name == name {
+	if name == nil || b.BossBar.Name == name {
 		return
 	}
-	b.name = name
+	b.BossBar.Name = name
 	b.writeToViewers(b.createTitleUpdate(name))
 }
-func (b *bossBar) Progress() float32 {
+func (b *bossBar) Color() Color {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-	return b.progress
+	return b.BossBar.Color
 }
-func (b *bossBar) SetProgress(progress float32) {
+func (b *bossBar) SetColor(color Color) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if progress < MinProgress || progress > MaxProgress || b.progress == progress {
-		b.mu.Unlock()
+	if b.BossBar.Color == color {
 		return
 	}
-	b.progress = progress
-	b.writeToViewers(b.createPercentUpdate(progress))
+	b.BossBar.Color = color
+	b.writeToViewers(b.createColorUpdate(color))
+}
+func (b *bossBar) Percent() float32 {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.BossBar.Percent
+}
+func (b *bossBar) SetPercent(percent float32) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if percent < MinProgress || percent > MaxProgress || b.BossBar.Percent == percent {
+		return
+	}
+	b.BossBar.Percent = percent
+	b.writeToViewers(b.createPercentUpdate(percent))
+}
+func (b *bossBar) Flags() []Flag {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.flags
+}
+func (b *bossBar) SetFlags(flags []Flag) {
+	newFlags := bossbar.ConvertFlags(flags...)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.BossBar.Flags == newFlags {
+		return
+	}
+	b.flags = flags
+	b.BossBar.Flags = newFlags
+	b.writeToViewers(b.createFlagsUpdate(newFlags))
+}
+func (b *bossBar) Overlay() Overlay {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.BossBar.Overlay
+}
+func (b *bossBar) SetOverlay(overlay Overlay) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.BossBar.Overlay == overlay {
+		return
+	}
+	b.BossBar.Overlay = overlay
+	b.writeToViewers(b.createOverlayUpdate(overlay))
 }
 
-func (b *bossBar) createAddPacket(name component.Component) *packet.BossBar {
-	return &packet.BossBar{
-		UUID:   b.id,
-		Action: packet.BossBarActionAdd,
-		Color:  b.color,
-		Flags:  b.flags,
+func (b *bossBar) createRemovePacket() *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:     b.BossBar.ID,
+		Action: bossbar.RemoveAction,
 	}
 }
-func (b *bossBar) createPercentUpdate(percent float32) *packet.BossBar {
-	return &packet.BossBar{
-		UUID:    b.id,
-		Action:  packet.BossBarActionUpdatePercent,
+func (b *bossBar) createAddPacket() *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:      b.BossBar.ID,
+		Action:  bossbar.AddAction,
+		Name:    b.BossBar.Name,
+		Percent: b.BossBar.Percent,
+		Color:   b.BossBar.Color,
+		Overlay: b.BossBar.Overlay,
+		Flags:   b.BossBar.Flags,
+	}
+}
+func (b *bossBar) createPercentUpdate(percent float32) *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:      b.BossBar.ID,
+		Action:  bossbar.UpdatePercentAction,
 		Percent: percent,
 	}
 }
-
-func (b *bossBar) createTitleUpdate(name component.Component) *packet.BossBar {
-	return &packet.BossBar{
-		UUID:    b.id,
-		Action:  packet.BossBarActionUpdateName,
-		Name:    name,
-		Color:   b.color,
-		Percent: b.progress,
-		Overlay: b.overlay,
-		Flags:   b.flags,
+func (b *bossBar) createColorUpdate(color Color) *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:      b.BossBar.ID,
+		Action:  bossbar.UpdateStyleAction,
+		Color:   color,
+		Overlay: b.BossBar.Overlay,
+		Flags:   b.BossBar.Flags,
+	}
+}
+func (b *bossBar) createOverlayUpdate(overlay Overlay) *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:      b.BossBar.ID,
+		Action:  bossbar.UpdateStyleAction,
+		Color:   b.BossBar.Color,
+		Overlay: overlay,
+	}
+}
+func (b *bossBar) createTitleUpdate(name component.Component) *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:     b.BossBar.ID,
+		Action: bossbar.UpdateNameAction,
+		Name:   name,
+	}
+}
+func (b *bossBar) createFlagsUpdate(flags byte) *bossbar.BossBar {
+	return &bossbar.BossBar{
+		ID:     b.BossBar.ID,
+		Action: bossbar.UpdatePropertiesAction,
+		Color:  b.BossBar.Color,
+		Flags:  flags,
 	}
 }
 
-var _ BossBar = (*bossBar)(nil)
-
-func (b *barColor) ID() ColorID { return b.id }
-
-type bossBarManager struct {
-	bars map[uuid.UUID]*BossBarHolder
-	sync.Mutex
-
-	// fnPlayer func(id uuid.UUID) *connectedPlayer
-}
-
-func (m *bossBarManager) get(bar packet.BossBar) (*BossBarHolder, bool) {
-	barholder, ok := m.bars[bar.UUID]
-	return barholder, ok
-}
-
-func (m *bossBarManager) getOrCreate(bar packet.BossBar) (*BossBarHolder, error) {
-	if bar.UUID == uuid.Nil {
-		return nil, errBossBarNoUUID
+func toSlice(m map[uuid.UUID]Viewer) []Viewer {
+	viewers := make([]Viewer, 0, len(m))
+	for _, viewer := range m {
+		viewers = append(viewers, viewer)
 	}
-
-	if barholder, ok := m.bars[bar.UUID]; ok {
-		return barholder, nil
-	}
-
-	barholder := &BossBarHolder{
-		subscribers: make(map[uuid.UUID]*proxy.connectedPlayer),
-	}
-	barholder.Register()
-
-	m.bars[bar.UUID] = barholder
-
-	return barholder, nil
-}
-
-// TODO: impl
-func (m *bossBarManager) onDisconnect(player proxy.Player) {
-}
-
-func (m *bossBarManager) Add(player proxy.Player, bar packet.BossBar) error {
-	m.Lock()
-	defer m.Unlock()
-
-	// this
-	p, ok := player.(*proxy.connectedPlayer)
-	if !ok {
-		fmt.Println("Add() failed to get player")
-		return nil
-	}
-	// or this?
-	// m.fnPlayer(player.ID())
-
-	bh, err := m.getOrCreate(bar)
-	if err != nil {
-		return err
-	}
-
-	bh.subscribers[player.ID()] = p
-	bar.Action = packet.BossBarActionAdd
-	return p.WritePacket(&bar)
-}
-
-func (m *bossBarManager) Remove(player proxy.Player, bar packet.BossBar) error {
-	m.Lock()
-	defer m.Unlock()
-
-	p, ok := player.(*proxy.connectedPlayer)
-	if !ok {
-		fmt.Println("Remove() failed to get player")
-		return nil
-	}
-
-	bh, ok := m.get(bar)
-	if !ok {
-		return nil
-	}
-
-	delete(bh.subscribers, player.ID())
-
-	// delete bar when nothing is left
-	if len(bh.subscribers) == 0 {
-		delete(m.bars, bar.UUID)
-	}
-
-	bar.Action = packet.BossBarActionRemove
-	return p.WritePacket(&bar)
-}
-
-func (m *bossBarManager) Broadcast(bar packet.BossBar) error {
-	m.Lock()
-	defer m.Unlock()
-
-	bh, ok := m.get(bar)
-	if !ok {
-		return nil
-	}
-
-	for _, player := range bh.subscribers {
-		err := player.WritePacket(&bar)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type BossBarHolder struct {
-	subscribers map[uuid.UUID]*proxy.connectedPlayer
-
-	// register once
-	sync.Once
-}
-
-// TODO: implement??
-func (bbh *BossBarHolder) Register() {
+	return viewers
 }

@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -69,6 +70,8 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleResourcePacketRequest(p)
 	case *packet.ServerData:
 		b.handleServerData(p)
+	case *bossbar.BossBar:
+		b.handleBossBar(p, pc)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -116,6 +119,16 @@ func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *pro
 func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 	b.serverConn.disconnect()
 	b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
+}
+
+func (b *backendPlaySessionHandler) handleBossBar(p *bossbar.BossBar, pc *proto.PacketContext) {
+	switch p.Action {
+	case bossbar.AddAction:
+		b.playerSessionHandler.serverBossBars[p.ID] = struct{}{}
+	case bossbar.RemoveAction:
+		delete(b.playerSessionHandler.serverBossBars, p.ID)
+	}
+	b.forwardToPlayer(pc, nil) // forward on
 }
 
 func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, pc *proto.PacketContext) {

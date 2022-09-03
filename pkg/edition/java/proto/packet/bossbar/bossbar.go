@@ -1,4 +1,4 @@
-package packet
+package bossbar
 
 import (
 	"errors"
@@ -10,64 +10,64 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-type BossBarAction uint8
+type Action int
 
 const (
-	BossBarActionAdd BossBarAction = iota
-	BossBarActionRemove
-	BossBarActionUpdatePercent
-	BossBarActionUpdateName
-	BossBarActionUpdateStyle
-	BossBarActionProperties
+	AddAction Action = iota
+	RemoveAction
+	UpdatePercentAction
+	UpdateNameAction
+	UpdateStyleAction
+	UpdatePropertiesAction
 )
 
-type BossBarColor uint8
+type Color int
 
 const (
-	BossBarColorPink BossBarColor = iota
-	BossBarColorBlue
-	BossBarColorRed
-	BossBarColorGreen
-	BossBarColorYellow
-	BossBarColorPurple
-	BossBarColorWhite
+	PinkColor Color = iota
+	BlueColor
+	RedColor
+	GreenColor
+	YellowColor
+	PurpleColor
+	WhiteColor
 )
 
-type BossBarOverlay uint8
+type Overlay int
 
 const (
-	BossBarOverlayProgress BossBarOverlay = iota
-	BossBarOverlayNotched6
-	BossBarOverlayNotched10
-	BossBarOverlayNotched12
-	BossBarOverlayNotched20
+	ProgressOverlay Overlay = iota
+	Notched6Overlay
+	Notched10Overlay
+	Notched12Overlay
+	Notched20Overlay
 )
 
-type BossBarFlag uint8
+type Flag int
 
 const (
-	BossBarFlagDarkenScreen   BossBarFlag = 0x01
-	BossBarFlagPlayBossMusic  BossBarFlag = 0x02
-	BossBarFlagCreateWorldFog BossBarFlag = 0x04
+	DarkenScreenFlag   Flag = 0x01
+	PlayBossMusicFlag  Flag = 0x02
+	CreateWorldFogFlag Flag = 0x04
 )
 
 var (
-	errBossBarNoName        = errors.New("action bar needs to have a name specified")
-	errBossBarInvalidAction = errors.New("unknown action for bossbar")
+	errNoName        = errors.New("action bar needs to have a name specified")
+	errInvalidAction = errors.New("unknown action for bossbar")
 )
 
 type BossBar struct {
-	UUID    uuid.UUID
-	Action  BossBarAction
+	ID      uuid.UUID
+	Action  Action
 	Name    component.Component
 	Percent float32
-	Color   BossBarColor
-	Overlay BossBarOverlay
+	Color   Color
+	Overlay Overlay
 	Flags   byte
 }
 
 func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteUUID(wr, bb.UUID)
+	err := util.WriteUUID(wr, bb.ID)
 	if err != nil {
 		return err
 	}
@@ -77,9 +77,9 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 	}
 
 	switch bb.Action {
-	case BossBarActionAdd:
+	case AddAction:
 		if bb.Name == nil {
-			return errBossBarNoName
+			return errNoName
 		}
 		err = util.WriteComponent(wr, c.Protocol, bb.Name)
 		if err != nil {
@@ -101,17 +101,17 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if err != nil {
 			return err
 		}
-	case BossBarActionRemove:
+	case RemoveAction:
 		// do nohing
-	case BossBarActionUpdatePercent:
+	case UpdatePercentAction:
 		if bb.Name == nil {
-			return errBossBarNoName
+			return errNoName
 		}
 		err = util.WriteComponent(wr, c.Protocol, bb.Name)
 		if err != nil {
 			return err
 		}
-	case BossBarActionUpdateStyle:
+	case UpdateStyleAction:
 		err = util.WriteVarInt(wr, int(bb.Color))
 		if err != nil {
 			return err
@@ -120,20 +120,20 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if err != nil {
 			return err
 		}
-	case BossBarActionProperties:
+	case UpdatePropertiesAction:
 		err = util.WriteByte(wr, bb.Flags)
 		if err != nil {
 			return err
 		}
 	default:
-		return errBossBarInvalidAction
+		return errInvalidAction
 	}
 
 	return nil
 }
 
 func (bb *BossBar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	bb.UUID, err = util.ReadUUID(rd)
+	bb.ID, err = util.ReadUUID(rd)
 	if err != nil {
 		return err
 	}
@@ -141,10 +141,10 @@ func (bb *BossBar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	bb.Action = BossBarAction(tmpAction)
+	bb.Action = Action(tmpAction)
 
 	switch bb.Action {
-	case BossBarActionAdd:
+	case AddAction:
 		bb.Name, err = util.ReadComponent(rd, c.Protocol)
 		if err != nil {
 			return err
@@ -157,55 +157,55 @@ func (bb *BossBar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		if err != nil {
 			return err
 		}
-		bb.Color = BossBarColor(tmpColor)
+		bb.Color = Color(tmpColor)
 		tmpOverlay, err := util.ReadVarInt(rd)
 		if err != nil {
 			return err
 		}
-		bb.Overlay = BossBarOverlay(tmpOverlay)
+		bb.Overlay = Overlay(tmpOverlay)
 		bb.Flags, err = util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
-	case BossBarActionRemove:
+	case RemoveAction:
 		// do nothing
-	case BossBarActionUpdatePercent:
+	case UpdatePercentAction:
 		bb.Percent, err = util.ReadFloat32(rd)
 		if err != nil {
 			return err
 		}
-	case BossBarActionUpdateName:
+	case UpdateNameAction:
 		bb.Name, err = util.ReadComponent(rd, c.Protocol)
 		if err != nil {
 			return err
 		}
-	case BossBarActionUpdateStyle:
+	case UpdateStyleAction:
 		tmpColor, err := util.ReadVarInt(rd)
 		if err != nil {
 			return err
 		}
-		bb.Color = BossBarColor(tmpColor)
+		bb.Color = Color(tmpColor)
 		tmpOverlay, err := util.ReadVarInt(rd)
 		if err != nil {
 			return err
 		}
-		bb.Overlay = BossBarOverlay(tmpOverlay)
-	case BossBarActionProperties:
+		bb.Overlay = Overlay(tmpOverlay)
+	case UpdatePropertiesAction:
 		bb.Flags, err = util.ReadByte(rd)
 		if err != nil {
 			return err
 		}
 	default:
-		return errBossBarInvalidAction
+		return errInvalidAction
 	}
 	return nil
 }
 
-func BossBarFlags(flags []BossBarFlag) byte {
+// ConvertFlags converts the given flags to the byte representation.
+func ConvertFlags(flags ...Flag) byte {
 	var val byte
 	for _, flag := range flags {
 		val |= byte(flag)
 	}
-
 	return val
 }

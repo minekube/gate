@@ -2,6 +2,7 @@ package state
 
 import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -181,7 +182,7 @@ func init() {
 		m(0x17, version.Minecraft_1_19),
 		m(0x19, version.Minecraft_1_19_1),
 	)
-	Play.ClientBound.Register(&p.BossBar{},
+	Play.ClientBound.Register(&bossbar.BossBar{},
 		m(0x0C, version.Minecraft_1_9),
 		m(0x0D, version.Minecraft_1_15),
 		m(0x0C, version.Minecraft_1_16),

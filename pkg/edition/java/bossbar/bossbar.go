@@ -1,30 +1,111 @@
 package bossbar
 
 import (
-	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	packet "go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-type Manager interface {
-	// Add adds the specified viewer to the boss bar's viewers
-	// and spawns the boss bar, registering the boss bar if needed.
-	Add(viewer Viewer, bar BossBar) error
-	// Remove is called when a viewer disconnects from the proxy.
-	// Removes the player from any boss bar subscriptions.
-	Remove(viewer Viewer, bar BossBar) error
-	Broadcast(bar BossBar) error
-}
-
+// BossBar is a boss bar.
 type BossBar interface {
+	// Viewers returns the viewers of this boss bar.
+	Viewers() []Viewer
+	// AddViewer adds the specified viewer to the boss bar's viewers
+	AddViewer(Viewer) error
+	// RemoveViewer removes the specified viewer from the boss bar's viewers
+	RemoveViewer(Viewer) error
+
+	// ID returns the boss bar's ID.
+	ID() uuid.UUID
+	// Name returns the name of this boss bar.
 	Name() component.Component
+	// SetName sets the name of this boss bar.
 	SetName(component.Component)
+
+	// Color returns the color of this boss bar.
+	Color() Color
+	// SetColor sets the color of this boss bar.
+	SetColor(Color)
+
+	// Percent returns the percent of this boss bar.
+	Percent() float32
+	// SetPercent sets the percent of this boss bar.
+	SetPercent(float32)
+
+	// Flags returns the flags of this boss bar.
+	Flags() []Flag
+	// SetFlags sets the flags of this boss bar.
+	SetFlags([]Flag)
+
+	// Overlay returns the overlay of this boss bar.
+	Overlay() Overlay
+	// SetOverlay sets the overlay of this boss bar.
+	SetOverlay(Overlay)
 }
 
-// Viewer is the interface for a boss bar viewer.
+// NewBossBar creates a new boss bar.
+// It is safe for concurrent use.
+//
+// Don't forget to register/unregister the boss bar with the
+// proxy boss bar manager if necessary.
+func NewBossBar(
+	name component.Component,
+	percent float32,
+	color Color,
+	overlay Overlay,
+	flags ...Flag,
+) BossBar {
+	return &bossBar{
+		viewers: make(map[uuid.UUID]Viewer),
+		BossBar: packet.BossBar{
+			ID:      uuid.New(),
+			Name:    name,
+			Percent: percent,
+			Color:   color,
+			Overlay: overlay,
+			Flags:   packet.ConvertFlags(flags...),
+		},
+		flags: flags,
+	}
+}
+
+// RemoveAllViewers removes all viewers from the boss bar.
+func RemoveAllViewers(b BossBar) {
+	for _, viewer := range b.Viewers() {
+		go func(v Viewer) { _ = b.RemoveViewer(v) }(viewer)
+	}
+}
+
+// Viewer is the interface for a boss bar viewer (likely a player).
 type Viewer interface {
+	ID() uuid.UUID
 	proto.PacketWriter
+}
+
+// Color is a color for a boss bar.
+type Color = packet.Color
+
+// Available boss bar colors.
+const (
+	PinkColor   = Color(packet.PinkColor)
+	BlueColor   = Color(packet.BlueColor)
+	RedColor    = Color(packet.RedColor)
+	GreenColor  = Color(packet.GreenColor)
+	YellowColor = Color(packet.YellowColor)
+	PurpleColor = Color(packet.PurpleColor)
+	WhiteColor  = Color(packet.WhiteColor)
+)
+
+// Colors is a list of available boss bar colors.
+var Colors = []Color{
+	PinkColor,
+	BlueColor,
+	RedColor,
+	GreenColor,
+	YellowColor,
+	PurpleColor,
+	WhiteColor,
 }
 
 const (
@@ -34,25 +115,24 @@ const (
 	MaxProgress float32 = 1.0
 )
 
-// Color is a color for a boss bar.
-type Color interface {
-	color.Color
-	ID() ColorID
-}
+// Overlay is a boss bar overlay.
+type Overlay = packet.Overlay
 
-// ColorID is the id of a boss bar color.
-type ColorID = packet.BossBarColor
-
-// Available boss bar colors.
-var (
-	Pink   Color = &barColor{Color: color.LightPurple, id: packet.BossBarColorPink}
-	Blue   Color = &barColor{Color: color.Blue, id: packet.BossBarColorBlue}
-	Red    Color = &barColor{Color: color.Red, id: packet.BossBarColorRed}
-	Green  Color = &barColor{Color: color.Green, id: packet.BossBarColorGreen}
-	Yellow Color = &barColor{Color: color.Yellow, id: packet.BossBarColorYellow}
-	Purple Color = &barColor{Color: color.DarkPurple, id: packet.BossBarColorPurple}
-	White  Color = &barColor{Color: color.White, id: packet.BossBarColorWhite}
+// Available boss bar overlays.
+const (
+	ProgressOverlay  = Overlay(packet.ProgressOverlay)
+	Notched6Overlay  = Overlay(packet.Notched6Overlay)
+	Notched10Overlay = Overlay(packet.Notched10Overlay)
+	Notched12Overlay = Overlay(packet.Notched12Overlay)
+	Notched20Overlay = Overlay(packet.Notched20Overlay)
 )
 
-// Colors is a list of available boss bar colors.
-var Colors = []Color{Pink, Blue, Red, Green, Yellow, Purple, White}
+// Flag is a boss bar flag.
+type Flag = packet.Flag
+
+// Available boss bar flags.
+const (
+	DarkenScreenFlag   = Flag(packet.DarkenScreenFlag)
+	PlayBossMusicFlag  = Flag(packet.PlayBossMusicFlag)
+	CreateWorldFogFlag = Flag(packet.CreateWorldFogFlag)
+)
