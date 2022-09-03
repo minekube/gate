@@ -22,16 +22,6 @@ type ChannelMessageSink interface {
 // ChannelMessageSource is a source of plugin messages.
 type ChannelMessageSource any
 
-// ChannelRegistrar is an interface to register and
-// unregister ChannelIdentifiers for the proxy to listen on.
-type ChannelRegistrar interface {
-	// Register registers the specified message identifiers to listen on so you can
-	// intercept plugin messages on the channel using the PluginMessageEvent.
-	Register(ids ...ChannelIdentifier)
-	// Unregister removes the intent to listen for the specified channels.
-	Unregister(ids ...ChannelIdentifier)
-}
-
 const DefaultNamespace = "minecraft"
 
 // channelIdentifier is a Minecraft 1.13+ plugin channel identifier.

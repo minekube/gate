@@ -17,9 +17,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	protoutil "go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
@@ -27,7 +25,6 @@ import (
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
 )
@@ -38,7 +35,7 @@ type Proxy struct {
 	cfg              *config.Config
 	event            event.Manager
 	command          command.Manager
-	channelRegistrar *ChannelRegistrar
+	channelRegistrar *message.ChannelRegistrar
 	authenticator    auth.Authenticator
 
 	startTime atomic.Value
@@ -96,7 +93,7 @@ func New(options Options) (p *Proxy, err error) {
 		log:              logr.Discard(), // updated by Proxy.Start
 		cfg:              options.Config,
 		event:            eventMgr,
-		channelRegistrar: NewChannelRegistrar(),
+		channelRegistrar: message.NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
@@ -639,62 +636,8 @@ func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
 //
 //
 
-func (p *Proxy) ChannelRegistrar() *ChannelRegistrar {
+func (p *Proxy) ChannelRegistrar() *message.ChannelRegistrar {
 	return p.channelRegistrar
-}
-
-type ChannelRegistrar struct {
-	mu          sync.RWMutex // Protects following fields
-	identifiers map[string]message.ChannelIdentifier
-}
-
-func NewChannelRegistrar() *ChannelRegistrar {
-	return &ChannelRegistrar{identifiers: map[string]message.ChannelIdentifier{}}
-}
-
-// ChannelsForProtocol returns all the channel names
-// to register depending on the Minecraft protocol version.
-func (r *ChannelRegistrar) ChannelsForProtocol(protocol proto.Protocol) sets.String {
-	if protocol.GreaterEqual(version.Minecraft_1_13) {
-		return r.ModernChannelIDs()
-	}
-	return r.LegacyChannelIDs()
-}
-
-// ModernChannelIDs returns all channel IDs (as strings)
-// for use with Minecraft 1.13 and above.
-func (r *ChannelRegistrar) ModernChannelIDs() sets.String {
-	r.mu.RLock()
-	ids := r.identifiers
-	r.mu.RUnlock()
-	ss := sets.String{}
-	for _, i := range ids {
-		if _, ok := i.(*message.MinecraftChannelIdentifier); ok {
-			ss.Insert(i.ID())
-		} else {
-			ss.Insert(plugin.TransformLegacyToModernChannel(i.ID()))
-		}
-	}
-	return ss
-}
-
-// LegacyChannelIDs returns all legacy channel IDs.
-func (r *ChannelRegistrar) LegacyChannelIDs() sets.String {
-	r.mu.RLock()
-	ids := r.identifiers
-	r.mu.RUnlock()
-	ss := sets.String{}
-	for _, i := range ids {
-		ss.Insert(i.ID())
-	}
-	return ss
-}
-
-func (r *ChannelRegistrar) FromID(channel string) (message.ChannelIdentifier, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	id, ok := r.identifiers[channel]
-	return id, ok
 }
 
 //
