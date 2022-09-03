@@ -138,18 +138,10 @@ const (
 	CreateWorldFogFlag = Flag(packet.CreateWorldFogFlag)
 )
 
-// Show sends a boss bar show packet to the viewer.
-func Show(bar BossBar, viewer Viewer) error {
+func isProtocolSupported(viewer Viewer) bool {
 	if p, ok := viewer.(interface{ Protocol() proto.Protocol }); ok {
-		if !p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-			// below 1.9 doesn't support boss bars
-			return nil
-		}
+		// below 1.9 doesn't support boss bars
+		return p.Protocol().GreaterEqual(version.Minecraft_1_9)
 	}
-	return bar.AddViewer(viewer)
-}
-
-// Hide sends a boss bar hide packet to the viewer.
-func Hide(viewer Viewer, bar BossBar) error {
-	return bar.RemoveViewer(viewer)
+	return true // assume supported
 }

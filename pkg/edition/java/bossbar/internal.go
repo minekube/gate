@@ -44,6 +44,10 @@ func (b *bossBar) RemoveViewer(viewer Viewer) error {
 }
 
 func (b *bossBar) AddViewer(viewer Viewer) error {
+	if !isProtocolSupported(viewer) {
+		return nil
+	}
+
 	b.mu.Lock()
 	_, ok := b.viewers[viewer.ID()]
 	if ok {
