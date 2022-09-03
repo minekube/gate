@@ -53,7 +53,7 @@ const (
 
 var (
 	errNoName        = errors.New("action bar needs to have a name specified")
-	errInvalidAction = errors.New("unknown action for bossbar")
+	errInvalidAction = errors.New("unknown action for boss bar")
 )
 
 type BossBar struct {
@@ -104,6 +104,11 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 	case RemoveAction:
 		// do nohing
 	case UpdatePercentAction:
+		err = util.WriteFloat32(wr, bb.Percent)
+		if err != nil {
+			return err
+		}
+	case UpdateNameAction:
 		if bb.Name == nil {
 			return errNoName
 		}
@@ -128,7 +133,6 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 	default:
 		return errInvalidAction
 	}
-
 	return nil
 }
 
