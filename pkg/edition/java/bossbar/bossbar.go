@@ -83,7 +83,7 @@ type Viewer interface {
 	proto.PacketWriter
 }
 
-// Color is a color for a boss bar.
+// Color is the color of the percent bar.
 type Color = packet.Color
 
 // Available boss bar colors.

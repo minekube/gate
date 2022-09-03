@@ -2,10 +2,14 @@ module simple-proxy
 
 go 1.19
 
+replace (
+	go.minekube.com/gate => ../../../
+)
+
 require (
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.2
-	go.minekube.com/gate v0.19.1-0.20220831130846-90c0e8445e02
+	go.minekube.com/gate v0.19.2-0.20220903125705-9a43a5301787
 )
 
 require (
