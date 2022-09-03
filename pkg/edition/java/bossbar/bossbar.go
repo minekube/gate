@@ -44,12 +44,12 @@ type BossBar interface {
 	SetOverlay(Overlay)
 }
 
-// NewBossBar creates a new boss bar.
+// New creates a new boss bar.
 // It is safe for concurrent use.
 //
 // Don't forget to register/unregister the boss bar with the
 // proxy boss bar manager if necessary.
-func NewBossBar(
+func New(
 	name component.Component,
 	percent float32,
 	color Color,
