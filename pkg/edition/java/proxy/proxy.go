@@ -629,7 +629,6 @@ func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
 	_, found = p.playerIDs[player.ID()]
 	delete(p.playerNames, strings.ToLower(player.Username()))
 	delete(p.playerIDs, player.ID())
-	// TODO p.s.bossBarManager.onDisconnect(player)?
 	return found
 }
 

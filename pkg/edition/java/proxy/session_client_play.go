@@ -13,10 +13,12 @@ import (
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
@@ -42,16 +44,17 @@ type clientPlaySessionHandler struct {
 	loginPluginMessages deque.Deque[*plugin.Message]
 	lastChatMessage     time.Time // Added in 1.19
 
-	// TODO serverBossBars
+	serverBossBars         map[uuid.UUID]struct{}
 	outstandingTabComplete *packet.TabCompleteRequest
 }
 
 func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
 	log := player.log.WithName("clientPlaySession")
 	return &clientPlaySessionHandler{
-		player: player,
-		log:    log,
-		log1:   log.V(1),
+		player:         player,
+		log:            log,
+		log1:           log.V(1),
+		serverBossBars: map[uuid.UUID]struct{}{},
 	}
 }
 
@@ -330,8 +333,18 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	}
 	destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
 
-	// TODO Remove previous boss bars.
-	// These don't get cleared when sending JoinGame, thus we need to track them.
+	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
+	// track them.
+	for barID := range c.serverBossBars {
+		deletePacket := &bossbar.BossBar{
+			ID:     barID,
+			Action: bossbar.RemoveAction,
+		}
+		if err = c.player.BufferPacket(deletePacket); err != nil {
+			return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
+		}
+	}
+	c.serverBossBars = make(map[uuid.UUID]struct{}) // clear
 
 	// Tell the server about this client's plugin message channels.
 	serverVersion := serverMc.Protocol()

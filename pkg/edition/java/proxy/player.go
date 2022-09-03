@@ -39,6 +39,7 @@ import (
 // Player is a connected Minecraft player.
 type Player interface {
 	Inbound
+	netmc.PacketWriter
 	command.Source
 	message.ChannelMessageSource
 	message.ChannelMessageSink
@@ -483,7 +484,7 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 	})
 }
 
-// TODO add header/footer, title & boss bar methods
+// TODO add header/footer, title
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.

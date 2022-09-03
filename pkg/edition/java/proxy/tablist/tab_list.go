@@ -10,7 +10,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -118,7 +118,7 @@ func (t *tabList) removeEntry(id uuid.UUID) (*tabListEntry, error) {
 func (t *tabList) SetHeaderFooter(header, footer component.Component) error {
 	b := new(bytes.Buffer)
 	p := new(packet.HeaderAndFooter)
-	j := util2.JsonCodec(t.protocol)
+	j := util.JsonCodec(t.protocol)
 
 	if err := j.Marshal(b, header); err != nil {
 		return fmt.Errorf("error marshal header: %w", err)

@@ -2,7 +2,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
@@ -10,6 +12,7 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/cmd/gate"
 	"go.minekube.com/gate/pkg/command"
+	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/event"
 )
@@ -28,8 +31,12 @@ func main() {
 	gate.Execute()
 }
 
-// SimpleProxy is a simple proxy that adds a `/broadcast` command
-// and sends a message on server switch.
+// SimpleProxy is a simple proxy to showcase some features of Gate.
+//
+// In this example:
+//   - Add a `/broadcast` command
+//   - Send a message when player switches the server
+//   - Show boss bars to players
 type SimpleProxy struct {
 	*proxy.Proxy
 	legacyCodec *legacy.Legacy
@@ -89,48 +96,125 @@ func (p *SimpleProxy) registerCommands() {
 // Register event subscribers
 func (p *SimpleProxy) registerSubscribers() error {
 	// Send message on server switch.
-	p.Event().Subscribe(&proxy.ServerPostConnectEvent{}, 0, func(ev event.Event) {
-		e := ev.(*proxy.ServerPostConnectEvent)
-
-		newServer := e.Player().CurrentServer()
-		if newServer == nil {
-			return
-		}
-
-		_ = e.Player().SendMessage(&Text{
-			S: Style{Color: color.Aqua},
-			Extra: []Component{
-				&Text{
-					Content: "\nWelcome to the Gate Sample proxy!\n\n",
-					S:       Style{Color: color.Green, Bold: True},
-				},
-				&Text{Content: "You connected to "},
-				&Text{Content: newServer.Server().ServerInfo().Name(), S: Style{Color: color.Yellow}},
-				&Text{Content: "."},
-				&Text{
-					S: Style{
-						ClickEvent: SuggestCommand("/broadcast Gate is awesome!"),
-						HoverEvent: ShowText(&Text{Content: "/broadcast Gate is awesome!"}),
-					},
-					Content: "\n\nClick me to run ",
-					Extra: []Component{&Text{
-						Content: "/broadcast Gate is awesome!",
-						S:       Style{Color: color.White, Bold: True, Italic: True},
-					}},
-				},
-			},
-		})
-	})
+	event.Subscribe(p.Event(), 0, p.onServerSwitch)
 
 	// Change the MOTD response.
-	motd := &Text{Content: "Simple Proxy!\nJoin and test me."}
-	p.Event().Subscribe(&proxy.PingEvent{}, 0, func(ev event.Event) {
-		e := ev.(*proxy.PingEvent)
-		p := e.Ping()
+	event.Subscribe(p.Event(), 0, pingHandler())
 
-		p.Description = motd
-		p.Players.Max = p.Players.Online + 1
-	})
+	// Show a boss bar to all players on this proxy.
+	event.Subscribe(p.Event(), 0, p.bossBarDisplay())
 
 	return nil
+}
+
+func (p *SimpleProxy) onServerSwitch(e *proxy.ServerPostConnectEvent) {
+	newServer := e.Player().CurrentServer()
+	if newServer == nil {
+		return
+	}
+
+	_ = e.Player().SendMessage(&Text{
+		S: Style{Color: color.Aqua},
+		Extra: []Component{
+			&Text{
+				Content: "\nWelcome to the Gate Sample proxy!\n\n",
+				S:       Style{Color: color.Green, Bold: True},
+			},
+			&Text{Content: "You connected to "},
+			&Text{Content: newServer.Server().ServerInfo().Name(), S: Style{Color: color.Yellow}},
+			&Text{Content: "."},
+			&Text{
+				S: Style{
+					ClickEvent: SuggestCommand("/broadcast Gate is awesome!"),
+					HoverEvent: ShowText(&Text{Content: "/broadcast Gate is awesome!"}),
+				},
+				Content: "\n\nClick me to run ",
+				Extra: []Component{&Text{
+					Content: "/broadcast Gate is awesome!",
+					S:       Style{Color: color.White, Bold: True, Italic: True},
+				}},
+			},
+		},
+	})
+}
+
+func pingHandler() func(p *proxy.PingEvent) {
+	motd := &Text{Content: "Simple Proxy!\nJoin and test me."}
+	return func(e *proxy.PingEvent) {
+		p := e.Ping()
+		p.Description = motd
+		p.Players.Max = p.Players.Online + 1
+	}
+}
+
+func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
+	// Create shared boss bar for all players
+	sharedBar := bossbar.New(
+		&Text{Content: "Welcome to Gate Sample proxy!", S: Style{
+			Color: color.Aqua,
+			Bold:  True,
+		}},
+		1,
+		bossbar.BlueColor,
+		bossbar.ProgressOverlay,
+	)
+
+	updateBossBar := func(bar bossbar.BossBar, player proxy.Player) {
+		now := time.Now()
+		text := &Text{Extra: []Component{
+			&Text{
+				Content: fmt.Sprintf("Hello %s! ", player.Username()),
+				S:       Style{Color: color.Yellow},
+			},
+			&Text{
+				Content: fmt.Sprintf("It's %s", now.Format("15:04:05 PM")),
+				S:       Style{Color: color.Gold},
+			},
+		}}
+		bar.SetName(text)
+		bar.SetPercent(float32(now.Second()) / 60)
+	}
+
+	return func(e *proxy.LoginEvent) {
+		if !e.Allowed() {
+			return
+		}
+		player := e.Player()
+
+		// Add player to shared boss bar
+		_ = sharedBar.AddViewer(player)
+
+		// Create own boss bar for player
+		playerBar := bossbar.New(
+			&Text{},
+			bossbar.MinProgress,
+			bossbar.RedColor,
+			bossbar.ProgressOverlay,
+		)
+		// Show it to player
+		_ = playerBar.AddViewer(player)
+
+		// Update boss bars every second,
+		// run in new goroutine to not unblock login event handler.
+		go func() {
+			// Blocking until player disconnects
+			tick(player.Context(), time.Second, func() {
+				updateBossBar(playerBar, player)
+			})
+		}()
+	}
+}
+
+// tick runs a function every interval until the context is cancelled.
+func tick(ctx context.Context, interval time.Duration, fn func()) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			fn()
+		case <-ctx.Done():
+			return
+		}
+	}
 }

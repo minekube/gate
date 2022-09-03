@@ -2,6 +2,7 @@ package state
 
 import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -180,6 +181,13 @@ func init() {
 		m(0x1A, version.Minecraft_1_17),
 		m(0x17, version.Minecraft_1_19),
 		m(0x19, version.Minecraft_1_19_1),
+	)
+	Play.ClientBound.Register(&bossbar.BossBar{},
+		m(0x0C, version.Minecraft_1_9),
+		m(0x0D, version.Minecraft_1_15),
+		m(0x0C, version.Minecraft_1_16),
+		m(0x0D, version.Minecraft_1_17),
+		m(0x0A, version.Minecraft_1_19),
 	)
 	Play.ClientBound.Register(&p.LegacyChat{},
 		m(0x02, version.Minecraft_1_7_2),
