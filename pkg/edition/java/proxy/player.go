@@ -13,7 +13,6 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
-	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -69,10 +68,6 @@ type Player interface {
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
 	TabList() tablist.TabList // Returns the player's tab list.
-	// ShowBossBar shows the specified boss bar to the player.
-	ShowBossBar(bar bossbar.BossBar) error
-	// HideBossBar hides the specified boss bar from the player.
-	HideBossBar(bar bossbar.BossBar) error
 	// TODO add title and more
 }
 
@@ -487,24 +482,6 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 		Channel: identifier.ID(),
 		Data:    data,
 	})
-}
-
-func (p *connectedPlayer) ShowBossBar(bar bossbar.BossBar) error {
-	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		err := bar.AddViewer(p)
-		if err == nil {
-			p.proxy.bossBarManager.Register(bar) // in case not already registered
-		}
-		return err
-	}
-	return nil
-}
-
-func (p *connectedPlayer) HideBossBar(bar bossbar.BossBar) error {
-	if p.Protocol().GreaterEqual(version.Minecraft_1_9) {
-		return bar.RemoveViewer(p)
-	}
-	return nil
 }
 
 // TODO add header/footer, title

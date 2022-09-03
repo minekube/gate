@@ -182,7 +182,7 @@ func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
 		player := e.Player()
 
 		// Add player to shared boss bar
-		_ = player.ShowBossBar(sharedBar)
+		_ = sharedBar.AddViewer(player)
 
 		// Create own boss bar for player
 		playerBar := bossbar.New(
@@ -192,14 +192,11 @@ func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
 			bossbar.ProgressOverlay,
 		)
 		// Show it to player
-		_ = player.ShowBossBar(playerBar)
+		_ = playerBar.AddViewer(player)
 
 		// Update boss bars every second,
 		// run in new goroutine to not unblock login event handler.
 		go func() {
-			// Don't forget to remove the boss bar from manager
-			// when player disconnects
-			defer p.BossBarManager().Unregister(playerBar)
 			// Blocking until player disconnects
 			tick(player.Context(), time.Second, func() {
 				updateBossBar(playerBar, player)

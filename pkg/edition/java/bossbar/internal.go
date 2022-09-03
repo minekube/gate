@@ -1,6 +1,7 @@
 package bossbar
 
 import (
+	"context"
 	"sync"
 
 	"go.minekube.com/common/minecraft/component"
@@ -11,9 +12,16 @@ import (
 
 type bossBar struct {
 	mu      sync.RWMutex // protects following fields
-	viewers map[uuid.UUID]Viewer
+	viewers map[uuid.UUID]*barViewer
 	bossbar.BossBar
 	flags []Flag
+}
+
+type barViewer struct {
+	Viewer
+	// canceled when removed from boss bar
+	ctx     context.Context
+	removed context.CancelFunc
 }
 
 func (b *bossBar) ID() uuid.UUID {
@@ -22,12 +30,13 @@ func (b *bossBar) ID() uuid.UUID {
 
 func (b *bossBar) RemoveViewer(viewer Viewer) error {
 	b.mu.Lock()
-	_, ok := b.viewers[viewer.ID()]
+	v, ok := b.viewers[viewer.ID()]
 	if !ok {
 		b.mu.Unlock()
 		return nil
 	}
-	delete(b.viewers, viewer.ID())
+	delete(b.viewers, v.ID())
+	v.removed()
 	p := b.createRemovePacket()
 	b.mu.Unlock()
 
@@ -41,7 +50,10 @@ func (b *bossBar) AddViewer(viewer Viewer) error {
 		b.mu.Unlock()
 		return nil
 	}
-	b.viewers[viewer.ID()] = viewer
+
+	v := newBarViewer(viewer, b)
+
+	b.viewers[viewer.ID()] = v
 	p := b.createAddPacket()
 	b.mu.Unlock()
 
@@ -50,9 +62,31 @@ func (b *bossBar) AddViewer(viewer Viewer) error {
 		b.mu.Lock()
 		delete(b.viewers, viewer.ID())
 		b.mu.Unlock()
+		v.removed()
 		return err
 	}
+
 	return nil
+}
+
+func newBarViewer(viewer Viewer, bar *bossBar) *barViewer {
+	removedCtx, cancel := context.WithCancel(context.Background())
+	if c, ok := viewer.(interface{ Context() context.Context }); ok {
+		viewerCtx := c.Context()
+		go func() {
+			defer cancel()
+			select {
+			case <-viewerCtx.Done():
+				_ = bar.RemoveViewer(viewer)
+			case <-removedCtx.Done(): // viewer removed by RemoveViewer method
+			}
+		}()
+	}
+	return &barViewer{
+		Viewer:  viewer,
+		ctx:     removedCtx,
+		removed: cancel,
+	}
 }
 
 func (b *bossBar) Viewers() []Viewer {
@@ -200,10 +234,10 @@ func (b *bossBar) createFlagsUpdate(flags byte) *bossbar.BossBar {
 	}
 }
 
-func toSlice(m map[uuid.UUID]Viewer) []Viewer {
+func toSlice(m map[uuid.UUID]*barViewer) []Viewer {
 	viewers := make([]Viewer, 0, len(m))
 	for _, viewer := range m {
-		viewers = append(viewers, viewer)
+		viewers = append(viewers, viewer.Viewer)
 	}
 	return viewers
 }

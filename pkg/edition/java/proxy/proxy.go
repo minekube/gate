@@ -41,8 +41,6 @@ type Proxy struct {
 	channelRegistrar *ChannelRegistrar
 	authenticator    auth.Authenticator
 
-	bossBarManager *bossBarManager
-
 	startTime atomic.Value
 
 	closeMu       sync.Mutex
@@ -104,8 +102,6 @@ func New(options Options) (p *Proxy, err error) {
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
 	}
-
-	p.bossBarManager = newBossBarManager(p)
 
 	c := options.Config
 	// Connection & login rate limiters
@@ -628,8 +624,6 @@ retry:
 
 // unregisters a connected player
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
-	defer p.bossBarManager.removeViewer(player)
-
 	p.muP.Lock()
 	defer p.muP.Unlock()
 	_, found = p.playerIDs[player.ID()]

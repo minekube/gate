@@ -3,6 +3,7 @@ package bossbar
 import (
 	"go.minekube.com/common/minecraft/component"
 	packet "go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -57,7 +58,7 @@ func New(
 	flags ...Flag,
 ) BossBar {
 	return &bossBar{
-		viewers: make(map[uuid.UUID]Viewer),
+		viewers: make(map[uuid.UUID]*barViewer),
 		BossBar: packet.BossBar{
 			ID:      uuid.New(),
 			Name:    name,
@@ -136,3 +137,19 @@ const (
 	PlayBossMusicFlag  = Flag(packet.PlayBossMusicFlag)
 	CreateWorldFogFlag = Flag(packet.CreateWorldFogFlag)
 )
+
+// Show sends a boss bar show packet to the viewer.
+func Show(bar BossBar, viewer Viewer) error {
+	if p, ok := viewer.(interface{ Protocol() proto.Protocol }); ok {
+		if !p.Protocol().GreaterEqual(version.Minecraft_1_9) {
+			// below 1.9 doesn't support boss bars
+			return nil
+		}
+	}
+	return bar.AddViewer(viewer)
+}
+
+// Hide sends a boss bar hide packet to the viewer.
+func Hide(viewer Viewer, bar BossBar) error {
+	return bar.RemoveViewer(viewer)
+}
