@@ -1,5 +1,7 @@
 package proxy
 
+import "context"
+
 // Plugins is used to register plugins with the proxy.
 // The plugin's init hook is run after the proxy is initialized and
 // before serving any connections.
@@ -26,7 +28,7 @@ var Plugins []Plugin
 //   - Within your main function
 //   - Add your Plugin to the Plugins
 //   - And call cmd/gate.Execute (blocking your main until shutdown).
-//   - Subscribe to proxy.ShutdownEvent for de-initializing your plugin.
+//   - Subscribe to proxy.ShutdownEvent for de-initializing your plugin in a blocking manner.
 //
 // By running cmd/gate.Execute, Gate will do the whole rest.
 //   - load the cfg (parse found file, flags and env vars)
@@ -35,6 +37,13 @@ var Plugins []Plugin
 // Script languages:
 //   - Not yet supported.
 type Plugin struct {
-	Name string                   // The name identifying the plugin.
-	Init func(proxy *Proxy) error // The hook to initialize the plugin.
+	Name string // The name identifying the plugin.
+	// The hook to initialize the plugin.
+	// The proxy is passed to the plugin, so it can register event listeners, commands and so on.
+	// The init function should not block the proxy from starting.
+	//
+	// The context is canceled when the proxy is shutting down.
+	// The plugin can use the proxy's logger available via logr.FromContextOrDiscard(ctx) or logr.FromContext(ctx)
+	// and should name it after the plugin's name with logger.WithName.
+	Init func(ctx context.Context, proxy *Proxy) error
 }

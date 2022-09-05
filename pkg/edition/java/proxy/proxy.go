@@ -146,7 +146,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.closeListener = stopListener
 	p.closeMu.Unlock()
 
-	if err := p.preInit(); err != nil {
+	if err := p.preInit(ctx); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 	defer p.Shutdown(p.shutdownReason) // disconnects players
@@ -206,7 +206,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 }
 
 // called before starting to actually run the proxy
-func (p *Proxy) preInit() (err error) {
+func (p *Proxy) preInit(ctx context.Context) (err error) {
 	// Load shutdown reason
 	if err = p.loadShutdownReason(); err != nil {
 		return fmt.Errorf("error loading shutdown reason: %w", err)
@@ -243,7 +243,7 @@ func (p *Proxy) preInit() (err error) {
 	}
 
 	// Init "plugins" with the proxy
-	return p.initPlugins()
+	return p.initPlugins(ctx)
 }
 
 // loads shutdown kick reason on proxy shutdown from the cfg
@@ -301,9 +301,9 @@ func (p *Proxy) loadFavicon() (err error) {
 	return nil
 }
 
-func (p *Proxy) initPlugins() error {
+func (p *Proxy) initPlugins(ctx context.Context) error {
 	for _, pl := range Plugins {
-		if err := pl.Init(p); err != nil {
+		if err := pl.Init(ctx, p); err != nil {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
 	}
