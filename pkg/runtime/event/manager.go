@@ -64,6 +64,8 @@ type Type reflect.Type
 
 // New returns a new event Manager optionally
 // using a logger to log handler panics.
+//
+// Pass logr.Discard() to disable logging.
 func New(log logr.Logger) Manager {
 	return &manager{log: log, subscribers: map[Type][]*subscriber{}}
 }
