@@ -80,10 +80,7 @@ func (a *listener) AcceptEndpoint(ctx context.Context, endpoint connectutil.Endp
 	svr.disconnect = func(err error) {
 		once.Do(func() {
 			_ = a.ServerRegistry.Unregister(svr)
-			select {
-			case disconnect <- err:
-			case <-ctx.Done():
-			}
+			disconnect <- err
 		})
 	}
 
