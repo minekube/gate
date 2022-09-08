@@ -3,6 +3,7 @@ package uuid
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	guuid "github.com/google/uuid"
@@ -26,6 +27,14 @@ func (i UUID) Undashed() string {
 
 func (i UUID) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Quote(i.String())), nil
+}
+func (i *UUID) UnmarshalJSON(b []byte) (err error) {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return fmt.Errorf("expected quoted uuid, but got %s: %w", b, err)
+	}
+	*i, err = Parse(s)
+	return
 }
 
 // Parse decodes s into a UUID or returns an error.  Both the standard UUID

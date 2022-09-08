@@ -344,8 +344,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.minekube.com/brigodier v0.0.1 h1:v5x+fZNefM24JIi+fYQjQcjZ8rwJbfRSpnnpw4b/x6k=
 go.minekube.com/brigodier v0.0.1/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
-go.minekube.com/common v0.0.2 h1:b8Jliq8f/48oC7fYdMQi9rx3K5sU4gNIPnBKqQs6NBA=
-go.minekube.com/common v0.0.2/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
+go.minekube.com/common v0.0.3 h1:lAq1zQeKWYVwI3VgNn/sv8J3u9gGOJsRYDRqBng1W5o=
+go.minekube.com/common v0.0.3/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.minekube.com/connect v0.4.3 h1:gpUHxUiqfLJlNrnhuXC0spbu4xZ6D+92rCtZOgUfbd0=
 go.minekube.com/connect v0.4.3/go.mod h1:UoJPzARtItNMD2IMGGRxKEwo3sibouOZwOh8pN3aBQ4=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
