@@ -3,8 +3,10 @@ package ping
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+
 	"go.minekube.com/common/minecraft/component"
-	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -20,7 +22,7 @@ type ServerPing struct {
 
 func (p *ServerPing) MarshalJSON() ([]byte, error) {
 	b := new(bytes.Buffer)
-	err := util2.JsonCodec(p.Version.Protocol).Marshal(b, p.Description)
+	err := util.JsonCodec(p.Version.Protocol).Marshal(b, p.Description)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +35,32 @@ func (p *ServerPing) MarshalJSON() ([]byte, error) {
 		Description: b.Bytes(),
 		Alias:       (*Alias)(p),
 	})
+}
+func (p *ServerPing) UnmarshalJSON(data []byte) error {
+	type Alias ServerPing
+	out := &struct {
+		Alias
+		Description json.RawMessage `json:"description"` // override description type
+	}{}
+	if err := json.Unmarshal(data, out); err != nil {
+		return fmt.Errorf("error decoding json: %w", err)
+	}
+
+	if string(out.Description) != "{}" {
+		description, err := util.JsonCodec(out.Version.Protocol).Unmarshal(out.Description)
+		if err != nil {
+			return fmt.Errorf("error decoding description: %w", err)
+		}
+
+		var ok bool
+		out.Alias.Description, ok = description.(*component.Text)
+		if !ok {
+			return fmt.Errorf("unmmarshalled description is not a TextComponent, but %T", description)
+		}
+	}
+
+	*p = ServerPing(out.Alias)
+	return nil
 }
 
 type Version struct {

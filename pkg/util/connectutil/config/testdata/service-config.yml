@@ -18,5 +18,5 @@ connect:
   service:
     enabled: true
     addr: localhost:8080
-    publicTunnelServiceAddr: wss://connect.minekube.net/tunnel
+    publicTunnelServiceAddr: ws://localhost:8080/tunnel
     overrideRegistration: true

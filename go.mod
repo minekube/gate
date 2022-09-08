@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.14.0
 	go.minekube.com/brigodier v0.0.1
-	go.minekube.com/common v0.0.2
+	go.minekube.com/common v0.0.3
 	go.minekube.com/connect v0.4.3
 	go.uber.org/atomic v1.10.0
 	go.uber.org/multierr v1.8.0
