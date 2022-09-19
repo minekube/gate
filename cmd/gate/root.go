@@ -32,7 +32,7 @@ func App() *cli.App {
 	app.Description = `A high performant & paralleled Minecraft proxy server with
 	scalability, flexibility & excelled server version support.
 
-Visit the website https://minekube.com/gate`
+Visit the website https://developers.minekube.com/gate`
 
 	var (
 		debug      bool
