@@ -100,6 +100,9 @@ func (t *tabListEntry) SetDisplayName(name component.Component) error {
 
 func (t *tabListEntry) setDisplayNameNoUpdate(name component.Component) {
 	t.mu.Lock()
+	if name == nil {
+		name = &component.Text{Content: t.profile.Name}
+	}
 	t.displayName = name
 	t.mu.Unlock()
 }
