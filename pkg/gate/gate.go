@@ -4,12 +4,10 @@ package gate
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/viper"
+	"go.minekube.com/gate/pkg/util/interrupt"
 	"go.uber.org/multierr"
 
 	"go.minekube.com/gate/pkg/bridge"
@@ -139,7 +137,8 @@ var Viper = viper.New()
 type StartOption func(o *startOptions)
 
 type startOptions struct {
-	Config *config.Config
+	conf                 *config.Config
+	autoShutdownOnSignal bool
 }
 
 // LoadConfig loads in config.Config from viper.
@@ -157,7 +156,18 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 // WithConfig StartOption for Start.
 func WithConfig(c config.Config) StartOption {
 	return func(o *startOptions) {
-		o.Config = &c
+		o.conf = &c
+	}
+}
+
+// WithAutoShutdownOnSignal StartOption for Start
+// that automatically shuts down the Gate instance
+// when a shutdown signal is received.
+//
+// This setting is enabled by default.
+func WithAutoShutdownOnSignal(enabled bool) StartOption {
+	return func(o *startOptions) {
+		o.autoShutdownOnSignal = enabled
 	}
 }
 
@@ -169,23 +179,25 @@ func WithConfig(c config.Config) StartOption {
 // The Gate is shutdown on stop channel close or on occurrence of any
 // significant error. Config validation warnings are logged but ignored.
 func Start(ctx context.Context, opts ...StartOption) error {
-	c := &startOptions{}
+	c := &startOptions{
+		autoShutdownOnSignal: true,
+	}
 	for _, opt := range opts {
 		opt(c)
 	}
-	if c.Config == nil {
+	if c.conf == nil {
 		cfg, err := LoadConfig(Viper)
 		if err != nil {
 			return err
 		}
-		c.Config = cfg
+		c.conf = cfg
 	}
 
 	log := logr.FromContextOrDiscard(ctx)
 	configLog := log.WithName("config")
 
 	// Validate Gate config
-	warns, errs := c.Config.Validate()
+	warns, errs := c.conf.Validate()
 	for _, e := range errs {
 		configLog.Info("config validation error", "error", e.Error())
 	}
@@ -201,7 +213,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 
 	// Setup new Gate instance with loaded config.
 	gate, err := New(Options{
-		Config:   c.Config,
+		Config:   c.conf,
 		EventMgr: event.New(log.WithName("event")),
 	})
 	if err != nil {
@@ -209,24 +221,18 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	}
 
 	// Setup os signal channel to trigger Gate shutdown.
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer func() { signal.Stop(sig); close(sig) }()
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go func() {
-		defer cancel()
-		select {
-		case <-ctx.Done():
-		case s, ok := <-sig:
-			if !ok {
-				// Sig chan was closed
-				return
+	if c.autoShutdownOnSignal {
+		go func() {
+			defer cancel()
+			select {
+			case <-ctx.Done():
+			case s := <-interrupt.Notify():
+				log.Info("Received os signal", "signal", s)
 			}
-			log.Info("Received os signal", "signal", s)
-		}
-	}()
+		}()
+	}
 
 	// Start everything
 	return gate.Start(ctx)
