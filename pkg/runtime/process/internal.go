@@ -69,7 +69,7 @@ func (pm *collection) Start(ctx context.Context) (err error) {
 			err = nil
 		}
 		internalStop()
-		stopErr := pm.engageStopProcedure(stopComplete, logr.FromContextOrDiscard(ctx))
+		stopErr := pm.engageStopProcedure(stopComplete, logr.FromContextOrDiscard(pm.ctx))
 		if stopErr != nil && stopErr != errStopAll {
 			// multierr allows using errors.Is for all contained errors
 			// whereas fmt.Errorf allows wrapping at most one error which means the
@@ -84,7 +84,7 @@ func (pm *collection) Start(ctx context.Context) (err error) {
 	// and will not be able to enter the deferred pm.engageStopProcedure() which drains it.
 	pm.errChan = make(chan error)
 
-	go pm.startRunnables(ctx)
+	go pm.startRunnables(pm.ctx)
 
 	select {
 	case <-ctx.Done():
