@@ -47,9 +47,6 @@ type BossBar interface {
 
 // New creates a new boss bar.
 // It is safe for concurrent use.
-//
-// Don't forget to register/unregister the boss bar with the
-// proxy boss bar manager if necessary.
 func New(
 	name component.Component,
 	percent float32,
