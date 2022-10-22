@@ -122,3 +122,10 @@ connect:
   # enable it and get empowered by the additional network services
   # and by the growing community in this ecosystem.
   enabled: false
+  # The endpoint name is a globally unique identifier of your server.
+  # If Connect is enabled, but no name is specified a random name is
+  # generated on every restart (only recommended for testing).
+  #
+  # It is supported to run multiple Gates on the same endpoint name for load balancing
+  # (use the same connect.json token file from first Gate instance).
+  #name: your-endpoint-name

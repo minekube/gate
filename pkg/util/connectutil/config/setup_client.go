@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -29,14 +30,16 @@ import (
 //
 // Watch reconnects on disconnect.
 func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) {
-	if c.Name == "" {
-		return nil, errors.New("missing name for our endpoint")
-	}
 	if c.WatchServiceAddr == "" {
 		return nil, errors.New("missing watch service address for listening to session proposals")
 	}
+	c.Name = strings.TrimSpace(c.Name)
 
 	return process.RunnableFunc(func(ctx context.Context) error {
+		if c.Name == "" {
+			c.Name = randomEndpointName(ctx)
+		}
+
 		ph := proposalHandler{
 			localAddr:          nil,
 			connHandler:        connHandler.HandleConn,
@@ -50,26 +53,28 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 			if err != nil {
 				return err
 			}
-			// Set auth metadata
-			ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", fmt.Sprintf("Bearer %s", token))
+			dialCtx := metadata.AppendToOutgoingContext(ctx,
+				"Authorization", "Bearer "+token,
+				connect.MDEndpoint, c.Name,
+			)
 
 			log := logr.FromContextOrDiscard(ctx)
+
 			const timeout = time.Minute
-			log.Info("Connecting to watch service...", "addr", c.WatchServiceAddr, "timeout", timeout.String())
+			log.Info("connecting to watch service...",
+				"endpoint", c.Name,
+				"addr", c.WatchServiceAddr,
+				"timeout", timeout.String())
 			t := time.Now()
 
-			ctx = metadata.AppendToOutgoingContext(ctx, connect.MDEndpoint, c.Name)
-
-			dialCtx, cancel := context.WithTimeout(ctx, timeout)
+			dialCtx, cancel := context.WithTimeout(dialCtx, timeout)
 			defer cancel()
+
 			err = ws.ClientOptions{
 				URL:         c.WatchServiceAddr,
 				DialContext: dialCtx,
-				DialOptions: websocket.DialOptions{
-					HTTPHeader: nil,
-				},
 				Handshake: func(ctx context.Context, res *http.Response) (context.Context, error) {
-					log.Info("Connected", "took", time.Since(t).String())
+					log.Info("connected", "took", time.Since(t).Round(time.Millisecond).String())
 					return ctx, nil
 				},
 			}.Watch(ctx, func(proposal connect.SessionProposal) error {
@@ -81,7 +86,7 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 				if err == nil {
 					// TODO Backoff reconnect without logging an error after 5 times
 					err = errors.New("disconnected by watch service")
-					log.Info("Session watcher disconnected by server, reconnecting", "after", time.Since(t))
+					log.Info("session watcher disconnected by server, reconnecting", "after", time.Since(t))
 				}
 			}
 			return err
@@ -139,7 +144,7 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 	}
 
 	log := logr.FromContextOrDiscard(ctx)
-	log.Info("Creating tunnel", "tunnelServiceAddr", tunnelSvcAddr)
+	log.Info("creating tunnel", "tunnelServiceAddr", tunnelSvcAddr)
 
 	// Create tunnel connection
 	ctx = metadata.AppendToOutgoingContext(ctx, connect.MDSession, proposal.Session().GetId())
@@ -156,7 +161,7 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		DialContext: dialCtx,
 		DialOptions: websocket.DialOptions{},
 		Handshake: func(ctx context.Context, res *http.Response) (context.Context, error) {
-			log.Info("Tunnel connected")
+			log.Info("tunnel connected")
 			return ctx, nil
 		},
 	}.Tunnel(ctx)
@@ -169,7 +174,7 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp}
 	}
 
-	log.Info("Established tunnel for session")
+	log.Info("established tunnel for session")
 	t.connHandler(conn)
 	return nil
 }
