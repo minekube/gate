@@ -466,7 +466,7 @@ func Assert[T any](c any) (T, bool) {
 		var t T
 		return t, false
 	}
-	i, ok = underlying.(T)
+	i, ok = underlying.Conn().(T)
 	return i, ok
 }
 

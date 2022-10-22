@@ -7,7 +7,7 @@ import (
 	"github.com/rs/xid"
 )
 
-const DefaultWatchServiceAddr = "wss://watch.connect.api.minekube.com"
+const DefaultWatchServiceAddr = "wss://watch-connect.minekube.net"
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
