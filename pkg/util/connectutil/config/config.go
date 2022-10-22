@@ -3,8 +3,6 @@ package config
 import (
 	"math/rand"
 	"time"
-
-	"github.com/rs/xid"
 )
 
 const DefaultWatchServiceAddr = "wss://watch-connect.minekube.net"
@@ -13,7 +11,7 @@ const DefaultWatchServiceAddr = "wss://watch-connect.minekube.net"
 var DefaultConfig = Config{
 	Enabled:                false,
 	WatchServiceAddr:       DefaultWatchServiceAddr,
-	Name:                   xid.New().String(),
+	Name:                   "",
 	EnforcePassthrough:     false,
 	AllowUnencryptedTunnel: false,
 	Service: Service{
@@ -26,9 +24,9 @@ var DefaultConfig = Config{
 
 // Config is the config for Connect.
 type Config struct {
-	Enabled                bool // Whether to connect Gate to the WatchService
-	Name                   string
-	EnforcePassthrough     bool // Setting to true will reject all sessions in non-passthrough mode.
+	Enabled                bool   // Whether to connect Gate to the WatchService
+	Name                   string // Endpoint name
+	EnforcePassthrough     bool   // Setting to true will reject all sessions in non-passthrough mode.
 	WatchServiceAddr       string
 	AllowUnencryptedTunnel bool
 

@@ -30,15 +30,16 @@ import (
 //
 // Watch reconnects on disconnect.
 func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) {
-	c.Name = strings.TrimSpace(c.Name)
-	if c.Name == "" {
-		return nil, errors.New("missing name for your endpoint")
-	}
 	if c.WatchServiceAddr == "" {
 		return nil, errors.New("missing watch service address for listening to session proposals")
 	}
+	c.Name = strings.TrimSpace(c.Name)
 
 	return process.RunnableFunc(func(ctx context.Context) error {
+		if c.Name == "" {
+			c.Name = randomEndpointName(ctx)
+		}
+
 		ph := proposalHandler{
 			localAddr:          nil,
 			connHandler:        connHandler.HandleConn,
@@ -73,7 +74,7 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 				URL:         c.WatchServiceAddr,
 				DialContext: dialCtx,
 				Handshake: func(ctx context.Context, res *http.Response) (context.Context, error) {
-					log.Info("Connected", "took", time.Since(t).String())
+					log.Info("connected", "took", time.Since(t).Round(time.Millisecond).String())
 					return ctx, nil
 				},
 			}.Watch(ctx, func(proposal connect.SessionProposal) error {
