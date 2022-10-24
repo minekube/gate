@@ -54,7 +54,6 @@ var DefaultConfig = Config{
 	},
 	ProxyProtocol: ProxyProtocol{
 		Receive: false,
-		Backend: false,
 	},
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
@@ -139,7 +138,6 @@ type (
 	}
 	ProxyProtocol struct {
 		Receive bool // Enable HA-Proxy protocol mode
-		Backend bool // Use HA-Proxy protocol for backend server connections
 	}
 )
 

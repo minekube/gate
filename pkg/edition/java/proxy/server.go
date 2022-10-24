@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -314,32 +313,10 @@ func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 				return nil, err
 			}
 
-			if s.config().ProxyProtocol.Backend {
-				_, err = backendProxyHeader(s.player.RemoteAddr(), dstAddr).WriteTo(conn)
-				if err != nil {
-					return nil, fmt.Errorf("error writing proxy protocol header to server: %w", err)
-				}
-			}
-
 			return conn, nil
 		}
 	}
 	return sd.Dial(ctx, s.player)
-}
-
-func backendProxyHeader(src, dst net.Addr) *proxyproto.Header {
-	if _, ok := dst.(*net.TCPAddr); !ok {
-		dst = &net.TCPAddr{
-			IP: net.IPv4(23, 32, 32, 32),
-		}
-	}
-	return &proxyproto.Header{
-		Version:           1,
-		Command:           proxyproto.PROXY,
-		TransportProtocol: proxyproto.TCPv4,
-		SourceAddr:        src,
-		DestinationAddr:   dst,
-	}
 }
 
 // HandshakeAddresser provides the ServerAddress sent with the packet.Handshake when a player joins the server

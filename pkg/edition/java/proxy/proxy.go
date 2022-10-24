@@ -157,9 +157,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 	if p.cfg.ProxyProtocol.Receive {
 		p.log.Info("proxy protocol enabled")
 	}
-	if p.cfg.ProxyProtocol.Backend {
-		p.log.Info("proxy protocol enabled for backend server connections")
-	}
 
 	defer p.Shutdown(p.shutdownReason) // disconnects players
 	return p.listenAndServe(p.cfg.Bind, stopListener)
