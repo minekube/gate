@@ -52,7 +52,10 @@ var DefaultConfig = Config{
 		Threshold: 256,
 		Level:     -1,
 	},
-	HAProxyProtocol:                     false,
+	ProxyProtocol: ProxyProtocol{
+		Receive: false,
+		Backend: false,
+	},
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
@@ -85,9 +88,10 @@ type Config struct {
 	ConnectionTimeout int // Write timeout
 	ReadTimeout       int
 
-	Quota                               Quota
-	Compression                         Compression
-	HAProxyProtocol                     bool // Enable HA-Proxy protocol mode
+	Quota         Quota
+	Compression   Compression
+	ProxyProtocol ProxyProtocol
+
 	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
 
 	BungeePluginChannelEnabled       bool
@@ -133,6 +137,10 @@ type (
 		Burst      int     // The maximum events per second, per block; the size of the token bucket
 		MaxEntries int     // Maximum number of IP blocks to keep track of in cache
 	}
+	ProxyProtocol struct {
+		Receive bool // Enable HA-Proxy protocol mode
+		Backend bool // Use HA-Proxy protocol for backend server connections
+	}
 )
 
 // ForwardingMode is a player info forwarding mode.
@@ -154,9 +162,6 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	if c == nil {
 		e("config must not be nil")
 		return
-	}
-	if c.HAProxyProtocol {
-		e("Proxy protocol is not supported yet, disable it")
 	}
 
 	if len(c.Bind) == 0 {

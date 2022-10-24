@@ -84,6 +84,12 @@ editions:
         mode: legacy
         # The secret used if the mode is velocity.
         #velocitySecret: secret_here
+      # Proxy protocol (HA-Proxy) settings.
+      proxyProtocol:
+        # Determines whether Gate should accept proxy protocol for players.
+        receive: true
+        # Determines whether Gate should use proxy protocol for backend server connections.
+        backend: false
       # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
       # ops: The allowed operations per second.
       # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.

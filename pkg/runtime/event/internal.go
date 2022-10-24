@@ -94,7 +94,7 @@ func (m *manager) FireParallel(event Event, after ...HandlerFunc) {
 		defer func() {
 			if r := recover(); r != nil {
 				m.log.Error(nil,
-					"Recovered from panic by an 'after fire' func",
+					"recovered from panic by an 'after fire' func",
 					"panic", r,
 					"eventType", TypeOf(event),
 					"index", i)
