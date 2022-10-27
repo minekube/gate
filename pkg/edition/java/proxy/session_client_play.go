@@ -178,14 +178,16 @@ func phaseHandle(
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	serverConn := c.player.connectedServer()
-	if serverConn != nil && p.RandomID == serverConn.lastPingID.Load() {
+	if serverConn != nil {
+		sentTime, ok := serverConn.pendingPings.Get(p.RandomID)
+		if !ok {
+			return
+		}
+		serverConn.pendingPings.Delete(p.RandomID)
 		serverMc := serverConn.conn()
 		if serverMc != nil {
-			lastPingSent := time.Unix(0, serverConn.lastPingSent.Load()*int64(time.Millisecond))
-			c.player.ping.Store(time.Since(lastPingSent))
-			if serverMc.WritePacket(p) == nil {
-				serverConn.lastPingSent.Store(int64(time.Duration(time.Now().Nanosecond()) / time.Millisecond))
-			}
+			c.player.ping.Store(time.Since(sentTime))
+			_ = serverMc.WritePacket(p)
 		}
 	}
 }

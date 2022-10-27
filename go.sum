@@ -69,6 +69,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dboslee/lru v0.0.1 h1:PMT+59nkGSkf9Tcb4YMw5B08ilpGgNSmRjEyNK2JVoE=
+github.com/dboslee/lru v0.0.1/go.mod h1:vDIFJHUqr1vdYKAdG9x3r+zFWP0i9uJqQWpB6nSuHxM=
 github.com/df-mc/atomic v1.10.0 h1:0ZuxBKwR/hxcFGorKiHIp+hY7hgY+XBTzhCYD2NqSEg=
 github.com/df-mc/atomic v1.10.0/go.mod h1:Gw9rf+rPIbydMjA329Jn4yjd/O2c/qusw3iNp4tFGSc=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=

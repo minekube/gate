@@ -6,6 +6,7 @@ import (
 	"errors"
 	"reflect"
 	"regexp"
+	"time"
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
@@ -112,7 +113,7 @@ func (b *backendPlaySessionHandler) Disconnected() {
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *proto.PacketContext) {
-	b.serverConn.lastPingID.Store(p.RandomID)
+	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
 	b.forwardToPlayer(pc, nil) // forward on
 }
 
