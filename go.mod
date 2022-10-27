@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.2.7
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/pires/go-proxyproto v0.6.2
 	github.com/rs/xid v1.4.0
 	github.com/sandertv/go-raknet v1.11.1
 	github.com/sandertv/gophertunnel v1.24.6
@@ -49,7 +50,6 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
-	github.com/pires/go-proxyproto v0.6.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect

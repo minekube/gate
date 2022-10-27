@@ -154,7 +154,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	if p.cfg.Debug {
 		p.log.Info("running in debug mode")
 	}
-	if p.cfg.ProxyProtocol.Receive {
+	if p.cfg.ProxyProtocol {
 		p.log.Info("proxy protocol enabled")
 	}
 
@@ -482,7 +482,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
 
-		if p.cfg.ProxyProtocol.Receive {
+		if p.cfg.ProxyProtocol {
 			conn = proxyproto.NewConn(conn)
 		}
 

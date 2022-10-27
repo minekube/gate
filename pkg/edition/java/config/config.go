@@ -52,9 +52,7 @@ var DefaultConfig = Config{
 		Threshold: 256,
 		Level:     -1,
 	},
-	ProxyProtocol: ProxyProtocol{
-		Receive: false,
-	},
+	ProxyProtocol:                       false,
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
@@ -89,7 +87,7 @@ type Config struct {
 
 	Quota         Quota
 	Compression   Compression
-	ProxyProtocol ProxyProtocol
+	ProxyProtocol bool // Enable HA-Proxy protocol mode
 
 	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
 
@@ -135,9 +133,6 @@ type (
 		OPS        float32 // Allowed operations/events per second, per IP block
 		Burst      int     // The maximum events per second, per block; the size of the token bucket
 		MaxEntries int     // Maximum number of IP blocks to keep track of in cache
-	}
-	ProxyProtocol struct {
-		Receive bool // Enable HA-Proxy protocol mode
 	}
 )
 
