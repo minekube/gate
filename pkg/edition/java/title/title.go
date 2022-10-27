@@ -16,8 +16,8 @@ type Viewer interface {
 	netmc.PacketWriter
 }
 
-// ResetTitle resets the title of the viewer.
-func ResetTitle(viewer Viewer) error {
+// ClearTitle clears the title of the viewer.
+func ClearTitle(viewer Viewer) error {
 	return ShowTitle(viewer, nil)
 }
 
@@ -26,7 +26,19 @@ type Options struct {
 	Title                 component.Component
 	Subtitle              component.Component
 	FadeIn, Stay, FadeOut time.Duration
+	// The parts of a title to update exclusively.
+	// If empty, all parts are being updated.
+	Parts []Part
 }
+
+// Part is a part of a title.
+type Part byte
+
+const (
+	TitlePart    Part = iota + 1 // Update title
+	SubtitlePart                 // Update subtitle
+	TimesPart                    // Update title times
+)
 
 // ShowTitle shows a title to the viewer.
 func ShowTitle(viewer Viewer, opts *Options) error {
@@ -43,58 +55,78 @@ func ShowTitle(viewer Viewer, opts *Options) error {
 		return viewer.WritePacket(reset)
 	}
 
-	fadeIn := opts.FadeIn
-	stay := opts.Stay
-	fadeOut := opts.FadeOut
-	if fadeIn == 0 && stay == 0 && fadeOut == 0 {
-		// Set defaults
-		fadeIn = time.Second / 2
-		stay = time.Second * 3
-		fadeOut = time.Second / 2
+	hasPart := func(p Part) bool {
+		if len(opts.Parts) == 0 {
+			return true // empty means all parts
+		}
+		for _, part := range opts.Parts {
+			if part == p {
+				return true
+			}
+		}
+		return false
 	}
 
-	timesPkt, err := title.New(protocol, &title.Builder{
-		Action: title.SetTimes,
-		// 50 = 1000ms / 20 ticks per second
-		FadeIn:  int(fadeIn.Milliseconds() / 50),
-		Stay:    int(stay.Milliseconds() / 50),
-		FadeOut: int(fadeOut.Milliseconds() / 50),
-	})
-	if err != nil {
-		return err
+	if hasPart(TimesPart) {
+		fadeIn := opts.FadeIn
+		stay := opts.Stay
+		fadeOut := opts.FadeOut
+		if fadeIn == 0 && stay == 0 && fadeOut == 0 {
+			// Set defaults
+			fadeIn = time.Second / 2
+			stay = time.Second * 3
+			fadeOut = time.Second / 2
+		}
+		timesPkt, err := title.New(protocol, &title.Builder{
+			Action: title.SetTimes,
+			// 50 = 1000ms / 20 ticks per second
+			FadeIn:  int(fadeIn.Milliseconds() / 50),
+			Stay:    int(stay.Milliseconds() / 50),
+			FadeOut: int(fadeOut.Milliseconds() / 50),
+		})
+		if err != nil {
+			return err
+		}
+		if err = viewer.BufferPacket(timesPkt); err != nil {
+			return err
+		}
 	}
 
-	subtitle := opts.Subtitle
-	if subtitle == nil {
-		subtitle = empty
-	}
-	subtitlePkt, err := title.New(protocol, &title.Builder{
-		Action:    title.SetSubtitle,
-		Component: subtitle,
-	})
-	if err != nil {
-		return err
-	}
-
-	ti := opts.Title
-	if ti == nil {
-		ti = empty
-	}
-	titlePkt, err := title.New(protocol, &title.Builder{
-		Action:    title.SetTitle,
-		Component: ti,
-	})
-	if err != nil {
-		return err
+	if hasPart(SubtitlePart) {
+		subtitle := opts.Subtitle
+		if subtitle == nil {
+			subtitle = empty
+		}
+		subtitlePkt, err := title.New(protocol, &title.Builder{
+			Action:    title.SetSubtitle,
+			Component: subtitle,
+		})
+		if err != nil {
+			return err
+		}
+		if err = viewer.BufferPacket(subtitlePkt); err != nil {
+			return err
+		}
 	}
 
-	if err = viewer.BufferPacket(timesPkt); err != nil {
-		return err
+	if hasPart(TitlePart) {
+		ti := opts.Title
+		if ti == nil {
+			ti = empty
+		}
+		titlePkt, err := title.New(protocol, &title.Builder{
+			Action:    title.SetTitle,
+			Component: ti,
+		})
+		if err != nil {
+			return err
+		}
+		if err = viewer.BufferPacket(titlePkt); err != nil {
+			return err
+		}
 	}
-	if err = viewer.BufferPacket(subtitlePkt); err != nil {
-		return err
-	}
-	return viewer.WritePacket(titlePkt)
+
+	return viewer.Flush()
 }
 
 var empty = &component.Text{}
