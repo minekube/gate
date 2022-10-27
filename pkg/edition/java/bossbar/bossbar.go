@@ -74,7 +74,7 @@ func RemoveAllViewers(b BossBar) {
 	}
 }
 
-// Viewer is the interface for a boss bar viewer (likely a player).
+// Viewer is the interface for a boss bar viewer (e.g. a player).
 type Viewer interface {
 	ID() uuid.UUID
 	proto.PacketWriter

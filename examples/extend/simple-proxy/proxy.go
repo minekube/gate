@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/edition/java/title"
 	"go.minekube.com/gate/pkg/runtime/event"
 )
 
@@ -21,7 +22,7 @@ func main() {
 	// Add our "plug-in" to be initialized on Gate start.
 	proxy.Plugins = append(proxy.Plugins, proxy.Plugin{
 		Name: "SimpleProxy",
-		Init: func(proxy *proxy.Proxy) error {
+		Init: func(ctx context.Context, proxy *proxy.Proxy) error {
 			return newSimpleProxy(proxy).init()
 		},
 	})
@@ -39,13 +40,13 @@ func main() {
 //   - Show boss bars to players
 type SimpleProxy struct {
 	*proxy.Proxy
-	legacyCodec *legacy.Legacy
 }
+
+var legacyCodec = &legacy.Legacy{Char: legacy.AmpersandChar}
 
 func newSimpleProxy(proxy *proxy.Proxy) *SimpleProxy {
 	return &SimpleProxy{
-		Proxy:       proxy,
-		legacyCodec: &legacy.Legacy{Char: legacy.AmpersandChar},
+		Proxy: proxy,
 	}
 }
 
@@ -76,7 +77,7 @@ func (p *SimpleProxy) registerCommands() {
 			// Executed when running "/broadcast <message>"
 			Executes(command.Command(func(c *command.Context) error {
 				// Colorize/format message
-				message, err := p.legacyCodec.Unmarshal([]byte(c.String("message")))
+				message, err := legacyCodec.Unmarshal([]byte(c.String("message")))
 				if err != nil {
 					return c.Source.SendMessage(&Text{
 						Content: fmt.Sprintf("Error formatting message: %v", err)})
@@ -91,6 +92,52 @@ func (p *SimpleProxy) registerCommands() {
 				return nil
 			})),
 	))
+	p.Command().Register(brigodier.Literal("ping").
+		Executes(command.Command(func(c *command.Context) error {
+			player, ok := c.Source.(proxy.Player)
+			if !ok {
+				return c.Source.SendMessage(&Text{Content: "Pong!"})
+			}
+			return player.SendMessage(&Text{
+				Content: fmt.Sprintf("Pong! Your ping is %s", player.Ping()),
+				S:       Style{Color: color.Green},
+			})
+		})),
+	)
+	p.Command().Register(titleCommand())
+}
+
+func titleCommand() brigodier.LiteralNodeBuilder {
+	showTitle := command.Command(func(c *command.Context) error {
+		player, ok := c.Source.(proxy.Player)
+		if !ok {
+			return c.Source.SendMessage(&Text{Content: "You must be a player to run this command."})
+		}
+
+		ti, err := legacyCodec.Unmarshal([]byte(c.String("title")))
+		if err != nil {
+			return player.SendMessage(&Text{
+				Content: fmt.Sprintf("Error parsing title: %v", err),
+			})
+		}
+
+		// empty if arg not provided
+		subtitle, err := legacyCodec.Unmarshal([]byte(c.String("subtitle")))
+		if err != nil {
+			return player.SendMessage(&Text{
+				Content: fmt.Sprintf("Error parsing title: %v", err),
+			})
+		}
+
+		return title.ShowTitle(player, &title.Options{
+			Title:    ti,
+			Subtitle: subtitle,
+		})
+	})
+
+	return brigodier.Literal("title").
+		Then(brigodier.Argument("title", brigodier.String).Executes(showTitle).
+			Then(brigodier.Argument("subtitle", brigodier.StringPhrase).Executes(showTitle)))
 }
 
 // Register event subscribers
@@ -133,6 +180,18 @@ func (p *SimpleProxy) onServerSwitch(e *proxy.ServerPostConnectEvent) {
 					Content: "/broadcast Gate is awesome!",
 					S:       Style{Color: color.White, Bold: True, Italic: True},
 				}},
+			},
+			&Text{
+				Content: "\n\nClick me to run sample /title command!",
+				S: Style{
+					HoverEvent: ShowText(&Text{Content: "/title <title> [subtitle]"}),
+					ClickEvent: SuggestCommand(`/title "&eGate greets" &2&o` + e.Player().Username()),
+				},
+			},
+			&Text{Content: "\n\nMore sample commands you can try: "},
+			&Text{
+				Content: "/ping",
+				S:       Style{Color: color.Yellow},
 			},
 		},
 	})
