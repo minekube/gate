@@ -306,8 +306,14 @@ func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 	)
 	if sd, ok = s.Server().ServerInfo().(ServerDialer); !ok {
 		if sd, ok = s.Server().(ServerDialer); !ok {
+			dstAddr := s.Server().ServerInfo().Addr()
 			var d net.Dialer
-			return d.DialContext(ctx, "tcp", s.Server().ServerInfo().Addr().String())
+			conn, err := d.DialContext(ctx, "tcp", dstAddr.String())
+			if err != nil {
+				return nil, err
+			}
+
+			return conn, nil
 		}
 	}
 	return sd.Dial(ctx, s.player)
