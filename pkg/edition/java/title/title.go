@@ -9,6 +9,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 // Viewer is the interface for a title viewer (e.g. a player).
@@ -18,7 +19,28 @@ type Viewer interface {
 
 // ClearTitle clears the title of the viewer.
 func ClearTitle(viewer Viewer) error {
-	return ShowTitle(viewer, nil)
+	protocol, ok := isProtocolSupported(viewer)
+	if !ok {
+		return nil
+	}
+	reset, err := title.New(protocol, &title.Builder{Action: title.Reset})
+	if err != nil {
+		return err
+	}
+	return viewer.WritePacket(reset)
+}
+
+// HideTitle hides the title from the viewer.
+func HideTitle(viewer Viewer) error {
+	protocol, ok := isProtocolSupported(viewer)
+	if !ok {
+		return nil
+	}
+	reset, err := title.New(protocol, &title.Builder{Action: title.Hide})
+	if err != nil {
+		return err
+	}
+	return viewer.WritePacket(reset)
 }
 
 // Options for showing a title.
@@ -42,17 +64,12 @@ const (
 
 // ShowTitle shows a title to the viewer.
 func ShowTitle(viewer Viewer, opts *Options) error {
-	protocol, _ := protoutil.Protocol(viewer)
-	if !protocol.GreaterEqual(version.Minecraft_1_8) {
+	if opts == nil {
 		return nil
 	}
-
-	if opts == nil {
-		reset, err := title.New(protocol, &title.Builder{Action: title.Reset})
-		if err != nil {
-			return err
-		}
-		return viewer.WritePacket(reset)
+	protocol, ok := isProtocolSupported(viewer)
+	if !ok {
+		return nil
 	}
 
 	hasPart := func(p Part) bool {
@@ -130,3 +147,8 @@ func ShowTitle(viewer Viewer, opts *Options) error {
 }
 
 var empty = &component.Text{}
+
+func isProtocolSupported(viewer Viewer) (proto.Protocol, bool) {
+	protocol, _ := protoutil.Protocol(viewer)
+	return protocol, protocol.GreaterEqual(version.Minecraft_1_8)
+}
