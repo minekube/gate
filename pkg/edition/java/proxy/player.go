@@ -470,7 +470,7 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 	if err != nil {
 		return err
 	}
-	return p.WritePacket(&packet.LegacyChat{ // TODO 1.19 chat
+	return p.WritePacket(&packet.LegacyChat{
 		Message: string(m),
 		Type:    packet.GameInfoMessageType,
 		Sender:  uuid.Nil,

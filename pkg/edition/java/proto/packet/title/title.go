@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
+// Action is the title action.
 type Action int
 
 // Title packets actions.

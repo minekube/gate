@@ -43,7 +43,7 @@ jobs:
       - name: Test
         run: make test
   build:
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'created')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'release' && github.event.action == 'created')
     needs:
       - lint
       - test

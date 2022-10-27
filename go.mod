@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/bxcodec/faker/v3 v3.6.0
+	github.com/dboslee/lru v0.0.1
 	github.com/gammazero/deque v0.2.0
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3

@@ -133,7 +133,7 @@ func (e *Encoder) writeCompressed(payload *bytes.Buffer, pk any) (n int, err err
 	compressed, release := compressPool.getBuf(pk)
 	defer release()
 
-	_, err = util.WriteVarIntN(compressed, uncompressedSize) // data length
+	err = util.WriteVarInt(compressed, uncompressedSize) // data length
 	if err != nil {
 		return 0, err
 	}
@@ -146,7 +146,7 @@ func (e *Encoder) writeCompressed(payload *bytes.Buffer, pk any) (n int, err err
 		return n, err
 	}
 	m, err := compressed.WriteTo(e.wr) // body
-	return int(m) + n, err
+	return n + int(m), err
 }
 
 // Write encodes payload and writes it to the underlying writer.
