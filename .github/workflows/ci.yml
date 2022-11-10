@@ -43,7 +43,7 @@ jobs:
       - name: Test
         run: make test
   build:
-    if: ( github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') )
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs:
       - lint
       - test
