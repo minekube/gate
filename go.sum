@@ -353,8 +353,6 @@ github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.minekube.com/brigodier v0.0.1 h1:v5x+fZNefM24JIi+fYQjQcjZ8rwJbfRSpnnpw4b/x6k=
 go.minekube.com/brigodier v0.0.1/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
-go.minekube.com/common v0.0.4 h1:vwlVsbphzWjPucw2Kv6lBQUGSOu10bZSNX0R/Zm36Gk=
-go.minekube.com/common v0.0.4/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.minekube.com/common v0.0.5 h1:h9EqMI3drSewTroBssy/eQniIP+Itirtj+av2PxyoP4=
 go.minekube.com/common v0.0.5/go.mod h1:PCdSdTInlQv6ggDIbVjLFs7ehSRP4i9KqYsLAeeNUYU=
 go.minekube.com/connect v0.5.1 h1:kg7Nfgp2V16Luape6xBh9pUQPF3qmpwqYrY69ypcp3E=

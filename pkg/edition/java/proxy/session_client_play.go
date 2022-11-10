@@ -76,7 +76,7 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *packet.PlayerCommand:
 		c.handlePlayerCommand(p)
 	case *packet.TabCompleteRequest:
-		c.handleTabCompleteRequest(p)
+		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
 		c.handlePluginMessage(p)
 	case *packet.ClientSettings:
@@ -704,16 +704,16 @@ func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err 
 	return true, nil
 }
 
-func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabCompleteRequest) {
+func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabCompleteRequest, pc *proto.PacketContext) {
 	isCommand := !p.AssumeCommand && strings.HasPrefix(p.Command, "/")
 	if isCommand {
-		c.handleCommandTabComplete(p)
+		c.handleCommandTabComplete(p, pc)
 	} else {
 		c.handleRegularTabComplete(p)
 	}
 }
 
-func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest) {
+func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest, pc *proto.PacketContext) {
 	startPos := strings.LastIndex(p.Command, " ") + 1
 	if !(startPos > 0) {
 		return
@@ -733,6 +733,7 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 			// additional tab completion support.
 			c.outstandingTabComplete = p
 		}
+		c.forwardToServer(pc)
 		return
 	}
 
