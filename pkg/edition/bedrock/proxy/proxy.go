@@ -13,8 +13,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sandertv/go-raknet"
 
+	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
-	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 

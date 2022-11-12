@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/robinbraemer/event"
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/runtime/event"
 )
 
 // ConnectionRequest can send a connection request to another server on the proxy.

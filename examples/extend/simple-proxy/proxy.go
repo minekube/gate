@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/robinbraemer/event"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
@@ -15,7 +16,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/edition/java/title"
-	"go.minekube.com/gate/pkg/runtime/event"
 )
 
 func main() {

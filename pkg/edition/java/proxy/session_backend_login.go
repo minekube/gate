@@ -153,7 +153,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 		b.informationForwarded.Store(true)
 	} else {
 		// Don't understand, fire event if we have subscribers
-		if !b.eventMgr.HasSubscribers(&ServerLoginPluginMessageEvent{}) {
+		if !b.eventMgr.HasSubscriber(&ServerLoginPluginMessageEvent{}) {
 			_ = mc.WritePacket(&packet.LoginPluginResponse{
 				ID:      p.ID,
 				Success: false,

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/robinbraemer/event"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -16,7 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/atomic"
 )

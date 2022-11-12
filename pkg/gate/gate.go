@@ -10,12 +10,12 @@ import (
 	"go.minekube.com/gate/pkg/util/interrupt"
 	"go.uber.org/multierr"
 
+	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
-	"go.minekube.com/gate/pkg/runtime/event"
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errors "go.minekube.com/gate/pkg/util/errs"
@@ -214,7 +214,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	// Setup new Gate instance with loaded config.
 	gate, err := New(Options{
 		Config:   c.conf,
-		EventMgr: event.New(log.WithName("event")),
+		EventMgr: event.New(event.WithLogger(log.WithName("event"))),
 	})
 	if err != nil {
 		return fmt.Errorf("error creating Gate instance: %w", err)
