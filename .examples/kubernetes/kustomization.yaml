@@ -1,0 +1,17 @@
+resources:
+  - deploy.yaml
+  - svc.yaml
+  - servers
+
+configMapGenerator:
+  - name: gate-config
+    files:
+      - config.yml
+
+images:
+  - name: gate
+    newName: ghcr.io/minekube/gate
+    newTag: latest
+
+commonLabels:
+  app.kubernetes.io/name: gate

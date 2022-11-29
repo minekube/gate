@@ -1,0 +1,15 @@
+{
+  "name": "gate-docs",
+  "version": "1.0.0",
+  "author": "Minekube",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "serve": "vitepress serve docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0-alpha.29",
+    "vue": "^3.2.45"
+  },
+  "dependencies": {}
+}

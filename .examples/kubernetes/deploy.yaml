@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gate
+spec:
+  selector: {} # kustomize common labels
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: proxy
+    spec:
+      containers:
+        - name: gate
+          image: gate
+          ports:
+            - containerPort: 25565
+              name: minecraft
+          volumeMounts:
+            - name: config
+              mountPath: /gate/config.yml
+              subPath: config.yml
+      volumes:
+        - name: config
+          configMap:
+            name: gate-config

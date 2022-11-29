@@ -1,0 +1,146 @@
+apiVersion: v1
+data:
+  config.yml: |
+    # This is a simplified config where the rest of the
+    # settings are omitted and will be set by default.
+    # See config.yml for the full configuration options.
+    #
+    # The Minecraft editions Gate supports.
+    editions:
+      # Java Minecraft edition is the first popular edition for desktops.
+      java:
+        enabled: true
+        config:
+          bind: 0.0.0.0:25565
+          servers:
+            server-0: server-0.servers:25565
+            server-1: server-1.servers:25565
+          try:
+            - server-0
+            - server-1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: gate
+  name: gate-config-t5m52f4d44
+---
+apiVersion: v1
+data:
+  spigot.yml: |
+    settings:
+      bungeecord: true
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: gate
+  name: spigot-8mf62594mt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: gate
+  name: gate
+spec:
+  ports:
+  - name: minecraft
+    nodePort: 32556
+    port: 25565
+    protocol: TCP
+    targetPort: minecraft
+  selector:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/name: gate
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: gate
+  name: servers
+spec:
+  clusterIP: None
+  ports:
+  - name: minecraft
+    port: 25565
+    targetPort: minecraft
+  selector:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: gate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: gate
+  name: gate
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: proxy
+        app.kubernetes.io/name: gate
+    spec:
+      containers:
+      - image: ghcr.io/minekube/gate:latest
+        name: gate
+        ports:
+        - containerPort: 25565
+          name: minecraft
+        volumeMounts:
+        - mountPath: /gate/config.yml
+          name: config
+          subPath: config.yml
+      volumes:
+      - configMap:
+          name: gate-config-t5m52f4d44
+        name: config
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: gate
+  name: server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: server
+      app.kubernetes.io/name: gate
+  serviceName: servers
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: server
+        app.kubernetes.io/name: gate
+    spec:
+      containers:
+      - env:
+        - name: TYPE
+          value: PAPER
+        - name: EULA
+          value: "TRUE"
+        - name: ONLINE_MODE
+          value: "FALSE"
+        image: itzg/minecraft-server:latest
+        name: server1
+        ports:
+        - containerPort: 25565
+          name: minecraft
+        volumeMounts:
+        - mountPath: /data/spigot.yml
+          name: spigot
+          readOnly: false
+          subPath: spigot.yml
+      volumes:
+      - configMap:
+          name: spigot-8mf62594mt
+        name: spigot

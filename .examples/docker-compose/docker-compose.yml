@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  gate:
+    image: ghcr.io/minekube/gate:latest
+    container_name: gate
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config.yml:/gate/config.yml
+  server-0:
+    image: itzg/minecraft-server
+    environment:
+      EULA: "true"
+      TYPE: "PUFFERFISH"
+      ONLINE_MODE: "false"
+    ports:
+      - "25566:25565"
+    volumes:
+      - ./serverdata0:/data
+    restart: unless-stopped
+  server-1:
+    image: itzg/minecraft-server
+    environment:
+      EULA: "true"
+      TYPE: "PUFFERFISH"
+      ONLINE_MODE: "false"
+    ports:
+      - "25567:25565"
+    volumes:
+      - ./serverdata1:/data
+    restart: unless-stopped

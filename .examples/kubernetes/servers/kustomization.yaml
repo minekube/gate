@@ -1,0 +1,16 @@
+resources:
+  - server.yaml
+  - svc.yaml
+
+images:
+  - name: minecraft-server
+    newName: itzg/minecraft-server
+    newTag: latest
+
+commonLabels:
+  app.kubernetes.io/component: server
+
+configMapGenerator:
+  - name: spigot
+    files:
+      - spigot.yml

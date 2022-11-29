@@ -64,7 +64,7 @@ var DefaultConfig = Config{
 }
 
 // Config is the configuration of the proxy.
-type Config struct {
+type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go for generating output yaml and markdown for the docs
 	Bind string // The address to listen for connections.
 
 	OnlineMode                    bool

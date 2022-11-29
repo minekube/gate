@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: server
+spec:
+  serviceName: servers
+  replicas: 2
+  selector: {} # kustomize common labels
+  template:
+    metadata: {} # kustomize common labels
+    spec:
+      volumes:
+        - name: spigot
+          configMap:
+            name: spigot
+      containers:
+        - name: server1
+          # We highly recommend using a custom image containing your worlds and
+          # server jar since it will be faster to start and will use less
+          # resources as it's downloaded every time the container starts.
+          image: minecraft-server
+          stdin: true
+          tty: true
+          livenessProbe:
+            exec:
+              command: ["mc-health"]
+            initialDelaySeconds: 120
+            periodSeconds: 60
+          readinessProbe:
+            exec:
+              command: ["mc-health"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 12
+          env:
+            - name: TYPE
+              value: PUFFERFISH
+            - name: EULA
+              value: "TRUE"
+            - name: ONLINE_MODE
+              value: "FALSE"
+          ports:
+            - containerPort: 25565
+              name: minecraft
+          volumeMounts:
+            - mountPath: /data/spigot.yml
+              name: spigot
+              subPath: spigot.yml
+              readOnly: false
