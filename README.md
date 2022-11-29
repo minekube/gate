@@ -1,4 +1,4 @@
-![Logo](https://raw.githubusercontent.com/minekube/gate/addbe2cd32def3619223f46eb30e6ed53613a899/site/static/images/cover3.png)
+![Logo](.web/docs/public/og-image.png)
 
 # The extensible Minecraft Proxy
 
@@ -18,15 +18,15 @@ _written in Go and ready for the cloud!_
 > but you can already start using it!
 > It is already being used by the Minekube network!
 
-## [Website & Documentation](https://developers.minekube.com/gate)
+## [Website & Documentation](https://gate.minekube.com)
 
 **There is a lot to discover on Gate's website.**
-Please refer to the website for the [documentation](https://developers.minekube.com/gate),
+Please refer to the website for the [documentation](https://gate.minekube.com),
 guides and any more information needed!
 
 ## Quick Start
 
-Follow our quick guide on [creating a simple Minecraft network](https://developers.minekube.com/gate)
+Follow our quick guide on [creating a simple Minecraft network](https://gate.minekube.com/guide/quick-start/)
 on our documentation website.
 
-![Server list](https://raw.githubusercontent.com/minekube/gate/addbe2cd32def3619223f46eb30e6ed53613a899/site/static/images/server-list.png)
+![Server list](.web/docs/images/server-list.png)

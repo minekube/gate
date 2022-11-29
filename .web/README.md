@@ -26,7 +26,7 @@ $ yarn install
 ### Local Development
 
 ```sh console
-$ yarn run dev/connect
+$ yarn run dev
 ```
 
 This command starts a local development server and opens up a browser window.
@@ -35,7 +35,7 @@ Most changes are reflected live without having to restart the server.
 ### Build
 
 ```sh console
-$ yarn run build/connect
+$ yarn run build
 ```
 
 This command generates static content into the `dist` directory and can be served
