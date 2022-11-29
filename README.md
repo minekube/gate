@@ -1,4 +1,4 @@
-![Logo](.web/docs/public/og-image.png)
+[![Logo](.web/docs/public/og-image.png)](https://gate.minekube.com)
 
 # The extensible Minecraft Proxy
 
@@ -29,4 +29,4 @@ guides and any more information needed!
 Follow our quick guide on [creating a simple Minecraft network](https://gate.minekube.com/guide/quick-start/)
 on our documentation website.
 
-![Server list](.web/docs/images/server-list.png)
+[![Server list](.web/docs/images/server-list.png)](https://gate.minekube.com)
