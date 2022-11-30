@@ -20,14 +20,9 @@ vet:
 lint:
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run
 
-
-
-updatedocsy:
-	git submodule update --depth 1 --init --recursive site/themes/docsy
-
-
-
-
+# Serve the docs website locally and auto on changes
+dev-docs:
+	cd .web && yarn install && yarn dev
 
 # Install gops & dependencies
 pprof-gops-install:
