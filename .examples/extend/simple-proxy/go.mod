@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.0.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/gate v0.21.4
+	go.minekube.com/gate v0.21.5
 )
 
 require (
@@ -34,13 +34,13 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pires/go-proxyproto v0.6.2 // indirect
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sandertv/go-raknet v1.12.0 // indirect
-	github.com/sandertv/gophertunnel v1.25.0 // indirect
-	github.com/spf13/afero v1.9.2 // indirect
+	github.com/sandertv/gophertunnel v1.26.0 // indirect
+	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -57,8 +57,8 @@ require (
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
-	google.golang.org/genproto v0.0.0-20221111202108-142d8a6fa32e // indirect
-	google.golang.org/grpc v1.50.1 // indirect
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
+	google.golang.org/grpc v1.51.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

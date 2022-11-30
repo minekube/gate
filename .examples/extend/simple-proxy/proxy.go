@@ -53,7 +53,8 @@ func newSimpleProxy(proxy *proxy.Proxy) *SimpleProxy {
 // initialize our sample proxy
 func (p *SimpleProxy) init() error {
 	p.registerCommands()
-	return p.registerSubscribers()
+	p.registerSubscribers()
+	return nil
 }
 
 // Register a proxy-wide commands (can be run while being on any server)
@@ -141,7 +142,7 @@ func titleCommand() brigodier.LiteralNodeBuilder {
 }
 
 // Register event subscribers
-func (p *SimpleProxy) registerSubscribers() error {
+func (p *SimpleProxy) registerSubscribers() {
 	// Send message on server switch.
 	event.Subscribe(p.Event(), 0, p.onServerSwitch)
 
@@ -150,8 +151,6 @@ func (p *SimpleProxy) registerSubscribers() error {
 
 	// Show a boss bar to all players on this proxy.
 	event.Subscribe(p.Event(), 0, p.bossBarDisplay())
-
-	return nil
 }
 
 func (p *SimpleProxy) onServerSwitch(e *proxy.ServerPostConnectEvent) {
