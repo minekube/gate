@@ -86,8 +86,8 @@ func (p *SimpleProxy) registerCommands() {
 
 				// Send to all players on this proxy
 				for _, player := range p.Players() {
-					// Send message in new goroutine,
-					// to not halt loop on slow connections.
+					// Send message in new goroutine to not block
+					// this loop if any player has a slow connection.
 					go func(p proxy.Player) { _ = p.SendMessage(message) }(player)
 				}
 				return nil
