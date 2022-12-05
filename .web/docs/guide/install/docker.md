@@ -47,6 +47,8 @@ docker-compose up
 ```
 
 The files of the two servers are located in the `serverdata*` directories.
+You can join at `localhost:25565` and use `/server` to switch between the servers.
+
 
 ## Troubleshooting
 
