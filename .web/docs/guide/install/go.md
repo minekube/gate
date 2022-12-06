@@ -20,3 +20,7 @@ go run go.minekube.com/gate@latest
 Thanks to local caching running this command a second time would start Gate even quicker
 since all the required dependencies are already on the local machine.
 
+
+## Developers Guide
+
+If you are a developer checkout the [Developers Guide](/developers/)!

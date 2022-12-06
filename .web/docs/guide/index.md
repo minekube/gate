@@ -1,3 +1,4 @@
+
 # Introduction
 
 _Gate is a modern cloud-native, open source, fast, batteries-included and secure proxy for Minecraft servers
@@ -7,13 +8,14 @@ with a focus on scalability, flexibility, multi-version support and developer fr
 
 ![server list ping](/images/server-list.png)
 
+<!--@include: ../badges.md -->
 
 Gate is a tiny [binary](install/binaries) and can run locally, in [Docker](install/docker) containers or
 scale with your growing demands in a [Kubernetes](install/kubernetes)-orchestrated
 production environment in the cloud.
 
 It replaces legacy proxies like BungeeCord but also runs alongside them.
-Gate entirely rewritten in Go and heavily inspired by the Velocity project.
+Gate is entirely written in Go and heavily inspired by the Velocity project.
 
 ::: tip What is Go?
 Gate is written in [Go](https://go.dev/),
@@ -26,6 +28,8 @@ that is used by companies like Google, Microsoft, Meta, Amazon, Twitter, PayPal,
 
 If you already know the concepts of a Minecraft proxy,
 you can skip this page and jump to the [Quick Start](quick-start) guide.
+
+If you are a developer checkout the [Developers Guide](/developers/).
 
 ## Why do we need a Minecraft proxy?
 

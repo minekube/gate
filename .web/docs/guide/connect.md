@@ -29,5 +29,5 @@ connect:
   # It is supported to run multiple Gates on the same endpoint name for load balancing
   # (use the same connect.json token file from first Gate instance).
   #name: your-endpoint-name // [!code --]
-  name: my-server-name # globally unique identifier for your server // [!code ++]
+  name: my-server-name // [!code ++]
 ```

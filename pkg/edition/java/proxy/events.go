@@ -73,6 +73,7 @@ type GameProfileRequestEvent struct {
 	use profile.GameProfile
 }
 
+// NewGameProfileRequestEvent creates a new GameProfileRequestEvent.
 func NewGameProfileRequestEvent(
 	inbound Inbound,
 	original profile.GameProfile,
@@ -186,6 +187,9 @@ func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
 //
 //
 
+// PreLoginEvent is fired when a player has initiated a connection with the proxy
+// but before the proxy authenticates the player with Mojang or before the player's proxy connection
+// is fully established (for offline mode).
 type PreLoginEvent struct {
 	connection Inbound
 	username   string
@@ -202,8 +206,10 @@ func newPreLoginEvent(conn Inbound, username string) *PreLoginEvent {
 	}
 }
 
+// PreLoginResult is the result of a PreLoginEvent.
 type PreLoginResult uint8
 
+// PreLoginResult values.
 const (
 	AllowedPreLogin PreLoginResult = iota
 	DeniedPreLogin
@@ -211,19 +217,22 @@ const (
 	ForceOfflineModePreLogin
 )
 
+// Username returns the username of the player.
 func (e *PreLoginEvent) Username() string {
 	return e.username
 }
 
+// Conn returns the inbound connection that is connecting to the proxy.
 func (e *PreLoginEvent) Conn() Inbound {
 	return e.connection
 }
 
+// Result returns the current result of the PreLoginEvent.
 func (e *PreLoginEvent) Result() PreLoginResult {
 	return e.result
 }
 
-// Reason returns the deny reason to disconnect the connection.
+// Reason returns the `deny reason` to disconnect the connection.
 // May be nil!
 func (e *PreLoginEvent) Reason() component.Component {
 	return e.reason
