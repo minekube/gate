@@ -66,7 +66,7 @@ export default defineConfig({
         nav: [
             {text: 'Quick Start', link: '/guide/quick-start'},
             {text: 'Guide', link: '/guide/'},
-            {text: 'Developers Guide', link: '/developers/'},
+            {text: 'Developer Guide', link: '/developers/'},
             {text: 'Config', link: '/guide/config/'},
             {text: 'Downloads', link: '/guide/install/'},
             {
@@ -107,8 +107,12 @@ export default defineConfig({
                     ]
                 },
                 {
-                    text: 'Guide',
+                    text: 'Guides',
                     items: [
+                        {
+                            text: 'Developers Guide',
+                            link: '/developers/',
+                        },
                         {
                             text: 'Configurations',
                             link: '/guide/config/',
@@ -138,7 +142,20 @@ export default defineConfig({
                     items: [
                         {
                             text: 'Introduction',
-                            link: '/guide/developers/'
+                            link: '/developers/'
+                        },
+                        {
+                            text: 'Events',
+                            link: '/developers/events'
+                        },
+                    ]
+                },
+                {
+                    text: 'Learn by Examples',
+                    items: [
+                        {
+                            text: 'Simple Proxy',
+                            link: '/developers/examples/simple-proxy'
                         },
                     ]
                 },
