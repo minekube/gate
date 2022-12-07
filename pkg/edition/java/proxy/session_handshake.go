@@ -127,7 +127,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		return
 	}
 
-	h.conn.SetType(connTypeForHandshake(p))
+	h.conn.SetType(handshakeConnectionType(p))
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
@@ -154,7 +154,7 @@ func stateForProtocol(status int) *state.Registry {
 	return nil
 }
 
-func connTypeForHandshake(h *packet.Handshake) phase.ConnectionType {
+func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
 	if h.ProtocolVersion < int(version.Minecraft_1_13.Protocol) &&
 		strings.HasSuffix(h.ServerAddress, forge.HandshakeHostnameToken) {

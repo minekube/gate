@@ -3,11 +3,12 @@ package plugin
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"regexp"
-	"strings"
 )
 
 const (
@@ -57,7 +58,7 @@ func LegacyUnregister(p *Message) bool {
 
 // Channels fetches all the channels in a register or unregister plugin message.
 func Channels(p *Message) (channels []string) {
-	if p == nil || len(p.Data) == 0 || !IsRegister(p) || !IsUnregister(p) {
+	if p == nil || len(p.Data) == 0 || (!IsRegister(p) && !IsUnregister(p)) {
 		return
 	}
 	return strings.Split(string(p.Data), "\000") // split null-terminated
