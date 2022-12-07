@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -75,6 +76,10 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 	if !version.Protocol(protocol).Supported() {
 		shownVersion = version.MaximumVersion.Protocol
 	}
+	var modInfo *modinfo.ModInfo
+	if p.config().AnnounceForge {
+		modInfo = modinfo.Default
+	}
 	return &ping.ServerPing{
 		Version: ping.Version{
 			Protocol: shownVersion,
@@ -86,6 +91,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		},
 		Description: p.motd,
 		Favicon:     p.favicon,
+		ModInfo:     modInfo,
 	}
 }
 
