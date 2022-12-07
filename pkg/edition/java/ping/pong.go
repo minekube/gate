@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/favicon"
@@ -14,10 +15,11 @@ import (
 
 // ServerPing is a 1.7 and above server list ping response.
 type ServerPing struct {
-	Version     Version         `json:"version"`
-	Players     *Players        `json:"players"`
-	Description *component.Text `json:"description"`
-	Favicon     favicon.Favicon `json:"favicon,omitempty"`
+	Version     Version          `json:"version"`
+	Players     *Players         `json:"players"`
+	Description *component.Text  `json:"description"`
+	Favicon     favicon.Favicon  `json:"favicon,omitempty"`
+	ModInfo     *modinfo.ModInfo `json:"modinfo,omitempty"`
 }
 
 func (p *ServerPing) MarshalJSON() ([]byte, error) {
