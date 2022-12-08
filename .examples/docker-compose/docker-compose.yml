@@ -7,9 +7,10 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ./config.yml:/gate/config.yml
+      - ./config.yml:/config.yml
   server-0:
     image: itzg/minecraft-server
+    container_name: server-0
     environment:
       EULA: "true"
       TYPE: "PUFFERFISH"
@@ -21,6 +22,7 @@ services:
     restart: unless-stopped
   server-1:
     image: itzg/minecraft-server
+    container_name: server-1
     environment:
       EULA: "true"
       TYPE: "PUFFERFISH"

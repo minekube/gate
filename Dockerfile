@@ -17,6 +17,6 @@ COPY gate.go ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o gate gate.go
 
 # Move binary into final image
-FROM gcr.io/distroless/static:nonroot AS app
+FROM gcr.io/distroless/static-debian11 AS app
 COPY --from=build /workspace/gate /
 CMD ["/gate"]
