@@ -171,7 +171,7 @@ func init() {
 	register(id("brigadier:string", mapSet(version.Minecraft_1_19, 5)), brigodier.String, StringArgumentPropertyCodec)
 
 	// Minecraft argument types
-	register(id("minecraft:entity", mapSet(version.Minecraft_1_19, 6)), ByteArgumentType(0), ByteArgumentPropertyCodec)
+	register(id("minecraft:entity", mapSet(version.Minecraft_1_19, 6)), PlayerArgument, EntityArgumentPropertyCodec)
 	empty(id("minecraft:game_profile", mapSet(version.Minecraft_1_19, 7)))
 	empty(id("minecraft:block_pos", mapSet(version.Minecraft_1_19, 8)))
 	empty(id("minecraft:column_pos", mapSet(version.Minecraft_1_19, 9)))
