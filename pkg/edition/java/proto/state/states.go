@@ -3,6 +3,8 @@ package state
 import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -73,6 +75,7 @@ func init() {
 		m(0x0F, version.Minecraft_1_17),
 		m(0x11, version.Minecraft_1_19),
 		m(0x12, version.Minecraft_1_19_1),
+		m(0x11, version.Minecraft_1_19_3),
 	)
 	Play.ServerBound.Register(&plugin.Message{},
 		m(0x17, version.Minecraft_1_7_2),
@@ -84,6 +87,7 @@ func init() {
 		m(0x0A, version.Minecraft_1_17),
 		m(0x0C, version.Minecraft_1_19),
 		m(0x0D, version.Minecraft_1_19_1),
+		m(0x0C, version.Minecraft_1_19_3),
 	)
 	Play.ServerBound.Register(&p.ClientSettings{},
 		m(0x15, version.Minecraft_1_7_2),
@@ -93,6 +97,7 @@ func init() {
 		m(0x05, version.Minecraft_1_14),
 		m(0x07, version.Minecraft_1_19),
 		m(0x08, version.Minecraft_1_19_1),
+		m(0x07, version.Minecraft_1_19_3),
 	)
 	Play.ServerBound.Register(&p.LegacyChat{},
 		m(0x01, version.Minecraft_1_7_2),
@@ -118,6 +123,7 @@ func init() {
 		m(0x06, version.Minecraft_1_14),
 		m(0x08, version.Minecraft_1_19),
 		m(0x09, version.Minecraft_1_19_1),
+		m(0x08, version.Minecraft_1_19_3),
 	)
 	Play.ServerBound.Register(&p.ResourcePackResponse{},
 		m(0x19, version.Minecraft_1_8),
@@ -143,6 +149,7 @@ func init() {
 		m(0x21, version.Minecraft_1_17),
 		m(0x1E, version.Minecraft_1_19),
 		m(0x20, version.Minecraft_1_19_1),
+		m(0x1F, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.JoinGame{},
 		m(0x01, version.Minecraft_1_7_2),
@@ -155,6 +162,7 @@ func init() {
 		m(0x26, version.Minecraft_1_17),
 		m(0x23, version.Minecraft_1_19),
 		m(0x25, version.Minecraft_1_19_1),
+		m(0x24, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.Respawn{},
 		m(0x07, version.Minecraft_1_7_2),
@@ -169,6 +177,7 @@ func init() {
 		m(0x3D, version.Minecraft_1_17),
 		m(0x3B, version.Minecraft_1_19),
 		m(0x3E, version.Minecraft_1_19_1),
+		m(0x3D, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.Disconnect{},
 		m(0x40, version.Minecraft_1_7_2),
@@ -181,6 +190,7 @@ func init() {
 		m(0x1A, version.Minecraft_1_17),
 		m(0x17, version.Minecraft_1_19),
 		m(0x19, version.Minecraft_1_19_1),
+		m(0x17, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&bossbar.BossBar{},
 		m(0x0C, version.Minecraft_1_9),
@@ -211,8 +221,9 @@ func init() {
 		m(0x5F, version.Minecraft_1_18),
 		m(0x60, version.Minecraft_1_19),
 		m(0x63, version.Minecraft_1_19_1),
+		m(0x61, version.Minecraft_1_19_3),
 	)
-	Play.ClientBound.Register(&p.PlayerListItem{},
+	Play.ClientBound.Register(&legacytablist.PlayerListItem{},
 		m(0x38, version.Minecraft_1_7_2),
 		m(0x2D, version.Minecraft_1_9),
 		m(0x2E, version.Minecraft_1_12_1),
@@ -239,25 +250,30 @@ func init() {
 		m(0x57, version.Minecraft_1_17),
 		m(0x58, version.Minecraft_1_18),
 		m(0x5B, version.Minecraft_1_19_1),
+		m(0x59, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&title.Text{},
 		m(0x59, version.Minecraft_1_17),
 		m(0x5A, version.Minecraft_1_18),
 		m(0x5D, version.Minecraft_1_19_1),
+		m(0x5B, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&title.Actionbar{},
 		m(0x41, version.Minecraft_1_17),
 		m(0x40, version.Minecraft_1_19),
 		m(0x43, version.Minecraft_1_19_1),
+		m(0x42, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&title.Times{},
 		m(0x5A, version.Minecraft_1_17),
 		m(0x5B, version.Minecraft_1_18),
 		m(0x5E, version.Minecraft_1_19_1),
+		m(0x5C, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&title.Clear{},
 		m(0x10, version.Minecraft_1_17),
 		m(0x0D, version.Minecraft_1_19),
+		m(0x0C, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&plugin.Message{},
 		m(0x3F, version.Minecraft_1_7_2),
@@ -270,6 +286,7 @@ func init() {
 		m(0x18, version.Minecraft_1_17),
 		m(0x15, version.Minecraft_1_19),
 		m(0x16, version.Minecraft_1_19_1),
+		m(0x15, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.ResourcePackRequest{},
 		m(0x48, version.Minecraft_1_8),
@@ -284,6 +301,7 @@ func init() {
 		m(0x3C, version.Minecraft_1_17),
 		m(0x3A, version.Minecraft_1_19),
 		m(0x3D, version.Minecraft_1_19_1),
+		m(0x3C, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.TabCompleteResponse{},
 		m(0x3A, version.Minecraft_1_7_2),
@@ -294,6 +312,7 @@ func init() {
 		m(0x0F, version.Minecraft_1_16_2),
 		m(0x11, version.Minecraft_1_17),
 		m(0x0E, version.Minecraft_1_19),
+		m(0x0D, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.AvailableCommands{},
 		m(0x11, version.Minecraft_1_13),
@@ -302,6 +321,13 @@ func init() {
 		m(0x10, version.Minecraft_1_16_2),
 		m(0x12, version.Minecraft_1_17),
 		m(0x0F, version.Minecraft_1_19),
+		m(0x0E, version.Minecraft_1_19_3),
+	)
+	Play.ClientBound.Register(&playerinfo.Remove{},
+		m(0x35, version.Minecraft_1_19_3),
+	)
+	Play.ClientBound.Register(&playerinfo.Upsert{},
+		m(0x36, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
@@ -309,10 +335,12 @@ func init() {
 	)
 	Play.ClientBound.Register(&p.PlayerChatCompletion{},
 		m(0x15, version.Minecraft_1_19_1),
+		m(0x14, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.ServerData{},
 		m(0x3F, version.Minecraft_1_19),
 		m(0x42, version.Minecraft_1_19_1),
+		m(0x41, version.Minecraft_1_19_3),
 	)
 	// coming soon...
 	// BossBar

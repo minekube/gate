@@ -23,6 +23,8 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -133,9 +135,9 @@ var packets = []proto.Packet{
 		Stay:    2,
 		FadeOut: 3,
 	},
-	&PlayerListItem{
-		Action: UpdateLatencyPlayerListItemAction,
-		Items: []PlayerListItemEntry{
+	&legacytablist.PlayerListItem{
+		Action: legacytablist.UpdateLatencyPlayerListItemAction,
+		Items: []legacytablist.PlayerListItemEntry{
 			{
 				ID:   testUUID,
 				Name: "testName",
@@ -191,10 +193,6 @@ var packets = []proto.Packet{
 	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	playerChatPacket,
 	&PlayerChatPreview{},
-	&ServerChatPreview{
-		ID:      3,
-		Preview: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
-	},
 	&SystemChat{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
 		Type:      SystemMessageType,
@@ -203,7 +201,6 @@ var packets = []proto.Packet{
 	&ServerData{
 		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},
 		Favicon:            "Favicon",
-		PreviewsChat:       true,
 		SecureChatEnforced: true,
 	},
 	&bossbar.BossBar{
@@ -215,6 +212,13 @@ var packets = []proto.Packet{
 		Overlay: bossbar.Notched10Overlay,
 		Flags:   bossbar.ConvertFlags(bossbar.DarkenScreenFlag, bossbar.PlayBossMusicFlag),
 	},
+	&playerinfo.Upsert{
+		ActionSet: []playerinfo.UpsertAction{
+			playerinfo.AddPlayerAction,
+			playerinfo.InitializeChatAction,
+		},
+	},
+	&playerinfo.Remove{},
 }
 
 // fill packets with fake data

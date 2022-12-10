@@ -10,6 +10,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
@@ -26,7 +27,8 @@ type TabList interface {
 	RemoveEntry(id uuid.UUID) error                           // Removes an entry from the tab list.
 	HasEntry(id uuid.UUID) bool                               // Determines if the specified entry exists in the tab list.
 	Entries() map[uuid.UUID]Entry                             // Returns the entries in the tab list.
-	ProcessBackendPacket(*packet.PlayerListItem) error        // Processes a packet.PlayerListItem sent from the backend to the client.
+	ClearAll() error                                          // Clears all entries from the tab list.
+	ProcessBackendPacket(*legacytablist.PlayerListItem) error // Processes a packet.PlayerListItem sent from the backend to the client.
 }
 
 type (
@@ -90,9 +92,9 @@ func (t *tabList) AddEntry(entry Entry) error {
 	}
 	t.entries[entry.Profile().ID] = e
 	t.mu.Unlock()
-	return t.w.WritePacket(&packet.PlayerListItem{
-		Action: packet.AddPlayerListItemAction,
-		Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+	return t.w.WritePacket(&legacytablist.PlayerListItem{
+		Action: legacytablist.AddPlayerListItemAction,
+		Items:  []legacytablist.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
 	})
 }
 
@@ -107,9 +109,9 @@ func (t *tabList) removeEntry(id uuid.UUID) (*tabListEntry, error) {
 	delete(t.entries, id)
 	t.mu.Unlock()
 	if ok {
-		return entry, t.w.WritePacket(&packet.PlayerListItem{
-			Action: packet.RemovePlayerListItemAction,
-			Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+		return entry, t.w.WritePacket(&legacytablist.PlayerListItem{
+			Action: legacytablist.RemovePlayerListItemAction,
+			Items:  []legacytablist.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
 		})
 	}
 	return entry, nil
@@ -139,14 +141,14 @@ func (t *tabList) ClearHeaderFooter() error {
 
 // removes all player entries shown in the tab list
 func (t *tabList) clearEntries(bufferPacket func(proto.Packet) error) error {
-	items, ok := func() ([]packet.PlayerListItemEntry, bool) {
+	items, ok := func() ([]legacytablist.PlayerListItemEntry, bool) {
 		t.mu.Lock()
 		defer t.mu.Unlock()
 		if len(t.entries) == 0 {
 			// already empty
 			return nil, false
 		}
-		items := make([]packet.PlayerListItemEntry, 0, len(t.entries))
+		items := make([]legacytablist.PlayerListItemEntry, 0, len(t.entries))
 		for _, e := range t.entries {
 			items = append(items, *newPlayerListItemEntry(e))
 		}
@@ -157,8 +159,8 @@ func (t *tabList) clearEntries(bufferPacket func(proto.Packet) error) error {
 		return nil
 	}
 
-	return bufferPacket(&packet.PlayerListItem{
-		Action: packet.RemovePlayerListItemAction,
+	return bufferPacket(&legacytablist.PlayerListItem{
+		Action: legacytablist.RemovePlayerListItemAction,
 		Items:  items,
 	})
 }
@@ -173,7 +175,7 @@ func (t *tabList) hasEntry(id uuid.UUID) bool {
 	return ok
 }
 
-func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
+func (t *tabList) ProcessBackendPacket(p *legacytablist.PlayerListItem) error {
 	// Packet is already forwarded on, so no need to do that here
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -182,13 +184,13 @@ func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 			return errors.New("1.7 tab list entry given to modern tab list handler")
 		}
 
-		if p.Action != packet.AddPlayerListItemAction && !t.hasEntry(item.ID) {
+		if p.Action != legacytablist.AddPlayerListItemAction && !t.hasEntry(item.ID) {
 			// Sometimes UpdateGameMode is sent before AddPlayer so don't want to warn here
 			continue
 		}
 
 		switch p.Action {
-		case packet.AddPlayerListItemAction:
+		case legacytablist.AddPlayerListItemAction:
 			// ensure that name and properties are available
 			if item.Name == "" || item.Properties == nil {
 				return errors.New("got null game profile for AddPlayerListItemAction")
@@ -223,19 +225,19 @@ func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 					playerKey:   providedKey,
 				}
 			}
-		case packet.RemovePlayerListItemAction:
+		case legacytablist.RemovePlayerListItemAction:
 			delete(t.entries, item.ID)
-		case packet.UpdateDisplayNamePlayerListItemAction:
+		case legacytablist.UpdateDisplayNamePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
 				e.setDisplayNameNoUpdate(item.DisplayName)
 			}
-		case packet.UpdateLatencyPlayerListItemAction:
+		case legacytablist.UpdateLatencyPlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
 				e.setLatency(time.Millisecond * time.Duration(item.Latency))
 			}
-		case packet.UpdateGameModePlayerListItemAction:
+		case legacytablist.UpdateGameModePlayerListItemAction:
 			e, ok := t.entries[item.ID]
 			if ok {
 				e.setGameMode(item.GameMode)
@@ -247,7 +249,7 @@ func (t *tabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 	return nil
 }
 
-func (t *tabList) updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error {
+func (t *tabList) updateEntry(action legacytablist.PlayerListItemAction, entry *tabListEntry) error {
 	if !t.HasEntry(entry.Profile().ID) {
 		return nil
 	}
@@ -266,9 +268,9 @@ func (t *tabList) updateEntry(action packet.PlayerListItemAction, entry *tabList
 		packetItem.PlayerKey = nil
 	}
 
-	return t.w.WritePacket(&packet.PlayerListItem{
+	return t.w.WritePacket(&legacytablist.PlayerListItem{
 		Action: action,
-		Items:  []packet.PlayerListItemEntry{*packetItem},
+		Items:  []legacytablist.PlayerListItemEntry{*packetItem},
 	})
 }
 

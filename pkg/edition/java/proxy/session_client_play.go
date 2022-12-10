@@ -465,7 +465,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 			}
 			return ""
 		}(),
-		ShouldKeepPlayerData: false,
+		DataToKeep:           0,
 		DimensionInfo:        joinGame.DimensionInfo,
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,

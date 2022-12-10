@@ -6,8 +6,9 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
@@ -47,12 +48,19 @@ type Entry interface {
 	// SetLatency sets the latency/ping for the entry.
 	// See Latency() for how it is displayed.
 	SetLatency(time.Duration) error
-	crypto.KeyIdentifiable
+	// ChatSession returns the chat session associated with this entry.
+	ChatSession() player.ChatSession
+	// Listed indicates whether the entry is listed,
+	// when listed they will be visible to other players in the tab list.
+	Listed() bool
+	// SetListed sets whether the entry is listed.
+	// Only changeable in 1.19.3 and above!
+	SetListed(bool) error
 }
 
 type tabListInternal interface {
 	TabList
-	updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error
+	updateEntry(action legacytablist.PlayerListItemAction, entry *tabListEntry) error
 	clearEntries(bufferPacket func(proto.Packet) error) error
 }
 
@@ -69,7 +77,12 @@ type tabListEntry struct {
 	// This is only intended and only works for players currently not connected to this proxy.
 	// For any player currently connected to this proxy this will be filled automatically.
 	// Will ignore mismatching key revision data.
-	playerKey crypto.IdentifiedKey // nil-able
+	chatSession crypto.IdentifiedKey // nil-able
+}
+
+func (t *tabListEntry) ChatSession() player.ChatSession {
+	//TODO implement me
+	panic("implement me")
 }
 
 var _ Entry = (*tabListEntry)(nil)
@@ -95,7 +108,7 @@ func (t *tabListEntry) SetDisplayName(name component.Component) error {
 		fn()
 	}
 	t.setDisplayNameNoUpdate(name)
-	return t.tabList.updateEntry(packet.UpdateDisplayNamePlayerListItemAction, t)
+	return t.tabList.updateEntry(legacytablist.UpdateDisplayNamePlayerListItemAction, t)
 }
 
 func (t *tabListEntry) setDisplayNameNoUpdate(name component.Component) {
@@ -121,7 +134,7 @@ func (t *tabListEntry) Latency() time.Duration {
 
 func (t *tabListEntry) SetLatency(latency time.Duration) error {
 	t.setLatency(latency)
-	return t.tabList.updateEntry(packet.UpdateLatencyPlayerListItemAction, t)
+	return t.tabList.updateEntry(legacytablist.UpdateLatencyPlayerListItemAction, t)
 }
 func (t *tabListEntry) setLatency(latency time.Duration) {
 	t.mu.Lock()
@@ -131,7 +144,7 @@ func (t *tabListEntry) setLatency(latency time.Duration) {
 
 func (t *tabListEntry) SetGameMode(gameMode int) error {
 	t.setGameMode(gameMode)
-	return t.tabList.updateEntry(packet.UpdateGameModePlayerListItemAction, t)
+	return t.tabList.updateEntry(legacytablist.UpdateGameModePlayerListItemAction, t)
 }
 func (t *tabListEntry) setGameMode(gameMode int) {
 	t.mu.Lock()
@@ -140,12 +153,15 @@ func (t *tabListEntry) setGameMode(gameMode int) {
 }
 
 func (t *tabListEntry) IdentifiedKey() crypto.IdentifiedKey {
-	return t.playerKey
+	if t.chatSession == nil {
+		return nil
+	}
+	return t.chatSession.IdentifiedKey()
 }
 
-func newPlayerListItemEntry(entry Entry) *packet.PlayerListItemEntry {
+func newPlayerListItemEntry(entry Entry) *legacytablist.PlayerListItemEntry {
 	p := entry.Profile()
-	return &packet.PlayerListItemEntry{
+	return &legacytablist.PlayerListItemEntry{
 		ID:          p.ID,
 		Name:        p.Name,
 		Properties:  p.Properties,

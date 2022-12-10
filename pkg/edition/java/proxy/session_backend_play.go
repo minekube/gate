@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -65,7 +66,7 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleAvailableCommands(p)
 	case *packet.TabCompleteResponse:
 		b.playerSessionHandler.handleTabCompleteResponse(p)
-	case *packet.PlayerListItem:
+	case *legacytablist.PlayerListItem:
 		b.handlePlayerListItem(p, pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
@@ -259,10 +260,10 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 	}
 }
 
-func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem, pc *proto.PacketContext) {
+func (b *backendPlaySessionHandler) handlePlayerListItem(p *legacytablist.PlayerListItem, pc *proto.PacketContext) {
 	// Track changes to tab list of player
 	if err := b.serverConn.player.tabList.ProcessBackendPacket(p); err != nil {
-		b.serverConn.log.Error(err, "Error while processing backend PlayerListItem packet, ignored")
+		b.serverConn.log.Error(err, "error while processing backend PlayerListItem packet, ignored")
 	}
 	b.forwardToPlayer(pc, nil)
 }

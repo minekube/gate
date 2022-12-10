@@ -7,7 +7,7 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -62,14 +62,14 @@ func (t *legacyTabList) Entries() map[uuid.UUID]Entry {
 	return t.tabList.Entries()
 }
 
-func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
+func (t *legacyTabList) ProcessBackendPacket(p *legacytablist.PlayerListItem) error {
 	if len(p.Items) != 1 {
 		return fmt.Errorf("expected 1 item in %T but got %d", p, len(p.Items))
 	}
 	item := p.Items[0] // Only one item per packet in 1.7
 
 	switch p.Action {
-	case packet.AddPlayerListItemAction:
+	case legacytablist.AddPlayerListItemAction:
 		t.mu.Lock()
 		if id, ok := t.nameMapping[item.Name]; ok { // ADD_PLAYER also used for updating ping
 			t.mu.Unlock()
@@ -90,7 +90,7 @@ func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 				latency: time.Millisecond * time.Duration(item.Latency),
 			})
 		}
-	case packet.RemovePlayerListItemAction:
+	case legacytablist.RemovePlayerListItemAction:
 		t.mu.Lock()
 		removedID := t.nameMapping[item.Name]
 		t.mu.Unlock()
@@ -103,15 +103,15 @@ func (t *legacyTabList) ProcessBackendPacket(p *packet.PlayerListItem) error {
 	return nil
 }
 
-func (t *legacyTabList) updateEntry(action packet.PlayerListItemAction, entry *tabListEntry) error {
+func (t *legacyTabList) updateEntry(action legacytablist.PlayerListItemAction, entry *tabListEntry) error {
 	if !t.HasEntry(entry.Profile().ID) {
 		return nil
 	}
 	switch action {
-	case packet.UpdateLatencyPlayerListItemAction, packet.UpdateDisplayNamePlayerListItemAction:
-		return t.tabList.w.WritePacket(&packet.PlayerListItem{
-			Action: packet.AddPlayerListItemAction,
-			Items:  []packet.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
+	case legacytablist.UpdateLatencyPlayerListItemAction, legacytablist.UpdateDisplayNamePlayerListItemAction:
+		return t.tabList.w.WritePacket(&legacytablist.PlayerListItem{
+			Action: legacytablist.AddPlayerListItemAction,
+			Items:  []legacytablist.PlayerListItemEntry{*newPlayerListItemEntry(entry)},
 		})
 	default:
 		// Can't do anything else

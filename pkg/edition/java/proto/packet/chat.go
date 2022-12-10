@@ -356,49 +356,6 @@ func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 
 var _ proto.Packet = (*SystemChat)(nil)
 
-type ServerChatPreview struct {
-	ID      int
-	Preview component.Component
-}
-
-func (p *ServerChatPreview) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteInt(wr, p.ID)
-	if err != nil {
-		return err
-	}
-	err = util.WriteBool(wr, p.Preview != nil)
-	if err != nil {
-		return err
-	}
-	if p.Preview != nil {
-		err = util.WriteComponent(wr, c.Protocol, p.Preview)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (p *ServerChatPreview) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	p.ID, err = util.ReadInt(rd)
-	if err != nil {
-		return err
-	}
-	ok, err := util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
-	if ok {
-		p.Preview, err = util.ReadComponent(rd, c.Protocol)
-		if err != nil {
-			return err
-		}
-	}
-	return
-}
-
-var _ proto.Packet = (*ServerChatPreview)(nil)
-
 type ServerPlayerChat struct {
 	Component         component.Component
 	UnsignedComponent component.Component // nil-able
