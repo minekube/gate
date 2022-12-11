@@ -6,7 +6,7 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"

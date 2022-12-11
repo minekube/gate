@@ -19,6 +19,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
+	internaltablist "go.minekube.com/gate/pkg/internal/tablist"
 	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/command"
@@ -90,7 +91,7 @@ type connectedPlayer struct {
 	pluginChannelsMu sync.RWMutex // Protects following field
 	pluginChannels   sets.String  // Known plugin channels
 
-	tabList tablist.TabList // Player's tab list
+	tabList internaltablist.InternalTabList // Player's tab list
 
 	mu                       sync.RWMutex // Protects following fields
 	connectedServer_         *serverConnection

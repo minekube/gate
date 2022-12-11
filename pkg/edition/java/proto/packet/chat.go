@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -355,82 +354,6 @@ func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 }
 
 var _ proto.Packet = (*SystemChat)(nil)
-
-type ServerPlayerChat struct {
-	Component         component.Component
-	UnsignedComponent component.Component // nil-able
-	Type              int
-
-	Sender     uuid.UUID
-	SenderName component.Component
-	TeamName   component.Component // nil-able
-
-	Expiry time.Time
-}
-
-func (s *ServerPlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
-	// TODO TBD
-	return errors.New("not yet implemented")
-}
-
-func (s *ServerPlayerChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	s.Component, err = util.ReadComponent(rd, c.Protocol)
-	if err != nil {
-		return err
-	}
-	ok, err := util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
-	if ok {
-		s.Component, err = util.ReadComponent(rd, c.Protocol)
-		if err != nil {
-			return err
-		}
-		s.UnsignedComponent = s.Component
-	}
-	s.Type, err = util.ReadVarInt(rd)
-	if err != nil {
-		return err
-	}
-	if err != nil {
-		return err
-	}
-	s.SenderName, err = util.ReadComponent(rd, c.Protocol)
-	if err != nil {
-		return err
-	}
-	ok, err = util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
-	if ok {
-		s.TeamName, err = util.ReadComponent(rd, c.Protocol)
-		if err != nil {
-			return err
-		}
-	}
-
-	s.Expiry, err = util.ReadUnixMilli(rd)
-	if err != nil {
-		return err
-	}
-
-	salt, err := util.ReadInt64(rd)
-	if err != nil {
-		return err
-	}
-	_ = salt
-	signature, err := util.ReadBytes(rd)
-	if err != nil {
-		return err
-	}
-	_ = signature
-
-	return nil
-}
-
-var _ proto.Packet = (*ServerPlayerChat)(nil)
 
 type ChatBuilder struct {
 	protocol          proto.Protocol

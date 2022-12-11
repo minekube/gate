@@ -8,7 +8,15 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
+
+// TabList is the tab list of a player.
+type TabList interface {
+	Add(...Entry) error               // Adds one or more entries to the tab list.
+	RemoveAll(ids ...uuid.UUID) error // Removes one or more entries from the tab list. If empty removes all entries.
+	Entries() map[uuid.UUID]Entry     // Returns the entries in the tab list.
+}
 
 // Viewer is a player connection that can write packets.
 type Viewer interface {
@@ -39,4 +47,10 @@ func SendHeaderFooter(viewer Viewer, header, footer component.Component) error {
 // ClearHeaderFooter clears the tab list header and footer for the viewer.
 func ClearHeaderFooter(viewer proto.PacketWriter) error {
 	return viewer.WritePacket(packet.ResetHeaderAndFooter)
+}
+
+// HasEntry determines if the specified entry exists in the tab list.
+func HasEntry(tl TabList, id uuid.UUID) bool {
+	_, ok := tl.Entries()[id]
+	return ok
 }

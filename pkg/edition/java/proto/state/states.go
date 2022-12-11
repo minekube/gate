@@ -3,9 +3,9 @@ package state
 import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 )

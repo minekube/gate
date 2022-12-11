@@ -3,7 +3,7 @@ package packet
 import (
 	"io"
 
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 )

@@ -19,7 +19,7 @@ type (
 	}
 	Entry struct {
 		ProfileID         uuid.UUID
-		Profile           *profile.GameProfile
+		Profile           profile.GameProfile
 		Listed            bool
 		Latency           int // in milliseconds
 		GameMode          int
@@ -154,7 +154,7 @@ func (a *addAction) Decode(c *proto.PacketContext, rd io.Reader, info *Entry) (e
 	if err != nil {
 		return err
 	}
-	info.Profile = &profile.GameProfile{
+	info.Profile = profile.GameProfile{
 		ID:         info.ProfileID,
 		Name:       name,
 		Properties: props,

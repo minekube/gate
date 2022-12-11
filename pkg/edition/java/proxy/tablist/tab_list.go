@@ -10,7 +10,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
@@ -18,18 +18,6 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/multierr"
 )
-
-// TabList is the tab list of a player.
-type TabList interface {
-	SetHeaderFooter(header, footer component.Component) error // Sets the tab list header and footer for the player.
-	ClearHeaderFooter() error                                 // Clears the tab list header and footer for the player.
-	AddEntry(Entry) error                                     // Adds an entry to the tab list.
-	RemoveEntry(id uuid.UUID) error                           // Removes an entry from the tab list.
-	HasEntry(id uuid.UUID) bool                               // Determines if the specified entry exists in the tab list.
-	Entries() map[uuid.UUID]Entry                             // Returns the entries in the tab list.
-	ClearAll() error                                          // Clears all entries from the tab list.
-	ProcessBackendPacket(*legacytablist.PlayerListItem) error // Processes a packet.PlayerListItem sent from the backend to the client.
-}
 
 type (
 	// tabList is the tab list of one player connection.
@@ -283,7 +271,7 @@ func (t *tabList) entry(id uuid.UUID) *tabListEntry {
 // BufferClearTabListEntries clears all entries from the tab list.
 // The packet entries are written with bufferPacket, so make sure to do an explicit flush.
 func BufferClearTabListEntries(list TabList, bufferPacket func(proto.Packet) error) error {
-	if internal, ok := list.(tabListInternal); ok {
+	if internal, ok := list.(tabListInternal); ok { // todo move to internal package
 		return internal.clearEntries(bufferPacket)
 	}
 	// fallback implementation

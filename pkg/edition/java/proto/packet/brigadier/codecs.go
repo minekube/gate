@@ -107,6 +107,38 @@ var (
 			return &RegistryKeyArgumentType{Identifier: id}, nil
 		},
 	}
+	ResourceOrTagKeyArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			i, ok := v.(*ResourceOrTagKeyArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *RegistryKeyArgumentType but got %T", v)
+			}
+			return util.WriteString(wr, i.Identifier)
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+			id, err := util.ReadString(rd)
+			if err != nil {
+				return nil, err
+			}
+			return &ResourceOrTagKeyArgumentType{Identifier: id}, nil
+		},
+	}
+	ResourceKeyArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			i, ok := v.(*ResourceKeyArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *ResourceKeyArgumentType but got %T", v)
+			}
+			return util.WriteString(wr, i.Identifier)
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+			id, err := util.ReadString(rd)
+			if err != nil {
+				return nil, err
+			}
+			return &ResourceKeyArgumentType{Identifier: id}, nil
+		},
+	}
 
 	Float64ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {

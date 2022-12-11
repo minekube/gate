@@ -10,8 +10,8 @@ import (
 )
 
 type RemoteChatSession struct {
-	SessionID     uuid.UUID // zeroable
-	IdentifiedKey crypto.IdentifiedKey
+	SessionID uuid.UUID // zeroable
+	crypto.IdentifiedKey
 }
 
 func (r *RemoteChatSession) Encode(c *proto.PacketContext, wr io.Writer) error {
