@@ -47,14 +47,17 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 		}
 
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-			ok := (s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil) || s.HolderID != uuid.Nil
+			okPlayerKey := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
+			ok := okPlayerKey || s.HolderID != uuid.Nil
 			err = util.WriteBool(wr, ok)
 			if err != nil {
 				return err
 			}
 			if ok {
-				id := s.PlayerKey.SignatureHolder()
-				if s.HolderID != uuid.Nil {
+				var id uuid.UUID
+				if okPlayerKey {
+					id = s.PlayerKey.SignatureHolder()
+				} else {
 					id = s.HolderID
 				}
 				err = util.WriteUUID(wr, id)

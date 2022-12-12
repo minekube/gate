@@ -23,6 +23,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
@@ -83,28 +84,8 @@ var packets = []proto.Packet{
 	&Handshake{},
 	&KeepAlive{},
 	&ServerLogin{
-		Username: "Foo",
-		PlayerKey: func() crypto.IdentifiedKey {
-			pk, err := rsa.GenerateKey(rand.Reader, 512)
-			if err != nil {
-				panic(err)
-			}
-			public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
-			if err != nil {
-				panic(err)
-			}
-			hashed := crypto2.SHA1.New()
-			hashed.Write([]byte("message"))
-			signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
-			if err != nil {
-				panic(err)
-			}
-			k, err := crypto.NewIdentifiedKey(keyrevision.LinkedV2, public, time.Now().UnixMilli(), signature)
-			if err != nil {
-				panic(err)
-			}
-			return k
-		}(),
+		Username:  "Foo",
+		PlayerKey: generatePlayerKey(),
 	},
 	&EncryptionResponse{},
 	&LoginPluginResponse{},
@@ -148,6 +129,7 @@ var packets = []proto.Packet{
 				},
 				GameMode:    2,
 				Latency:     4325,
+				PlayerKey:   generatePlayerKey(),
 				DisplayName: &component.Text{Content: "Bob", S: component.Style{Color: color.Red}},
 			},
 			{
@@ -160,6 +142,7 @@ var packets = []proto.Packet{
 				},
 				GameMode:    1,
 				Latency:     42,
+				PlayerKey:   generatePlayerKey(),
 				DisplayName: &component.Text{Content: "Alice", S: component.Style{Color: color.Green}},
 			},
 		},
@@ -219,6 +202,31 @@ var packets = []proto.Packet{
 		},
 	},
 	&playerinfo.Remove{},
+	&chat.RemoteChatSession{
+		Key: generatePlayerKey(),
+	}, // not a packet but we can test it anyway
+}
+
+func generatePlayerKey() crypto.IdentifiedKey {
+	pk, err := rsa.GenerateKey(rand.Reader, 512)
+	if err != nil {
+		panic(err)
+	}
+	public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+	if err != nil {
+		panic(err)
+	}
+	hashed := crypto2.SHA1.New()
+	hashed.Write([]byte("message"))
+	signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
+	if err != nil {
+		panic(err)
+	}
+	k, err := crypto.NewIdentifiedKey(keyrevision.LinkedV2, public, time.Now().UnixMilli(), signature)
+	if err != nil {
+		panic(err)
+	}
+	return k
 }
 
 // fill packets with fake data
