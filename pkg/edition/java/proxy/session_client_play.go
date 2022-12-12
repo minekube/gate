@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
@@ -68,11 +69,11 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		c.handleKeepAlive(p)
-	case *packet.LegacyChat:
+	case *chat.LegacyChat:
 		c.handleLegacyChat(p)
-	case *packet.PlayerChat:
+	case *chat.KeyedPlayerChat:
 		c.handlePlayerChat(p)
-	case *packet.PlayerCommand:
+	case *chat.KeyedPlayerCommand:
 		c.handlePlayerCommand(p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
@@ -476,7 +477,7 @@ func (c *clientPlaySessionHandler) proxy() *Proxy {
 	return c.player.proxy
 }
 
-func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
+func (c *clientPlaySessionHandler) handleLegacyChat(p *chat.LegacyChat) {
 	_, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return
@@ -492,7 +493,7 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *packet.LegacyChat) {
 	}
 }
 
-func (c *clientPlaySessionHandler) handlePlayerCommand(p *packet.PlayerCommand) {
+func (c *clientPlaySessionHandler) handlePlayerCommand(p *chat.KeyedPlayerCommand) {
 	if !c.validateChat(p.Command) {
 		return
 	}
@@ -526,7 +527,7 @@ func (c *clientPlaySessionHandler) tickLastMessage(nextMessage *crypto.SignedCha
 	return true
 }
 
-func (c *clientPlaySessionHandler) handlePlayerChat(p *packet.PlayerChat) {
+func (c *clientPlaySessionHandler) handlePlayerChat(p *chat.KeyedPlayerChat) {
 	_, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return
@@ -614,8 +615,10 @@ func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessa
 			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
 				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
 			}
-			write := packet.NewChatBuilder(c.player.Protocol()).Message(e.Message()).ToServer()
-			_ = serverMc.WritePacket(write)
+			_ = serverMc.WritePacket((&chat.Builder{
+				Protocol: c.player.Protocol(),
+				Message:  e.Message(),
+			}).ToServer())
 			return
 		}
 		c.log1.Info("player sent chat message", "chat", e.Message())
@@ -653,7 +656,7 @@ func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandEx
 	log.Info("player executing command")
 
 	forwardToServer := func() error {
-		write := packet.NewChatBuilder(c.player.Protocol()).AsPlayer(c.player.ID())
+		write := chat.NewBuilder(c.player.Protocol()).AsPlayer(c.player.ID())
 
 		if signedCommand != nil && result.Command() == signedCommand.Command {
 			write.SignedCommandMessage(signedCommand)

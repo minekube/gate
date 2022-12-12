@@ -15,6 +15,7 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
@@ -179,7 +180,7 @@ var (
 )
 
 func (p *connectedPlayer) SpoofChatInput(input string) error {
-	if len(input) > packet.MaxServerBoundMessageLength {
+	if len(input) > chat.MaxServerBoundMessageLength {
 		return ErrTooLongChatMessage
 	}
 
@@ -187,8 +188,11 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 	if !ok {
 		return ErrNoBackendConnection
 	}
-	write := packet.NewChatBuilder(p.Protocol()).AsPlayer(p.ID()).Message(input).ToServer()
-	return serverMc.WritePacket(write)
+	return serverMc.WritePacket((&chat.Builder{
+		Protocol: p.Protocol(),
+		Sender:   p.ID(),
+		Message:  input,
+	}).ToServer())
 }
 
 func (p *connectedPlayer) ensureBackendConnection() (netmc.MinecraftConn, bool) {
@@ -382,39 +386,39 @@ func (p *connectedPlayer) Active() bool {
 // WithMessageSender modifies the sender identity of the chat message.
 func WithMessageSender(id uuid.UUID) command.MessageOption {
 	return messageApplyOption(func(o any) {
-		if b, ok := o.(*packet.ChatBuilder); ok {
-			b.AsPlayer(id)
+		if b, ok := o.(*chat.Builder); ok {
+			b.Sender = id
 		}
 	})
 }
 
 // MessageType is a chat message type.
-type MessageType = packet.MessageType
+type MessageType = chat.MessageType
 
 // Chat message types.
 const (
 	// ChatMessageType is a standard chat message and
 	// lets the chat message appear in the client's HUD.
 	// These messages can be filtered out by the client's settings.
-	ChatMessageType = packet.ChatMessageType
+	ChatMessageType = chat.ChatMessageType
 	// SystemMessageType is a system chat message.
 	// e.g. client is willing to accept messages from commands,
 	// but does not want general chat from other players.
 	// It lets the chat message appear in the client's HUD and can't be dismissed.
-	SystemMessageType = packet.SystemMessageType
+	SystemMessageType = chat.SystemMessageType
 	// GameInfoMessageType lets the chat message appear above the player's main HUD.
 	// This text format doesn't support many component features, such as hover events.
-	GameInfoMessageType = packet.GameInfoMessageType
+	GameInfoMessageType = chat.GameInfoMessageType
 )
 
 // WithMessageType modifies chat message type.
 func WithMessageType(t MessageType) command.MessageOption {
 	return messageApplyOption(func(o any) {
-		if b, ok := o.(*packet.ChatBuilder); ok {
+		if b, ok := o.(*chat.Builder); ok {
 			if t != ChatMessageType {
 				t = SystemMessageType
 			}
-			b.Type(t)
+			b.Type = t
 		}
 	})
 }
@@ -431,14 +435,16 @@ func (p *connectedPlayer) SendMessage(msg component.Component, opts ...command.M
 	if err := util.JsonCodec(p.Protocol()).Marshal(m, msg); err != nil {
 		return err
 	}
-	chat := packet.NewChatBuilder(p.Protocol()).
-		Component(msg).
-		AsPlayer(p.ID()).
-		Type(ChatMessageType)
-	for _, o := range opts {
-		o.Apply(chat)
+	b := chat.Builder{
+		Protocol:  p.Protocol(),
+		Type:      ChatMessageType,
+		Sender:    p.ID(),
+		Component: msg,
 	}
-	return p.WritePacket(chat.ToClient())
+	for _, o := range opts {
+		o.Apply(b)
+	}
+	return p.WritePacket(b.ToClient())
 }
 
 var legacyJsonCodec = &legacy.Legacy{}
@@ -470,9 +476,9 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 	if err != nil {
 		return err
 	}
-	return p.WritePacket(&packet.LegacyChat{
+	return p.WritePacket(&chat.LegacyChat{
 		Message: string(m),
-		Type:    packet.GameInfoMessageType,
+		Type:    chat.GameInfoMessageType,
 		Sender:  uuid.Nil,
 	})
 }

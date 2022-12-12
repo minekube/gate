@@ -2,13 +2,13 @@ package playerinfo
 
 import (
 	"io"
-	"math"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/internal/mathutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -28,22 +28,12 @@ type (
 	}
 )
 
-type bitSet []byte
-
-func (b bitSet) set(i int, v bool) {
-	if v {
-		b[i/8] |= 1 << uint(i%8)
-	} else {
-		b[i/8] &^= 1 << uint(i%8)
-	}
-}
-
 func (u *Upsert) Encode(c *proto.PacketContext, wr io.Writer) error {
-	set := bitSet(make([]byte, -floorDiv(-len(UpsertActions), 8)))
+	bitSet := mathutil.NewBitSet(len(UpsertActions))
 	for i := range UpsertActions {
-		set.set(i, ContainsAction(u.ActionSet, UpsertActions[i]))
+		bitSet.Set(i, ContainsAction(u.ActionSet, UpsertActions[i]))
 	}
-	if _, err := wr.Write(set); err != nil {
+	if _, err := wr.Write(bitSet.Bytes); err != nil {
 		return err
 	}
 	if err := util.WriteVarInt(wr, len(u.Entries)); err != nil {
@@ -73,7 +63,7 @@ func ContainsAction(actions []UpsertAction, action UpsertAction) bool {
 }
 
 func (u *Upsert) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	bytes := make([]byte, -floorDiv(-len(UpsertActions), 8))
+	bytes := make([]byte, -mathutil.FloorDiv(-len(UpsertActions), 8))
 	if _, err = io.ReadFull(rd, bytes); err != nil {
 		return err
 	}
@@ -102,10 +92,6 @@ func (u *Upsert) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		u.Entries = append(u.Entries, entry)
 	}
 	return nil
-}
-
-func floorDiv(a, b int) int {
-	return int(math.Floor(float64(a) / float64(b)))
 }
 
 var _ proto.Packet = (*Upsert)(nil)

@@ -1,4 +1,4 @@
-package packet
+package chat
 
 import (
 	"bytes"
@@ -21,24 +21,24 @@ const (
 
 var errLimitsViolation = errs.NewSilentErr("command arguments incorrect size")
 
-type PlayerCommand struct {
+type KeyedPlayerCommand struct {
 	Unsigned         bool
 	Command          string
 	Timestamp        time.Time
 	Salt             int64
-	SignedPreview    bool // Good god. Please no.
+	SignedPreview    bool // purely for pass through for 1.19 -> 1.19.2 - this will never be implemented
 	Arguments        map[string][]byte
 	PreviousMessages []*crypto.SignaturePair
 	LastMessage      *crypto.SignaturePair
 }
 
-// NewPlayerCommand returns a new PlayerCommand packet based on a command and list of arguments.
-func NewPlayerCommand(command string, arguments []string, timestamp time.Time) *PlayerCommand {
+// NewKeyedPlayerCommand returns a new KeyedPlayerCommand packet based on a command and list of arguments.
+func NewKeyedPlayerCommand(command string, arguments []string, timestamp time.Time) *KeyedPlayerCommand {
 	args := make(map[string][]byte, len(arguments))
 	for _, arg := range arguments {
 		args[arg] = []byte{}
 	}
-	return &PlayerCommand{
+	return &KeyedPlayerCommand{
 		Unsigned:      true,
 		Command:       command,
 		Timestamp:     timestamp,
@@ -48,7 +48,7 @@ func NewPlayerCommand(command string, arguments []string, timestamp time.Time) *
 	}
 }
 
-func (p *PlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {
+func (p *KeyedPlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {
 	err := util.WriteString(wr, p.Command)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (p *PlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {
 	return nil
 }
 
-func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+func (p *KeyedPlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	p.Command, err = util.ReadStringMax(rd, MaxServerBoundMessageLength)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (p *PlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error)
 	return nil
 }
 
-func (p *PlayerCommand) SignedContainer(
+func (p *KeyedPlayerCommand) SignedContainer(
 	signer crypto.IdentifiedKey,
 	sender uuid.UUID,
 	mustSign bool,
@@ -193,4 +193,4 @@ func (p *PlayerCommand) SignedContainer(
 	}, nil
 }
 
-var _ proto.Packet = (*PlayerCommand)(nil)
+var _ proto.Packet = (*KeyedPlayerCommand)(nil)

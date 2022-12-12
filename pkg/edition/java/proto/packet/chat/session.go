@@ -9,8 +9,9 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
+// RemoteChatSession represents a remote chat session that is used to send messages.
 type RemoteChatSession struct {
-	ID  uuid.UUID // SessionID zeroable
+	ID  uuid.UUID // may be zero
 	Key crypto.IdentifiedKey
 }
 

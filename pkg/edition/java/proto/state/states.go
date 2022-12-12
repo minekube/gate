@@ -3,6 +3,7 @@ package state
 import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
@@ -99,18 +100,18 @@ func init() {
 		m(0x08, version.Minecraft_1_19_1),
 		m(0x07, version.Minecraft_1_19_3),
 	)
-	Play.ServerBound.Register(&p.LegacyChat{},
+	Play.ServerBound.Register(&chat.LegacyChat{},
 		m(0x01, version.Minecraft_1_7_2),
 		m(0x02, version.Minecraft_1_9),
 		m(0x03, version.Minecraft_1_12),
 		m(0x02, version.Minecraft_1_12_1),
 		ml(0x03, version.Minecraft_1_14, version.Minecraft_1_18_2),
 	)
-	Play.ServerBound.Register(&p.PlayerCommand{},
+	Play.ServerBound.Register(&chat.KeyedPlayerCommand{},
 		m(0x03, version.Minecraft_1_19),
 		m(0x04, version.Minecraft_1_19_1),
 	)
-	Play.ServerBound.Register(&p.PlayerChat{},
+	Play.ServerBound.Register(&chat.KeyedPlayerChat{},
 		m(0x04, version.Minecraft_1_19),
 		m(0x05, version.Minecraft_1_19_1),
 	)
@@ -199,7 +200,7 @@ func init() {
 		m(0x0D, version.Minecraft_1_17),
 		m(0x0A, version.Minecraft_1_19),
 	)
-	Play.ClientBound.Register(&p.LegacyChat{},
+	Play.ClientBound.Register(&chat.LegacyChat{},
 		m(0x02, version.Minecraft_1_7_2),
 		m(0x0F, version.Minecraft_1_9),
 		m(0x0E, version.Minecraft_1_13),
@@ -329,7 +330,7 @@ func init() {
 	Play.ClientBound.Register(&playerinfo.Upsert{},
 		m(0x36, version.Minecraft_1_19_3),
 	)
-	Play.ClientBound.Register(&p.SystemChat{},
+	Play.ClientBound.Register(&chat.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
 		m(0x62, version.Minecraft_1_19_1),
 	)

@@ -39,7 +39,7 @@ import (
 var (
 	//go:embed testdata/PlayerChat-1.19.gob
 	playerChatPacketGob []byte
-	playerChatPacket    = new(PlayerChat)
+	playerChatPacket    = new(chat.KeyedPlayerChat)
 )
 
 func init() {
@@ -55,7 +55,7 @@ func init() {
 // can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
-	&LegacyChat{},
+	&chat.LegacyChat{},
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
@@ -173,12 +173,11 @@ var packets = []proto.Packet{
 		},
 		ChatTypeRegistry: nil,
 	},
-	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
+	chat.NewKeyedPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	playerChatPacket,
-	&PlayerChatPreview{},
-	&SystemChat{
+	&chat.SystemChat{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
-		Type:      SystemMessageType,
+		Type:      chat.SystemMessageType,
 	},
 	&PlayerChatCompletion{},
 	&ServerData{
@@ -202,9 +201,11 @@ var packets = []proto.Packet{
 		},
 	},
 	&playerinfo.Remove{},
-	&chat.RemoteChatSession{
+	&chat.RemoteChatSession{ // not a packet but we can test it anyway
 		Key: generatePlayerKey(),
-	}, // not a packet but we can test it anyway
+	},
+	&chat.LastSeenMessages{}, // not a packet but we can test it anyway
+
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {
