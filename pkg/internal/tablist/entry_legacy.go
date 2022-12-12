@@ -7,12 +7,12 @@ import (
 )
 
 type LegacyEntry struct {
-	Entry
+	KeyedEntry
 }
 
 func (e *LegacyEntry) SetDisplayName(name component.Component) error {
 	// We have to remove first if updating
-	err := e.OwningTabList.RemoveAll(e.Profile().ID)
+	err := e.Entry.OwningTabList.RemoveAll(e.Profile().ID)
 	if err != nil {
 		return fmt.Errorf("error removing legacy entry %s before SetDisplayName: %w",
 			e.Profile(), err)

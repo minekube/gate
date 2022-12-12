@@ -17,7 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
-	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.uber.org/atomic"
 
@@ -313,7 +312,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 		c.player.phase().OnFirstJoin(c.player)
 	} else {
 		// Clear tab list to avoid duplicate entries
-		if err = tablist.BufferClearTabListEntries(c.player.tabList, c.player.BufferPacket); err != nil {
+		if err = c.player.tabList.RemoveAll(); err != nil {
 			return fmt.Errorf("error clearing tablist entries: %w", err)
 		}
 		// The player is switching from a server already, so we need to tell the client to change

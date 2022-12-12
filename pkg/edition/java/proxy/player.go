@@ -18,7 +18,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
-	"go.minekube.com/gate/pkg/gate/proto"
 	internaltablist "go.minekube.com/gate/pkg/internal/tablist"
 	"go.uber.org/atomic"
 
@@ -115,13 +114,12 @@ func newConnectedPlayer(
 	virtualHost net.Addr,
 	onlineMode bool,
 	playerKey crypto.IdentifiedKey, // nil-able
-	tabList tablist.TabList,
 	sessionHandlerDeps *sessionHandlerDeps,
 ) *connectedPlayer {
 	var ping atomic.Duration
 	ping.Store(-1)
 
-	return &connectedPlayer{
+	p := &connectedPlayer{
 		sessionHandlerDeps: sessionHandlerDeps,
 		MinecraftConn:      conn,
 		log: logr.FromContextOrDiscard(conn.Context()).WithName("player").WithValues(
@@ -132,10 +130,11 @@ func newConnectedPlayer(
 		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
 		connPhase:      conn.Type().InitialClientPhase(),
 		ping:           ping,
-		tabList:        tabList,
 		permFunc:       func(string) permission.TriState { return permission.Undefined },
 		playerKey:      playerKey,
 	}
+	p.tabList = internaltablist.New(p)
+	return p
 }
 
 func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }
@@ -677,22 +676,4 @@ func (p *connectedPlayer) Settings() player.Settings {
 
 func (p *connectedPlayer) config() *config.Config {
 	return p.configProvider.config()
-}
-
-func newTabList(conn proto.PacketWriter, protocol proto.Protocol, players playerProvider) tablist.TabList {
-	if protocol.GreaterEqual(version.Minecraft_1_8) {
-		return tablist.New(conn, protocol, &tabListPlayerKeyProvider{players})
-	}
-	return tablist.NewLegacy(conn, protocol)
-}
-
-type tabListPlayerKeyProvider struct{ playerProvider }
-
-var _ tablist.PlayerKeyProvider = (*tabListPlayerKeyProvider)(nil)
-
-func (t *tabListPlayerKeyProvider) PlayerKey(playerID uuid.UUID) crypto.IdentifiedKey {
-	if p := t.Player(playerID); p != nil {
-		return p.IdentifiedKey()
-	}
-	return nil
 }

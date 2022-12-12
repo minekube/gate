@@ -10,24 +10,34 @@ import (
 )
 
 type RemoteChatSession struct {
-	SessionID uuid.UUID // zeroable
-	crypto.IdentifiedKey
+	ID  uuid.UUID // SessionID zeroable
+	Key crypto.IdentifiedKey
+}
+
+func (r *RemoteChatSession) SessionID() uuid.UUID {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *RemoteChatSession) IdentifiedKey() crypto.IdentifiedKey {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (r *RemoteChatSession) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteUUID(wr, r.SessionID)
+	err := util.WriteUUID(wr, r.ID)
 	if err != nil {
 		return err
 	}
-	return crypto.WritePlayerKey(wr, r.IdentifiedKey)
+	return crypto.WritePlayerKey(wr, r.Key)
 }
 
 func (r *RemoteChatSession) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	r.SessionID, err = util.ReadUUID(rd)
+	r.ID, err = util.ReadUUID(rd)
 	if err != nil {
 		return err
 	}
-	r.IdentifiedKey, err = crypto.ReadPlayerKey(c.Protocol, rd)
+	r.Key, err = crypto.ReadPlayerKey(c.Protocol, rd)
 	return err
 }
 

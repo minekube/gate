@@ -69,6 +69,10 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *legacytablist.PlayerListItem:
 		b.handleLegacyPlayerListItem(p, pc)
+	case *playerinfo.Upsert:
+		b.handleUpsertPlayerInfo(p, pc)
+	case *playerinfo.Remove:
+		b.handleRemovePlayerInfo(p, pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
 	case *packet.ServerData:
@@ -275,9 +279,7 @@ func (b *backendPlaySessionHandler) handleUpsertPlayerInfo(p *playerinfo.Upsert,
 }
 
 func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove, pc *proto.PacketContext) {
-	if err := b.serverConn.player.tabList.ProcessRemove(p); err != nil {
-		b.serverConn.log.Error(err, "error processing backend RemovePlayerInfo packet, ignored")
-	}
+	b.serverConn.player.tabList.ProcessRemove(p)
 	b.forwardToPlayer(pc, nil)
 }
 

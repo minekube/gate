@@ -31,6 +31,21 @@ type Entry struct {
 }
 
 var _ tablist.Entry = (*Entry)(nil)
+var _ internalEntry = (*Entry)(nil)
+
+type internalEntry interface {
+	SetDisplayNameInternal(name component.Component)
+	SetLatencyInternal(latency time.Duration)
+	SetGameModeInternal(gameMode int)
+	SetChatSessionInternal(chatSession player.ChatSession)
+	SetListedInternal(listed bool)
+}
+
+func doInternalEntity(e tablist.Entry, fn func(internalEntry)) {
+	if i, ok := e.(internalEntry); ok {
+		fn(i)
+	}
+}
 
 func (e *Entry) TabList() tablist.TabList {
 	return e.OwningTabList
@@ -48,6 +63,11 @@ func (e *Entry) DisplayName() component.Component {
 	return e.EntryAttributes.DisplayName
 }
 
+func (e *Entry) SetDisplayNameInternal(name component.Component) {
+	e.Lock()
+	e.EntryAttributes.DisplayName = name
+	e.Unlock()
+}
 func (e *Entry) SetDisplayName(name component.Component) error {
 	e.Lock()
 	e.EntryAttributes.DisplayName = name
@@ -67,6 +87,11 @@ func (e *Entry) GameMode() int {
 	return e.EntryAttributes.GameMode
 }
 
+func (e *Entry) SetGameModeInternal(gameMode int) {
+	e.Lock()
+	e.EntryAttributes.GameMode = gameMode
+	e.Unlock()
+}
 func (e *Entry) SetGameMode(gameMode int) error {
 	e.Lock()
 	e.EntryAttributes.GameMode = gameMode
@@ -81,21 +106,27 @@ func (e *Entry) SetGameMode(gameMode int) error {
 }
 
 func (e *Entry) Latency() time.Duration {
+	e.TryRLock()
 	e.RLock()
 	defer e.RUnlock()
 	return e.EntryAttributes.Latency
 }
 
-func (e *Entry) SetLatency(duration time.Duration) error {
+func (e *Entry) SetLatencyInternal(latency time.Duration) {
 	e.Lock()
-	e.EntryAttributes.Latency = duration
+	e.EntryAttributes.Latency = latency
+	e.Unlock()
+}
+func (e *Entry) SetLatency(latency time.Duration) error {
+	e.Lock()
+	e.EntryAttributes.Latency = latency
 	profileID := e.EntryAttributes.Profile.ID
 	e.Unlock()
 	upsertEntry, err := rawEntry(profileID)
 	if err != nil {
 		return fmt.Errorf("error creating upsert entry: %w", err)
 	}
-	upsertEntry.Latency = int(duration.Milliseconds())
+	upsertEntry.Latency = int(latency.Milliseconds())
 	return e.OwningTabList.EmitActionRaw(playerinfo.UpdateLatencyAction, upsertEntry)
 }
 
@@ -105,7 +136,7 @@ func (e *Entry) ChatSession() player.ChatSession {
 	return e.EntryAttributes.ChatSession
 }
 
-func (e *Entry) SetChatSession(chatSession player.ChatSession) {
+func (e *Entry) SetChatSessionInternal(chatSession player.ChatSession) {
 	e.Lock()
 	e.EntryAttributes.ChatSession = chatSession
 	e.Unlock()
@@ -117,6 +148,11 @@ func (e *Entry) Listed() bool {
 	return e.EntryAttributes.Listed
 }
 
+func (e *Entry) SetListedInternal(listed bool) {
+	e.Lock()
+	e.EntryAttributes.Listed = listed
+	e.Unlock()
+}
 func (e *Entry) SetListed(listed bool) error {
 	e.Lock()
 	e.EntryAttributes.Listed = listed
