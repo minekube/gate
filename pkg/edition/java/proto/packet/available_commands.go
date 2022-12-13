@@ -233,6 +233,7 @@ func (w *WireNode) decode(rd io.Reader, protocol proto.Protocol) (err error) {
 			return err
 		}
 	}
+
 	switch t := w.Flags & FlagNodeType; t {
 	case NodeTypeRoot:
 	case NodeTypeLiteral:
