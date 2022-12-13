@@ -32,8 +32,12 @@ func (p *SessionPlayerChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	err = util.WriteBool(wr, p.Signed)
+	if err != nil {
+		return err
+	}
 	if p.Signed {
-		err = util.WriteBytes(wr, p.Signature)
+		_, err = wr.Write(p.Signature)
 		if err != nil {
 			return err
 		}
@@ -60,7 +64,7 @@ func (p *SessionPlayerChat) Decode(c *proto.PacketContext, rd io.Reader) error {
 		return err
 	}
 	if p.Signed {
-		p.Signature, err = util.ReadBytes(rd)
+		p.Signature, err = readMessageSignature(rd)
 		if err != nil {
 			return err
 		}

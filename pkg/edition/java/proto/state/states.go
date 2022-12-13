@@ -109,14 +109,17 @@ func init() {
 	)
 	Play.ServerBound.Register(&chat.KeyedPlayerCommand{},
 		m(0x03, version.Minecraft_1_19),
-		m(0x04, version.Minecraft_1_19_1),
+		ml(0x04, version.Minecraft_1_19_1, version.Minecraft_1_19_1),
 	)
 	Play.ServerBound.Register(&chat.KeyedPlayerChat{},
 		m(0x04, version.Minecraft_1_19),
-		m(0x05, version.Minecraft_1_19_1),
+		ml(0x05, version.Minecraft_1_19_1, version.Minecraft_1_19_1),
 	)
 	Play.ServerBound.Register(&chat.SessionPlayerCommand{},
 		m(0x04, version.Minecraft_1_19_3),
+	)
+	Play.ServerBound.Register(&chat.SessionPlayerChat{},
+		m(0x05, version.Minecraft_1_19_3),
 	)
 	Play.ServerBound.Register(&p.TabCompleteRequest{},
 		m(0x14, version.Minecraft_1_7_2),
@@ -238,7 +241,7 @@ func init() {
 		m(0x32, version.Minecraft_1_16_2),
 		m(0x36, version.Minecraft_1_17),
 		m(0x34, version.Minecraft_1_19),
-		m(0x37, version.Minecraft_1_19_1),
+		ml(0x37, version.Minecraft_1_19_1, version.Minecraft_1_19_1),
 	)
 	Play.ClientBound.Register(&title.Legacy{},
 		m(0x45, version.Minecraft_1_8),

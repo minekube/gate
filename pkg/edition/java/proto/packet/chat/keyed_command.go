@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 const (
@@ -67,7 +65,7 @@ func (p *KeyedPlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error 
 	}
 
 	if len(p.Arguments) > maxNumArguments {
-		return fmt.Errorf("%w: max is %d but was %d", errLimitsViolation, maxNumArguments, len(p.Arguments))
+		return fmt.Errorf("encode %w: max is %d but was %d", errLimitsViolation, maxNumArguments, len(p.Arguments))
 	}
 	err = util.WriteVarInt(wr, len(p.Arguments))
 	if err != nil {
@@ -121,7 +119,7 @@ func (p *KeyedPlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		return err
 	}
 	if mapSize > maxNumArguments {
-		return fmt.Errorf("%w: max is %d but was %d", errLimitsViolation, maxNumArguments, mapSize)
+		return fmt.Errorf("decode %w: max is %d but was %d", errLimitsViolation, maxNumArguments, mapSize)
 	}
 	// Mapped as Argument : signature
 	entries := make(map[string][]byte, mapSize)
@@ -163,34 +161,3 @@ func (p *KeyedPlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	}
 	return nil
 }
-
-func (p *KeyedPlayerCommand) SignedContainer(
-	signer crypto.IdentifiedKey,
-	sender uuid.UUID,
-	mustSign bool,
-) (*crypto.SignedChatCommand, error) {
-	// There's a certain mod that is very broken that still signs messages but
-	// doesn't provide the player key. This is broken and wrong, but we need to
-	// work around that.
-	if p.Unsigned || signer == nil {
-		if mustSign {
-			return nil, errInvalidSignature
-		}
-		return nil, nil
-	}
-	salt := new(bytes.Buffer)
-	_ = util.WriteInt64(salt, p.Salt)
-	return &crypto.SignedChatCommand{
-		Command:            p.Command,
-		Signer:             signer.SignedPublicKey(),
-		Expiry:             p.Timestamp,
-		Salt:               salt.Bytes(),
-		Sender:             sender,
-		SignedPreview:      p.SignedPreview,
-		Signatures:         p.Arguments,
-		PreviousSignatures: p.PreviousMessages,
-		LastSignature:      p.LastMessage,
-	}, nil
-}
-
-var _ proto.Packet = (*KeyedPlayerCommand)(nil)

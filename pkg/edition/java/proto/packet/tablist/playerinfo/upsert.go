@@ -31,7 +31,7 @@ type (
 func (u *Upsert) Encode(c *proto.PacketContext, wr io.Writer) error {
 	bitSet := mathutil.NewBitSet(len(UpsertActions))
 	for i := range UpsertActions {
-		bitSet.Set(i, ContainsAction(u.ActionSet, UpsertActions[i]))
+		bitSet.SetBool(i, ContainsAction(u.ActionSet, UpsertActions[i]))
 	}
 	if _, err := wr.Write(bitSet.Bytes); err != nil {
 		return err

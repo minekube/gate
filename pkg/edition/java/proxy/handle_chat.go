@@ -80,7 +80,7 @@ func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat) error {
 		return nil
 	}
 
-	if evt.Message() != evt.Original() {
+	if evt.Message() != packet.Message {
 		if packet.Signed {
 			invalidChange(c.log, c.player)
 			return nil

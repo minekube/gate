@@ -55,7 +55,6 @@ func init() {
 // can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
-	&chat.LegacyChat{},
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
@@ -179,6 +178,16 @@ var packets = []proto.Packet{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
 		Type:      chat.SystemMessageType,
 	},
+	&chat.LegacyChat{},
+	&chat.KeyedPlayerCommand{
+		Arguments: map[string][]byte{
+			"arg1": {},
+			"arg2": {},
+		},
+	},
+	&chat.KeyedPlayerChat{},
+	&chat.SessionPlayerChat{},
+	&chat.SessionPlayerCommand{},
 	&PlayerChatCompletion{},
 	&ServerData{
 		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},

@@ -255,31 +255,6 @@ func pemEncodeKey(key []byte, header string) string {
 	return fmt.Sprintf(format, header, w.String(), header)
 }
 
-type (
-	SignedChatMessage struct {
-		Message            string
-		Signer             *rsa.PublicKey
-		Signature          []byte
-		Expiry             time.Time
-		Salt               []byte
-		Sender             uuid.UUID
-		SignedPreview      bool
-		PreviousSignatures []*SignaturePair
-		LastSignature      *SignaturePair
-	}
-	SignedChatCommand struct {
-		Command            string
-		Signer             *rsa.PublicKey
-		Expiry             time.Time
-		Salt               []byte
-		Sender             uuid.UUID
-		SignedPreview      bool
-		Signatures         map[string][]byte
-		PreviousSignatures []*SignaturePair
-		LastSignature      *SignaturePair
-	}
-)
-
 type SignaturePair struct {
 	Signer    uuid.UUID
 	Signature []byte
