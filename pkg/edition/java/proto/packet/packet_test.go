@@ -185,9 +185,27 @@ var packets = []proto.Packet{
 			"arg2": {},
 		},
 	},
-	&chat.KeyedPlayerChat{},
-	&chat.SessionPlayerChat{},
-	&chat.SessionPlayerCommand{},
+	&chat.KeyedPlayerChat{
+		Salt:      []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		Signature: bytes.Repeat([]byte{1}, 256),
+	},
+	&chat.SessionPlayerChat{
+		Signature: bytes.Repeat([]byte{1}, 256),
+	},
+	&chat.SessionPlayerCommand{
+		ArgumentSignatures: chat.ArgumentSignatures{
+			Entries: []chat.ArgumentSignature{
+				{
+					Name:      "arg1",
+					Signature: bytes.Repeat([]byte{1}, 256),
+				},
+				{
+					Name:      "arg2",
+					Signature: bytes.Repeat([]byte{1}, 256),
+				},
+			},
+		},
+	},
 	&PlayerChatCompletion{},
 	&ServerData{
 		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},

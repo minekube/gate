@@ -73,6 +73,11 @@ func (p *SimpleProxy) registerCommands() {
 					b.Suggest("&oI am &6&l" + player.Username())
 				}
 				b.Suggest("Hello world!")
+
+				// We can also order suggestion based on the current input and sort them.
+				// The slice provides available suggestion candidates.
+				//return suggest.Similar(b, []string{"FirstTry", "SecondTry"}).Build()
+
 				return b.Build()
 			})).
 			// Executed when running "/broadcast <message>"
