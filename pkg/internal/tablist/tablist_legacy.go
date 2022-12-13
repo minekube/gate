@@ -42,8 +42,8 @@ func (l *LegacyTabList) RemoveAll(ids ...uuid.UUID) error {
 }
 
 func (l *LegacyTabList) ProcessLegacy(p *legacytablist.PlayerListItem) error {
-	if len(p.Items) != 1 {
-		return fmt.Errorf("expected 1 item in %T but got %d", p, len(p.Items))
+	if len(p.Items) == 0 {
+		return fmt.Errorf("expected at least one item in %T but got zero", p)
 	}
 	item := p.Items[0] // Only one item per packet in 1.7
 
