@@ -23,7 +23,10 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -36,7 +39,7 @@ import (
 var (
 	//go:embed testdata/PlayerChat-1.19.gob
 	playerChatPacketGob []byte
-	playerChatPacket    = new(PlayerChat)
+	playerChatPacket    = new(chat.KeyedPlayerChat)
 )
 
 func init() {
@@ -52,7 +55,6 @@ func init() {
 // can't be filled by fake data and must be initialized at compile time.
 var packets = []proto.Packet{
 	&plugin.Message{},
-	&LegacyChat{},
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
@@ -81,28 +83,8 @@ var packets = []proto.Packet{
 	&Handshake{},
 	&KeepAlive{},
 	&ServerLogin{
-		Username: "Foo",
-		PlayerKey: func() crypto.IdentifiedKey {
-			pk, err := rsa.GenerateKey(rand.Reader, 512)
-			if err != nil {
-				panic(err)
-			}
-			public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
-			if err != nil {
-				panic(err)
-			}
-			hashed := crypto2.SHA1.New()
-			hashed.Write([]byte("message"))
-			signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
-			if err != nil {
-				panic(err)
-			}
-			k, err := crypto.NewIdentifiedKey(keyrevision.LinkedV2, public, time.Now().UnixMilli(), signature)
-			if err != nil {
-				panic(err)
-			}
-			return k
-		}(),
+		Username:  "Foo",
+		PlayerKey: generatePlayerKey(),
 	},
 	&EncryptionResponse{},
 	&LoginPluginResponse{},
@@ -133,9 +115,9 @@ var packets = []proto.Packet{
 		Stay:    2,
 		FadeOut: 3,
 	},
-	&PlayerListItem{
-		Action: UpdateLatencyPlayerListItemAction,
-		Items: []PlayerListItemEntry{
+	&legacytablist.PlayerListItem{
+		Action: legacytablist.UpdateLatencyPlayerListItemAction,
+		Items: []legacytablist.PlayerListItemEntry{
 			{
 				ID:   testUUID,
 				Name: "testName",
@@ -146,6 +128,7 @@ var packets = []proto.Packet{
 				},
 				GameMode:    2,
 				Latency:     4325,
+				PlayerKey:   generatePlayerKey(),
 				DisplayName: &component.Text{Content: "Bob", S: component.Style{Color: color.Red}},
 			},
 			{
@@ -158,6 +141,7 @@ var packets = []proto.Packet{
 				},
 				GameMode:    1,
 				Latency:     42,
+				PlayerKey:   generatePlayerKey(),
 				DisplayName: &component.Text{Content: "Alice", S: component.Style{Color: color.Green}},
 			},
 		},
@@ -188,22 +172,44 @@ var packets = []proto.Packet{
 		},
 		ChatTypeRegistry: nil,
 	},
-	NewPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
+	chat.NewKeyedPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	playerChatPacket,
-	&PlayerChatPreview{},
-	&ServerChatPreview{
-		ID:      3,
-		Preview: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
-	},
-	&SystemChat{
+	&chat.SystemChat{
 		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
-		Type:      SystemMessageType,
+		Type:      chat.SystemMessageType,
+	},
+	&chat.LegacyChat{},
+	&chat.KeyedPlayerCommand{
+		Arguments: map[string][]byte{
+			"arg1": {},
+			"arg2": {},
+		},
+	},
+	&chat.KeyedPlayerChat{
+		Salt:      []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		Signature: bytes.Repeat([]byte{1}, 256),
+	},
+	&chat.SessionPlayerChat{
+		Signature: bytes.Repeat([]byte{1}, 256),
+	},
+	&chat.SessionPlayerCommand{
+		ArgumentSignatures: chat.ArgumentSignatures{
+			Entries: []chat.ArgumentSignature{
+				{
+					Name:      "arg1",
+					Signature: bytes.Repeat([]byte{1}, 256),
+				},
+				{
+					Name:      "arg2",
+					Signature: bytes.Repeat([]byte{1}, 256),
+				},
+			},
+		},
 	},
 	&PlayerChatCompletion{},
 	&ServerData{
 		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},
 		Favicon:            "Favicon",
-		PreviewsChat:       true,
 		SecureChatEnforced: true,
 	},
 	&bossbar.BossBar{
@@ -215,6 +221,40 @@ var packets = []proto.Packet{
 		Overlay: bossbar.Notched10Overlay,
 		Flags:   bossbar.ConvertFlags(bossbar.DarkenScreenFlag, bossbar.PlayBossMusicFlag),
 	},
+	&playerinfo.Upsert{
+		ActionSet: []playerinfo.UpsertAction{
+			playerinfo.AddPlayerAction,
+			playerinfo.InitializeChatAction,
+		},
+	},
+	&playerinfo.Remove{},
+	&chat.RemoteChatSession{ // not a packet but we can test it anyway
+		Key: generatePlayerKey(),
+	},
+	&chat.LastSeenMessages{}, // not a packet but we can test it anyway
+
+}
+
+func generatePlayerKey() crypto.IdentifiedKey {
+	pk, err := rsa.GenerateKey(rand.Reader, 512)
+	if err != nil {
+		panic(err)
+	}
+	public, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+	if err != nil {
+		panic(err)
+	}
+	hashed := crypto2.SHA1.New()
+	hashed.Write([]byte("message"))
+	signature, err := rsa.SignPSS(rand.Reader, pk, crypto2.SHA1, hashed.Sum(nil), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
+	if err != nil {
+		panic(err)
+	}
+	k, err := crypto.NewIdentifiedKey(keyrevision.LinkedV2, public, time.Now().UnixMilli(), signature)
+	if err != nil {
+		panic(err)
+	}
+	return k
 }
 
 // fill packets with fake data

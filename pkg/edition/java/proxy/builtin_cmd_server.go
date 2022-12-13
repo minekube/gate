@@ -10,7 +10,7 @@ import (
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
-	"go.minekube.com/gate/pkg/internal/suggest"
+	"go.minekube.com/gate/pkg/command/suggest"
 )
 
 const serverCmdPermission = "gate.command.server"
@@ -137,7 +137,7 @@ func serverSuggestionProvider(p *Proxy) brigodier.SuggestionProvider {
 		_ *command.Context,
 		b *brigodier.SuggestionsBuilder,
 	) *brigodier.Suggestions {
-		return suggest.Build(b, b.Input, serverNames(p))
+		return suggest.Similar(b, serverNames(p)).Build()
 	})
 }
 

@@ -199,18 +199,25 @@ func init() {
 	empty(id("minecraft:team", mapSet(version.Minecraft_1_19, 31)))
 	empty(id("minecraft:item_slot", mapSet(version.Minecraft_1_19, 32)))
 	empty(id("minecraft:resource_location", mapSet(version.Minecraft_1_19, 33)))
-	empty(id("minecraft:mob_effect", mapSet(version.Minecraft_1_19, 34)))
-	empty(id("minecraft:function", mapSet(version.Minecraft_1_19, 35)))
-	empty(id("minecraft:entity_anchor", mapSet(version.Minecraft_1_19, 36)))
-	empty(id("minecraft:int_range", mapSet(version.Minecraft_1_19, 37)))
-	empty(id("minecraft:float_range", mapSet(version.Minecraft_1_19, 38)))
-	empty(id("minecraft:item_enchantment", mapSet(version.Minecraft_1_19, 39)))
-	empty(id("minecraft:entity_summon", mapSet(version.Minecraft_1_19, 40)))
-	empty(id("minecraft:dimension", mapSet(version.Minecraft_1_19, 41)))
-	empty(id("minecraft:time", mapSet(version.Minecraft_1_19, 42))) // added in 1.14
+	empty(id("minecraft:mob_effect", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 34)))
+	empty(id("minecraft:function", mapSet(version.Minecraft_1_19_3, 34), mapSet(version.Minecraft_1_19, 35)))
+	empty(id("minecraft:entity_anchor", mapSet(version.Minecraft_1_19_3, 35), mapSet(version.Minecraft_1_19, 36)))
+	empty(id("minecraft:int_range", mapSet(version.Minecraft_1_19_3, 36), mapSet(version.Minecraft_1_19, 37)))
+	empty(id("minecraft:float_range", mapSet(version.Minecraft_1_19_3, 37), mapSet(version.Minecraft_1_19, 38)))
+	empty(id("minecraft:item_enchantment", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 39)))
+	empty(id("minecraft:entity_summon", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 40)))
+	empty(id("minecraft:dimension", mapSet(version.Minecraft_1_19_3, 38), mapSet(version.Minecraft_1_19, 41)))
+	empty(id("minecraft:gamemode", mapSet(version.Minecraft_1_19_3, 39)))                                 // 1.19.3
+	empty(id("minecraft:time", mapSet(version.Minecraft_1_19_3, 40), mapSet(version.Minecraft_1_19, 42))) // added in 1.14
 
-	register(id("minecraft:resource_or_tag", mapSet(version.Minecraft_1_19, 43)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
-	register(id("minecraft:resource", mapSet(version.Minecraft_1_19, 44)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
+	register(id("minecraft:resource_or_tag", mapSet(version.Minecraft_1_19_3, 41), mapSet(version.Minecraft_1_19, 43)),
+		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
+	register(id("minecraft:resource_or_tag_key", mapSet(version.Minecraft_1_19_3, 42)),
+		ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
+	register(id("minecraft:resource", mapSet(version.Minecraft_1_19_3, 43), mapSet(version.Minecraft_1_19, 44)),
+		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
+	register(id("minecraft:resource_key", mapSet(version.Minecraft_1_19_3, 43)),
+		ResourceKeyArgument, ResourceKeyArgumentPropertyCodec)
 
 	empty(id("minecraft:template_mirror", mapSet(version.Minecraft_1_19, 45)))   // 1.19
 	empty(id("minecraft:template_rotation", mapSet(version.Minecraft_1_19, 46))) // 1.19

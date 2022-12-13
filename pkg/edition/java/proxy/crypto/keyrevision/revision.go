@@ -22,6 +22,10 @@ var (
 			version.Minecraft_1_19_1.Protocol,
 		},
 	}
+	Revisions = []Revision{
+		GenericV1,
+		LinkedV2,
+	}
 )
 
 // Applicable returns whether the revision is applicable to the protocol version.
@@ -32,6 +36,16 @@ func Applicable(rev Revision, protocol proto.Protocol) bool {
 		}
 	}
 	return false
+}
+
+// RevisionIndex returns the index of the revision in the Revisions slice.
+func RevisionIndex(rev Revision) int {
+	for i, r := range Revisions {
+		if r == rev {
+			return i
+		}
+	}
+	return -1
 }
 
 type revision struct {

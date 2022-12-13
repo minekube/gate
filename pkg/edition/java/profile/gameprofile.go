@@ -3,6 +3,7 @@ package profile
 import (
 	"encoding/json"
 	"fmt"
+
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 

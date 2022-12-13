@@ -122,7 +122,8 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			return
 		}
 	} else if l.conn.Protocol().GreaterEqual(version.Minecraft_1_19) &&
-		l.config().ForceKeyAuthentication {
+		l.config().ForceKeyAuthentication &&
+		l.conn.Protocol().Lower(version.Minecraft_1_19_3) {
 		_ = l.inbound.disconnect(&component.Translation{
 			Key: "multiplayer.disconnect.missing_public_key",
 		})

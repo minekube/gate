@@ -74,7 +74,6 @@ func (a *authSessionHandler) Activated() {
 		a.inbound.VirtualHost(),
 		a.onlineMode,
 		a.inbound.IdentifiedKey(),
-		newTabList(conn, conn.Protocol(), a.players),
 		a.sessionHandlerDeps,
 	)
 	a.connectedPlayer = player

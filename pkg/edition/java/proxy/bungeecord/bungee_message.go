@@ -200,7 +200,7 @@ func (r *bungeeCordMessageResponder) processForwardToServer(in io.Reader) {
 		return
 	}
 	forward := r.prepareForwardMessage(in)
-	if strings.EqualFold(target, "ALL") {
+	if strings.EqualFold(target, "ALL") || strings.EqualFold(target, "ONLINE") {
 		var currentUserServer string
 		if s := r.ConnectedServer(); s != nil {
 			currentUserServer = s.Name()

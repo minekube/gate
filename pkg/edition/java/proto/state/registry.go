@@ -98,23 +98,22 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 		to   proto.Protocol
 	)
 	for i, current := range mappings {
+		next = current
+		if i+1 < len(mappings) {
+			next = mappings[i+1]
+		}
+
 		from = current.Protocol
 		lastValid := current.LastValidProtocol
 		if lastValid != 0 {
 			if next != current {
 				panic("Cannot add a mapping after last valid mapping")
 			}
-			if from > lastValid {
+			if from-lastValid > 0 {
 				panic("Last mapping version cannot be higher than highest mapping version")
 			}
 		}
-		// set "next"
-		if i < len(mappings)-1 {
-			next = mappings[i+1]
-		} else {
-			next = current
-		}
-		// set "to"
+
 		if current == next {
 			if lastValid != 0 {
 				to = lastValid
@@ -127,10 +126,10 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 
 		lastInList := lastValid
 		if lastValid == 0 {
-			lastInList = last(version.SupportedVersions).Protocol
+			lastInList = version.MaximumVersion.Protocol
 		}
 
-		if from >= to && from != lastInList {
+		if from-to >= 0 && from != lastInList {
 			panic(fmt.Sprintf("Next mapping version (%s) should be lower then current (%s)", to, from))
 		}
 
@@ -150,6 +149,7 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 			if _, ok = registry.PacketTypes[packetType]; ok {
 				panic(fmt.Sprintf("%T is already registered for protocol %s", packetOf, registry.Protocol))
 			}
+
 			registry.PacketIDs[current.ID] = packetType
 			registry.PacketTypes[packetType] = current.ID
 			return true
@@ -193,20 +193,9 @@ func ml(id proto.PacketID, version, lastValidProtocol *proto.Version) *PacketMap
 	}
 }
 
-func versionRange(
-	versions []*proto.Version,
-	from, to proto.Protocol,
-	fn func(p proto.Protocol,
-	) bool) {
-	var inRange bool
+func versionRange(versions []*proto.Version, from, to proto.Protocol, fn func(proto.Protocol) bool) {
 	for _, ver := range versions {
-		if ver.Protocol == from {
-			inRange = true
-		} else if ver.Protocol == to {
-			fn(ver.Protocol)
-			return
-		}
-		if inRange {
+		if ver.Protocol >= from && ver.Protocol <= to {
 			if !fn(ver.Protocol) {
 				return
 			}
@@ -227,13 +216,4 @@ func (s State) String() string {
 		return "Play"
 	}
 	return "UnknownState"
-}
-
-// returns last element of the slice or nil if slice is empty
-func last[T any](s []T) T {
-	if len(s) == 0 {
-		var t T
-		return t
-	}
-	return s[len(s)-1]
 }
