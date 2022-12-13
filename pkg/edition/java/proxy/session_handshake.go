@@ -25,7 +25,6 @@ import (
 type sessionHandlerDeps struct {
 	proxy          *Proxy
 	registrar      playerRegistrar
-	players        playerProvider
 	eventMgr       event.Manager
 	configProvider configProvider
 	authenticator  auth.Authenticator

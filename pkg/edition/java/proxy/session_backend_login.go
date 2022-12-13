@@ -9,6 +9,7 @@ import (
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
@@ -112,11 +113,12 @@ func (b *backendLoginSessionHandler) handleEncryptionRequest() {
 }
 
 const (
-	velocityIpForwardingChannel        = "velocity:player_info"
-	velocityDefaultForwardingVersion   = 1
-	velocityWithKeyForwardingVersion   = 2
-	velocityWithKeyV2ForwardingVersion = 3
-	velocityForwardingMaxVersion       = velocityWithKeyV2ForwardingVersion
+	velocityIpForwardingChannel          = "velocity:player_info"
+	velocityDefaultForwardingVersion     = 1
+	velocityWithKeyForwardingVersion     = 2
+	velocityWithKeyV2ForwardingVersion   = 3
+	velocityLazySessionForwardingVersion = 4
+	velocityForwardingMaxVersion         = velocityLazySessionForwardingVersion
 )
 
 func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPluginMessage) {
@@ -192,16 +194,24 @@ func findForwardingVersion(requested int, player *connectedPlayer) int {
 	// Ensure we are in range
 	requested = min(requested, velocityForwardingMaxVersion)
 	if requested > velocityDefaultForwardingVersion {
-		if revision := player.IdentifiedKey().KeyRevision(); revision != nil {
-			switch revision {
-			case keyrevision.GenericV1:
-				return velocityWithKeyForwardingVersion
-			// Since V2 is not backwards compatible we have to throw the key if v2 and requested is v1
-			case keyrevision.LinkedV2:
-				if requested >= velocityWithKeyV2ForwardingVersion {
-					return velocityWithKeyV2ForwardingVersion
+		if player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+			if requested >= velocityLazySessionForwardingVersion {
+				return velocityLazySessionForwardingVersion
+			}
+			return velocityDefaultForwardingVersion
+		}
+		if key := player.IdentifiedKey(); key != nil {
+			if revision := key.KeyRevision(); revision != nil {
+				switch revision {
+				case keyrevision.GenericV1:
+					return velocityWithKeyForwardingVersion
+				// Since V2 is not backwards compatible we have to throw the key if v2 and requested is v1
+				case keyrevision.LinkedV2:
+					if requested >= velocityWithKeyV2ForwardingVersion {
+						return velocityWithKeyV2ForwardingVersion
+					}
+					return velocityDefaultForwardingVersion
 				}
-				return velocityDefaultForwardingVersion
 			}
 		}
 	}
@@ -239,7 +249,8 @@ func createVelocityForwardingData(
 
 	// This serves as additional redundancy. The key normally is stored in the
 	// login start to the server, but some setups require this.
-	if actualVersion >= velocityWithKeyForwardingVersion {
+	if actualVersion >= velocityWithKeyForwardingVersion &&
+		actualVersion < velocityLazySessionForwardingVersion {
 		playerKey := player.IdentifiedKey()
 		if playerKey == nil {
 			return nil, errors.New("player auth key missing")

@@ -15,6 +15,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/sets"
@@ -65,8 +67,12 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleAvailableCommands(p)
 	case *packet.TabCompleteResponse:
 		b.playerSessionHandler.handleTabCompleteResponse(p)
-	case *packet.PlayerListItem:
-		b.handlePlayerListItem(p, pc)
+	case *legacytablist.PlayerListItem:
+		b.handleLegacyPlayerListItem(p, pc)
+	case *playerinfo.Upsert:
+		b.handleUpsertPlayerInfo(p, pc)
+	case *playerinfo.Remove:
+		b.handleRemovePlayerInfo(p, pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
 	case *packet.ServerData:
@@ -214,7 +220,6 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 		_ = b.serverConn.player.WritePacket(&packet.ServerData{
 			Description:        e.Ping().Description,
 			Favicon:            e.Ping().Favicon,
-			PreviewsChat:       p.PreviewsChat,
 			SecureChatEnforced: p.SecureChatEnforced,
 		})
 	})
@@ -259,11 +264,22 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 	}
 }
 
-func (b *backendPlaySessionHandler) handlePlayerListItem(p *packet.PlayerListItem, pc *proto.PacketContext) {
-	// Track changes to tab list of player
-	if err := b.serverConn.player.tabList.ProcessBackendPacket(p); err != nil {
-		b.serverConn.log.Error(err, "Error while processing backend PlayerListItem packet, ignored")
+func (b *backendPlaySessionHandler) handleLegacyPlayerListItem(p *legacytablist.PlayerListItem, pc *proto.PacketContext) {
+	if err := b.serverConn.player.tabList.ProcessLegacy(p); err != nil {
+		b.serverConn.log.Error(err, "erro processing backend LegacyPlayerListItem packet, ignored")
 	}
+	b.forwardToPlayer(pc, nil)
+}
+
+func (b *backendPlaySessionHandler) handleUpsertPlayerInfo(p *playerinfo.Upsert, pc *proto.PacketContext) {
+	if err := b.serverConn.player.tabList.ProcessUpdate(p); err != nil {
+		b.serverConn.log.Error(err, "error processing backend UpsertPlayerInfo packet, ignored")
+	}
+	b.forwardToPlayer(pc, nil)
+}
+
+func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove, pc *proto.PacketContext) {
+	b.serverConn.player.tabList.ProcessRemove(p)
 	b.forwardToPlayer(pc, nil)
 }
 

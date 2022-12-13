@@ -15,7 +15,7 @@ type Respawn struct {
 	Difficulty           int16
 	Gamemode             int16
 	LevelType            string         // empty by default
-	ShouldKeepPlayerData bool           // 1.16+
+	DataToKeep           byte           // 1.16+
 	DimensionInfo        *DimensionInfo // 1.16-1.16.1
 	PreviousGamemode     int16          // 1.16+
 	CurrentDimensionData *DimensionData // 1.16.2+
@@ -78,9 +78,16 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 		if err != nil {
 			return err
 		}
-		err = util.WriteBool(wr, r.ShouldKeepPlayerData)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
+			err = util.WriteByte(wr, r.DataToKeep)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = util.WriteBool(wr, r.DataToKeep != 0)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		err = util.WriteString(wr, r.LevelType)
@@ -171,9 +178,21 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			Flat:               flat,
 			DebugType:          debug,
 		}
-		r.ShouldKeepPlayerData, err = util.ReadBool(rd)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
+			r.DataToKeep, err = util.ReadByte(rd)
+			if err != nil {
+				return err
+			}
+		} else {
+			ok, err := util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
+			if ok {
+				r.DataToKeep = 1
+			} else {
+				r.DataToKeep = 0
+			}
 		}
 	} else {
 		r.LevelType, err = util.ReadStringMax(rd, 16)

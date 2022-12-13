@@ -13,6 +13,7 @@ import (
 	"github.com/dboslee/lru"
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.uber.org/atomic"
@@ -418,12 +419,19 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	serverMc.SetProtocol(protocol)
 	serverMc.SetState(state.Login)
 
+	serverLogin := &packet.ServerLogin{
+		Username: s.player.Username(),
+	}
+	if s.player.IdentifiedKey() == nil &&
+		s.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+		serverLogin.HolderID = s.player.ID()
+	} else {
+		serverLogin.PlayerKey = s.player.IdentifiedKey()
+	}
+
 	// Kick off the connection process
 	// connection from proxy -> server (backend)
-	err = serverMc.WritePacket(&packet.ServerLogin{
-		Username:  s.player.Username(),
-		PlayerKey: s.player.IdentifiedKey(),
-	})
+	err = serverMc.WritePacket(serverLogin)
 	if err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}

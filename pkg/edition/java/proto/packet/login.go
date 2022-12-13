@@ -16,7 +16,7 @@ import (
 
 type ServerLogin struct {
 	Username  string
-	PlayerKey crypto.IdentifiedKey // 1.19+
+	PlayerKey crypto.IdentifiedKey // 1.19.3
 	HolderID  uuid.UUID            // Used for key revision 2
 }
 
@@ -33,25 +33,34 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 		return err
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		err = util.WriteBool(wr, s.PlayerKey != nil)
-		if err != nil {
-			return err
-		}
-		if s.PlayerKey != nil {
-			err = crypto.WritePlayerKey(wr, s.PlayerKey)
+		if c.Protocol.Lower(version.Minecraft_1_19_3) {
+			err = util.WriteBool(wr, s.PlayerKey != nil)
 			if err != nil {
 				return err
+			}
+			if s.PlayerKey != nil {
+				err = crypto.WritePlayerKey(wr, s.PlayerKey)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-			ok := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
+			okPlayerKey := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
+			ok := okPlayerKey || s.HolderID != uuid.Nil
 			err = util.WriteBool(wr, ok)
 			if err != nil {
 				return err
 			}
 			if ok {
-				err = util.WriteUUID(wr, s.PlayerKey.SignatureHolder())
+				var id uuid.UUID
+				if okPlayerKey {
+					id = s.PlayerKey.SignatureHolder()
+				} else {
+					id = s.HolderID
+				}
+				err = util.WriteUUID(wr, id)
 				if err != nil {
 					return err
 				}
@@ -68,19 +77,25 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	}
 
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		ok, err := util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
-		if ok {
-			s.PlayerKey, err = crypto.ReadPlayerKey(c.Protocol, rd)
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
+			s.PlayerKey = nil
+		} else {
+			ok, err := util.ReadBool(rd)
 			if err != nil {
 				return err
+			}
+			if ok {
+				s.PlayerKey, err = crypto.ReadPlayerKey(c.Protocol, rd)
+				if err != nil {
+					return err
+				}
+			} else {
+				s.PlayerKey = nil
 			}
 		}
 
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-			ok, err = util.ReadBool(rd)
+			ok, err := util.ReadBool(rd)
 			if err != nil {
 				return err
 			}
@@ -91,6 +106,8 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 				}
 			}
 		}
+	} else {
+		s.PlayerKey = nil
 	}
 	return
 }
@@ -107,7 +124,7 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 		if err != nil {
 			return err
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) && c.Protocol.Lower(version.Minecraft_1_19_3) {
 			err = util.WriteBool(wr, e.Salt == nil) // yes, write true if no salt
 			if err != nil {
 				return err
@@ -135,7 +152,8 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 		if err != nil {
 			return
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19) && c.Protocol.Lower(version.Minecraft_1_19_3) {
 			var ok bool
 			ok, err = util.ReadBool(rd)
 			if err != nil {
@@ -148,16 +166,17 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 				}
 				e.Salt = &salt
 			}
-			e.VerifyToken, err = util.ReadBytesLen(rd, 256)
-			if err != nil {
-				return
-			}
-		} else {
-			e.VerifyToken, err = util.ReadBytesLen(rd, 128)
-			if err != nil {
-				return
-			}
 		}
+
+		limit := 256
+		if c.Protocol.Lower(version.Minecraft_1_19) {
+			limit = 128
+		}
+		e.VerifyToken, err = util.ReadBytesLen(rd, limit)
+		if err != nil {
+			return
+		}
+
 	} else {
 		e.SharedSecret, err = util.ReadBytes17(rd)
 		if err != nil {

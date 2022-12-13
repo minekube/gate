@@ -516,7 +516,6 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 	conn.SetSessionHandler(newHandshakeSessionHandler(conn, &sessionHandlerDeps{
 		proxy:          p,
 		registrar:      p,
-		players:        p,
 		configProvider: p,
 		eventMgr:       p.event,
 		authenticator:  p.authenticator,
@@ -681,8 +680,5 @@ func withConnectionTimeout(parent context.Context, cfg *config.Config) (context.
 type (
 	configProvider interface {
 		config() *config.Config
-	}
-	playerProvider interface {
-		Player(id uuid.UUID) Player
 	}
 )
