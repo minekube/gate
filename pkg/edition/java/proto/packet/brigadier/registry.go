@@ -216,7 +216,7 @@ func init() {
 		ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
 	register(id("minecraft:resource", mapSet(version.Minecraft_1_19_3, 43), mapSet(version.Minecraft_1_19, 44)),
 		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
-	register(id("minecraft:resource_key", mapSet(version.Minecraft_1_19_3, 43)),
+	register(id("minecraft:resource_key", mapSet(version.Minecraft_1_19_3, 44)),
 		ResourceKeyArgument, ResourceKeyArgumentPropertyCodec)
 
 	empty(id("minecraft:template_mirror", mapSet(version.Minecraft_1_19, 45)))   // 1.19

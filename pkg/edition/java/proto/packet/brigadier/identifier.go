@@ -36,7 +36,9 @@ func newArgIdentifier(id string, versions ...versionSet) (*ArgumentIdentifier, e
 		}
 		for _, v := range version.Versions {
 			if v.Protocol >= current.version {
-				identifier.idByProtocol[v.Protocol] = current.id
+				if _, ok := identifier.idByProtocol[v.Protocol]; !ok {
+					identifier.idByProtocol[v.Protocol] = current.id
+				}
 			}
 		}
 		previous = &current.version
