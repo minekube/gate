@@ -266,7 +266,7 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 
 func (b *backendPlaySessionHandler) handleLegacyPlayerListItem(p *legacytablist.PlayerListItem, pc *proto.PacketContext) {
 	if err := b.serverConn.player.tabList.ProcessLegacy(p); err != nil {
-		b.serverConn.log.Error(err, "erro processing backend LegacyPlayerListItem packet, ignored")
+		b.serverConn.log.Error(err, "error processing backend LegacyPlayerListItem packet, ignored")
 	}
 	b.forwardToPlayer(pc, nil)
 }
