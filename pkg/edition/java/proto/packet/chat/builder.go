@@ -44,8 +44,8 @@ type Builder struct {
 	// Sender is the UUID of the player who sent the message.
 	// If zero (uuid.Nil), the message is sent by the server.
 	Sender uuid.UUID
-	// Time is the time the message was sent.
-	Time time.Time
+	// Timestamp is the time the message was sent.
+	Timestamp time.Time
 }
 
 // ToClient creates a packet which can be sent to the client;
@@ -79,23 +79,23 @@ func (b *Builder) ToClient() proto.Packet {
 // ToServer creates a packet which can be sent to the server;
 // using the provided information in the builder.
 func (b *Builder) ToServer() proto.Packet {
-	if b.Time.IsZero() {
-		b.Time = time.Now()
+	if b.Timestamp.IsZero() {
+		b.Timestamp = time.Now()
 	}
 	if b.Protocol.GreaterEqual(version.Minecraft_1_19_3) { // Keyed chat
 		if strings.HasPrefix(b.Message, "/") {
-			return NewKeyedPlayerCommand(strings.TrimPrefix(b.Message, "/"), nil, b.Time)
+			return NewKeyedPlayerCommand(strings.TrimPrefix(b.Message, "/"), nil, b.Timestamp)
 		}
 	} else if b.Protocol.GreaterEqual(version.Minecraft_1_19) { // Session chat
 		if strings.HasPrefix(b.Message, "/") {
 			return &SessionPlayerCommand{
 				Command:   strings.TrimPrefix(b.Message, "/"),
-				Timestamp: b.Time,
+				Timestamp: b.Timestamp,
 			}
 		}
 		return &SessionPlayerChat{
 			Message:   b.Message,
-			Timestamp: b.Time,
+			Timestamp: b.Timestamp,
 		}
 	}
 	// Legacy chat

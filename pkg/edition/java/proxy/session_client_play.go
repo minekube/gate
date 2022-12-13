@@ -9,13 +9,10 @@ import (
 	"time"
 
 	"github.com/gammazero/deque"
-	"go.minekube.com/brigodier"
-	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
-	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -24,7 +21,6 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/robinbraemer/event"
-	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
@@ -42,7 +38,8 @@ type clientPlaySessionHandler struct {
 	player              *connectedPlayer
 	spawned             atomic.Bool
 	loginPluginMessages deque.Deque[*plugin.Message]
-	lastChatMessage     time.Time // Added in 1.19
+	chatHandler         *chatHandler
+	chatTimeKeeper      chatTimeKeeper
 
 	serverBossBars         map[uuid.UUID]struct{}
 	outstandingTabComplete *packet.TabCompleteRequest
@@ -55,6 +52,12 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 		log:            log,
 		log1:           log.V(1),
 		serverBossBars: map[uuid.UUID]struct{}{},
+		chatHandler: &chatHandler{
+			log:      log,
+			eventMgr: player.eventMgr,
+			player:   player,
+			cmdMgr:   player.proxy.Command(),
+		},
 	}
 }
 
@@ -71,10 +74,14 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleKeepAlive(p)
 	case *chat.LegacyChat:
 		c.handleLegacyChat(p)
+	case *chat.SessionPlayerChat:
+		c.handleSessionPlayerChat(p)
 	case *chat.KeyedPlayerChat:
-		c.handlePlayerChat(p)
+		c.handleKeyedPlayerChat(p)
 	case *chat.KeyedPlayerCommand:
-		c.handlePlayerCommand(p)
+		c.handleKeyedPlayerCommand(p)
+	case *chat.SessionPlayerCommand:
+		c.handleSessionPlayerCommand(p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
@@ -487,143 +494,88 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *chat.LegacyChat) {
 	}
 
 	if strings.HasPrefix(p.Message, "/") {
-		c.processCommandMessage(strings.TrimPrefix(p.Message, "/"), nil)
+		err := c.chatHandler.handleCommand(p)
+		if err != nil {
+			c.log.Error(err, "error handling legacy command")
+		}
 	} else {
-		c.processPlayerChat(p.Message, nil, p)
+		err := c.chatHandler.handleChat(p)
+		if err != nil {
+			c.log.Error(err, "error handling legacy chat")
+		}
 	}
 }
 
-func (c *clientPlaySessionHandler) handlePlayerCommand(p *chat.KeyedPlayerCommand) {
+func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPlayerCommand) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
+	if !c.updateTimeKeeper(p.Timestamp) {
+		return
+	}
 	if !c.validateChat(p.Command) {
 		return
 	}
 
-	if !p.Unsigned {
-		// Bad if spoofed
-		signedCommand, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
-		if err != nil {
-			c.log.Error(err, "invalid signed command message")
-			c.player.Disconnect(&component.Text{
-				Content: "Invalid signed chat message",
-				S:       component.Style{Color: color.Red},
-			})
-			return
-		}
-		if signedCommand != nil {
-			c.processCommandMessage(p.Command, signedCommand)
-			return
-		}
+	err := c.chatHandler.handleCommand(p)
+	if err != nil {
+		c.log.Error(err, "error handling session player command")
 	}
-
-	c.processCommandMessage(p.Command, nil)
 }
 
-func (c *clientPlaySessionHandler) tickLastMessage(nextMessage *crypto.SignedChatMessage) bool {
-	if !c.lastChatMessage.IsZero() && c.lastChatMessage.After(nextMessage.Expiry) {
-		c.player.Disconnect(&component.Translation{Key: "multiplayer.disconnect.out_of_order_chat"})
-		return false
-	}
-	c.lastChatMessage = nextMessage.Expiry
-	return true
-}
-
-func (c *clientPlaySessionHandler) handlePlayerChat(p *chat.KeyedPlayerChat) {
+func (c *clientPlaySessionHandler) handleKeyedPlayerCommand(p *chat.KeyedPlayerCommand) {
 	_, ok := c.player.ensureBackendConnection()
 	if !ok {
+		return
+	}
+	if !c.updateTimeKeeper(p.Timestamp) {
+		return
+	}
+	if !c.validateChat(p.Command) {
+		return
+	}
+
+	err := c.chatHandler.handleCommand(p)
+	if err != nil {
+		c.log.Error(err, "error handling keyed player command")
+	}
+}
+
+func (c *clientPlaySessionHandler) handleSessionPlayerChat(p *chat.SessionPlayerChat) {
+	_, ok := c.player.ensureBackendConnection()
+	if !ok {
+		return
+	}
+	if !c.updateTimeKeeper(p.Timestamp) {
 		return
 	}
 	if !c.validateChat(p.Message) {
 		return
 	}
 
-	if !p.Unsigned {
-		// Bad if spoofed
-		signedChat, err := p.SignedContainer(c.player.IdentifiedKey(), c.player.ID(), false)
-		if err != nil {
-			c.log.Error(err, "invalid signed chat message")
-			c.player.Disconnect(&component.Text{
-				Content: "Invalid signed chat message",
-				S:       component.Style{Color: color.Red},
-			})
-			return
-		}
-		if signedChat != nil {
-			// Server doesn't care for expiry as long as order is correct
-			if !c.tickLastMessage(signedChat) {
-				return
-			}
-			c.processPlayerChat(p.Message, signedChat, p)
-			return
-		}
+	err := c.chatHandler.handleChat(p)
+	if err != nil {
+		c.log.Error(err, "error handling session player chat")
 	}
-
-	c.processPlayerChat(p.Message, nil, p)
 }
 
-func (c *clientPlaySessionHandler) processCommandMessage(command string, signedCommand *crypto.SignedChatCommand) {
-	serverConn := c.player.connectedServer()
-	if serverConn == nil {
-		return
-	}
-	serverMc := serverConn.conn()
-	if serverMc == nil {
-		return
-	}
-
-	e := &CommandExecuteEvent{
-		source:          c.player,
-		commandline:     command,
-		originalCommand: command,
-	}
-	event.FireParallel(c.proxy().Event(), e, func(e *CommandExecuteEvent) {
-		err := c.processCommandExecuteResult(e, signedCommand)
-		if err != nil {
-			c.log.Error(err, "error while running command", "command", command)
-			_ = c.player.SendMessage(&component.Text{
-				Content: "An error occurred while running this command.",
-				S:       component.Style{Color: color.Red},
-			})
-			return
-		}
-	})
-}
-
-func (c *clientPlaySessionHandler) processPlayerChat(msg string, signedChatMessage *crypto.SignedChatMessage, original proto.Packet) {
-	serverConn := c.player.connectedServer()
-	if serverConn == nil {
-		return
-	}
-	_, ok := serverConn.ensureConnected()
+func (c *clientPlaySessionHandler) handleKeyedPlayerChat(p *chat.KeyedPlayerChat) {
+	_, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return
 	}
-	e := &PlayerChatEvent{
-		player:   c.player,
-		original: msg,
+	if !c.updateTimeKeeper(p.Expiry) {
+		return
 	}
-	event.FireParallel(c.proxy().Event(), e, func(e *PlayerChatEvent) {
-		if !e.Allowed() || !c.player.Active() {
-			return
-		}
-		serverMc, ok := serverConn.ensureConnected()
-		if !ok {
-			return
-		}
-		if e.modified != "" {
-			c.log1.Info("player sent chat message",
-				"original", e.Original(), "modified", e.modified)
-			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) && c.player.IdentifiedKey() != nil {
-				c.log1.Info("a plugin changed a signed chat message, the server may not accept it")
-			}
-			_ = serverMc.WritePacket((&chat.Builder{
-				Protocol: c.player.Protocol(),
-				Message:  e.Message(),
-			}).ToServer())
-			return
-		}
-		c.log1.Info("player sent chat message", "chat", e.Message())
-		_ = serverMc.WritePacket(original)
-	})
+	if !c.validateChat(p.Message) {
+		return
+	}
+
+	err := c.chatHandler.handleChat(p)
+	if err != nil {
+		c.log.Error(err, "error handling keyed player chat")
+	}
 }
 
 func (c *clientPlaySessionHandler) validateChat(msg string) bool {
@@ -632,78 +584,6 @@ func (c *clientPlaySessionHandler) validateChat(msg string) bool {
 		return false
 	}
 	return true
-}
-
-func (c *clientPlaySessionHandler) processCommandExecuteResult(result *CommandExecuteEvent, signedCommand *crypto.SignedChatCommand) error {
-	if !result.Allowed() || !c.player.Active() {
-		return nil
-	}
-
-	smc, ok := c.player.ensureBackendConnection()
-	if !ok {
-		c.player.Disconnect(internalServerConnectionError)
-		return nil
-	}
-
-	// Log player executed command
-	log := c.log
-	if result.Command() == result.OriginalCommand() {
-		log = log.WithValues("command", result.Command())
-	} else {
-		log = log.WithValues("original", result.OriginalCommand(),
-			"changed", result.Command())
-	}
-	log.Info("player executing command")
-
-	forwardToServer := func() error {
-		write := chat.NewBuilder(c.player.Protocol()).AsPlayer(c.player.ID())
-
-		if signedCommand != nil && result.Command() == signedCommand.Command {
-			write.SignedCommandMessage(signedCommand)
-		} else {
-			write.Message("/" + result.Command())
-		}
-		return smc.WritePacket(write.ToServer())
-	}
-
-	if result.Forward() {
-		return forwardToServer()
-	}
-
-	// Exec command
-	hasRun, err := c.executeCommand(result.Command())
-	if err != nil {
-		return err
-	}
-	if !hasRun {
-		return forwardToServer()
-	}
-
-	return nil
-}
-
-func (c *clientPlaySessionHandler) executeCommand(cmd string) (hasRun bool, err error) {
-	// Make invoke context
-	ctx, cancel := context.WithCancel(c.player.Context())
-	defer cancel()
-
-	// Dispatch command
-	err = c.proxy().command.Do(ctx, c.player, cmd)
-	if err != nil {
-		if errors.Is(err, command.ErrForward) ||
-			errors.Is(err, brigodier.ErrDispatcherUnknownCommand) {
-			return false, nil // forward command to server
-		}
-		var sErr *brigodier.CommandSyntaxError
-		if errors.As(err, &sErr) {
-			return true, c.player.SendMessage(&component.Text{
-				Content: sErr.Error(),
-				S:       component.Style{Color: color.Red},
-			})
-		}
-		return false, err
-	}
-	return true, nil
 }
 
 func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabCompleteRequest, pc *proto.PacketContext) {
@@ -843,4 +723,28 @@ func (c *clientPlaySessionHandler) finishRegularTabComplete(request *packet.TabC
 		response.Offers = append(response.Offers, packet.TabCompleteOffer{Text: suggestion})
 	}
 	_ = c.player.WritePacket(response)
+}
+
+type chatTimeKeeper struct{ lastTime time.Time }
+
+func (k *chatTimeKeeper) update(t time.Time) bool {
+	if t.Before(k.lastTime) {
+		k.lastTime = t
+		return false
+	}
+	k.lastTime = t
+	return true
+}
+
+func (c *clientPlaySessionHandler) updateTimeKeeper(t time.Time) bool {
+	if t.IsZero() {
+		return true
+	}
+	if !c.chatTimeKeeper.update(t) {
+		c.player.Disconnect(&component.Translation{
+			Key: "multiplayer.disconnect.out_of_order_chat",
+		})
+		return false
+	}
+	return true
 }

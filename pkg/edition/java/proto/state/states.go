@@ -115,6 +115,9 @@ func init() {
 		m(0x04, version.Minecraft_1_19),
 		m(0x05, version.Minecraft_1_19_1),
 	)
+	Play.ServerBound.Register(&chat.SessionPlayerCommand{},
+		m(0x04, version.Minecraft_1_19_3),
+	)
 	Play.ServerBound.Register(&p.TabCompleteRequest{},
 		m(0x14, version.Minecraft_1_7_2),
 		m(0x01, version.Minecraft_1_9),
@@ -333,6 +336,7 @@ func init() {
 	Play.ClientBound.Register(&chat.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
 		m(0x62, version.Minecraft_1_19_1),
+		m(0x60, version.Minecraft_1_19_3),
 	)
 	Play.ClientBound.Register(&p.PlayerChatCompletion{},
 		m(0x15, version.Minecraft_1_19_1),

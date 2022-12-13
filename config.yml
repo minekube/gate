@@ -19,9 +19,9 @@ editions:
       # upon login or fallback when a player is kicked from a server.
       try:
         - server1
-        - server2
-        - server3
-        - server4
+#        - server2
+#        - server3
+#        - server4
       # Configure the response for server list pings.
       status:
         # The message of the day in legacy '§' format or modern text component '{"text":"...", ...}' json.

@@ -38,6 +38,10 @@ func (l *LastSeenMessages) Decode(c *proto.PacketContext, rd io.Reader) (err err
 	return nil
 }
 
+func (l *LastSeenMessages) Empty() bool {
+	return l.Acknowledged.Empty()
+}
+
 var divFloor = -mathutil.FloorDiv(-20, 8)
 
 // copyOf equivalent to Java's Arrays.copyOf(acknowledged.toByteArray(), DIV_FLOOR)
