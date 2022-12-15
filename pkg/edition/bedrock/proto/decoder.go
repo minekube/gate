@@ -72,10 +72,9 @@ func (d *Decoder) fillQueue() error {
 
 func (d *Decoder) decode(p []byte) (ctx *proto.PacketContext, err error) {
 	ctx = &proto.PacketContext{
-		Direction:   d.direction,
-		Protocol:    d.registry.Protocol,
-		KnownPacket: false,
-		Payload:     p,
+		Direction: d.direction,
+		Protocol:  d.registry.Protocol,
+		Payload:   p,
 	}
 	payload := bytes.NewReader(p)
 
@@ -95,7 +94,6 @@ func (d *Decoder) decode(p []byte) (ctx *proto.PacketContext, err error) {
 	}
 
 	// Packet is known, decode data into it.
-	ctx.KnownPacket = true
 	if err = ctx.Packet.Decode(ctx, payload); err != nil {
 		if err == io.EOF { // payload was to short or decoder has a bug
 			err = io.ErrUnexpectedEOF

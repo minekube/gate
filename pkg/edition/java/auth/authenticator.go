@@ -1,3 +1,4 @@
+// Package auth provides a way to authenticate joining online mode players with Mojang's session server.
 package auth
 
 import (

@@ -64,7 +64,7 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 var _ netmc.SessionHandler = (*clientPlaySessionHandler)(nil)
 
 func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
-	if !pc.KnownPacket {
+	if !pc.KnownPacket() {
 		c.forwardToServer(pc)
 		return
 	}

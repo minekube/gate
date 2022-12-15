@@ -89,6 +89,7 @@ func (r *ProtocolRegistry) CreatePacket(id proto.PacketID) proto.Packet {
 	return p
 }
 
+// Register registers a packet type with the corresponding protocol versions for each mapping.
 func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapping) {
 	packetType := proto.TypeOf(packetOf)
 

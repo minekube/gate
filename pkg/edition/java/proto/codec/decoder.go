@@ -92,7 +92,7 @@ func (d *Decoder) Decode() (ctx *proto.PacketContext, err error) {
 func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 	if d.log.Enabled() { // check enabled for performance reason
 		defer func() {
-			if ctx != nil && ctx.KnownPacket {
+			if ctx != nil && ctx.KnownPacket() {
 				d.log.Info("decoded packet", "context", ctx.String())
 				if d.hexDump {
 					fmt.Println(hex.Dump(ctx.Payload))
@@ -196,10 +196,9 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 // or drop the packet.
 func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) {
 	ctx = &proto.PacketContext{
-		Direction:   d.direction,
-		Protocol:    d.registry.Protocol,
-		KnownPacket: false,
-		Payload:     p,
+		Direction: d.direction,
+		Protocol:  d.registry.Protocol,
+		Payload:   p,
 	}
 	payload := bytes.NewReader(p)
 
@@ -220,7 +219,6 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	}
 
 	// Packet is known, decode data into it.
-	ctx.KnownPacket = true
 	if err = ctx.Packet.Decode(ctx, payload); err != nil {
 		if err == io.EOF { // payload was too short or decoder has a bug
 			err = io.ErrUnexpectedEOF

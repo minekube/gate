@@ -1,3 +1,4 @@
+// Package bossbar provides a way to create and manage Minecraft boss bars for players.
 package bossbar
 
 import (

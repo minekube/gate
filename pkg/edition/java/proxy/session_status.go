@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"go.minekube.com/gate/pkg/edition/java/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -52,7 +52,7 @@ func (h *statusSessionHandler) Activated() {
 }
 
 func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
-	if !pc.KnownPacket {
+	if !pc.KnownPacket() {
 		// What even is going on? ;D
 		_ = h.conn.Close()
 		return

@@ -3,6 +3,7 @@ package codec
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"fmt"
 	"io"
 )
 
@@ -12,8 +13,12 @@ func NewDecryptReader(r io.Reader, secret []byte) (reader io.Reader, err error) 
 	if err != nil {
 		return
 	}
+	cfb, err := newCFB8(block, secret, true)
+	if err != nil {
+		return nil, err
+	}
 	return &cipher.StreamReader{
-		S: newCFB8(block, secret, true),
+		S: cfb,
 		R: r,
 	}, nil
 }
@@ -24,8 +29,12 @@ func NewEncryptWriter(w io.Writer, secret []byte) (wr io.Writer, err error) {
 	if err != nil {
 		return
 	}
+	cfb, err := newCFB8(block, secret, false)
+	if err != nil {
+		return nil, err
+	}
 	return &cipher.StreamWriter{
-		S: newCFB8(block, secret, false),
+		S: cfb,
 		W: w,
 	}, nil
 }
@@ -45,9 +54,10 @@ type cfb8 struct {
 	de              bool
 }
 
-func newCFB8(c cipher.Block, iv []byte, decrypt bool) cipher.Stream {
-	if len(iv) != 16 {
-		panic("bad iv length!")
+func newCFB8(c cipher.Block, iv []byte, decrypt bool) (cipher.Stream, error) {
+	const ivLen = 16
+	if len(iv) != ivLen {
+		return nil, fmt.Errorf("invalid iv length, expected %d, got %d", ivLen, len(iv))
 	}
 	cp := make([]byte, 256)
 	copy(cp, iv)
@@ -58,7 +68,7 @@ func newCFB8(c cipher.Block, iv []byte, decrypt bool) cipher.Stream {
 		ivReal:    cp,
 		tmp:       make([]byte, 16),
 		de:        decrypt,
-	}
+	}, nil
 }
 
 func (cf *cfb8) XORKeyStream(dst, src []byte) {

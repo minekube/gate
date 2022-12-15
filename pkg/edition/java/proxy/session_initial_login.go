@@ -66,7 +66,7 @@ var invalidPlayerName = &component.Text{
 }
 
 func (l *initialLoginSessionHandler) HandlePacket(p *proto.PacketContext) {
-	if !p.KnownPacket {
+	if !p.KnownPacket() {
 		// unknown packet, close connection
 		_ = l.conn.Close()
 		return
