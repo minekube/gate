@@ -50,26 +50,28 @@ type Packet interface {
 }
 
 // PacketContext carries context information for a
-// received packet or packet that is about to be send.
+// received packet or packet that is about to be sent.
 type PacketContext struct {
 	Direction Direction // The direction the packet is bound to.
 	Protocol  Protocol  // The protocol version of the packet.
 	PacketID  PacketID  // The ID of the packet, is always set.
 
-	// Whether the PacketID is known in the connection's current state.ProtocolRegistry.
-	// If false field Packet is nil, which in most cases indicates a forwarded packet that
-	// is just going to be proxy-ed through to client <--> backend connection.
-	KnownPacket bool
-
 	// Is the decoded type that is found by PacketID in the connections
-	// current state.ProtocolRegistry. Otherwise nil, the PacketID is unknown
+	// current state.ProtocolRegistry. Otherwise, nil, the PacketID is unknown
 	// and KnownPacket is false.
 	Packet Packet
 
 	// The unencrypted and uncompressed form of packet id + data.
-	// It contains the actual received payload (may be longer than what the Packet's Decode read).
+	// It contains the actual received payload (maybe longer than what the Packet's Decode read).
 	// This can be used to skip encoding Packet.
 	Payload []byte // Empty when encoding.
+}
+
+// KnownPacket indicated whether the PacketID is known in the connection's current state.ProtocolRegistry.
+// If false field Packet is nil, which in most cases indicates a forwarded packet that
+// is just going to be proxy-ed through to client <--> backend connection.
+func (c *PacketContext) KnownPacket() bool {
+	return c != nil && c.Packet != nil
 }
 
 // PacketID identifies a packet in a protocol version.
@@ -86,7 +88,7 @@ func (id PacketID) String() string {
 func (c *PacketContext) String() string {
 	return fmt.Sprintf("PacketContext:direction=%s,Protocol=%s,"+
 		"KnownPacket=%t,PacketID=%s,PacketType=%s,Payloadlen=%d",
-		c.Direction, c.Protocol, c.KnownPacket, c.PacketID,
+		c.Direction, c.Protocol, c.KnownPacket(), c.PacketID,
 		reflect.TypeOf(c.Packet), len(c.Payload))
 }
 

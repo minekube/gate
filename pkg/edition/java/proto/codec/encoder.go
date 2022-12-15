@@ -78,12 +78,11 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 	_ = util.WriteVarInt(buf, int(packetID))
 
 	ctx := &proto.PacketContext{
-		Direction:   e.direction,
-		Protocol:    e.registry.Protocol,
-		KnownPacket: true,
-		PacketID:    packetID,
-		Packet:      packet,
-		Payload:     nil,
+		Direction: e.direction,
+		Protocol:  e.registry.Protocol,
+		PacketID:  packetID,
+		Packet:    packet,
+		Payload:   nil,
 	}
 
 	if err = packet.Encode(ctx, buf); err != nil {

@@ -2,7 +2,7 @@ package phase
 
 import (
 	"go.minekube.com/gate/pkg/edition/java/forge"
-	"go.minekube.com/gate/pkg/edition/java/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 )
 

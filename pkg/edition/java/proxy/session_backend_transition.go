@@ -71,7 +71,7 @@ func (b *backendTransitionSessionHandler) Deactivated() {
 }
 
 func (b *backendTransitionSessionHandler) HandlePacket(pc *proto.PacketContext) {
-	if !pc.KnownPacket {
+	if !pc.KnownPacket() {
 		return // ignore unknown packet
 	}
 

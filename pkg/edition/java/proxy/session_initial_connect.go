@@ -18,7 +18,7 @@ func newInitialConnectSessionHandler(player *connectedPlayer) netmc.SessionHandl
 }
 
 func (i *initialConnectSessionHandler) HandlePacket(p *proto.PacketContext) {
-	if !p.KnownPacket {
+	if !p.KnownPacket() {
 		return
 	}
 	switch typed := p.Packet.(type) {

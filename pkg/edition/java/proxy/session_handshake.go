@@ -60,7 +60,7 @@ func newHandshakeSessionHandler(
 }
 
 func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
-	if !p.KnownPacket {
+	if !p.KnownPacket() {
 		// Unknown packet received.
 		// Better to close the connection.
 		_ = h.conn.Close()

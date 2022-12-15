@@ -48,7 +48,7 @@ func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHa
 }
 
 func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
-	if !pc.KnownPacket {
+	if !pc.KnownPacket() {
 		// forward unknown packet to player
 		b.forwardToPlayer(pc, nil)
 		return

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"go.minekube.com/gate/pkg/edition/java/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
