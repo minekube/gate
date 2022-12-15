@@ -267,9 +267,6 @@ func (t *TabList) ProcessUpdate(info *playerinfo.Upsert) error {
 }
 
 func (t *TabList) processUpdateForEntry(actions []playerinfo.UpsertAction, info *playerinfo.Entry) error {
-	if info.ProfileID == uuid.Nil {
-		return fmt.Errorf("profile id must not be nil")
-	}
 	profileID := info.ProfileID
 	currentEntry := t.EntriesByID[profileID]
 	if playerinfo.ContainsAction(actions, playerinfo.AddPlayerAction) {
