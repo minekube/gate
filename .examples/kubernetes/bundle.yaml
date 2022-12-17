@@ -4,25 +4,19 @@ data:
     # This is a simplified config where the rest of the
     # settings are omitted and will be set by default.
     # See config.yml for the full configuration options.
-    #
-    # The Minecraft editions Gate supports.
-    editions:
-      # Java Minecraft edition is the first popular edition for desktops.
-      java:
-        enabled: true
-        config:
-          bind: 0.0.0.0:25565
-          servers:
-            server-0: server-0.servers:25565
-            server-1: server-1.servers:25565
-          try:
-            - server-0
-            - server-1
+    config:
+      bind: 0.0.0.0:25565
+      servers:
+        server-0: server-0.servers:25565
+        server-1: server-1.servers:25565
+      try:
+        - server-0
+        - server-1
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/name: gate
-  name: gate-config-t5m52f4d44
+  name: gate-config-8bh2kdmfmd
 ---
 apiVersion: v1
 data:
@@ -99,7 +93,7 @@ spec:
           subPath: config.yml
       volumes:
       - configMap:
-          name: gate-config-t5m52f4d44
+          name: gate-config-8bh2kdmfmd
         name: config
 ---
 apiVersion: apps/v1
@@ -125,16 +119,31 @@ spec:
       containers:
       - env:
         - name: TYPE
-          value: PAPER
+          value: PUFFERFISH
         - name: EULA
           value: "TRUE"
         - name: ONLINE_MODE
           value: "FALSE"
         image: itzg/minecraft-server:latest
+        livenessProbe:
+          exec:
+            command:
+            - mc-health
+          initialDelaySeconds: 120
+          periodSeconds: 60
         name: server1
         ports:
         - containerPort: 25565
           name: minecraft
+        readinessProbe:
+          exec:
+            command:
+            - mc-health
+          failureThreshold: 12
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        stdin: true
+        tty: true
         volumeMounts:
         - mountPath: /data/spigot.yml
           name: spigot
