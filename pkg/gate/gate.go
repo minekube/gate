@@ -4,9 +4,11 @@ package gate
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/viper"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/util/interrupt"
 	"go.uber.org/multierr"
 
@@ -149,6 +151,10 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	// Load in Gate config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("error loading config: %w", err)
+	}
+	// Override Java config by shorter alias
+	if !reflect.DeepEqual(cfg.Config, jconfig.Config{}) {
+		cfg.Editions.Java.Config = cfg.Config
 	}
 	return &cfg, nil
 }

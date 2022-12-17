@@ -11,10 +11,10 @@ import (
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
+	Config: jconfig.DefaultConfig,
 	Editions: Editions{
 		Java: Java{
 			Enabled: true,
-			Config:  jconfig.DefaultConfig,
 		},
 		Bedrock: Bedrock{
 			Enabled: false,
@@ -30,6 +30,9 @@ var DefaultConfig = Config{
 
 // Config is the root configuration of Gate.
 type Config struct {
+	// Config is the Java edition configuration.
+	// It is an alias for Editions.Java.Config.
+	Config jconfig.Config
 	// See Editions struct.
 	Editions Editions
 	// See HealthService struct.
