@@ -118,7 +118,7 @@ export default defineConfig({
                             link: '/guide/config/',
                         },
                         {
-                            text: 'Security',
+                            text: 'Security & DDoS Protection',
                             link: '/guide/security'
                         },
                         {

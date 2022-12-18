@@ -14,3 +14,43 @@ connecting to your backend servers directly.
 This does not apply to [Lite mode](lite), where backend servers should do the authentication.
 
 :::
+
+## DDoS Protecting your Minecraft server
+
+If you are running a public Minecraft server, and you are not using [Connect](https://connect.minekube.com),
+having a good DDoS protection is essential to prevent your server from being taken offline.
+
+If you are under attack, your server will be lagging, become unresponsive and timeout players.
+This is not good player experience nor your brand.
+
+There are many ways to protect your server from DDoS attacks.
+Here are common methods proven to work very well in production:
+
+### OVHcloud Anti-DDoS <VPBadge>cheap & reliable</VPBadge>
+
+_OVH is a well known service provider that offers a very good
+[DDoS protection](https://www.ovhcloud.com/en/security/anti-ddos/) service for your servers._
+
+You don't need to host all your Minecraft servers on OVH, but you can set up
+[Gate Lite](lite) on a tiny [VPS instance](https://www.ovhcloud.com/en/vps/) and
+forward all your traffic to your backend servers.
+
+::: details OVH Anti-DDoS setup
+
+1. [Create a VPS instance](https://www.ovhcloud.com/en/vps/) _(any provider with good Anti-DDoS)_
+2. [Install Gate](install/) on your VPS with [Lite mode](lite) enabled to point to your actual servers (not required)
+3. [Activate Anti-DDoS](https://www.ovhcloud.com/en/security/anti-ddos/) in the OVH dashboard for your VPS
+4. Configure your DNS to point your domain to your VPS IP address
+
+:::
+
+### Cloudflare Spectrum <VPBadge type='warning'>very costly</VPBadge>
+
+Cloudlare is a well known service provider with global scale DDoS protection
+for TCP services using [Cloudflare Spectrum](https://www.cloudflare.com/products/cloudflare-spectrum/minecraft/)
+
+
+### TCPShield <VPBadge type='danger'>uses OVH</VPBadge>
+
+TCPShield is a Minecraft proxy service that uses OVH's DDoS protection.
+It is free for small servers.
