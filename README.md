@@ -28,7 +28,7 @@ guides and any more information needed!
 
 Follow our [quick start guide](https://gate.minekube.com/guide/quick-start/) on creating a simple Minecraft network!
 
-[![Server list](/images/server-list.png)](https://gate.minekube.com)
+[![Server list](.web/docs/images/server-list.png)](https://gate.minekube.com)
 
 
 ## Gate Lite Mode
