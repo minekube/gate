@@ -118,6 +118,14 @@ export default defineConfig({
                             link: '/guide/config/',
                         },
                         {
+                            text: 'Security',
+                            link: '/guide/security'
+                        },
+                        {
+                            text: 'Lite Mode',
+                            link: '/guide/lite'
+                        },
+                        {
                             text: 'Enabling Connect',
                             link: '/guide/connect'
                         },

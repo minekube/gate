@@ -1,0 +1,32 @@
+# This is a simplified config where the rest of the
+# settings are omitted and will be set by default.
+# See config.yml for the full configuration options.
+config:
+  bind: 0.0.0.0:25565
+  # Lite mode is a lightweight reverse proxy mode that acts as thin layer between the client and the backend server.
+  # It efficiently routes client connections based on the virtual host address received in the handshake packet.
+  # This allows to protect multiple backend servers behind a single port Gate Lite proxy instance.
+  # Player connections (including ping requests and player authentication) is forwarded to the destined backend server.
+  # This means Lite mode supports proxy behind proxy setups, but advanced features like server switching or proxy commands are no longer available
+  # and have no effect in Lite mode when extensions use higher level Gate APIs and events.
+  lite:
+    # Enable Lite mode.
+    # If disabled, the proxy will act as a full proxy with all features enabled like just like BungeeCord/Velocity.
+    # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
+    # Default: false
+    enabled: true
+    # The endpoints that the proxy redirects player connections to based on matching the virtual host address.
+    # The endpoints are matched in order of appearance.
+    # Examples:
+    endpoints:
+      # Match the virtual host address to the backend server.
+      - host: localhost
+        # The backend server to connect to if matched.
+        backend: localhost:25566
+      # You can also use * wildcard to match any subdomain.
+      - host: '*.example.com'
+        backend: 172.16.0.12:25566
+        proxyProtocol: true # Use proxy protocol to connect to backend.
+      # You can also match to multiple hosts to one or multiple random backends.
+      - host: [ 127.0.0.1, localhost]
+        backend: [ 172.16.0.12:25566, backend.example.com:25566 ]

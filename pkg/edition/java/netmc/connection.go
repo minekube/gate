@@ -466,8 +466,7 @@ func Assert[T any](c any) (T, bool) {
 		var t T
 		return t, false
 	}
-	i, ok = underlying.Conn().(T)
-	return i, ok
+	return Assert[T](underlying.Conn())
 }
 
 // SendKeepAlive sends a keep-alive packet to the connection if in Play state.

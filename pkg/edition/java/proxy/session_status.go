@@ -58,11 +58,11 @@ func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		return
 	}
 
-	switch p := pc.Packet.(type) {
+	switch pc.Packet.(type) {
 	case *packet.StatusRequest:
 		h.handleStatusRequest()
 	case *packet.StatusPing:
-		h.handleStatusPing(p)
+		h.handleStatusPing(pc)
 	default:
 		// unexpected packet, simply close
 		_ = h.conn.Close()
@@ -129,10 +129,10 @@ func (h *statusSessionHandler) handleStatusRequest() {
 	})
 }
 
-func (h *statusSessionHandler) handleStatusPing(p *packet.StatusPing) {
+func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {
 	// Just return again and close
 	defer h.conn.Close()
-	if err := h.conn.WritePacket(p); err != nil {
+	if err := h.conn.Write(p.Payload); err != nil {
 		h.log.V(1).Info("error writing StatusPing response", "err", err)
 	}
 }
