@@ -17,8 +17,13 @@ INFO	gate/root.go:94	using config file	{"config": ""}
 INFO	config	gate/gate.go:205	config validation warn	{"warn": "java: No backend servers configured."}
 INFO	java	proxy/proxy.go:299	Using favicon from data uri	{"length": 3086}
 INFO	java	proxy/proxy.go:472	listening for connections	{"addr": "0.0.0.0:25565"}
-
 ```
+
+::: tip Running Gate Lite Mode
+
+Gate also has a [Lite mode](lite) that can passthrough connections based on the hostname.
+
+:::
 
 ## Configuring Backend Servers
 

@@ -97,6 +97,12 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	}
 	l.currentState = loginPacketReceivedLoginState
 
+	// Validate username format
+	if !playerNameRegex.MatchString(login.Username) {
+		_ = l.inbound.disconnect(invalidPlayerName)
+		return
+	}
+
 	playerKey := login.PlayerKey
 	if playerKey != nil {
 		if playerKey.Expired() {
@@ -131,12 +137,6 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	}
 	l.inbound.playerKey = playerKey
 	l.login = login
-
-	// Validate username format
-	if !playerNameRegex.MatchString(login.Username) {
-		_ = l.inbound.disconnect(invalidPlayerName)
-		return
-	}
 
 	e := newPreLoginEvent(l.inbound, l.login.Username)
 	l.eventMgr.Fire(e)

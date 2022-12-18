@@ -28,8 +28,9 @@ Forks of Spigot are not well-tested with Gate, though they may work perfectly fi
 
 ## Proxy-behind-proxy setups
 
-These setups are only supported with [Connect enabled](connect).
+These setups are only supported with [Lite mode](lite#proxy-behind-proxy) or [Connect enabled](connect)!
+
 You are best advised to avoid other kinds of setups, as they can cause lots of issues.
 Most proxy-behind-proxy setups are either illogical in the first place or can be handled more
-gracefully by purpose-built solutions like [Connect](https://connect.minekube.com/).
+gracefully by purpose-built solutions like [Connect](https://connect.minekube.com/) or [Lite mode](lite).
 

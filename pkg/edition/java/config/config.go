@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -61,6 +62,7 @@ var DefaultConfig = Config{
 	Debug:                               false,
 	ShutdownReason:                      "§cGate proxy is shutting down...\nPlease reconnect in a moment!",
 	ForceKeyAuthentication:              true,
+	Lite:                                liteconfig.DefaultConfig,
 }
 
 // Config is the configuration of the proxy.
@@ -99,6 +101,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 
 	Debug          bool
 	ShutdownReason string
+
+	Lite liteconfig.Config
 }
 
 type (
@@ -165,6 +169,24 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		}
 	}
 
+	for _, quota := range []QuotaSettings{c.Quota.Connections, c.Quota.Logins} {
+		if quota.Enabled {
+			if quota.OPS <= 0 {
+				e("Invalid quota ops %d, use a number > 0", quota.OPS)
+			}
+			if quota.Burst < 1 {
+				e("Invalid quota burst %d, use a number >= 1", quota.Burst)
+			}
+			if quota.MaxEntries < 1 {
+				e("Invalid quota max entries %d, use a number >= 1", quota.Burst)
+			}
+		}
+	}
+
+	if c.Lite.Enabled {
+		return c.Lite.Validate()
+	}
+
 	if !c.OnlineMode {
 		w("Proxy is running in offline mode!")
 	}
@@ -215,20 +237,6 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	} else if c.Compression.Threshold == 0 {
 		w("All packets going through the proxy will be compressed, this lowers bandwidth, " +
 			"but has lower throughput and increases CPU usage.")
-	}
-
-	for _, quota := range []QuotaSettings{c.Quota.Connections, c.Quota.Logins} {
-		if quota.Enabled {
-			if quota.OPS <= 0 {
-				e("Invalid quota ops %d, use a number > 0", quota.OPS)
-			}
-			if quota.Burst < 1 {
-				e("Invalid quota burst %d, use a number >= 1", quota.Burst)
-			}
-			if quota.MaxEntries < 1 {
-				e("Invalid quota max entries %d, use a number >= 1", quota.Burst)
-			}
-		}
 	}
 
 	return

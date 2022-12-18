@@ -38,6 +38,9 @@ func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errors.ErrMissingConfig
 	}
+	if !options.Config.Editions.Java.Enabled && !options.Config.Editions.Bedrock.Enabled {
+		return nil, fmt.Errorf("no edition enabled, enable at least one Minecraft proxy edition")
+	}
 
 	// Require no config validation errors
 	warns, errs := options.Config.Validate()
@@ -114,7 +117,7 @@ func New(options Options) (gate *Gate, err error) {
 	return gate, nil
 }
 
-// Gate manages one or multiple proxy editions (Bedrock & Java).
+// Gate is the root holder of various child processes.
 type Gate struct {
 	bridge *bridge.Bridge     // The proxies.
 	proc   process.Collection // Parallel running proc.
@@ -136,6 +139,7 @@ func (g *Gate) Start(ctx context.Context) error { return g.proc.Start(ctx) }
 // Viper is the default viper instance used by Start to load in a config.Config.
 var Viper = viper.New()
 
+// StartOption is an option for Start.
 type StartOption func(o *startOptions)
 
 type startOptions struct {
@@ -179,11 +183,13 @@ func WithAutoShutdownOnSignal(enabled bool) StartOption {
 
 // Start is a convenience function to set up and run a Gate instance.
 //
-// It sets up a Logger, reads in a Config, validates it and sets up
-// os signal handling before starting the instance.
+// It uses the logr.Logger from the provided context, reads in a Config,
+// validates it and sets up os signal handling before starting the instance.
 //
-// The Gate is shutdown on stop channel close or on occurrence of any
-// significant error. Config validation warnings are logged but ignored.
+// The Gate is shutdown when the context is canceled or on occurrence of any
+// significant error like severe configuration error or unable to bind to a port.
+//
+// Config validation warnings are logged but ignored.
 func Start(ctx context.Context, opts ...StartOption) error {
 	c := &startOptions{
 		autoShutdownOnSignal: true,

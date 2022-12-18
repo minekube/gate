@@ -30,6 +30,7 @@ require (
 	golang.org/x/text v0.4.0
 	golang.org/x/time v0.2.0
 	google.golang.org/grpc v1.50.1
+	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
 )
 
@@ -70,5 +71,4 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
