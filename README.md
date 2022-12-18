@@ -46,4 +46,9 @@ graph LR
     C -->|10.0.0.1| D[Backend A]
     C -->|10.0.0.2| E[Backend B]
     C -->|10.0.0.3| F[Another Proxy]
+    
+    linkStyle 0 stroke:orange
+    linkStyle 1 stroke:purple
+    linkStyle 2 stroke:purple
+    linkStyle 3 stroke:orange
 ```
