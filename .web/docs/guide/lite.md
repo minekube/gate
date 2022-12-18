@@ -19,7 +19,7 @@ longer available in this mode and have no effect when extensions use higher leve
 If you point your domain to the IP address Gate listens on, you can use the domain name as the host address.
 This allows you to use a single Gate and port for multiple backend servers.
 
-Gate Lite mode `endpoints` is a list of `host` -> `backend` mappings.
+Gate Lite mode `routes` is a list of `host` -> `backend` mappings.
 For each hostname, Gate will forward the player connection to the first matching backend server.
 
 [![Graph](/images/lite-mermaid-diagram-LR.svg)](https://gate.minekube.com)
@@ -31,7 +31,7 @@ In this configuration, **Gate Lite** will route:
 config:
   lite:
     enabled: true
-    endpoints:
+    routes:
       - host: abc.example.com
         backend: 10.0.0.3:25566
       - host: '*.minecraft.com'
@@ -54,14 +54,14 @@ You can switch to Lite mode by enabling it in the `config.yml`.
 Gate Lite mode supports proxy behind proxy setups meaning you can use another proxy like
 Gate, BungeeCord or Velocity as a backend server.
 
-To preserve the real player IP address you should enable `proxyProtocol: true` for the endpoint
-as well as on the backend server.
+To preserve the real player IP address you should enable `proxyProtocol: true` or `realIP: true`
+(if using TCPShield) for the route as well as on the backend server.
 
 ```yaml config-lite.yml
 config:
   lite:
     enabled: true
-    endpoints:
+    routes:
       - host: abc.example.com
         backend: 10.0.0.3:25566
         proxyProtocol: true // [!code ++]

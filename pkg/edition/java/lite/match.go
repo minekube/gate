@@ -2,10 +2,10 @@ package lite
 
 import "go.minekube.com/gate/pkg/edition/java/lite/config"
 
-// FindEndpoint returns the first endpoint that matches the given wildcard supporting pattern.
-func FindEndpoint(pattern string, endpoints ...config.Endpoint) (host string, ep *config.Endpoint) {
-	for i := range endpoints {
-		ep = &endpoints[i]
+// FindRoute returns the first route that matches the given wildcard supporting pattern.
+func FindRoute(pattern string, routes ...config.Route) (host string, ep *config.Route) {
+	for i := range routes {
+		ep = &routes[i]
 		for _, host = range ep.Host {
 			if match(pattern, host) {
 				return host, ep

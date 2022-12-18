@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -234,16 +235,16 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
 	)
 
-	host, ep := lite.FindEndpoint(clearedHost, h.config().Lite.Endpoints...) // TODO trim forge suffix
+	host, ep := lite.FindRoute(clearedHost, h.config().Lite.Routes...) // TODO trim forge suffix
 	if ep == nil {
-		log.V(1).Info("no endpoint found for host")
+		log.V(1).Info("no route found for host")
 		return
 	}
-	log = log.WithValues("endpoint", host)
+	log = log.WithValues("route", host)
 
 	backend := ep.Backend.Random()
 	if backend == "" {
-		log.Info("endpoint has no backend configured")
+		log.Info("route has no backend configured")
 		return
 	}
 	dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
@@ -281,7 +282,13 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 		}
 	}
 
-	// Forward handshake packet.
+	if ep.RealIP && lite.IsRealIP(handshake.ServerAddress) {
+		// Modify the handshake packet to use RealIP of the client.
+		handshake.ServerAddress = lite.RealIP(handshake.ServerAddress, src.RemoteAddr())
+		update(pc, handshake)
+	}
+
+	// Forward handshake packet as is.
 	err = util.WriteVarInt(dst, len(pc.Payload))
 	if err != nil {
 		return
@@ -295,6 +302,13 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 	_ = src.SetDeadline(time.Time{}) // disable deadline
 	go func() { _, _ = io.Copy(src, dst) }()
 	_, _ = io.Copy(dst, src)
+}
+
+func update(pc *proto.PacketContext, h *packet.Handshake) {
+	payload := new(bytes.Buffer)
+	_ = util.WriteVarInt(payload, int(pc.PacketID))
+	_ = h.Encode(pc, payload)
+	pc.Payload = payload.Bytes()
 }
 
 //

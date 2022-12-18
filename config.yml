@@ -116,11 +116,11 @@ config:
     # If disabled, the proxy will act as a full proxy with all features enabled like just like BungeeCord/Velocity.
     # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
     # Default: false
-    enabled: true
-    # The endpoints that the proxy redirects player connections to based on matching the virtual host address.
-    # The endpoints are matched in order of appearance.
+    enabled: false
+    # The routes that the proxy redirects player connections to based on matching the virtual host address.
+    # The routes are matched in order of appearance.
     # Examples:
-    endpoints:
+    routes:
       # Match the virtual host address to the backend server.
       - host: localhost
         # The backend server to connect to if matched.
@@ -129,9 +129,13 @@ config:
       - host: '*.example.com'
         backend: 172.16.0.12:25566
         proxyProtocol: true # Use proxy protocol to connect to backend.
+        realIP: true # Optionally you can also use TCPShield's RealIP protocol.
       # You can also match to multiple hosts to one or multiple random backends.
       - host: [ 127.0.0.1, localhost]
         backend: [ 172.16.0.12:25566, backend.example.com:25566 ]
+      # Match all as last item routes any other host to a default backend.
+      - host: '*'
+        backend: 10.0.0.10:25565
 
 # Configuration for Connect, a network that organizes all Minecraft servers/proxies
 # and makes them universally accessible for all players.
