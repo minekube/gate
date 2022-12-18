@@ -73,4 +73,7 @@ config:
 
 ## Security considerations
 
+If you use Lite mode and you backend servers do player authentication,
+you do not need to worry.
+
 Please see the [Security](security) guide for more information.
