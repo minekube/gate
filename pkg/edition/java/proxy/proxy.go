@@ -154,6 +154,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 	if p.cfg.Debug {
 		p.log.Info("running in debug mode")
 	}
+	if p.cfg.Lite.Enabled {
+		p.log.Info("running in lite mode")
+	}
 	if p.cfg.ProxyProtocol {
 		p.log.Info("proxy protocol enabled")
 	}
@@ -227,25 +230,28 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 	}
 
 	c := p.cfg
-	// Register servers
-	if len(c.Servers) != 0 {
-		p.log.Info("registering servers...", "count", len(c.Servers))
-	}
-	for name, addr := range c.Servers {
-		pAddr, err := netutil.Parse(addr, "tcp")
-		if err != nil {
-			return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
-		}
-		info := NewServerInfo(name, pAddr)
-		_, err = p.Register(info)
-		if err != nil {
-			p.log.Error(err, "could not register server", "server", info)
-		}
-	}
+	if !c.Lite.Enabled {
 
-	// Register builtin commands
-	if c.BuiltinCommands {
-		p.registerBuiltinCommands()
+		// Register servers
+		if len(c.Servers) != 0 {
+			p.log.Info("registering servers...", "count", len(c.Servers))
+		}
+		for name, addr := range c.Servers {
+			pAddr, err := netutil.Parse(addr, "tcp")
+			if err != nil {
+				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
+			}
+			info := NewServerInfo(name, pAddr)
+			_, err = p.Register(info)
+			if err != nil {
+				p.log.Error(err, "could not register server", "server", info)
+			}
+		}
+
+		// Register builtin commands
+		if c.BuiltinCommands {
+			p.registerBuiltinCommands()
+		}
 	}
 
 	// Init "plugins" with the proxy

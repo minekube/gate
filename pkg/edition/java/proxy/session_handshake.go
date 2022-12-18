@@ -1,20 +1,26 @@
 package proxy
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
+	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -69,7 +75,7 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 	switch typed := p.Packet.(type) {
 	// TODO legacy pings
 	case *packet.Handshake:
-		h.handleHandshake(typed)
+		h.handleHandshake(typed, p)
 	default:
 		// Unknown packet received.
 		// Better to close the connection.
@@ -77,7 +83,7 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 	}
 }
 
-func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
+func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, pc *proto.PacketContext) {
 	vHost := netutil.NewAddr(
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
@@ -87,7 +93,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
 	if nextState == nil {
-		h.log.V(1).Info("Client provided invalid next status state, closing connection",
+		h.log.V(1).Info("client provided invalid next status state, closing connection",
 			"nextStatus", handshake.NextStatus)
 		_ = h.conn.Close()
 		return
@@ -96,6 +102,12 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake) {
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetState(nextState)
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
+
+	if h.config().Lite.Enabled {
+		// Lite mode enabled, pipe the connection.
+		h.forwardLite(handshake, pc)
+		return
+	}
 
 	switch nextState {
 	case state.Status:
@@ -197,6 +209,106 @@ func (i *initialInbound) String() string {
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
 	return netmc.CloseWith(i.MinecraftConn, packet.DisconnectWithProtocol(reason, i.Protocol()))
+}
+
+//
+//
+//
+//
+//
+//
+
+func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *proto.PacketContext) {
+	defer func() { _ = h.conn.Close() }()
+
+	srcConn, ok := netmc.Assert[interface{ Conn() net.Conn }](h.conn)
+	if !ok {
+		h.log.Info("failed to assert connection as net.Conn")
+		return
+	}
+	src := srcConn.Conn()
+
+	clearedHost := lite.ClearVirtualHost(handshake.ServerAddress)
+	log := h.log.WithName("lite").WithValues(
+		"clientAddr", netutil.Host(src.RemoteAddr()),
+		"handshakeHost", clearedHost,
+		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
+	)
+
+	host, ep := lite.FindRoute(clearedHost, h.config().Lite.Routes...) // TODO trim forge suffix
+	if ep == nil {
+		log.V(1).Info("no route found for host")
+		return
+	}
+	log = log.WithValues("route", host)
+
+	backend := ep.Backend.Random()
+	if backend == "" {
+		log.Info("route has no backend configured")
+		return
+	}
+	dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
+	if err != nil {
+		log.Error(err, "failed to parse backend address")
+		return
+	}
+	backendAddr := dstAddr.String()
+	if _, port := netutil.HostPort(dstAddr); port == 0 {
+		backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
+	}
+	log = log.WithValues("backend", backendAddr)
+
+	timeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
+	dst, err := net.DialTimeout(src.RemoteAddr().Network(), backendAddr, timeout)
+	if err != nil {
+		log.Info("failed to connect to backend", "error", err.Error())
+		return
+	}
+	defer func() { _ = dst.Close() }()
+
+	log = log.WithValues("backendAddr", netutil.Host(dst.RemoteAddr()))
+
+	if ep.ProxyProtocol {
+		header := proxyproto.Header{
+			Version:           2,
+			Command:           proxyproto.PROXY,
+			TransportProtocol: proxyproto.TCPv4,
+			SourceAddr:        src.RemoteAddr(),
+			DestinationAddr:   dst.RemoteAddr(),
+		}
+		if _, err = header.WriteTo(dst); err != nil {
+			log.Info("failed to write proxy protocol header to backend", "error", err.Error())
+			return
+		}
+	}
+
+	if ep.RealIP && lite.IsRealIP(handshake.ServerAddress) {
+		// Modify the handshake packet to use RealIP of the client.
+		handshake.ServerAddress = lite.RealIP(handshake.ServerAddress, src.RemoteAddr())
+		update(pc, handshake)
+	}
+
+	// Forward handshake packet as is.
+	err = util.WriteVarInt(dst, len(pc.Payload))
+	if err != nil {
+		return
+	}
+	_, err = dst.Write(pc.Payload)
+	if err != nil {
+		return
+	}
+
+	log.Info("forwarding connection")
+	_ = src.SetDeadline(time.Time{}) // disable deadline
+	go func() { _, _ = io.Copy(src, dst) }()
+	_, _ = io.Copy(dst, src)
+}
+
+func update(pc *proto.PacketContext, h *packet.Handshake) {
+	payload := new(bytes.Buffer)
+	_ = util.WriteVarInt(payload, int(pc.PacketID))
+	_ = h.Encode(pc, payload)
+	pc.Payload = payload.Bytes()
 }
 
 //
