@@ -297,26 +297,6 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 	_, _ = io.Copy(dst, src)
 }
 
-//func pipe(src, dst net.Conn) {
-//	buffer := make([]byte, 0xffff)
-//
-//	for {
-//		n, err := src.Read(buffer)
-//		if err != nil {
-//			fmt.Println(src.RemoteAddr(), "read", err)
-//			return
-//		}
-//
-//		data := buffer[:n]
-//
-//		_, err = dst.Write(data)
-//		if err != nil {
-//			fmt.Println(dst.RemoteAddr(), "write", err)
-//			return
-//		}
-//	}
-//}
-
 //
 //
 //
