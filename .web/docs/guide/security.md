@@ -21,7 +21,7 @@ If you are running a public Minecraft server, and you are not using [Connect](ht
 having a good DDoS protection is essential to prevent your server from being taken offline.
 
 If you are under attack, your server will be lagging, become unresponsive and timeout players.
-This is not good player experience nor your brand.
+This is not good for your player experience nor your brand.
 
 There are many ways to protect your server from DDoS attacks.
 Here are common methods proven to work very well in production:
