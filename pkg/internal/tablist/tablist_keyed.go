@@ -20,6 +20,7 @@ type KeyedTabList struct {
 
 var _ InternalTabList = (*KeyedTabList)(nil)
 
+func (k *KeyedTabList) Parent() InternalTabList { return nil }
 func (k *KeyedTabList) Add(entries ...tablist.Entry) error {
 	if len(entries) == 0 {
 		return nil

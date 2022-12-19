@@ -31,6 +31,7 @@ func New(viewer Viewer) InternalTabList {
 			Viewer:       viewer,
 			EntriesByID:  map[uuid.UUID]tablist.Entry{},
 		}
+		return tl
 	}
 
 	tl := &LegacyTabList{

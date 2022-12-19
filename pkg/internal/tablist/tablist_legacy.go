@@ -19,6 +19,8 @@ type LegacyTabList struct {
 
 var _ tablist.TabList = (*LegacyTabList)(nil)
 
+func (l *LegacyTabList) Parent() InternalTabList { return nil }
+
 func (l *LegacyTabList) Add(entries ...tablist.Entry) error {
 	l.Lock()
 	defer l.Unlock()
