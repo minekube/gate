@@ -33,11 +33,11 @@ config:
     enabled: true
     routes:
       - host: abc.example.com
-        backend: 10.0.0.3:25566
-      - host: '*.minecraft.com'
-        backend: 10.0.0.2:25567
+        backend: 10.0.0.3:25568
+      - host: '*.example.com'
+        backend: 10.0.0.1:25567
       - host: [ example.com, localhost ]
-        backend: [ 10.0.0.1:25568 ]
+        backend: [ 10.0.0.2:25566 ]
 ```
 
 

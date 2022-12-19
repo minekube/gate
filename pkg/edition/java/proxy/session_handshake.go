@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -259,9 +260,15 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 	log = log.WithValues("backend", backendAddr)
 
 	timeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
-	dst, err := net.DialTimeout(src.RemoteAddr().Network(), backendAddr, timeout)
+	ctx, cancel := context.WithTimeout(h.conn.Context(), timeout)
+	defer cancel()
+
+	var dialer net.Dialer
+	dst, err := dialer.DialContext(ctx, src.RemoteAddr().Network(), backendAddr)
 	if err != nil {
-		log.Info("failed to connect to backend", "error", err.Error())
+		if ctx.Err() == nil {
+			log.Info("failed to connect to backend", "error", err.Error())
+		}
 		return
 	}
 	defer func() { _ = dst.Close() }()
