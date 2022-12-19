@@ -14,10 +14,11 @@ import (
 )
 
 type chatHandler struct {
-	log      logr.Logger
-	eventMgr event.Manager
-	player   *connectedPlayer
-	cmdMgr   *command.Manager
+	log            logr.Logger
+	eventMgr       event.Manager
+	player         *connectedPlayer
+	cmdMgr         *command.Manager
+	configProvider configProvider
 }
 
 func (c *chatHandler) handleChat(packet proto.Packet) error {
@@ -75,14 +76,14 @@ func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat) error {
 	c.eventMgr.Fire(evt)
 	if !evt.Allowed() {
 		if packet.Signed {
-			invalidCancel(c.log, c.player)
+			c.invalidCancel(c.log, c.player)
 		}
 		return nil
 	}
 
 	if evt.Message() != packet.Message {
 		if packet.Signed {
-			invalidChange(c.log, c.player)
+			c.invalidChange(c.log, c.player)
 			return nil
 		}
 		return server.WritePacket((&chat.Builder{
@@ -126,14 +127,14 @@ func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *ch
 	playerKey := c.player.IdentifiedKey()
 	denyRevision := keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2)
 	if !event.Allowed() && denyRevision {
-		invalidCancel(c.log, c.player)
+		c.invalidCancel(c.log, c.player)
 		return nil
 	}
 
 	if event.Message() != packet.Message {
 		if denyRevision {
 			// Bad, very bad.
-			invalidChange(c.log, c.player)
+			c.invalidChange(c.log, c.player)
 			return nil
 		}
 		c.log.Info("a plugin changed a signed chat message. The server may not accept it")
@@ -147,19 +148,21 @@ func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *ch
 	return server.WritePacket(packet)
 }
 
-func invalidCancel(log logr.Logger, player *connectedPlayer) {
-	invalidMessage(log.WithName("invalidCancel"), player)
+func (c *chatHandler) invalidCancel(log logr.Logger, player *connectedPlayer) {
+	c.invalidMessage(log.WithName("invalidCancel"), player)
 }
 
-func invalidChange(log logr.Logger, player *connectedPlayer) {
-	invalidMessage(log.WithName("invalidChange"), player)
+func (c *chatHandler) invalidChange(log logr.Logger, player *connectedPlayer) {
+	c.invalidMessage(log.WithName("invalidChange"), player)
 }
 
-func invalidMessage(log logr.Logger, player *connectedPlayer) {
+func (c *chatHandler) invalidMessage(log logr.Logger, player *connectedPlayer) {
 	log.Info("A plugin tried to cancel a signed chat message." +
 		" This is no longer possible in 1.19.1 and newer. " +
 		"Disconnecting player...")
-	disconnectIllegalProtocolState(player)
+	if c.configProvider.config().ForceKeyAuthentication {
+		disconnectIllegalProtocolState(player)
+	}
 }
 
 func disconnectIllegalProtocolState(player *connectedPlayer) {

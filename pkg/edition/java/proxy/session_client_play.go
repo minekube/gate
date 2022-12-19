@@ -53,10 +53,11 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 		log1:           log.V(1),
 		serverBossBars: map[uuid.UUID]struct{}{},
 		chatHandler: &chatHandler{
-			log:      log,
-			eventMgr: player.eventMgr,
-			player:   player,
-			cmdMgr:   player.proxy.Command(),
+			log:            log,
+			eventMgr:       player.eventMgr,
+			player:         player,
+			cmdMgr:         player.proxy.Command(),
+			configProvider: player.proxy,
 		},
 	}
 }
