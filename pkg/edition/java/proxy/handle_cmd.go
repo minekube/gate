@@ -180,6 +180,10 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 			if !ok {
 				return
 			}
+			if packet.Signed() && commandToRun == packet.Command {
+				_ = server.WritePacket(packet)
+				return
+			}
 			if packet.Signed() {
 				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
 				disconnectIllegalProtocolState(c.player)
@@ -212,13 +216,11 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				_ = server.WritePacket(packet)
 				return
 			}
-
 			if packet.Signed() {
 				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
 				disconnectIllegalProtocolState(c.player)
 				return
 			}
-
 			_ = server.WritePacket((&chat.Builder{
 				Protocol:  server.Protocol(),
 				Message:   "/" + commandToRun,
