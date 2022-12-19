@@ -340,8 +340,6 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 			return err
 		}
 	}
-	destination.activeDimensionRegistry = joinGame.DimensionRegistry // 1.16
-	destination.entityID = joinGame.EntityID
 
 	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
 	// track them.

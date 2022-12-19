@@ -208,6 +208,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		player:         b.serverConn.player,
 		server:         b.serverConn.server,
 		previousServer: previousServer, // nil-able
+		entityID:       p.EntityID,
 	}
 	// Fire event in same goroutine as we don't want to read
 	// more incoming packets while we process the JoinGame!

@@ -205,14 +205,6 @@ type ServerConnection interface {
 	Player() Player           // Returns the player that this connection is associated with.
 }
 
-func ServerConnectionEntityID(c ServerConnection) int {
-	sc, ok := c.(*serverConnection)
-	if !ok {
-		return 0
-	}
-	return sc.entityID
-}
-
 type serverConnection struct {
 	server *registeredServer
 	player *connectedPlayer
@@ -221,9 +213,6 @@ type serverConnection struct {
 	completedJoin      atomic.Bool
 	gracefulDisconnect atomic.Bool
 	pendingPings       *lru.SyncCache[int64, time.Time]
-
-	activeDimensionRegistry *packet.DimensionRegistry // updated by packet.JoinGame
-	entityID                int                       // updated by packet.JoinGame
 
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
