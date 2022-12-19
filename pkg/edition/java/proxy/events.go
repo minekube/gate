@@ -561,6 +561,7 @@ type ServerConnectedEvent struct {
 	player         Player
 	server         RegisteredServer
 	previousServer RegisteredServer // nil-able
+	entityID       int
 }
 
 // Player returns the associated player.
@@ -577,6 +578,13 @@ func (s *ServerConnectedEvent) Server() RegisteredServer {
 // May return nil if there was none!
 func (s *ServerConnectedEvent) PreviousServer() RegisteredServer {
 	return s.previousServer
+}
+
+// EntityID returns the current entity ID of the player.
+// This is the entity ID the player has on the connected server and changes
+// every time the player connects to a new server.
+func (s *ServerConnectedEvent) EntityID() int {
+	return s.entityID
 }
 
 //

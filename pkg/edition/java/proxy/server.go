@@ -214,8 +214,6 @@ type serverConnection struct {
 	gracefulDisconnect atomic.Bool
 	pendingPings       *lru.SyncCache[int64, time.Time]
 
-	activeDimensionRegistry *packet.DimensionRegistry // updated by packet.JoinGame
-
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
 	connPhase  phase.BackendConnectionPhase
