@@ -157,17 +157,19 @@ func (c *chatHandler) invalidChange(log logr.Logger, player *connectedPlayer) {
 }
 
 func (c *chatHandler) invalidMessage(log logr.Logger, player *connectedPlayer) {
-	log.Info("A plugin tried to cancel a signed chat message." +
-		" This is no longer possible in 1.19.1 and newer. " +
-		"Disconnecting player...")
-	if c.configProvider.config().ForceKeyAuthentication {
-		disconnectIllegalProtocolState(player)
+	if c.disconnectIllegalProtocolState(player) {
+		log.Info("A plugin tried to cancel a signed chat message." +
+			" This is no longer possible in 1.19.1 and newer. Try disabling forceKeyAuthentication if you still want to allow this.")
 	}
 }
 
-func disconnectIllegalProtocolState(player *connectedPlayer) {
-	player.Disconnect(&component.Text{
-		Content: "A proxy plugin caused an illegal protocol state. Contact your network administrator.",
-		S:       component.Style{Color: color.Red},
-	})
+func (c *chatHandler) disconnectIllegalProtocolState(player *connectedPlayer) bool {
+	if c.configProvider.config().ForceKeyAuthentication {
+		player.Disconnect(&component.Text{
+			Content: "A proxy plugin caused an illegal protocol state. Contact your network administrator.",
+			S:       component.Style{Color: color.Red},
+		})
+		return true
+	}
+	return false
 }

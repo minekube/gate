@@ -89,8 +89,9 @@ func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error 
 		if !e.Allowed() {
 			if playerKey != nil {
 				if !packet.Unsigned && keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) {
-					c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-					disconnectIllegalProtocolState(c.player)
+					if c.disconnectIllegalProtocolState(c.player) {
+						c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+					}
 					return
 				}
 			}
@@ -108,8 +109,9 @@ func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error 
 				return
 			}
 			if !packet.Unsigned && playerKey != nil && keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-				disconnectIllegalProtocolState(c.player)
+				if c.disconnectIllegalProtocolState(c.player) {
+					c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+				}
 				return
 			}
 			_ = server.WritePacket((&chat.Builder{
@@ -141,9 +143,9 @@ func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error 
 			}
 
 			if !packet.Unsigned && playerKey != nil &&
-				keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-				disconnectIllegalProtocolState(c.player)
+				keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) &&
+				c.disconnectIllegalProtocolState(c.player) {
+				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
 				return
 			}
 
@@ -167,8 +169,9 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 	event.FireParallel(c.eventMgr, e, func(e *CommandExecuteEvent) {
 		if !e.Allowed() {
 			if packet.Signed() {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-				disconnectIllegalProtocolState(c.player)
+				if c.disconnectIllegalProtocolState(c.player) {
+					c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+				}
 				return
 			}
 			return
@@ -184,9 +187,8 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				_ = server.WritePacket(packet)
 				return
 			}
-			if packet.Signed() {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-				disconnectIllegalProtocolState(c.player)
+			if packet.Signed() && c.disconnectIllegalProtocolState(c.player) {
+				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
 				return
 			}
 			_ = server.WritePacket((&chat.Builder{
@@ -216,9 +218,8 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				_ = server.WritePacket(packet)
 				return
 			}
-			if packet.Signed() {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported. Disconnecting player...")
-				disconnectIllegalProtocolState(c.player)
+			if packet.Signed() && c.disconnectIllegalProtocolState(c.player) {
+				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
 				return
 			}
 			_ = server.WritePacket((&chat.Builder{
