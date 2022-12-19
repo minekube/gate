@@ -82,11 +82,7 @@ func (b *Builder) ToServer() proto.Packet {
 	if b.Timestamp.IsZero() {
 		b.Timestamp = time.Now()
 	}
-	if b.Protocol.GreaterEqual(version.Minecraft_1_19_3) { // Keyed chat
-		if strings.HasPrefix(b.Message, "/") {
-			return NewKeyedPlayerCommand(strings.TrimPrefix(b.Message, "/"), nil, b.Timestamp)
-		}
-	} else if b.Protocol.GreaterEqual(version.Minecraft_1_19) { // Session chat
+	if b.Protocol.GreaterEqual(version.Minecraft_1_19_3) { // Session chat
 		if strings.HasPrefix(b.Message, "/") {
 			return &SessionPlayerCommand{
 				Command:   strings.TrimPrefix(b.Message, "/"),
@@ -96,6 +92,17 @@ func (b *Builder) ToServer() proto.Packet {
 		return &SessionPlayerChat{
 			Message:   b.Message,
 			Timestamp: b.Timestamp,
+			Signature: []byte{0},
+		}
+	} else if b.Protocol.GreaterEqual(version.Minecraft_1_19) { // Keyed chat
+		if strings.HasPrefix(b.Message, "/") {
+			return NewKeyedPlayerCommand(strings.TrimPrefix(b.Message, "/"), nil, b.Timestamp)
+		}
+		// This will produce an error on the server, but needs to be here.
+		return &KeyedPlayerChat{
+			Message:  b.Message,
+			Unsigned: true,
+			Expiry:   b.Timestamp,
 		}
 	}
 	// Legacy chat

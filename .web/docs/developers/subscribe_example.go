@@ -11,7 +11,8 @@ func SubscribeExample(p *proxy.Proxy) {
 	mgr := p.Event()
 
 	// Subscribe to an event.
-	event.Subscribe(mgr, 0, func(e *proxy.PreLoginEvent) {
+	const priority = 0
+	event.Subscribe(mgr, priority, func(e *proxy.PreLoginEvent) {
 		// Kicks every player
 		e.Deny(&component.Text{Content: "Sorry, the server is in maintenance."})
 	})

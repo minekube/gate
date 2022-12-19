@@ -73,7 +73,7 @@ config:
 
 ## Security considerations
 
-If you use Lite mode and you backend servers do player authentication,
+If you use Lite mode and your backend servers do player authentication,
 you do not need to worry.
 
 Checkout the [Anti-DDoS](security#ddos-protecting-your-minecraft-server) guide for how

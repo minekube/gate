@@ -80,10 +80,8 @@ func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat) error {
 		}
 		return nil
 	}
-
 	if evt.Message() != packet.Message {
-		if packet.Signed {
-			c.invalidChange(c.log, c.player)
+		if packet.Signed && c.invalidChange(c.log, c.player) {
 			return nil
 		}
 		return server.WritePacket((&chat.Builder{
@@ -132,9 +130,8 @@ func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *ch
 	}
 
 	if event.Message() != packet.Message {
-		if denyRevision {
+		if denyRevision && c.invalidChange(c.log, c.player) {
 			// Bad, very bad.
-			c.invalidChange(c.log, c.player)
 			return nil
 		}
 		c.log.Info("a plugin changed a signed chat message. The server may not accept it")
@@ -152,15 +149,17 @@ func (c *chatHandler) invalidCancel(log logr.Logger, player *connectedPlayer) {
 	c.invalidMessage(log.WithName("invalidCancel"), player)
 }
 
-func (c *chatHandler) invalidChange(log logr.Logger, player *connectedPlayer) {
-	c.invalidMessage(log.WithName("invalidChange"), player)
+func (c *chatHandler) invalidChange(log logr.Logger, player *connectedPlayer) bool {
+	return c.invalidMessage(log.WithName("invalidChange"), player)
 }
 
-func (c *chatHandler) invalidMessage(log logr.Logger, player *connectedPlayer) {
+func (c *chatHandler) invalidMessage(log logr.Logger, player *connectedPlayer) bool {
 	if c.disconnectIllegalProtocolState(player) {
 		log.Info("A plugin tried to cancel a signed chat message." +
 			" This is no longer possible in 1.19.1 and newer. Try disabling forceKeyAuthentication if you still want to allow this.")
+		return true
 	}
+	return false
 }
 
 func (c *chatHandler) disconnectIllegalProtocolState(player *connectedPlayer) bool {

@@ -17,7 +17,7 @@ This does not apply to [Lite mode](lite), where backend servers should do the au
 
 ## DDoS Protecting your Minecraft server
 
-If you are running a public Minecraft server, and you are not using [Connect](https://connect.minekube.com),
+If you are running a high-profile public Minecraft server, and you are not using [Connect](https://connect.minekube.com),
 having a good DDoS protection is essential to prevent your server from being taken offline.
 
 If you are under attack, your server will be lagging, become unresponsive and timeout players.

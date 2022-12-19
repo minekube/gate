@@ -67,8 +67,8 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 	defer e.mu.Unlock()
 	packetID, found := e.registry.PacketID(packet)
 	if !found {
-		return n, fmt.Errorf("packet id for type %T in protocol %s not registered in the %s state registry",
-			packet, e.registry.Protocol, e.state)
+		return n, fmt.Errorf("packet id for type %T in protocol %s not registered in the %s %s state registry",
+			packet, e.registry.Protocol, e.direction, e.state)
 	}
 
 	pk := reflect.TypeOf(packet)
