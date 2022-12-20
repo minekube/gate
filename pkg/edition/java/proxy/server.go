@@ -12,6 +12,7 @@ import (
 
 	"github.com/dboslee/lru"
 	"github.com/go-logr/logr"
+	"github.com/pires/go-proxyproto"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
@@ -351,11 +352,20 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {
 	// Connect proxy -> server
 	debug := s.log.V(1)
-	debug.Info("connecting to server...")
+	debug.Info("dialing backend server...")
 	conn, err := s.dial(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to server %q: %w", s.server.ServerInfo().Name(), err)
+		return nil, fmt.Errorf("error connecting to backend server %q: %w", s.server.ServerInfo().Name(), err)
 	}
+
+	if s.config().ProxyProtocolBackend {
+		header := proxyproto.HeaderProxyFromAddrs(2, s.player.RemoteAddr(), conn.RemoteAddr())
+		debug.Info("writing proxy protocol header")
+		if _, err = header.WriteTo(conn); err != nil {
+			return nil, fmt.Errorf("error writing proxy protocol header to backend: %w", err)
+		}
+	}
+
 	debug.Info("connected to server")
 
 	// Wrap server connection

@@ -54,6 +54,7 @@ var DefaultConfig = Config{
 		Level:     -1,
 	},
 	ProxyProtocol:                       false,
+	ProxyProtocolBackend:                false,
 	ShouldPreventClientProxyConnections: false,
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
@@ -87,9 +88,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ConnectionTimeout int // Write timeout
 	ReadTimeout       int
 
-	Quota         Quota
-	Compression   Compression
-	ProxyProtocol bool // Enable HA-Proxy protocol mode
+	Quota                Quota
+	Compression          Compression
+	ProxyProtocol        bool // Enable HA-Proxy protocol mode
+	ProxyProtocolBackend bool // Enable HA-Proxy protocol mode for backend servers
 
 	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
 
