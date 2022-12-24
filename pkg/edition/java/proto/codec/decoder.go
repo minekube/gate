@@ -101,13 +101,14 @@ func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 		}()
 	}
 
+retry:
 	payload, err := d.readPayload()
 	if err != nil {
-		return nil, err
+		return nil, &errs.SilentError{Err: err}
 	}
 	if len(payload) == 0 {
 		// Got an empty packet, skipping it
-		return d.readPacket()
+		goto retry
 	}
 	return d.decodePayload(payload)
 }

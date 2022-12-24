@@ -68,7 +68,6 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 func (r *reader) handleReadErr(err error) (recoverable bool) {
 	var silentErr *errs.SilentError
 	if errors.As(err, &silentErr) {
-		r.log.V(1).Info("silentErr: error reading next packet, unrecoverable and closing connection", "err", err)
 		return false
 	}
 	// Immediately retry for EAGAIN
