@@ -184,10 +184,10 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		close(p.closeListener)
 	}
 
-	p.log.Info("Shutting down the proxy...")
+	p.log.Info("shutting down the proxy...")
 	shutdownTime := time.Now()
 	defer func() {
-		p.log.Info("Finished shutdown.",
+		p.log.Info("finished shutdown.",
 			"shutdownTime", time.Since(shutdownTime).Round(time.Microsecond).String(),
 			"totalTime", time.Since(p.startTime.Load().(time.Time)).Round(time.Millisecond).String())
 	}()
@@ -200,16 +200,16 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	if reason != nil {
 		err := (&legacy.Legacy{}).Marshal(reasonStr, reason)
 		if err != nil {
-			p.log.Error(err, "Error marshal disconnect reason to legacy format")
+			p.log.Error(err, "error marshal disconnect reason to legacy format")
 		}
 	}
 
-	p.log.Info("Disconnecting all players...", "reason", reasonStr.String())
+	p.log.Info("disconnecting all players...", "reason", reasonStr.String())
 	disconnectTime := time.Now()
 	p.DisconnectAll(reason)
-	p.log.Info("Disconnected all players.", "time", time.Since(disconnectTime).String())
+	p.log.Info("disconnected all players.", "time", time.Since(disconnectTime).String())
 
-	p.log.Info("Waiting for all event handlers to complete...")
+	p.log.Info("waiting for all event handlers to complete...")
 	p.event.Fire(&ShutdownEvent{})
 	p.event.Wait()
 }
@@ -220,17 +220,17 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 	if err = p.loadShutdownReason(); err != nil {
 		return fmt.Errorf("error loading shutdown reason: %w", err)
 	}
-	// Load status motd
-	if err = p.loadMotd(); err != nil {
-		return fmt.Errorf("error loading status motd: %w", err)
-	}
-	// Load favicon
-	if err = p.loadFavicon(); err != nil {
-		return fmt.Errorf("error loading favicon: %w", err)
-	}
 
 	c := p.cfg
 	if !c.Lite.Enabled {
+		// Load status motd
+		if err = p.loadMotd(); err != nil {
+			return fmt.Errorf("error loading status motd: %w", err)
+		}
+		// Load favicon
+		if err = p.loadFavicon(); err != nil {
+			return fmt.Errorf("error loading favicon: %w", err)
+		}
 
 		// Register servers
 		if len(c.Servers) != 0 {

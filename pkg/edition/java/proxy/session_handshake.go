@@ -267,7 +267,7 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 	dst, err := dialer.DialContext(ctx, src.RemoteAddr().Network(), backendAddr)
 	if err != nil {
 		if ctx.Err() == nil {
-			log.Info("failed to connect to backend", "error", err.Error())
+			log.Info("failed to connect to backend", "error", err)
 		}
 		return
 	}
@@ -284,7 +284,7 @@ func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *p
 			DestinationAddr:   dst.RemoteAddr(),
 		}
 		if _, err = header.WriteTo(dst); err != nil {
-			log.Info("failed to write proxy protocol header to backend", "error", err.Error())
+			log.Info("failed to write proxy protocol header to backend", "error", err)
 			return
 		}
 	}
