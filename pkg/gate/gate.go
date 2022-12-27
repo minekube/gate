@@ -157,7 +157,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 	// Override Java config by shorter alias
-	if !reflect.DeepEqual(cfg.Config, jconfig.Config{}) {
+	if !reflect.DeepEqual(cfg.Config, jconfig.DefaultConfig) {
 		cfg.Editions.Java.Config = cfg.Config
 	}
 	return &cfg, nil
@@ -211,10 +211,10 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	// Validate Gate config
 	warns, errs := c.conf.Validate()
 	for _, e := range errs {
-		configLog.Info("config validation error", "error", e.Error())
+		configLog.Info("config validation error", "error", e)
 	}
 	for _, w := range warns {
-		configLog.Info("config validation warn", "warn", w.Error())
+		configLog.Info("config validation warn", "warn", w)
 	}
 	if len(errs) != 0 {
 		// Shouldn't run Gate with validation errors

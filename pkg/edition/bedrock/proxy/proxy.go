@@ -93,7 +93,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 	defer ln.Close()
 	go func() { <-stop; _ = ln.Close() }()
 
-	p.log.Info("Listening for connections", "addr", addr)
+	p.log.Info("listening for connections", "addr", addr)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {

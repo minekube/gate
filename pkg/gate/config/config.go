@@ -15,6 +15,7 @@ var DefaultConfig = Config{
 	Editions: Editions{
 		Java: Java{
 			Enabled: true,
+			Config:  jconfig.DefaultConfig,
 		},
 		Bedrock: Bedrock{
 			Enabled: false,
