@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"syscall"
+
+	"github.com/go-logr/logr"
 )
 
 var (
@@ -37,3 +39,24 @@ func IsConnClosedErr(err error) bool {
 	return err != nil && (errors.Is(err, net.ErrClosed) ||
 		errors.Is(err, syscall.ECONNRESET))
 }
+
+// VerbosityError is an error wrapper that specifies the log verbosity of the wrapped error.
+type VerbosityError struct {
+	Err       error
+	Verbosity int
+}
+
+// V returns a new Logger instance with the specific verbosity level specified if the error is a VerbosityError.
+// See logr.Logger#V().
+func V(log logr.Logger, err error) logr.Logger {
+	var v *VerbosityError
+	if errors.As(err, &v) {
+		return log.V(v.Verbosity)
+	}
+	return log
+}
+
+func (e *VerbosityError) Error() string {
+	return e.Err.Error()
+}
+func (e *VerbosityError) Unwrap() error { return e.Err }

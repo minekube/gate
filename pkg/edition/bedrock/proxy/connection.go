@@ -66,7 +66,7 @@ func (c *minecraftConn) readLoop() {
 		packetCtx, err := c.decoder.Decode()
 		if err != nil {
 			if err != io.EOF { // EOF means connection was closed
-				c.log.V(1).Info("Error decoding next packets, closing connection", "err", err)
+				c.log.V(1).Info("Error decoding next packets, closing connection", "error", err)
 			}
 			return
 		}

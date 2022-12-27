@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"go.minekube.com/gate/pkg/util/configutil"
 )
@@ -21,6 +22,7 @@ type (
 	Route struct {
 		Host          configutil.SingleOrMulti[string]
 		Backend       configutil.SingleOrMulti[string]
+		CachePingTTL  time.Duration // 0 = default, < 0 = disabled
 		ProxyProtocol bool
 		RealIP        bool
 	}
@@ -45,3 +47,13 @@ func (c Config) Validate() (warns []error, errs []error) {
 
 	return
 }
+
+func (r *Route) GetCachePingTTL() time.Duration {
+	const defaultTTL = time.Second * 10
+	if r.CachePingTTL == 0 {
+		return defaultTTL
+	}
+	return r.CachePingTTL
+}
+
+func (r *Route) CachePingEnabled() bool { return r.GetCachePingTTL() > 0 }

@@ -500,7 +500,7 @@ func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
 // that has not had any I/O performed on it yet.
 func (p *Proxy) HandleConn(raw net.Conn) {
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
-		p.log.Info("Connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
+		p.log.Info("connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()
 		return
 	}

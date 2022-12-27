@@ -1,16 +1,12 @@
 package proxy
 
 import (
-	"bytes"
-	"context"
 	"fmt"
-	"io"
 	"net"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
@@ -21,7 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -104,17 +99,25 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	h.conn.SetState(nextState)
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
+	var resolvePingResponse pingResolveFunc
 	if h.config().Lite.Enabled {
-		// Lite mode enabled, pipe the connection.
-		h.forwardLite(handshake, pc)
-		return
+		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
+		if nextState == state.Login {
+			// Lite mode enabled, pipe the connection.
+			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc)
+			return
+		}
+		// Resolve ping response for lite mode.
+		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
+			return lite.ResolveStatusResponse(dialTimeout, h.config().Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx)
+		}
 	}
 
 	switch nextState {
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
 		// Just update the session handler and wait for the StatusRequest packet.
-		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps))
+		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse))
 	case state.Login:
 		// Client wants to join.
 		h.handleLogin(handshake, inbound)
@@ -210,112 +213,6 @@ func (i *initialInbound) String() string {
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
 	return netmc.CloseWith(i.MinecraftConn, packet.DisconnectWithProtocol(reason, i.Protocol()))
-}
-
-//
-//
-//
-//
-//
-//
-
-func (h *handshakeSessionHandler) forwardLite(handshake *packet.Handshake, pc *proto.PacketContext) {
-	defer func() { _ = h.conn.Close() }()
-
-	srcConn, ok := netmc.Assert[interface{ Conn() net.Conn }](h.conn)
-	if !ok {
-		h.log.Info("failed to assert connection as net.Conn")
-		return
-	}
-	src := srcConn.Conn()
-
-	clearedHost := lite.ClearVirtualHost(handshake.ServerAddress)
-	log := h.log.WithName("lite").WithValues(
-		"clientAddr", netutil.Host(src.RemoteAddr()),
-		"handshakeHost", clearedHost,
-		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
-	)
-
-	host, ep := lite.FindRoute(clearedHost, h.config().Lite.Routes...) // TODO trim forge suffix
-	if ep == nil {
-		log.V(1).Info("no route found for host")
-		return
-	}
-	log = log.WithValues("route", host)
-
-	backend := ep.Backend.Random()
-	if backend == "" {
-		log.Info("route has no backend configured")
-		return
-	}
-	dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
-	if err != nil {
-		log.Error(err, "failed to parse backend address")
-		return
-	}
-	backendAddr := dstAddr.String()
-	if _, port := netutil.HostPort(dstAddr); port == 0 {
-		backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
-	}
-	log = log.WithValues("backend", backendAddr)
-
-	timeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
-	ctx, cancel := context.WithTimeout(h.conn.Context(), timeout)
-	defer cancel()
-
-	var dialer net.Dialer
-	dst, err := dialer.DialContext(ctx, src.RemoteAddr().Network(), backendAddr)
-	if err != nil {
-		if ctx.Err() == nil {
-			log.Info("failed to connect to backend", "error", err)
-		}
-		return
-	}
-	defer func() { _ = dst.Close() }()
-
-	log = log.WithValues("backendAddr", netutil.Host(dst.RemoteAddr()))
-
-	if ep.ProxyProtocol {
-		header := proxyproto.Header{
-			Version:           2,
-			Command:           proxyproto.PROXY,
-			TransportProtocol: proxyproto.TCPv4,
-			SourceAddr:        src.RemoteAddr(),
-			DestinationAddr:   dst.RemoteAddr(),
-		}
-		if _, err = header.WriteTo(dst); err != nil {
-			log.Info("failed to write proxy protocol header to backend", "error", err)
-			return
-		}
-	}
-
-	if ep.RealIP && lite.IsRealIP(handshake.ServerAddress) {
-		// Modify the handshake packet to use RealIP of the client.
-		handshake.ServerAddress = lite.RealIP(handshake.ServerAddress, src.RemoteAddr())
-		update(pc, handshake)
-	}
-
-	// Forward handshake packet as is.
-	err = util.WriteVarInt(dst, len(pc.Payload))
-	if err != nil {
-		return
-	}
-	_, err = dst.Write(pc.Payload)
-	if err != nil {
-		return
-	}
-
-	log.Info("forwarding connection")
-	_ = src.SetDeadline(time.Time{}) // disable deadline
-	go func() { _, _ = io.Copy(src, dst) }()
-	_, _ = io.Copy(dst, src)
-}
-
-func update(pc *proto.PacketContext, h *packet.Handshake) {
-	payload := new(bytes.Buffer)
-	_ = util.WriteVarInt(payload, int(pc.PacketID))
-	_ = h.Encode(pc, payload)
-	pc.Payload = payload.Bytes()
 }
 
 //

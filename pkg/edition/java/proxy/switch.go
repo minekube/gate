@@ -158,7 +158,7 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 	log := p.log.WithValues(
 		"serverName", server.ServerInfo().Name(),
 		"serverAddr", server.ServerInfo().Addr())
-	log.V(1).Info("could not connect player to server", "err", err)
+	log.V(1).Info("could not connect player to server", "error", err)
 
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
@@ -301,7 +301,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	log := p.log.WithValues("server", server.ServerInfo().Name())
 
 	if plainReason, err := util2.MarshalPlain(reason); err != nil {
-		p.log.V(1).Info("error marshal disconnect reason to plain", "err", err)
+		p.log.V(1).Info("error marshal disconnect reason to plain", "error", err)
 	} else {
 		log = log.WithValues("reason", plainReason)
 	}

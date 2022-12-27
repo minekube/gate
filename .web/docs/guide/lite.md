@@ -1,9 +1,9 @@
-# Gate Lite mode
+# Gate Lite Mode
 
 ## What is Lite mode?
 
 Gate has a `Lite` mode that makes Gate act as an ultra-thin lightweight reverse proxy between
-the client and the backend server.
+the client and the backend server for host based connection forwarding.
 
 Using different domains or subdomains Lite efficiently routes client connections based on the
 host address the player joins with.
@@ -11,7 +11,7 @@ This allows you to protect multiple backend servers behind a single port to a Ga
 
 Player connections are offloaded to the destined backend server, including ping requests and player authentication.
 
-**Lite mode supports proxy behind proxy setups**, but advanced features like backend server switching or proxy commands are no
+**Lite mode supports [proxy behind proxy](#proxy-behind-proxy) setups**, but advanced features like backend server switching or proxy commands are no
 longer available in this mode and have no effect when extensions use higher level Gate APIs or non-Lite events.
 
 ## Host based Routing
@@ -40,10 +40,50 @@ config:
         backend: [ 10.0.0.2:25566 ]
 ```
 
+## Ping Response Caching
 
-## Enabling Lite mode
+Players send server list ping requests to Gate Lite to display the motd (message of the day).
+Gate Lite forwards the actual ping-pong response from the backend server based on the configured route.
 
-You can switch to Lite mode by enabling it in the `config.yml`.
+If the backend was already pinged some seconds ago Gate Lite directly returns the cached ping response.
+This reduces the network traffic since less TCP connections must be made to backend servers to fetch the
+status.
+
+### Setting cache duration
+
+To keep and reuse the ping response of a backend for `3 minutes` set:
+
+```yaml
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: abc.example.com
+        backend: [ 10.0.0.3:25565, 10.0.0.4:25565 ]
+        pingCacheTTL: 3m // [!code ++]
+```
+
+_TTL - the Time-to-live before evicting the response data from the in-memory cache_
+
+Note that routes can configure multiple random backends and each backend has its own TTL.
+
+### Disabling the cache
+
+Setting the TTL to `-1` disables response caching for this route only.
+
+```yaml
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: abc.example.com
+        backend: 10.0.0.3:25568
+        pingCacheTTL: -1 // [!code ++]
+```
+
+## Sample config
+
+The Lite configuration is located in the same Gate `config.yml` file under `lite`.
 
 ```yaml config-lite.yml
 <!--@include: ../../../config-lite.yml -->

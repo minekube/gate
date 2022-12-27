@@ -11,24 +11,29 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/errs"
 )
 
 type statusSessionHandler struct {
 	*sessionHandlerDeps
 
-	conn    netmc.MinecraftConn
-	inbound Inbound
-	log     logr.Logger
+	conn                netmc.MinecraftConn
+	inbound             Inbound
+	log                 logr.Logger
+	resolvePingResponse pingResolveFunc // used in lite mode
 
 	receivedRequest bool
 
 	nopSessionHandler
 }
 
+type pingResolveFunc func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error)
+
 func newStatusSessionHandler(
 	conn netmc.MinecraftConn,
 	inbound Inbound,
 	sessionHandlerDeps *sessionHandlerDeps,
+	pingResolveFunc pingResolveFunc,
 ) netmc.SessionHandler {
 	return &statusSessionHandler{
 		sessionHandlerDeps: sessionHandlerDeps,
@@ -37,6 +42,7 @@ func newStatusSessionHandler(
 		log: logr.FromContextOrDiscard(conn.Context()).WithName("statusSession").WithValues(
 			"inbound", inbound,
 			"protocol", conn.Protocol()),
+		resolvePingResponse: pingResolveFunc,
 	}
 }
 
@@ -60,9 +66,10 @@ func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
 
 	switch pc.Packet.(type) {
 	case *packet.StatusRequest:
-		h.handleStatusRequest()
+		h.handleStatusRequest(pc)
 	case *packet.StatusPing:
 		h.handleStatusPing(pc)
+	// TODO add LegacyPing
 	default:
 		// unexpected packet, simply close
 		_ = h.conn.Close()
@@ -95,7 +102,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 	}
 }
 
-func (h *statusSessionHandler) handleStatusRequest() {
+func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 	if h.receivedRequest {
 		// Already sent response
 		_ = h.conn.Close()
@@ -105,8 +112,29 @@ func (h *statusSessionHandler) handleStatusRequest() {
 
 	e := &PingEvent{
 		inbound: h.inbound,
-		ping:    newInitialPing(h.proxy, h.conn.Protocol()),
 	}
+
+	if h.resolvePingResponse != nil {
+		log, res, err := h.resolvePingResponse(h.log, pc)
+		if err != nil {
+			errs.V(log, err).Error(err, "could not resolve ping")
+			_ = h.conn.Close()
+			return
+		}
+		if !h.eventMgr.HasSubscriber(e) {
+			_ = h.conn.WritePacket(res)
+			return
+		}
+		e.ping = new(ping.ServerPing)
+		if err = json.Unmarshal([]byte(res.Status), e.ping); err != nil {
+			h.log.V(1).Error(err, "failed to unmarshal status response")
+			_ = h.conn.Close()
+			return
+		}
+	} else {
+		e.ping = newInitialPing(h.proxy, h.conn.Protocol())
+	}
+
 	h.eventMgr.Fire(e)
 
 	if e.ping == nil {
@@ -133,6 +161,6 @@ func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {
 	// Just return again and close
 	defer h.conn.Close()
 	if err := h.conn.Write(p.Payload); err != nil {
-		h.log.V(1).Info("error writing StatusPing response", "err", err)
+		h.log.V(1).Info("error writing StatusPing response", "error", err)
 	}
 }

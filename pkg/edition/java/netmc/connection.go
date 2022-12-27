@@ -280,7 +280,7 @@ func (c *minecraftConn) closeOnErr(err error) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
-	c.log.V(1).Info("error writing packet, closing connection", "err", err)
+	c.log.V(1).Info("error writing packet, closing connection", "error", err)
 }
 
 func (c *minecraftConn) Close() error {
