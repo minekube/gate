@@ -24,8 +24,7 @@ hero:
 features:
   - icon: 📦
     title: Fewer moving parts
-    details: Gate runs great in containers because it has no dependencies—not even libc.
-             Run Gate practically anywhere.
+    details: Run Gate's tiny executable practically anywhere or in a container - No Java runtime needed!
   - icon: 💻
     title: Developer Friendly
     details: Gate is written in Go, a modern programming language that is easy to learn and
@@ -37,9 +36,9 @@ features:
     title: Multi-Version Support
     details: Gate supports Minecraft server versions 1.8 to latest and is constantly updated to support
              new versions.
-  - icon: ✅
-    title: Simple Installation
-    details: Gate is a single tiny executable ready to run the proxy. No Java runtime needed!
+  - icon: 🪄
+    title: Lite Mode
+    details: Gate Lite is an ultra-thin lightweight Minecraft reverse proxy for host based connection routing.
   - icon: ⚡️
     title: High Performance
     details: Gate is designed to be fast and efficient. A proxy that can handle thousands of players with ease. 
