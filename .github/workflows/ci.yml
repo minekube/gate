@@ -83,6 +83,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
           cache-to: type=inline
           tags: |
@@ -102,6 +103,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
+          cache: true
           go-version-file: go.mod
 
       - name: Run GoReleaser

@@ -1,4 +1,4 @@
-FROM golang:1.19 AS build
+FROM --platform=$BUILDPLATFORM golang:1.19 AS build
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -13,10 +13,14 @@ COPY cmd ./cmd
 COPY pkg ./pkg
 COPY gate.go ./
 
+# Automatically provided by the buildkit
+ARG TARGETOS TARGETARCH
+
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o gate gate.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -ldflags="-s -w" -a -o gate gate.go
 
 # Move binary into final image
-FROM gcr.io/distroless/static-debian11 AS app
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian11 AS app
 COPY --from=build /workspace/gate /
 CMD ["/gate"]
