@@ -12,7 +12,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.2.7
-	github.com/jellydator/ttlcache/v3 v3.0.0
+	github.com/jellydator/ttlcache/v3 v3.0.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/robinbraemer/event v0.0.1
