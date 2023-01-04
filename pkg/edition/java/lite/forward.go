@@ -21,7 +21,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/internal/cachutil"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
@@ -278,9 +277,7 @@ func ResolveStatusResponse(
 	)
 
 	loaderOpt := ttlcache.WithLoader[string, *pingResult](
-		&cachutil.SuppressedLoader[*pingResult]{
-			Loader: loader,
-		},
+		ttlcache.NewSuppressedLoader[string, *pingResult](loader, nil),
 	)
 
 	resultChan := make(chan *pingResult, 1)
