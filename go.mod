@@ -26,7 +26,7 @@ require (
 	go.minekube.com/common v0.0.5
 	go.minekube.com/connect v0.5.1
 	go.uber.org/atomic v1.10.0
-	go.uber.org/multierr v1.8.0
+	go.uber.org/multierr v1.9.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/text v0.4.0
