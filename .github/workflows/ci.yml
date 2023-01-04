@@ -72,8 +72,8 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
           IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
           
-          echo "::set-output name=image::${IMAGE}"
-          echo "::set-output name=image_latest::${IMAGE_LATEST}"
+          echo "image=${IMAGE}" >> $GITHUB_STATE
+          echo "image_latest=${IMAGE_LATEST}" >> $GITHUB_OUTPUT
           
           echo "${IMAGE}" >> $GITHUB_STEP_SUMMARY
 
