@@ -106,7 +106,6 @@ func (e *Entry) SetGameMode(gameMode int) error {
 }
 
 func (e *Entry) Latency() time.Duration {
-	e.TryRLock()
 	e.RLock()
 	defer e.RUnlock()
 	return e.EntryAttributes.Latency
