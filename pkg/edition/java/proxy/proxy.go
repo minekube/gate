@@ -23,6 +23,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
+	"go.minekube.com/gate/pkg/internal/connwrap"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -503,6 +504,22 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		p.log.Info("connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()
 		return
+	}
+
+	// Fire connection event
+	if p.event.HasSubscriber((*ConnectionEvent)(nil)) {
+		conn := &connwrap.Conn{Conn: raw}
+		e := &ConnectionEvent{
+			conn:     conn,
+			original: conn,
+		}
+		p.event.Fire(e)
+		if conn.Closed() || e.Connection() == nil {
+			_ = conn.Close()
+			p.log.V(1).Info("connection closed by ConnectionEvent subscriber", "remoteAddr", raw.RemoteAddr())
+			return
+		}
+		raw = e.Connection()
 	}
 
 	// Create context for connection

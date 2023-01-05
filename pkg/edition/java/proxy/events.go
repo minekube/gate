@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"net"
+
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
@@ -37,6 +39,41 @@ func (p *PingEvent) Ping() *ping.ServerPing {
 // SetPing sets the ping response to use.
 func (p *PingEvent) SetPing(ping *ping.ServerPing) {
 	p.ping = ping
+}
+
+//
+//
+//
+//
+//
+
+// ConnectionEventConn tracks whether Close was called on the connection.
+type ConnectionEventConn interface {
+	net.Conn
+	Closed() bool // Whether Close was called.
+}
+
+// ConnectionEvent is fired when a client connects with the proxy.
+// It can be used for low-level connection handling, modifying or closing the connection.
+// This event is fired before ConnectionHandshakeEvent
+type ConnectionEvent struct {
+	conn     net.Conn
+	original ConnectionEventConn
+}
+
+// Connection returns the connection.
+func (e *ConnectionEvent) Connection() net.Conn {
+	return e.conn
+}
+
+// OriginalConnection returns the original connection.
+func (e *ConnectionEvent) OriginalConnection() ConnectionEventConn {
+	return e.original
+}
+
+// SetConnection sets new connection to use for this connection.
+func (e *ConnectionEvent) SetConnection(conn net.Conn) {
+	e.conn = conn
 }
 
 //
