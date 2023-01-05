@@ -16,13 +16,11 @@ type RemoteChatSession struct {
 }
 
 func (r *RemoteChatSession) SessionID() uuid.UUID {
-	//TODO implement me
-	panic("implement me")
+	return r.ID
 }
 
 func (r *RemoteChatSession) IdentifiedKey() crypto.IdentifiedKey {
-	//TODO implement me
-	panic("implement me")
+	return r.Key
 }
 
 func (r *RemoteChatSession) Encode(c *proto.PacketContext, wr io.Writer) error {
