@@ -220,6 +220,11 @@ func (p *connectedPlayer) handleConnectionErr2(
 func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReason Component, kickedFromCurrent bool) {
 	p.proxy.Event().Fire(e)
 
+	// If player was connected to another server by event handler, we don't need to do anything else.
+	if cs := p.CurrentServer(); cs != nil && RegisteredServerEqual(e.Server(), cs.Server()) {
+		return
+	}
+
 	// There can't be any connection in flight now.
 	p.setInFlightConnection(nil)
 
