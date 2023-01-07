@@ -221,7 +221,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	p.proxy.Event().Fire(e)
 
 	// If player was connected to another server by event handler, we don't need to do anything else.
-	if cs := p.CurrentServer(); cs != nil && RegisteredServerEqual(e.Server(), cs.Server()) {
+	if cs := p.CurrentServer(); cs != nil && !RegisteredServerEqual(e.Server(), cs.Server()) {
 		return
 	}
 
