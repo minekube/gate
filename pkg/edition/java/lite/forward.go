@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/pires/go-proxyproto"
+	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
@@ -150,7 +150,7 @@ func dialRoute(
 	}()
 
 	if route.ProxyProtocol {
-		header := proxyproto.HeaderProxyFromAddrs(2, srcAddr, dst.RemoteAddr())
+		header := protoutil.ProxyHeader(srcAddr, dst.RemoteAddr())
 		if _, err = header.WriteTo(dst); err != nil {
 			return dst, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
 		}

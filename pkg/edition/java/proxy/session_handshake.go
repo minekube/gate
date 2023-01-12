@@ -99,6 +99,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	h.conn.SetState(nextState)
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
+	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
 	if h.config().Lite.Enabled {
 		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond

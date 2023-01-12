@@ -12,7 +12,7 @@ import (
 
 	"github.com/dboslee/lru"
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
+	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
@@ -359,7 +359,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	}
 
 	if s.config().ProxyProtocolBackend {
-		header := proxyproto.HeaderProxyFromAddrs(2, s.player.RemoteAddr(), conn.RemoteAddr())
+		header := protoutil.ProxyHeader(s.player.RemoteAddr(), conn.RemoteAddr())
 		debug.Info("writing proxy protocol header")
 		if _, err = header.WriteTo(conn); err != nil {
 			return nil, fmt.Errorf("error writing proxy protocol header to backend: %w", err)
