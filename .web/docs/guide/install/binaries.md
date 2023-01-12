@@ -6,7 +6,7 @@ Gate is only a single executable file ready to run the proxy._
 ---
 
 Visit the <VPButton text="Releases" href="https://github.com/minekube/gate/releases/latest"/> page, 
-see to the Assets section at the bottom and download Gate for your operating system
+go to the Assets section at the bottom and download Gate for your operating system
 Windows, macOS or Linux.
 
 **Make Gate executable**
