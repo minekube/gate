@@ -150,13 +150,7 @@ func dialRoute(
 	}()
 
 	if route.ProxyProtocol {
-		header := proxyproto.Header{
-			Version:           2,
-			Command:           proxyproto.PROXY,
-			TransportProtocol: proxyproto.TCPv4,
-			SourceAddr:        srcAddr,
-			DestinationAddr:   dst.RemoteAddr(),
-		}
+		header := proxyproto.HeaderProxyFromAddrs(2, srcAddr, dst.RemoteAddr())
 		if _, err = header.WriteTo(dst); err != nil {
 			return nil, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
 		}
