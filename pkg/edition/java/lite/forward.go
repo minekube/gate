@@ -150,10 +150,18 @@ func dialRoute(
 	}()
 
 	if route.ProxyProtocol {
+		// Determine TCPv4 or TCPv6
+		var transportProtocol proxyproto.AddressFamilyAndProtocol
+		if proxyproto.HeaderProxyFromAddrs(2, dst.RemoteAddr(), nil).TransportProtocol.IsIPv4() {
+			transportProtocol = proxyproto.TCPv4
+		} else {
+			transportProtocol = proxyproto.TCPv6
+		}
+
 		header := proxyproto.Header{
 			Version:           2,
 			Command:           proxyproto.PROXY,
-			TransportProtocol: proxyproto.TCPv4,
+			TransportProtocol: transportProtocol,
 			SourceAddr:        srcAddr,
 			DestinationAddr:   dst.RemoteAddr(),
 		}
