@@ -13,7 +13,7 @@ config:
   # and have no effect in Lite mode when extensions use higher level Gate APIs and events.
   lite:
     # Enable Lite mode.
-    # If disabled, the proxy will act as a full proxy with all features enabled like just like BungeeCord/Velocity.
+    # If disabled, the proxy will act as a full proxy with all features enabled just like BungeeCord/Velocity.
     # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
     # Default: false
     enabled: true
@@ -33,7 +33,7 @@ config:
       # You can also match to multiple hosts to one or multiple random backends.
       - host: [ 127.0.0.1, localhost]
         backend: [ 172.16.0.12:25566, backend.example.com:25566 ]
-        # Ping responses are cached 3 seconds per backend address by default.
+        # Ping responses are cached per backend address by default.
         # To disable motd caching set it to -1.
         # Default: 10s
         cachePingTTL: 60s
