@@ -152,7 +152,7 @@ func dialRoute(
 	if route.ProxyProtocol {
 		header := proxyproto.HeaderProxyFromAddrs(2, srcAddr, dst.RemoteAddr())
 		if _, err = header.WriteTo(dst); err != nil {
-			return nil, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
+			return dst, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
 		}
 	}
 
