@@ -27,4 +27,6 @@ The limiter only prevents attacks on a per IP block bases
 and cannot mitigate against distributed denial of services (DDoS), since this type
 of attack should be handled on a higher networking layer than Gate operates in.
 
+See [DDoS Protecting your Minecraft server](security#ddos-protecting-your-minecraft-server) for details.
+
 :::

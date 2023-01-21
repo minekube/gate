@@ -19,7 +19,7 @@ func Protocol(subject any) (proto.Protocol, bool) {
 
 // ProxyHeader returns a proxy header for the given address.
 func ProxyHeader(srcAddr, destAddr net.Addr) *proxyproto.Header {
-	// Passing destination address as srcAddr too fixes disconnect error
+	// Passing destination address as srcAddr fixes disconnect error
 	// where the backend only allows IPv6 but the client connected with IPv4 (or vice-versa).
 	// This assumes that the srcAddr uses the same protocol (e.g. TCP) as the destAddr.
 	header := proxyproto.HeaderProxyFromAddrs(0, destAddr, destAddr)

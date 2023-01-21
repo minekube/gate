@@ -110,6 +110,7 @@ config:
 - [Gate - Enable Proxy Protocol](https://github.com/minekube/gate/blob/7b03987bcdc7e8a6ed96156fa147bdd9dbf6ba4c/config.yml#L85)
 - [Velocity - Enable Proxy Protocol](https://docs.papermc.io/velocity/configuration#advanced-section)
 - [BungeeCord - Enable Proxy Protocol](https://www.spigotmc.org/wiki/bungeecord-configuration-guide/)
+- [Paper - Enable Proxy Protocol](https://docs.papermc.io/paper/reference/global-configuration#proxy-protocol)
 
 ## Security considerations
 
