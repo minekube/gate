@@ -31,11 +31,22 @@ func Test_match(t *testing.T) {
 		{"a", "?b", false},
 		{"a", "*b", false},
 		{"a", "a*", true},
+		{"a", "A*", true},
+		{"A", "a*", true},
 	}
 
 	for _, test := range tests {
 		if got := match(test.s, test.pattern); got != test.want {
 			t.Errorf("match(%q, %q) = %v, want %v", test.s, test.pattern, got, test.want)
 		}
+	}
+}
+
+func BenchmarkMatch(b *testing.B) {
+	s := "Some very long string to match against"
+	pattern := "*str?ng*"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match(s, pattern)
 	}
 }
