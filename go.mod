@@ -6,7 +6,7 @@ require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/dboslee/lru v0.0.1
 	github.com/gammazero/deque v0.2.1
-	github.com/go-faker/faker/v4 v4.0.0-beta.4
+	github.com/go-faker/faker/v4 v4.0.0
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
