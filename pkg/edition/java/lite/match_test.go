@@ -33,6 +33,7 @@ func Test_match(t *testing.T) {
 		{"a", "a*", true},
 		{"a", "A*", true},
 		{"A", "a*", true},
+		{"abc.example.COm", "*.Example.Com", true},
 	}
 
 	for _, test := range tests {
