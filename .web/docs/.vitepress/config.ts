@@ -44,14 +44,11 @@ export default defineConfig({
             {icon: 'github', link: `${gitHubLink}/gate`}
         ],
 
-        // algolia: {
-        //     appId: '7H67QR5P0A',
-        //     apiKey: 'deaab78bcdfe96b599497d25acc6460e',
-        //     indexName: 'vitejs',
-        //     searchParameters: {
-        //         facetFilters: ['tags:en']
-        //     }
-        // },
+        algolia: {
+            appId: 'CUJMPRQVZJ',
+            apiKey: 'f3a1d3d48a15f78e39d6401b86318ed7',
+            indexName: 'gate-minekube',
+        },
 
         // carbonAds: {
         //     code: 'CEBIEK3N',
