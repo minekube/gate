@@ -23,8 +23,6 @@ type backendTransitionSessionHandler struct {
 	bungeeCordMessageRecorder bungeecord.MessageResponder
 	listenDoneCtx             chan struct{}
 	log                       logr.Logger
-
-	nopSessionHandler
 }
 
 func newBackendTransitionSessionHandler(

@@ -36,8 +36,6 @@ type backendLoginSessionHandler struct {
 	log           logr.Logger
 
 	informationForwarded atomic.Bool
-
-	nopSessionHandler
 }
 
 var _ netmc.SessionHandler = (*backendLoginSessionHandler)(nil)
