@@ -22,6 +22,9 @@ type Reader interface {
 	// If the reader should retry reading the next packet, it returns ErrReadPacketRetry.
 	// If the reader returns an error, it returns the connection is in a broken and should be closed.
 	ReadPacket() (*proto.PacketContext, error)
+	// ReadBuffered reads the remaining buffered bytes from the reader.
+	// This is useful for emptying the Reader when it is not needed anymore.
+	ReadBuffered() ([]byte, error)
 	StateChanger
 }
 
@@ -111,4 +114,10 @@ func (r *reader) EnableEncryption(secret []byte) error {
 func (r *reader) SetCompressionThreshold(threshold int) error {
 	r.Decoder.SetCompressionThreshold(threshold)
 	return nil
+}
+
+func (r *reader) ReadBuffered() ([]byte, error) {
+	b := make([]byte, r.readBuf.Buffered())
+	_, err := r.readBuf.Read(b)
+	return b, err
 }

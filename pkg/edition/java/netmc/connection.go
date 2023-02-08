@@ -446,6 +446,11 @@ func (c *minecraftConn) EnableEncryption(secret []byte) error {
 	return c.wr.EnableEncryption(secret)
 }
 
+// ReadBuffered reads the remaining buffered bytes from the underlying Reader.
+func (c *minecraftConn) ReadBuffered() ([]byte, error) {
+	return c.rd.ReadBuffered()
+}
+
 // Conn exports the hidden underlying connection and can be retrieved with interface assertion.
 func (c *minecraftConn) Conn() net.Conn {
 	return c.c

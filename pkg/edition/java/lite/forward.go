@@ -49,14 +49,37 @@ func Forward(
 	}
 	defer func() { _ = dst.Close() }()
 
+	if err = emptyReadBuff(client, dst); err != nil {
+		errs.V(log, err).Info("failed to empty client buffer", "error", err)
+		return
+	}
+
 	log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
 	pipe(log, src, dst)
 }
 
+func emptyReadBuff(src netmc.MinecraftConn, dst net.Conn) error {
+	buff, ok := src.(interface{ ReadBuffered() ([]byte, error) })
+	if ok {
+		b, err := buff.ReadBuffered()
+		if err != nil {
+			return fmt.Errorf("failed to read buffered bytes: %w", err)
+		}
+		if len(b) != 0 {
+			_, err = dst.Write(b)
+			if err != nil {
+				return fmt.Errorf("failed to write buffered bytes: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
 func pipe(log logr.Logger, src, dst net.Conn) {
 	// disable deadlines
-	_ = src.SetDeadline(time.Time{})
-	_ = dst.SetDeadline(time.Time{})
+	var zero time.Time
+	_ = src.SetDeadline(zero)
+	_ = dst.SetDeadline(zero)
 
 	go func() {
 		i, err := io.Copy(src, dst)
