@@ -18,7 +18,7 @@ require (
 	github.com/robinbraemer/event v0.0.1
 	github.com/rs/xid v1.4.0
 	github.com/sandertv/go-raknet v1.12.0
-	github.com/sandertv/gophertunnel v1.26.1
+	github.com/sandertv/gophertunnel v1.27.2
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.24.3
@@ -64,7 +64,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
-	golang.org/x/image v0.1.0 // indirect
+	golang.org/x/image v0.3.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
