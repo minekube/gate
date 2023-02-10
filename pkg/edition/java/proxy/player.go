@@ -28,7 +28,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
@@ -430,10 +429,6 @@ func (a messageApplyOption) Apply(o any) { a(o) }
 func (p *connectedPlayer) SendMessage(msg component.Component, opts ...command.MessageOption) error {
 	if msg == nil {
 		return nil // skip nil message
-	}
-	m := new(strings.Builder)
-	if err := util.JsonCodec(p.Protocol()).Marshal(m, msg); err != nil {
-		return err
 	}
 	b := chat.Builder{
 		Protocol:  p.Protocol(),
