@@ -10,6 +10,7 @@ import (
 
 	"github.com/gammazero/deque"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -202,6 +203,13 @@ func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	serverConn := c.player.connectedServer()
+
+	if serverConn == nil && packet.Channel == forge.LegacyHandshakeChannel {
+		// Handling edge case when packet with FML client handshake (state COMPLETE)
+		// arrives after JoinGame packet from destination server.
+		serverConn = c.player.connectionInFlight()
+	}
+
 	var backendConn netmc.MinecraftConn
 	if serverConn != nil {
 		backendConn = serverConn.conn()
