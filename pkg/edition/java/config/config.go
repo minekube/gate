@@ -71,7 +71,7 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Bind string // The address to listen for connections.
 
 	OnlineMode                    bool
-	OnlineModeKickExistingPlayers bool
+	OnlineModeKickExistingPlayers bool // Kicks existing players when a premium player with the same name joins.
 
 	Forwarding Forwarding
 	Status     Status

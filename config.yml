@@ -71,6 +71,12 @@ config:
   readTimeout: 30000
   # Whether to reconnect the player when disconnected from a server.
   failoverOnUnexpectedServerDisconnect: true
+  # Whether to kick existing connected player when an online-mode player with the same name joins.
+  # This is useful for scenarios where the real Minecraft account takes precedence over the cracked one.
+  # Note that enabling this would allow real Minecraft account players to bully cracked players by
+  # taking the cracked player's name and block them from joining the server, while the online player is connected.
+  # Default: false
+  onlineModeKickExistingPlayers: false
   # Enabled extra debug logging (only for debugging purposes).
   debug: false
   # This allows you to customize how player information such as IPs and UUIDs are forwarded to your server.
