@@ -14,10 +14,6 @@ Minecraft proxy** server with scalability, flexibility &
 excellent server version support -
 _written in Go and ready for the cloud!_
 
-> Gate is currently subject to have breaking changes,
-> but you can already start using it!
-> It is already being used by our wide [community](https://minekube.com/discord) and powers the open [Connect Network](https://connect.minekube.com/)!
-
 ## [Website & Documentation](https://gate.minekube.com)
 
 **There is a lot to discover on Gate's website.**
