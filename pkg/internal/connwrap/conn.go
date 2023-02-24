@@ -6,7 +6,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-// Conn is a wrapper around a net.Conn that tracks whether Closed has been called.
+// Conn is a wrapper around a net.Conn that tracks whether Close has been called.
 type Conn struct {
 	net.Conn // underlying connection
 	closed   atomic.Bool
