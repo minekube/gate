@@ -154,7 +154,7 @@ config:
 # Among a lot of other features it even allows players to join locally hosted
 # Minecraft servers without having an open port or public IP address.
 #
-# Visit https://developers.minekube.com/connect
+# Visit https://connect.minekube.com/
 connect:
   # Enabling Connect makes Gate register itself to Connect network.
   # This feature is disabled by default, but you are encouraged to
