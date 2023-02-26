@@ -287,6 +287,8 @@ github.com/sandertv/gophertunnel v1.27.2 h1:oTPNwhRV46TiZerRi8tAmKssmg5T8m2FG6w0
 github.com/sandertv/gophertunnel v1.27.2/go.mod h1:hgVpDdaLDP/39Z/YqEU0WFi/DHRDHqvBs3XGqkB4tnU=
 github.com/sandertv/gophertunnel v1.27.3 h1:FXh1tenc4K0dLnANbjtDemZeK71gLDeQ8dgABUoHWXU=
 github.com/sandertv/gophertunnel v1.27.3/go.mod h1:hgVpDdaLDP/39Z/YqEU0WFi/DHRDHqvBs3XGqkB4tnU=
+github.com/sandertv/gophertunnel v1.27.4 h1:7KAdSmEESLJWQ4CCDI6dlmUvd1NaaTemPG3eN2xH+ww=
+github.com/sandertv/gophertunnel v1.27.4/go.mod h1:ekREo7U9TPHh86kbuPMaWA93NMyWsfVvP/iNT3XhAb8=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/shurcooL/component v0.0.0-20170202220835-f88ec8f54cc4/go.mod h1:XhFIlyj5a1fBNx5aJTbKoIq0mNaPvOagO+HjB3EtxrY=
 github.com/shurcooL/events v0.0.0-20181021180414-410e4ca65f48/go.mod h1:5u70Mqkb5O5cxEA8nxTsgrgLehJeAw6Oc4Ab1c/P1HM=
