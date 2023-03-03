@@ -60,7 +60,7 @@ config:
     routes:
       - host: abc.example.com
         backend: [ 10.0.0.3:25565, 10.0.0.4:25565 ]
-        pingCacheTTL: 3m # or 180s // [!code ++]
+        cachePingTTL: 3m # or 180s // [!code ++]
 ```
 
 _TTL - the Time-to-live before evicting the response data from the in-memory cache_
@@ -78,7 +78,7 @@ config:
     routes:
       - host: abc.example.com
         backend: 10.0.0.3:25568
-        pingCacheTTL: -1 // [!code ++]
+        cachePingTTL: -1 // [!code ++]
 ```
 
 ## Sample config
