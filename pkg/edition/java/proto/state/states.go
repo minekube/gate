@@ -355,7 +355,7 @@ func init() {
 	)
 	Play.ClientBound.Register(&playerinfo.Upsert{},
 		m(0x36, version.Minecraft_1_19_3),
-		m(0x39, version.Minecraft_1_19_4),
+		m(0x3A, version.Minecraft_1_19_4),
 	)
 	Play.ClientBound.Register(&chat.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
