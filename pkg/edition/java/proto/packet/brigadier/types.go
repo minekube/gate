@@ -21,6 +21,11 @@ type ByteArgumentType byte
 func (b ByteArgumentType) Parse(*brigodier.StringReader) (any, error) { return byte(0), nil }
 func (b ByteArgumentType) String() string                             { return "byte" }
 
+type IntArgumentType int
+
+func (b IntArgumentType) Parse(*brigodier.StringReader) (any, error) { return 0, nil }
+func (b IntArgumentType) String() string                             { return "int" }
+
 var ResourceOrTagKeyArgument brigodier.ArgumentType = &ResourceOrTagKeyArgumentType{}
 
 type ResourceOrTagKeyArgumentType RegistryKeyArgumentType

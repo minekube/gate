@@ -17,24 +17,35 @@ type ServerData struct {
 }
 
 func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteBool(wr, s.Description != nil)
-	if err != nil {
-		return err
-	}
-	if s.Description != nil {
-		err = util.WriteComponent(wr, c.Protocol, s.Description)
+	hasDescription := s.Description != nil
+	if c.Protocol.Lower(version.Minecraft_1_19_4) {
+		err := util.WriteBool(wr, s.Description != nil)
 		if err != nil {
 			return err
 		}
 	}
-	err = util.WriteBool(wr, s.Favicon != "")
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) || hasDescription {
+		err := util.WriteComponent(wr, c.Protocol, s.Description)
+		if err != nil {
+			return err
+		}
+	}
+	hasFavicon := s.Favicon != ""
+	err := util.WriteBool(wr, hasFavicon)
 	if err != nil {
 		return err
 	}
-	if s.Favicon != "" {
-		err = util.WriteString(wr, string(s.Favicon))
-		if err != nil {
-			return err
+	if hasFavicon {
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
+			err = util.WriteBytes(wr, s.Favicon.Bytes())
+			if err != nil {
+				return err
+			}
+		} else {
+			err = util.WriteString(wr, string(s.Favicon))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
@@ -53,26 +64,41 @@ func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (s *ServerData) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
+		s.Description, err = util.ReadComponent(rd, c.Protocol)
+		if err != nil {
+			return err
+		}
+	} else {
+		ok, err := util.ReadBool(rd)
+		if err != nil {
+			return err
+		}
+		if ok {
+			s.Description, err = util.ReadComponent(rd, c.Protocol)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	ok, err := util.ReadBool(rd)
 	if err != nil {
 		return err
 	}
 	if ok {
-		s.Description, err = util.ReadComponent(rd, c.Protocol)
-		if err != nil {
-			return err
+		if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
+			b, err := util.ReadBytes(rd)
+			if err != nil {
+				return err
+			}
+			s.Favicon = favicon.FromBytes(b)
+		} else {
+			fi, err := util.ReadString(rd)
+			if err != nil {
+				return err
+			}
+			s.Favicon = favicon.Favicon(fi)
 		}
-	}
-	ok, err = util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
-	if ok {
-		fi, err := util.ReadString(rd)
-		if err != nil {
-			return err
-		}
-		s.Favicon = favicon.Favicon(fi)
 	}
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
 		_, err = util.ReadBool(rd)

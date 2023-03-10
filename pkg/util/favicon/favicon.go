@@ -3,11 +3,11 @@ package favicon
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"image"
 	_ "image/jpeg"
 	"image/png"
 	"os"
+	"strings"
 
 	"github.com/nfnt/resize"
 )
@@ -28,8 +28,7 @@ func FromImage(img image.Image) (Favicon, error) {
 	if err := png.Encode(buf, img); err != nil {
 		return "", err
 	}
-	b64 := base64.StdEncoding.EncodeToString(buf.Bytes())
-	return Favicon(fmt.Sprintf("data:image/png;base64,%s", b64)), nil
+	return FromBytes(buf.Bytes()), nil
 }
 
 // FromFile takes the filename of an image and converts it to Favicon.
@@ -45,4 +44,18 @@ func FromFile(filename string) (Favicon, error) {
 		return "", err
 	}
 	return FromImage(img)
+}
+
+const dataImagePrefix = "data:image/png;base64,"
+
+// FromBytes takes the bytes encoding of an image and converts it to Favicon.
+func FromBytes(b []byte) Favicon {
+	b64 := base64.StdEncoding.EncodeToString(b)
+	return Favicon(dataImagePrefix + b64)
+}
+
+// Bytes returns the bytes encoding of the favicon.
+func (f Favicon) Bytes() []byte {
+	b, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(string(f), dataImagePrefix))
+	return b
 }

@@ -124,8 +124,11 @@ func (c *chatHandler) handleKeyedChat(packet *chat.KeyedPlayerChat) error {
 func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *chat.KeyedPlayerChat, event *PlayerChatEvent) error {
 	playerKey := c.player.IdentifiedKey()
 	denyRevision := keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2)
-	if !event.Allowed() && denyRevision {
-		c.invalidCancel(c.log, c.player)
+	if !event.Allowed() {
+		if denyRevision {
+			// Bad, very bad.
+			c.invalidCancel(c.log, c.player)
+		}
 		return nil
 	}
 

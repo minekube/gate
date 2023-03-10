@@ -139,6 +139,24 @@ var (
 			return &ResourceKeyArgumentType{Identifier: id}, nil
 		},
 	}
+	TimeArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
+				i, ok := v.(IntArgumentType)
+				if ok {
+					return util.WriteInt(wr, int(i))
+				}
+			}
+			return nil
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
+				b, err := util.ReadInt(rd)
+				return IntArgumentType(b), err
+			}
+			return IntArgumentType(0), nil
+		},
+	}
 
 	Float64ArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {

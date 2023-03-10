@@ -207,8 +207,10 @@ func init() {
 	empty(id("minecraft:item_enchantment", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 39)))
 	empty(id("minecraft:entity_summon", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 40)))
 	empty(id("minecraft:dimension", mapSet(version.Minecraft_1_19_3, 38), mapSet(version.Minecraft_1_19, 41)))
-	empty(id("minecraft:gamemode", mapSet(version.Minecraft_1_19_3, 39)))                                 // 1.19.3
-	empty(id("minecraft:time", mapSet(version.Minecraft_1_19_3, 40), mapSet(version.Minecraft_1_19, 42))) // added in 1.14
+	empty(id("minecraft:gamemode", mapSet(version.Minecraft_1_19_3, 39))) // 1.19.3
+	register(id("minecraft:time", mapSet(version.Minecraft_1_19_3, 40), mapSet(version.Minecraft_1_19, 42)),
+		IntArgumentType(0), TimeArgumentPropertyCodec,
+	) // added in 1.14
 
 	register(id("minecraft:resource_or_tag", mapSet(version.Minecraft_1_19_3, 41), mapSet(version.Minecraft_1_19, 43)),
 		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
@@ -221,8 +223,9 @@ func init() {
 
 	empty(id("minecraft:template_mirror", mapSet(version.Minecraft_1_19, 45)))   // 1.19
 	empty(id("minecraft:template_rotation", mapSet(version.Minecraft_1_19, 46))) // 1.19
+	empty(id("minecraft:heightmap", mapSet(version.Minecraft_1_19_4, 47)))       // 1.19.4
 
-	empty(id("minecraft:uuid", mapSet(version.Minecraft_1_19, 47))) // added in 1.16
+	empty(id("minecraft:uuid", mapSet(version.Minecraft_1_19_4, 48), mapSet(version.Minecraft_1_19, 47))) // added in 1.16
 
 	// Crossstitch support
 	register(id("crossstitch:mod_argument", mapSet(version.Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)
