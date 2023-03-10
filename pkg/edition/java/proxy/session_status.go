@@ -117,7 +117,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 	if h.resolvePingResponse != nil {
 		log, res, err := h.resolvePingResponse(h.log, pc)
 		if err != nil {
-			errs.V(log, err).Error(err, "could not resolve ping")
+			errs.V(log, err).Info("could not resolve ping", "error", err)
 			_ = h.conn.Close()
 			return
 		}

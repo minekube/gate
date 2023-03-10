@@ -120,7 +120,7 @@ func findRoute(
 
 	host, route := FindRoute(clearedHost, routes...)
 	if route == nil {
-		return log.V(1), src, "", nil, errors.New("no route found for host")
+		return log.V(1), src, "", nil, fmt.Errorf("no route configured for host %s", clearedHost)
 	}
 	log = log.WithValues("route", host)
 
@@ -241,7 +241,7 @@ func ResolveStatusResponse(
 ) (logr.Logger, *packet.StatusResponse, error) {
 	log, src, backendAddr, route, err := findRoute(routes, log, client, handshake)
 	if err != nil {
-		return log, nil, fmt.Errorf("failed to find route: %w", err)
+		return log, nil, err
 	}
 
 	// fast path: use cache
