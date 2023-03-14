@@ -104,7 +104,7 @@ const (
 )
 
 func (r *ResourcePackResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
-	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_9_4) {
 		err := util.WriteString(wr, r.Hash)
 		if err != nil {
 			return err
@@ -114,7 +114,7 @@ func (r *ResourcePackResponse) Encode(c *proto.PacketContext, wr io.Writer) erro
 }
 
 func (r *ResourcePackResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
+	if c.Protocol.LowerEqual(version.Minecraft_1_9_4) {
 		r.Hash, err = util.ReadString(rd)
 		if err != nil {
 			return err

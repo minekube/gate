@@ -236,7 +236,12 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 	}
 
 	if p.Hash != "" && sha1HexRegex.MatchString(p.Hash) {
-		packInfo.Hash, _ = hex.DecodeString(p.Hash)
+		var err error
+		packInfo.Hash, err = hex.DecodeString(p.Hash)
+		if err != nil {
+			b.serverConn.log.V(1).Error(err, "error decoding resource pack hash")
+			return
+		}
 	}
 
 	e := &ServerResourcePackSendEvent{
@@ -255,12 +260,18 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 			toSend.Origin = DownstreamServerResourcePackOrigin
 		}
 
-		_ = b.serverConn.player.queueResourcePack(toSend)
+		err := b.serverConn.player.queueResourcePack(toSend)
+		if err != nil {
+			b.serverConn.log.V(1).Error(err, "error queuing resource pack")
+		}
 	} else if smc, ok := b.serverConn.ensureConnected(); ok {
-		_ = smc.WritePacket(&packet.ResourcePackResponse{
+		err := smc.WritePacket(&packet.ResourcePackResponse{
 			Hash:   p.Hash,
 			Status: DeclinedResourcePackResponseStatus,
 		})
+		if err != nil {
+			b.serverConn.log.V(1).Error(err, "error sending resource pack response")
+		}
 	}
 }
 
