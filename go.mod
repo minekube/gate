@@ -14,7 +14,7 @@ require (
 	github.com/gookit/color v1.5.2
 	github.com/jellydator/ttlcache/v3 v3.0.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pires/go-proxyproto v0.6.2
+	github.com/pires/go-proxyproto v0.7.0
 	github.com/robinbraemer/event v0.0.1
 	github.com/rs/xid v1.4.0
 	github.com/sandertv/go-raknet v1.12.0
