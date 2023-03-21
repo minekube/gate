@@ -28,11 +28,11 @@ const (
 type Pool struct {
 	DisableCalibration bool
 
-	calls       [steps]uint64
-	calibrating uint64
+	calls       [steps]atomic.Uint64
+	calibrating atomic.Uint64
 
-	defaultSize uint64
-	maxSize     uint64
+	defaultSize atomic.Uint64
+	maxSize     atomic.Uint64
 
 	pool sync.Pool
 }
@@ -55,13 +55,13 @@ func (p *Pool) Get() *bytes.Buffer {
 	if v != nil {
 		return v.(*bytes.Buffer)
 	}
-	return bytes.NewBuffer(make([]byte, 0, atomic.LoadUint64(&p.defaultSize)))
+	return bytes.NewBuffer(make([]byte, 0, p.defaultSize.Load()))
 }
 
 // Put returns byte buffer to the pool.
 //
 // ByteBuffer.B mustn't be touched after returning it to the pool.
-// Otherwise data races will occur.
+// Otherwise, data races will occur.
 func Put(b *bytes.Buffer) { defaultPool.Put(b) }
 
 // Put releases byte buffer obtained via Get to the pool.
@@ -71,11 +71,11 @@ func (p *Pool) Put(b *bytes.Buffer) {
 	idx := index(b.Len())
 
 	if !p.DisableCalibration &&
-		atomic.AddUint64(&p.calls[idx], 1) > calibrateCallsThreshold {
+		p.calls[idx].Add(1) > calibrateCallsThreshold {
 		p.calibrate()
 	}
 
-	maxSize := int(atomic.LoadUint64(&p.maxSize))
+	maxSize := int(p.maxSize.Load())
 	if maxSize == 0 || b.Cap() <= maxSize {
 		b.Reset()
 		p.pool.Put(b)
@@ -83,14 +83,14 @@ func (p *Pool) Put(b *bytes.Buffer) {
 }
 
 func (p *Pool) calibrate() {
-	if !atomic.CompareAndSwapUint64(&p.calibrating, 0, 1) {
+	if !p.calibrating.CompareAndSwap(0, 1) {
 		return
 	}
 
 	a := make(callSizes, 0, steps)
 	var callsSum uint64
 	for i := uint64(0); i < steps; i++ {
-		calls := atomic.SwapUint64(&p.calls[i], 0)
+		calls := p.calls[i].Swap(0)
 		callsSum += calls
 		a = append(a, callSize{
 			calls: calls,
@@ -115,10 +115,10 @@ func (p *Pool) calibrate() {
 		}
 	}
 
-	atomic.StoreUint64(&p.defaultSize, defaultSize)
-	atomic.StoreUint64(&p.maxSize, maxSize)
+	p.defaultSize.Store(defaultSize)
+	p.maxSize.Store(maxSize)
 
-	atomic.StoreUint64(&p.calibrating, 0)
+	p.calibrating.Store(0)
 }
 
 type callSize struct {
