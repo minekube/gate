@@ -12,6 +12,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	phase "go.minekube.com/gate/pkg/edition/java/proxy/phase"
+	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
@@ -194,6 +195,12 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		// Send keep alive to try to avoid timeouts
 		if err := netmc.SendKeepAlive(b.serverConn.player); err != nil {
 			failResult("could not send keep alive packet, player might have disconnected: %w", err)
+			return
+		}
+
+		// Reset Tablist header and footer to prevent desync
+		if err := tablist.ClearHeaderFooter(b.serverConn.player); err != nil {
+			failResult("could not clear tablist header and footer, player might have disconnected: %w", err)
 			return
 		}
 	} else {
