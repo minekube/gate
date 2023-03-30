@@ -1,6 +1,12 @@
 package util
 
-// NBT is a named binary tag.
+import (
+	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
+)
+
+// NBT is a named binary tag aka compound binary tag.
 type NBT map[string]any
 
 func (b NBT) Bool(name string) (bool, bool) {
@@ -128,4 +134,30 @@ func (b NBT) Int64Array(name string) (ret []int64, ok bool) {
 		ret, ok = val.([]int64)
 	}
 	return
+}
+
+func ReadNBT(rd io.Reader) (NBT, error) {
+	return DecodeNBT(NewNBTDecoder(rd))
+}
+
+func DecodeNBT(decoder interface{ Decode(any) error }) (NBT, error) {
+	v := NBT{}
+	err := decoder.Decode(&v)
+	return v, err
+}
+
+func NewNBTDecoder(r io.Reader) *nbt.Decoder {
+	return nbt.NewDecoderWithEncoding(r, nbt.BigEndian)
+}
+
+func NewNBTEncoder(w io.Writer) *nbt.Encoder {
+	return nbt.NewEncoderWithEncoding(w, nbt.BigEndian)
+}
+
+func WriteNBT(w io.Writer, nbt NBT) error {
+	return NewNBTEncoder(w).Encode(nbt)
+}
+
+func (b NBT) Write(w io.Writer) error {
+	return WriteNBT(w, b)
 }

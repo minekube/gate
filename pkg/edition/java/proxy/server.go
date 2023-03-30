@@ -258,10 +258,16 @@ func (s *serverConnection) SendPluginMessage(id message.ChannelIdentifier, data 
 }
 
 func (s *serverConnection) Server() RegisteredServer {
+	if s == nil {
+		return nil
+	}
 	return s.server
 }
 
 func (s *serverConnection) Player() Player {
+	if s == nil {
+		return nil
+	}
 	return s.player
 }
 

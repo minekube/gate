@@ -96,7 +96,6 @@ var packets = []proto.Packet{
 		Prompt: &component.Text{Content: "Prompt"},
 	},
 	&ResourcePackResponse{},
-	&Respawn{},
 	&StatusRequest{},
 	&StatusResponse{},
 	&StatusPing{},
@@ -122,9 +121,9 @@ var packets = []proto.Packet{
 				ID:   testUUID,
 				Name: "testName",
 				Properties: []profile.Property{
-					*mustFake(&profile.Property{}).(*profile.Property),
-					*mustFake(&profile.Property{}).(*profile.Property),
-					*mustFake(&profile.Property{}).(*profile.Property),
+					*mustFake(&profile.Property{}),
+					*mustFake(&profile.Property{}),
+					*mustFake(&profile.Property{}),
 				},
 				GameMode:    2,
 				Latency:     4325,
@@ -135,9 +134,9 @@ var packets = []proto.Packet{
 				ID:   testUUID,
 				Name: "testName2",
 				Properties: []profile.Property{
-					*mustFake(&profile.Property{}).(*profile.Property),
-					*mustFake(&profile.Property{}).(*profile.Property),
-					*mustFake(&profile.Property{}).(*profile.Property),
+					*mustFake(&profile.Property{}),
+					*mustFake(&profile.Property{}),
+					*mustFake(&profile.Property{}),
 				},
 				GameMode:    1,
 				Latency:     42,
@@ -154,23 +153,29 @@ var packets = []proto.Packet{
 		Difficulty:           3,
 		Hardcore:             true,
 		MaxPlayers:           3,
-		LevelType:            strPtr("test"),
+		LevelType:            ptr("test"),
 		ViewDistance:         3,
 		ReducedDebugInfo:     true,
 		ShowRespawnScreen:    true,
-		DimensionRegistry:    mustFake(&DimensionRegistry{}).(*DimensionRegistry),
-		DimensionInfo:        mustFake(&DimensionInfo{}).(*DimensionInfo),
-		CurrentDimensionData: mustFake(&DimensionData{}).(*DimensionData),
+		DimensionInfo:        mustFake(&DimensionInfo{}),
+		LevelNames:           []string{"test", "test2"},
 		PreviousGamemode:     2,
-		BiomeRegistry: map[string]any{
-			"k": "v",
-		},
-		SimulationDistance: 3,
-		LastDeadPosition: &DeathPosition{
-			Key:   "k",
-			Value: 3,
-		},
-		ChatTypeRegistry: nil,
+		SimulationDistance:   3,
+		LastDeadPosition:     mustFake(&DeathPosition{}),
+		CurrentDimensionData: map[string]any{},
+		Registry:             map[string]any{},
+	},
+	&Respawn{
+		Dimension:            1,
+		PartialHashedSeed:    3,
+		Difficulty:           4,
+		Gamemode:             2,
+		LevelType:            "test",
+		DataToKeep:           0,
+		DimensionInfo:        mustFake(&DimensionInfo{}),
+		PreviousGamemode:     0,
+		CurrentDimensionData: map[string]any{},
+		LastDeathPosition:    mustFake(&DeathPosition{}),
 	},
 	chat.NewKeyedPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	playerChatPacket,
@@ -378,11 +383,11 @@ func vRange(start, endInclusive *proto.Version) (vers []*proto.Version) {
 	}
 	return
 }
-func strPtr(s string) *string { return &s }
-func mustFake(a any) any {
+func mustFake[T any](a T) T {
 	if err := faker.FakeData(a); err != nil {
 		panic(fmt.Sprintf("error faking %T: %v", a, err))
 	}
 	return a
 }
-func mustFakeStr() string { return *mustFake(strPtr("")).(*string) }
+func mustFakeStr() string { return *mustFake(ptr("")) }
+func ptr[T any](a T) *T   { return &a }

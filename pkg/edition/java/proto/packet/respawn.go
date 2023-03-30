@@ -3,7 +3,6 @@ package packet
 import (
 	"io"
 
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -18,14 +17,14 @@ type Respawn struct {
 	DataToKeep           byte           // 1.16+
 	DimensionInfo        *DimensionInfo // 1.16-1.16.1
 	PreviousGamemode     int16          // 1.16+
-	CurrentDimensionData *DimensionData // 1.16.2+
+	CurrentDimensionData util.NBT       // 1.16.2+
 	LastDeathPosition    *DeathPosition // 1.19+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
-			err = nbt.NewEncoderWithEncoding(wr, nbt.BigEndian).Encode(r.CurrentDimensionData.encodeDimensionDetails())
+			err = r.CurrentDimensionData.Write(wr)
 			if err != nil {
 				return err
 			}
@@ -110,8 +109,7 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
-			dimDataTag := util.NBT{}
-			err = nbt.NewDecoderWithEncoding(rd, nbt.BigEndian).Decode(&dimDataTag)
+			r.CurrentDimensionData, err = util.ReadNBT(rd)
 			if err != nil {
 				return err
 			}
@@ -119,11 +117,6 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			if err != nil {
 				return err
 			}
-			r.CurrentDimensionData, err = decodeBaseCompoundTag(dimDataTag, c.Protocol)
-			if err != nil {
-				return err
-			}
-			r.CurrentDimensionData.RegistryIdentifier = dimensionIdentifier
 		} else {
 			dimensionIdentifier, err = util.ReadString(rd)
 			if err != nil {
