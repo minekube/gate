@@ -38,7 +38,6 @@ func (p *Message) Decode(c *proto.PacketContext, r io.Reader) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_13) {
 		p.Channel = TransformLegacyToModernChannel(p.Channel)
-		return
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		p.Data, err = io.ReadAll(r)
