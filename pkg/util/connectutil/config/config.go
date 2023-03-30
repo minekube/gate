@@ -1,10 +1,5 @@
 package config
 
-import (
-	"math/rand"
-	"time"
-)
-
 const DefaultWatchServiceAddr = "wss://watch-connect.minekube.net"
 
 // DefaultConfig is a default Config.
@@ -44,5 +39,3 @@ type Service struct {
 	// Overrides servers with the same name.
 	OverrideRegistration bool
 }
-
-func init() { rand.Seed(time.Now().UnixNano()) }

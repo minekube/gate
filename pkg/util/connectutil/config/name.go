@@ -14,7 +14,9 @@ import (
 	"go.minekube.com/gate/pkg/version"
 )
 
-func init() { rand.Seed(time.Now().UnixNano()) }
+func init() {
+	rand.Seed(time.Now().UnixNano()) //nolint:staticcheck
+}
 
 func randomEndpointName(ctx context.Context) string {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
