@@ -1,13 +1,13 @@
 module go.minekube.com/gate
 
-go 1.19
+go 1.20
 
 require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/dboslee/lru v0.0.1
 	github.com/gammazero/deque v0.2.1
 	github.com/go-faker/faker/v4 v4.1.0
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/uuid v1.3.0
@@ -21,16 +21,16 @@ require (
 	github.com/sandertv/gophertunnel v1.28.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
-	github.com/urfave/cli/v2 v2.25.0
+	github.com/urfave/cli/v2 v2.25.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
 	go.minekube.com/connect v0.5.2
 	go.uber.org/atomic v1.10.0
-	go.uber.org/multierr v1.10.0
+	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/text v0.8.0
 	golang.org/x/time v0.3.0
-	google.golang.org/grpc v1.53.0
+	google.golang.org/grpc v1.54.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
 )
@@ -68,7 +68,7 @@ require (
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
+	google.golang.org/genproto v0.0.0-20230330200707-38013875ee22 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
