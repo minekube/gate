@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -101,12 +102,17 @@ func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 		}()
 	}
 
+	var retries int
 retry:
 	payload, err := d.readPayload()
 	if err != nil {
 		return nil, &errs.SilentError{Err: err}
 	}
 	if len(payload) == 0 {
+		if retries > 10 {
+			return nil, errors.New("got too many empty packets")
+		}
+		retries++
 		// Got an empty packet, skipping it
 		goto retry
 	}
