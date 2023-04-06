@@ -65,10 +65,17 @@ type Player interface {
 	// If at all possible, specify an 20-byte SHA-1 hash of the resource pack file.
 	// To monitor the status of the sent resource pack, subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePack(info ResourcePackInfo) error
+	// AppliedResourcePack returns the resource pack that was applied to the player.
+	// Returns nil if no resource pack was applied.
+	AppliedResourcePack() *ResourcePackInfo
+	// PendingResourcePack returns the resource pack that is currently being sent to the player.
+	// Returns nil if no resource pack is being sent.
+	PendingResourcePack() *ResourcePackInfo
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
 	TabList() tablist.TabList // Returns the player's tab list.
-	// TODO add title and more
+
+	// Looking for title or bossbar methods? See the title and bossbar packages.
 }
 
 type connectedPlayer struct {
@@ -101,6 +108,7 @@ type connectedPlayer struct {
 	outstandingResourcePacks deque.Deque[*ResourcePackInfo]
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
+	appliedResourcePack      *ResourcePackInfo
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
@@ -278,6 +286,10 @@ func (p *connectedPlayer) queueResourcePack(info ResourcePackInfo) error {
 
 func (p *connectedPlayer) tickResourcePackQueue() error {
 	p.mu.RLock()
+	if p.outstandingResourcePacks.Len() == 0 {
+		p.mu.RUnlock()
+		return nil
+	}
 	queued := p.outstandingResourcePacks.Front()
 	previousResourceResponse := p.previousResourceResponse
 	p.mu.RUnlock()
@@ -317,6 +329,22 @@ func (p *connectedPlayer) tickResourcePackQueue() error {
 	return p.WritePacket(req)
 }
 
+// AppliedResourcePack returns the resource-pack that was applied and accepted by the player.
+// It returns nil if there is no applied resource-pack.
+func (p *connectedPlayer) AppliedResourcePack() *ResourcePackInfo {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.appliedResourcePack
+}
+
+// PendingResourcePack returns the resource-pack that is currently being sent to the player.
+// It returns nil if there is no pending resource-pack.
+func (p *connectedPlayer) PendingResourcePack() *ResourcePackInfo {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.pendingResourcePack
+}
+
 // Processes a client response to a sent resource-pack.
 func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStatus) bool {
 	peek := status == AcceptedResourcePackResponseStatus
@@ -328,7 +356,7 @@ func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStat
 	}
 
 	var queued *ResourcePackInfo
-	if !peek {
+	if peek {
 		queued = p.outstandingResourcePacks.Front()
 	} else {
 		queued = p.outstandingResourcePacks.PopFront()
@@ -361,6 +389,7 @@ func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStat
 		b := false
 		p.previousResourceResponse = &b
 	case SuccessfulResourcePackResponseStatus:
+		p.appliedResourcePack = queued
 		p.previousResourceResponse = nil
 		p.pendingResourcePack = nil
 	case FailedDownloadResourcePackResponseStatus:
