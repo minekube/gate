@@ -88,6 +88,9 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
 		c.handlePluginMessage(p)
+	case *packet.ResourcePackResponse:
+		c.player.onResourcePackResponse(p.Status)
+		c.forwardToServer(pc) // forward to server
 	case *packet.ClientSettings:
 		c.player.setSettings(p)
 		c.forwardToServer(pc) // forward to server

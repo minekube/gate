@@ -328,7 +328,7 @@ func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStat
 	}
 
 	var queued *ResourcePackInfo
-	if peek {
+	if !peek {
 		queued = p.outstandingResourcePacks.Front()
 	} else {
 		queued = p.outstandingResourcePacks.PopFront()
