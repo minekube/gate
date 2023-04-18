@@ -223,7 +223,7 @@ func (c *minecraftConn) Context() context.Context { return c.ctx }
 func (c *minecraftConn) Flush() error {
 	err := c.wr.Flush()
 	if err != nil {
-		c.closeOnErr(err)
+		c.closeOnWriteErr(err)
 	}
 	return err
 }
@@ -232,7 +232,6 @@ func (c *minecraftConn) WritePacket(p proto.Packet) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
-	defer func() { c.closeOnErr(err) }()
 	if err = c.BufferPacket(p); err != nil {
 		return err
 	}
@@ -243,8 +242,8 @@ func (c *minecraftConn) Write(payload []byte) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
-	defer func() { c.closeOnErr(err) }()
 	if _, err = c.wr.Write(payload); err != nil {
+		c.closeOnWriteErr(err, "writePayloadLen", len(payload))
 		return err
 	}
 	return c.Flush()
@@ -254,7 +253,11 @@ func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
-	defer func() { c.closeOnErr(err) }()
+	defer func() {
+		if err != nil {
+			c.closeOnWriteErr(err, "bufferPacket", fmt.Sprintf("%T", packet))
+		}
+	}()
 	_, err = c.wr.WritePacket(packet)
 	return err
 }
@@ -263,12 +266,16 @@ func (c *minecraftConn) BufferPayload(payload []byte) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
-	defer func() { c.closeOnErr(err) }()
+	defer func() {
+		if err != nil {
+			c.closeOnWriteErr(err, "bufferPayloadLen", len(payload))
+		}
+	}()
 	_, err = c.wr.Write(payload)
 	return err
 }
 
-func (c *minecraftConn) closeOnErr(err error) {
+func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	if err == nil {
 		return
 	}
@@ -280,7 +287,11 @@ func (c *minecraftConn) closeOnErr(err error) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
-	c.log.V(1).Info("error writing packet, closing connection", "error", err)
+	log := c.log.V(1)
+	if !log.Enabled() {
+		return
+	}
+	log.Info("error writing packet, closing connection", append(logKeysAndValues, "error", err)...)
 }
 
 func (c *minecraftConn) Close() error {
