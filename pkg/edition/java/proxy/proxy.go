@@ -315,10 +315,13 @@ func (p *Proxy) loadFavicon() (err error) {
 }
 
 func (p *Proxy) initPlugins(ctx context.Context) error {
+	log := logr.FromContextOrDiscard(ctx)
 	for _, pl := range Plugins {
+		start := time.Now()
 		if err := pl.Init(ctx, p); err != nil {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
+		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
 	}
 	return nil
 }
