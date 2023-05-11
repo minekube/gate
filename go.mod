@@ -8,7 +8,7 @@ require (
 	github.com/gammazero/deque v0.2.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-logr/logr v1.2.4
-	github.com/go-logr/zapr v1.2.3
+	github.com/go-logr/zapr v1.2.4
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.5.2
