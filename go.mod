@@ -24,7 +24,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/connect v0.5.2
+	go.minekube.com/connect v0.5.3
 	go.uber.org/atomic v1.10.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.24.0
@@ -36,6 +36,7 @@ require (
 )
 
 require (
+	buf.build/gen/go/minekube/connect/protocolbuffers/go v1.30.0-20230517095325-052a0564f571.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/df-mc/atomic v1.10.0 // indirect
@@ -70,6 +71,6 @@ require (
 	golang.org/x/sys v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20230330200707-38013875ee22 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
