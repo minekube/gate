@@ -488,6 +488,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,
 		LastDeathPosition:    joinGame.LastDeadPosition,
+		PortalCooldown:       joinGame.PortalCooldown,
 	}
 }
 

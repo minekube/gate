@@ -19,6 +19,7 @@ type Respawn struct {
 	PreviousGamemode     int16          // 1.16+
 	CurrentDimensionData util.NBT       // 1.16.2+
 	LastDeathPosition    *DeathPosition // 1.19+
+	PortalCooldown       int            // 1.20+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -98,6 +99,12 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		err = r.LastDeathPosition.encode(wr)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
+		err = util.WriteVarInt(wr, r.PortalCooldown)
 		if err != nil {
 			return err
 		}
@@ -195,6 +202,12 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		r.LastDeathPosition, err = decodeDeathPosition(rd)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
+		r.PortalCooldown, err = util.ReadVarInt(rd)
 		if err != nil {
 			return err
 		}

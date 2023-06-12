@@ -79,9 +79,8 @@ func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
 var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
 
 func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
-	shownVersion := protocol
 	if !version.Protocol(protocol).Supported() {
-		shownVersion = version.MaximumVersion.Protocol
+		protocol = version.MaximumVersion.Protocol
 	}
 	var modInfo *modinfo.ModInfo
 	if p.config().AnnounceForge {
@@ -89,7 +88,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 	}
 	return &ping.ServerPing{
 		Version: ping.Version{
-			Protocol: shownVersion,
+			Protocol: protocol,
 			Name:     versionName,
 		},
 		Players: &ping.Players{

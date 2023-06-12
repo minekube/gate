@@ -29,6 +29,7 @@ type JoinGame struct {
 	PreviousGamemode     int16          // 1.16+
 	SimulationDistance   int            // 1.18+
 	LastDeadPosition     *DeathPosition // 1.19+
+	PortalCooldown       int            // 1.20+
 }
 
 type DimensionInfo struct {
@@ -208,6 +209,14 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 			return err
 		}
 	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
+		err = util.WriteVarInt(wr, j.PortalCooldown)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -473,6 +482,13 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		j.LastDeadPosition, err = decodeDeathPosition(rd)
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
+		j.PortalCooldown, err = util.ReadVarInt(rd)
 		if err != nil {
 			return err
 		}
