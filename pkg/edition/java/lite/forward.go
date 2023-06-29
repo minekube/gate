@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,13 +16,16 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -220,6 +224,13 @@ var pingCache = struct {
 	sync.Once
 }{}
 
+var fallback = struct {
+	sync.Once
+
+	result *ping.ServerPing
+	err    error
+}{}
+
 type pingResult struct {
 	res *packet.StatusResponse
 	err error
@@ -311,6 +322,20 @@ func ResolveStatusResponse(
 	}
 }
 
+func ResolveFallbackResponse(
+	fc config.Fallback,
+	log logr.Logger,
+	handshakeCtx *proto.PacketContext,
+) (logr.Logger, *ping.ServerPing, error) {
+	fallback.Do(func() {
+		log.V(1).Info("resolving fallback status")
+		result, err := newFallbackStatus(log, fc, handshakeCtx.Protocol)
+		fallback.result = result
+		fallback.err = fmt.Errorf("error creating fallback status: %w", err)
+	})
+	return log, fallback.result, fallback.err
+}
+
 func fetchStatus(
 	log logr.Logger,
 	conn net.Conn,
@@ -336,4 +361,47 @@ func fetchStatus(
 	}
 
 	return res, nil
+}
+
+var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
+
+func newFallbackStatus(
+	log logr.Logger,
+	fc config.Fallback,
+	protocol proto.Protocol,
+) (
+	*ping.ServerPing,
+	error,
+) {
+	if !version.Protocol(protocol).Supported() {
+		protocol = version.MaximumVersion.Protocol
+	}
+	description, err := componentutil.ParseTextComponent(fc.MOTD)
+	if err != nil {
+		return nil, fmt.Errorf("error loading fallback motd: %w", err)
+	}
+	var favi favicon.Favicon
+	if len(fc.Favicon) != 0 {
+		if strings.HasPrefix(fc.Favicon, "data:image/") {
+			favi = favicon.Favicon(fc.Favicon)
+			log.Info("using favicon from data uri", "length", len(favi))
+		} else {
+			favi, err = favicon.FromFile(fc.Favicon)
+			if err != nil {
+				return nil, fmt.Errorf("error reading favicon file %q: %w", fc.Favicon, err)
+			}
+			log.Info("using favicon file", "file", fc.Favicon)
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error loading fallback favicon: %w", err)
+	}
+	return &ping.ServerPing{
+		Version: ping.Version{
+			Protocol: protocol,
+			Name:     versionName,
+		},
+		Description: description,
+		Favicon:     favi,
+	}, nil
 }

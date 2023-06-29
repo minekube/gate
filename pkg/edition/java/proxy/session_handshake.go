@@ -15,6 +15,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -101,6 +102,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 
 	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
+	var resolveFallbackResponse fallbackResolveFunc
 	if h.config().Lite.Enabled {
 		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
 		if nextState == state.Login {
@@ -112,13 +114,19 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
 			return lite.ResolveStatusResponse(dialTimeout, h.config().Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx)
 		}
+
+		if h.config().Lite.Fallback.Enabled {
+			resolveFallbackResponse = func(log logr.Logger) (logr.Logger, *ping.ServerPing, error) {
+				return lite.ResolveFallbackResponse(h.config().Lite.Fallback, log, pc)
+			}
+		}
 	}
 
 	switch nextState {
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
 		// Just update the session handler and wait for the StatusRequest packet.
-		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse))
+		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse, resolveFallbackResponse))
 	case state.Login:
 		// Client wants to join.
 		h.handleLogin(handshake, inbound)

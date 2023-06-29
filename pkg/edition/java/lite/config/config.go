@@ -16,8 +16,9 @@ var DefaultConfig = Config{
 type (
 	// Config is the configuration for Lite mode.
 	Config struct {
-		Enabled bool
-		Routes  []Route
+		Enabled  bool
+		Routes   []Route
+		Fallback Fallback
 	}
 	Route struct {
 		Host          configutil.SingleOrMulti[string]
@@ -25,6 +26,11 @@ type (
 		CachePingTTL  time.Duration // 0 = default, < 0 = disabled
 		ProxyProtocol bool
 		RealIP        bool
+	}
+	Fallback struct {
+		Enabled bool
+		MOTD    string
+		Favicon string
 	}
 )
 
