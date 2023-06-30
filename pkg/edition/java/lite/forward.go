@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -224,13 +225,6 @@ var pingCache = struct {
 	sync.Once
 }{}
 
-var fallback = struct {
-	sync.Once
-
-	result *ping.ServerPing
-	err    error
-}{}
-
 type pingResult struct {
 	res *packet.StatusResponse
 	err error
@@ -322,20 +316,6 @@ func ResolveStatusResponse(
 	}
 }
 
-func ResolveFallbackResponse(
-	fc config.Fallback,
-	log logr.Logger,
-	handshakeCtx *proto.PacketContext,
-) (logr.Logger, *ping.ServerPing, error) {
-	fallback.Do(func() {
-		log.V(1).Info("resolving fallback status")
-		result, err := newFallbackStatus(log, fc, handshakeCtx.Protocol)
-		fallback.result = result
-		fallback.err = fmt.Errorf("error creating fallback status: %w", err)
-	})
-	return log, fallback.result, fallback.err
-}
-
 func fetchStatus(
 	log logr.Logger,
 	conn net.Conn,
@@ -364,44 +344,63 @@ func fetchStatus(
 }
 
 var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
+var fallbackData = struct {
+	sync.Once
+	loadErr error
 
-func newFallbackStatus(
-	log logr.Logger,
+	motd    *component.Text
+	favicon favicon.Favicon
+}{}
+
+func GenerateFallbackResponse(
 	fc config.Fallback,
-	protocol proto.Protocol,
-) (
-	*ping.ServerPing,
-	error,
-) {
-	if !version.Protocol(protocol).Supported() {
+	log logr.Logger,
+	handshakeCtx *proto.PacketContext,
+	statusRequestCtx *proto.PacketContext,
+) (logr.Logger, *ping.ServerPing, error) {
+	var protocol = handshakeCtx.Protocol
+	if !version.Protocol(handshakeCtx.Protocol).Supported() {
 		protocol = version.MaximumVersion.Protocol
 	}
-	description, err := componentutil.ParseTextComponent(fc.MOTD)
-	if err != nil {
-		return nil, fmt.Errorf("error loading fallback motd: %w", err)
+	fallbackData.Do(func() {
+		log.V(1).Info("loading fallback status")
+		motd, favi, err := loadFallbackData(log, fc)
+		fallbackData.motd = motd
+		fallbackData.favicon = favi
+		fallbackData.loadErr = err
+	})
+	if fallbackData.loadErr != nil {
+		return log, nil, fmt.Errorf("error loading fallback status: %w", fallbackData.loadErr)
 	}
-	var favi favicon.Favicon
-	if len(fc.Favicon) != 0 {
-		if strings.HasPrefix(fc.Favicon, "data:image/") {
-			favi = favicon.Favicon(fc.Favicon)
-			log.Info("using favicon from data uri", "length", len(favi))
-		} else {
-			favi, err = favicon.FromFile(fc.Favicon)
-			if err != nil {
-				return nil, fmt.Errorf("error reading favicon file %q: %w", fc.Favicon, err)
-			}
-			log.Info("using favicon file", "file", fc.Favicon)
-		}
-	}
-	if err != nil {
-		return nil, fmt.Errorf("error loading fallback favicon: %w", err)
-	}
-	return &ping.ServerPing{
+	return log, &ping.ServerPing{
 		Version: ping.Version{
 			Protocol: protocol,
 			Name:     versionName,
 		},
-		Description: description,
-		Favicon:     favi,
 	}, nil
+}
+
+func loadFallbackData(log logr.Logger, fc config.Fallback) (
+	motd *component.Text,
+	favi favicon.Favicon,
+	err error,
+) {
+	motd, err = componentutil.ParseTextComponent(fc.MOTD)
+	if err != nil {
+		return nil, favi, fmt.Errorf("error loading fallback motd: %w", err)
+	}
+	if len(fc.Favicon) == 0 {
+		return
+	}
+	if strings.HasPrefix(fc.Favicon, "data:image/") {
+		favi = favicon.Favicon(fc.Favicon)
+		log.Info("using favicon from data uri", "length", len(favi))
+	} else {
+		favi, err = favicon.FromFile(fc.Favicon)
+		if err != nil {
+			return motd, favi, fmt.Errorf("error reading favicon file %q: %w", fc.Favicon, err)
+		}
+		log.Info("using favicon file", "file", fc.Favicon)
+	}
+	return
 }

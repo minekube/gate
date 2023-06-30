@@ -21,8 +21,8 @@ type statusSessionHandler struct {
 	inbound Inbound
 	log     logr.Logger
 
-	resolvePingResponse     pingResolveFunc // used in lite mode
-	resolveFallbackResponse fallbackResolveFunc
+	resolvePingResponse  pingResolveFunc // used in lite mode
+	fallbackPingResponse pingFallbackFunc
 
 	receivedRequest bool
 
@@ -30,14 +30,14 @@ type statusSessionHandler struct {
 }
 
 type pingResolveFunc func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error)
-type fallbackResolveFunc func(log logr.Logger) (logr.Logger, *ping.ServerPing, error)
+type pingFallbackFunc func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *ping.ServerPing, error)
 
 func newStatusSessionHandler(
 	conn netmc.MinecraftConn,
 	inbound Inbound,
 	sessionHandlerDeps *sessionHandlerDeps,
 	pingResolveFunc pingResolveFunc,
-	fallbackResolveFunc fallbackResolveFunc,
+	fallbackPingResponse pingFallbackFunc,
 ) netmc.SessionHandler {
 	return &statusSessionHandler{
 		sessionHandlerDeps: sessionHandlerDeps,
@@ -46,8 +46,8 @@ func newStatusSessionHandler(
 		log: logr.FromContextOrDiscard(conn.Context()).WithName("statusSession").WithValues(
 			"inbound", inbound,
 			"protocol", conn.Protocol()),
-		resolvePingResponse:     pingResolveFunc,
-		resolveFallbackResponse: fallbackResolveFunc,
+		resolvePingResponse:  pingResolveFunc,
+		fallbackPingResponse: fallbackPingResponse,
 	}
 }
 
@@ -120,19 +120,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 
 	if h.resolvePingResponse != nil {
 		log, res, err := h.resolvePingResponse(h.log, pc)
-		if err != nil && h.resolveFallbackResponse != nil {
-			log, fb, err := h.resolveFallbackResponse(h.log)
-			if err != nil {
-				errs.V(log, err).Info("could not resolve fallback", "error", err)
-				_ = h.conn.Close()
-				return
-			}
-			if !h.eventMgr.HasSubscriber(e) {
-				_ = h.conn.WritePacket(res)
-				return
-			}
-			e.ping = fb
-		} else if err != nil {
+		if err != nil {
 			errs.V(log, err).Info("could not resolve ping", "error", err)
 			_ = h.conn.Close()
 			return
