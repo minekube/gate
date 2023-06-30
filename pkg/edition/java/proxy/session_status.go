@@ -118,26 +118,9 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		inbound: h.inbound,
 	}
 
-	if h.resolvePingResponse != nil {
-		log, res, err := h.resolvePingResponse(h.log, pc)
-		if err != nil {
-			errs.V(log, err).Info("could not resolve ping", "error", err)
-			_ = h.conn.Close()
-			return
-		} else {
-			if !h.eventMgr.HasSubscriber(e) {
-				_ = h.conn.WritePacket(res)
-				return
-			}
-			e.ping = new(ping.ServerPing)
-			if err = json.Unmarshal([]byte(res.Status), e.ping); err != nil {
-				h.log.V(1).Error(err, "failed to unmarshal status response")
-				_ = h.conn.Close()
-				return
-			}
-		}
-	} else {
-		e.ping = newInitialPing(h.proxy, h.conn.Protocol())
+	e.ping = h.statusResponse(pc)
+	if e.ping == nil {
+		return
 	}
 
 	h.eventMgr.Fire(e)
@@ -160,6 +143,51 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 	_ = h.conn.WritePacket(&packet.StatusResponse{
 		Status: string(response),
 	})
+}
+
+func (h *statusSessionHandler) statusResponse(pc *proto.PacketContext) *ping.ServerPing {
+	hasPingEventSubscriber := h.eventMgr.HasSubscriber((*PingEvent)(nil))
+	if h.resolvePingResponse == nil {
+		return newInitialPing(h.proxy, h.conn.Protocol())
+	}
+	log, pingResponse, err := h.resolvePingResponse(h.log, pc)
+	if err != nil && h.fallbackPingResponse == nil {
+		errs.V(log, err).Info("could not resolve ping", "error", err)
+		_ = h.conn.Close()
+		return nil
+	}
+	if err == nil {
+		if !hasPingEventSubscriber {
+			_ = h.conn.WritePacket(pingResponse)
+			return nil
+		}
+		ping := new(ping.ServerPing)
+		if err = json.Unmarshal([]byte(pingResponse.Status), ping); err != nil {
+			h.log.V(1).Error(err, "failed to unmarshal status response")
+			_ = h.conn.Close()
+			return nil
+		}
+		return ping
+	}
+	log, fallbackPing, err := h.fallbackPingResponse(h.log, pc)
+	if err != nil {
+		errs.V(log, err).Info("could not use fallback ping", "error", err)
+		_ = h.conn.Close()
+		return nil
+	}
+	if !hasPingEventSubscriber {
+		fallbackBytes, err := json.Marshal(fallbackPing)
+		if err != nil {
+			_ = h.conn.Close()
+			h.log.Error(err, "error marshaling fallback response to json")
+			return nil
+		}
+		_ = h.conn.WritePacket(&packet.StatusResponse{
+			Status: string(fallbackBytes),
+		})
+		return nil
+	}
+	return fallbackPing
 }
 
 func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {
