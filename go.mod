@@ -20,7 +20,7 @@ require (
 	github.com/sandertv/go-raknet v1.12.0
 	github.com/sandertv/gophertunnel v1.30.0
 	github.com/spf13/viper v1.16.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
