@@ -9,12 +9,12 @@ import (
 )
 
 // FindRoute returns the first route that matches the given wildcard supporting pattern.
-func FindRoute(pattern string, routes ...config.Route) (host string, ep *config.Route) {
+func FindRoute(pattern string, routes ...config.Route) (host string, route *config.Route) {
 	for i := range routes {
-		ep = &routes[i]
-		for _, host = range ep.Host {
+		route = &routes[i]
+		for _, host = range route.Host {
 			if match(pattern, host) {
-				return host, ep
+				return host, route
 			}
 		}
 	}

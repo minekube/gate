@@ -113,32 +113,37 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		inbound: h.inbound,
 	}
 
-	if h.resolvePingResponse != nil {
-		log, res, err := h.resolvePingResponse(h.log, pc)
+	log := h.log
+	if h.resolvePingResponse == nil {
+		e.ping = newInitialPing(h.proxy, pc.Protocol)
+	} else {
+		var err error
+		var res *packet.StatusResponse
+		log, res, err = h.resolvePingResponse(h.log, pc)
 		if err != nil {
 			errs.V(log, err).Info("could not resolve ping", "error", err)
 			_ = h.conn.Close()
 			return
 		}
 		if !h.eventMgr.HasSubscriber(e) {
+			// Fast path: No event handler, just send response
 			_ = h.conn.WritePacket(res)
 			return
 		}
+		// Need to unmarshal status response to ping struct for event handlers
 		e.ping = new(ping.ServerPing)
 		if err = json.Unmarshal([]byte(res.Status), e.ping); err != nil {
 			h.log.V(1).Error(err, "failed to unmarshal status response")
 			_ = h.conn.Close()
 			return
 		}
-	} else {
-		e.ping = newInitialPing(h.proxy, h.conn.Protocol())
 	}
 
 	h.eventMgr.Fire(e)
 
 	if e.ping == nil {
 		_ = h.conn.Close()
-		h.log.V(1).Info("ping response was set to nil by an event handler, no response is sent")
+		log.V(1).Info("ping response was set to nil by an event handler, no response is sent")
 		return
 	}
 	if !h.inbound.Active() {
@@ -148,7 +153,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 	response, err := json.Marshal(e.ping)
 	if err != nil {
 		_ = h.conn.Close()
-		h.log.Error(err, "error marshaling ping response to json")
+		log.Error(err, "error marshaling ping response to json")
 		return
 	}
 	_ = h.conn.WritePacket(&packet.StatusResponse{
