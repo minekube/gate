@@ -92,7 +92,7 @@ func Parse(s string) (Favicon, error) {
 		}
 		return f, nil
 	}
-	return "", fmt.Errorf("favicon: invalid format %q", s)
+	return "", fmt.Errorf("favicon: invalid format or file not found: %s", s)
 }
 
 // FromBytes takes base64 bytes encoding of an image and converts it to Favicon.
