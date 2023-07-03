@@ -81,13 +81,41 @@ config:
         cachePingTTL: -1 // [!code ++]
 ```
 
+## Fallback status for offline backends
+
+If all backends of a route are unreachable, Gate Lite will return a fallback status response if configured.
+You can utilize all available status fields to customize the response. (See full sample config below.)
+
+::: code-group
+```yaml [config.yml]
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: localhost
+        # The backend server to connect to if matched.
+        backend: localhost:25566
+        # The optional fallback status response when backend of this route are offline.
+        fallback:
+          motd: |
+            §cLocalhost server is offline.
+            §eCheck back later!
+          version:
+            name: '§cTry again later!'
+            protocol: -1
+```
+:::
+          
+
 ## Sample config
 
 The Lite configuration is located in the same Gate `config.yml` file under `lite`.
 
-```yaml config-lite.yml
+::: code-group
+```yaml [config-lite.yml on GitHub]
 <!--@include: ../../../config-lite.yml -->
 ```
+:::
 
 ## Proxy behind proxy
 

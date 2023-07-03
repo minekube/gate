@@ -19,6 +19,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
@@ -265,7 +266,7 @@ func (p *Proxy) loadShutdownReason() (err error) {
 	if len(c.ShutdownReason) == 0 {
 		return nil
 	}
-	p.shutdownReason, err = componentutil.ParseTextComponent(c.ShutdownReason)
+	p.shutdownReason, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.ShutdownReason)
 	return
 }
 
@@ -274,7 +275,7 @@ func (p *Proxy) loadMotd() (err error) {
 	if len(c.Status.Motd) == 0 {
 		return nil
 	}
-	p.motd, err = componentutil.ParseTextComponent(c.Status.Motd)
+	p.motd, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.Status.Motd)
 	return
 }
 
@@ -284,17 +285,8 @@ func (p *Proxy) loadFavicon() (err error) {
 	if len(c.Status.Favicon) == 0 {
 		return nil
 	}
-	if strings.HasPrefix(c.Status.Favicon, "data:image/") {
-		p.favicon = favicon.Favicon(c.Status.Favicon)
-		p.log.Info("Using favicon from data uri", "length", len(p.favicon))
-	} else {
-		p.favicon, err = favicon.FromFile(c.Status.Favicon)
-		if err != nil {
-			return fmt.Errorf("error reading favicon file %q: %w", c.Status.Favicon, err)
-		}
-		p.log.Info("Using favicon file", "file", c.Status.Favicon)
-	}
-	return nil
+	p.favicon, err = favicon.Parse(c.Status.Favicon)
+	return err
 }
 
 func (p *Proxy) initPlugins(ctx context.Context) error {

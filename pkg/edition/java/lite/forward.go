@@ -3,30 +3,26 @@ package lite
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
-	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -41,15 +37,18 @@ func Forward(
 ) {
 	defer func() { _ = client.Close() }()
 
-	log, src, backendAddr, route, err := findRoute(routes, log, client, handshake)
+	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
 	if err != nil {
 		errs.V(log, err).Info("failed to find route", "error", err)
 		return
 	}
 
-	dst, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
+	// Find a backend to dial successfully.
+	log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
+		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
+		return log, conn, err
+	})
 	if err != nil {
-		errs.V(log, err).Info("failed to dial route", "error", err)
 		return
 	}
 	defer func() { _ = dst.Close() }()
@@ -61,6 +60,27 @@ func Forward(
 
 	log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
 	pipe(log, src, dst)
+}
+
+// errAllBackendsFailed is returned when all backends failed to dial.
+var errAllBackendsFailed = errors.New("all backends failed")
+
+// tryBackends tries backends until one succeeds or all fail.
+func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (logr.Logger, T, error) {
+	for {
+		backendAddr, log, ok := next()
+		if !ok {
+			var zero T
+			return log, zero, errAllBackendsFailed
+		}
+
+		log, t, err := try(log, backendAddr)
+		if err != nil {
+			errs.V(log, err).Info("failed to try backend", "error", err)
+			continue
+		}
+		return log, t, nil
+	}
 }
 
 func emptyReadBuff(src netmc.MinecraftConn, dst net.Conn) error {
@@ -98,6 +118,8 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	}
 }
 
+type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
+
 func findRoute(
 	routes []config.Route,
 	log logr.Logger,
@@ -106,13 +128,13 @@ func findRoute(
 ) (
 	newLog logr.Logger,
 	src net.Conn,
-	backendAddr string,
 	route *config.Route,
+	nextBackend nextBackendFunc,
 	err error,
 ) {
 	srcConn, ok := netmc.Assert[interface{ Conn() net.Conn }](client)
 	if !ok {
-		return log, src, "", nil, errors.New("failed to assert connection as net.Conn")
+		return log, src, nil, nil, errors.New("failed to assert connection as net.Conn")
 	}
 	src = srcConn.Conn()
 
@@ -125,25 +147,37 @@ func findRoute(
 
 	host, route := FindRoute(clearedHost, routes...)
 	if route == nil {
-		return log.V(1), src, "", nil, fmt.Errorf("no route configured for host %s", clearedHost)
+		return log.V(1), src, nil, nil, fmt.Errorf("no route configured for host %s", clearedHost)
 	}
 	log = log.WithValues("route", host)
 
-	backend := route.Backend.Random()
-	if backend == "" {
-		return log, src, "", nil, errors.New("no backend configured for route")
+	if len(route.Backend) == 0 {
+		return log, src, route, nil, errors.New("no backend configured for route")
 	}
-	dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
-	if err != nil {
-		return log, src, "", nil, fmt.Errorf("failed to parse backend address: %w", err)
-	}
-	backendAddr = dstAddr.String()
-	if _, port := netutil.HostPort(dstAddr); port == 0 {
-		backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
-	}
-	log = log.WithValues("backendAddr", backendAddr)
 
-	return log, src, backendAddr, route, nil
+	tryBackends := route.Backend.Copy()
+	nextBackend = func() (string, logr.Logger, bool) {
+		if len(tryBackends) == 0 {
+			return "", log, false
+		}
+		// Pop first backend
+		backend := tryBackends[0]
+		tryBackends = tryBackends[1:]
+
+		dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
+		if err != nil {
+			log.Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
+			return "", log, false
+		}
+		backendAddr := dstAddr.String()
+		if _, port := netutil.HostPort(dstAddr); port == 0 {
+			backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
+		}
+
+		return backendAddr, log.WithValues("backendAddr", backendAddr), true
+	}
+
+	return log, src, route, nextBackend, nil
 }
 
 func dialRoute(
@@ -244,11 +278,47 @@ func ResolveStatusResponse(
 	handshakeCtx *proto.PacketContext,
 	statusRequestCtx *proto.PacketContext,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	log, src, backendAddr, route, err := findRoute(routes, log, client, handshake)
+	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
 	if err != nil {
 		return log, nil, err
 	}
 
+	log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
+		return resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
+	})
+	if err != nil && route.Fallback != nil {
+		log.Info("failed to resolve status response, will use fallback status response", "error", err)
+
+		// Fallback status response if configured
+		fallbackPong, err := route.Fallback.Response(handshakeCtx.Protocol)
+		if err != nil {
+			log.Info("failed to get fallback status response", "error", err)
+		}
+		if fallbackPong != nil {
+			status, err2 := json.Marshal(fallbackPong)
+			if err2 != nil {
+				return log, nil, fmt.Errorf("%w: failed to marshal fallback status response: %w", err, err2)
+			}
+			if log.V(1).Enabled() {
+				log.V(1).Info("using fallback status response", "status", string(status))
+			}
+			return log, &packet.StatusResponse{Status: string(status)}, nil
+		}
+	}
+	return log, res, err
+}
+
+func resolveStatusResponse(
+	src net.Conn,
+	dialTimeout time.Duration,
+	backendAddr string,
+	route *config.Route,
+	log logr.Logger,
+	client netmc.MinecraftConn,
+	handshake *packet.Handshake,
+	handshakeCtx *proto.PacketContext,
+	statusRequestCtx *proto.PacketContext,
+) (logr.Logger, *packet.StatusResponse, error) {
 	// fast path: use cache
 	if route.CachePingEnabled() {
 		item := pingCache.Get(backendAddr)
@@ -310,7 +380,7 @@ func ResolveStatusResponse(
 		return log, result.res, result.err
 	case <-client.Context().Done():
 		return log, nil, &errs.VerbosityError{
-			Err:       client.Context().Err(),
+			Err:       context.Cause(client.Context()),
 			Verbosity: 1,
 		}
 	}
@@ -341,66 +411,4 @@ func fetchStatus(
 	}
 
 	return res, nil
-}
-
-var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
-var fallbackData = struct {
-	sync.Once
-	loadErr error
-
-	motd    *component.Text
-	favicon favicon.Favicon
-}{}
-
-func GenerateFallbackResponse(
-	fc config.Fallback,
-	log logr.Logger,
-	handshakeCtx *proto.PacketContext,
-	statusRequestCtx *proto.PacketContext,
-) (logr.Logger, *ping.ServerPing, error) {
-	var protocol = handshakeCtx.Protocol
-	if !version.Protocol(handshakeCtx.Protocol).Supported() {
-		protocol = version.MaximumVersion.Protocol
-	}
-	fallbackData.Do(func() {
-		log.V(1).Info("loading fallback status")
-		motd, favi, err := loadFallbackData(log, fc)
-		fallbackData.motd = motd
-		fallbackData.favicon = favi
-		fallbackData.loadErr = err
-	})
-	if fallbackData.loadErr != nil {
-		return log, nil, fmt.Errorf("error loading fallback status: %w", fallbackData.loadErr)
-	}
-	return log, &ping.ServerPing{
-		Version: ping.Version{
-			Protocol: protocol,
-			Name:     versionName,
-		},
-	}, nil
-}
-
-func loadFallbackData(log logr.Logger, fc config.Fallback) (
-	motd *component.Text,
-	favi favicon.Favicon,
-	err error,
-) {
-	motd, err = componentutil.ParseTextComponent(fc.MOTD)
-	if err != nil {
-		return nil, favi, fmt.Errorf("error loading fallback motd: %w", err)
-	}
-	if len(fc.Favicon) == 0 {
-		return
-	}
-	if strings.HasPrefix(fc.Favicon, "data:image/") {
-		favi = favicon.Favicon(fc.Favicon)
-		log.Info("using favicon from data uri", "length", len(favi))
-	} else {
-		favi, err = favicon.FromFile(fc.Favicon)
-		if err != nil {
-			return motd, favi, fmt.Errorf("error reading favicon file %q: %w", fc.Favicon, err)
-		}
-		log.Info("using favicon file", "file", fc.Favicon)
-	}
-	return
 }
