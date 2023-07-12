@@ -85,14 +85,17 @@ func Parse(s string) (Favicon, error) {
 	if strings.HasPrefix(s, dataImagePrefix) {
 		return Favicon(s), nil
 	}
-	if stat, err := os.Stat(s); err == nil && !stat.IsDir() {
+	if stat, err := os.Stat(s); err == nil {
+		if stat.IsDir() {
+			return "", fmt.Errorf("favicon: %s is a directory not a file", s)
+		}
 		f, err := FromFile(s)
 		if err != nil {
 			return "", fmt.Errorf("favicon: %w", err)
 		}
 		return f, nil
 	}
-	return "", fmt.Errorf("favicon: invalid format or file not found: %s", s)
+	return "", fmt.Errorf("favicon: invalid format: %s", s)
 }
 
 // FromBytes takes base64 bytes encoding of an image and converts it to Favicon.

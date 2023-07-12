@@ -160,7 +160,7 @@ config:
       - host: '*'
         backend: 10.0.0.10:25565
         fallback:
-          motd: §eThere is server for this host.
+          motd: §eNo server available for this host.
           version:
             name: §eTry example.com
             protocol: -1
