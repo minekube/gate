@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/nfnt/resize"
@@ -94,6 +95,9 @@ func Parse(s string) (Favicon, error) {
 			return "", fmt.Errorf("favicon: %w", err)
 		}
 		return f, nil
+	}
+	if path.Ext(s) != "" {
+		return "", fmt.Errorf("favicon: file %s not found", s)
 	}
 	return "", fmt.Errorf("favicon: invalid format: %s", s)
 }
