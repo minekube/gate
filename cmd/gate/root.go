@@ -132,8 +132,19 @@ func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
 
 // FixedReadInConfig is a workaround for https://github.com/minekube/gate/issues/218#issuecomment-1632800775
 func FixedReadInConfig[T any](v *viper.Viper, configFile string, defaultConfig *T) error {
-	if configFile == "" || defaultConfig == nil {
+	if defaultConfig == nil {
 		return v.ReadInConfig()
+	}
+
+	if configFile == "" {
+		// Try to find config file using Viper's config finder logic
+		if err := v.ReadInConfig(); err != nil {
+			return err
+		}
+		configFile = v.ConfigFileUsed()
+		if configFile == "" {
+			return nil // no config file found
+		}
 	}
 
 	var (
