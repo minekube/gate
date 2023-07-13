@@ -26,7 +26,7 @@ You can also try to delete one server pod and see how Gate
 automatically reconnects the player to the other server.
 
 ```sh console
-kubectl apply -f https://raw.githubusercontent.com/minekube/gate/blob/master/.examples/kubernetes/bundle.yaml`
+kubectl apply -f https://raw.githubusercontent.com/minekube/gate/master/.examples/kubernetes/bundle.yaml
 ```
 
 ::: details bundle.yaml
