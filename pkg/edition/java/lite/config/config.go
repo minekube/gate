@@ -30,7 +30,7 @@ type (
 	Route struct {
 		Host          configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
 		Backend       configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
-		CachePingTTL  time.Duration                    `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
+		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
 		RealIP        bool                             `json:"realIP,omitempty" yaml:"realIP,omitempty"`
@@ -73,7 +73,7 @@ func (r *Route) GetCachePingTTL() time.Duration {
 	if r.CachePingTTL == 0 {
 		return defaultTTL
 	}
-	return r.CachePingTTL
+	return time.Duration(r.CachePingTTL)
 }
 
 // CachePingEnabled returns true if the route has a ping cache enabled.
