@@ -194,7 +194,7 @@ func dialRoute(
 	defer cancel()
 
 	var dialer net.Dialer
-	dst, err = dialer.DialContext(dialCtx, srcAddr.Network(), routeAddr)
+	dst, err = dialer.DialContext(dialCtx, "tcp", routeAddr)
 	if err != nil {
 		v := 0
 		if dialCtx.Err() != nil {

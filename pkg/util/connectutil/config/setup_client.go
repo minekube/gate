@@ -129,7 +129,7 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		return status.Error(codes.InvalidArgument, "session proposal is missing tunnel service address")
 	}
 	if proposal.Session().GetPlayer().GetAddr() == "" {
-		return status.Error(codes.InvalidArgument, "session proposal is player address")
+		return status.Error(codes.InvalidArgument, "session proposal is missing player address")
 	}
 	var gp *profile.GameProfile
 	if !proposal.Session().GetAuth().GetPassthrough() {
