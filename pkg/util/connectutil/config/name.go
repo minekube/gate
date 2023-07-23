@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -13,10 +12,6 @@ import (
 	"go.minekube.com/gate/pkg/internal/randstr"
 	"go.minekube.com/gate/pkg/version"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano()) //nolint:staticcheck
-}
 
 func randomEndpointName(ctx context.Context) string {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)

@@ -40,7 +40,7 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *Duration) MarshalYAML() (interface{}, error) {
+func (d *Duration) MarshalYAML() (any, error) {
 	return time.Duration(*d).String(), nil
 }
 func (d *Duration) UnmarshalYAML(value *yaml.Node) error {
