@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -20,10 +19,10 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
+	"golang.org/x/sync/singleflight"
 )
 
 // Forward forwards a client connection to a matching backend route.
@@ -84,9 +83,9 @@ func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendA
 }
 
 func emptyReadBuff(src netmc.MinecraftConn, dst net.Conn) error {
-	buff, ok := src.(interface{ ReadBuffered() ([]byte, error) })
+	buf, ok := src.(interface{ ReadBuffered() ([]byte, error) })
 	if ok {
-		b, err := buff.ReadBuffered()
+		b, err := buf.ReadBuffered()
 		if err != nil {
 			return fmt.Errorf("failed to read buffered bytes: %w", err)
 		}
@@ -254,20 +253,6 @@ func update(pc *proto.PacketContext, h *packet.Handshake) {
 	pc.Payload = payload.Bytes()
 }
 
-var pingCache = struct {
-	*ttlcache.Cache[string, *pingResult]
-	sync.Once
-}{}
-
-type pingResult struct {
-	res *packet.StatusResponse
-	err error
-}
-
-func init() {
-	pingCache.Cache = ttlcache.New[string, *pingResult]()
-}
-
 // ResolveStatusResponse resolves the status response for the matching route and caches it for a short time.
 func ResolveStatusResponse(
 	dialTimeout time.Duration,
@@ -308,6 +293,25 @@ func ResolveStatusResponse(
 	return log, res, err
 }
 
+var (
+	pingCache = ttlcache.New[pingKey, *pingResult]()
+	sfg       = new(singleflight.Group)
+)
+
+func init() {
+	go pingCache.Start() // start ttl eviction once
+}
+
+type pingKey struct {
+	backendAddr string
+	protocol    proto.Protocol
+}
+
+type pingResult struct {
+	res *packet.StatusResponse
+	err error
+}
+
 func resolveStatusResponse(
 	src net.Conn,
 	dialTimeout time.Duration,
@@ -319,9 +323,11 @@ func resolveStatusResponse(
 	handshakeCtx *proto.PacketContext,
 	statusRequestCtx *proto.PacketContext,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	// fast path: use cache
+	key := pingKey{backendAddr, proto.Protocol(handshake.ProtocolVersion)}
+
+	// fast path: use cache without loader
 	if route.CachePingEnabled() {
-		item := pingCache.Get(backendAddr)
+		item := pingCache.Get(key)
 		if item != nil {
 			log.V(1).Info("returning cached status result")
 			val := item.Value()
@@ -340,11 +346,6 @@ func resolveStatusResponse(
 	load := func(ctx context.Context) (*packet.StatusResponse, error) {
 		log.V(1).Info("resolving status")
 
-		if route.CachePingEnabled() {
-			// Always use the latest version when caching is enabled
-			handshake.ProtocolVersion = int(version.MaximumVersion.Protocol)
-		}
-
 		dst, err := dialRoute(ctx, dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, handshakeCtx, route.CachePingEnabled())
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial route: %w", err)
@@ -360,20 +361,19 @@ func resolveStatusResponse(
 		return log, res, err
 	}
 
-	loader := ttlcache.LoaderFunc[string, *pingResult](
-		func(c *ttlcache.Cache[string, *pingResult], key string) *ttlcache.Item[string, *pingResult] {
+	loader := ttlcache.LoaderFunc[pingKey, *pingResult](
+		func(c *ttlcache.Cache[pingKey, *pingResult], key pingKey) *ttlcache.Item[pingKey, *pingResult] {
 			res, err := load(context.Background())
-			pingCache.Do(func() { go pingCache.Start() }) // start ttl eviction once
-			return c.Set(backendAddr, &pingResult{res: res, err: err}, route.GetCachePingTTL())
+			return c.Set(key, &pingResult{res: res, err: err}, route.GetCachePingTTL())
 		},
 	)
 
-	loaderOpt := ttlcache.WithLoader[string, *pingResult](
-		ttlcache.NewSuppressedLoader[string, *pingResult](loader, nil),
+	loaderOpt := ttlcache.WithLoader[pingKey, *pingResult](
+		ttlcache.NewSuppressedLoader[pingKey, *pingResult](loader, sfg),
 	)
 
 	resultChan := make(chan *pingResult, 1)
-	go func() { resultChan <- pingCache.Get(backendAddr, loaderOpt).Value() }()
+	go func() { resultChan <- pingCache.Get(key, loaderOpt).Value() }()
 
 	select {
 	case result := <-resultChan:
