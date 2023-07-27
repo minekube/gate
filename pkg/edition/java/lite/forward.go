@@ -346,6 +346,7 @@ func resolveStatusResponse(
 	load := func(ctx context.Context) (*packet.StatusResponse, error) {
 		log.V(1).Info("resolving status")
 
+		ctx = logr.NewContext(ctx, log)
 		dst, err := dialRoute(ctx, dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, handshakeCtx, route.CachePingEnabled())
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial route: %w", err)
@@ -361,19 +362,13 @@ func resolveStatusResponse(
 		return log, res, err
 	}
 
-	loader := ttlcache.LoaderFunc[pingKey, *pingResult](
-		func(c *ttlcache.Cache[pingKey, *pingResult], key pingKey) *ttlcache.Item[pingKey, *pingResult] {
-			res, err := load(context.Background())
-			return c.Set(key, &pingResult{res: res, err: err}, route.GetCachePingTTL())
-		},
-	)
-
-	loaderOpt := ttlcache.WithLoader[pingKey, *pingResult](
-		ttlcache.NewSuppressedLoader[pingKey, *pingResult](loader, sfg),
-	)
+	opt := withLoader(sfg, route.GetCachePingTTL(), func(key pingKey) *pingResult {
+		res, err := load(context.Background())
+		return &pingResult{res: res, err: err}
+	})
 
 	resultChan := make(chan *pingResult, 1)
-	go func() { resultChan <- pingCache.Get(key, loaderOpt).Value() }()
+	go func() { resultChan <- pingCache.Get(key, opt).Value() }()
 
 	select {
 	case result := <-resultChan:
@@ -411,4 +406,18 @@ func fetchStatus(
 	}
 
 	return res, nil
+}
+
+// withLoader returns a ttlcache option that uses the given load function to load a value for a key
+// if it is not already cached.
+func withLoader[K comparable, V any](group *singleflight.Group, ttl time.Duration, load func(key K) V) ttlcache.Option[K, V] {
+	loader := ttlcache.LoaderFunc[K, V](
+		func(c *ttlcache.Cache[K, V], key K) *ttlcache.Item[K, V] {
+			v := load(key)
+			return c.Set(key, v, ttl)
+		},
+	)
+	return ttlcache.WithLoader[K, V](
+		ttlcache.NewSuppressedLoader[K, V](loader, group),
+	)
 }
