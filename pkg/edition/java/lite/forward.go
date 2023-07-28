@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -184,16 +185,16 @@ func dialRoute(
 	dialTimeout time.Duration,
 	srcAddr net.Addr,
 	route *config.Route,
-	routeAddr string,
+	backendAddr string,
 	handshake *packet.Handshake,
-	pc *proto.PacketContext,
+	handshakeCtx *proto.PacketContext,
 	forceUpdatePacketContext bool,
 ) (dst net.Conn, err error) {
 	dialCtx, cancel := context.WithTimeout(ctx, dialTimeout)
 	defer cancel()
 
 	var dialer net.Dialer
-	dst, err = dialer.DialContext(dialCtx, "tcp", routeAddr)
+	dst, err = dialer.DialContext(dialCtx, "tcp", backendAddr)
 	if err != nil {
 		v := 0
 		if dialCtx.Err() != nil {
@@ -201,7 +202,7 @@ func dialRoute(
 		}
 		return nil, &errs.VerbosityError{
 			Verbosity: v,
-			Err:       fmt.Errorf("failed to connect to backend %s: %w", routeAddr, err),
+			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
 		}
 	}
 	defer func() {
@@ -217,17 +218,26 @@ func dialRoute(
 		}
 	}
 
+	if route.ModifyVirtualHost {
+		clearedHost := ClearVirtualHost(handshake.ServerAddress)
+		backendHost := netutil.HostStr(backendAddr)
+		if !strings.EqualFold(clearedHost, backendHost) {
+			// Modify the handshake packet to use the backend host as virtual host.
+			handshake.ServerAddress = strings.ReplaceAll(handshake.ServerAddress, clearedHost, backendHost)
+			forceUpdatePacketContext = true
+		}
+	}
 	if route.RealIP && IsRealIP(handshake.ServerAddress) {
 		// Modify the handshake packet to use RealIP of the client.
 		handshake.ServerAddress = RealIP(handshake.ServerAddress, srcAddr)
 		forceUpdatePacketContext = true
 	}
 	if forceUpdatePacketContext {
-		update(pc, handshake)
+		update(handshakeCtx, handshake)
 	}
 
 	// Forward handshake packet as is.
-	if err = writePacket(dst, pc); err != nil {
+	if err = writePacket(dst, handshakeCtx); err != nil {
 		return nil, fmt.Errorf("failed to write handshake packet to backend: %w", err)
 	}
 

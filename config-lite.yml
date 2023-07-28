@@ -25,7 +25,7 @@ config:
       - host: localhost
         # The backend server to connect to if matched.
         backend: localhost:25566
-        # The optional fallback status response when backend of this route are offline.
+        # The optional fallback status response when all backends of this route are offline.
         fallback:
           motd: |
             §cLocalhost server is offline.
@@ -48,6 +48,12 @@ config:
         # To disable motd caching set it to -1.
         # Default: 10s
         cachePingTTL: 60s
+        # Modifies the virtual host to match the backend address in the handshake request.
+        # This is useful when backends require players to connect with a specific domain.
+        # Lite will modify the player's handshake packet's virtual host field from `localhost` -> `backend.example.com`
+        # before forwarding the connection to the backend.
+        # Default: false
+        modifyVirtualHost: true
       # Match all as last item routes any other host to a default backend.
       - host: '*'
         backend: 10.0.0.10:25565

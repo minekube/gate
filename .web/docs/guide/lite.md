@@ -1,5 +1,6 @@
 # Gate Lite Mode
 
+
 ## What is Lite mode?
 
 Gate has a `Lite` mode that makes Gate act as an ultra-thin lightweight reverse proxy between
@@ -71,7 +72,8 @@ Note that routes can configure multiple random backends and each backend has its
 
 Setting the TTL to `-1` disables response caching for this route only.
 
-```yaml
+::: code-group
+```yaml [config.yml]
 config:
   lite:
     enabled: true
@@ -80,6 +82,7 @@ config:
         backend: 10.0.0.3:25568
         cachePingTTL: -1 // [!code ++]
 ```
+:::
 
 ## Fallback status for offline backends
 
@@ -106,6 +109,28 @@ config:
 ```
 :::
           
+## Modify virtual host
+
+Modifies the virtual host to match the backend address in the handshake request.
+This is useful when backends require players to connect with a specific domain to
+prevent players from using third party domains.
+
+To work around this limitation, simply enable this on your route:
+
+::: code-group
+```yaml [config.yml]
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: localhost
+        backend: play.example.com
+        modifyVirtualHost: true // [!code ++]
+```
+:::
+
+Lite will modify the player's handshake packet's virtual host field from `localhost` -> `play.example.com`
+before forwarding the connection to the backend.
 
 ## Sample config
 

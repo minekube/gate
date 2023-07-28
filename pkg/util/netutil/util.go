@@ -8,7 +8,12 @@ import (
 
 // Host returns the host of net.Addr.
 func Host(addr net.Addr) string {
-	host, _, _ := splitHostPort(addr.String())
+	return HostStr(addr.String())
+}
+
+// HostStr returns the host of the address.
+func HostStr(addr string) string {
+	host, _, _ := splitHostPort(addr)
 	return host
 }
 

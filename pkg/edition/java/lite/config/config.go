@@ -28,12 +28,13 @@ type (
 		Routes  []Route
 	}
 	Route struct {
-		Host          configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
-		Backend       configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
-		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
-		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
-		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
-		RealIP        bool                             `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		Host              configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
+		Backend           configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
+		CachePingTTL      configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
+		Fallback          *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
+		ProxyProtocol     bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
+		RealIP            bool                             `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		ModifyVirtualHost bool                             `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
 	}
 	Status struct {
 		MOTD    string          `yaml:"motd,omitempty" json:"motd,omitempty"`
