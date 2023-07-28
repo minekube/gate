@@ -240,7 +240,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 			defer cancel()
 			select {
 			case <-ctx.Done():
-			case s := <-interrupt.Notify():
+			case s := <-interrupt.Notify(ctx):
 				log.Info("Received os signal", "signal", s)
 			}
 		}()

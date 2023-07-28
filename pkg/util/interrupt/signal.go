@@ -15,9 +15,14 @@ func TerminationContext(ctx context.Context) (context.Context, context.CancelFun
 	return signal.NotifyContext(ctx, terminationSignals...)
 }
 
-// Notify returns a channel receives termination signals.
-func Notify() <-chan os.Signal {
-	sig := make(chan os.Signal, 1)
+// Notify returns a channel receives termination signals from the OS until the context is canceled.
+func Notify(ctx context.Context) <-chan os.Signal {
+	sig := make(chan os.Signal, len(terminationSignals))
 	signal.Notify(sig, terminationSignals...)
+	go func() {
+		<-ctx.Done()
+		signal.Stop(sig)
+		close(sig)
+	}()
 	return sig
 }

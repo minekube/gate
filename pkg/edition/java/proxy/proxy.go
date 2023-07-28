@@ -41,7 +41,7 @@ type Proxy struct {
 	channelRegistrar *message.ChannelRegistrar
 	authenticator    auth.Authenticator
 
-	startTime atomic.Value
+	startTime atomic.Pointer[time.Time]
 
 	closeMu       sync.Mutex
 	closeListener chan struct{}
@@ -132,7 +132,8 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return ErrProxyAlreadyRun
 	}
 	p.started = true
-	p.startTime.Store(time.Now())
+	now := time.Now()
+	p.startTime.Store(&now)
 	p.log = logr.FromContextOrDiscard(ctx)
 
 	stopListener := make(chan struct{})
@@ -191,7 +192,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	defer func() {
 		p.log.Info("finished shutdown.",
 			"shutdownTime", time.Since(shutdownTime).Round(time.Microsecond).String(),
-			"totalTime", time.Since(p.startTime.Load().(time.Time)).Round(time.Millisecond).String())
+			"totalTime", time.Since(*p.startTime.Load()).Round(time.Millisecond).String())
 	}()
 
 	pre := &PreShutdownEvent{reason: reason}

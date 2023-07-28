@@ -37,7 +37,7 @@ func App() *cli.App {
 	app.Description = `A high performant & paralleled Minecraft proxy server with
 	scalability, flexibility & excelled server version support.
 
-Visit the website https://developers.minekube.com/gate`
+Visit the website https://gate.minekube.com/ for more information.`
 
 	var (
 		debug      bool
@@ -46,10 +46,9 @@ Visit the website https://developers.minekube.com/gate`
 	)
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:    "config",
-			Aliases: []string{"c"},
-			Usage: `config file (default: ./config.yml)
-Supports: yaml/yml, json, toml, hcl, ini, prop/properties/props, env/dotenv`,
+			Name:        "config",
+			Aliases:     []string{"c"},
+			Usage:       `config file (default: ./config.yml) Supports: yaml, json, env`,
 			EnvVars:     []string{"GATE_CONFIG"},
 			Destination: &configFile,
 		},
