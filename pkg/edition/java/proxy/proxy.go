@@ -195,22 +195,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 	})()
 
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				time.Sleep(1 * time.Second)
-				host, port := netutil.HostPort(netutil.NewAddr(bind, "tcp"))
-				p.cfg.Bind = fmt.Sprintf("%s:%d", host, port+1)
-				p.event.Fire(&javaConfigReloadedEvent{
-					Config: p.cfg,
-				})
-			}
-		}
-	}()
-
 	return eg.Wait()
 }
 
