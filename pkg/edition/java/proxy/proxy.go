@@ -18,18 +18,21 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
+	"go.minekube.com/gate/pkg/internal/sysevent"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
+	"golang.org/x/sync/errgroup"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -43,9 +46,10 @@ type Proxy struct {
 
 	startTime atomic.Pointer[time.Time]
 
-	closeMu       sync.Mutex
-	closeListener chan struct{}
-	started       bool
+	closeMu     sync.Mutex
+	startCtx    context.Context
+	cancelStart context.CancelFunc
+	started     bool
 
 	shutdownReason *component.Text
 	motd           *component.Text
@@ -103,18 +107,26 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 	}
 
-	c := options.Config
 	// Connection & login rate limiters
-	quota := c.Quota.Connections
-	if quota.Enabled {
-		p.connectionsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
-	}
-	quota = c.Quota.Logins
-	if quota.Enabled {
-		p.loginsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
-	}
+	p.initQuota(&options.Config.Quota)
 
 	return p, nil
+}
+
+func (p *Proxy) initQuota(quota *config.Quota) {
+	q := quota.Connections
+	if q.Enabled {
+		p.connectionsQuota = addrquota.NewQuota(q.OPS, q.Burst, q.MaxEntries)
+	} else {
+		p.connectionsQuota = nil
+	}
+
+	q = quota.Logins
+	if q.Enabled {
+		p.loginsQuota = addrquota.NewQuota(q.OPS, q.Burst, q.MaxEntries)
+	} else {
+		p.loginsQuota = nil
+	}
 }
 
 // ErrProxyAlreadyRun is returned by Proxy.Run if the proxy instance was already run.
@@ -136,18 +148,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.startTime.Store(&now)
 	p.log = logr.FromContextOrDiscard(ctx)
 
-	stopListener := make(chan struct{})
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		select {
-		case <-stopListener:
-		default:
-			close(stopListener)
-		}
-	}()
-	p.closeListener = stopListener
+	p.startCtx, p.cancelStart = context.WithCancel(ctx)
+	ctx = p.startCtx
+	defer p.cancelStart()
 	p.closeMu.Unlock()
 
 	if err := p.preInit(ctx); err != nil {
@@ -165,8 +168,53 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 
 	defer p.Shutdown(p.shutdownReason) // disconnects players
-	return p.listenAndServe(p.cfg.Bind, stopListener)
+
+	eg, ctx := errgroup.WithContext(ctx)
+	listen := func(addr string) context.CancelFunc {
+		lnCtx, stop := context.WithCancel(ctx)
+		eg.Go(func() error {
+			defer stop()
+			return p.listenAndServe(lnCtx, addr)
+		})
+		return stop
+	}
+
+	bind := p.cfg.Bind
+	stopLn := listen(bind)
+
+	defer event.Subscribe(p.event, 0, func(e *javaConfigReloadedEvent) {
+		cfg := e.Config
+		*p.cfg = *cfg
+		p.initQuota(&cfg.Quota)
+		if newBind := cfg.Bind; newBind != bind {
+			p.closeMu.Lock()
+			stopLn()
+			bind = newBind
+			stopLn = listen(bind)
+			p.closeMu.Unlock()
+		}
+	})()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(1 * time.Second)
+				host, port := netutil.HostPort(netutil.NewAddr(bind, "tcp"))
+				p.cfg.Bind = fmt.Sprintf("%s:%d", host, port+1)
+				p.event.Fire(&javaConfigReloadedEvent{
+					Config: p.cfg,
+				})
+			}
+		}
+	}()
+
+	return eg.Wait()
 }
+
+type javaConfigReloadedEvent = sysevent.ConfigReloadedEvent[jconfig.Config]
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
@@ -180,12 +228,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		return // not started or already shutdown
 	}
 	p.started = false
-	select {
-	case <-p.closeListener: // channel may be already closed
-	default:
-		// stop listening for new connections
-		close(p.closeListener)
-	}
+	p.cancelStart()
 
 	p.log.Info("shutting down the proxy...")
 	shutdownTime := time.Now()
@@ -438,21 +481,23 @@ func (p *Proxy) DisconnectAll(reason component.Component) {
 }
 
 // listenAndServe starts listening for connections on addr until closed channel receives.
-func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
-	select {
-	case <-stop:
-		return nil
-	default:
+func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = ln.Close() }()
-	go func() { <-stop; _ = ln.Close() }()
 
-	p.event.Fire(&ReadyEvent{})
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() { <-ctx.Done(); _ = ln.Close() }()
+
+	p.event.Fire(&ReadyEvent{addr: addr})
 
 	defer p.log.Info("stopped listening for new connections")
 	p.log.Info("listening for connections", "addr", addr)

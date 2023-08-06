@@ -62,4 +62,4 @@ config:
           version:
             name: §eTry example.com
             protocol: -1
-          favicon: server-icon.png
+          #favicon: server-icon.png
