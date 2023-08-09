@@ -15,7 +15,7 @@ Once you have Go installed, you create a new Go module and add Gate as a depende
 ```sh console
 mkdir mcproxy; cd mcproxy
 go mod init mcproxy
-go get -u github.com/minekube/gate@latest
+go get -u go.minekube.com/gate@latest
 ```
 
 Add and initialize your plugin and execute Gate, that's it!
