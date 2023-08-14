@@ -68,77 +68,77 @@ var DefaultConfig = Config{
 
 // Config is the configuration of the proxy.
 type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go for generating output yaml and markdown for the docs
-	Bind string // The address to listen for connections.
+	Bind string `yaml:"bind"` // The address to listen for connections.
 
-	OnlineMode                    bool
-	OnlineModeKickExistingPlayers bool // Kicks existing players when a premium player with the same name joins.
+	OnlineMode                    bool `yaml:"onlineMode"`
+	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers"` // Kicks existing players when a premium player with the same name joins.
 
-	Forwarding Forwarding
-	Status     Status
-	Query      Query
+	Forwarding Forwarding `yaml:"forwarding"`
+	Status     Status     `yaml:"status"`
+	Query      Query      `yaml:"query"`
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
-	AnnounceForge bool
+	AnnounceForge bool `yaml:"announceForge"`
 
-	Servers                              map[string]string // name:address
-	Try                                  []string          // Try server names order
-	ForcedHosts                          ForcedHosts
-	FailoverOnUnexpectedServerDisconnect bool
+	Servers                              map[string]string `yaml:"servers"` // name:address
+	Try                                  []string          `yaml:"try"`     // Try server names order
+	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts"`
+	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect"`
 
-	ConnectionTimeout int // Write timeout
-	ReadTimeout       int
+	ConnectionTimeout int `yaml:"connectionTimeout"` // Write timeout
+	ReadTimeout       int `yaml:"readTimeout"`
 
-	Quota                Quota
-	Compression          Compression
-	ProxyProtocol        bool // Enable HA-Proxy protocol mode
-	ProxyProtocolBackend bool // Enable HA-Proxy protocol mode for backend servers
+	Quota                Quota       `yaml:"quota"`
+	Compression          Compression `yaml:"compression"`
+	ProxyProtocol        bool        `yaml:"proxyProtocol"`        // Enable HA-Proxy protocol mode
+	ProxyProtocolBackend bool        `yaml:"proxyProtocolBackend"` // Enable HA-Proxy protocol mode for backend servers
 
-	ShouldPreventClientProxyConnections bool // Sends player IP to Mojang on login
+	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections"` // Sends player IP to Mojang on login
 
-	BungeePluginChannelEnabled       bool
-	BuiltinCommands                  bool
-	RequireBuiltinCommandPermissions bool // Whether builtin commands require player permissions
-	AnnounceProxyCommands            bool
-	ForceKeyAuthentication           bool // Added in 1.19
+	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled"`
+	BuiltinCommands                  bool `yaml:"builtinCommands"`
+	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions"` // Whether builtin commands require player permissions
+	AnnounceProxyCommands            bool `yaml:"announceProxyCommands"`
+	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication"` // Added in 1.19
 
-	Debug          bool
-	ShutdownReason string
+	Debug          bool   `yaml:"debug"`
+	ShutdownReason string `yaml:"shutdownReason"`
 
-	Lite liteconfig.Config
+	Lite liteconfig.Config `yaml:"lite"`
 }
 
 type (
 	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
-		ShowMaxPlayers  int
-		Motd            string
-		Favicon         string
-		LogPingRequests bool
+		ShowMaxPlayers  int    `yaml:"showMaxPlayers"`
+		Motd            string `yaml:"motd"`
+		Favicon         string `yaml:"favicon"`
+		LogPingRequests bool   `yaml:"logPingRequests"`
 	}
 	Query struct {
-		Enabled     bool
-		Port        int
-		ShowPlugins bool
+		Enabled     bool `yaml:"enabled"`
+		Port        int  `yaml:"port"`
+		ShowPlugins bool `yaml:"showPlugins"`
 	}
 	Forwarding struct {
-		Mode           ForwardingMode
-		VelocitySecret string // Used with "velocity" mode
+		Mode           ForwardingMode `yaml:"mode"`
+		VelocitySecret string         `yaml:"velocitySecret"` // Used with "velocity" mode
 	}
 	Compression struct {
-		Threshold int
-		Level     int
+		Threshold int `yaml:"threshold"`
+		Level     int `yaml:"level"`
 	}
 	// Quota is the config for rate limiting.
 	Quota struct {
-		Connections QuotaSettings // Limits new connections per second, per IP block.
-		Logins      QuotaSettings // Limits logins per second, per IP block.
+		Connections QuotaSettings `yaml:"connections"` // Limits new connections per second, per IP block.
+		Logins      QuotaSettings `yaml:"logins"`      // Limits logins per second, per IP block.
 		// Maybe add a bytes-per-sec limiter, or should be managed by a higher layer.
 	}
 	QuotaSettings struct {
-		Enabled    bool    // If false, there is no such limiting.
-		OPS        float32 // Allowed operations/events per second, per IP block
-		Burst      int     // The maximum events per second, per block; the size of the token bucket
-		MaxEntries int     // Maximum number of IP blocks to keep track of in cache
+		Enabled    bool    `yaml:"enabled"`    // If false, there is no such limiting.
+		OPS        float32 `yaml:"OPS"`        // Allowed operations/events per second, per IP block
+		Burst      int     `yaml:"burst"`      // The maximum events per second, per block; the size of the token bucket
+		MaxEntries int     `yaml:"maxEntries"` // Maximum number of IP blocks to keep track of in cache
 	}
 )
 

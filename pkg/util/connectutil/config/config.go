@@ -19,11 +19,11 @@ var DefaultConfig = Config{
 
 // Config is the config for Connect.
 type Config struct {
-	Enabled                bool   // Whether to connect Gate to the WatchService
-	Name                   string // Endpoint name
-	EnforcePassthrough     bool   // Setting to true will reject all sessions in non-passthrough mode.
-	WatchServiceAddr       string
-	AllowUnencryptedTunnel bool
+	Enabled                bool   `yaml:"enabled"`            // Whether to connect Gate to the WatchService
+	Name                   string `yaml:"name"`               // Endpoint name
+	EnforcePassthrough     bool   `yaml:"enforcePassthrough"` // Setting to true will reject all sessions in non-passthrough mode.
+	WatchServiceAddr       string `yaml:"watchServiceAddr"`
+	AllowUnencryptedTunnel bool   `yaml:"allowUnencryptedTunnel"`
 
 	Service Service
 }
@@ -31,11 +31,11 @@ type Config struct {
 // Service is a config for defining self-hosted
 // Connect service for single-instance use.
 type Service struct {
-	Enabled bool
-	Addr    string // The address all services listen on.
+	Enabled bool   `yaml:"enabled"`
+	Addr    string `yaml:"addr"` // The address all services listen on.
 	// The address provided to endpoints in session proposals.
 	// If not specified falls back to Services.Addr.
-	PublicTunnelServiceAddr string
+	PublicTunnelServiceAddr string `yaml:"publicTunnelServiceAddr"`
 	// Overrides servers with the same name.
-	OverrideRegistration bool
+	OverrideRegistration bool `yaml:"overrideRegistration"`
 }
