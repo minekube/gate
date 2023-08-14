@@ -18,10 +18,11 @@ import (
 type authSessionHandler struct {
 	*sessionHandlerDeps
 
-	log        logr.Logger
-	inbound    *loginInboundConn
-	profile    *profile.GameProfile
-	onlineMode bool
+	log             logr.Logger
+	inbound         *loginInboundConn
+	originalProfile *profile.GameProfile
+	useProfile      *profile.GameProfile
+	onlineMode      bool
 
 	connectedPlayer *connectedPlayer
 }
@@ -34,7 +35,8 @@ type playerRegistrar interface {
 
 func newAuthSessionHandler(
 	inbound *loginInboundConn,
-	profile *profile.GameProfile,
+	originalProfile *profile.GameProfile,
+	useProfile *profile.GameProfile,
 	onlineMode bool,
 	sessionHandlerDeps *sessionHandlerDeps,
 ) netmc.SessionHandler {
@@ -42,7 +44,8 @@ func newAuthSessionHandler(
 		sessionHandlerDeps: sessionHandlerDeps,
 		log:                logr.FromContextOrDiscard(inbound.Context()).WithName("authSession"),
 		inbound:            inbound,
-		profile:            profile,
+		originalProfile:    originalProfile,
+		useProfile:         useProfile,
 		onlineMode:         onlineMode,
 	}
 }
@@ -55,22 +58,24 @@ func (a *authSessionHandler) Disconnected() {
 }
 
 func (a *authSessionHandler) Activated() {
-	// Some connection types may need to alter the game profile.
-	gameProfile := *a.inbound.delegate.Type().AddGameProfileTokensIfRequired(
-		a.profile, a.config().Forwarding.Mode)
+	// Some connection types may need to alter the game originalProfile.
+	originalGameProfile := *a.inbound.delegate.Type().AddGameProfileTokensIfRequired(
+		a.originalProfile, a.config().Forwarding.Mode)
+	useGameProfile := *a.inbound.delegate.Type().AddGameProfileTokensIfRequired(
+		a.useProfile, a.config().Forwarding.Mode)
 
-	profileRequest := NewGameProfileRequestEvent(a.inbound, gameProfile, a.onlineMode)
+	profileRequest := NewGameProfileRequestEvent(a.inbound, originalGameProfile, a.onlineMode, useGameProfile)
 	a.eventMgr.Fire(profileRequest)
 	conn := a.inbound.delegate.MinecraftConn
 	if netmc.Closed(conn) {
 		return // Player disconnected after authentication
 	}
-	gameProfile = profileRequest.GameProfile()
+	useGameProfile = profileRequest.GameProfile()
 
 	// Initiate a regular connection and move over to it.
 	player := newConnectedPlayer(
 		conn,
-		&gameProfile,
+		&useGameProfile,
 		a.inbound.VirtualHost(),
 		a.onlineMode,
 		a.inbound.IdentifiedKey(),

@@ -1,8 +1,7 @@
 package proxy
 
 import (
-	"net"
-
+	"errors"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
@@ -14,6 +13,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/util/permission"
+	"net"
 )
 
 // PingEvent is fired when a request for server information is sent by a remote client,
@@ -115,11 +115,13 @@ func NewGameProfileRequestEvent(
 	inbound Inbound,
 	original profile.GameProfile,
 	onlineMode bool,
+	use profile.GameProfile,
 ) *GameProfileRequestEvent {
 	return &GameProfileRequestEvent{
 		inbound:    inbound,
 		original:   original,
 		onlineMode: onlineMode,
+		use:        use,
 	}
 }
 
@@ -138,18 +140,20 @@ func (e *GameProfileRequestEvent) OnlineMode() bool {
 	return e.onlineMode
 }
 
+// OriginalGameProfile returns the original game originalProfile.
+func (e *GameProfileRequestEvent) OriginalGameProfile() profile.GameProfile {
+	return e.original
+}
+
+// GameProfile returns the game originalProfile that will be used to initialize the connection with.
+// Should no originalProfile be set, the original originalProfile (given by the proxy) will be used.
+func (e *GameProfileRequestEvent) GameProfile() profile.GameProfile {
+	return e.use
+}
+
 // SetGameProfile sets the profile to use for this connection.
 func (e *GameProfileRequestEvent) SetGameProfile(p profile.GameProfile) {
 	e.use = p
-}
-
-// GameProfile returns the game profile that will be used to initialize the connection with.
-// Should no profile be set, the original profile (given by the proxy) will be used.
-func (e *GameProfileRequestEvent) GameProfile() profile.GameProfile {
-	if len(e.use.Name) == 0 {
-		return e.original
-	}
-	return e.use
 }
 
 //
@@ -228,18 +232,20 @@ func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
 // but before the proxy authenticates the player with Mojang or before the player's proxy connection
 // is fully established (for offline mode).
 type PreLoginEvent struct {
-	connection Inbound
-	username   string
+	connection       Inbound
+	originalUsername string
 
-	result PreLoginResult
-	reason component.Component
+	result      PreLoginResult
+	useUsername string
+	reason      component.Component
 }
 
-func newPreLoginEvent(conn Inbound, username string) *PreLoginEvent {
+func newPreLoginEvent(conn Inbound, originalUsername string) *PreLoginEvent {
 	return &PreLoginEvent{
-		connection: conn,
-		username:   username,
-		result:     AllowedPreLogin,
+		connection:       conn,
+		originalUsername: originalUsername,
+		useUsername:      originalUsername,
+		result:           AllowedPreLogin,
 	}
 }
 
@@ -254,9 +260,23 @@ const (
 	ForceOfflineModePreLogin
 )
 
+// OriginalUsername returns the original username of the player.
+func (e *PreLoginEvent) OriginalUsername() string {
+	return e.originalUsername
+}
+
 // Username returns the username of the player.
 func (e *PreLoginEvent) Username() string {
-	return e.username
+	return e.useUsername
+}
+
+// SetUsername sets server username for the player.
+func (e *PreLoginEvent) SetUsername(username string) error {
+	if !playerNameRegex.MatchString(username) {
+		return errors.New("username must matches ^[A-Za-z0-9_]{2,16}$")
+	}
+	e.useUsername = username
+	return nil
 }
 
 // Conn returns the inbound connection that is connecting to the proxy.
