@@ -140,11 +140,6 @@ func (e *GameProfileRequestEvent) OnlineMode() bool {
 	return e.onlineMode
 }
 
-// OriginalGameProfile returns the original game originalProfile.
-func (e *GameProfileRequestEvent) OriginalGameProfile() profile.GameProfile {
-	return e.original
-}
-
 // GameProfile returns the game originalProfile that will be used to initialize the connection with.
 // Should no originalProfile be set, the original originalProfile (given by the proxy) will be used.
 func (e *GameProfileRequestEvent) GameProfile() profile.GameProfile {
