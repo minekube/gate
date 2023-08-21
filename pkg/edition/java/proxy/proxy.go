@@ -18,14 +18,13 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
-	"go.minekube.com/gate/pkg/internal/sysevent"
+	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/favicon"
@@ -182,7 +181,8 @@ func (p *Proxy) Start(ctx context.Context) error {
 	bind := p.cfg.Bind
 	stopLn := listen(bind)
 
-	defer event.Subscribe(p.event, 0, func(e *javaConfigReloadedEvent) {
+	// Listen for config reloads until we exit
+	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
 		cfg := e.Config
 		*p.cfg = *cfg
 		p.initQuota(&cfg.Quota)
@@ -198,7 +198,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	return eg.Wait()
 }
 
-type javaConfigReloadedEvent = sysevent.ConfigReloadedEvent[jconfig.Config]
+type javaConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //

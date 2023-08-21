@@ -2,25 +2,30 @@
 package gate
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path"
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/viper"
-	jconfig "go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/util/interrupt"
-	"go.uber.org/multierr"
-
 	"github.com/robinbraemer/event"
+	"github.com/spf13/viper"
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
+	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
-	errors "go.minekube.com/gate/pkg/util/errs"
+	errorsutil "go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/interrupt"
+	"gopkg.in/yaml.v3"
 )
 
 // Options are Gate options.
@@ -36,7 +41,7 @@ type Options struct {
 // The given Options requires a validated Config.
 func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
-		return nil, errors.ErrMissingConfig
+		return nil, errorsutil.ErrMissingConfig
 	}
 	if !options.Config.Editions.Java.Enabled && !options.Config.Editions.Bedrock.Enabled {
 		return nil, fmt.Errorf("no edition enabled, enable at least one Minecraft proxy edition")
@@ -44,7 +49,7 @@ func New(options Options) (gate *Gate, err error) {
 
 	// Require no config validation errors
 	warns, errs := options.Config.Validate()
-	if err = multierr.Combine(errs...); err != nil {
+	if err = errors.Join(errs...); err != nil {
 		return nil, fmt.Errorf("config validation errors "+
 			"(errors: %d, warns: %d)", len(errs), len(warns))
 	}
@@ -53,6 +58,12 @@ func New(options Options) (gate *Gate, err error) {
 	if eventMgr == nil {
 		eventMgr = event.Nop
 	}
+	reload.Map(eventMgr, func(c *config.Config) *jconfig.Config {
+		return &c.Editions.Java.Config
+	})
+	reload.Map(eventMgr, func(c *config.Config) *connectcfg.Config {
+		return &c.Connect
+	})
 
 	gate = &Gate{
 		proc:   process.New(process.Options{AllOrNothing: true}),
@@ -143,34 +154,20 @@ var Viper = viper.New()
 type StartOption func(o *startOptions)
 
 type startOptions struct {
-	conf                 *config.Config
-	autoShutdownOnSignal bool
+	conf                      *config.Config
+	autoShutdownOnSignal      bool
+	autoConfigReloadWatchPath string
 }
 
-// LoadConfig loads in config.Config from viper.
-// It is used by Start with the packages Viper if no WithConfig option is given.
-func LoadConfig(v *viper.Viper) (*config.Config, error) {
-	// Clone default config
-	cfg := func() config.Config { return config.DefaultConfig }()
-	// Load in Gate config
-	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("error loading config: %w", err)
-	}
-	// Override Java config by shorter alias
-	if !reflect.DeepEqual(cfg.Config, jconfig.DefaultConfig) {
-		cfg.Editions.Java.Config = cfg.Config
-	}
-	return &cfg, nil
-}
-
-// WithConfig StartOption for Start.
+// WithConfig is a StartOption for Start
+// that uses the provided config.Config.
 func WithConfig(c config.Config) StartOption {
 	return func(o *startOptions) {
 		o.conf = &c
 	}
 }
 
-// WithAutoShutdownOnSignal StartOption for Start
+// WithAutoShutdownOnSignal is a StartOption for Start
 // that automatically shuts down the Gate instance
 // when a shutdown signal is received.
 //
@@ -178,6 +175,19 @@ func WithConfig(c config.Config) StartOption {
 func WithAutoShutdownOnSignal(enabled bool) StartOption {
 	return func(o *startOptions) {
 		o.autoShutdownOnSignal = enabled
+	}
+}
+
+// LoadConfigFunc is a function that loads in a config.Config.
+type LoadConfigFunc func() (*config.Config, error)
+
+// WithAutoConfigReload is a StartOption for Start
+// that automatically reloads the config when a file change is detected.
+//
+// This setting is disabled by default.
+func WithAutoConfigReload(path string) StartOption {
+	return func(o *startOptions) {
+		o.autoConfigReloadWatchPath = path
 	}
 }
 
@@ -209,24 +219,15 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	configLog := log.WithName("config")
 
 	// Validate Gate config
-	warns, errs := c.conf.Validate()
-	for _, e := range errs {
-		configLog.Info("config validation error", "error", e)
-	}
-	for _, w := range warns {
-		configLog.Info("config validation warn", "warn", w)
-	}
-	if len(errs) != 0 {
-		// Shouldn't run Gate with validation errors
-		return fmt.Errorf("config validation errors "+
-			"(errors: %d, warns: %d), inspect the logs for details",
-			len(errs), len(warns))
+	if err := validateConfig(configLog, c.conf); err != nil {
+		return err
 	}
 
 	// Setup new Gate instance with loaded config.
+	eventMgr := event.New(event.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
 		Config:   c.conf,
-		EventMgr: event.New(event.WithLogger(log.WithName("event"))),
+		EventMgr: eventMgr,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating Gate instance: %w", err)
@@ -246,6 +247,123 @@ func Start(ctx context.Context, opts ...StartOption) error {
 		}()
 	}
 
+	// Setup auto config reload if enabled.
+	err = setupAutoConfigReload(
+		ctx, configLog, eventMgr,
+		c.autoConfigReloadWatchPath,
+	)
+	if err != nil {
+		return fmt.Errorf("error setting up auto config reload: %w", err)
+	}
+
 	// Start everything
 	return gate.Start(ctx)
+}
+
+// setupAutoConfigReload sets up auto config reload if enabled.
+func setupAutoConfigReload(
+	ctx context.Context,
+	log logr.Logger,
+	mgr event.Manager,
+	path string,
+) error {
+	if path == "" {
+		return nil // No auto config reload
+	}
+	log.Info("auto config reload enabled", "path", path)
+	// Watch config file for changes
+	return reload.Watch(ctx, path, func() error {
+		cfg, err := LoadConfig(Viper)
+		if err != nil {
+			return err
+		}
+		if err = validateConfig(log, cfg); err != nil {
+			return err
+		}
+		reload.FireConfigUpdate(mgr, cfg)
+		return nil
+	})
+}
+
+// validateConfig validates the provided config.Config
+// and logs any validation errors or warnings.
+// If there are any hard errors, it returns an error.
+func validateConfig(log logr.Logger, c *config.Config) error {
+	// Validate Gate config
+	warns, errs := c.Validate()
+	for _, e := range errs {
+		log.Info("config validation error", "error", e)
+	}
+	for _, w := range warns {
+		log.Info("config validation warn", "warn", w)
+	}
+	if len(errs) != 0 {
+		// Shouldn't run Gate with validation errors
+		return fmt.Errorf("config validation errors "+
+			"(errors: %d, warns: %d), inspect the logs for details",
+			len(errs), len(warns))
+	}
+	return nil
+}
+
+// LoadConfig loads in config.Config from viper.
+// It is used by Start with the packages Viper if no WithConfig option is given.
+func LoadConfig(v *viper.Viper) (*config.Config, error) {
+	// Clone default config
+	cfg := func() config.Config { return config.DefaultConfig }()
+	// Load in Gate config
+	if err := fixedReadInConfig(v, &cfg); err != nil {
+		return &cfg, fmt.Errorf("error loading config: %w", err)
+	}
+	// Override Java config by shorter alias
+	if !reflect.DeepEqual(cfg.Config, jconfig.DefaultConfig) {
+		cfg.Editions.Java.Config = cfg.Config
+	}
+	return &cfg, nil
+}
+
+// Workaround for https://github.com/minekube/gate/issues/218#issuecomment-1632800775
+func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
+	if defaultConfig == nil {
+		return v.ReadInConfig()
+	}
+
+	configFile := v.ConfigFileUsed()
+	if configFile == "" {
+		// Try to find config file using Viper's config finder logic
+		if err := v.ReadInConfig(); err != nil {
+			return err
+		}
+		configFile = v.ConfigFileUsed()
+		if configFile == "" {
+			return nil // no config file found
+		}
+	}
+
+	var (
+		unmarshal func([]byte, any) error
+		marshal   func(any) ([]byte, error)
+	)
+	switch path.Ext(configFile) {
+	case ".yaml", ".yml":
+		unmarshal = yaml.Unmarshal
+		marshal = yaml.Marshal
+	case ".json":
+		unmarshal = json.Unmarshal
+		marshal = json.Marshal
+	default:
+		return fmt.Errorf("unsupported config file format %q", configFile)
+	}
+	b, err := os.ReadFile(configFile)
+	if err != nil {
+		return fmt.Errorf("error reading config file %q: %w", configFile, err)
+	}
+	if err = unmarshal(b, defaultConfig); err != nil {
+		return fmt.Errorf("error unmarshaling config file %q to %T: %w", configFile, defaultConfig, err)
+	}
+	if b, err = marshal(defaultConfig); err != nil {
+		return fmt.Errorf("error marshaling config file %q: %w", configFile, err)
+	}
+
+	return v.ReadConfig(bytes.NewReader(b))
 }
