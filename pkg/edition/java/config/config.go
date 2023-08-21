@@ -136,7 +136,7 @@ type (
 	}
 	QuotaSettings struct {
 		Enabled    bool    `yaml:"enabled"`    // If false, there is no such limiting.
-		OPS        float32 `yaml:"OPS"`        // Allowed operations/events per second, per IP block
+		OPS        float32 `yaml:"ops"`        // Allowed operations/events per second, per IP block
 		Burst      int     `yaml:"burst"`      // The maximum events per second, per block; the size of the token bucket
 		MaxEntries int     `yaml:"maxEntries"` // Maximum number of IP blocks to keep track of in cache
 	}
