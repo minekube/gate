@@ -14,7 +14,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.uber.org/atomic"
-	"go.uber.org/multierr"
 )
 
 type (
@@ -113,7 +112,7 @@ func (l *loginInboundConn) handleLoginPluginResponse(res *packet.LoginPluginResp
 
 	defer func() {
 		if len(l.outstandingResponses) == 0 && l.onAllMessagesHandled != nil {
-			err = multierr.Combine(err, l.onAllMessagesHandled())
+			err = errors.Join(err, l.onAllMessagesHandled())
 		}
 	}()
 	if res.Success {

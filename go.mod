@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.5.4
 	github.com/jellydator/ttlcache/v3 v3.0.1
+	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/robinbraemer/event v0.0.1
@@ -26,7 +27,6 @@ require (
 	go.minekube.com/common v0.0.5
 	go.minekube.com/connect v0.5.3
 	go.uber.org/atomic v1.11.0
-	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/text v0.12.0
@@ -64,6 +64,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/image v0.9.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230726155614-23370e0ffb3e // indirect

@@ -111,28 +111,37 @@ export default defineConfig({
                             link: '/developers/',
                         },
                         {
-                            text: 'Configurations',
-                            link: '/guide/config/',
+                            text: 'Lite Mode',
+                            link: '/guide/lite'
                         },
                         {
                             text: 'Security & DDoS Protection',
                             link: '/guide/security'
                         },
                         {
-                            text: 'Lite Mode',
-                            link: '/guide/lite'
+                            text: 'Compatibility',
+                            link: '/guide/compatibility'
                         },
+                    ]
+                },
+                {
+                    text: 'Configuration',
+                    items: [
                         {
                             text: 'Enabling Connect',
                             link: '/guide/connect'
                         },
                         {
-                            text: 'Builtin Commands',
-                            link: '/guide/builtin-commands'
+                            text: 'Complete Configuration',
+                            link: '/guide/config/',
                         },
                         {
-                            text: 'Compatibility',
-                            link: '/guide/compatibility'
+                            text: 'Auto Reload',
+                            link: '/guide/config/reload',
+                        },
+                        {
+                            text: 'Builtin Commands',
+                            link: '/guide/builtin-commands'
                         },
                         {
                             text: 'Rate Limiting',
@@ -163,6 +172,10 @@ export default defineConfig({
                             link: '/developers/examples/simple-proxy'
                         },
                     ]
+                },
+                {
+                    text: 'Back to Guides',
+                    link: '/guide/',
                 },
             ],
             // '/config/': [

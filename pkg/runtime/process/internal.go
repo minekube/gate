@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"go.uber.org/multierr"
 )
 
 type collection struct {
@@ -71,10 +70,10 @@ func (pm *collection) Start(ctx context.Context) (err error) {
 		internalStop()
 		stopErr := pm.engageStopProcedure(stopComplete, logr.FromContextOrDiscard(pm.ctx))
 		if stopErr != nil && stopErr != errStopAll {
-			// multierr allows using errors.Is for all contained errors
+			// Join allows using errors.Is for all contained errors
 			// whereas fmt.Errorf allows wrapping at most one error which means the
 			// other one can not be found anymore.
-			err = multierr.Combine(err, stopErr)
+			err = errors.Join(err, stopErr)
 		}
 	}()
 

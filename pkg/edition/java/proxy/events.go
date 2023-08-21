@@ -1077,7 +1077,14 @@ func (s *PreShutdownEvent) SetReason(reason component.Component) {
 
 // ReadyEvent is fired once the proxy was successfully
 // initialized and is ready to serve connections.
-type ReadyEvent struct{}
+//
+// May be triggered multiple times on config reloads.
+type ReadyEvent struct {
+	addr string // The address the proxy is listening on.
+}
+
+// Addr returns the address the proxy is listening on.
+func (r *ReadyEvent) Addr() string { return r.addr }
 
 // ShutdownEvent is fired by the proxy after the proxy
 // has stopped accepting connections and PreShutdownEvent,

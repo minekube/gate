@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -19,17 +20,16 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
-	"go.minekube.com/gate/pkg/util/componentutil"
+	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
+	"golang.org/x/sync/errgroup"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -43,13 +43,10 @@ type Proxy struct {
 
 	startTime atomic.Pointer[time.Time]
 
-	closeMu       sync.Mutex
-	closeListener chan struct{}
-	started       bool
-
-	shutdownReason *component.Text
-	motd           *component.Text
-	favicon        favicon.Favicon
+	closeMu     sync.Mutex
+	startCtx    context.Context
+	cancelStart context.CancelFunc
+	started     bool
 
 	muS     sync.RWMutex                 // Protects following field
 	servers map[string]*registeredServer // registered backend servers: by lower case names
@@ -103,18 +100,26 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 	}
 
-	c := options.Config
 	// Connection & login rate limiters
-	quota := c.Quota.Connections
-	if quota.Enabled {
-		p.connectionsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
-	}
-	quota = c.Quota.Logins
-	if quota.Enabled {
-		p.loginsQuota = addrquota.NewQuota(quota.OPS, quota.Burst, quota.MaxEntries)
-	}
+	p.initQuota(&options.Config.Quota)
 
 	return p, nil
+}
+
+func (p *Proxy) initQuota(quota *config.Quota) {
+	q := quota.Connections
+	if q.Enabled {
+		p.connectionsQuota = addrquota.NewQuota(q.OPS, q.Burst, q.MaxEntries)
+	} else {
+		p.connectionsQuota = nil
+	}
+
+	q = quota.Logins
+	if q.Enabled {
+		p.loginsQuota = addrquota.NewQuota(q.OPS, q.Burst, q.MaxEntries)
+	} else {
+		p.loginsQuota = nil
+	}
 }
 
 // ErrProxyAlreadyRun is returned by Proxy.Run if the proxy instance was already run.
@@ -136,37 +141,72 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.startTime.Store(&now)
 	p.log = logr.FromContextOrDiscard(ctx)
 
-	stopListener := make(chan struct{})
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		select {
-		case <-stopListener:
-		default:
-			close(stopListener)
-		}
-	}()
-	p.closeListener = stopListener
+	p.startCtx, p.cancelStart = context.WithCancel(ctx)
+	ctx = p.startCtx
+	defer p.cancelStart()
 	p.closeMu.Unlock()
 
-	if err := p.preInit(ctx); err != nil {
+	if err := p.init(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
-	if p.cfg.Debug {
-		p.log.Info("running in debug mode")
-	}
-	if p.cfg.Lite.Enabled {
-		p.log.Info("running in lite mode")
-	}
-	if p.cfg.ProxyProtocol {
-		p.log.Info("proxy protocol enabled")
+	// Init "plugins" with the proxy
+	if err := p.initPlugins(ctx); err != nil {
+		return err
 	}
 
-	defer p.Shutdown(p.shutdownReason) // disconnects players
-	return p.listenAndServe(p.cfg.Bind, stopListener)
+	logInfo := func() {
+		if p.cfg.Debug {
+			p.log.Info("running in debug mode")
+		}
+		if p.cfg.Lite.Enabled {
+			p.log.Info("running in lite mode")
+		}
+		if p.cfg.ProxyProtocol {
+			p.log.Info("proxy protocol enabled")
+		}
+	}
+	logInfo()
+
+	defer func() {
+		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
+	}()
+
+	eg, ctx := errgroup.WithContext(ctx)
+	listen := func(addr string) context.CancelFunc {
+		lnCtx, stop := context.WithCancel(ctx)
+		eg.Go(func() error {
+			defer stop()
+			return p.listenAndServe(lnCtx, addr)
+		})
+		return stop
+	}
+
+	bind := p.cfg.Bind
+	stopLn := listen(bind)
+
+	// Listen for config reloads until we exit
+	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
+		cfg := e.Config
+		*p.cfg = *cfg
+		p.initQuota(&cfg.Quota)
+		if newBind := cfg.Bind; newBind != bind {
+			p.closeMu.Lock()
+			stopLn()
+			bind = newBind
+			stopLn = listen(bind)
+			p.closeMu.Unlock()
+		}
+		if err := p.init(); err != nil {
+			p.log.Error(err, "re-initialization error")
+		}
+		logInfo()
+	})()
+
+	return eg.Wait()
 }
+
+type javaConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
@@ -180,12 +220,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 		return // not started or already shutdown
 	}
 	p.started = false
-	select {
-	case <-p.closeListener: // channel may be already closed
-	default:
-		// stop listening for new connections
-		close(p.closeListener)
-	}
+	p.cancelStart()
 
 	p.log.Info("shutting down the proxy...")
 	shutdownTime := time.Now()
@@ -200,7 +235,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	reason = pre.Reason()
 
 	reasonStr := new(strings.Builder)
-	if reason != nil {
+	if reason != nil && !reflect.ValueOf(reason).IsNil() {
 		err := (&legacy.Legacy{}).Marshal(reasonStr, reason)
 		if err != nil {
 			p.log.Error(err, "error marshal disconnect reason to legacy format")
@@ -218,23 +253,9 @@ func (p *Proxy) Shutdown(reason component.Component) {
 }
 
 // called before starting to actually run the proxy
-func (p *Proxy) preInit(ctx context.Context) (err error) {
-	// Load shutdown reason
-	if err = p.loadShutdownReason(); err != nil {
-		return fmt.Errorf("error loading shutdown reason: %w", err)
-	}
-
+func (p *Proxy) init() (err error) {
 	c := p.cfg
 	if !c.Lite.Enabled {
-		// Load status motd
-		if err = p.loadMotd(); err != nil {
-			return fmt.Errorf("error loading status motd: %w", err)
-		}
-		// Load favicon
-		if err = p.loadFavicon(); err != nil {
-			return fmt.Errorf("error loading favicon: %w", err)
-		}
-
 		// Register servers
 		if len(c.Servers) != 0 {
 			p.log.Info("registering servers...", "count", len(c.Servers))
@@ -245,6 +266,7 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+			_ = p.Unregister(info)
 			_, err = p.Register(info)
 			if err != nil {
 				p.log.Error(err, "could not register server", "server", info)
@@ -257,37 +279,7 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 		}
 	}
 
-	// Init "plugins" with the proxy
-	return p.initPlugins(ctx)
-}
-
-// loads shutdown kick reason on proxy shutdown from the cfg
-func (p *Proxy) loadShutdownReason() (err error) {
-	c := p.cfg
-	if len(c.ShutdownReason) == 0 {
-		return nil
-	}
-	p.shutdownReason, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.ShutdownReason)
-	return
-}
-
-func (p *Proxy) loadMotd() (err error) {
-	c := p.cfg
-	if len(c.Status.Motd) == 0 {
-		return nil
-	}
-	p.motd, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.Status.Motd)
-	return
-}
-
-// initializes favicon from the cfg
-func (p *Proxy) loadFavicon() (err error) {
-	c := p.cfg
-	if len(c.Status.Favicon) == 0 {
-		return nil
-	}
-	p.favicon, err = favicon.Parse(c.Status.Favicon)
-	return err
+	return nil
 }
 
 func (p *Proxy) initPlugins(ctx context.Context) error {
@@ -438,23 +430,25 @@ func (p *Proxy) DisconnectAll(reason component.Component) {
 }
 
 // listenAndServe starts listening for connections on addr until closed channel receives.
-func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
-	select {
-	case <-stop:
-		return nil
-	default:
+func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = ln.Close() }()
-	go func() { <-stop; _ = ln.Close() }()
 
-	p.event.Fire(&ReadyEvent{})
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() { <-ctx.Done(); _ = ln.Close() }()
 
-	defer p.log.Info("stopped listening for new connections")
+	p.event.Fire(&ReadyEvent{addr: addr})
+
+	defer p.log.Info("stopped listening for new connections", "addr", addr)
 	p.log.Info("listening for connections", "addr", addr)
 
 	for {

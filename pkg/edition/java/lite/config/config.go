@@ -2,14 +2,11 @@ package config
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -37,32 +34,18 @@ type (
 		ModifyVirtualHost bool                             `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
 	}
 	Status struct {
-		MOTD    string          `yaml:"motd,omitempty" json:"motd,omitempty"`
-		Version ping.Version    `yaml:"version,omitempty" json:"version,omitempty"`
-		Favicon favicon.Favicon `yaml:"favicon,omitempty" json:"favicon,omitempty"`
-		ModInfo modinfo.ModInfo `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
-
-		ParsedMOTD struct {
-			Text      *component.Text `yaml:"-" json:"-"`
-			sync.Once `yaml:"-" json:"-"`
-		} `yaml:"-" json:"-"`
+		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
+		Version ping.Version              `yaml:"version,omitempty" json:"version,omitempty"`
+		Favicon favicon.Favicon           `yaml:"favicon,omitempty" json:"favicon,omitempty"`
+		ModInfo modinfo.ModInfo           `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
 	}
 )
 
 // Response returns the configured status response.
-func (s *Status) Response(protocol proto.Protocol) (*ping.ServerPing, error) {
-	// Lazy parse MOTD
-	var err error
-	s.ParsedMOTD.Do(func() {
-		s.ParsedMOTD.Text, err = componentutil.ParseTextComponent(protocol, s.MOTD)
-	})
-	if err != nil {
-		return nil, err
-	}
-
+func (s *Status) Response(proto.Protocol) (*ping.ServerPing, error) {
 	return &ping.ServerPing{
 		Version:     s.Version,
-		Description: s.ParsedMOTD.Text,
+		Description: s.MOTD.T(),
 		Favicon:     s.Favicon,
 		ModInfo:     &s.ModInfo,
 	}, nil

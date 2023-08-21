@@ -1,8 +1,9 @@
 # Enabling Connect Integration
 
-Gate has a builtin integration with [Connect](https://connect.minekube.com/) to list your proxy on the Connect network.
+Gate has a builtin integration with [Connect](https://connect.minekube.com/) to list your proxy on
+the [Connect network](https://connect.minekube.com/guide/#the-connect-network).
 
-Great side effect is that it exposes your locally running Gate proxy to the Internet
+Great side effect is that it also exposes your locally running Gate proxy to the Internet
 and allows players to connect to it from anywhere using the free provided domain
 `<my-server-name>.play.minekube.net`.
 

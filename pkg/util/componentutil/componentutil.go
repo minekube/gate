@@ -1,7 +1,7 @@
 package componentutil
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
@@ -25,7 +25,7 @@ func ParseTextComponent(protocol proto.Protocol, s string) (t *component.Text, e
 	}
 	t, ok := c.(*component.Text)
 	if !ok {
-		return nil, errors.New("invalid text component")
+		return nil, fmt.Errorf("invalid text component type %T", c)
 	}
 	return t, nil
 }
