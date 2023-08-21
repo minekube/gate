@@ -109,20 +109,8 @@ func New(options Options) (gate *Gate, err error) {
 		}
 	}
 
-	if c.Editions.Java.Enabled { // Currently, only supporting Connect for java edition
-		runnable, err := connectcfg.New(
-			c.Connect,
-			gate.Java(),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error setting up Connect: %w", err)
-		}
-		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
-			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("connect"))
-			return runnable.Start(ctx)
-		})); err != nil {
-			return nil, err
-		}
+	if err = setupConnect(gate.proc, c, eventMgr, gate.Java()); err != nil {
+		return nil, err
 	}
 
 	return gate, nil

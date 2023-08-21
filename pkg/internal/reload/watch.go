@@ -27,7 +27,8 @@ func Watch(ctx context.Context, path string, cb func() error) error {
 		start := time.Now()
 		if err := cb(); err != nil {
 			log.Info("failed to reload config", "error", err)
+			return
 		}
-		log.Info("reloaded config successfully", "duration", time.Since(start).Round(time.Millisecond))
+		log.Info("reloaded config successfully", "duration", time.Since(start).Round(time.Millisecond).String())
 	})
 }

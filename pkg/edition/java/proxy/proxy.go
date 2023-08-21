@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -19,15 +20,12 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
 	"go.minekube.com/gate/pkg/internal/reload"
-	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/errs"
-	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
@@ -49,10 +47,6 @@ type Proxy struct {
 	startCtx    context.Context
 	cancelStart context.CancelFunc
 	started     bool
-
-	shutdownReason *component.Text
-	motd           *component.Text
-	favicon        favicon.Favicon
 
 	muS     sync.RWMutex                 // Protects following field
 	servers map[string]*registeredServer // registered backend servers: by lower case names
@@ -174,7 +168,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 	logInfo()
 
-	defer p.Shutdown(p.shutdownReason) // disconnects players
+	defer func() {
+		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
+	}()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	listen := func(addr string) context.CancelFunc {
@@ -239,7 +235,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 	reason = pre.Reason()
 
 	reasonStr := new(strings.Builder)
-	if reason != nil {
+	if reason != nil && !reflect.ValueOf(reason).IsNil() {
 		err := (&legacy.Legacy{}).Marshal(reasonStr, reason)
 		if err != nil {
 			p.log.Error(err, "error marshal disconnect reason to legacy format")
@@ -258,18 +254,8 @@ func (p *Proxy) Shutdown(reason component.Component) {
 
 // called before starting to actually run the proxy
 func (p *Proxy) init() (err error) {
-	// Load shutdown reason
-	if err = p.loadShutdownReason(); err != nil {
-		return fmt.Errorf("error loading shutdown reason: %w", err)
-	}
-
 	c := p.cfg
 	if !c.Lite.Enabled {
-		// Load status motd
-		if err = p.loadMotd(); err != nil {
-			return fmt.Errorf("error loading status motd: %w", err)
-		}
-
 		// Register servers
 		if len(c.Servers) != 0 {
 			p.log.Info("registering servers...", "count", len(c.Servers))
@@ -294,25 +280,6 @@ func (p *Proxy) init() (err error) {
 	}
 
 	return nil
-}
-
-// loads shutdown kick reason on proxy shutdown from the cfg
-func (p *Proxy) loadShutdownReason() (err error) {
-	c := p.cfg
-	if c.ShutdownReason == "" {
-		return nil
-	}
-	p.shutdownReason, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.ShutdownReason)
-	return
-}
-
-func (p *Proxy) loadMotd() (err error) {
-	c := p.cfg
-	if len(c.Status.Motd) == 0 {
-		return nil
-	}
-	p.motd, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.Status.Motd)
-	return
 }
 
 func (p *Proxy) initPlugins(ctx context.Context) error {
@@ -481,7 +448,7 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 
 	p.event.Fire(&ReadyEvent{addr: addr})
 
-	defer p.log.Info("stopped listening for new connections")
+	defer p.log.Info("stopped listening for new connections", "addr", addr)
 	p.log.Info("listening for connections", "addr", addr)
 
 	for {

@@ -88,6 +88,9 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 					err = errors.New("disconnected by watch service")
 					log.Info("session watcher disconnected by server, reconnecting", "after", time.Since(t))
 				}
+			} else if errors.Is(ctx.Err(), context.Canceled) {
+				// Context canceled
+				return nil
 			}
 			return err
 		})).Start(ctx)
