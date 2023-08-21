@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -110,10 +111,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 type (
 	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
-		ShowMaxPlayers  int    `yaml:"showMaxPlayers"`
-		Motd            string `yaml:"motd"`
-		Favicon         string `yaml:"favicon"`
-		LogPingRequests bool   `yaml:"logPingRequests"`
+		ShowMaxPlayers  int             `yaml:"showMaxPlayers"`
+		Motd            string          `yaml:"motd"`
+		Favicon         favicon.Favicon `yaml:"favicon"`
+		LogPingRequests bool            `yaml:"logPingRequests"`
 	}
 	Query struct {
 		Enabled     bool `yaml:"enabled"`

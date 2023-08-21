@@ -152,19 +152,27 @@ func (p *Proxy) Start(ctx context.Context) error {
 	defer p.cancelStart()
 	p.closeMu.Unlock()
 
-	if err := p.preInit(ctx); err != nil {
+	if err := p.init(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
-	if p.cfg.Debug {
-		p.log.Info("running in debug mode")
+	// Init "plugins" with the proxy
+	if err := p.initPlugins(ctx); err != nil {
+		return err
 	}
-	if p.cfg.Lite.Enabled {
-		p.log.Info("running in lite mode")
+
+	logInfo := func() {
+		if p.cfg.Debug {
+			p.log.Info("running in debug mode")
+		}
+		if p.cfg.Lite.Enabled {
+			p.log.Info("running in lite mode")
+		}
+		if p.cfg.ProxyProtocol {
+			p.log.Info("proxy protocol enabled")
+		}
 	}
-	if p.cfg.ProxyProtocol {
-		p.log.Info("proxy protocol enabled")
-	}
+	logInfo()
 
 	defer p.Shutdown(p.shutdownReason) // disconnects players
 
@@ -193,6 +201,10 @@ func (p *Proxy) Start(ctx context.Context) error {
 			stopLn = listen(bind)
 			p.closeMu.Unlock()
 		}
+		if err := p.init(); err != nil {
+			p.log.Error(err, "re-initialization error")
+		}
+		logInfo()
 	})()
 
 	return eg.Wait()
@@ -245,7 +257,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 }
 
 // called before starting to actually run the proxy
-func (p *Proxy) preInit(ctx context.Context) (err error) {
+func (p *Proxy) init() (err error) {
 	// Load shutdown reason
 	if err = p.loadShutdownReason(); err != nil {
 		return fmt.Errorf("error loading shutdown reason: %w", err)
@@ -256,10 +268,6 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 		// Load status motd
 		if err = p.loadMotd(); err != nil {
 			return fmt.Errorf("error loading status motd: %w", err)
-		}
-		// Load favicon
-		if err = p.loadFavicon(); err != nil {
-			return fmt.Errorf("error loading favicon: %w", err)
 		}
 
 		// Register servers
@@ -272,6 +280,7 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+			_ = p.Unregister(info)
 			_, err = p.Register(info)
 			if err != nil {
 				p.log.Error(err, "could not register server", "server", info)
@@ -284,14 +293,13 @@ func (p *Proxy) preInit(ctx context.Context) (err error) {
 		}
 	}
 
-	// Init "plugins" with the proxy
-	return p.initPlugins(ctx)
+	return nil
 }
 
 // loads shutdown kick reason on proxy shutdown from the cfg
 func (p *Proxy) loadShutdownReason() (err error) {
 	c := p.cfg
-	if len(c.ShutdownReason) == 0 {
+	if c.ShutdownReason == "" {
 		return nil
 	}
 	p.shutdownReason, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.ShutdownReason)
@@ -305,16 +313,6 @@ func (p *Proxy) loadMotd() (err error) {
 	}
 	p.motd, err = componentutil.ParseTextComponent(version.Legacy.Protocol, c.Status.Motd)
 	return
-}
-
-// initializes favicon from the cfg
-func (p *Proxy) loadFavicon() (err error) {
-	c := p.cfg
-	if len(c.Status.Favicon) == 0 {
-		return nil
-	}
-	p.favicon, err = favicon.Parse(c.Status.Favicon)
-	return err
 }
 
 func (p *Proxy) initPlugins(ctx context.Context) error {

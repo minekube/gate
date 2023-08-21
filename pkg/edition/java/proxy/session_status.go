@@ -96,7 +96,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 			Max:    p.cfg.Status.ShowMaxPlayers,
 		},
 		Description: p.motd,
-		Favicon:     p.favicon,
+		Favicon:     p.config().Status.Favicon,
 		ModInfo:     modInfo,
 	}
 }
