@@ -23,7 +23,7 @@ func Watch(ctx context.Context, path string, cb func() error) error {
 			log.Info("failed watching config", "error", err)
 			return
 		}
-		log.Info("reloading config")
+		log.Info("auto-reloading config")
 		start := time.Now()
 		if err := cb(); err != nil {
 			log.Info("failed to reload config", "error", err)
