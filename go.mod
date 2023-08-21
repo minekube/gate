@@ -10,7 +10,7 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gookit/color v1.5.4
 	github.com/jellydator/ttlcache/v3 v3.0.1
 	github.com/knadh/koanf/providers/file v0.1.0
