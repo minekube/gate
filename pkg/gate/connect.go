@@ -1,7 +1,10 @@
 package gate
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/json"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -26,29 +29,38 @@ func setupConnect(
 		var (
 			mu          sync.Mutex
 			stopConnect context.CancelFunc
-			name        string
+			// keep track of current config hash to avoid unnecessary restarts when config didn't change
+			currentConfigHash []byte
 		)
 		trigger := func(c *config.Config) {
-			cfg := c.Connect
-			if cfg.Enabled && !c.Editions.Java.Enabled {
+			connect := c.Connect
+			if connect.Enabled && !c.Editions.Java.Enabled {
 				log.Info("Connect is only supported for Java edition")
+				return
+			}
+
+			newConfigHash, err := jsonHash(connect)
+			if err != nil {
+				log.Error(err, "error hashing Connect config")
 				return
 			}
 
 			mu.Lock()
 			defer mu.Unlock()
-			if (!cfg.Enabled && stopConnect != nil) ||
-				(cfg.Enabled && (stopConnect == nil || cfg.Name != name)) {
 
-				if stopConnect != nil {
-					stopConnect()
-					stopConnect = nil
-				}
+			// check if config changed
+			if bytes.Equal(newConfigHash, currentConfigHash) {
+				return // no change
+			}
+			currentConfigHash = newConfigHash
+
+			// stop current Connect if running
+			if stopConnect != nil {
+				stopConnect()
+				stopConnect = nil
 			}
 
-			name = cfg.Name
-
-			runnable, err := connectcfg.New(cfg, instance)
+			runnable, err := connectcfg.New(connect, instance)
 			if err != nil {
 				log.Error(err, "error setting up Connect")
 				return
@@ -58,6 +70,7 @@ func setupConnect(
 			runCtx, stopConnect = context.WithCancel(ctx)
 
 			go func() {
+				defer stopConnect()
 				if err = runnable.Start(runCtx); err != nil {
 					log.Error(err, "error with Connect")
 					return
@@ -75,4 +88,14 @@ func setupConnect(
 		<-ctx.Done()
 		return nil
 	}))
+}
+
+// jsonHash returns the sha1 hash of the JSON representation of v.
+func jsonHash(v any) ([]byte, error) {
+	j, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	h := sha1.Sum(j)
+	return h[:], nil
 }
