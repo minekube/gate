@@ -19,7 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/sets"
 	"go.uber.org/atomic"
 )
 
@@ -143,19 +142,11 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	// We need to specially handle REGISTER and UNREGISTER packets.
-	// Later on, we'll write them to the client.
-	if plugin.IsRegister(packet) {
-		b.serverConn.player.lockedKnownChannels(func(knownChannels sets.String) {
-			knownChannels.Insert(plugin.Channels(packet)...)
-		})
-		b.forwardToPlayer(pc, nil)
-		return
-	} else if plugin.IsUnregister(packet) {
-		b.serverConn.player.lockedKnownChannels(func(knownChannels sets.String) {
-			knownChannels.Delete(plugin.Channels(packet)...)
-		})
-		b.forwardToPlayer(pc, nil)
+	// Register and unregister packets are simply forwarded to the server as-is.
+	if plugin.IsRegister(packet) || plugin.IsUnregister(packet) {
+		if serverMc, ok := b.serverConn.ensureConnected(); ok {
+			_ = serverMc.Write(pc.Payload)
+		}
 		return
 	}
 
@@ -195,10 +186,10 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		data:       clone,
 		forward:    true,
 	}, func(pme *PluginMessageEvent) {
-		if pme.Allowed() && b.serverConn.player.Active() {
+		if pme.Allowed() && b.serverConn.active() {
 			b.forwardToPlayer(nil, &plugin.Message{
 				Channel: packet.Channel,
-				Data:    clone,
+				Data:    pme.Data(),
 			})
 		}
 	})

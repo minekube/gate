@@ -32,7 +32,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/util/permission"
-	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -94,9 +93,6 @@ type connectedPlayer struct {
 	// due to another connection logging in with the same GameProfile.
 	disconnectDueToDuplicateConnection atomic.Bool
 
-	pluginChannelsMu sync.RWMutex // Protects following field
-	pluginChannels   sets.String  // Known plugin channels
-
 	tabList internaltablist.InternalTabList // Player's tab list
 
 	mu                       sync.RWMutex // Protects following fields
@@ -132,14 +128,13 @@ func newConnectedPlayer(
 		MinecraftConn:      conn,
 		log: logr.FromContextOrDiscard(conn.Context()).WithName("player").WithValues(
 			"name", profile.Name, "id", profile.ID),
-		profile:        profile,
-		virtualHost:    virtualHost,
-		onlineMode:     onlineMode,
-		pluginChannels: sets.NewString(), // Should we limit the size to 1024 channels?
-		connPhase:      conn.Type().InitialClientPhase(),
-		ping:           ping,
-		permFunc:       func(string) permission.TriState { return permission.Undefined },
-		playerKey:      playerKey,
+		profile:     profile,
+		virtualHost: virtualHost,
+		onlineMode:  onlineMode,
+		connPhase:   conn.Type().InitialClientPhase(),
+		ping:        ping,
+		permFunc:    func(string) permission.TriState { return permission.Undefined },
+		playerKey:   playerKey,
 	}
 	p.tabList = internaltablist.New(p)
 	return p
@@ -654,21 +649,6 @@ func (p *connectedPlayer) SetModInfo(info *modinfo.ModInfo) {
 			modInfo: *info,
 		})
 	}
-}
-
-// NOTE: the returned set is not goroutine-safe and must not be modified,
-// it is only for reading!!!
-func (p *connectedPlayer) knownChannels() sets.String {
-	p.pluginChannelsMu.RLock()
-	defer p.pluginChannelsMu.RUnlock()
-	return p.pluginChannels
-}
-
-// runs fn while pluginChannels is locked. Used for modifying channel set.
-func (p *connectedPlayer) lockedKnownChannels(fn func(knownChannels sets.String)) {
-	p.pluginChannelsMu.RLock()
-	defer p.pluginChannelsMu.RUnlock()
-	fn(p.pluginChannels)
 }
 
 func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {

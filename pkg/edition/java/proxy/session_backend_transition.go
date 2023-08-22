@@ -126,16 +126,6 @@ func (b *backendTransitionSessionHandler) handlePluginMessage(packet *plugin.Mes
 		return
 	}
 
-	if plugin.IsRegister(packet) {
-		b.serverConn.player.pluginChannelsMu.Lock()
-		b.serverConn.player.pluginChannels.Insert(plugin.Channels(packet)...)
-		b.serverConn.player.pluginChannelsMu.Unlock()
-	} else if plugin.IsUnregister(packet) {
-		b.serverConn.player.pluginChannelsMu.Lock()
-		b.serverConn.player.pluginChannels.Delete(plugin.Channels(packet)...)
-		b.serverConn.player.pluginChannelsMu.Unlock()
-	}
-
 	// We always need to handle plugin messages, for Forge compatibility.
 	player := b.serverConn.player
 	backendConn := b.serverConn.conn()

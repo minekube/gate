@@ -28,7 +28,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/sets"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -109,9 +108,6 @@ func (c *clientPlaySessionHandler) Activated() {
 	if len(channels) != 0 {
 		register := plugin.ConstructChannelsPacket(protocol, channels.UnsortedList()...)
 		_ = c.player.WritePacket(register)
-		c.player.pluginChannelsMu.Lock()
-		c.player.pluginChannels.InsertSet(channels)
-		c.player.pluginChannelsMu.Unlock()
 	}
 }
 
@@ -227,22 +223,14 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			"channel", packet.Channel)
 	} else if plugin.IsRegister(packet) {
 		if backendConn.WritePacket(packet) != nil {
-			channelsIDs, channels := c.parseChannels(packet)
-			c.player.lockedKnownChannels(func(knownChannels sets.String) {
-				knownChannels.Insert(channels...)
-			})
-
+			channelsIDs, _ := c.parseChannels(packet)
 			c.proxy().event.Fire(&PlayerChannelRegisterEvent{
 				channels: channelsIDs,
 				player:   c.player,
 			})
 		}
 	} else if plugin.IsUnregister(packet) {
-		if backendConn.WritePacket(packet) != nil {
-			c.player.lockedKnownChannels(func(knownChannels sets.String) {
-				knownChannels.Delete(plugin.Channels(packet)...)
-			})
-		}
+		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
 		// TODO read brand message & fire PlayerClientBrandEvent & cache client brand
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
@@ -366,11 +354,11 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	}
 	c.serverBossBars = make(map[uuid.UUID]struct{}) // clear
 
-	// Tell the server about this client's plugin message channels.
+	// Tell the server about the proxy's plugin message channels.
 	serverVersion := serverMc.Protocol()
-	playerKnownChannels := c.player.knownChannels().UnsortedList()
-	if len(playerKnownChannels) != 0 {
-		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, playerKnownChannels...)
+	channels := c.proxy().ChannelRegistrar().ChannelsForProtocol(serverVersion)
+	if len(channels) != 0 {
+		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, channels.UnsortedList()...)
 		if err = serverMc.BufferPacket(channelsPacket); err != nil {
 			return fmt.Errorf("error buffering %T for backend: %w", channelsPacket, err)
 		}

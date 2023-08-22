@@ -104,9 +104,13 @@ func Channel(protocol proto.Protocol) string {
 	return bungeeCordLegacyChannel.ID()
 }
 
+func IsBungeeCordMessage(message *plugin.Message) bool {
+	return strings.EqualFold(bungeeCordModernChannel, message.Channel) ||
+		strings.EqualFold(bungeeCordLegacyChannel.ID(), message.Channel)
+}
+
 func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
-	if !strings.EqualFold(bungeeCordModernChannel, message.Channel) &&
-		!strings.EqualFold(bungeeCordLegacyChannel.ID(), message.Channel) {
+	if !IsBungeeCordMessage(message) {
 		return false
 	}
 

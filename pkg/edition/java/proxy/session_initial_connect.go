@@ -2,8 +2,10 @@ package proxy
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
@@ -36,18 +38,37 @@ func (i *initialConnectSessionHandler) handlePluginMessage(packet *plugin.Messag
 		return // Done
 	}
 
-	if plugin.IsRegister(packet) {
-		i.player.pluginChannelsMu.Lock()
-		i.player.pluginChannels.Insert(plugin.Channels(packet)...)
-		i.player.pluginChannelsMu.Unlock()
-	} else if plugin.IsUnregister(packet) {
-		i.player.pluginChannelsMu.Lock()
-		i.player.pluginChannels.Delete(plugin.Channels(packet)...)
-		i.player.pluginChannelsMu.Unlock()
+	if bungeecord.IsBungeeCordMessage(packet) {
+		return
 	}
-	if serverConn.player.Active() {
-		_ = serverConn.player.WritePacket(packet)
+
+	id, ok := i.player.proxy.ChannelRegistrar().FromID(packet.Channel)
+	if !ok {
+		if serverMc, ok := serverConn.ensureConnected(); ok {
+			_ = serverMc.WritePacket(packet)
+		}
+		return
 	}
+
+	clone := make([]byte, len(packet.Data))
+	copy(clone, packet.Data)
+	event.FireParallel(i.player.eventMgr, &PluginMessageEvent{
+		source:     serverConn,
+		target:     serverConn.player,
+		identifier: id,
+		data:       clone,
+		forward:    true,
+	}, func(pme *PluginMessageEvent) {
+		if pme.Allowed() && serverConn.active() {
+			serverMc, ok := serverConn.ensureConnected()
+			if ok {
+				_ = serverMc.WritePacket(&plugin.Message{
+					Channel: packet.Channel,
+					Data:    pme.Data(),
+				})
+			}
+		}
+	})
 }
 
 func (i *initialConnectSessionHandler) Disconnected() {
