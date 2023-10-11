@@ -7,7 +7,7 @@ titleTemplate: Next Generation Minecraft Proxy
 hero:
   name: Gate
   text: The Lightweight Minecraft Proxy
-  tagline: Replacing BungeeCord/Velocity • Optimized for efficiency, low memory usage as 10MB • Developed in Go • Embrace the cloud native era!
+  tagline: Replacing BungeeCord/Velocity • Optimized for efficiency, low memory usage 10MB • Developed in Go • Embrace the cloud native era!
   image:
     src: /minekube-logo.png
   actions:
