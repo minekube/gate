@@ -46,7 +46,7 @@ config:
 Players send server list ping requests to Gate Lite to display the motd (message of the day).
 Gate Lite forwards the actual ping-pong response from the backend server based on the configured route.
 
-If the backend was already pinged some seconds ago Gate Lite directly returns the cached ping response.
+If the backend was already pinged within the cache window Gate Lite directly returns the cached ping response.
 This reduces the network traffic since less TCP connections must be made to backend servers to fetch the
 status.
 
@@ -70,7 +70,7 @@ Note that routes can configure multiple random backends and each backend has its
 
 ### Disabling the cache
 
-Setting the TTL to `-1` disables response caching for this route only.
+Setting the TTL to `-1s` disables response caching for this route only.
 
 ::: code-group
 ```yaml [config.yml]
@@ -80,7 +80,7 @@ config:
     routes:
       - host: abc.example.com
         backend: 10.0.0.3:25568
-        cachePingTTL: -1 // [!code ++]
+        cachePingTTL: -1s // [!code ++]
 ```
 :::
 
