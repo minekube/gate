@@ -1,5 +1,4 @@
-// The permission utility package defines primitives that allow to
-// check a Subject for a permission.
+// Package permission is a utility package that defines primitives to allow checking a Subject for a permission.
 //
 // E.g. A player's permission Func can be setup on join by subscribing
 // to proxy.PermissionsSetupEvent.
@@ -7,7 +6,7 @@
 // Note:
 // This is a simple package only allowing limited complexity of permission checking
 // and may not suffice everyone's requirements.
-// Therefore Gate also makes no assumptions on whether this package is used or not.
+// Therefore, Gate also makes no assumptions on whether this package is used or not.
 // Plugins may use their own authorization system internally without a touch on this package.
 package permission
 

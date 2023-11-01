@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	VanillaMaximumUncompressedSize = 8 * 1024 * 1024  // 8MiB
-	HardMaximumUncompressedSize    = 16 * 1024 * 1024 // 16MiB
+	VanillaMaximumUncompressedSize = 8 * 1024 * 1024   // 8MiB
+	HardMaximumUncompressedSize    = 128 * 1024 * 1024 // 128MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
 )
 
@@ -30,7 +30,7 @@ type Encoder struct {
 	hexDump   bool // for debugging
 
 	mu          sync.Mutex // Protects following fields
-	wr          io.Writer  // the underlying writer to write successfully encoded packet to
+	wr          io.Writer  // the underlying writer to write successfully encoded packets to
 	registry    *state.ProtocolRegistry
 	state       *state.Registry
 	compression struct {

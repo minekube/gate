@@ -207,10 +207,12 @@ func versionRange(versions []*proto.Version, from, to proto.Protocol, fn func(pr
 // String implements fmt.Stringer.
 func (s State) String() string {
 	switch s {
-	case StatusState:
-		return "Status"
 	case HandshakeState:
 		return "Handshake"
+	case StatusState:
+		return "Status"
+	case ConfigState:
+		return "Config"
 	case LoginState:
 		return "Login"
 	case PlayState:

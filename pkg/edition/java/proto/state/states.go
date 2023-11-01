@@ -16,10 +16,11 @@ type State int
 
 // The states the Java edition client connection can be in.
 const (
-	HandshakeState State = iota
-	StatusState
-	LoginState
-	PlayState
+	HandshakeState State = 0
+	StatusState    State = 1
+	ConfigState    State = 4 // Minecraft 1.20.2+: After StatusState, before LoginState
+	LoginState     State = 2
+	PlayState      State = 3
 )
 
 // The registries storing the packets for a connection state.
