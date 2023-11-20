@@ -18,8 +18,11 @@ hero:
       text: View on GitHub
       link: https://github.com/minekube/gate
     - theme: alt
-      text: Why Gate?
-      link: /guide/why
+      text: Join Discord
+      link: https://minekube.com/discord
+    - theme: alt
+      text: Lite mode
+      link: /guide/lite
 
 features:
   - icon: 📦
