@@ -63,6 +63,7 @@ export default defineConfig({
         nav: [
             {text: 'Quick Start', link: '/guide/quick-start'},
             {text: 'Guide', link: '/guide/'},
+            {text: 'Lite mode', link: '/guide/lite'},
             {text: 'Developer Guide', link: '/developers/'},
             {text: 'Config', link: '/guide/config/'},
             {text: 'Downloads', link: '/guide/install/'},
@@ -111,7 +112,7 @@ export default defineConfig({
                             link: '/developers/',
                         },
                         {
-                            text: 'Lite Mode',
+                            text: 'Lite mode',
                             link: '/guide/lite'
                         },
                         {
