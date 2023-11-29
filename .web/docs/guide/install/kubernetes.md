@@ -2,7 +2,7 @@
 
 _Gate ships in packaged [Docker](docker) images that you can deploy to [Kubernetes](https://kubernetes.io/)
 <button style="border:none;padding:3px;border-radius:4px;vertical-align:bottom" id="play-vite-audio" onclick="document.getElementById('k8s-audio').play();"><svg style="height:2em;width:2em"><use href="/voice.svg#voice" /></svg></button>
-<audio id="k8s-audio"><source src="./k8s.mp3" type="audio/mpeg"></audio>_
+<audio id="k8s-audio"><source src="/k8s.mp3" type="audio/mpeg"></audio>._
 
 
 ::: tip Prerequisites
