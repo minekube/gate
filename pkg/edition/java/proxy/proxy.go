@@ -83,7 +83,11 @@ func New(options Options) (p *Proxy, err error) {
 	}
 	authn := options.Authenticator
 	if authn == nil {
-		authn, err = auth.New(auth.Options{})
+		opts := auth.Options{
+			// Default to mojang's session server
+			HasJoinedURLFn: auth.CustomHasJoinedURL(options.Config.Auth.SessionServerURL.T()),
+		}
+		authn, err = auth.New(opts)
 		if err != nil {
 			return nil, fmt.Errorf("erorr creating authenticator: %w", err)
 		}
@@ -164,6 +168,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 		if p.cfg.ProxyProtocol {
 			p.log.Info("proxy protocol enabled")
+		}
+		if p.cfg.Auth.SessionServerURL != nil {
+			p.log.Info("using custom authentication server", "url", p.cfg.Auth.SessionServerURL)
 		}
 	}
 	logInfo()
@@ -255,6 +262,10 @@ func (p *Proxy) Shutdown(reason component.Component) {
 // called before starting to actually run the proxy
 func (p *Proxy) init() (err error) {
 	c := p.cfg
+
+	// No need to check, nil default to mojang's session server
+	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
+
 	if !c.Lite.Enabled {
 		// Register servers
 		if len(c.Servers) != 0 {
@@ -266,6 +277,12 @@ func (p *Proxy) init() (err error) {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+
+			// Check if server is already registered and equal to the one we want to register.
+			if rs := p.Server(name); rs != nil && ServerInfoEqual(rs.ServerInfo(), info) {
+				continue
+			}
+
 			_ = p.Unregister(info)
 			_, err = p.Register(info)
 			if err != nil {

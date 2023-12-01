@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
@@ -15,6 +14,7 @@ import (
 var DefaultConfig = Config{
 	Bind:                          "0.0.0.0:25565",
 	OnlineMode:                    true,
+	Auth:                          Auth{},
 	OnlineModeKickExistingPlayers: false,
 	Forwarding: Forwarding{
 		Mode:           LegacyForwardingMode,
@@ -82,6 +82,7 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Bind string `yaml:"bind"` // The address to listen for connections.
 
 	OnlineMode                    bool `yaml:"onlineMode"`
+	Auth                          Auth `yaml:"auth"`
 	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers"` // Kicks existing players when a premium player with the same name joins.
 
 	Forwarding Forwarding `yaml:"forwarding"`
@@ -150,6 +151,12 @@ type (
 		OPS        float32 `yaml:"ops"`        // Allowed operations/events per second, per IP block
 		Burst      int     `yaml:"burst"`      // The maximum events per second, per block; the size of the token bucket
 		MaxEntries int     `yaml:"maxEntries"` // Maximum number of IP blocks to keep track of in cache
+	}
+	// Auth is the config for authentication.
+	Auth struct {
+		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
+		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
+		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[string]
 	}
 )
 
