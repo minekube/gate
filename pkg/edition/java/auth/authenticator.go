@@ -37,6 +37,9 @@ type Authenticator interface {
 	GenerateServerID(decryptedSharedSecret []byte) (serverID string, err error)
 	// AuthenticateJoin Authenticates a joining user. The ip is optional.
 	AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error)
+	// SetHasJoinedURLFn sets the HasJoinedURLFn.
+	// If not set, DefaultHasJoinedURL is used.
+	SetHasJoinedURLFn(fn HasJoinedURLFn)
 }
 
 // Response is the authentication response.
@@ -54,13 +57,28 @@ var defaultHasJoinedBaseURL, _ = url.Parse(defaultHasJoinedEndpoint)
 // DefaultHasJoinedURL returns the default hasJoined URL for the given serverID and username.
 // The userIP is optional.
 func DefaultHasJoinedURL(serverID, username, userIP string) string {
+	return buildHasJoinedURL(defaultHasJoinedBaseURL, serverID, username, userIP)
+}
+
+// CustomHasJoinedURL returns a HasJoinedURLFn that uses the given baseURL instead of the default official Mojang API.
+func CustomHasJoinedURL(baseURL *url.URL) HasJoinedURLFn {
+	if baseURL == nil {
+		baseURL = defaultHasJoinedBaseURL
+	}
+	return func(serverID, username, userIP string) string {
+		return buildHasJoinedURL(baseURL, serverID, username, userIP)
+	}
+}
+
+// buildHasJoinedURL builds the hasJoined URL for the given baseURL.
+func buildHasJoinedURL(baseURL *url.URL, serverID, username, userIP string) string {
 	query := url.Values{}
 	query.Set("serverId", serverID)
 	query.Set("username", username)
 	if userIP != "" {
 		query.Set("ip", userIP)
 	}
-	return defaultHasJoinedBaseURL.ResolveReference(&url.URL{RawQuery: query.Encode()}).String()
+	return baseURL.ResolveReference(&url.URL{RawQuery: query.Encode()}).String()
 }
 
 // HasJoinedURLFn returns the url to authenticate a
@@ -138,11 +156,18 @@ type authenticator struct {
 	hasJoinedURLFn HasJoinedURLFn
 }
 
+var _ Authenticator = (*authenticator)(nil)
+
+func (a *authenticator) SetHasJoinedURLFn(fn HasJoinedURLFn) {
+	if fn == nil {
+		fn = DefaultHasJoinedURL
+	}
+	a.hasJoinedURLFn = fn
+}
+
 func (a *authenticator) PublicKey() []byte {
 	return a.public
 }
-
-var _ Authenticator = (*authenticator)(nil)
 
 func (a *authenticator) Verify(encryptedVerifyToken, actualVerifyToken []byte) (bool, error) {
 	decryptedVerifyToken, err := rsa.DecryptPKCS1v15(rand.Reader, a.private, encryptedVerifyToken)
