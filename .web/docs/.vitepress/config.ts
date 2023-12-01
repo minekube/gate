@@ -10,6 +10,7 @@ const ogDescription = 'Next Generation Minecraft Proxy'
 export default defineConfig({
     title: `Gate Proxy${additionalTitle}`,
     description: ogDescription,
+    appearance: 'dark',
 
     head: [
         ['link', {rel: 'icon', type: 'image/png', href: '/favicon.png'}],
@@ -50,10 +51,13 @@ export default defineConfig({
             {icon: 'github', link: `${gitHubLink}/gate`}
         ],
 
-        algolia: {
-            appId: 'CUJMPRQVZJ',
-            apiKey: 'f3a1d3d48a15f78e39d6401b86318ed7',
-            indexName: 'gate-minekube',
+        search: {
+            provider: 'algolia',
+            options: {
+                appId: 'CUJMPRQVZJ',
+                apiKey: 'f3a1d3d48a15f78e39d6401b86318ed7',
+                indexName: 'gate-minekube',
+            }
         },
 
         // carbonAds: {
