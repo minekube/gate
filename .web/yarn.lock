@@ -1295,6 +1295,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fflate@npm:^0.4.1":
+  version: 0.4.8
+  resolution: "fflate@npm:0.4.8"
+  checksum: 29d1eddaaa5deab61b1c6b0d21282adacadbc4d2c01e94d8b1ee784398151673b9c563e53f97a801bc410a1ae55e8de5378114a743430e643e7a0644ba8e5a42
+  languageName: node
+  linkType: hard
+
 "focus-trap@npm:^7.5.4":
   version: 7.5.4
   resolution: "focus-trap@npm:7.5.4"
@@ -1374,6 +1381,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gate-docs@workspace:."
   dependencies:
+    posthog-js: "npm:^1.93.3"
     vitepress: "npm:^1.0.0-rc.31"
     vue: "npm:^3.2.45"
   languageName: unknown
@@ -1958,6 +1966,15 @@ __metadata:
     picocolors: "npm:^1.0.0"
     source-map-js: "npm:^1.0.2"
   checksum: 748b82e6e5fc34034dcf2ae88ea3d11fd09f69b6c50ecdd3b4a875cfc7cdca435c958b211e2cb52355422ab6fccb7d8f2f2923161d7a1b281029e4a913d59acf
+  languageName: node
+  linkType: hard
+
+"posthog-js@npm:^1.93.3":
+  version: 1.93.3
+  resolution: "posthog-js@npm:1.93.3"
+  dependencies:
+    fflate: "npm:^0.4.1"
+  checksum: b2dab9ee4df1ce86e937773f8c2b4f99350bdf50af0cd23bd8a60172b3b10d73bc6c11520eae6b81cde931e39d040d79cad46ad191648f370b662771799b475e
   languageName: node
   linkType: hard
 
