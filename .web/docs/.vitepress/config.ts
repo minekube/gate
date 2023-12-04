@@ -118,12 +118,12 @@ export default defineConfig({
                     text: 'Guides',
                     items: [
                         {
-                            text: 'Developers Guide',
-                            link: '/developers/',
-                        },
-                        {
                             text: 'Lite mode',
                             link: '/guide/lite'
+                        },
+                        {
+                            text: 'Developers Guide',
+                            link: '/developers/',
                         },
                         {
                             text: 'Security & DDoS Protection',

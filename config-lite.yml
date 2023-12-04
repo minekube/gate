@@ -2,6 +2,7 @@
 # settings are omitted and will be set by default.
 # See config.yml for the full configuration options.
 config:
+  # The bind address to listen for Minecraft client connections.
   bind: 0.0.0.0:25565
   # Lite mode is a lightweight reverse proxy mode that acts as thin layer between the client and the backend server.
   # See https://gate.minekube.com/guide/lite
@@ -63,3 +64,47 @@ config:
             name: §eTry example.com
             protocol: -1
           #favicon: server-icon.png
+
+  # The follow settings from standard Gate also apply to Lite mode.
+  #
+  # The time in milliseconds Gate waits to connect to a server before timing out.
+  connectionTimeout: 5000
+  # The time in milliseconds Gate waits to receive data from a server before timing out.
+  # If you use Forge, you may need to increase this setting.
+  readTimeout: 30000
+  # Enabled extra debug logging (only for debugging purposes).
+  debug: false
+  # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
+  # Do not enable this if you don't know what it is.
+  proxyProtocol: false
+  # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
+  # ops: The allowed operations per second.
+  # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
+  # maxEntries: The maximum IPs to keep track of in cache for rate-limiting (if full, deletes oldest).
+  quota:
+    # Limit how many new connections can be established by the same IP range.
+    connections:
+      enabled: true
+      ops: 5
+      burst: 10
+      maxEntries: 1000
+
+# Configuration for Connect, a network that organizes all Minecraft servers/proxies
+# and makes them universally accessible for all players.
+# Among a lot of other features it even allows players to join locally hosted
+# Minecraft servers without having an open port or public IP address.
+#
+# Visit https://connect.minekube.com/
+connect:
+  # Enabling Connect makes Gate register itself to Connect network.
+  # This feature is disabled by default, but you are encouraged to
+  # enable it and get empowered by the additional network services
+  # and by the growing community in this ecosystem.
+  enabled: false
+  # The endpoint name is a globally unique identifier of your server.
+  # If Connect is enabled, but no name is specified a random name is
+  # generated on every restart (only recommended for testing).
+  #
+  # It is supported to run multiple Gates on the same endpoint name for load balancing
+  # (use the same connect.json token file from first Gate instance).
+  #name: your-endpoint-name

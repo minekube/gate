@@ -132,7 +132,7 @@ config:
 Lite will modify the player's handshake packet's virtual host field from `localhost` -> `play.example.com`
 before forwarding the connection to the backend.
 
-## Sample config
+## Complete Lite config
 
 The Lite configuration is located in the same Gate `config.yml` file under `lite`.
 
