@@ -32,9 +32,10 @@ type initialLoginSessionHandler struct {
 
 	nopSessionHandler
 
-	currentState loginState
-	login        *packet.ServerLogin
-	verify       []byte
+	currentState  loginState
+	originalLogin *packet.ServerLogin
+	useLogin      *packet.ServerLogin
+	verify        []byte
 }
 
 type loginState string
@@ -136,9 +137,9 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		return
 	}
 	l.inbound.playerKey = playerKey
-	l.login = login
+	l.originalLogin = login
 
-	e := newPreLoginEvent(l.inbound, l.login.Username)
+	e := newPreLoginEvent(l.inbound, l.originalLogin.Username)
 	l.eventMgr.Fire(e)
 
 	if netmc.Closed(l.conn) {
@@ -150,6 +151,12 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		return
 	}
 
+	l.useLogin = &packet.ServerLogin{
+		Username:  e.Username(),
+		PlayerKey: login.PlayerKey,
+		HolderID:  login.HolderID,
+	}
+
 	_ = l.inbound.loginEventFired(func() error {
 		if netmc.Closed(l.conn) {
 			return nil // Player was disconnected
@@ -159,7 +166,9 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
 			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
-				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false)
+				useProfile := p.GameProfile()
+				useProfile.Name = l.useLogin.Username
+				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), useProfile, false)
 				l.conn.SetSessionHandler(sh)
 				return nil
 			}
@@ -178,7 +187,11 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		}
 
 		// Offline mode login
-		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
+		sh := l.newAuthSessionHandler(
+			l.inbound,
+			profile.NewOffline(l.originalLogin.Username),
+			profile.NewOffline(l.useLogin.Username),
+			false)
 		l.conn.SetSessionHandler(sh)
 		return nil
 	})
@@ -186,12 +199,14 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 func (l *initialLoginSessionHandler) newAuthSessionHandler(
 	inbound *loginInboundConn,
-	profile *profile.GameProfile,
+	originalProfile *profile.GameProfile,
+	useProfile *profile.GameProfile,
 	onlineMode bool,
 ) netmc.SessionHandler {
 	return newAuthSessionHandler(
 		inbound,
-		profile,
+		originalProfile,
+		useProfile,
 		onlineMode,
 		l.sessionHandlerDeps,
 	)
@@ -217,7 +232,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	}
 	l.currentState = encryptionResponseReceivedLoginState
 
-	if l.login == nil {
+	if l.originalLogin == nil {
 		l.log.V(1).Info("no ServerLogin packet received yet, disconnecting")
 		_ = l.conn.Close()
 		return
@@ -288,7 +303,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	ctx, cancel := context.WithTimeout(logr.NewContext(l.conn.Context(), log), 30*time.Second)
 	defer cancel()
 
-	authResp, err := authn.AuthenticateJoin(ctx, serverID, l.login.Username, optionalUserIP)
+	authResp, err := authn.AuthenticateJoin(ctx, serverID, l.originalLogin.Username, optionalUserIP)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			// The player disconnected before receiving we could authenticate.
@@ -306,7 +321,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	}
 
 	// Extract game profile from response.
-	gameProfile, err := authResp.GameProfile()
+	originalGameProfile, err := authResp.GameProfile()
 	if err != nil {
 		if netmc.CloseWith(l.conn, packet.DisconnectWith(unableAuthWithMojang)) == nil {
 			log.Error(err, "unable get GameProfile from Mojang authentication response")
@@ -314,8 +329,11 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 		return
 	}
 
+	useGameProfile := originalGameProfile
+	useGameProfile.Name = l.useLogin.Username
+
 	// All went well, initialize the session.
-	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true)
+	sh := l.newAuthSessionHandler(l.inbound, originalGameProfile, useGameProfile, true)
 	l.conn.SetSessionHandler(sh)
 }
 
