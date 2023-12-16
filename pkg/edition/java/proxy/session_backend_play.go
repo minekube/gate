@@ -257,6 +257,7 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 		}
 	} else if smc, ok := b.serverConn.ensureConnected(); ok {
 		err := smc.WritePacket(&packet.ResourcePackResponse{
+			ID:     p.ID,
 			Hash:   p.Hash,
 			Status: DeclinedResourcePackResponseStatus,
 		})

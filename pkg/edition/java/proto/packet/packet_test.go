@@ -10,6 +10,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"io"
 	"reflect"
 	"testing"
@@ -237,7 +238,12 @@ var packets = []proto.Packet{
 		Key: generatePlayerKey(),
 	},
 	&chat.LastSeenMessages{}, // not a packet but we can test it anyway
-
+	&config.ActiveFeatures{},
+	&config.FinishedUpdate{},
+	&config.RegistrySync{},
+	&config.StartUpdate{},
+	&config.TagsUpdate{},
+	&RemoveResourcePack{},
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {

@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.minekube.com/common/minecraft/key"
 	"io"
 	"math"
+	"strings"
 	"time"
 
 	"go.minekube.com/common/minecraft/component"
@@ -138,6 +140,40 @@ func ReadVarInt(r io.Reader) (result int, err error) {
 	}
 	result = int(int32(uresult))
 	return
+}
+
+// ReadVarIntArray reads a VarInt array from the reader.
+func ReadVarIntArray(rd io.Reader) ([]int, error) {
+	length, err := ReadVarInt(rd)
+	if err != nil {
+		return nil, err
+	}
+	if length < 0 {
+		return nil, fmt.Errorf("got a negative-length array (%d)", length)
+	}
+	array := make([]int, length)
+	for i := 0; i < length; i++ {
+		array[i], err = ReadVarInt(rd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return array, nil
+}
+
+// WriteVarIntArray writes a variable-length integer array to the writer.
+func WriteVarIntArray(wr io.Writer, array []int) error {
+	err := WriteVarInt(wr, len(array))
+	if err != nil {
+		return err
+	}
+	for _, value := range array {
+		err = WriteVarInt(wr, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ReadBool(reader io.Reader) (val bool, err error) {
@@ -357,4 +393,64 @@ func ReadComponent(rd io.Reader, protocol proto.Protocol) (component.Component, 
 		return nil, err
 	}
 	return JsonCodec(protocol).Unmarshal([]byte(str))
+}
+
+//
+//
+//
+//
+//
+
+const defaultKeySeparator = ":"
+
+// ReadKey reads a standard Mojang Text namespaced:key from the reader.
+func ReadKey(rd io.Reader) (key.Key, error) {
+	str, err := ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	parts := strings.SplitN(str, defaultKeySeparator, 2)
+	if len(parts) != 2 {
+		return nil, errors.New("invalid key format")
+	}
+	return key.New(parts[0], parts[1]), nil
+}
+
+// WriteKey writes a standard Mojang Text namespaced:key to the writer.
+func WriteKey(wr io.Writer, k key.Key) error {
+	return WriteString(wr, k.String())
+}
+
+// ReadKeyArray reads a standard Mojang Text namespaced:key array from the reader.
+func ReadKeyArray(rd io.Reader) ([]key.Key, error) {
+	length, err := ReadVarInt(rd)
+	if err != nil {
+		return nil, err
+	}
+	if length < 0 {
+		return nil, fmt.Errorf("got a negative-length array (%d)", length)
+	}
+	keys := make([]key.Key, length)
+	for i := 0; i < length; i++ {
+		keys[i], err = ReadKey(rd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return keys, nil
+}
+
+// WriteKeyArray writes a standard Mojang Text namespaced:key array to the writer.
+func WriteKeyArray(wr io.Writer, keys []key.Key) error {
+	err := WriteVarInt(wr, len(keys))
+	if err != nil {
+		return err
+	}
+	for _, k := range keys {
+		err = WriteKey(wr, k)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

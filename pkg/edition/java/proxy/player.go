@@ -221,6 +221,7 @@ func (p *connectedPlayer) SendResourcePack(info ResourcePackInfo) error {
 
 // ResourcePackInfo is resource-pack options for Player.SendResourcePack.
 type ResourcePackInfo struct {
+	ID uuid.UUID // The ID of this resource-pack.
 	// The download link the resource-pack can be found at.
 	URL string
 	// The SHA-1 hash of the provided resource pack.
@@ -314,6 +315,7 @@ func (p *connectedPlayer) tickResourcePackQueue() error {
 	}
 
 	req := &packet.ResourcePackRequest{
+		ID:       queued.ID,
 		URL:      queued.URL,
 		Required: queued.ShouldForce,
 		Prompt:   queued.Prompt,

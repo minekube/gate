@@ -4,6 +4,7 @@ import (
 	p "go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
@@ -27,6 +28,7 @@ const (
 var (
 	Handshake = NewRegistry(HandshakeState)
 	Status    = NewRegistry(StatusState)
+	Config    = NewRegistry(ConfigState)
 	Login     = NewRegistry(LoginState)
 	Play      = NewRegistry(PlayState)
 )
@@ -44,6 +46,43 @@ func init() {
 		m(0x00, version.Minecraft_1_7_2))
 	Status.ClientBound.Register(&p.StatusPing{},
 		m(0x01, version.Minecraft_1_7_2))
+
+	Config.ServerBound.Register(&p.ClientSettings{},
+		m(0x00, version.Minecraft_1_20_2))
+	Config.ServerBound.Register(&plugin.Message{},
+		m(0x01, version.Minecraft_1_20_2))
+	Config.ServerBound.Register(&config.FinishedUpdate{},
+		m(0x02, version.Minecraft_1_20_2))
+	Config.ServerBound.Register(&p.KeepAlive{},
+		m(0x03, version.Minecraft_1_20_2))
+	Config.ServerBound.Register(&p.PingIdentify{},
+		m(0x04, version.Minecraft_1_20_2))
+	Config.ServerBound.Register(&p.ResourcePackResponse{},
+		m(0x05, version.Minecraft_1_20_2))
+
+	Config.ClientBound.Register(&plugin.Message{},
+		m(0x00, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&p.Disconnect{},
+		m(0x01, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&config.FinishedUpdate{},
+		m(0x02, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&p.KeepAlive{},
+		m(0x03, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&p.PingIdentify{},
+		m(0x04, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&config.RegistrySync{},
+		m(0x05, version.Minecraft_1_20_2))
+	Config.ClientBound.Register(&p.RemoveResourcePack{},
+		m(0x06, version.Minecraft_1_20_3))
+	Config.ClientBound.Register(&p.ResourcePackRequest{},
+		m(0x06, version.Minecraft_1_20_2),
+		m(0x07, version.Minecraft_1_20_3))
+	Config.ClientBound.Register(&config.ActiveFeatures{},
+		m(0x07, version.Minecraft_1_20_2),
+		m(0x08, version.Minecraft_1_20_3))
+	Config.ClientBound.Register(&config.TagsUpdate{},
+		m(0x08, version.Minecraft_1_20_2),
+		m(0x09, version.Minecraft_1_20_3))
 
 	Login.ServerBound.Register(&p.ServerLogin{},
 		m(0x00, version.Minecraft_1_7_2))
@@ -375,6 +414,10 @@ func init() {
 		m(0x41, version.Minecraft_1_19_3),
 		m(0x45, version.Minecraft_1_19_4),
 	)
-	// coming soon...
-	// BossBar
+	Play.ClientBound.Register(&config.StartUpdate{},
+		m(0x65, version.Minecraft_1_20_2),
+		m(0x67, version.Minecraft_1_20_3),
+	)
+
+	// TODO BossBar
 }
