@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"strings"
 	"sync"
@@ -105,6 +107,8 @@ type connectedPlayer struct {
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
 	appliedResourcePack      *ResourcePackInfo
+	playerListHeader         component.Component
+	playerListFooter         component.Component
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
@@ -688,4 +692,12 @@ func (p *connectedPlayer) Settings() player.Settings {
 
 func (p *connectedPlayer) config() *config.Config {
 	return p.configProvider.config()
+}
+
+// switchToConfigState switches the connection to the config state.
+func (p *connectedPlayer) switchToConfigState(pkt *cfgpacket.StartUpdate) {
+	if err := p.WritePacket(pkt); err != nil {
+		p.log.Error(err, "error writing config packet")
+	}
+	p.SetState(state.Config)
 }

@@ -945,6 +945,18 @@ type ServerResourcePackSendEvent struct {
 	serverConn           *serverConnection
 }
 
+// newServerResourcePackSendEvent creates a new ServerResourcePackSendEvent.
+func newServerResourcePackSendEvent(
+	packInfo ResourcePackInfo,
+	serverConn *serverConnection,
+) *ServerResourcePackSendEvent {
+	return &ServerResourcePackSendEvent{
+		receivedResourcePack: packInfo,
+		providedResourcePack: packInfo,
+		serverConn:           serverConn,
+	}
+}
+
 // Allowed indicated whether sending the resource pack to the client is allowed.
 func (e *ServerResourcePackSendEvent) Allowed() bool {
 	return !e.denied

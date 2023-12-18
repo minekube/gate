@@ -2,6 +2,7 @@ package tablist
 
 import (
 	"fmt"
+	"go.minekube.com/common/minecraft/component"
 	"reflect"
 	"sync"
 	"time"
@@ -55,6 +56,9 @@ type InternalTabList interface {
 	EmitActionRaw(action playerinfo.UpsertAction, entry *playerinfo.Entry) error
 	UpdateEntry(action legacytablist.PlayerListItemAction, entry tablist.Entry) error
 
+	// DeleteEntries deletes the entries with the given ids without sending a packet.
+	DeleteEntries(ids ...uuid.UUID) []uuid.UUID
+
 	Parent() InternalTabList // Used to resolve the parent root struct of an embedded tab list struct
 }
 
@@ -82,8 +86,40 @@ type (
 
 		sync.RWMutex
 		EntriesByID map[uuid.UUID]tablist.Entry
+
+		headerFooter struct {
+			sync.RWMutex
+			header, footer component.Component
+		}
 	}
 )
+
+func (t *TabList) SetHeaderFooter(header, footer component.Component) error {
+	if header == nil {
+		header = &component.Translation{}
+	}
+	if footer == nil {
+		footer = &component.Translation{}
+	}
+
+	err := tablist.SendHeaderFooter(t.Viewer, header, footer)
+	if err != nil {
+		return fmt.Errorf("error sending header footer: %w", err)
+	}
+
+	t.headerFooter.Lock()
+	t.headerFooter.header = header
+	t.headerFooter.footer = footer
+	t.headerFooter.Unlock()
+
+	return nil
+}
+
+func (t *TabList) HeaderFooter() (header, footer component.Component) {
+	t.headerFooter.RLock()
+	defer t.headerFooter.RUnlock()
+	return t.headerFooter.header, t.headerFooter.footer
+}
 
 func (t *TabList) Parent() InternalTabList {
 	return t.ParentStruct
@@ -103,7 +139,7 @@ func (t *TabList) UpdateEntry(action legacytablist.PlayerListItemAction, entry t
 }
 
 func (t *TabList) RemoveAll(ids ...uuid.UUID) error {
-	if toRemove := t.deleteEntries(ids...); len(toRemove) != 0 {
+	if toRemove := t.DeleteEntries(ids...); len(toRemove) != 0 {
 		return t.Viewer.BufferPacket(&playerinfo.Remove{
 			PlayersToRemove: toRemove,
 		})
@@ -111,7 +147,7 @@ func (t *TabList) RemoveAll(ids ...uuid.UUID) error {
 	return nil
 }
 
-func (t *TabList) deleteEntries(ids ...uuid.UUID) []uuid.UUID {
+func (t *TabList) DeleteEntries(ids ...uuid.UUID) []uuid.UUID {
 	t.Lock()
 	defer t.Unlock()
 	if len(ids) == 0 { // Delete all

@@ -17,9 +17,11 @@ import (
 
 // TabList is the tab list of a player.
 type TabList interface {
-	Add(entries ...Entry) error       // Adds one or more entries to the tab list.
-	RemoveAll(ids ...uuid.UUID) error // Removes one or more entries from the tab list. If empty removes all entries.
-	Entries() map[uuid.UUID]Entry     // Returns the entries in the tab list.
+	Add(entries ...Entry) error                               // Adds one or more entries to the tab list.
+	RemoveAll(ids ...uuid.UUID) error                         // Removes one or more entries from the tab list. If empty removes all entries.
+	Entries() map[uuid.UUID]Entry                             // Returns the entries in the tab list.
+	SetHeaderFooter(header, footer component.Component) error // Sets the header and footer of the tab list.
+	HeaderFooter() (header, footer component.Component)       // Returns the header and footer of the tab list. May be nil if not set.
 }
 
 // Entry is a single entry/player in a TabList.
