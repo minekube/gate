@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
@@ -20,6 +22,7 @@ type backendConfigSessionHandler struct {
 	state                      backendConfigSessionState
 	resourcePackToApply        *ResourcePackInfo
 	playerConfigSessionHandler *clientConfigSessionHandler
+	log                        logr.Logger
 
 	nopSessionHandler
 }
@@ -39,6 +42,7 @@ func newBackendConfigSessionHandler(
 		state:                      backendConfigSessionStateStart,
 		requestCtx:                 requestCtx,
 		playerConfigSessionHandler: clientSession,
+		log:                        serverConn.log.WithName("backendConfigSessionHandler"),
 	}, nil
 }
 
@@ -76,6 +80,14 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.forwardToPlayer(pc, nil)
 	case *config.RegistrySync:
 		b.forwardToPlayer(pc, nil)
+	case *plugin.Message:
+		b.handlePluginMessage(pc, p)
+	case *packet.Disconnect:
+		b.serverConn.disconnect()
+		result := disconnectResultForPacket(b.log.V(1), p,
+			b.serverConn.player.Protocol(), b.serverConn.server, true,
+		)
+		b.requestCtx.result(result, nil)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -109,7 +121,7 @@ func (b *backendConfigSessionHandler) handleResourcePackRequest(p *packet.Resour
 	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event())
 }
 
-func (b *backendConfigSessionHandler) handleFinishedUpdate(_ *config.FinishedUpdate) {
+func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
 	smc, ok := b.serverConn.ensureConnected()
 	if !ok {
 		return
@@ -118,7 +130,7 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(_ *config.FinishedUpd
 	configHandler := b.playerConfigSessionHandler
 
 	smc.SetState(state.Play)
-	configHandler.handleBackendFinishUpdate(b.serverConn, func() {
+	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
 		if b.serverConn == player.connectedServer() {
 			smc.SetActiveSessionHandler(state.Play)
 
@@ -144,6 +156,15 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(_ *config.FinishedUpd
 			_ = player.queueResourcePack(*b.resourcePackToApply)
 		}
 	})
+}
+
+func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContext, p *plugin.Message) {
+	if plugin.McBrand(p) {
+		_ = b.serverConn.player.WritePacket(plugin.RewriteMinecraftBrand(p,
+			b.serverConn.player.Protocol()))
+	} else {
+		b.forwardToPlayer(pc, nil)
+	}
 }
 
 // forwardToPlayer forwards packets to the player. It prefers PacketContext over Packet.
