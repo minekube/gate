@@ -75,6 +75,7 @@ type Player interface {
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
 	TabList() tablist.TabList // Returns the player's tab list.
+	ClientBrand() string      // Returns the player's client brand. Empty if unspecified.
 
 	// Looking for title or bossbar methods? See the title and bossbar packages.
 }
@@ -107,6 +108,7 @@ type connectedPlayer struct {
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
 	appliedResourcePack      *ResourcePackInfo
+	clientBrand              string // may be empty
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
@@ -698,4 +700,17 @@ func (p *connectedPlayer) switchToConfigState(pkt *cfgpacket.StartUpdate) {
 		p.log.Error(err, "error writing config packet")
 	}
 	p.SetState(state.Config)
+}
+
+func (p *connectedPlayer) ClientBrand() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.clientBrand
+}
+
+// setClientBrand sets the client brand of the player.
+func (p *connectedPlayer) setClientBrand(brand string) {
+	p.mu.Lock()
+	p.clientBrand = brand
+	p.mu.Unlock()
 }

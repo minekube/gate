@@ -232,7 +232,8 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	} else if plugin.IsUnregister(packet) {
 		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
-		// TODO read brand message & fire PlayerClientBrandEvent & cache client brand
+		// TODO fire PlayerClientBrandEvent & cache client brand
+		c.player.setClientBrand(plugin.ReadBrandMessage(packet.Data))
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
 	} else {
 		serverConnPhase := serverConn.phase()
