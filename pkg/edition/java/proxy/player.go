@@ -107,8 +107,6 @@ type connectedPlayer struct {
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
 	appliedResourcePack      *ResourcePackInfo
-	playerListHeader         component.Component
-	playerListFooter         component.Component
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
