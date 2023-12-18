@@ -244,6 +244,7 @@ var packets = []proto.Packet{
 	&config.StartUpdate{},
 	&config.TagsUpdate{},
 	&RemoveResourcePack{},
+	&LoginAcknowledged{},
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
 	"net"
 	"sync"
 	"time"
@@ -64,12 +65,12 @@ func Closed(c interface{ Context() context.Context }) bool {
 // PacketWriter is the interface for writing packets to the underlying connection.
 type PacketWriter interface {
 	// WritePacket writes a packet to the connection's
-	// write buffer and flushes the complete buffer afterwards.
+	// write buffer and flushes the complete buffer afterward.
 	//
 	// The connection will be closed on any error encountered!
 	WritePacket(p proto.Packet) (err error)
 	// Write encodes and writes payload to the connection's
-	// write buffer and flushes the complete buffer afterwards.
+	// write buffer and flushes the complete buffer afterward.
 	Write(payload []byte) (err error)
 
 	// BufferPacket writes a packet into the connection's write buffer.
@@ -138,6 +139,7 @@ func NewMinecraftConn(
 		state:     state.Handshake,
 		protocol:  version.Minecraft_1_7_2.Protocol,
 		connType:  phase.Undetermined,
+		direction: direction,
 	}
 	return c, c.startReadLoop
 }
@@ -145,8 +147,9 @@ func NewMinecraftConn(
 // minecraftConn is a Minecraft connection.
 // It may be the connection of client -> proxy or proxy -> backend server.
 type minecraftConn struct {
-	c   net.Conn    // underlying connection
-	log logr.Logger // connections own logger
+	c         net.Conn    // underlying connection
+	log       logr.Logger // connections own logger
+	direction proto.Direction
 
 	rd Reader
 	wr Writer
@@ -158,9 +161,10 @@ type minecraftConn struct {
 
 	protocol proto.Protocol // Client's protocol version.
 
-	mu       sync.RWMutex         // Protects following fields
-	state    *state.Registry      // Client state.
-	connType phase.ConnectionType // Connection type
+	mu              sync.RWMutex         // Protects following fields
+	state           *state.Registry      // Client state.
+	connType        phase.ConnectionType // Connection type
+	playPacketQueue *queue.PlayPacketQueue
 
 	sessionHandlerMu struct {
 		sync.RWMutex
@@ -258,6 +262,10 @@ func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
 			c.closeOnWriteErr(err, "bufferPacket", fmt.Sprintf("%T", packet))
 		}
 	}()
+	if c.playPacketQueue.Queue(packet) {
+		// Packet was queued, don't write it now
+		return nil
+	}
 	_, err = c.wr.WritePacket(packet)
 	return err
 }
@@ -402,12 +410,38 @@ func (c *minecraftConn) State() *state.Registry {
 	return c.state
 }
 
-func (c *minecraftConn) SetState(state *state.Registry) {
+func (c *minecraftConn) SetState(s *state.Registry) {
 	c.mu.Lock()
-	c.state = state
-	c.rd.SetState(state)
-	c.wr.SetState(state)
+	prevState := c.state
+	c.state = s
+	c.rd.SetState(s)
+	c.wr.SetState(s)
+
+	c.ensurePlayPacketQueue(s.State) // 1.20.2+
+
 	c.mu.Unlock()
+
+	c.log.V(1).Info("update state", "previous", prevState, "new", s)
+}
+
+// ensurePlayPacketQueue ensures the play packet queue is activated or deactivated
+// when the connection enters or leaves the play state. See PlayPacketQueue struct for more info.
+func (c *minecraftConn) ensurePlayPacketQueue(newState state.State) {
+	if newState == state.ConfigState { // state exists since 1.20.2+
+		// Activate the play packet queue if not already
+		if c.playPacketQueue == nil {
+			c.playPacketQueue = queue.NewPlayPacketQueue(c.protocol, c.direction)
+		}
+		return
+	}
+
+	// Remove the play packet queue if it exists
+	if c.playPacketQueue != nil {
+		if err := c.playPacketQueue.ReleaseQueue(c); err != nil {
+			c.log.Error(err, "error releasing play packet queue")
+		}
+		c.playPacketQueue = nil
+	}
 }
 
 func (c *minecraftConn) Type() phase.ConnectionType {

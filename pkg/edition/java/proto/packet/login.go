@@ -372,10 +372,22 @@ func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err e
 	return
 }
 
-var _ proto.Packet = (*ServerLogin)(nil)
-var _ proto.Packet = (*ServerLoginSuccess)(nil)
-var _ proto.Packet = (*LoginPluginMessage)(nil)
-var _ proto.Packet = (*LoginPluginResponse)(nil)
-var _ proto.Packet = (*EncryptionRequest)(nil)
-var _ proto.Packet = (*EncryptionResponse)(nil)
-var _ proto.Packet = (*SetCompression)(nil)
+type LoginAcknowledged struct{}
+
+func (l *LoginAcknowledged) Encode(_ *proto.PacketContext, wr io.Writer) error {
+	return nil
+}
+func (l *LoginAcknowledged) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+	return nil
+}
+
+var (
+	_ proto.Packet = (*ServerLogin)(nil)
+	_ proto.Packet = (*ServerLoginSuccess)(nil)
+	_ proto.Packet = (*LoginPluginMessage)(nil)
+	_ proto.Packet = (*LoginPluginResponse)(nil)
+	_ proto.Packet = (*EncryptionRequest)(nil)
+	_ proto.Packet = (*EncryptionResponse)(nil)
+	_ proto.Packet = (*SetCompression)(nil)
+	_ proto.Packet = (*LoginAcknowledged)(nil)
+)
