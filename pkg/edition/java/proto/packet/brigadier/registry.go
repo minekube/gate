@@ -7,7 +7,7 @@ import (
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	. "go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
@@ -107,7 +107,7 @@ func (p *passthroughProperty) Parse(rd *brigodier.StringReader) (any, error) {
 func (p *passthroughProperty) String() string { return p.identifier.id }
 
 func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifier, protocol proto.Protocol) error {
-	if protocol.GreaterEqual(version.Minecraft_1_19) {
+	if protocol.GreaterEqual(Minecraft_1_19) {
 		id, ok := identifier.idByProtocol[protocol]
 		if !ok {
 			return fmt.Errorf("don't know how to encode type %s", identifier)
@@ -120,7 +120,7 @@ func (r *argPropReg) writeIdentifier(wr io.Writer, identifier *ArgumentIdentifie
 var errIdentifierNotFound = errors.New("identifier not found")
 
 func (r *argPropReg) readIdentifier(rd io.Reader, protocol proto.Protocol) (*ArgumentIdentifier, error) {
-	if protocol.GreaterEqual(version.Minecraft_1_19) {
+	if protocol.GreaterEqual(Minecraft_1_19) {
 		id, err := util.ReadVarInt(rd)
 		if err != nil {
 			return nil, err
@@ -163,72 +163,64 @@ func init() {
 	}
 
 	// Base Brigadier argument types
-	register(id("brigadier:bool", mapSet(version.Minecraft_1_19, 0)), brigodier.Bool, BoolArgumentPropertyCodec)
-	register(id("brigadier:float", mapSet(version.Minecraft_1_19, 1)), brigodier.Float32, Float32ArgumentPropertyCodec)
-	register(id("brigadier:double", mapSet(version.Minecraft_1_19, 2)), brigodier.Float64, Float64ArgumentPropertyCodec)
-	register(id("brigadier:integer", mapSet(version.Minecraft_1_19, 3)), brigodier.Int, Int32ArgumentPropertyCodec)
-	register(id("brigadier:long", mapSet(version.Minecraft_1_19, 4)), brigodier.Int64, Int64ArgumentPropertyCodec)
-	register(id("brigadier:string", mapSet(version.Minecraft_1_19, 5)), brigodier.String, StringArgumentPropertyCodec)
+	register(id("brigadier:bool", mapSet(Minecraft_1_19, 0)), brigodier.Bool, BoolArgumentPropertyCodec)
+	register(id("brigadier:float", mapSet(Minecraft_1_19, 1)), brigodier.Float32, Float32ArgumentPropertyCodec)
+	register(id("brigadier:double", mapSet(Minecraft_1_19, 2)), brigodier.Float64, Float64ArgumentPropertyCodec)
+	register(id("brigadier:integer", mapSet(Minecraft_1_19, 3)), brigodier.Int, Int32ArgumentPropertyCodec)
+	register(id("brigadier:long", mapSet(Minecraft_1_19, 4)), brigodier.Int64, Int64ArgumentPropertyCodec)
+	register(id("brigadier:string", mapSet(Minecraft_1_19, 5)), brigodier.String, StringArgumentPropertyCodec)
 
 	// Minecraft argument types
-	register(id("minecraft:entity", mapSet(version.Minecraft_1_19, 6)), ByteArgumentType(0), ByteArgumentPropertyCodec)
-	empty(id("minecraft:game_profile", mapSet(version.Minecraft_1_19, 7)))
-	empty(id("minecraft:block_pos", mapSet(version.Minecraft_1_19, 8)))
-	empty(id("minecraft:column_pos", mapSet(version.Minecraft_1_19, 9)))
-	empty(id("minecraft:vec3", mapSet(version.Minecraft_1_19, 10)))
-	empty(id("minecraft:vec2", mapSet(version.Minecraft_1_19, 11)))
-	empty(id("minecraft:block_state", mapSet(version.Minecraft_1_19, 12)))
-	empty(id("minecraft:block_predicate", mapSet(version.Minecraft_1_19, 13)))
-	empty(id("minecraft:item_stack", mapSet(version.Minecraft_1_19, 14)))
-	empty(id("minecraft:item_predicate", mapSet(version.Minecraft_1_19, 15)))
-	empty(id("minecraft:color", mapSet(version.Minecraft_1_19, 16)))
-	empty(id("minecraft:component", mapSet(version.Minecraft_1_19, 17)))
-	empty(id("minecraft:message", mapSet(version.Minecraft_1_19, 18)))
-	empty(id("minecraft:nbt_compound_tag", mapSet(version.Minecraft_1_19, 19))) // added in 1.14
-	empty(id("minecraft:nbt_tag", mapSet(version.Minecraft_1_19, 20)))          // added in 1.14
-	empty(id("minecraft:nbt_path", mapSet(version.Minecraft_1_19, 21)))
-	empty(id("minecraft:objective", mapSet(version.Minecraft_1_19, 22)))
-	empty(id("minecraft:objective_criteria", mapSet(version.Minecraft_1_19, 23)))
-	empty(id("minecraft:operation", mapSet(version.Minecraft_1_19, 24)))
-	empty(id("minecraft:particle", mapSet(version.Minecraft_1_19, 25)))
-	empty(id("minecraft:angle", mapSet(version.Minecraft_1_19, 26))) // added in 1.16.2
-	empty(id("minecraft:rotation", mapSet(version.Minecraft_1_19, 27)))
-	empty(id("minecraft:scoreboard_slot", mapSet(version.Minecraft_1_19, 28)))
-	register(id("minecraft:score_holder", mapSet(version.Minecraft_1_19, 29)), ByteArgumentType(0), ByteArgumentPropertyCodec)
-	empty(id("minecraft:swizzle", mapSet(version.Minecraft_1_19, 30)))
-	empty(id("minecraft:team", mapSet(version.Minecraft_1_19, 31)))
-	empty(id("minecraft:item_slot", mapSet(version.Minecraft_1_19, 32)))
-	empty(id("minecraft:resource_location", mapSet(version.Minecraft_1_19, 33)))
-	empty(id("minecraft:mob_effect", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 34)))
-	empty(id("minecraft:function", mapSet(version.Minecraft_1_19_3, 34), mapSet(version.Minecraft_1_19, 35)))
-	empty(id("minecraft:entity_anchor", mapSet(version.Minecraft_1_19_3, 35), mapSet(version.Minecraft_1_19, 36)))
-	empty(id("minecraft:int_range", mapSet(version.Minecraft_1_19_3, 36), mapSet(version.Minecraft_1_19, 37)))
-	empty(id("minecraft:float_range", mapSet(version.Minecraft_1_19_3, 37), mapSet(version.Minecraft_1_19, 38)))
-	empty(id("minecraft:item_enchantment", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 39)))
-	empty(id("minecraft:entity_summon", mapSet(version.Minecraft_1_19_3, -1), mapSet(version.Minecraft_1_19, 40)))
-	empty(id("minecraft:dimension", mapSet(version.Minecraft_1_19_3, 38), mapSet(version.Minecraft_1_19, 41)))
-	empty(id("minecraft:gamemode", mapSet(version.Minecraft_1_19_3, 39))) // 1.19.3
-	register(id("minecraft:time", mapSet(version.Minecraft_1_19_3, 40), mapSet(version.Minecraft_1_19, 42)),
-		IntArgumentType(0), TimeArgumentPropertyCodec,
-	) // added in 1.14
-
-	register(id("minecraft:resource_or_tag", mapSet(version.Minecraft_1_19_3, 41), mapSet(version.Minecraft_1_19, 43)),
-		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
-	register(id("minecraft:resource_or_tag_key", mapSet(version.Minecraft_1_19_3, 42)),
-		ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
-	register(id("minecraft:resource", mapSet(version.Minecraft_1_19_3, 43), mapSet(version.Minecraft_1_19, 44)),
-		RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
-	register(id("minecraft:resource_key", mapSet(version.Minecraft_1_19_3, 44)),
-		ResourceKeyArgument, ResourceKeyArgumentPropertyCodec)
-
-	empty(id("minecraft:template_mirror", mapSet(version.Minecraft_1_19, 45)))   // 1.19
-	empty(id("minecraft:template_rotation", mapSet(version.Minecraft_1_19, 46))) // 1.19
-	empty(id("minecraft:heightmap", mapSet(version.Minecraft_1_19_4, 47)))       // 1.19.4
-
-	empty(id("minecraft:uuid", mapSet(version.Minecraft_1_19_4, 48), mapSet(version.Minecraft_1_19, 47))) // added in 1.16
+	register(id("minecraft:entity", mapSet(Minecraft_1_19, 6)), ByteArgumentType(0), ByteArgumentPropertyCodec)
+	empty(id("minecraft:game_profile", mapSet(Minecraft_1_19, 7)))
+	empty(id("minecraft:block_pos", mapSet(Minecraft_1_19, 8)))
+	empty(id("minecraft:column_pos", mapSet(Minecraft_1_19, 9)))
+	empty(id("minecraft:vec3", mapSet(Minecraft_1_19, 10)))
+	empty(id("minecraft:vec2", mapSet(Minecraft_1_19, 11)))
+	empty(id("minecraft:block_state", mapSet(Minecraft_1_19, 12)))
+	empty(id("minecraft:block_predicate", mapSet(Minecraft_1_19, 13)))
+	empty(id("minecraft:item_stack", mapSet(Minecraft_1_19, 14)))
+	empty(id("minecraft:item_predicate", mapSet(Minecraft_1_19, 15)))
+	empty(id("minecraft:color", mapSet(Minecraft_1_19, 16)))
+	empty(id("minecraft:component", mapSet(Minecraft_1_19, 17)))
+	empty(id("minecraft:style", mapSet(Minecraft_1_20_3, 18)))
+	empty(id("minecraft:message", mapSet(Minecraft_1_20_3, 19), mapSet(Minecraft_1_19, 18)))
+	empty(id("minecraft:nbt_compound_tag", mapSet(Minecraft_1_20_3, 20), mapSet(Minecraft_1_19, 19)))
+	empty(id("minecraft:nbt_tag", mapSet(Minecraft_1_20_3, 21), mapSet(Minecraft_1_19, 20)))
+	empty(id("minecraft:nbt_path", mapSet(Minecraft_1_20_3, 22), mapSet(Minecraft_1_19, 21)))
+	empty(id("minecraft:objective", mapSet(Minecraft_1_20_3, 23), mapSet(Minecraft_1_19, 22)))
+	empty(id("minecraft:objective_criteria", mapSet(Minecraft_1_20_3, 24), mapSet(Minecraft_1_19, 23)))
+	empty(id("minecraft:operation", mapSet(Minecraft_1_20_3, 25), mapSet(Minecraft_1_19, 24)))
+	empty(id("minecraft:particle", mapSet(Minecraft_1_20_3, 26), mapSet(Minecraft_1_19, 25)))
+	empty(id("minecraft:angle", mapSet(Minecraft_1_20_3, 27), mapSet(Minecraft_1_19, 26)))
+	empty(id("minecraft:rotation", mapSet(Minecraft_1_20_3, 28), mapSet(Minecraft_1_19, 27)))
+	empty(id("minecraft:scoreboard_slot", mapSet(Minecraft_1_20_3, 29), mapSet(Minecraft_1_19, 28)))
+	register(id("minecraft:score_holder", mapSet(Minecraft_1_20_3, 30), mapSet(Minecraft_1_19, 29)), ByteArgumentType(0), ByteArgumentPropertyCodec)
+	empty(id("minecraft:swizzle", mapSet(Minecraft_1_20_3, 31), mapSet(Minecraft_1_19, 30)))
+	empty(id("minecraft:team", mapSet(Minecraft_1_20_3, 32), mapSet(Minecraft_1_19, 31)))
+	empty(id("minecraft:item_slot", mapSet(Minecraft_1_20_3, 33), mapSet(Minecraft_1_19, 32)))
+	empty(id("minecraft:resource_location", mapSet(Minecraft_1_20_3, 34), mapSet(Minecraft_1_19, 33)))
+	empty(id("minecraft:mob_effect", mapSet(Minecraft_1_19_3, -1), mapSet(Minecraft_1_19, 34)))
+	empty(id("minecraft:function", mapSet(Minecraft_1_20_3, 35), mapSet(Minecraft_1_19_3, 34), mapSet(Minecraft_1_19, 35)))
+	empty(id("minecraft:entity_anchor", mapSet(Minecraft_1_20_3, 36), mapSet(Minecraft_1_19_3, 35), mapSet(Minecraft_1_19, 36)))
+	empty(id("minecraft:int_range", mapSet(Minecraft_1_20_3, 37), mapSet(Minecraft_1_19_3, 36), mapSet(Minecraft_1_19, 37)))
+	empty(id("minecraft:float_range", mapSet(Minecraft_1_20_3, 38), mapSet(Minecraft_1_19_3, 37), mapSet(Minecraft_1_19, 38)))
+	empty(id("minecraft:item_enchantment", mapSet(Minecraft_1_19_3, -1), mapSet(Minecraft_1_19, 39)))
+	empty(id("minecraft:entity_summon", mapSet(Minecraft_1_19_3, -1), mapSet(Minecraft_1_19, 40)))
+	empty(id("minecraft:dimension", mapSet(Minecraft_1_20_3, 39), mapSet(Minecraft_1_19_3, 38), mapSet(Minecraft_1_19, 41)))
+	empty(id("minecraft:gamemode", mapSet(Minecraft_1_20_3, 40), mapSet(Minecraft_1_19_3, 39)))
+	register(id("minecraft:time", mapSet(Minecraft_1_20_3, 41), mapSet(Minecraft_1_19_3, 40), mapSet(Minecraft_1_19, 42)), IntArgumentType(0), TimeArgumentPropertyCodec)
+	register(id("minecraft:resource_or_tag", mapSet(Minecraft_1_20_3, 42), mapSet(Minecraft_1_19_3, 41), mapSet(Minecraft_1_19, 43)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
+	register(id("minecraft:resource_or_tag_key", mapSet(Minecraft_1_20_3, 43), mapSet(Minecraft_1_19_3, 42)), ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
+	register(id("minecraft:resource", mapSet(Minecraft_1_20_3, 44), mapSet(Minecraft_1_19_3, 43), mapSet(Minecraft_1_19, 44)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
+	register(id("minecraft:resource_key", mapSet(Minecraft_1_20_3, 45), mapSet(Minecraft_1_19_3, 44)), ResourceKeyArgument, ResourceKeyArgumentPropertyCodec)
+	empty(id("minecraft:template_mirror", mapSet(Minecraft_1_20_3, 46), mapSet(Minecraft_1_19, 45)))
+	empty(id("minecraft:template_rotation", mapSet(Minecraft_1_20_3, 47), mapSet(Minecraft_1_19, 46)))
+	empty(id("minecraft:heightmap", mapSet(Minecraft_1_20_3, 49), mapSet(Minecraft_1_19_4, 47)))
+	empty(id("minecraft:uuid", mapSet(Minecraft_1_20_3, 48), mapSet(Minecraft_1_19_4, 48), mapSet(Minecraft_1_19, 47)))
 
 	// Crossstitch support
-	register(id("crossstitch:mod_argument", mapSet(version.Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)
+	register(id("crossstitch:mod_argument", mapSet(Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)
 
 	empty(id("minecraft:nbt")) // No longer in 1.19+
 }
