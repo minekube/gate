@@ -987,8 +987,6 @@ func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackI
 	e.providedResourcePack = pack
 }
 
-// TODO PlayerClientBrandEvent
-
 //
 //
 //
@@ -1058,6 +1056,25 @@ func (r *ServerLoginPluginMessageResult) Reply(response []byte) *ServerLoginPlug
 	return &ServerLoginPluginMessageResult{
 		Response: response,
 	}
+}
+
+//
+//
+//
+//
+
+// PlayerClientBrandEvent is fired when a Player sends the `minecraft:brand` plugin message.
+// The proxy will not wait on event handlers to finish firing.
+type PlayerClientBrandEvent struct {
+	player Player
+	brand  string
+}
+
+func (e *PlayerClientBrandEvent) Player() Player {
+	return e.player
+}
+func (e *PlayerClientBrandEvent) Brand() string {
+	return e.brand
 }
 
 //

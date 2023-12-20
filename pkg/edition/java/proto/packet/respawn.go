@@ -78,13 +78,13 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 		if err != nil {
 			return err
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
-			err = util.WriteByte(wr, r.DataToKeep)
+		if c.Protocol.Lower(version.Minecraft_1_19_3) {
+			err = util.WriteBool(wr, r.DataToKeep != 0)
 			if err != nil {
 				return err
 			}
-		} else {
-			err = util.WriteBool(wr, r.DataToKeep != 0)
+		} else if c.Protocol.Lower(version.Minecraft_1_20_2) {
+			err = util.WriteByte(wr, r.DataToKeep)
 			if err != nil {
 				return err
 			}
@@ -105,6 +105,12 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
 		err = util.WriteVarInt(wr, r.PortalCooldown)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		err = util.WriteByte(wr, r.DataToKeep)
 		if err != nil {
 			return err
 		}
@@ -178,12 +184,8 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			Flat:               flat,
 			DebugType:          debug,
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
-			r.DataToKeep, err = util.ReadByte(rd)
-			if err != nil {
-				return err
-			}
-		} else {
+
+		if c.Protocol.Lower(version.Minecraft_1_19_3) {
 			ok, err := util.ReadBool(rd)
 			if err != nil {
 				return err
@@ -192,6 +194,11 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 				r.DataToKeep = 1
 			} else {
 				r.DataToKeep = 0
+			}
+		} else if c.Protocol.Lower(version.Minecraft_1_20_2) {
+			r.DataToKeep, err = util.ReadByte(rd)
+			if err != nil {
+				return err
 			}
 		}
 	} else {
@@ -208,6 +215,12 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
 		r.PortalCooldown, err = util.ReadVarInt(rd)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		r.DataToKeep, err = util.ReadByte(rd)
 		if err != nil {
 			return err
 		}

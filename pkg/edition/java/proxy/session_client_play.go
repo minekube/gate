@@ -112,13 +112,17 @@ func (c *clientPlaySessionHandler) Activated() {
 }
 
 func (c *clientPlaySessionHandler) forwardToServer(pc *proto.PacketContext) {
-	if serverMc := c.canForward(); serverMc != nil {
+	forwardToServer(pc, c.player)
+}
+
+func forwardToServer(pc *proto.PacketContext, player *connectedPlayer) {
+	if serverMc := canForward(player); serverMc != nil {
 		_ = serverMc.Write(pc.Payload)
 	}
 }
 
-func (c *clientPlaySessionHandler) canForward() netmc.MinecraftConn {
-	serverConn := c.player.connectedServer()
+func canForward(player *connectedPlayer) netmc.MinecraftConn {
+	serverConn := player.connectedServer()
 	if serverConn == nil {
 		// No server connection yet, probably transitioning.
 		return nil
@@ -185,7 +189,10 @@ func phaseHandle(
 }
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	serverConn := c.player.connectedServer()
+	handleKeepAlive(p, c.player)
+}
+func handleKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
+	serverConn := player.connectedServer()
 	if serverConn != nil {
 		sentTime, ok := serverConn.pendingPings.Get(p.RandomID)
 		if !ok {
@@ -194,7 +201,7 @@ func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 		serverConn.pendingPings.Delete(p.RandomID)
 		serverMc := serverConn.conn()
 		if serverMc != nil {
-			c.player.ping.Store(time.Since(sentTime))
+			player.ping.Store(time.Since(sentTime))
 			_ = serverMc.WritePacket(p)
 		}
 	}
@@ -232,8 +239,12 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	} else if plugin.IsUnregister(packet) {
 		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
-		// TODO fire PlayerClientBrandEvent & cache client brand
-		c.player.setClientBrand(plugin.ReadBrandMessage(packet.Data))
+		brand := plugin.ReadBrandMessage(packet.Data)
+		c.player.setClientBrand(brand)
+		c.proxy().Event().FireParallel(&PlayerClientBrandEvent{
+			player: c.player,
+			brand:  brand,
+		})
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
 	} else {
 		serverConnPhase := serverConn.phase()

@@ -140,7 +140,9 @@ func ReadNBT(rd io.Reader) (NBT, error) {
 	return DecodeNBT(NewNBTDecoder(rd))
 }
 
-func DecodeNBT(decoder interface{ Decode(any) error }) (NBT, error) {
+func DecodeNBT(
+	decoder interface{ Decode(any) error },
+) (NBT, error) {
 	v := NBT{}
 	err := decoder.Decode(&v)
 	return v, err

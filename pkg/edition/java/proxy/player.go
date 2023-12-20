@@ -515,7 +515,7 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 	})
 }
 
-// TODO add header/footer, title
+// TODO title
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.
