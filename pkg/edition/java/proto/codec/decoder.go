@@ -226,9 +226,13 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	}
 
 	// Packet is known, decode data into it.
-	if err = ctx.Packet.Decode(ctx, payload); err != nil {
-		if err == io.EOF { // payload was too short or decoder has a bug
-			err = io.ErrUnexpectedEOF
+	err = util.RecoverFunc(func() error {
+		return ctx.Packet.Decode(ctx, payload)
+	})
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			// payload was too short or packet decoder has a bug
+			err = errors.Join(err, io.ErrUnexpectedEOF)
 		}
 		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s): %w",
 			ctx.Packet, ctx.PacketID, ctx.Protocol, ctx.Direction, err)

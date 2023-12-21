@@ -85,7 +85,9 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		Payload:   nil,
 	}
 
-	if err = packet.Encode(ctx, buf); err != nil {
+	if err = util.RecoverFunc(func() error {
+		return packet.Encode(ctx, buf)
+	}); err != nil {
 		return
 	}
 
