@@ -14,7 +14,6 @@ import (
 
 type clientConfigSessionHandler struct {
 	player *connectedPlayer
-	server *registeredServer
 
 	brandChannel string
 
@@ -24,12 +23,10 @@ type clientConfigSessionHandler struct {
 }
 
 func newClientConfigSessionHandler(
-	server *registeredServer,
 	player *connectedPlayer,
 ) *clientConfigSessionHandler {
 	return &clientConfigSessionHandler{
 		player: player,
-		server: server,
 	}
 }
 
@@ -47,11 +44,10 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *packet.KeepAlive:
 		handleKeepAlive(p, h.player)
 	case *packet.ClientSettings:
-		h.player.setSettings(p)
+		h.player.setClientSettings(p)
 	case *packet.ResourcePackResponse:
 		h.handleResourcePackResponse(p)
 	case *config.FinishedUpdate:
-		// TODO continue here robin
 		h.player.SetActiveSessionHandler(state.Play, newClientPlaySessionHandler(h.player))
 		h.configSwitchDone.SetTrue()
 	case *plugin.Message:

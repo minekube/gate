@@ -3,6 +3,8 @@ package proxy
 import (
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -222,10 +224,10 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 
 	// Change client to use ClientPlaySessionHandler if required.
-	playHandler, ok := b.serverConn.player.MinecraftConn.SessionHandler().(*clientPlaySessionHandler)
+	playHandler, ok := b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		playHandler = newClientPlaySessionHandler(b.serverConn.player)
-		b.serverConn.player.MinecraftConn.SetSessionHandler(playHandler)
+		b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play, playHandler)
 	}
 
 	if err := playHandler.handleBackendJoinGame(pc, p, b.serverConn); err != nil {
@@ -240,10 +242,20 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		failResult("error creating backend play session handler: %w", err)
 		return
 	}
-	smc.SetSessionHandler(backendPlay)
+	smc.SetActiveSessionHandler(state.Play, backendPlay)
 
 	// Now set the connected server.
 	b.serverConn.player.setConnectedServer(b.serverConn)
+
+	// Send client settings. In 1.20.2+ this is done in the config state.
+	if smc.Protocol().Lower(version.Minecraft_1_20_2) {
+		if csp := b.serverConn.player.ClientSettingsPacket(); csp != nil {
+			smc, ok := b.serverConn.ensureConnected()
+			if ok {
+				_ = smc.WritePacket(csp)
+			}
+		}
+	}
 
 	// We're done!
 	postConnectEvent := newServerPostConnectEvent(b.serverConn.player, previousServer)

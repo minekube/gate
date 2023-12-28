@@ -96,12 +96,12 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	}
 
 	// Update connection to requested state and protocol sent in the packet.
-	h.conn.SetState(nextState)
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
 	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
 	if h.config().Lite.Enabled {
+		h.conn.SetState(nextState)
 		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
@@ -118,7 +118,8 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
 		// Just update the session handler and wait for the StatusRequest packet.
-		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse))
+		handler := newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse)
+		h.conn.SetActiveSessionHandler(state.Status, handler)
 	case state.Login:
 		// Client wants to join.
 		h.handleLogin(handshake, inbound)
@@ -157,7 +158,8 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 
 	lic := newLoginInboundConn(inbound)
 	h.eventMgr.Fire(&ConnectionHandshakeEvent{inbound: lic})
-	h.conn.SetSessionHandler(newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps))
+	handler := newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps)
+	h.conn.SetActiveSessionHandler(state.Login, handler)
 }
 
 func stateForProtocol(status int) *state.Registry {

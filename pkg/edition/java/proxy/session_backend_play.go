@@ -34,7 +34,7 @@ type backendPlaySessionHandler struct {
 }
 
 func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHandler, error) {
-	cpsh, ok := serverConn.player.SessionHandler().(*clientPlaySessionHandler)
+	cpsh, ok := serverConn.player.ActiveSessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
 	}
@@ -80,7 +80,8 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleRemovePlayerInfo(p, pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
-	// TODO handleRemoveResourcePacketRequest
+	case *packet.RemoveResourcePack:
+		b.forwardToPlayer(pc, nil) // TODO
 	case *packet.ServerData:
 		b.handleServerData(p)
 	case *bossbar.BossBar:
@@ -134,8 +135,9 @@ func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 	b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
 }
 
-func (b *backendPlaySessionHandler) handleStartUpdate(p *config.StartUpdate) {
-	b.serverConn.player.switchToConfigState(p)
+func (b *backendPlaySessionHandler) handleStartUpdate(_ *config.StartUpdate) {
+	// TODO set decoder state to Config (need MinecraftConnection as struct and expose decoder)
+	b.serverConn.player.switchToConfigState()
 }
 
 func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSettings) {

@@ -51,6 +51,11 @@ func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger) *Encode
 	}
 }
 
+// Direction returns the encoder's direction.
+func (e *Encoder) Direction() proto.Direction {
+	return e.direction
+}
+
 func (e *Encoder) SetCompression(threshold, level int) (err error) {
 	e.mu.Lock()
 	e.compression.threshold = threshold

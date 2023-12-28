@@ -24,7 +24,7 @@ import (
 
 // MinecraftConn is a Minecraft connection of a client or server.
 // The connection is unusable after Close was called and must be recreated.
-type MinecraftConn interface {
+type MinecraftConn interface { // TODO convert to exported struct as this interface is growing unstably and only used by minecraftConn
 	// Context returns the context of the connection.
 	// This Context is canceled on Close and can be used to attach more context values to a connection.
 	Context() context.Context
@@ -36,22 +36,32 @@ type MinecraftConn interface {
 
 	// State returns the current state of the connection.
 	State() *state.Registry
+
 	// Protocol returns the protocol version of the connection.
 	Protocol() proto.Protocol
+
 	// RemoteAddr returns the remote address of the connection.
 	RemoteAddr() net.Addr
 	// LocalAddr returns the local address of the connection.
 	LocalAddr() net.Addr
+
 	// Type returns the connection type of the connection.
 	Type() phase.ConnectionType
-	// SessionHandler returns the session handler of the connection.
-	SessionHandler() SessionHandler
-
-	// SetSessionHandler sets the session handler for this connection
-	// and calls Deactivated() on the old handler and Activated() on the new handler.
-	SetSessionHandler(SessionHandler)
 	// SetType sets the connection type of the connection.
 	SetType(phase.ConnectionType)
+
+	// ActiveSessionHandler returns the session handler of the connection.
+	ActiveSessionHandler() SessionHandler
+	// SetActiveSessionHandler sets the session handler for this connection,
+	// calls Deactivated() on the previous handler and Activated() on the new handler.
+	SetActiveSessionHandler(*state.Registry, SessionHandler)
+	// SwitchSessionHandler switches the active session handler to the respective registry one.
+	// Returns true if the session handler was switched or is already in the respective state.
+	// Returns false if the session handler does not exist for the state.
+	SwitchSessionHandler(*state.Registry) bool
+	// AddSessionHandler adds a session handler for the respective registry that will be used
+	// when calling SwitchSessionHandler on the same registry.
+	AddSessionHandler(*state.Registry, SessionHandler)
 
 	StateChanger
 	PacketWriter
@@ -141,6 +151,7 @@ func NewMinecraftConn(
 		connType:  phase.Undetermined,
 		direction: direction,
 	}
+	c.sessionHandlerMu.sessionHandlers = make(map[*state.Registry]SessionHandler)
 	return c, c.startReadLoop
 }
 
@@ -168,7 +179,8 @@ type minecraftConn struct {
 
 	sessionHandlerMu struct {
 		sync.RWMutex
-		SessionHandler // The current session handler.
+		activeSessionHandler SessionHandler                     // The current session handler.
+		sessionHandlers      map[*state.Registry]SessionHandler // Session handlers by state.
 	}
 }
 
@@ -198,7 +210,7 @@ func (c *minecraftConn) startReadLoop() {
 		//  - in turn call session handler
 
 		// Handle packet by connection's session handler.
-		c.SessionHandler().HandlePacket(packetCtx)
+		c.ActiveSessionHandler().HandlePacket(packetCtx)
 		return true
 	}
 
@@ -320,7 +332,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 		c.cancelCtx()
 		err = c.c.Close()
 
-		if sh := c.SessionHandler(); sh != nil {
+		if sh := c.ActiveSessionHandler(); sh != nil {
 			sh.Disconnected()
 
 			if p, ok := sh.(interface{ PlayerLog() logr.Logger }); ok && !c.knownDisconnect.Load() {
@@ -456,20 +468,77 @@ func (c *minecraftConn) SetType(connType phase.ConnectionType) {
 	c.connType = connType
 }
 
-func (c *minecraftConn) SessionHandler() SessionHandler {
+func (c *minecraftConn) ActiveSessionHandler() SessionHandler {
 	c.sessionHandlerMu.RLock()
 	defer c.sessionHandlerMu.RUnlock()
-	return c.sessionHandlerMu.SessionHandler
+	return c.sessionHandlerMu.activeSessionHandler
 }
 
-func (c *minecraftConn) SetSessionHandler(handler SessionHandler) {
+func (c *minecraftConn) SetActiveSessionHandler(registry *state.Registry, handler SessionHandler) {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+
 	c.sessionHandlerMu.Lock()
 	defer c.sessionHandlerMu.Unlock()
-	if c.sessionHandlerMu.SessionHandler != nil {
-		c.sessionHandlerMu.SessionHandler.Deactivated()
+
+	if c.sessionHandlerMu.activeSessionHandler != nil {
+		c.sessionHandlerMu.activeSessionHandler.Deactivated()
 	}
-	c.sessionHandlerMu.SessionHandler = handler
+
+	c.sessionHandlerMu.sessionHandlers[registry] = handler
+	c.sessionHandlerMu.activeSessionHandler = handler
+	c.SetState(registry)
 	handler.Activated()
+}
+
+func (c *minecraftConn) AddSessionHandler(registry *state.Registry, handler SessionHandler) {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+	if handler == nil {
+		panic("handler must not be nil")
+	}
+
+	c.sessionHandlerMu.Lock()
+	defer c.sessionHandlerMu.Unlock()
+
+	if registry == c.State() {
+		// Handler would overwrite the current handler
+		c.log.Info("AddSessionHandler: session handler already exists for state", "state", registry.String())
+		return
+	}
+
+	c.sessionHandlerMu.sessionHandlers[registry] = handler
+}
+
+func (c *minecraftConn) SwitchSessionHandler(registry *state.Registry) bool {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+
+	c.sessionHandlerMu.Lock()
+	defer c.sessionHandlerMu.Unlock()
+
+	handler, ok := c.sessionHandlerMu.sessionHandlers[registry]
+	if !ok {
+		return false
+	}
+
+	if c.sessionHandlerMu.activeSessionHandler == handler {
+		// The handler is already active, no need to switch
+		return true
+	}
+
+	if c.sessionHandlerMu.activeSessionHandler != nil {
+		c.sessionHandlerMu.activeSessionHandler.Deactivated()
+	}
+
+	c.sessionHandlerMu.activeSessionHandler = handler
+	c.SetState(registry)
+	handler.Activated()
+
+	return true
 }
 
 // SetCompressionThreshold sets the compression threshold on the connection.

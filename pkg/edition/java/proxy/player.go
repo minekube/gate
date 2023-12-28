@@ -55,7 +55,7 @@ type Player interface {
 	// CreateConnectionRequest creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() profile.GameProfile // Returns the player's game profile.
-	Settings() player.Settings        // The player's client settings. Returns player.DefaultSettings if unknown.
+	PlayerSettings() player.Settings  // The player's client settings. Returns player.DefaultSettings if unknown.
 	// Disconnect disconnects the player with a reason.
 	// Once called, further interface calls to this player become undefined.
 	Disconnect(reason component.Component)
@@ -102,6 +102,7 @@ type connectedPlayer struct {
 	connectedServer_         *serverConnection
 	connInFlight             *serverConnection
 	settings                 player.Settings
+	clientSettingsPacket     *packet.ClientSettings
 	modInfo                  *modinfo.ModInfo
 	connPhase                phase.ClientConnectionPhase
 	outstandingResourcePacks deque.Deque[*ResourcePackInfo]
@@ -667,10 +668,11 @@ func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Unlock()
 }
 
-func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
+func (p *connectedPlayer) setClientSettings(settings *packet.ClientSettings) {
 	wrapped := player.NewSettings(settings)
 	p.mu.Lock()
 	p.settings = wrapped
+	p.clientSettingsPacket = settings
 	p.mu.Unlock()
 
 	p.eventMgr.Fire(&PlayerSettingsChangedEvent{
@@ -679,9 +681,9 @@ func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
 	})
 }
 
-// Settings returns the players client settings.
+// PlayerSettings returns the players client settings.
 // If not known already, returns player.DefaultSettings.
-func (p *connectedPlayer) Settings() player.Settings {
+func (p *connectedPlayer) PlayerSettings() player.Settings {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.settings != nil {
@@ -690,16 +692,26 @@ func (p *connectedPlayer) Settings() player.Settings {
 	return player.DefaultSettings
 }
 
+// ClientSettingsPacket returns the last known client settings packet.
+// If not known already, returns nil.
+func (p *connectedPlayer) ClientSettingsPacket() *packet.ClientSettings {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.clientSettingsPacket
+}
+
 func (p *connectedPlayer) config() *config.Config {
 	return p.configProvider.config()
 }
 
-// switchToConfigState switches the connection to the config state.
-func (p *connectedPlayer) switchToConfigState(pkt *cfgpacket.StartUpdate) {
-	if err := p.WritePacket(pkt); err != nil {
-		p.log.Error(err, "error writing config packet")
-	}
-	p.SetState(state.Config)
+// switchToConfigState switches the connection of the client into config state.
+func (p *connectedPlayer) switchToConfigState() {
+	go func() {
+		if err := p.WritePacket(new(cfgpacket.StartUpdate)); err != nil {
+			p.log.Error(err, "error writing config packet")
+		}
+		p.SetState(state.Config)
+	}()
 }
 
 func (p *connectedPlayer) ClientBrand() string {

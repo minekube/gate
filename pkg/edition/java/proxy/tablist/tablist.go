@@ -17,11 +17,15 @@ import (
 
 // TabList is the tab list of a player.
 type TabList interface {
-	Add(entries ...Entry) error                               // Adds one or more entries to the tab list.
-	RemoveAll(ids ...uuid.UUID) error                         // Removes one or more entries from the tab list. If empty removes all entries.
-	Entries() map[uuid.UUID]Entry                             // Returns the entries in the tab list.
-	SetHeaderFooter(header, footer component.Component) error // Sets the header and footer of the tab list.
-	HeaderFooter() (header, footer component.Component)       // Returns the header and footer of the tab list. May be nil if not set.
+	Add(entries ...Entry) error       // Adds one or more entries to the tab list.
+	RemoveAll(ids ...uuid.UUID) error // Removes one or more entries from the tab list. If empty removes all entries.
+	Entries() map[uuid.UUID]Entry     // Returns the entries in the tab list.
+	// SetHeaderFooter sets the header and footer of the tab list.
+	//
+	// If nil is passed for either, the header/footer will be cleared.
+	// Use ClearTabListHeaderFooter() to clear the header and footer for convenience.
+	SetHeaderFooter(header, footer component.Component) error
+	HeaderFooter() (header, footer component.Component) // Returns the header and footer of the tab list. May be nil if not set.
 }
 
 // Entry is a single entry/player in a TabList.
@@ -95,6 +99,12 @@ func SendHeaderFooter(viewer Viewer, header, footer component.Component) error {
 	p.Footer = b.String()
 
 	return viewer.WritePacket(p)
+}
+
+// ClearTabListHeaderFooter clears the tab list header and footer for a tab list.
+// Convenience function for tabList.SetHeaderFooter(nil, nil).
+func ClearTabListHeaderFooter(tabList TabList) error {
+	return tabList.SetHeaderFooter(nil, nil)
 }
 
 // ClearHeaderFooter clears the tab list header and footer for the viewer.

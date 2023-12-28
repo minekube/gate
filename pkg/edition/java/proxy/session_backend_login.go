@@ -327,10 +327,30 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	if !ok {
 		return
 	}
-	serverMc.SetState(state.Play)
 
-	// Switch to the transition handler.
-	serverMc.SetSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
+	if serverMc.Protocol().Lower(version.Minecraft_1_20_2) {
+		serverMc.SetActiveSessionHandler(state.Play,
+			newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
+	} else {
+		_ = serverMc.WritePacket(&packet.LoginAcknowledged{})
+		sh, err := newBackendConfigSessionHandler(b.serverConn, b.requestCtx)
+		if err != nil {
+			b.requestCtx.result(nil, err)
+			b.serverConn.disconnect()
+			return
+		}
+		serverMc.SetActiveSessionHandler(state.Config, sh)
+		player := b.serverConn.player
+		if pkt := player.ClientSettingsPacket(); pkt != nil {
+			_ = serverMc.WritePacket(pkt)
+		}
+		if csh, ok := player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler); ok {
+			// TODO serverMc.SetAutoReading(false)
+			csh.doSwitch().DoWhenTrue(func() {
+				// TODO serverMc.SetAutoReading(true)
+			})
+		}
+	}
 }
 
 func (b *backendLoginSessionHandler) Disconnected() {

@@ -32,7 +32,7 @@ func newBackendConfigSessionHandler(
 	serverConn *serverConnection,
 	requestCtx *connRequestCxt,
 ) (netmc.SessionHandler, error) {
-	clientSession, ok := serverConn.player.SessionHandler().(*clientConfigSessionHandler)
+	clientSession, ok := serverConn.player.ActiveSessionHandler().(*clientConfigSessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backend config session handler with non-client config session handler")
 	}
@@ -132,7 +132,7 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 	smc.SetState(state.Play)
 	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
 		if b.serverConn == player.connectedServer() {
-			smc.SetActiveSessionHandler(state.Play)
+			smc.SwitchSessionHandler(state.Play)
 
 			header, footer := player.tabList.HeaderFooter()
 			err := tablist.SendHeaderFooter(player, header, footer)
