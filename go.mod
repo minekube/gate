@@ -5,6 +5,7 @@ go 1.21.0
 require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/dboslee/lru v0.0.1
+	github.com/edwingeng/deque/v2 v2.1.1
 	github.com/gammazero/deque v0.2.1
 	github.com/go-faker/faker/v4 v4.1.1
 	github.com/go-logr/logr v1.2.4

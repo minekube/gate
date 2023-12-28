@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"github.com/gammazero/deque"
+	"github.com/edwingeng/deque/v2"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
@@ -24,7 +24,7 @@ type PlayPacketQueue struct {
 func NewPlayPacketQueue(version proto.Protocol, direction proto.Direction) *PlayPacketQueue {
 	return &PlayPacketQueue{
 		registry:        state.FromDirection(direction, state.Config, version),
-		queue:           deque.New[proto.Packet](),
+		queue:           deque.NewDeque[proto.Packet](),
 		protocolVersion: version,
 	}
 }
@@ -43,28 +43,25 @@ func (h *PlayPacketQueue) Queue(packet proto.Packet) bool {
 	return false
 }
 
-// PacketBuffer is a packet buffer that can flush packets to an underlying packet writer.
-type PacketBuffer interface {
-	BufferPacket(proto.Packet) error
-	Flush() error
-}
-
 // ReleaseQueue releases all packets in the queue to the sink packet writer.
 // It iterates over the queue, buffering each packet and flushing the sink.
-func (h *PlayPacketQueue) ReleaseQueue(sink PacketBuffer) error {
+func (h *PlayPacketQueue) ReleaseQueue(
+	buffer func(proto.Packet) error,
+	flush func() error,
+) error {
 	if h == nil {
 		return nil
 	}
 	var ok bool
-	for h.queue.Len() > 0 {
+	for h.queue.Len() != 0 {
 		packet := h.queue.PopFront()
-		if err := sink.BufferPacket(packet); err != nil {
+		if err := buffer(packet); err != nil {
 			return err
 		}
 		ok = true
 	}
 	if ok {
-		return sink.Flush()
+		return flush()
 	}
 	return nil
 }

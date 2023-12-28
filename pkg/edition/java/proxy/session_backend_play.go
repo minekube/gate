@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"reflect"
 	"regexp"
 	"time"
@@ -136,7 +137,12 @@ func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 }
 
 func (b *backendPlaySessionHandler) handleStartUpdate(_ *config.StartUpdate) {
-	// TODO set decoder state to Config (need MinecraftConnection as struct and expose decoder)
+	smc, ok := b.serverConn.ensureConnected()
+	if !ok {
+		return
+	}
+	smc.SetAutoReading(false)
+	smc.Reader().SetState(state.Config)
 	b.serverConn.player.switchToConfigState()
 }
 

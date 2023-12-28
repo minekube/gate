@@ -784,6 +784,7 @@ func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) 
 				err := errors.New("failed to switch session handler")
 				c.log.Error(err, "expected to switch session handler to config state")
 			}
+			smc.SetAutoReading(true)
 		}()
 	}
 	c.configSwitchDone.SetTrue()

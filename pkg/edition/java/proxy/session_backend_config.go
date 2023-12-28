@@ -129,8 +129,12 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 	player := b.serverConn.player
 	configHandler := b.playerConfigSessionHandler
 
-	smc.SetState(state.Play)
+	smc.SetAutoReading(false)
+	// Even when not auto reading messages are still decoded. Decode them with the correct state
+	smc.Reader().SetState(state.Play)
 	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
+		defer smc.SetAutoReading(true)
+
 		if b.serverConn == player.connectedServer() {
 			if !smc.SwitchSessionHandler(state.Play) {
 				err := errors.New("failed to switch session handler")

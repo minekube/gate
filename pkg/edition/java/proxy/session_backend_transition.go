@@ -199,6 +199,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 
 	// The goods are in hand! We got JoinGame.
 	// Let's transition completely to the new state.
+	smc.SetAutoReading(false)
 	connectedEvent := &ServerConnectedEvent{
 		player:         b.serverConn.player,
 		server:         b.serverConn.server,
@@ -243,6 +244,9 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		return
 	}
 	smc.SetActiveSessionHandler(state.Play, backendPlay)
+
+	// Clean up disabling auto-read while the connected event was being processed.
+	smc.SetAutoReading(true)
 
 	// Now set the connected server.
 	b.serverConn.player.setConnectedServer(b.serverConn)
