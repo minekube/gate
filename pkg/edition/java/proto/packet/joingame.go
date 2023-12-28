@@ -22,13 +22,14 @@ type JoinGame struct {
 	ViewDistance         int     // 1.14+
 	ReducedDebugInfo     bool
 	ShowRespawnScreen    bool
+	DoLimitedCrafting    bool           // 1.20.2+
 	LevelNames           []string       // a set of strings, 1.16+
 	Registry             util.NBT       // 1.16+
 	DimensionInfo        *DimensionInfo // 1.16+
 	CurrentDimensionData util.NBT       // 1.16.2+
 	PreviousGamemode     int16          // 1.16+
 	SimulationDistance   int            // 1.18+
-	LastDeadPosition     *DeathPosition // 1.19+
+	LastDeathPosition    *DeathPosition // 1.19+
 	PortalCooldown       int            // 1.20+
 }
 
@@ -90,7 +91,10 @@ func (d *DeathPosition) String() string {
 }
 
 func (j *JoinGame) Encode(c *proto.PacketContext, wr io.Writer) error {
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		// they made 1.20.2 more complicated
+		return j.encode1202Up(c, wr)
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		// Minecraft 1.16 and above have significantly more complicated logic for writing this packet,
 		// so separate it out.
 		return j.encode116Up(c, wr)
@@ -204,7 +208,7 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 	}
 
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		err = j.LastDeadPosition.encode(wr)
+		err = j.LastDeathPosition.encode(wr)
 		if err != nil {
 			return err
 		}
@@ -288,9 +292,116 @@ func (j *JoinGame) encodeLegacy(c *proto.PacketContext, wr io.Writer) error {
 	}
 	return nil
 }
+func (j *JoinGame) encode1202Up(c *proto.PacketContext, wr io.Writer) error {
+	err := util.WriteInt(wr, j.EntityID)
+	if err != nil {
+		return err
+	}
+	err = util.WriteBool(wr, j.Hardcore)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteStrings(wr, j.LevelNames)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteVarInt(wr, j.MaxPlayers)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteVarInt(wr, j.ViewDistance)
+	if err != nil {
+		return err
+	}
+	err = util.WriteVarInt(wr, j.SimulationDistance)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteBool(wr, j.ReducedDebugInfo)
+	if err != nil {
+		return err
+	}
+	err = util.WriteBool(wr, j.ShowRespawnScreen)
+	if err != nil {
+		return err
+	}
+	err = util.WriteBool(wr, j.DoLimitedCrafting)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteString(wr, j.DimensionInfo.RegistryIdentifier)
+	if err != nil {
+		return err
+	}
+	if j.DimensionInfo.LevelName == nil {
+		return errors.New("dimension info level name must not be nil")
+	}
+	err = util.WriteString(wr, *j.DimensionInfo.LevelName)
+	if err != nil {
+		return err
+	}
+	err = util.WriteInt64(wr, j.PartialHashedSeed)
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteByte(wr, byte(j.Gamemode))
+	if err != nil {
+		return err
+	}
+	err = util.WriteByte(wr, byte(j.PreviousGamemode))
+	if err != nil {
+		return err
+	}
+
+	err = util.WriteBool(wr, j.DimensionInfo.DebugType)
+	if err != nil {
+		return err
+	}
+	err = util.WriteBool(wr, j.DimensionInfo.Flat)
+	if err != nil {
+		return err
+	}
+
+	// optional death location
+	if j.LastDeathPosition != nil {
+		err = util.WriteBool(wr, true)
+		if err != nil {
+			return err
+		}
+		err = util.WriteString(wr, j.LastDeathPosition.Key)
+		if err != nil {
+			return err
+		}
+		err = util.WriteInt64(wr, j.LastDeathPosition.Value)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = util.WriteBool(wr, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = util.WriteVarInt(wr, j.PortalCooldown)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (j *JoinGame) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		// they made 1.20.2 more complicated
+		return j.decode1202Up(c, rd)
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		// Minecraft 1.16 and above have significantly more complicated logic for reading this packet,
 		// so separate it out.
 		return j.decode116Up(c, rd)
@@ -481,7 +592,7 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		j.LastDeadPosition, err = decodeDeathPosition(rd)
+		j.LastDeathPosition, err = decodeDeathPosition(rd)
 		if err != nil {
 			return err
 		}
@@ -493,6 +604,112 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 			return err
 		}
 	}
+	return nil
+}
+
+func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
+	var err error
+	j.EntityID, err = util.ReadInt(rd)
+	if err != nil {
+		return err
+	}
+	j.Hardcore, err = util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+
+	j.LevelNames, err = util.ReadStringArray(rd)
+	if err != nil {
+		return err
+	}
+
+	j.MaxPlayers, err = util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
+
+	j.ViewDistance, err = util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
+	j.SimulationDistance, err = util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
+
+	j.ReducedDebugInfo, err = util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+	j.ShowRespawnScreen, err = util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+	j.DoLimitedCrafting, err = util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+
+	dimensionIdentifier, err := util.ReadString(rd)
+	if err != nil {
+		return err
+	}
+	levelName, err := util.ReadString(rd)
+	if err != nil {
+		return err
+	}
+	j.PartialHashedSeed, err = util.ReadInt64(rd)
+	if err != nil {
+		return err
+	}
+
+	gamemode, err := util.ReadByte(rd)
+	if err != nil {
+		return err
+	}
+	j.Gamemode = int16(gamemode)
+
+	previousGamemode, err := util.ReadByte(rd)
+	if err != nil {
+		return err
+	}
+	j.PreviousGamemode = int16(previousGamemode)
+
+	isDebug, err := util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+	isFlat, err := util.ReadBool(rd)
+	if err != nil {
+		return err
+	}
+	j.DimensionInfo = &DimensionInfo{
+		RegistryIdentifier: dimensionIdentifier,
+		LevelName:          &levelName,
+		Flat:               isFlat,
+		DebugType:          isDebug,
+	}
+
+	// optional death location
+	if ok, err := util.ReadBool(rd); err != nil {
+		return err
+	} else if ok {
+		key, err := util.ReadString(rd)
+		if err != nil {
+			return err
+		}
+		value, err := util.ReadInt64(rd)
+		if err != nil {
+			return err
+		}
+		j.LastDeathPosition = &DeathPosition{Key: key, Value: value}
+	}
+
+	j.PortalCooldown, err = util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

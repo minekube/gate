@@ -493,7 +493,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		DimensionInfo:        joinGame.DimensionInfo,
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,
-		LastDeathPosition:    joinGame.LastDeadPosition,
+		LastDeathPosition:    joinGame.LastDeathPosition,
 		PortalCooldown:       joinGame.PortalCooldown,
 	}
 }

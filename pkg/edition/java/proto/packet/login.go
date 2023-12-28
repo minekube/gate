@@ -46,6 +46,14 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 			}
 		}
 
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+			err = util.WriteUUID(wr, s.HolderID)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
 			okPlayerKey := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
 			ok := okPlayerKey || s.HolderID != uuid.Nil
@@ -92,6 +100,14 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			} else {
 				s.PlayerKey = nil
 			}
+		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+			s.HolderID, err = util.ReadUUID(rd)
+			if err != nil {
+				return err
+			}
+			return
 		}
 
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {

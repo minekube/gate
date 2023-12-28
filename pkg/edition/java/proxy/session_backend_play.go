@@ -237,6 +237,11 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 
 var sha1HexRegex = regexp.MustCompile(`[0-9a-fA-F]{40}`)
 
+// possibleResourcePackHash returns true if the given hash is a plausible SHA-1 hash.
+func possibleResourcePackHash(hash string) bool {
+	return sha1HexRegex.MatchString(hash)
+}
+
 func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (ResourcePackInfo, error) {
 	if p.URL == "" {
 		return ResourcePackInfo{}, fmt.Errorf("resource pack URL is empty")
@@ -248,7 +253,7 @@ func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (ResourcePackIn
 		Prompt:      p.Prompt,
 		Origin:      DownstreamServerResourcePackOrigin,
 	}
-	if p.Hash != "" && sha1HexRegex.MatchString(p.Hash) {
+	if p.Hash != "" && possibleResourcePackHash(p.Hash) {
 		var err error
 		packInfo.Hash, err = hex.DecodeString(p.Hash)
 		if err != nil {
