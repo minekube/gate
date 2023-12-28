@@ -348,7 +348,7 @@ func (p *connectedPlayer) PendingResourcePack() *ResourcePackInfo {
 
 // Processes a client response to a sent resource-pack.
 func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStatus) bool {
-	peek := status == AcceptedResourcePackResponseStatus
+	peek := status.Intermediate()
 
 	p.mu.Lock()
 	if p.outstandingResourcePacks.Len() == 0 {

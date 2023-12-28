@@ -116,11 +116,22 @@ type (
 	ResourcePackResponseStatus int
 )
 
+// Intermediate returns true if the resource pack status is intermediate, indicating that the player has
+// either accepted the resource pack and is currently downloading it or has successfully
+// downloaded it.
+func (s ResourcePackResponseStatus) Intermediate() bool {
+	return s == AcceptedResourcePackResponseStatus || s == DownloadedResourcePackResponseStatus
+}
+
 const (
 	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = iota
 	DeclinedResourcePackResponseStatus
 	FailedDownloadResourcePackResponseStatus
 	AcceptedResourcePackResponseStatus
+	DownloadedResourcePackResponseStatus
+	InvalidURLResourcePackResponseStatus
+	FailedToReloadResourcePackResponseStatus
+	DiscardedResourcePackResponseStatus
 )
 
 func (r *ResourcePackResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
