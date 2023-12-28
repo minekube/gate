@@ -111,5 +111,8 @@ func (s *clientSettings) ChatColors() bool {
 }
 
 func NewSettings(packet *packet.ClientSettings) Settings {
-	return &clientSettings{s: packet, locale: language.Make(strings.ReplaceAll(packet.Locale, "_", "-"))}
+	return &clientSettings{
+		s:      packet,
+		locale: language.Make(strings.ReplaceAll(packet.Locale, "_", "-")),
+	}
 }

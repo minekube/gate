@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/internal/oncetrue"
 	"sort"
 	"strings"
 	"time"
@@ -40,6 +42,8 @@ type clientPlaySessionHandler struct {
 	loginPluginMessages deque.Deque[*plugin.Message]
 	chatHandler         *chatHandler
 	chatTimeKeeper      chatTimeKeeper
+
+	configSwitchDone oncetrue.OnceWhenTrue
 
 	serverBossBars         map[uuid.UUID]struct{}
 	outstandingTabComplete *packet.TabCompleteRequest
@@ -91,8 +95,10 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.player.onResourcePackResponse(p.Status)
 		c.forwardToServer(pc) // forward to server
 	case *packet.ClientSettings:
-		c.player.setSettings(p)
+		c.player.setClientSettings(p)
 		c.forwardToServer(pc) // forward to server
+	case *config.FinishedUpdate:
+		c.handleFinishUpdate(p)
 	default:
 		c.forwardToServer(pc)
 	}
@@ -166,7 +172,7 @@ var (
 )
 
 func (b *backendConnAdapter) FlushQueuedPluginMessages() {
-	if h, ok := b.SessionHandler().(interface{ FlushQueuedPluginMessages() }); ok {
+	if h, ok := b.ActiveSessionHandler().(interface{ FlushQueuedPluginMessages() }); ok {
 		h.FlushQueuedPluginMessages()
 	}
 }
@@ -487,7 +493,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		DimensionInfo:        joinGame.DimensionInfo,
 		PreviousGamemode:     joinGame.PreviousGamemode,
 		CurrentDimensionData: joinGame.CurrentDimensionData,
-		LastDeathPosition:    joinGame.LastDeadPosition,
+		LastDeathPosition:    joinGame.LastDeathPosition,
 		PortalCooldown:       joinGame.PortalCooldown,
 	}
 }
@@ -759,4 +765,52 @@ func (c *clientPlaySessionHandler) updateTimeKeeper(t time.Time) bool {
 		return false
 	}
 	return true
+}
+
+func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) {
+	// Complete client switch
+	if !c.player.MinecraftConn.SwitchSessionHandler(state.Config) {
+		panic("expected client to have config session handler")
+	}
+	serverConn := c.player.connectedServer()
+	if serverConn != nil {
+		smc, ok := serverConn.ensureConnected()
+		if !ok {
+			return
+		}
+		go func() {
+			_ = smc.WritePacket(p)
+			if !smc.SwitchSessionHandler(state.Config) {
+				err := errors.New("failed to switch session handler")
+				c.log.Error(err, "expected to switch session handler to config state")
+			}
+			smc.SetAutoReading(true)
+		}()
+	}
+	c.configSwitchDone.SetTrue()
+}
+
+// doSwitch handles switching stages for swapping between servers.
+func (c *clientPlaySessionHandler) doSwitch() *oncetrue.OnceWhenTrue {
+	existingConn := c.player.connectedServer()
+	if existingConn != nil {
+		// Shut down the existing server connection.
+		c.player.setConnectedServer(nil)
+		existingConn.disconnect()
+
+		// Send keep alive to try to avoid timeouts
+		if netmc.SendKeepAlive(c.player) != nil {
+			return new(oncetrue.OnceWhenTrue)
+		}
+
+		// Reset TabList header and footer to prevent de-sync
+		if err := c.player.tabList.SetHeaderFooter(nil, nil); err != nil {
+			c.log.Error(err, "error resetting tablist header and footer")
+			return new(oncetrue.OnceWhenTrue)
+		}
+	}
+
+	c.spawned.Store(false)
+	c.player.switchToConfigState()
+	return &c.configSwitchDone
 }

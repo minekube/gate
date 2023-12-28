@@ -23,8 +23,18 @@ type authSessionHandler struct {
 	profile    *profile.GameProfile
 	onlineMode bool
 
+	loginState authLoginState // 1.20.2+
+
 	connectedPlayer *connectedPlayer
 }
+
+type authLoginState int
+
+const (
+	startAuthLoginState authLoginState = iota
+	successSentAuthLoginState
+	acknowledgedAuthLoginState
+)
 
 type playerRegistrar interface {
 	canRegisterConnection(player *connectedPlayer) bool
@@ -39,6 +49,7 @@ func newAuthSessionHandler(
 	sessionHandlerDeps *sessionHandlerDeps,
 ) netmc.SessionHandler {
 	return &authSessionHandler{
+		loginState:         startAuthLoginState,
 		sessionHandlerDeps: sessionHandlerDeps,
 		log:                logr.FromContextOrDiscard(inbound.Context()).WithName("authSession"),
 		inbound:            inbound,
@@ -94,11 +105,11 @@ func (a *authSessionHandler) Activated() {
 	player.permFunc = permSetup.Func()
 
 	if player.Active() {
-		a.completeLoginProtocolPhaseAndInit(player)
+		a.startLoginCompletion(player)
 	}
 }
 
-func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connectedPlayer) {
+func (a *authSessionHandler) startLoginCompletion(player *connectedPlayer) {
 	cfg := a.config()
 
 	// Send compression threshold
@@ -143,17 +154,11 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 		}
 	}
 
-	if player.WritePacket(&packet.ServerLoginSuccess{
-		UUID:       playerID,
-		Username:   player.Username(),
-		Properties: player.GameProfile().Properties,
-	}) != nil {
-		return
-	}
+	a.completeLoginProtocolPhaseAndInitialize(player)
+}
 
-	player.SetState(state.Play)
-	loginEvent := &LoginEvent{player: player}
-	event.FireParallel(a.eventMgr, loginEvent, func(e *LoginEvent) {
+func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *connectedPlayer) {
+	event.FireParallel(a.eventMgr, &LoginEvent{player: player}, func(loginEvent *LoginEvent) {
 		if !player.Active() {
 			a.eventMgr.Fire(&DisconnectEvent{
 				player:      player,
@@ -172,14 +177,31 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInit(player *connected
 			return
 		}
 
-		// Login is done now, just connect player to first server and
-		// let InitialConnectSessionHandler do further work.
-		player.SetSessionHandler(newInitialConnectSessionHandler(player))
-		a.eventMgr.Fire(&PostLoginEvent{player: player})
-		a.connectToInitialServer(player)
+		if player.WritePacket(&packet.ServerLoginSuccess{
+			UUID:       player.ID(),
+			Username:   player.Username(),
+			Properties: player.GameProfile().Properties,
+		}) != nil {
+			return
+		}
+
+		a.loginState = successSentAuthLoginState
+
+		if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) {
+			a.loginState = acknowledgedAuthLoginState
+			a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Play,
+				newInitialConnectSessionHandler(a.connectedPlayer))
+
+			a.eventMgr.Fire(&PostLoginEvent{player: player})
+			a.connectToInitialServer(player)
+		}
 	})
 }
 
+// connectToInitialServer connects the player to the initial server as per the player's information.
+// If the player is active and not already connected to a server, the connection is initiated.
+// If no initial server is found, the player is disconnected.
+// This function is primarily used during the player login process.
 func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	initialFromConfig := player.nextServerToTry(nil)
 	chooseServer := &PlayerChooseInitialServerEvent{
@@ -203,10 +225,40 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 func (a *authSessionHandler) Deactivated() {}
 
 func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
-	// no packet expected during auth session
-	_ = a.inbound.delegate.Close()
+	switch pc.Packet.(type) {
+	case *packet.LoginAcknowledged:
+		a.handleLoginAcknowledged()
+	default:
+		a.log.Info("unexpected packet during auth session",
+			"packet", pc.Packet,
+			"packet_id", pc.PacketID,
+			"player", a.connectedPlayer.String(),
+		)
+		_ = a.inbound.delegate.Close()
+	}
+
 }
 
 func (a *authSessionHandler) config() *config.Config {
 	return a.configProvider.config()
+}
+
+func (a *authSessionHandler) handleLoginAcknowledged() bool {
+	if a.loginState != successSentAuthLoginState {
+		_ = a.inbound.disconnect(&component.Translation{
+			Key: "multiplayer.disconnect.invalid_player_data",
+		})
+	} else {
+		a.loginState = acknowledgedAuthLoginState
+		a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Config,
+			newClientConfigSessionHandler(a.connectedPlayer))
+
+		event.FireParallel(a.eventMgr, &PostLoginEvent{player: a.connectedPlayer}, func(postLoginEvent *PostLoginEvent) {
+			if !a.connectedPlayer.Active() {
+				return
+			}
+			a.connectToInitialServer(a.connectedPlayer)
+		})
+	}
+	return true
 }

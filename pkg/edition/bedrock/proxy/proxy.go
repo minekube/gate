@@ -6,13 +6,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
-	"net"
 	"sync"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
-	"github.com/sandertv/go-raknet"
-
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/util/errs"
@@ -75,35 +72,4 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.log = logr.FromContextOrDiscard(ctx)
 	// TODO
 	return nil
-}
-
-func (p *Proxy) listenAndServe(addr string, stop <-chan struct{}) error {
-	select {
-	case <-stop:
-		return nil
-	default:
-	}
-
-	ln, err := raknet.Listen(addr)
-	if err != nil {
-		return err
-	}
-	// TODO the raknet library sadly strictly couples the listener and accepted connections,
-	// make sure we first send players a disconnect packet before closing the listener
-	defer ln.Close()
-	go func() { <-stop; _ = ln.Close() }()
-
-	p.log.Info("listening for connections", "addr", addr)
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			// TODO
-			return fmt.Errorf("error accepting new connection: %w", err)
-		}
-		go p.handleRawConn(conn)
-	}
-}
-
-func (p *Proxy) handleRawConn(raw net.Conn) {
-	defer raw.Close()
 }

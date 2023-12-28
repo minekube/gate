@@ -163,7 +163,7 @@ var packets = []proto.Packet{
 		LevelNames:           []string{"test", "test2"},
 		PreviousGamemode:     2,
 		SimulationDistance:   3,
-		LastDeadPosition:     mustFake(&DeathPosition{}),
+		LastDeathPosition:    mustFake(&DeathPosition{}),
 		CurrentDimensionData: map[string]any{},
 		Registry:             map[string]any{},
 	},

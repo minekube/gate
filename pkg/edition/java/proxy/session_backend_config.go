@@ -32,7 +32,7 @@ func newBackendConfigSessionHandler(
 	serverConn *serverConnection,
 	requestCtx *connRequestCxt,
 ) (netmc.SessionHandler, error) {
-	clientSession, ok := serverConn.player.SessionHandler().(*clientConfigSessionHandler)
+	clientSession, ok := serverConn.player.ActiveSessionHandler().(*clientConfigSessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backend config session handler with non-client config session handler")
 	}
@@ -129,14 +129,22 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 	player := b.serverConn.player
 	configHandler := b.playerConfigSessionHandler
 
-	smc.SetState(state.Play)
+	smc.SetAutoReading(false)
+	// Even when not auto reading messages are still decoded. Decode them with the correct state
+	smc.Reader().SetState(state.Play)
 	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
+		defer smc.SetAutoReading(true)
+
 		if b.serverConn == player.connectedServer() {
-			smc.SetActiveSessionHandler(state.Play)
+			if !smc.SwitchSessionHandler(state.Play) {
+				err := errors.New("failed to switch session handler")
+				b.log.Error(err, "expected to switch session handler to play state")
+			}
 
 			header, footer := player.tabList.HeaderFooter()
 			err := tablist.SendHeaderFooter(player, header, footer)
 			if err != nil {
+				b.log.Error(err, "error sending tab list header/footer")
 				return
 			}
 

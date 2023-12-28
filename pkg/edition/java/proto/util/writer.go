@@ -3,14 +3,13 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"io"
-	"math"
-	"strings"
-
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
+	"io"
+	"math"
+	"strings"
 )
 
 func WriteString(writer io.Writer, val string) (err error) {
@@ -193,45 +192,25 @@ func WriteProperties(wr io.Writer, properties []profile.Property) error {
 	return nil
 }
 
-/*
-func WriteUUIDIntArray(wr io.Writer, uuid [16]byte) (err error) {
-	err = WriteInt32(wr, ByteArrayToInt32(uuid[:3]))
-	if err != nil {
-		return err
-	}
-	err = WriteInt32(wr, ByteArrayToInt32(uuid[4:7]))
-	if err != nil {
-		return err
-	}
-	err = WriteInt32(wr, ByteArrayToInt32(uuid[8:10]))
-	if err != nil {
-		return err
-	}
-	err = WriteInt32(wr, ByteArrayToInt32(uuid[11:13]))
-	if err != nil {
-		return err
-	}
-	return
-}
+func WriteUUIDIntArray(wr io.Writer, id uuid.UUID) error {
+	msb := binary.BigEndian.Uint64(id[:8])
+	lsb := binary.BigEndian.Uint64(id[8:])
 
-func Int32ToByteArray(num int32) []byte {
-	size := int(unsafe.Sizeof(num))
-	arr := make([]byte, size)
-	for i := 0 ; i < size ; i++ {
-		byt := *(*uint8)(unsafe.Pointer(uintptr(unsafe.Pointer(&num)) + uintptr(i)))
-		arr[i] = byt
+	err := WriteUint32(wr, uint32(msb>>32))
+	if err != nil {
+		return err
 	}
-	return arr
+	err = WriteUint32(wr, uint32(msb))
+	if err != nil {
+		return err
+	}
+	err = WriteUint32(wr, uint32(lsb>>32))
+	if err != nil {
+		return err
+	}
+	err = WriteUint32(wr, uint32(lsb))
+	return err
 }
-
-func ByteArrayToInt32(arr []byte) int32{
-	val := int32(0)
-	size := len(arr)
-	for i := 0 ; i < size ; i++ {
-		*(*uint8)(unsafe.Pointer(uintptr(unsafe.Pointer(&val)) + uintptr(i))) = arr[i]
-	}
-	return val
-}*/
 
 func WriteBytes17(wr io.Writer, b []byte, allowExtended bool) error {
 	if allowExtended {

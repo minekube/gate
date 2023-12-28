@@ -24,7 +24,7 @@ import (
 
 // MinecraftConn is a Minecraft connection of a client or server.
 // The connection is unusable after Close was called and must be recreated.
-type MinecraftConn interface {
+type MinecraftConn interface { // TODO convert to exported struct as this interface is growing unstably and only used by minecraftConn
 	// Context returns the context of the connection.
 	// This Context is canceled on Close and can be used to attach more context values to a connection.
 	Context() context.Context
@@ -36,25 +36,41 @@ type MinecraftConn interface {
 
 	// State returns the current state of the connection.
 	State() *state.Registry
+
 	// Protocol returns the protocol version of the connection.
 	Protocol() proto.Protocol
+
 	// RemoteAddr returns the remote address of the connection.
 	RemoteAddr() net.Addr
 	// LocalAddr returns the local address of the connection.
 	LocalAddr() net.Addr
+
 	// Type returns the connection type of the connection.
 	Type() phase.ConnectionType
-	// SessionHandler returns the session handler of the connection.
-	SessionHandler() SessionHandler
-
-	// SetSessionHandler sets the session handler for this connection
-	// and calls Deactivated() on the old handler and Activated() on the new handler.
-	SetSessionHandler(SessionHandler)
 	// SetType sets the connection type of the connection.
 	SetType(phase.ConnectionType)
 
+	// ActiveSessionHandler returns the session handler of the connection.
+	ActiveSessionHandler() SessionHandler
+	// SetActiveSessionHandler sets the session handler for this connection,
+	// calls Deactivated() on the previous handler and Activated() on the new handler.
+	SetActiveSessionHandler(*state.Registry, SessionHandler)
+	// SwitchSessionHandler switches the active session handler to the respective registry one.
+	// Returns true if the session handler was switched or is already in the respective state.
+	// Returns false if the session handler does not exist for the state.
+	SwitchSessionHandler(*state.Registry) bool
+	// AddSessionHandler adds a session handler for the respective registry that will be used
+	// when calling SwitchSessionHandler on the same registry.
+	AddSessionHandler(*state.Registry, SessionHandler)
+
+	// SetAutoReading sets whether the connection should automatically read packets from the underlying connection.
+	// Default is true.
+	SetAutoReading(bool)
+
 	StateChanger
 	PacketWriter
+
+	Reader() Reader // Only use if you know what you are doing!
 }
 
 // Closed returns true if the connection is closed.
@@ -130,17 +146,19 @@ func NewMinecraftConn(
 
 	ctx, cancel := context.WithCancel(ctx)
 	c := &minecraftConn{
-		log:       log,
-		c:         base,
-		ctx:       ctx,
-		cancelCtx: cancel,
-		rd:        NewReader(base, in, readTimeout, log),
-		wr:        NewWriter(base, out, writeTimeout, compressionLevel, log),
-		state:     state.Handshake,
-		protocol:  version.Minecraft_1_7_2.Protocol,
-		connType:  phase.Undetermined,
-		direction: direction,
+		log:         log,
+		c:           base,
+		ctx:         ctx,
+		cancelCtx:   cancel,
+		rd:          NewReader(base, in, readTimeout, log),
+		wr:          NewWriter(base, out, writeTimeout, compressionLevel, log),
+		state:       state.Handshake,
+		protocol:    version.Minecraft_1_7_2.Protocol,
+		connType:    phase.Undetermined,
+		direction:   direction,
+		autoReading: newStateControl(true),
 	}
+	c.sessionHandlerMu.sessionHandlers = make(map[*state.Registry]SessionHandler)
 	return c, c.startReadLoop
 }
 
@@ -153,6 +171,8 @@ type minecraftConn struct {
 
 	rd Reader
 	wr Writer
+
+	autoReading *stateControl // Whether the connection should automatically read packets from the underlying connection.
 
 	ctx             context.Context // is canceled when connection closed
 	cancelCtx       context.CancelFunc
@@ -168,7 +188,8 @@ type minecraftConn struct {
 
 	sessionHandlerMu struct {
 		sync.RWMutex
-		SessionHandler // The current session handler.
+		activeSessionHandler SessionHandler                     // The current session handler.
+		sessionHandlers      map[*state.Registry]SessionHandler // Session handlers by state.
 	}
 }
 
@@ -180,6 +201,9 @@ func (c *minecraftConn) startReadLoop() {
 	defer func() { _ = c.closeKnown(false) }()
 
 	next := func() bool {
+		// Wait until auto reading is enabled, if not already
+		c.autoReading.Wait()
+
 		// Read next packet from underlying connection.
 		packetCtx, err := c.rd.ReadPacket()
 		if err != nil {
@@ -198,7 +222,7 @@ func (c *minecraftConn) startReadLoop() {
 		//  - in turn call session handler
 
 		// Handle packet by connection's session handler.
-		c.SessionHandler().HandlePacket(packetCtx)
+		c.ActiveSessionHandler().HandlePacket(packetCtx)
 		return true
 	}
 
@@ -220,6 +244,13 @@ func (c *minecraftConn) startReadLoop() {
 
 	for loop() {
 	}
+}
+
+func (c *minecraftConn) Reader() Reader { return c.rd }
+
+func (c *minecraftConn) SetAutoReading(enabled bool) {
+	c.log.V(1).Info("update auto reading", "enabled", enabled)
+	c.autoReading.SetState(enabled)
 }
 
 func (c *minecraftConn) Context() context.Context { return c.ctx }
@@ -254,6 +285,15 @@ func (c *minecraftConn) Write(payload []byte) (err error) {
 }
 
 func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
+	return c.bufferPacket(packet, true)
+}
+
+// bufferNoQueue is a helper func to buffer a packet without queuing it.
+func (c *minecraftConn) bufferNoQueue(packet proto.Packet) error {
+	return c.bufferPacket(packet, false)
+}
+
+func (c *minecraftConn) bufferPacket(packet proto.Packet, queue bool) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
@@ -262,8 +302,9 @@ func (c *minecraftConn) BufferPacket(packet proto.Packet) (err error) {
 			c.closeOnWriteErr(err, "bufferPacket", fmt.Sprintf("%T", packet))
 		}
 	}()
-	if c.playPacketQueue.Queue(packet) {
+	if queue && c.playPacketQueue.Queue(packet) {
 		// Packet was queued, don't write it now
+		c.log.V(1).Info("queued packet", "packet", fmt.Sprintf("%T", packet))
 		return nil
 	}
 	_, err = c.wr.WritePacket(packet)
@@ -312,6 +353,8 @@ var ErrClosedConn = errors.New("connection is closed")
 func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 	alreadyClosed := true
 	c.closeOnce.Do(func() {
+		defer c.SetAutoReading(true) // free the read loop in case auto reading is disabled
+
 		alreadyClosed = false
 		if markKnown {
 			c.knownDisconnect.Store(true)
@@ -320,7 +363,7 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 		c.cancelCtx()
 		err = c.c.Close()
 
-		if sh := c.SessionHandler(); sh != nil {
+		if sh := c.ActiveSessionHandler(); sh != nil {
 			sh.Disconnected()
 
 			if p, ok := sh.(interface{ PlayerLog() logr.Logger }); ok && !c.knownDisconnect.Load() {
@@ -421,7 +464,9 @@ func (c *minecraftConn) SetState(s *state.Registry) {
 
 	c.mu.Unlock()
 
-	c.log.V(1).Info("update state", "previous", prevState, "new", s)
+	if prevState != s {
+		c.log.V(1).Info("update state", "previous", prevState, "new", s)
+	}
 }
 
 // ensurePlayPacketQueue ensures the play packet queue is activated or deactivated
@@ -437,7 +482,7 @@ func (c *minecraftConn) ensurePlayPacketQueue(newState state.State) {
 
 	// Remove the play packet queue if it exists
 	if c.playPacketQueue != nil {
-		if err := c.playPacketQueue.ReleaseQueue(c); err != nil {
+		if err := c.playPacketQueue.ReleaseQueue(c.bufferNoQueue, c.Flush); err != nil {
 			c.log.Error(err, "error releasing play packet queue")
 		}
 		c.playPacketQueue = nil
@@ -456,20 +501,88 @@ func (c *minecraftConn) SetType(connType phase.ConnectionType) {
 	c.connType = connType
 }
 
-func (c *minecraftConn) SessionHandler() SessionHandler {
+func (c *minecraftConn) ActiveSessionHandler() SessionHandler {
 	c.sessionHandlerMu.RLock()
 	defer c.sessionHandlerMu.RUnlock()
-	return c.sessionHandlerMu.SessionHandler
+	return c.sessionHandlerMu.activeSessionHandler
 }
 
-func (c *minecraftConn) SetSessionHandler(handler SessionHandler) {
+func (c *minecraftConn) AddSessionHandler(registry *state.Registry, handler SessionHandler) {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+	if handler == nil {
+		panic("handler must not be nil")
+	}
+
 	c.sessionHandlerMu.Lock()
 	defer c.sessionHandlerMu.Unlock()
-	if c.sessionHandlerMu.SessionHandler != nil {
-		c.sessionHandlerMu.SessionHandler.Deactivated()
+
+	if registry == c.State() {
+		// Handler would overwrite the current handler
+		c.log.Info("AddSessionHandler: session handler already exists for state", "state", registry.String())
+		return
 	}
-	c.sessionHandlerMu.SessionHandler = handler
+
+	c.sessionHandlerMu.sessionHandlers[registry] = handler
+	c.log.V(1).WithName("AddSessionHandler").
+		Info("added session handler", "state", registry.String(), "handler", fmt.Sprintf("%T", handler))
+}
+
+func (c *minecraftConn) SetActiveSessionHandler(registry *state.Registry, handler SessionHandler) {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+
+	c.sessionHandlerMu.Lock()
+	defer c.sessionHandlerMu.Unlock()
+
+	if c.sessionHandlerMu.activeSessionHandler != nil {
+		c.sessionHandlerMu.activeSessionHandler.Deactivated()
+	}
+
+	c.sessionHandlerMu.sessionHandlers[registry] = handler
+	c.sessionHandlerMu.activeSessionHandler = handler
+	c.SetState(registry)
 	handler.Activated()
+
+	c.log.V(1).WithName("SetActiveSessionHandler").
+		Info("set session handler", "state", registry.String(), "handler", fmt.Sprintf("%T", handler))
+}
+
+func (c *minecraftConn) SwitchSessionHandler(registry *state.Registry) bool {
+	if registry == nil {
+		panic("registry must not be nil")
+	}
+
+	c.sessionHandlerMu.Lock()
+	defer c.sessionHandlerMu.Unlock()
+
+	handler, ok := c.sessionHandlerMu.sessionHandlers[registry]
+	if !ok {
+		return false
+	}
+
+	if c.sessionHandlerMu.activeSessionHandler == handler {
+		c.SetState(registry)
+
+		// The handler is already active, no need to switch
+		c.log.V(1).WithName("SwitchSessionHandler").Info("session handler already active, no need to switch", "state", registry.String(), "handler", fmt.Sprintf("%T", handler))
+		return true
+	}
+
+	if c.sessionHandlerMu.activeSessionHandler != nil {
+		c.sessionHandlerMu.activeSessionHandler.Deactivated()
+	}
+
+	c.sessionHandlerMu.activeSessionHandler = handler
+	c.SetState(registry)
+	handler.Activated()
+
+	c.log.V(1).WithName("SwitchSessionHandler").
+		Info("switched session handler", "state", registry.String(), "handler", fmt.Sprintf("%T", handler))
+
+	return true
 }
 
 // SetCompressionThreshold sets the compression threshold on the connection.

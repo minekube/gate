@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"reflect"
 	"strings"
@@ -526,7 +527,7 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		time.Duration(p.cfg.ConnectionTimeout)*time.Millisecond,
 		p.cfg.Compression.Level,
 	)
-	conn.SetSessionHandler(newHandshakeSessionHandler(conn, &sessionHandlerDeps{
+	conn.SetActiveSessionHandler(state.Handshake, newHandshakeSessionHandler(conn, &sessionHandlerDeps{
 		proxy:          p,
 		registrar:      p,
 		configProvider: p,

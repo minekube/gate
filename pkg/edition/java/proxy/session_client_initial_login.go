@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"regexp"
 	"time"
 
@@ -160,7 +161,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
 				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false)
-				l.conn.SetSessionHandler(sh)
+				l.conn.SetActiveSessionHandler(state.Login, sh)
 				return nil
 			}
 
@@ -179,7 +180,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 		// Offline mode login
 		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
-		l.conn.SetSessionHandler(sh)
+		l.conn.SetActiveSessionHandler(state.Login, sh)
 		return nil
 	})
 }
@@ -316,7 +317,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 
 	// All went well, initialize the session.
 	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true)
-	l.conn.SetSessionHandler(sh)
+	l.conn.SetActiveSessionHandler(state.Login, sh)
 }
 
 var (
