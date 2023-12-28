@@ -360,26 +360,17 @@ type LoginPluginMessage struct {
 }
 
 func (l *LoginPluginMessage) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteVarInt(wr, l.ID)
-	if err != nil {
-		return err
-	}
-	err = util.WriteString(wr, l.Channel)
-	if err != nil {
-		return err
-	}
-	return util.WriteBytes(wr, l.Data)
+	w := util.PanicWriter(wr)
+	w.VarInt(l.ID)
+	w.String(l.Channel)
+	w.Bytes(l.Data)
+	return nil
 }
 
 func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	l.ID, err = util.ReadVarInt(rd)
-	if err != nil {
-		return err
-	}
-	l.Channel, err = util.ReadString(rd)
-	if err != nil {
-		return err
-	}
+	r := util.PanicReader(rd)
+	r.VarInt(&l.ID)
+	r.String(&l.Channel)
 	l.Data, err = util.ReadBytes(rd)
 	if errors.Is(err, io.EOF) {
 		// Ignore if we couldn't read data
