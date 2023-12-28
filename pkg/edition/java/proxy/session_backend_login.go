@@ -345,9 +345,9 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 			_ = serverMc.WritePacket(pkt)
 		}
 		if csh, ok := player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler); ok {
-			// TODO serverMc.SetAutoReading(false)
+			// TODO 1.20.2+ serverMc.SetAutoReading(false)
 			csh.doSwitch().DoWhenTrue(func() {
-				// TODO serverMc.SetAutoReading(true)
+				// TODO 1.20.2+ serverMc.SetAutoReading(true)
 			})
 		}
 	}

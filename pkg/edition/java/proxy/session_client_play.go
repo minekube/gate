@@ -769,7 +769,9 @@ func (c *clientPlaySessionHandler) updateTimeKeeper(t time.Time) bool {
 
 func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) {
 	// Complete client switch
-	c.player.MinecraftConn.SwitchSessionHandler(state.Config)
+	if !c.player.MinecraftConn.SwitchSessionHandler(state.Config) {
+		panic("expected client to have config session handler")
+	}
 	serverConn := c.player.connectedServer()
 	if serverConn != nil {
 		smc, ok := serverConn.ensureConnected()
@@ -778,7 +780,10 @@ func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) 
 		}
 		go func() {
 			_ = smc.WritePacket(p)
-			smc.SwitchSessionHandler(state.Config)
+			if !smc.SwitchSessionHandler(state.Config) {
+				err := errors.New("failed to switch session handler")
+				c.log.Error(err, "expected to switch session handler to config state")
+			}
 		}()
 	}
 	c.configSwitchDone.SetTrue()

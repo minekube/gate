@@ -440,7 +440,9 @@ func (s *serverConnection) startHandshake(
 	// Set server's protocol & state
 	// after writing handshake, but before writing ServerLogin
 	serverMc.SetProtocol(protocol)
-	serverMc.SwitchSessionHandler(state.Login)
+	if !serverMc.SwitchSessionHandler(state.Login) {
+		return nil, fmt.Errorf("error switching session handler to login in server connection")
+	}
 
 	serverLogin := &packet.ServerLogin{
 		Username: s.player.Username(),

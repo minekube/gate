@@ -132,11 +132,15 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 	smc.SetState(state.Play)
 	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
 		if b.serverConn == player.connectedServer() {
-			smc.SwitchSessionHandler(state.Play)
+			if !smc.SwitchSessionHandler(state.Play) {
+				err := errors.New("failed to switch session handler")
+				b.log.Error(err, "expected to switch session handler to play state")
+			}
 
 			header, footer := player.tabList.HeaderFooter()
 			err := tablist.SendHeaderFooter(player, header, footer)
 			if err != nil {
+				b.log.Error(err, "error sending tab list header/footer")
 				return
 			}
 
