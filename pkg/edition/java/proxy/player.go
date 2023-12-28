@@ -55,7 +55,7 @@ type Player interface {
 	// CreateConnectionRequest creates a connection request to begin switching the backend server.
 	CreateConnectionRequest(target RegisteredServer) ConnectionRequest
 	GameProfile() profile.GameProfile // Returns the player's game profile.
-	PlayerSettings() player.Settings  // The player's client settings. Returns player.DefaultSettings if unknown.
+	Settings() player.Settings        // The player's client settings. Returns player.DefaultSettings if unknown.
 	// Disconnect disconnects the player with a reason.
 	// Once called, further interface calls to this player become undefined.
 	Disconnect(reason component.Component)
@@ -681,9 +681,9 @@ func (p *connectedPlayer) setClientSettings(settings *packet.ClientSettings) {
 	})
 }
 
-// PlayerSettings returns the players client settings.
+// Settings returns the players client settings.
 // If not known already, returns player.DefaultSettings.
-func (p *connectedPlayer) PlayerSettings() player.Settings {
+func (p *connectedPlayer) Settings() player.Settings {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.settings != nil {

@@ -98,10 +98,7 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		err = r.LastDeathPosition.encode(wr)
-		if err != nil {
-			return err
-		}
+		r.LastDeathPosition.encode(wr)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
 		err = util.WriteVarInt(wr, r.PortalCooldown)

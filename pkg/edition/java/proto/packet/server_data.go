@@ -17,12 +17,10 @@ type ServerData struct {
 }
 
 func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
+	w := util.PanicWriter(wr)
 	hasDescription := s.Description != nil
 	if c.Protocol.Lower(version.Minecraft_1_19_4) {
-		err := util.WriteBool(wr, s.Description != nil)
-		if err != nil {
-			return err
-		}
+		w.Bool(hasDescription)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) || hasDescription {
 		err := util.WriteComponent(wr, c.Protocol, s.Description)
@@ -31,86 +29,50 @@ func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
 		}
 	}
 	hasFavicon := s.Favicon != ""
-	err := util.WriteBool(wr, hasFavicon)
-	if err != nil {
-		return err
-	}
+	w.Bool(hasFavicon)
 	if hasFavicon {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
-			err = util.WriteBytes(wr, s.Favicon.Bytes())
-			if err != nil {
-				return err
-			}
+			w.Bytes(s.Favicon.Bytes())
 		} else {
-			err = util.WriteString(wr, string(s.Favicon))
-			if err != nil {
-				return err
-			}
+			w.String(string(s.Favicon))
 		}
 	}
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
-		err = util.WriteBool(wr, false)
-		if err != nil {
-			return err
-		}
+		w.Bool(false)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-		err = util.WriteBool(wr, s.SecureChatEnforced)
-		if err != nil {
-			return err
-		}
+		w.Bool(s.SecureChatEnforced)
 	}
 	return nil
 }
 
 func (s *ServerData) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	r := util.PanicReader(rd)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
 		s.Description, err = util.ReadComponent(rd, c.Protocol)
 		if err != nil {
 			return err
 		}
 	} else {
-		ok, err := util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if r.Ok() {
 			s.Description, err = util.ReadComponent(rd, c.Protocol)
 			if err != nil {
 				return err
 			}
 		}
 	}
-	ok, err := util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
-	if ok {
+	if r.Ok() {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
-			b, err := util.ReadBytes(rd)
-			if err != nil {
-				return err
-			}
-			s.Favicon = favicon.FromBytes(b)
+			s.Favicon = favicon.FromBytes(util.PReadBytesVal(rd))
 		} else {
-			fi, err := util.ReadString(rd)
-			if err != nil {
-				return err
-			}
-			s.Favicon = favicon.Favicon(fi)
+			s.Favicon = favicon.Favicon(util.PReadStringVal(rd))
 		}
 	}
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
-		_, err = util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
+		_ = r.Ok()
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
-		s.SecureChatEnforced, err = util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
+		r.Bool(&s.SecureChatEnforced)
 	}
 	return nil
 }
