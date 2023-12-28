@@ -328,6 +328,35 @@ func ReadUUID(rd io.Reader) (id uuid.UUID, err error) {
 	return uuid.FromBytes(b)
 }
 
+func ReadUUIDIntArray(rd io.Reader) (uuid.UUID, error) {
+	msbHigh, err := ReadInt(rd)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	msbLow, err := ReadInt(rd)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	lsbHigh, err := ReadInt(rd)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	lsbLow, err := ReadInt(rd)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	msb := int64(msbHigh)<<32 | int64(msbLow)&0xFFFFFFFF
+	lsb := int64(lsbHigh)<<32 | int64(lsbLow)&0xFFFFFFFF
+
+	return uuid.FromBytes(append(int64ToBytes(msb), int64ToBytes(lsb)...))
+}
+
+func int64ToBytes(i int64) []byte {
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:], uint64(i))
+	return buf[:]
+}
+
 func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
 	var size int
 	size, err = ReadVarInt(rd)

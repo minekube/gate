@@ -292,7 +292,7 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		s.UUID, err = util.ReadUUID(rd)
 	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		s.UUID, err = util.ReadUUID(rd) // readUUIDIntArray?
+		s.UUID, err = util.ReadUUIDIntArray(rd)
 	} else {
 		var uuidString string
 		if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
