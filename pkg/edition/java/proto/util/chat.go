@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
@@ -19,6 +20,13 @@ func JsonCodec(protocol proto.Protocol) codec.Codec {
 		return jsonCodec_pre_1_20_3
 	}
 	return jsonCodec_pre_1_16
+}
+
+// Marshal marshals a component into JSON.
+func Marshal(protocol proto.Protocol, c component.Component) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := JsonCodec(protocol).Marshal(buf, c)
+	return buf.Bytes(), err
 }
 
 func LatestJsonCodec() codec.Codec {

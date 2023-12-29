@@ -234,8 +234,8 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 			// payload was too short or packet decoder has a bug
 			err = errors.Join(err, io.ErrUnexpectedEOF)
 		}
-		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s): %w",
-			ctx.Packet, ctx.PacketID, ctx.Protocol, ctx.Direction, err)
+		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s, read: %d, unread: %d): %w",
+			ctx.Packet, ctx.PacketID, ctx.Protocol, ctx.Direction, len(ctx.Payload)-payload.Len(), payload.Len(), err)
 	}
 
 	// Payload buffer should now be empty.

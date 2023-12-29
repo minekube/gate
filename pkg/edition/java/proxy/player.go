@@ -323,7 +323,7 @@ func (p *connectedPlayer) tickResourcePackQueue() error {
 		ID:       queued.ID,
 		URL:      queued.URL,
 		Required: queued.ShouldForce,
-		Prompt:   queued.Prompt,
+		Prompt:   chat.FromComponentProtocol(queued.Prompt, p.Protocol()),
 	}
 	if len(queued.Hash) != 0 {
 		req.Hash = hex.EncodeToString(queued.Hash)
@@ -484,7 +484,7 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 		// Use the title packet instead.
 		pkt, err := title.New(protocol, &title.Builder{
 			Action:    title.SetActionBar,
-			Component: msg,
+			Component: *chat.FromComponent(msg),
 		})
 		if err != nil {
 			return err
@@ -621,7 +621,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if netmc.CloseWith(p, packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
+	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), false)) == nil {
 		p.log.Info("player has been disconnected", "reason", r)
 	}
 }

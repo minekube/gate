@@ -4,14 +4,11 @@ package title
 import (
 	"errors"
 	"fmt"
-	"io"
-	"strings"
-
-	"go.minekube.com/common/minecraft/component"
-
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"io"
 )
 
 // Action is the title action.
@@ -39,20 +36,12 @@ func ProtocolAction(protocol proto.Protocol, action Action) Action {
 
 // New creates a version and type dependent title packet.
 func New(protocol proto.Protocol, title *Builder) (titlePacket proto.Packet, err error) {
-	var c string
-	if title.Component != nil {
-		c, err = comp(protocol, title.Component)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if protocol.GreaterEqual(version.Minecraft_1_17) {
 		switch title.Action {
 		case SetActionBar:
-			return &Actionbar{Component: c}, nil
+			return &Actionbar{Component: title.Component}, nil
 		case SetSubtitle:
-			return &Subtitle{Component: c}, nil
+			return &Subtitle{Component: title.Component}, nil
 		case SetTimes:
 			return &Times{
 				FadeIn:  title.FadeIn,
@@ -60,7 +49,7 @@ func New(protocol proto.Protocol, title *Builder) (titlePacket proto.Packet, err
 				FadeOut: title.FadeOut,
 			}, nil
 		case SetTitle:
-			return &Text{Component: c}, nil
+			return &Text{Component: title.Component}, nil
 		case Reset:
 			return &Clear{Action: Reset}, nil
 		case Hide:
@@ -73,45 +62,36 @@ func New(protocol proto.Protocol, title *Builder) (titlePacket proto.Packet, err
 
 	return &Legacy{
 		Action:    title.Action,
-		Component: c,
+		Component: &title.Component,
 		FadeIn:    title.FadeIn,
 		Stay:      title.Stay,
 		FadeOut:   title.FadeOut,
 	}, err
 }
 
-func comp(protocol proto.Protocol, c component.Component) (string, error) {
-	if c == nil {
-		return "", errors.New("component must not be nil")
-	}
-	b := new(strings.Builder)
-	err := util.JsonCodec(protocol).Marshal(b, c)
-	return b.String(), err
-}
-
 // Builder is a Title packet builder.
 type Builder struct {
 	Action                Action
-	Component             component.Component
+	Component             chat.ComponentHolder
 	FadeIn, Stay, FadeOut int // ticks
 }
 
 type (
-	Actionbar struct{ Component string }
-	Subtitle  struct{ Component string }
+	Actionbar struct{ Component chat.ComponentHolder }
+	Subtitle  struct{ Component chat.ComponentHolder }
 	Times     struct{ FadeIn, Stay, FadeOut int }
-	Text      struct{ Component string }
+	Text      struct{ Component chat.ComponentHolder }
 	Clear     struct {
 		// Either Hide or Reset. Falls back to Hide.
 		Action Action
 	}
 )
 
-func (t *Text) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	return util.WriteString(wr, t.Component)
+func (t *Text) Encode(c *proto.PacketContext, wr io.Writer) error {
+	return t.Component.Write(wr, c.Protocol)
 }
-func (t *Text) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	t.Component, err = util.ReadString(rd)
+func (t *Text) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	t.Component, err = chat.ReadComponentHolderNP(rd, c.Protocol)
 	return
 }
 func (c *Clear) Decode(_ *proto.PacketContext, rd io.Reader) error {
@@ -129,19 +109,19 @@ func (c *Clear) Decode(_ *proto.PacketContext, rd io.Reader) error {
 func (c *Clear) Encode(_ *proto.PacketContext, wr io.Writer) error {
 	return util.WriteBool(wr, c.Action == Reset)
 }
-func (a *Actionbar) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	a.Component, err = util.ReadString(rd)
+func (a *Actionbar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	a.Component, err = chat.ReadComponentHolderNP(rd, c.Protocol)
 	return
 }
-func (a *Actionbar) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	return util.WriteString(wr, a.Component)
+func (a *Actionbar) Encode(c *proto.PacketContext, wr io.Writer) error {
+	return a.Component.Write(wr, c.Protocol)
 }
-func (s *Subtitle) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	s.Component, err = util.ReadString(rd)
+func (s *Subtitle) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	s.Component, err = chat.ReadComponentHolderNP(rd, c.Protocol)
 	return
 }
-func (s *Subtitle) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	return util.WriteString(wr, s.Component)
+func (s *Subtitle) Encode(c *proto.PacketContext, wr io.Writer) error {
+	return s.Component.Write(wr, c.Protocol)
 }
 func (t *Times) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 	t.FadeIn, err = util.ReadInt(rd)
@@ -169,7 +149,7 @@ func (t *Times) Encode(_ *proto.PacketContext, wr io.Writer) error {
 
 type Legacy struct {
 	Action                Action
-	Component             string
+	Component             *chat.ComponentHolder
 	FadeIn, Stay, FadeOut int
 }
 
@@ -188,7 +168,7 @@ func (l *Legacy) Encode(c *proto.PacketContext, wr io.Writer) error {
 	case Hide, Reset:
 		return nil
 	case SetTitle, SetSubtitle, SetActionBar:
-		return util.WriteString(wr, l.Component)
+		return l.Component.Write(wr, c.Protocol)
 	case SetTimes:
 		err = util.WriteInt(wr, l.FadeIn)
 		if err != nil {
@@ -218,7 +198,7 @@ func (l *Legacy) Decode(c *proto.PacketContext, rd io.Reader) error {
 	case Hide, Reset:
 		return nil
 	case SetTitle, SetSubtitle, SetActionBar:
-		l.Component, err = util.ReadString(rd)
+		l.Component, err = chat.ReadComponentHolder(rd, c.Protocol)
 	case SetTimes:
 		l.FadeIn, err = util.ReadInt(rd)
 		if err != nil {

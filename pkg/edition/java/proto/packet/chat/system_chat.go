@@ -4,19 +4,18 @@ import (
 	"fmt"
 	"io"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 type SystemChat struct {
-	Component component.Component
+	Component *ComponentHolder
 	Type      MessageType
 }
 
 func (p *SystemChat) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteComponent(wr, c.Protocol, p.Component)
+	err := p.Component.Write(wr, c.Protocol)
 	if err != nil {
 		return err
 	}
@@ -35,7 +34,7 @@ func (p *SystemChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (p *SystemChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	p.Component, err = util.ReadComponent(rd, c.Protocol)
+	p.Component, err = ReadComponentHolder(rd, c.Protocol)
 	if err != nil {
 		return err
 	}

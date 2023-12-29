@@ -167,6 +167,10 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 		originalCommand: packet.Command,
 	}
 	event.FireParallel(c.eventMgr, e, func(e *CommandExecuteEvent) {
+		server, ok := c.player.ensureBackendConnection()
+		if !ok {
+			return
+		}
 		if !e.Allowed() {
 			if packet.Signed() {
 				if c.disconnectIllegalProtocolState(c.player) {
@@ -174,15 +178,17 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				}
 				return
 			}
+			// We seemingly can't actually do this if signed args exist, if not, we can probs keep stuff happy
+			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+				_ = server.WritePacket(&chat.ChatAcknowledgement{
+					Offset: packet.LastSeenMessages.Offset,
+				})
+			}
 			return
 		}
 
 		commandToRun := e.Command()
 		if e.Forward() {
-			server, ok := c.player.ensureBackendConnection()
-			if !ok {
-				return
-			}
 			if packet.Signed() && commandToRun == packet.Command {
 				_ = server.WritePacket(packet)
 				return
@@ -228,6 +234,11 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				Sender:    c.player.ID(),
 				Timestamp: packet.Timestamp,
 			}).ToServer())
+		}
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+			_ = server.WritePacket(&chat.ChatAcknowledgement{
+				Offset: packet.LastSeenMessages.Offset,
+			})
 		}
 	})
 	return nil

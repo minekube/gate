@@ -1,9 +1,9 @@
 package packet
 
 import (
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"io"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -11,9 +11,9 @@ import (
 )
 
 type ServerData struct {
-	Description        component.Component // nil-able
-	Favicon            favicon.Favicon     // may be empty
-	SecureChatEnforced bool                // Added in 1.19.1
+	Description        *chat.ComponentHolder // nil-able
+	Favicon            favicon.Favicon       // may be empty
+	SecureChatEnforced bool                  // Added in 1.19.1
 }
 
 func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -23,7 +23,7 @@ func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
 		w.Bool(hasDescription)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) || hasDescription {
-		err := util.WriteComponent(wr, c.Protocol, s.Description)
+		err := s.Description.Write(wr, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -48,17 +48,10 @@ func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
 
 func (s *ServerData) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	r := util.PanicReader(rd)
-	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) {
-		s.Description, err = util.ReadComponent(rd, c.Protocol)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_4) || r.Ok() {
+		s.Description, err = chat.ReadComponentHolder(rd, c.Protocol)
 		if err != nil {
 			return err
-		}
-	} else {
-		if r.Ok() {
-			s.Description, err = util.ReadComponent(rd, c.Protocol)
-			if err != nil {
-				return err
-			}
 		}
 	}
 	if r.Ok() {

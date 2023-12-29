@@ -1,14 +1,12 @@
 package tablist
 
 import (
-	"bytes"
-	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"time"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -83,22 +81,10 @@ type Viewer interface {
 
 // SendHeaderFooter updates the tab list header and footer for a Viewer.
 func SendHeaderFooter(viewer Viewer, header, footer component.Component) error {
-	b := new(bytes.Buffer)
-	p := new(packet.HeaderAndFooter)
-	j := util.JsonCodec(viewer.Protocol())
-
-	if err := j.Marshal(b, header); err != nil {
-		return fmt.Errorf("error marshal header: %w", err)
-	}
-	p.Header = b.String()
-	b.Reset()
-
-	if err := j.Marshal(b, footer); err != nil {
-		return fmt.Errorf("error marshal footer: %w", err)
-	}
-	p.Footer = b.String()
-
-	return viewer.WritePacket(p)
+	return viewer.WritePacket(&packet.HeaderAndFooter{
+		Header: *chat.FromComponentProtocol(header, viewer.Protocol()),
+		Footer: *chat.FromComponentProtocol(footer, viewer.Protocol()),
+	})
 }
 
 // ClearTabListHeaderFooter clears the tab list header and footer for a tab list.

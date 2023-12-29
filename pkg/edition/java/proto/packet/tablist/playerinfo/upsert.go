@@ -3,7 +3,6 @@ package playerinfo
 import (
 	"io"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -23,7 +22,7 @@ type (
 		Listed            bool
 		Latency           int // in milliseconds
 		GameMode          int
-		DisplayName       component.Component     // nil-able
+		DisplayName       *chat.ComponentHolder   // nil-able
 		RemoteChatSession *chat.RemoteChatSession // nil-able
 	}
 )
@@ -219,7 +218,7 @@ func (a *updateDisplayNameAction) Encode(c *proto.PacketContext, wr io.Writer, i
 		return err
 	}
 	if info.DisplayName != nil {
-		return util.WriteComponent(wr, c.Protocol, info.DisplayName)
+		return info.DisplayName.Write(wr, c.Protocol)
 	}
 	return nil
 }
@@ -230,7 +229,7 @@ func (a *updateDisplayNameAction) Decode(c *proto.PacketContext, rd io.Reader, i
 		return err
 	}
 	if ok {
-		info.DisplayName, err = util.ReadComponent(rd, c.Protocol)
+		info.DisplayName, err = chat.ReadComponentHolder(rd, c.Protocol)
 	} else {
 		info.DisplayName = nil
 	}

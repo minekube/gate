@@ -2,22 +2,20 @@ package packet
 
 import (
 	"errors"
-	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"strings"
-
-	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/uuid"
+	"io"
 )
 
 type ResourcePackRequest struct {
 	ID       uuid.UUID // 1.20.3+
 	URL      string
 	Hash     string
-	Required bool                // 1.17+
-	Prompt   component.Component // (nil-able) 1.17+
+	Required bool                  // 1.17+
+	Prompt   *chat.ComponentHolder // (nil-able) 1.17+
 }
 
 func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -52,12 +50,10 @@ func (r *ResourcePackRequest) Encode(c *proto.PacketContext, wr io.Writer) error
 			if err != nil {
 				return err
 			}
-			buf := new(strings.Builder)
-			err = util.JsonCodec(c.Protocol).Marshal(buf, r.Prompt)
+			err = r.Prompt.Write(wr, c.Protocol)
 			if err != nil {
 				return err
 			}
-			err = util.WriteString(wr, buf.String())
 		} else {
 			err = util.WriteBool(wr, false)
 		}
@@ -92,12 +88,10 @@ func (r *ResourcePackRequest) Decode(c *proto.PacketContext, rd io.Reader) (err 
 			return err
 		}
 		if hasPrompt {
-			var prompt string
-			prompt, err = util.ReadString(rd)
+			r.Prompt, err = chat.ReadComponentHolder(rd, c.Protocol)
 			if err != nil {
 				return err
 			}
-			r.Prompt, err = util.JsonCodec(c.Protocol).Unmarshal([]byte(prompt))
 		} else {
 			r.Prompt = nil
 		}

@@ -3,6 +3,7 @@ package tablist
 import (
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"sync"
 	"time"
 
@@ -77,7 +78,7 @@ func (e *Entry) SetDisplayName(name component.Component) error {
 	if err != nil {
 		return fmt.Errorf("error creating upsert entry: %w", err)
 	}
-	upsertEntry.DisplayName = name
+	upsertEntry.DisplayName = chat.FromComponentProtocol(name, e.OwningTabList.GetViewer().Protocol())
 	return e.OwningTabList.EmitActionRaw(playerinfo.UpdateDisplayNameAction, upsertEntry)
 }
 

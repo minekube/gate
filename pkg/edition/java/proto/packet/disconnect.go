@@ -2,52 +2,50 @@ package packet
 
 import (
 	"errors"
-	"io"
-	"strings"
-
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+	"io"
 
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 type Disconnect struct {
-	Reason *string // A reason must only be given for encoding.
+	Reason *chat.ComponentHolder // nil-able
+
+	// Not part of the packet data itself,
+	// but used to determine whether this is a login or play packet.
+	Login bool
 }
 
 func (d *Disconnect) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if d.Reason == nil {
-		return errors.New("missing reason for disconnect")
+		return errors.New("no reason specified")
 	}
-	return util.WriteString(wr, *d.Reason)
+	return d.Reason.Write(wr, c.Protocol)
 }
 
-func (d *Disconnect) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	s, err := util.ReadString(rd)
-	if err != nil {
-		return err
+func (d *Disconnect) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	protocol := c.Protocol
+	if d.Login {
+		protocol = version.Minecraft_1_20_2.Protocol
 	}
-	d.Reason = &s
-	return nil
+	d.Reason, err = chat.ReadComponentHolder(rd, protocol)
+	return err
 }
 
 var _ proto.Packet = (*Disconnect)(nil)
 
-// DisconnectWith creates a Disconnect packet with guaranteed reason.
-func DisconnectWith(reason component.Component) *Disconnect {
-	return DisconnectWithProtocol(reason, version.Minecraft_1_7_2.Protocol)
-}
-
-// DisconnectWithProtocol creates a new Disconnect packet for the given given protocol.
-func DisconnectWithProtocol(reason component.Component, protocol proto.Protocol) *Disconnect {
-	if reason == nil {
-		reason = &component.Text{} // empty reason
+// NewDisconnect creates a new Disconnect packet.
+func NewDisconnect(reason component.Component, protocol proto.Protocol, login bool) *Disconnect {
+	if login {
+		protocol = version.Minecraft_1_20_2.Protocol
 	}
-	b := new(strings.Builder)
-	if err := util.JsonCodec(protocol).Marshal(b, reason); err != nil {
-		b.Reset() // empty reason
+	return &Disconnect{
+		Reason: &chat.ComponentHolder{
+			Protocol:  protocol,
+			Component: reason,
+		},
+		Login: login,
 	}
-	s := b.String()
-	return &Disconnect{Reason: &s}
 }

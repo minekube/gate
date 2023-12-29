@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"reflect"
 
 	"go.minekube.com/common/minecraft/component"
@@ -369,17 +370,11 @@ func disconnectResultForPacket(
 	server RegisteredServer,
 	safe bool,
 ) *connectionResult {
-	var reason string
+	var reason *chat.ComponentHolder
 	if p != nil && p.Reason != nil {
-		reason = *p.Reason
+		reason = p.Reason
 	}
-	r, err := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
-	if errLog.Enabled() && err != nil {
-		errLog.Error(err, "Error unmarshal disconnect reason from server",
-			"safe", safe, "protocol", protocol,
-			"reason", reason, "server", server.ServerInfo().Name())
-	}
-	return disconnectResult(r, server, safe)
+	return disconnectResult(reason.AsComponentOrNil(), server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {
 	return &connectionResult{

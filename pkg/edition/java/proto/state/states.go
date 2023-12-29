@@ -157,6 +157,9 @@ func init() {
 		m(0x02, version.Minecraft_1_12_1),
 		ml(0x03, version.Minecraft_1_14, version.Minecraft_1_18_2),
 	)
+	Play.ServerBound.Register(&chat.ChatAcknowledgement{},
+		m(0x03, version.Minecraft_1_19_3),
+	)
 	Play.ServerBound.Register(&chat.KeyedPlayerCommand{},
 		m(0x03, version.Minecraft_1_19),
 		ml(0x04, version.Minecraft_1_19_1, version.Minecraft_1_19_1),

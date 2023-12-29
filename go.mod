@@ -39,7 +39,7 @@ require (
 
 require (
 	buf.build/gen/go/minekube/connect/protocolbuffers/go v1.31.0-20230517110945-04c17e7d2fd9.1 // indirect
-	github.com/Tnze/go-mc v1.20.1 // indirect
+	github.com/Tnze/go-mc v1.20.2-0.20231123224931-bc3d77d78437 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/df-mc/atomic v1.10.0 // indirect

@@ -2,9 +2,9 @@ package bossbar
 
 import (
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"io"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -59,7 +59,7 @@ var (
 type BossBar struct {
 	ID      uuid.UUID
 	Action  Action
-	Name    component.Component
+	Name    *chat.ComponentHolder
 	Percent float32
 	Color   Color
 	Overlay Overlay
@@ -81,7 +81,7 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if bb.Name == nil {
 			return errNoName
 		}
-		err = util.WriteComponent(wr, c.Protocol, bb.Name)
+		err = bb.Name.Write(wr, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -112,7 +112,7 @@ func (bb *BossBar) Encode(c *proto.PacketContext, wr io.Writer) error {
 		if bb.Name == nil {
 			return errNoName
 		}
-		err = util.WriteComponent(wr, c.Protocol, bb.Name)
+		err = bb.Name.Write(wr, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func (bb *BossBar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 
 	switch bb.Action {
 	case AddAction:
-		bb.Name, err = util.ReadComponent(rd, c.Protocol)
+		bb.Name, err = chat.ReadComponentHolder(rd, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -179,7 +179,7 @@ func (bb *BossBar) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			return err
 		}
 	case UpdateNameAction:
-		bb.Name, err = util.ReadComponent(rd, c.Protocol)
+		bb.Name, err = chat.ReadComponentHolder(rd, c.Protocol)
 		if err != nil {
 			return err
 		}

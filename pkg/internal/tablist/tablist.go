@@ -49,6 +49,8 @@ func New(viewer Viewer) InternalTabList {
 type InternalTabList interface {
 	tablist.TabList
 
+	GetViewer() tablist.Viewer
+
 	ProcessRemove(info *playerinfo.Remove)
 	ProcessUpdate(info *playerinfo.Upsert) error
 	ProcessLegacy(legacy *legacytablist.PlayerListItem) error
@@ -93,6 +95,10 @@ type (
 		}
 	}
 )
+
+func (t *TabList) GetViewer() tablist.Viewer {
+	return t.Viewer
+}
 
 func (t *TabList) SetHeaderFooter(header, footer component.Component) error {
 	if header == nil {
@@ -214,7 +220,7 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		}
 		if !reflect.DeepEqual(previousEntry.DisplayName(), entry.DisplayName()) {
 			actions = append(actions, playerinfo.UpdateDisplayNameAction)
-			playerInfoEntry.DisplayName = entry.DisplayName()
+			playerInfoEntry.DisplayName = chat.FromComponentProtocol(entry.DisplayName(), t.Viewer.Protocol())
 		}
 		if previousEntry.Latency() != entry.Latency() {
 			actions = append(actions, playerinfo.UpdateLatencyAction)
@@ -246,7 +252,7 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		playerInfoEntry.Profile = entry.Profile()
 		if entry.DisplayName() != nil {
 			actions = append(actions, playerinfo.UpdateDisplayNameAction)
-			playerInfoEntry.DisplayName = entry.DisplayName()
+			playerInfoEntry.DisplayName = chat.FromComponentProtocol(entry.DisplayName(), t.Viewer.Protocol())
 		}
 		if entry.ChatSession() != nil {
 			actions = append(actions, playerinfo.InitializeChatAction)
@@ -333,7 +339,7 @@ func (t *TabList) processUpdateForEntry(actions []playerinfo.UpsertAction, info 
 	}
 	if playerinfo.ContainsAction(actions, playerinfo.UpdateDisplayNameAction) {
 		doInternalEntity(currentEntry, func(e internalEntry) {
-			e.SetDisplayNameInternal(info.DisplayName)
+			e.SetDisplayNameInternal(info.DisplayName.AsComponentOrNil())
 		})
 	}
 	if playerinfo.ContainsAction(actions, playerinfo.InitializeChatAction) {

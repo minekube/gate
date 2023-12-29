@@ -137,10 +137,10 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
 	if h.loginsQuota != nil && h.loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
-		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
+		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
-		}))
+		}, proto.Protocol(p.ProtocolVersion), true))
 		return
 	}
 
@@ -150,9 +150,9 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 	// and lower, otherwise IP information will never get forwarded.
 	if h.config().Forwarding.Mode == config.VelocityForwardingMode &&
 		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
-		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
+		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
-		}))
+		}, proto.Protocol(p.ProtocolVersion), true))
 		return
 	}
 
@@ -215,7 +215,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.DisconnectWithProtocol(reason, i.Protocol()))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), true))
 }
 
 //

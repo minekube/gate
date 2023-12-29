@@ -287,8 +287,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 }
 
 func (p *connectedPlayer) handleDisconnect(server RegisteredServer, disconnect *packet.Disconnect, safe bool) {
-	reason, _ := util2.JsonCodec(p.Protocol()).Unmarshal([]byte(*disconnect.Reason))
-	p.handleDisconnectWithReason(server, reason, safe)
+	p.handleDisconnectWithReason(server, disconnect.Reason.AsComponentOrNil(), safe)
 }
 
 // handles unexpected disconnects

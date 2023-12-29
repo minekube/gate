@@ -1,39 +1,40 @@
 package packet
 
 import (
+	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"io"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
 type HeaderAndFooter struct {
-	Header string
-	Footer string
+	Header chat.ComponentHolder
+	Footer chat.ComponentHolder
 }
 
 func (h *HeaderAndFooter) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteString(wr, h.Header)
+	err := h.Header.Write(wr, c.Protocol)
 	if err != nil {
 		return err
 	}
-	return util.WriteString(wr, h.Footer)
+	return h.Footer.Write(wr, c.Protocol)
 }
 
 // we never read this packet
 func (h *HeaderAndFooter) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	h.Header, err = util.ReadString(rd)
+	h.Header, err = chat.ReadComponentHolderNP(rd, c.Protocol)
 	if err != nil {
 		return err
 	}
-	h.Footer, err = util.ReadString(rd)
+	h.Footer, err = chat.ReadComponentHolderNP(rd, c.Protocol)
 	return err
 }
 
 var ResetHeaderAndFooter = &HeaderAndFooter{
-	Header: `{"translate":""}`,
-	Footer: `{"translate":""}`,
+	Header: *chat.FromComponent(new(component.Translation)),
+	Footer: *chat.FromComponent(new(component.Translation)),
 }
 
 var (

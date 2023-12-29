@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"reflect"
@@ -234,7 +235,7 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 			return
 		}
 		_ = b.serverConn.player.WritePacket(&packet.ServerData{
-			Description:        e.Ping().Description,
+			Description:        &chat.ComponentHolder{Component: e.Ping().Description},
 			Favicon:            e.Ping().Favicon,
 			SecureChatEnforced: p.SecureChatEnforced,
 		})
@@ -256,7 +257,7 @@ func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (ResourcePackIn
 		ID:          p.ID,
 		URL:         p.URL,
 		ShouldForce: p.Required,
-		Prompt:      p.Prompt,
+		Prompt:      p.Prompt.AsComponentOrNil(),
 		Origin:      DownstreamServerResourcePackOrigin,
 	}
 	if p.Hash != "" && possibleResourcePackHash(p.Hash) {
