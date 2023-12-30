@@ -2,6 +2,7 @@
 package title
 
 import (
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"time"
 
 	"go.minekube.com/common/minecraft/component"
@@ -116,7 +117,7 @@ func ShowTitle(viewer Viewer, opts *Options) error {
 		}
 		subtitlePkt, err := title.New(protocol, &title.Builder{
 			Action:    title.SetSubtitle,
-			Component: subtitle,
+			Component: *chat.FromComponentProtocol(subtitle, protocol),
 		})
 		if err != nil {
 			return err
@@ -133,7 +134,7 @@ func ShowTitle(viewer Viewer, opts *Options) error {
 		}
 		titlePkt, err := title.New(protocol, &title.Builder{
 			Action:    title.SetTitle,
-			Component: ti,
+			Component: *chat.FromComponentProtocol(ti, protocol),
 		})
 		if err != nil {
 			return err

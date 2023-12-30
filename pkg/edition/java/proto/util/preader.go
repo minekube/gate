@@ -43,6 +43,10 @@ func (r *PReader) Strings(i *[]string) {
 	PReadStrings(r.r, i)
 }
 
+func (r *PReader) Byte(b *byte) {
+	PReadByte(r.r, b)
+}
+
 func PReadStrings(r io.Reader, i *[]string) {
 	v, err := ReadStringArray(r)
 	if err != nil {

@@ -199,6 +199,9 @@ func (l *Legacy) Decode(c *proto.PacketContext, rd io.Reader) error {
 		return nil
 	case SetTitle, SetSubtitle, SetActionBar:
 		l.Component, err = chat.ReadComponentHolder(rd, c.Protocol)
+		if err != nil {
+			err = fmt.Errorf("error reading component: %w", err)
+		}
 	case SetTimes:
 		l.FadeIn, err = util.ReadInt(rd)
 		if err != nil {

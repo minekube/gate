@@ -329,7 +329,7 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 		return
 	}
 	_ = c.Close()
-	if err == ErrClosedConn {
+	if errors.Is(err, ErrClosedConn) {
 		return // Don't log this error
 	}
 	var opErr *net.OpError

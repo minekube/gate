@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"go.minekube.com/common/minecraft/key"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
 	"reflect"
 	"testing"
@@ -42,10 +43,19 @@ var (
 	//go:embed testdata/PlayerChat-1.19.gob
 	playerChatPacketGob []byte
 	playerChatPacket    = new(chat.KeyedPlayerChat)
+
+	//go:embed testdata/1-dimension_codec.snbt
+	dimensionCodecSnbt string
+	dimensionBinaryTag util.CompoundBinaryTag
 )
 
 func init() {
 	err := gob.NewDecoder(bytes.NewReader(playerChatPacketGob)).Decode(&playerChatPacket)
+	if err != nil {
+		panic(err)
+	}
+
+	dimensionBinaryTag, err = chat.SnbtToBinaryTag(dimensionCodecSnbt)
 	if err != nil {
 		panic(err)
 	}
@@ -60,9 +70,9 @@ var packets = []proto.Packet{
 	&TabCompleteRequest{},
 	&TabCompleteResponse{
 		Offers: []TabCompleteOffer{
-			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip"}},
-			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip2"}},
-			{Text: mustFakeStr(), Tooltip: &component.Text{Content: "MyTooltip3"}},
+			{Text: mustFakeStr(), Tooltip: chat.FromComponent(&component.Text{Content: "MyTooltip"})},
+			{Text: mustFakeStr(), Tooltip: chat.FromComponent(&component.Text{Content: "MyTooltip2"})},
+			{Text: mustFakeStr(), Tooltip: chat.FromComponent(&component.Text{Content: "MyTooltip3"})},
 		},
 	},
 	&AvailableCommands{RootNode: func() *brigodier.RootCommandNode {
@@ -81,7 +91,9 @@ var packets = []proto.Packet{
 		return n
 	}()},
 	&ClientSettings{},
-	&Disconnect{},
+	&Disconnect{
+		Reason: chat.FromComponent(&component.Text{Content: "Disconnect"}),
+	},
 	&Handshake{},
 	&KeepAlive{},
 	&ServerLogin{
@@ -101,15 +113,18 @@ var packets = []proto.Packet{
 	&StatusRequest{},
 	&StatusResponse{},
 	&StatusPing{},
-	&HeaderAndFooter{},
+	&HeaderAndFooter{
+		Header: *chat.FromComponent(&component.Text{Content: "Header"}),
+		Footer: *chat.FromComponent(&component.Text{Content: "Footer"}),
+	},
 	&EncryptionRequest{
 		ServerID:    "984hgf8097c4gh8734hr",
 		PublicKey:   []byte("9wh90fh23dh203d2b23b3"),
 		VerifyToken: []byte("32f8d89dh3di"),
 	},
-	&title.Text{Component: `{"text":"sub title"}`},
-	&title.Subtitle{Component: `{"text":"sub title"}`},
-	&title.Actionbar{Component: `{"text":"action bar"}`},
+	&title.Text{Component: *chat.FromComponent(&component.Text{Content: "title"})},
+	&title.Subtitle{Component: *chat.FromComponent(&component.Text{Content: "sub title"})},
+	&title.Actionbar{Component: *chat.FromComponent(&component.Text{Content: "action bar"})},
 	&title.Clear{Action: title.Reset},
 	&title.Times{
 		FadeIn:  1,
@@ -164,8 +179,8 @@ var packets = []proto.Packet{
 		PreviousGamemode:     2,
 		SimulationDistance:   3,
 		LastDeathPosition:    mustFake(&DeathPosition{}),
-		CurrentDimensionData: map[string]any{},
-		Registry:             map[string]any{},
+		CurrentDimensionData: dimensionBinaryTag,
+		Registry:             dimensionBinaryTag, // still use dimension codec for now
 	},
 	&Respawn{
 		Dimension:            1,
@@ -176,13 +191,13 @@ var packets = []proto.Packet{
 		DataToKeep:           0,
 		DimensionInfo:        mustFake(&DimensionInfo{}),
 		PreviousGamemode:     0,
-		CurrentDimensionData: map[string]any{},
+		CurrentDimensionData: dimensionBinaryTag,
 		LastDeathPosition:    mustFake(&DeathPosition{}),
 	},
 	chat.NewKeyedPlayerCommand("command", []string{"a", "b", "c"}, time.Now()),
 	playerChatPacket,
 	&chat.SystemChat{
-		Component: &component.Text{Content: "Preview", S: component.Style{Color: color.Red}},
+		Component: chat.FromComponent(&component.Text{Content: "Preview", S: component.Style{Color: color.Red}}),
 		Type:      chat.SystemMessageType,
 	},
 	&chat.LegacyChat{},
@@ -215,14 +230,14 @@ var packets = []proto.Packet{
 	},
 	&PlayerChatCompletion{},
 	&ServerData{
-		Description:        &component.Text{Content: "Description", S: component.Style{Color: color.Red}},
+		Description:        chat.FromComponent(&component.Text{Content: "Description", S: component.Style{Color: color.Red}}),
 		Favicon:            "Favicon",
 		SecureChatEnforced: true,
 	},
 	&bossbar.BossBar{
 		ID:      uuid.New(),
 		Action:  bossbar.UpdateStyleAction,
-		Name:    &component.Text{Content: "BossBar", S: component.Style{Color: color.Red}},
+		Name:    chat.FromComponent(&component.Text{Content: "BossBar", S: component.Style{Color: color.Red}}),
 		Percent: 0.5,
 		Color:   bossbar.PurpleColor,
 		Overlay: bossbar.Notched10Overlay,
@@ -359,7 +374,7 @@ func TestLegacyTitle(t *testing.T) {
 		[]proto.Packet{
 			&title.Legacy{
 				Action:    title.SetActionBar,
-				Component: `{"text":"legacy action bar"}`,
+				Component: chat.FromComponent(&component.Text{Content: "legacy action bar"}),
 			},
 		}...)
 	PacketCodings(t,
@@ -368,7 +383,7 @@ func TestLegacyTitle(t *testing.T) {
 		[]proto.Packet{
 			&title.Legacy{
 				Action:    title.SetSubtitle,
-				Component: `{"text":"legacy sub title"}`,
+				Component: chat.FromComponent(&component.Text{Content: "legacy sub title"}),
 			},
 			&title.Legacy{
 				Action:  title.SetTimes,
@@ -378,7 +393,7 @@ func TestLegacyTitle(t *testing.T) {
 			},
 			&title.Legacy{
 				Action:    title.SetTitle,
-				Component: `{"text":"legacy title"}`,
+				Component: chat.FromComponent(&component.Text{Content: "legacy title"}),
 			},
 		}...)
 }

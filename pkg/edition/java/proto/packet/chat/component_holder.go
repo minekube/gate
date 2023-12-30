@@ -8,10 +8,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"gopkg.in/yaml.v3"
 	"io"
 	"log/slog"
-	"regexp"
 )
 
 func FromComponent(comp component.Component) *ComponentHolder {
@@ -56,13 +54,8 @@ func ReadComponentHolderNP(rd io.Reader, protocol proto.Protocol) (ComponentHold
 func (c *ComponentHolder) read(rd io.Reader, protocol proto.Protocol) (err error) {
 	c.Protocol = protocol
 	if protocol.GreaterEqual(version.Minecraft_1_20_3) {
-		dec := nbt2.NewDecoder(rd)
-		dec.NetworkFormat(true) // skip tag name
-		_, err := dec.Decode(&c.BinaryTag)
-		if err != nil {
-			return fmt.Errorf("error while reading binaryTag: %w", err)
-		}
-		return nil
+		c.BinaryTag, err = util.ReadBinaryTag(rd, protocol)
+		return err
 	}
 	j, err := util.ReadString(rd)
 	c.JSON = json.RawMessage(j)
@@ -72,13 +65,11 @@ func (c *ComponentHolder) read(rd io.Reader, protocol proto.Protocol) (err error
 // Write writes the component holder to the writer.
 func (c *ComponentHolder) Write(wr io.Writer, protocol proto.Protocol) error {
 	if protocol.GreaterEqual(version.Minecraft_1_20_3) {
-		enc := nbt2.NewEncoder(wr)
-		enc.NetworkFormat(true) // skip tag name
-		err := enc.Encode(c.BinaryTag, "")
+		bt, err := c.AsBinaryTag()
 		if err != nil {
-			return fmt.Errorf("error while reading binaryTag: %w", err)
+			return err
 		}
-		return nil
+		return util.WriteBinaryTag(wr, protocol, bt)
 	}
 	j, err := c.AsJson()
 	if err != nil {
@@ -110,7 +101,7 @@ func (c *ComponentHolder) AsComponent() (component.Component, error) {
 		return c.Component, err
 	case len(c.BinaryTag.Data) != 0:
 		var err error
-		c.JSON, err = binaryTagToJSON(&c.BinaryTag)
+		c.JSON, err = BinaryTagToJSON(&c.BinaryTag)
 		if err != nil {
 			return nil, fmt.Errorf("error while marshalling binaryTag to JSON: %w", err)
 		}
@@ -128,7 +119,7 @@ func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 	}
 	if len(c.BinaryTag.Data) != 0 {
 		var err error
-		c.JSON, err = binaryTagToJSON(&c.BinaryTag)
+		c.JSON, err = BinaryTagToJSON(&c.BinaryTag)
 		return c.JSON, err
 	}
 	comp, err := c.AsComponent()
@@ -151,42 +142,13 @@ func (c *ComponentHolder) AsJsonOrNil() json.RawMessage {
 	return j
 }
 
-// AsBinaryTag returns the component as a binary NBT tag.
-//func (c *ComponentHolder) AsBinaryTag() (*nbt2.RawMessage, error) {
-//	if len(c.BinaryTag.Data) != 0 {
-//		return &c.BinaryTag, nil
-//	}
-//	j, err := c.AsJson()
-//	if err != nil {
-//		return nil, err
-//	}
-//	err = nbt.UnmarshalEncoding(j, &c.BinaryTag, nbt.BigEndian) // TODO
-//	return &c.BinaryTag, err
-//}
-
-func binaryTagToJSON(tag *nbt2.RawMessage) (json.RawMessage, error) {
-	return snbtToJSON(tag.String())
-}
-
-var snbtRe = regexp.MustCompile(`(?m)([^"]):([^"])`)
-
-// snbtToJSON converts a stringified NBT to JSON.
-// Example: {a:1,b:hello,c:"world",d:true} -> {"a":1,"b":"hello","c":"world","d":true}
-func snbtToJSON(snbt string) (json.RawMessage, error) {
-	// Add spaces after colons that are not within quotes
-	snbt = snbtRe.ReplaceAllString(snbt, "$1: $2")
-
-	// Parse non-standard json with yaml, which is a superset of json.
-	// We use YAML parser, since it's a superset of JSON and quotes are optional.
-	type M map[string]any
-	var m M
-	if err := yaml.Unmarshal([]byte(snbt), &m); err != nil {
-		return nil, err
+func (c *ComponentHolder) AsBinaryTag() (util.BinaryTag, error) {
+	if len(c.BinaryTag.Data) != 0 {
+		return c.BinaryTag, nil
 	}
-	// Marshal back to JSON
-	j, err := json.Marshal(m)
+	j, err := c.AsJson()
 	if err != nil {
-		return nil, err
+		return c.BinaryTag, err
 	}
-	return j, nil
+	return JsonToBinaryTag(j)
 }

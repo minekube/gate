@@ -1,6 +1,9 @@
 package util
 
-import "io"
+import (
+	"go.minekube.com/gate/pkg/gate/proto"
+	"io"
+)
 
 // Recover is a helper function to recover from a panic and set the error pointer to the recovered error.
 // If the panic is not an error, it will be re-panicked.
@@ -73,13 +76,12 @@ func (w *PWriter) Byte(b byte) {
 func (w *PWriter) Strings(s []string) {
 	PWriteStrings(w.w, s)
 }
-
-func (w *PWriter) NBT(nbt NBT) {
-	PWriteNBT(w.w, nbt)
+func (w *PWriter) CompoundBinaryTag(cbt CompoundBinaryTag, protocol proto.Protocol) {
+	PWriteCompoundBinaryTag(w.w, protocol, cbt)
 }
 
-func PWriteNBT(w io.Writer, nbt NBT) {
-	if err := WriteNBT(w, nbt); err != nil {
+func PWriteCompoundBinaryTag(w io.Writer, protocol proto.Protocol, cbt CompoundBinaryTag) {
+	if err := WriteBinaryTag(w, protocol, cbt); err != nil {
 		panic(err)
 	}
 }

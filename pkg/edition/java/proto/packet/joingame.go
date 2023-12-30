@@ -22,15 +22,15 @@ type JoinGame struct {
 	ViewDistance         int     // 1.14+
 	ReducedDebugInfo     bool
 	ShowRespawnScreen    bool
-	DoLimitedCrafting    bool           // 1.20.2+
-	LevelNames           []string       // a set of strings, 1.16+
-	Registry             util.NBT       // 1.16+
-	DimensionInfo        *DimensionInfo // 1.16+
-	CurrentDimensionData util.NBT       // 1.16.2+
-	PreviousGamemode     int16          // 1.16+
-	SimulationDistance   int            // 1.18+
-	LastDeathPosition    *DeathPosition // 1.19+
-	PortalCooldown       int            // 1.20+
+	DoLimitedCrafting    bool                   // 1.20.2+
+	LevelNames           []string               // a set of strings, 1.16+
+	Registry             util.CompoundBinaryTag // 1.16+
+	DimensionInfo        *DimensionInfo         // 1.16+
+	CurrentDimensionData util.CompoundBinaryTag // 1.16.2+
+	PreviousGamemode     int16                  // 1.16+
+	SimulationDistance   int                    // 1.18+
+	LastDeathPosition    *DeathPosition         // 1.19+
+	PortalCooldown       int                    // 1.20+
 }
 
 type DimensionInfo struct {
@@ -99,9 +99,9 @@ func (j *JoinGame) encode116Up(c *proto.PacketContext, wr io.Writer) error {
 	}
 	w.Byte(byte(j.PreviousGamemode))
 	w.Strings(j.LevelNames)
-	w.NBT(j.Registry)
+	w.CompoundBinaryTag(j.Registry, c.Protocol)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
-		w.NBT(j.CurrentDimensionData)
+		w.CompoundBinaryTag(j.CurrentDimensionData, c.Protocol)
 		w.String(j.DimensionInfo.RegistryIdentifier)
 	} else {
 		w.String(j.DimensionInfo.RegistryIdentifier)
@@ -273,18 +273,17 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 	j.PreviousGamemode = int16(util.PReadByteVal(rd))
 
 	r.Strings(&j.LevelNames)
-	nbtDecoder := util.NewNBTDecoder(rd)
-	j.Registry, err = util.DecodeNBT(nbtDecoder)
+	j.Registry, err = util.ReadCompoundTag(rd, c.Protocol)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading registry: %w", err)
 	}
 
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) &&
 		c.Protocol.Lower(version.Minecraft_1_19) {
-		j.CurrentDimensionData, err = util.DecodeNBT(nbtDecoder)
+		j.CurrentDimensionData, err = util.ReadCompoundTag(rd, c.Protocol)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading current dimension data: %w", err)
 		}
 		r.String(&dimensionIdentifier)
 	} else {
@@ -346,7 +345,6 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 	r.Int64(&j.PartialHashedSeed)
 
 	j.Gamemode = int16(util.PReadByteVal(rd))
-
 	j.PreviousGamemode = int16(util.PReadByteVal(rd))
 
 	isDebug := r.Ok()
@@ -360,9 +358,10 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 
 	// optional death location
 	if r.Ok() {
-		key := util.PReadStringVal(rd)
-		value := util.PReadInt64Val(rd)
-		j.LastDeathPosition = &DeathPosition{Key: key, Value: value}
+		j.LastDeathPosition = &DeathPosition{
+			Key:   util.PReadStringVal(rd),
+			Value: util.PReadInt64Val(rd),
+		}
 	}
 
 	r.VarInt(&j.PortalCooldown)
