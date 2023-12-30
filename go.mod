@@ -34,7 +34,6 @@ require (
 	golang.org/x/text v0.12.0
 	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.57.0
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
 )

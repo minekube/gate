@@ -5,6 +5,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"io"
+	"log/slog"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -41,11 +42,12 @@ func NewDisconnect(reason component.Component, protocol proto.Protocol, login bo
 	if login {
 		protocol = version.Minecraft_1_20_2.Protocol
 	}
+	if reason == nil {
+		slog.Error("tried to create a Disconnect packet with a nil reason")
+		reason = &component.Text{Content: ""}
+	}
 	return &Disconnect{
-		Reason: &chat.ComponentHolder{
-			Protocol:  protocol,
-			Component: reason,
-		},
-		Login: login,
+		Reason: chat.FromComponentProtocol(reason, protocol),
+		Login:  login,
 	}
 }

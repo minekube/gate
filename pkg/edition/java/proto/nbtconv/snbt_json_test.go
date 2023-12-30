@@ -1,6 +1,6 @@
 //go:build go1.18
 
-package chat
+package nbtconv
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ func TestSnbtToJSON(t *testing.T) {
 	}{
 		{
 			name:    "without spaces",
-			snbt:    `{a:1,b:hello,c:"world",d:true}`,
+			snbt:    `{a:1,b:hello,c:"world",d:1}`,
 			want:    json.RawMessage(`{"a":1,"b":"hello","c":"world","d":true}`),
 			wantErr: false,
 		},

@@ -1,4 +1,4 @@
-package chat
+package nbtconv
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Tnze/go-mc/nbt"
 	"gopkg.in/yaml.v3"
+	"io"
 	"strings"
 )
 
@@ -84,6 +85,7 @@ func JsonToSNBT(j json.RawMessage) (string, error) {
 	return b.String(), err
 }
 
+// ConvertToSNBT converts a map[string]any to stringified NBT by writing to a strings.Builder.
 func ConvertToSNBT(v any, b *strings.Builder) error {
 	switch v := v.(type) {
 	case map[string]any:
@@ -91,16 +93,17 @@ func ConvertToSNBT(v any, b *strings.Builder) error {
 	case []any:
 		return sliceToSNBT(v, b)
 	case string:
-		if len(v) == 0 {
-			// Empty strings are represented as two double quotes
-			b.WriteString(`""`)
+		// Quote strings that contain spaces or special characters
+		if strings.TrimSpace(v) == "" || strings.ContainsAny(v, " {}:[]/#@!^") {
+			b.WriteString(fmt.Sprintf(`"%s"`, v))
 		} else {
-			// Quote strings that contain spaces or special characters
-			if strings.ContainsAny(v, " {}:[]/") {
-				b.WriteString(fmt.Sprintf(`"%s"`, v))
-			} else {
-				b.WriteString(v)
-			}
+			b.WriteString(v)
+		}
+	case bool:
+		if v {
+			b.WriteString("1")
+		} else {
+			b.WriteString("0")
 		}
 	default:
 		b.WriteString(fmt.Sprintf("%v", v))
@@ -140,10 +143,12 @@ func sliceToSNBT(s []any, b *strings.Builder) error {
 	return nil
 }
 
+// BinaryTagToJSON converts a binary tag to JSON.
 func BinaryTagToJSON(tag *nbt.RawMessage) (json.RawMessage, error) {
 	return SnbtToJSON(tag.String())
 }
 
+// SnbtToBinaryTag converts a stringified NBT to binary tag.
 func SnbtToBinaryTag(snbt string) (nbt.RawMessage, error) {
 	// Convert SNBT to JSON
 	j, err := SnbtToJSON(snbt)
@@ -154,23 +159,70 @@ func SnbtToBinaryTag(snbt string) (nbt.RawMessage, error) {
 	return JsonToBinaryTag(j)
 }
 
-func JsonToBinaryTag(tag json.RawMessage) (nbt.RawMessage, error) {
+// JsonToBinaryTag converts a JSON to binary tag.
+func JsonToBinaryTag(j json.RawMessage) (nbt.RawMessage, error) {
 	// Convert JSON to snbt
-	snbt, err := JsonToSNBT(tag)
+	snbt, err := JsonToSNBT(j)
 	if err != nil {
 		return nbt.RawMessage{}, err
 	}
+
 	// Then convert snbt to bytes
 	buf := new(bytes.Buffer)
 	err = nbt.StringifiedMessage(snbt).MarshalNBT(buf)
 	if err != nil {
 		return nbt.RawMessage{}, fmt.Errorf("error marshalling snbt to binary: %w", err)
 	}
+
+	rd := io.MultiReader(
+		bytes.NewReader([]byte{10}), // type: TagCompound
+		buf,                         // struct fields: Data
+		bytes.NewReader([]byte{0}),  // end TagCompound
+	)
+
+	// This is an example the structure of a binary tag for a kick message:
+	// It is a compound tag with 3 tags:
+	// - color: red
+	// - bold: true
+	// - text: KickAll
+	//
+	// As stringified NBT (snbt) it looks like this:
+	// {color:red,bold:1,text:KickAll}
+	//
+	// The first TagByte (1, 0) represents the type of the tag (TagByte) and the name of the tag (empty).
+
+	//return nbt.RawMessage{
+	//	Type: nbt.TagCompound,
+	//	Data: []byte{
+	//		//10, // type: TagCompound (held by Type field)
+	//		//0, 0, // Named tag string length empty (disabled in network format)
+	//
+	//		8,                            // type: TagString
+	//		0, 5, 99, 111, 108, 111, 114, // string=color length=5
+	//		0, 3, 114, 101, 100, // string=red length=3
+	//
+	//		1,                       // type: TagByte
+	//		0, 4, 98, 111, 108, 100, // string=bold length=4
+	//		1, // TagByte true
+	//
+	//		8,                        // type: TagString
+	//		0, 4, 116, 101, 120, 116, // string=text length=4
+	//		0, 7, 75, 105, 99, 107, 65, 108, 108, // string=KickAll length=7
+	//
+	//		0, // End TagCompound
+	//	},
+	//}, nil
+
 	// Then convert bytes to binary tag
+	dec := nbt.NewDecoder(rd)
+	// Remove index 1 and 2 from buf.Bytes() (which are the length of the tag name)
+	// because we don't want them in network format
+	dec.NetworkFormat(true)
+
 	var m nbt.RawMessage
-	err = nbt.Unmarshal(buf.Bytes(), &m)
-	if err != nil {
-		return nbt.RawMessage{}, fmt.Errorf("error unmarshalling binary to binary tag: %w", err)
+	if _, err = dec.Decode(&m); err != nil {
+		return m, fmt.Errorf("error decoding binary tag: %w", err)
 	}
+
 	return m, nil
 }

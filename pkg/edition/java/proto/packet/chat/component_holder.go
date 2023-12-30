@@ -3,8 +3,9 @@ package chat
 import (
 	"encoding/json"
 	"fmt"
-	nbt2 "github.com/Tnze/go-mc/nbt"
+	"github.com/Tnze/go-mc/nbt"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -31,7 +32,7 @@ type ComponentHolder struct {
 	Protocol  proto.Protocol
 	Component component.Component
 	JSON      json.RawMessage
-	BinaryTag nbt2.RawMessage
+	BinaryTag nbt.RawMessage
 }
 
 // ReadComponentHolder reads a ComponentHolder from the provided reader.
@@ -101,7 +102,7 @@ func (c *ComponentHolder) AsComponent() (component.Component, error) {
 		return c.Component, err
 	case len(c.BinaryTag.Data) != 0:
 		var err error
-		c.JSON, err = BinaryTagToJSON(&c.BinaryTag)
+		c.JSON, err = nbtconv.BinaryTagToJSON(&c.BinaryTag)
 		if err != nil {
 			return nil, fmt.Errorf("error while marshalling binaryTag to JSON: %w", err)
 		}
@@ -119,7 +120,7 @@ func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 	}
 	if len(c.BinaryTag.Data) != 0 {
 		var err error
-		c.JSON, err = BinaryTagToJSON(&c.BinaryTag)
+		c.JSON, err = nbtconv.BinaryTagToJSON(&c.BinaryTag)
 		return c.JSON, err
 	}
 	comp, err := c.AsComponent()
@@ -150,5 +151,5 @@ func (c *ComponentHolder) AsBinaryTag() (util.BinaryTag, error) {
 	if err != nil {
 		return c.BinaryTag, err
 	}
-	return JsonToBinaryTag(j)
+	return nbtconv.JsonToBinaryTag(j)
 }
