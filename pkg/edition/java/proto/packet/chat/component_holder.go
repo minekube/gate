@@ -85,7 +85,7 @@ func (c *ComponentHolder) AsComponentOrNil() component.Component {
 	}
 	comp, err := c.AsComponent()
 	if err != nil {
-		slog.Debug("error while converting component holder to component", "error", err)
+		slog.Error("error while converting component holder to component", "error", err)
 		return nil
 	}
 	return comp
@@ -137,7 +137,7 @@ func (c *ComponentHolder) AsJsonOrNil() json.RawMessage {
 	}
 	j, err := c.AsJson()
 	if err != nil {
-		slog.Debug("error while converting component holder to json", "error", err)
+		slog.Error("error while converting component holder to json", "error", err)
 		return nil
 	}
 	return j

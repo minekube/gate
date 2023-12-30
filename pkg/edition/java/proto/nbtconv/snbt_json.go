@@ -2,12 +2,15 @@ package nbtconv
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Tnze/go-mc/nbt"
 	"gopkg.in/yaml.v3"
 	"io"
+	"log/slog"
+	"strconv"
 	"strings"
 )
 
@@ -45,14 +48,20 @@ func SnbtToJSON(snbt string) (json.RawMessage, error) {
 
 	// Ensure that input is not empty or trivially malformed
 	if len(snbt) < 2 || !strings.HasPrefix(snbt, "{") || !strings.HasSuffix(snbt, "}") {
-		// get first and last few characters of input and put ... in between
-		var truncated string
-		if len(snbt) > 10 {
-			truncated = snbt[:5] + "..." + snbt[len(snbt)-5:]
-		} else {
-			truncated = snbt
+		if slog.Default().Enabled(context.TODO(), slog.LevelDebug) {
+			// get first and last few characters of input and put ... in between
+			var truncated string
+			if len(snbt) > 10 {
+				truncated = snbt[:5] + "..." + snbt[len(snbt)-5:]
+			} else {
+				truncated = snbt
+			}
+			slog.Debug("got non-object snbt", "snbt", truncated)
 		}
-		return nil, fmt.Errorf("%w: but got %q", errSNBTInvalid, truncated)
+
+		// just a json string
+		return json.RawMessage(strconv.Quote(snbt)), nil
+
 	}
 
 	// Add spaces after colons that are not within quotes
