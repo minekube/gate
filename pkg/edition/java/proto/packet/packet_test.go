@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go.minekube.com/common/minecraft/key"
+	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
@@ -38,7 +39,7 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-// TODO write utility that records all known packets into gob for use in testing.
+// TODO write utility that while running the proxy records all known packets into .bin (per protocol version) for use in testing.
 var (
 	//go:embed testdata/PlayerChat-1.19.gob
 	playerChatPacketGob []byte
@@ -55,7 +56,7 @@ func init() {
 		panic(err)
 	}
 
-	dimensionBinaryTag, err = chat.SnbtToBinaryTag(dimensionCodecSnbt)
+	dimensionBinaryTag, err = nbtconv.SnbtToBinaryTag(dimensionCodecSnbt)
 	if err != nil {
 		panic(err)
 	}
@@ -163,24 +164,26 @@ var packets = []proto.Packet{
 		},
 	},
 	&JoinGame{
-		EntityID:             4,
-		Gamemode:             1,
-		Dimension:            4,
-		PartialHashedSeed:    1,
-		Difficulty:           3,
+		EntityID:             1,
+		Gamemode:             2,
+		Dimension:            3,
+		PartialHashedSeed:    4,
+		Difficulty:           5,
 		Hardcore:             true,
-		MaxPlayers:           3,
-		LevelType:            ptr("test"),
-		ViewDistance:         3,
+		MaxPlayers:           6,
+		LevelType:            ptr("myLevelType"),
+		ViewDistance:         7,
 		ReducedDebugInfo:     true,
 		ShowRespawnScreen:    true,
-		DimensionInfo:        mustFake(&DimensionInfo{}),
-		LevelNames:           []string{"test", "test2"},
-		PreviousGamemode:     2,
-		SimulationDistance:   3,
-		LastDeathPosition:    mustFake(&DeathPosition{}),
-		CurrentDimensionData: dimensionBinaryTag,
+		DoLimitedCrafting:    true,
+		LevelNames:           []string{"level1", "level2"},
 		Registry:             dimensionBinaryTag, // still use dimension codec for now
+		DimensionInfo:        mustFake(&DimensionInfo{}),
+		CurrentDimensionData: dimensionBinaryTag,
+		PreviousGamemode:     8,
+		SimulationDistance:   9,
+		LastDeathPosition:    mustFake(&DeathPosition{}),
+		PortalCooldown:       10,
 	},
 	&Respawn{
 		Dimension:            1,

@@ -18,7 +18,7 @@ func TestSnbtToJSON(t *testing.T) {
 		{
 			name:    "without spaces",
 			snbt:    `{a:1,b:hello,c:"world",d:1}`,
-			want:    json.RawMessage(`{"a":1,"b":"hello","c":"world","d":true}`),
+			want:    json.RawMessage(`{"a":1,"b":"hello","c":"world","d":1}`),
 			wantErr: false,
 		},
 		{

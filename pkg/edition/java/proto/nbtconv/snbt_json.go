@@ -159,26 +159,9 @@ func BinaryTagToJSON(tag *nbt.RawMessage) (json.RawMessage, error) {
 
 // SnbtToBinaryTag converts a stringified NBT to binary tag.
 func SnbtToBinaryTag(snbt string) (nbt.RawMessage, error) {
-	// Convert SNBT to JSON
-	j, err := SnbtToJSON(snbt)
-	if err != nil {
-		return nbt.RawMessage{}, err
-	}
-	// Then convert JSON to binary tag
-	return JsonToBinaryTag(j)
-}
-
-// JsonToBinaryTag converts a JSON to binary tag.
-func JsonToBinaryTag(j json.RawMessage) (nbt.RawMessage, error) {
-	// Convert JSON to snbt
-	snbt, err := JsonToSNBT(j)
-	if err != nil {
-		return nbt.RawMessage{}, err
-	}
-
 	// Then convert snbt to bytes
 	buf := new(bytes.Buffer)
-	err = nbt.StringifiedMessage(snbt).MarshalNBT(buf)
+	err := nbt.StringifiedMessage(snbt).MarshalNBT(buf)
 	if err != nil {
 		return nbt.RawMessage{}, fmt.Errorf("error marshalling snbt to binary: %w", err)
 	}
@@ -232,6 +215,20 @@ func JsonToBinaryTag(j json.RawMessage) (nbt.RawMessage, error) {
 	if _, err = dec.Decode(&m); err != nil {
 		return m, fmt.Errorf("error decoding binary tag: %w", err)
 	}
-
 	return m, nil
+}
+
+// JsonToBinaryTag converts a JSON to binary tag.
+//
+// Note that type information such as boolean is lost in the conversion, since
+// SNBT uses 1 and 0 byte values for booleans which are not distinguishable from
+// JSON numbers.
+//
+// Example: {"a":1,"b":"hello","c":"world","d":true} -> {a:1,b:hello,c:"world",d:1}
+func JsonToBinaryTag(j json.RawMessage) (nbt.RawMessage, error) {
+	snbt, err := JsonToSNBT(j)
+	if err != nil {
+		return nbt.RawMessage{}, err
+	}
+	return SnbtToBinaryTag(snbt)
 }

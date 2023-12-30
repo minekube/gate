@@ -67,7 +67,7 @@ func WriteBinaryTag(w io.Writer, protocol proto.Protocol, bt BinaryTag) error {
 	}
 	if protocol.Lower(version.Minecraft_1_20_2) {
 		// Empty name
-		if err := WriteInt16(w, 0); err != nil {
+		if err := WriteUint16(w, 0); err != nil {
 			return fmt.Errorf("error writing binary tag name: %w", err)
 		}
 	}
