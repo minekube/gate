@@ -279,8 +279,7 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 	}
 
 	var dimensionIdentifier, levelName string
-	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) &&
-		c.Protocol.Lower(version.Minecraft_1_19) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
 		j.CurrentDimensionData, err = util.ReadCompoundTag(rd, c.Protocol)
 		if err != nil {
 			return fmt.Errorf("error reading current dimension data: %w", err)
