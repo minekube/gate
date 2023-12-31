@@ -41,7 +41,7 @@ func DefaultJsonCodec() codec.Codec {
 var (
 	// Json component codec supporting pre-1.16 clients
 	jsonCodec_pre_1_16 = &codec.Json{
-		/* TODO
+		/* TODO https://github.com/PaperMC/Velocity/blob/00ef92bc5c82c46ed4770aaaf126c285a6ab705c/proxy/src/main/java/com/velocitypowered/proxy/protocol/ProtocolUtils.java#L58
 		 GsonComponentSerializer.builder()
 		  .downsampleColors()
 		  .emitLegacyHoverEvent()

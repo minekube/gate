@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Tnze/go-mc/nbt"
 	"gopkg.in/yaml.v3"
@@ -17,7 +16,7 @@ import (
 // formatSNBT adds spaces after colons that are not within quotes.
 // Example: {a:1,b:hello,c:"world",d:true} -> {a: 1, b: hello, c: "world", d: true}
 // This is needed because the yaml parser requires spaces after colons
-func formatSNBT(snbt string) string { // TODO test / rewrite properly
+func formatSNBT(snbt string) string { // TODO test properly
 	var result strings.Builder
 	inQuotes := false
 
@@ -37,8 +36,6 @@ func formatSNBT(snbt string) string { // TODO test / rewrite properly
 
 	return result.String()
 }
-
-var errSNBTInvalid = errors.New("invalid input for SNBT, must be a non-empty string starting with '{' and ending with '}'")
 
 // SnbtToJSON converts a stringified NBT to JSON.
 // Example: {a:1,b:hello,c:"world",d:true} -> {"a":1,"b":"hello","c":"world","d":true}

@@ -38,7 +38,7 @@ import (
 )
 
 // Player is a connected Minecraft player.
-type Player interface {
+type Player interface { // TODO convert to struct(?) bc this is a lot of methods and only *connectedPlayer implements it
 	Inbound
 	netmc.PacketWriter
 	command.Source
@@ -74,8 +74,10 @@ type Player interface {
 	PendingResourcePack() *ResourcePackInfo
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
-	TabList() tablist.TabList // Returns the player's tab list.
-	ClientBrand() string      // Returns the player's client brand. Empty if unspecified.
+	// TabList returns the player's tab list.
+	// Used for modifying the player's tab list and header/footer.
+	TabList() tablist.TabList
+	ClientBrand() string // Returns the player's client brand. Empty if unspecified.
 
 	// Looking for title or bossbar methods? See the title and bossbar packages.
 }
@@ -515,8 +517,6 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 		Data:    data,
 	})
 }
-
-// TODO title
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.

@@ -156,7 +156,7 @@ type (
 	Auth struct {
 		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
-		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[string]
+		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
 	}
 )
 
