@@ -11,9 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -414,14 +412,6 @@ func ReadUTF(rd io.Reader) (string, error) {
 func ReadUnixMilli(rd io.Reader) (time.Time, error) {
 	milli, err := ReadInt64(rd)
 	return time.UnixMilli(milli), err
-}
-
-func ReadComponent(rd io.Reader, protocol proto.Protocol) (component.Component, error) {
-	str, err := ReadString(rd)
-	if err != nil {
-		return nil, err
-	}
-	return JsonCodec(protocol).Unmarshal([]byte(str))
 }
 
 //
