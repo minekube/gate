@@ -1,9 +1,8 @@
 package packet
 
 import (
-	"bytes"
 	"errors"
-	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -105,7 +104,7 @@ type TabCompleteResponse struct {
 
 type TabCompleteOffer struct {
 	Text    string
-	Tooltip component.Component // nil-able
+	Tooltip *chat.ComponentHolder // nil-able
 }
 
 func (t *TabCompleteResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -126,7 +125,6 @@ func (t *TabCompleteResponse) Encode(c *proto.PacketContext, wr io.Writer) error
 		if err != nil {
 			return err
 		}
-		buf := new(bytes.Buffer)
 		for _, offer := range t.Offers {
 			err = util.WriteString(wr, offer.Text)
 			if err != nil {
@@ -137,15 +135,10 @@ func (t *TabCompleteResponse) Encode(c *proto.PacketContext, wr io.Writer) error
 				return err
 			}
 			if offer.Tooltip != nil {
-				err = util.JsonCodec(c.Protocol).Marshal(buf, offer.Tooltip)
+				err = offer.Tooltip.Write(wr, c.Protocol)
 				if err != nil {
 					return err
 				}
-				err = util.WriteString(wr, buf.String())
-				if err != nil {
-					return err
-				}
-				buf.Reset()
 			}
 		}
 		return nil
@@ -184,9 +177,9 @@ func (t *TabCompleteResponse) Decode(c *proto.PacketContext, rd io.Reader) (err 
 			return err
 		}
 		var (
-			offer, strTooltip string
-			hasTooltip        bool
-			tooltip           component.Component
+			offer      string
+			hasTooltip bool
+			tooltip    *chat.ComponentHolder
 		)
 		for i := 0; i < offers; i++ {
 			offer, err = util.ReadString(rd)
@@ -198,11 +191,7 @@ func (t *TabCompleteResponse) Decode(c *proto.PacketContext, rd io.Reader) (err 
 				return err
 			}
 			if hasTooltip {
-				strTooltip, err = util.ReadString(rd)
-				if err != nil {
-					return err
-				}
-				tooltip, err = util.JsonCodec(c.Protocol).Unmarshal([]byte(strTooltip))
+				tooltip, err = chat.ReadComponentHolder(rd, c.Protocol)
 				if err != nil {
 					return err
 				}

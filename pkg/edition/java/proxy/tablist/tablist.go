@@ -1,14 +1,12 @@
 package tablist
 
 import (
-	"bytes"
-	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"time"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -20,6 +18,12 @@ type TabList interface {
 	Add(entries ...Entry) error       // Adds one or more entries to the tab list.
 	RemoveAll(ids ...uuid.UUID) error // Removes one or more entries from the tab list. If empty removes all entries.
 	Entries() map[uuid.UUID]Entry     // Returns the entries in the tab list.
+	// SetHeaderFooter sets the header and footer of the tab list.
+	//
+	// If nil is passed for either, the header/footer will be cleared.
+	// Use ClearTabListHeaderFooter() to clear the header and footer for convenience.
+	SetHeaderFooter(header, footer component.Component) error
+	HeaderFooter() (header, footer component.Component) // Returns the header and footer of the tab list. May be nil if not set.
 }
 
 // Entry is a single entry/player in a TabList.
@@ -77,22 +81,16 @@ type Viewer interface {
 
 // SendHeaderFooter updates the tab list header and footer for a Viewer.
 func SendHeaderFooter(viewer Viewer, header, footer component.Component) error {
-	b := new(bytes.Buffer)
-	p := new(packet.HeaderAndFooter)
-	j := util.JsonCodec(viewer.Protocol())
+	return viewer.WritePacket(&packet.HeaderAndFooter{
+		Header: *chat.FromComponentProtocol(header, viewer.Protocol()),
+		Footer: *chat.FromComponentProtocol(footer, viewer.Protocol()),
+	})
+}
 
-	if err := j.Marshal(b, header); err != nil {
-		return fmt.Errorf("error marshal header: %w", err)
-	}
-	p.Header = b.String()
-	b.Reset()
-
-	if err := j.Marshal(b, footer); err != nil {
-		return fmt.Errorf("error marshal footer: %w", err)
-	}
-	p.Footer = b.String()
-
-	return viewer.WritePacket(p)
+// ClearTabListHeaderFooter clears the tab list header and footer for a tab list.
+// Convenience function for tabList.SetHeaderFooter(nil, nil).
+func ClearTabListHeaderFooter(tabList TabList) error {
+	return tabList.SetHeaderFooter(nil, nil)
 }
 
 // ClearHeaderFooter clears the tab list header and footer for the viewer.

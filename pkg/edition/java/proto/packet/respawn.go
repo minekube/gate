@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"fmt"
 	"io"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -13,192 +14,109 @@ type Respawn struct {
 	PartialHashedSeed    int64
 	Difficulty           int16
 	Gamemode             int16
-	LevelType            string         // empty by default
-	DataToKeep           byte           // 1.16+
-	DimensionInfo        *DimensionInfo // 1.16-1.16.1
-	PreviousGamemode     int16          // 1.16+
-	CurrentDimensionData util.NBT       // 1.16.2+
-	LastDeathPosition    *DeathPosition // 1.19+
-	PortalCooldown       int            // 1.20+
+	LevelType            string                 // empty by default
+	DataToKeep           byte                   // 1.16+
+	DimensionInfo        *DimensionInfo         // 1.16-1.16.1
+	PreviousGamemode     int16                  // 1.16+
+	CurrentDimensionData util.CompoundBinaryTag // 1.16.2+
+	LastDeathPosition    *DeathPosition         // 1.19+
+	PortalCooldown       int                    // 1.20+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
+	w := util.PanicWriter(wr)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
-			err = r.CurrentDimensionData.Write(wr)
+			err = util.WriteBinaryTag(wr, c.Protocol, r.CurrentDimensionData)
 			if err != nil {
 				return err
 			}
-			err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
-			if err != nil {
-				return err
-			}
+			w.String(r.DimensionInfo.RegistryIdentifier)
 		} else {
-			err = util.WriteString(wr, r.DimensionInfo.RegistryIdentifier)
-			if err != nil {
-				return err
-			}
-			err = util.WriteString(wr, *r.DimensionInfo.LevelName)
-			if err != nil {
-				return err
-			}
+			w.String(r.DimensionInfo.RegistryIdentifier)
+			w.String(*r.DimensionInfo.LevelName)
 		}
 	} else {
-		err = util.WriteInt32(wr, int32(r.Dimension))
-		if err != nil {
-			return err
-		}
+		w.Int(r.Dimension)
 	}
 	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
-		err = util.WriteByte(wr, byte(r.Difficulty))
-		if err != nil {
-			return err
-		}
+		w.Byte(byte(r.Difficulty))
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
-		err = util.WriteInt64(wr, r.PartialHashedSeed)
-		if err != nil {
-			return err
-		}
+		w.Int64(r.PartialHashedSeed)
 	}
-	err = util.WriteByte(wr, byte(r.Gamemode))
-	if err != nil {
-		return err
-	}
+	w.Byte(byte(r.Gamemode))
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		err = util.WriteByte(wr, byte(r.PreviousGamemode))
-		if err != nil {
-			return err
-		}
-		err = util.WriteBool(wr, r.DimensionInfo.DebugType)
-		if err != nil {
-			return err
-		}
-		err = util.WriteBool(wr, r.DimensionInfo.Flat)
-		if err != nil {
-			return err
-		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
-			err = util.WriteByte(wr, r.DataToKeep)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = util.WriteBool(wr, r.DataToKeep != 0)
-			if err != nil {
-				return err
-			}
+		w.Byte(byte(r.PreviousGamemode))
+		w.Bool(r.DimensionInfo.DebugType)
+		w.Bool(r.DimensionInfo.Flat)
+		if c.Protocol.Lower(version.Minecraft_1_19_3) {
+			w.Bool(r.DataToKeep != 0)
+		} else if c.Protocol.Lower(version.Minecraft_1_20_2) {
+			w.Byte(r.DataToKeep)
 		}
 	} else {
-		err = util.WriteString(wr, r.LevelType)
-		if err != nil {
-			return err
-		}
+		w.String(r.LevelType)
 	}
 
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
-		err = r.LastDeathPosition.encode(wr)
-		if err != nil {
-			return err
-		}
+		r.LastDeathPosition.encode(wr)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
-		err = util.WriteVarInt(wr, r.PortalCooldown)
-		if err != nil {
-			return err
-		}
+		w.VarInt(r.PortalCooldown)
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		w.Byte(r.DataToKeep)
 	}
 	return nil
 }
-
 func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	pr := util.PanicReader(rd)
 	var dimensionIdentifier, levelName string
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
-			r.CurrentDimensionData, err = util.ReadNBT(rd)
+			r.CurrentDimensionData, err = util.ReadCompoundTag(rd, c.Protocol)
 			if err != nil {
-				return err
+				return fmt.Errorf("error reading current dimension data: %w", err)
 			}
-			dimensionIdentifier, err = util.ReadString(rd)
-			if err != nil {
-				return err
-			}
+			pr.String(&dimensionIdentifier)
 		} else {
-			dimensionIdentifier, err = util.ReadString(rd)
-			if err != nil {
-				return err
-			}
-			levelName, err = util.ReadString(rd)
-			if err != nil {
-				return err
-			}
+			pr.String(&dimensionIdentifier)
+			pr.String(&levelName)
 		}
 	} else {
-		r.Dimension, err = util.ReadInt(rd)
-		if err != nil {
-			return err
-		}
+		pr.Int(&r.Dimension)
 	}
 	if c.Protocol.LowerEqual(version.Minecraft_1_13_2) {
-		difficulty, err := util.ReadByte(rd)
-		if err != nil {
-			return err
-		}
-		r.Difficulty = int16(difficulty)
+		r.Difficulty = int16(util.PReadByteVal(rd))
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_15) {
-		r.PartialHashedSeed, err = util.ReadInt64(rd)
-		if err != nil {
-			return err
-		}
+		pr.Int64(&r.PartialHashedSeed)
 	}
-	gamemode, err := util.ReadByte(rd)
-	if err != nil {
-		return err
-	}
-	r.Gamemode = int16(gamemode)
+	r.Gamemode = int16(util.PReadByteVal(rd))
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		previousGamemode, err := util.ReadByte(rd)
-		if err != nil {
-			return err
-		}
-		r.PreviousGamemode = int16(previousGamemode)
-		debug, err := util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
-		flat, err := util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
+		r.PreviousGamemode = int16(util.PReadByteVal(rd))
+		debug := pr.Ok()
+		flat := pr.Ok()
 		r.DimensionInfo = &DimensionInfo{
 			RegistryIdentifier: dimensionIdentifier,
 			LevelName:          &levelName,
 			Flat:               flat,
 			DebugType:          debug,
 		}
-		if c.Protocol.GreaterEqual(version.Minecraft_1_19_3) {
-			r.DataToKeep, err = util.ReadByte(rd)
-			if err != nil {
-				return err
-			}
-		} else {
-			ok, err := util.ReadBool(rd)
-			if err != nil {
-				return err
-			}
-			if ok {
+
+		if c.Protocol.Lower(version.Minecraft_1_19_3) {
+			if pr.Ok() {
 				r.DataToKeep = 1
 			} else {
 				r.DataToKeep = 0
 			}
+		} else if c.Protocol.Lower(version.Minecraft_1_20_2) {
+			pr.Byte(&r.DataToKeep)
 		}
 	} else {
-		r.LevelType, err = util.ReadStringMax(rd, 16)
-		if err != nil {
-			return err
-		}
+		pr.String(&r.LevelType)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		r.LastDeathPosition, err = decodeDeathPosition(rd)
@@ -207,10 +125,10 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		}
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
-		r.PortalCooldown, err = util.ReadVarInt(rd)
-		if err != nil {
-			return err
-		}
+		pr.VarInt(&r.PortalCooldown)
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+		pr.Byte(&r.DataToKeep)
 	}
 	return nil
 }

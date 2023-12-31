@@ -62,8 +62,11 @@ func (b *Builder) ToClient() proto.Packet {
 			t = SystemMessageType
 		}
 		return &SystemChat{
-			Component: msg,
-			Type:      t,
+			Component: &ComponentHolder{
+				Protocol:  b.Protocol,
+				Component: msg,
+			},
+			Type: t,
 		}
 	}
 

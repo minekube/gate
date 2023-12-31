@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"regexp"
 	"time"
 
@@ -160,7 +161,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
 				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false)
-				l.conn.SetSessionHandler(sh)
+				l.conn.SetActiveSessionHandler(state.Login, sh)
 				return nil
 			}
 
@@ -179,7 +180,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 
 		// Offline mode login
 		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
-		l.conn.SetSessionHandler(sh)
+		l.conn.SetActiveSessionHandler(state.Login, sh)
 		return nil
 	})
 }
@@ -268,7 +269,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	// Once the client sends EncryptionResponse, encryption is enabled.
 	if err = l.conn.EnableEncryption(decryptedSharedSecret); err != nil {
 		l.log.Error(err, "error enabling encryption for connecting player")
-		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(internalServerConnectionError))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(internalServerConnectionError, l.conn.Protocol(), true))
 		return
 	}
 
@@ -291,24 +292,24 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	authResp, err := authn.AuthenticateJoin(ctx, serverID, l.login.Username, optionalUserIP)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			// The player disconnected before receiving we could authenticate.
+			// The player disconnected before receiving authentication response.
 			return
 		}
-		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(unableAuthWithMojang))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), true))
 		return
 	}
 
 	if !authResp.OnlineMode() {
 		log.Info("disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
-		_ = netmc.CloseWith(l.conn, packet.DisconnectWith(onlineModeOnly))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(onlineModeOnly, l.conn.Protocol(), true))
 		return
 	}
 
 	// Extract game profile from response.
 	gameProfile, err := authResp.GameProfile()
 	if err != nil {
-		if netmc.CloseWith(l.conn, packet.DisconnectWith(unableAuthWithMojang)) == nil {
+		if netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), true)) == nil {
 			log.Error(err, "unable get GameProfile from Mojang authentication response")
 		}
 		return
@@ -316,7 +317,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 
 	// All went well, initialize the session.
 	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true)
-	l.conn.SetSessionHandler(sh)
+	l.conn.SetActiveSessionHandler(state.Login, sh)
 }
 
 var (

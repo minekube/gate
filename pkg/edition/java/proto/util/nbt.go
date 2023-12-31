@@ -1,163 +1,79 @@
 package util
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/Tnze/go-mc/nbt"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"io"
-
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
-// NBT is a named binary tag aka compound binary tag.
-type NBT map[string]any
+type (
+	// BinaryTag is a binary tag.
+	BinaryTag = nbt.RawMessage
+	// CompoundBinaryTag is a compound binary tag.
+	CompoundBinaryTag = BinaryTag
+)
 
-func (b NBT) Bool(name string) (bool, bool) {
-	val, ok := b.Uint8(name)
-	return val == 1, ok
-}
-
-func (b NBT) Int8(name string) (ret int8, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(int8)
+// ReadBinaryTag reads a binary tag from the provided reader.
+func ReadBinaryTag(r io.Reader, protocol proto.Protocol) (bt BinaryTag, err error) {
+	// Read the type
+	bt.Type, err = ReadByte(r)
+	if err != nil {
+		return bt, fmt.Errorf("error reading binary tag type: %w", err)
 	}
-	return
-}
-func (b NBT) Uint8(name string) (ret uint8, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(uint8)
-	}
-	return
-}
 
-func (b NBT) Int16(name string) (ret int16, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(int16)
-	}
-	return
-}
-
-func (b NBT) Int32(name string) (ret int32, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(int32)
-	}
-	return
-}
-func (b NBT) Int(name string) (int, bool) {
-	i, ok := b.Int32(name)
-	return int(i), ok
-}
-
-func (b NBT) Int64(name string) (ret int64, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(int64)
-	}
-	return
-}
-
-func (b NBT) Float32(name string) (ret float32, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(float32)
-	}
-	return
-}
-
-func (b NBT) Float64(name string) (ret float64, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(float64)
-	}
-	return
-}
-
-func (b NBT) ByteArray(name string) (ret []byte, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.([]byte)
-	}
-	return
-}
-
-func (b NBT) String(name string) (ret string, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(string)
-	}
-	return
-}
-
-func (b NBT) NBT(name string) (ret NBT, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.(map[string]any)
-		if !ok {
-			ret, ok = val.(NBT)
+	// Skip bytes if protocol version is less than 1.20.2.
+	if protocol.Lower(version.Minecraft_1_20_2) {
+		_, err = ReadUint16(r)
+		if err != nil {
+			return bt, fmt.Errorf("error skipping bytes: %w", err)
 		}
 	}
-	return
+
+	// use io.MultiReader() to reassemble the reader to use for decoding
+	// the binary tag without the skipped bytes
+	mr := io.MultiReader(bytes.NewReader([]byte{bt.Type}), r)
+
+	// Read the data
+	dec := nbt.NewDecoder(mr)
+	dec.NetworkFormat(true) // skip tag name
+
+	if _, err = dec.Decode(&bt); err != nil {
+		return bt, fmt.Errorf("error decoding binary tag: %w", err)
+	}
+
+	return bt, nil
 }
 
-func (b NBT) List(name string) (ret []NBT, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		var l []any
-		l, ok = val.([]any)
-		if !ok {
-			ret, ok = val.([]NBT)
-			return
+// ReadCompoundTag reads a compound binary tag from the provided reader.
+func ReadCompoundTag(r io.Reader, protocol proto.Protocol) (CompoundBinaryTag, error) {
+	bt, err := ReadBinaryTag(r, protocol)
+	if err != nil {
+		return bt, err
+	}
+	if bt.Type != nbt.TagCompound {
+		return bt, fmt.Errorf("expected root tag to be a compound tag, got %v", bt.Type)
+	}
+	return bt, nil
+}
+
+// WriteBinaryTag writes a binary tag to the provided writer.
+func WriteBinaryTag(w io.Writer, protocol proto.Protocol, bt BinaryTag) error {
+	// Write the type
+	if err := WriteByte(w, bt.Type); err != nil {
+		return fmt.Errorf("error writing binary tag type: %w", err)
+	}
+	if protocol.Lower(version.Minecraft_1_20_2) {
+		// Empty name
+		if err := WriteUint16(w, 0); err != nil {
+			return fmt.Errorf("error writing binary tag name: %w", err)
 		}
-		var n NBT
-		for _, e := range l {
-			n, ok = e.(map[string]any)
-			if ok {
-				ret = append(ret, n)
-			}
-		}
 	}
-	return
-}
-
-func (b NBT) Int32Array(name string) (ret []int32, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.([]int32)
+	// Write the data
+	if _, err := w.Write(bt.Data); err != nil {
+		return fmt.Errorf("error writing binary tag data: %w", err)
 	}
-	return
-}
-
-func (b NBT) Int64Array(name string) (ret []int64, ok bool) {
-	var val any
-	if val, ok = b[name]; ok {
-		ret, ok = val.([]int64)
-	}
-	return
-}
-
-func ReadNBT(rd io.Reader) (NBT, error) {
-	return DecodeNBT(NewNBTDecoder(rd))
-}
-
-func DecodeNBT(decoder interface{ Decode(any) error }) (NBT, error) {
-	v := NBT{}
-	err := decoder.Decode(&v)
-	return v, err
-}
-
-func NewNBTDecoder(r io.Reader) *nbt.Decoder {
-	return nbt.NewDecoderWithEncoding(r, nbt.BigEndian)
-}
-
-func NewNBTEncoder(w io.Writer) *nbt.Encoder {
-	return nbt.NewEncoderWithEncoding(w, nbt.BigEndian)
-}
-
-func WriteNBT(w io.Writer, nbt NBT) error {
-	return NewNBTEncoder(w).Encode(nbt)
-}
-
-func (b NBT) Write(w io.Writer) error {
-	return WriteNBT(w, b)
+	return nil
 }

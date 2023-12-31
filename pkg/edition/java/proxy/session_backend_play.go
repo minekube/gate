@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"reflect"
 	"regexp"
 	"time"
@@ -32,7 +36,7 @@ type backendPlaySessionHandler struct {
 }
 
 func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHandler, error) {
-	cpsh, ok := serverConn.player.SessionHandler().(*clientPlaySessionHandler)
+	cpsh, ok := serverConn.player.ActiveSessionHandler().(*clientPlaySessionHandler)
 	if !ok {
 		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
 	}
@@ -58,6 +62,10 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		b.handleKeepAlive(p, pc)
+	case *config.StartUpdate:
+		b.handleStartUpdate(p)
+	case *packet.ClientSettings:
+		b.handleClientSettings(p)
 	case *packet.Disconnect:
 		b.handleDisconnect(p)
 	case *plugin.Message:
@@ -74,6 +82,8 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleRemovePlayerInfo(p, pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
+	case *packet.RemoveResourcePack:
+		b.forwardToPlayer(pc, nil) // TODO
 	case *packet.ServerData:
 		b.handleServerData(p)
 	case *bossbar.BossBar:
@@ -125,6 +135,22 @@ func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *pro
 func (b *backendPlaySessionHandler) handleDisconnect(p *packet.Disconnect) {
 	b.serverConn.disconnect()
 	b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
+}
+
+func (b *backendPlaySessionHandler) handleStartUpdate(_ *config.StartUpdate) {
+	smc, ok := b.serverConn.ensureConnected()
+	if !ok {
+		return
+	}
+	smc.SetAutoReading(false)
+	smc.Reader().SetState(state.Config)
+	b.serverConn.player.switchToConfigState()
+}
+
+func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSettings) {
+	if err := b.serverConn.connection.WritePacket(p); err != nil {
+		b.serverConn.log.V(1).Error(err, "error writing ClientSettings packet to server")
+	}
 }
 
 func (b *backendPlaySessionHandler) handleBossBar(p *bossbar.BossBar, pc *proto.PacketContext) {
@@ -209,7 +235,7 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 			return
 		}
 		_ = b.serverConn.player.WritePacket(&packet.ServerData{
-			Description:        e.Ping().Description,
+			Description:        &chat.ComponentHolder{Component: e.Ping().Description},
 			Favicon:            e.Ping().Favicon,
 			SecureChatEnforced: p.SecureChatEnforced,
 		})
@@ -218,31 +244,51 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 
 var sha1HexRegex = regexp.MustCompile(`[0-9a-fA-F]{40}`)
 
-func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.ResourcePackRequest) {
+// possibleResourcePackHash returns true if the given hash is a plausible SHA-1 hash.
+func possibleResourcePackHash(hash string) bool {
+	return sha1HexRegex.MatchString(hash)
+}
+
+func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (ResourcePackInfo, error) {
+	if p.URL == "" {
+		return ResourcePackInfo{}, fmt.Errorf("resource pack URL is empty")
+	}
 	packInfo := ResourcePackInfo{
+		ID:          p.ID,
 		URL:         p.URL,
 		ShouldForce: p.Required,
-		Prompt:      p.Prompt,
+		Prompt:      p.Prompt.AsComponentOrNil(),
 		Origin:      DownstreamServerResourcePackOrigin,
 	}
-
-	if p.Hash != "" && sha1HexRegex.MatchString(p.Hash) {
+	if p.Hash != "" && possibleResourcePackHash(p.Hash) {
 		var err error
 		packInfo.Hash, err = hex.DecodeString(p.Hash)
 		if err != nil {
-			b.serverConn.log.V(1).Error(err, "error decoding resource pack hash")
-			return
+			return packInfo, fmt.Errorf("error decoding resource pack hash: %w", err)
 		}
 	}
+	return packInfo, nil
+}
 
-	e := &ServerResourcePackSendEvent{
-		receivedResourcePack: packInfo,
-		providedResourcePack: packInfo,
-		serverConn:           b.serverConn,
+func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.ResourcePackRequest) {
+	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event())
+}
+
+func handleResourcePacketRequest(
+	p *packet.ResourcePackRequest,
+	serverConn *serverConnection,
+	eventMgr event.Manager,
+) {
+	packInfo, err := toServerPromptedResourcePack(p)
+	if err != nil {
+		serverConn.log.V(1).Error(err, "error converting ResourcePackRequest to ResourcePackInfo")
+		return
 	}
-	b.proxy().event.Fire(e)
 
-	if netmc.Closed(b.serverConn.player) {
+	e := newServerResourcePackSendEvent(packInfo, serverConn)
+	eventMgr.Fire(e)
+
+	if netmc.Closed(serverConn.player) {
 		return
 	}
 	if e.Allowed() {
@@ -251,17 +297,18 @@ func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.Resour
 			toSend.Origin = DownstreamServerResourcePackOrigin
 		}
 
-		err := b.serverConn.player.queueResourcePack(toSend)
+		err = serverConn.player.queueResourcePack(toSend)
 		if err != nil {
-			b.serverConn.log.V(1).Error(err, "error queuing resource pack")
+			serverConn.log.V(1).Error(err, "error queuing resource pack")
 		}
-	} else if smc, ok := b.serverConn.ensureConnected(); ok {
-		err := smc.WritePacket(&packet.ResourcePackResponse{
+	} else if smc, ok := serverConn.ensureConnected(); ok {
+		err = smc.WritePacket(&packet.ResourcePackResponse{
+			ID:     p.ID,
 			Hash:   p.Hash,
 			Status: DeclinedResourcePackResponseStatus,
 		})
 		if err != nil {
-			b.serverConn.log.V(1).Error(err, "error sending resource pack response")
+			serverConn.log.V(1).Error(err, "error sending resource pack response")
 		}
 	}
 }

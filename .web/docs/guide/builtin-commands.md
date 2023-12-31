@@ -11,7 +11,7 @@ If you want to add custom commands refer to the [Developers Guide](/developers/)
 |------------------|-----------------------|-----------------------------------------------------------------------------------------|
 | `/server`        | `gate.command.server` | Players can use the command to view and switch to another server.                       |
 | `/glist`         | `gate.command.glist`  | View the number of players on the Gate instance. `/glist all` lists players per server. |
-
+| `/send`          | `gate.command.send`   | Send one or all players to another server.                                              |
 
 ## Permission
 

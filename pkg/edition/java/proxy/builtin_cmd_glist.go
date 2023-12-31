@@ -9,7 +9,6 @@ import (
 	. "go.minekube.com/common/minecraft/color"
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/command"
-	"go.minekube.com/gate/pkg/command/suggest"
 )
 
 const glistCmdPermission = "gate.command.glist"
@@ -23,10 +22,7 @@ func newGlistCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 			return c.SendMessage(glistTotalCount(proxy.PlayerCount()))
 		})).
 		Then(brigodier.Argument(glistServerArg, brigodier.String).
-			Suggests(command.SuggestFunc(func(_ *command.Context,
-				b *brigodier.SuggestionsBuilder) *brigodier.Suggestions {
-				return suggest.Similar(b, append(serverNames(proxy), "all")).Build()
-			})).
+			Suggests(serverSuggestionProvider(proxy, "all")).
 			Executes(command.Command(func(c *command.Context) error {
 				return glistSendServerCount(proxy, c.Source, c.String(glistServerArg))
 			})),

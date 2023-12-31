@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"strings"
 	"sync"
@@ -36,7 +38,7 @@ import (
 )
 
 // Player is a connected Minecraft player.
-type Player interface {
+type Player interface { // TODO convert to struct(?) bc this is a lot of methods and only *connectedPlayer implements it
 	Inbound
 	netmc.PacketWriter
 	command.Source
@@ -72,7 +74,10 @@ type Player interface {
 	PendingResourcePack() *ResourcePackInfo
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
-	TabList() tablist.TabList // Returns the player's tab list.
+	// TabList returns the player's tab list.
+	// Used for modifying the player's tab list and header/footer.
+	TabList() tablist.TabList
+	ClientBrand() string // Returns the player's client brand. Empty if unspecified.
 
 	// Looking for title or bossbar methods? See the title and bossbar packages.
 }
@@ -99,12 +104,14 @@ type connectedPlayer struct {
 	connectedServer_         *serverConnection
 	connInFlight             *serverConnection
 	settings                 player.Settings
+	clientSettingsPacket     *packet.ClientSettings
 	modInfo                  *modinfo.ModInfo
 	connPhase                phase.ClientConnectionPhase
 	outstandingResourcePacks deque.Deque[*ResourcePackInfo]
 	previousResourceResponse *bool
 	pendingResourcePack      *ResourcePackInfo
 	appliedResourcePack      *ResourcePackInfo
+	clientBrand              string // may be empty
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
@@ -221,6 +228,7 @@ func (p *connectedPlayer) SendResourcePack(info ResourcePackInfo) error {
 
 // ResourcePackInfo is resource-pack options for Player.SendResourcePack.
 type ResourcePackInfo struct {
+	ID uuid.UUID // The ID of this resource-pack.
 	// The download link the resource-pack can be found at.
 	URL string
 	// The SHA-1 hash of the provided resource pack.
@@ -314,9 +322,10 @@ func (p *connectedPlayer) tickResourcePackQueue() error {
 	}
 
 	req := &packet.ResourcePackRequest{
+		ID:       queued.ID,
 		URL:      queued.URL,
 		Required: queued.ShouldForce,
-		Prompt:   queued.Prompt,
+		Prompt:   chat.FromComponentProtocol(queued.Prompt, p.Protocol()),
 	}
 	if len(queued.Hash) != 0 {
 		req.Hash = hex.EncodeToString(queued.Hash)
@@ -342,7 +351,7 @@ func (p *connectedPlayer) PendingResourcePack() *ResourcePackInfo {
 
 // Processes a client response to a sent resource-pack.
 func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStatus) bool {
-	peek := status == AcceptedResourcePackResponseStatus
+	peek := status.Intermediate()
 
 	p.mu.Lock()
 	if p.outstandingResourcePacks.Len() == 0 {
@@ -477,7 +486,7 @@ func (p *connectedPlayer) SendActionBar(msg component.Component) error {
 		// Use the title packet instead.
 		pkt, err := title.New(protocol, &title.Builder{
 			Action:    title.SetActionBar,
-			Component: msg,
+			Component: *chat.FromComponent(msg),
 		})
 		if err != nil {
 			return err
@@ -508,8 +517,6 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 		Data:    data,
 	})
 }
-
-// TODO add header/footer, title
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
 // current is the current server of the player is on, so we skip this server and not connect to it.
@@ -614,7 +621,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if netmc.CloseWith(p, packet.DisconnectWithProtocol(reason, p.Protocol())) == nil {
+	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), false)) == nil {
 		p.log.Info("player has been disconnected", "reason", r)
 	}
 }
@@ -661,10 +668,11 @@ func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Unlock()
 }
 
-func (p *connectedPlayer) setSettings(settings *packet.ClientSettings) {
+func (p *connectedPlayer) setClientSettings(settings *packet.ClientSettings) {
 	wrapped := player.NewSettings(settings)
 	p.mu.Lock()
 	p.settings = wrapped
+	p.clientSettingsPacket = settings
 	p.mu.Unlock()
 
 	p.eventMgr.Fire(&PlayerSettingsChangedEvent{
@@ -684,6 +692,37 @@ func (p *connectedPlayer) Settings() player.Settings {
 	return player.DefaultSettings
 }
 
+// ClientSettingsPacket returns the last known client settings packet.
+// If not known already, returns nil.
+func (p *connectedPlayer) ClientSettingsPacket() *packet.ClientSettings {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.clientSettingsPacket
+}
+
 func (p *connectedPlayer) config() *config.Config {
 	return p.configProvider.config()
+}
+
+// switchToConfigState switches the connection of the client into config state.
+func (p *connectedPlayer) switchToConfigState() {
+	go func() {
+		if err := p.WritePacket(new(cfgpacket.StartUpdate)); err != nil {
+			p.log.Error(err, "error writing config packet")
+		}
+		p.SetState(state.Config)
+	}()
+}
+
+func (p *connectedPlayer) ClientBrand() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.clientBrand
+}
+
+// setClientBrand sets the client brand of the player.
+func (p *connectedPlayer) setClientBrand(brand string) {
+	p.mu.Lock()
+	p.clientBrand = brand
+	p.mu.Unlock()
 }

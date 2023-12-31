@@ -143,9 +143,10 @@ func (p *PacketRegistry) Register(packetOf proto.Packet, mappings ...*PacketMapp
 				panic(fmt.Sprintf("Unknown protocol version %s", current.Protocol))
 			}
 
-			if _, ok = registry.PacketIDs[current.ID]; ok {
-				panic(fmt.Sprintf("Can not register packet type %s with id %#x for "+
-					"protocol %s because another packet is already registered", packetType, current.ID, registry.Protocol))
+			if typ, ok := registry.PacketIDs[current.ID]; ok {
+				panic(fmt.Sprintf("Can not register packet %s with id %#x for "+
+					"protocol %s because %s already registered with same id is conflicting. Check that all packet ids are updated.",
+					packetType, current.ID, registry.Protocol, typ.String()))
 			}
 			if _, ok = registry.PacketTypes[packetType]; ok {
 				panic(fmt.Sprintf("%T is already registered for protocol %s", packetOf, registry.Protocol))
@@ -207,10 +208,12 @@ func versionRange(versions []*proto.Version, from, to proto.Protocol, fn func(pr
 // String implements fmt.Stringer.
 func (s State) String() string {
 	switch s {
-	case StatusState:
-		return "Status"
 	case HandshakeState:
 		return "Handshake"
+	case StatusState:
+		return "Status"
+	case ConfigState:
+		return "Config"
 	case LoginState:
 		return "Login"
 	case PlayState:

@@ -386,18 +386,36 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		s.config().Compression.Level,
 	)
 	resultChan := make(chan *connResponse, 1)
-	serverMc.SetSessionHandler(newBackendLoginSessionHandler(s, &connRequestCxt{
-		Context:  ctx,
-		response: resultChan,
-	}, s.player.sessionHandlerDeps))
 
-	// Update serverConnection
+	// Kick off the connection process...
+	if !serverMc.SwitchSessionHandler(state.Handshake) {
+		handler := newBackendLoginSessionHandler(s, &connRequestCxt{
+			Context:  ctx,
+			response: resultChan,
+		}, s.player.sessionHandlerDeps)
+		serverMc.SetActiveSessionHandler(state.Handshake, handler)
+		serverMc.AddSessionHandler(state.Login, handler)
+	}
+
+	// Set the connection phase, which may, for future forge (or whatever), be
+	// determined at this point already
 	s.mu.Lock()
 	s.connection = serverMc
 	s.connPhase = serverMc.Type().InitialBackendPhase()
 	s.mu.Unlock()
 
 	debug.Info("establishing player connection with server...")
+	return s.startHandshake(readLoop, resultChan)
+}
+
+func (s *serverConnection) startHandshake(
+	readLoop func(),
+	resultChan chan *connResponse,
+) (*connectionResult, error) {
+	serverMc, ok := s.ensureConnected()
+	if !ok {
+		return nil, netmc.ErrClosedConn
+	}
 
 	// Initiate the handshake.
 	protocol := s.player.Protocol()
@@ -415,14 +433,16 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		}
 		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
 	}
-	if err = serverMc.BufferPacket(handshake); err != nil {
+	if err := serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
 	}
 
 	// Set server's protocol & state
 	// after writing handshake, but before writing ServerLogin
 	serverMc.SetProtocol(protocol)
-	serverMc.SetState(state.Login)
+	if !serverMc.SwitchSessionHandler(state.Login) {
+		return nil, fmt.Errorf("error switching session handler to login in server connection")
+	}
 
 	serverLogin := &packet.ServerLogin{
 		Username: s.player.Username(),
@@ -435,14 +455,13 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	}
 
 	// Kick off the connection process
-	// connection from proxy -> server (backend)
-	err = serverMc.WritePacket(serverLogin)
-	if err != nil {
+	// connection from proxy -> backend server
+	if err := serverMc.WritePacket(serverLogin); err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}
 	go readLoop()
 
-	// Block
+	// Block until we get a result
 	r := <-resultChan
 	return r.connectionResult, r.error
 }

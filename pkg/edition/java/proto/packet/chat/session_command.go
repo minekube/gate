@@ -22,7 +22,10 @@ var _ proto.Packet = (*ArgumentSignatures)(nil)
 var _ proto.Packet = (*ArgumentSignature)(nil)
 
 func (s *SessionPlayerCommand) Signed() bool {
-	return s.Salt != 0 || s.LastSeenMessages.Empty() || len(s.ArgumentSignatures.Entries) != 0
+	if s.Salt == 0 {
+		return false
+	}
+	return !s.LastSeenMessages.Empty() || len(s.ArgumentSignatures.Entries) != 0
 }
 
 func (s *SessionPlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) error {

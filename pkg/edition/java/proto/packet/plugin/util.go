@@ -117,7 +117,7 @@ func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 		return message
 	}
 
-	currentBrand := readBrandMessage(message.Data)
+	currentBrand := ReadBrandMessage(message.Data)
 	rewrittenBrand := fmt.Sprintf("%s (Gate by Minekube)", currentBrand)
 
 	rewrittenBuf := new(bytes.Buffer)
@@ -133,11 +133,14 @@ func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 	}
 }
 
+// ReadBrandMessage reads the brand message from the given packet data.
+// The returned string will be empty if the data is invalid.
+//
 // Some clients (mostly poorly-implemented bots) do not send validly-formed brand messages.
 // In order to accommodate their broken behavior, we'll first try to read in the 1.8 format, and
 // if that fails, treat it as a 1.7-format message (which has no prefixed length).
 // (The message the proxy sends will be in the correct format depending on the protocol.)
-func readBrandMessage(data []byte) string {
+func ReadBrandMessage(data []byte) string {
 	s, err := util.ReadString(bytes.NewReader(data))
 	if err != nil {
 		s, _ = util.ReadStringWithoutLen(bytes.NewReader(data))

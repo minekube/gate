@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"reflect"
 
 	"go.minekube.com/common/minecraft/component"
@@ -327,10 +328,30 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	if !ok {
 		return
 	}
-	serverMc.SetState(state.Play)
 
-	// Switch to the transition handler.
-	serverMc.SetSessionHandler(newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
+	if serverMc.Protocol().Lower(version.Minecraft_1_20_2) {
+		serverMc.SetActiveSessionHandler(state.Play,
+			newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
+	} else {
+		_ = serverMc.WritePacket(&packet.LoginAcknowledged{})
+		sh, err := newBackendConfigSessionHandler(b.serverConn, b.requestCtx)
+		if err != nil {
+			b.requestCtx.result(nil, err)
+			b.serverConn.disconnect()
+			return
+		}
+		serverMc.SetActiveSessionHandler(state.Config, sh)
+		player := b.serverConn.player
+		if pkt := player.ClientSettingsPacket(); pkt != nil {
+			_ = serverMc.WritePacket(pkt)
+		}
+		if csh, ok := player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler); ok {
+			serverMc.SetAutoReading(false)
+			csh.doSwitch().DoWhenTrue(func() {
+				serverMc.SetAutoReading(true)
+			})
+		}
+	}
 }
 
 func (b *backendLoginSessionHandler) Disconnected() {
@@ -349,17 +370,11 @@ func disconnectResultForPacket(
 	server RegisteredServer,
 	safe bool,
 ) *connectionResult {
-	var reason string
+	var reason *chat.ComponentHolder
 	if p != nil && p.Reason != nil {
-		reason = *p.Reason
+		reason = p.Reason
 	}
-	r, err := protoutil.JsonCodec(protocol).Unmarshal([]byte(reason))
-	if errLog.Enabled() && err != nil {
-		errLog.Error(err, "Error unmarshal disconnect reason from server",
-			"safe", safe, "protocol", protocol,
-			"reason", reason, "server", server.ServerInfo().Name())
-	}
-	return disconnectResult(r, server, safe)
+	return disconnectResult(reason.AsComponentOrNil(), server, safe)
 }
 func disconnectResult(reason component.Component, server RegisteredServer, safe bool) *connectionResult {
 	return &connectionResult{

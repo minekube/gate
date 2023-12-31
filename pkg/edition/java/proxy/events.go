@@ -877,15 +877,28 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 //
 
-// ResourcePackResponseStatus is the status for a resource pack.
+// ResourcePackResponseStatus represents the possible statuses for the resource pack.
 type ResourcePackResponseStatus = packet.ResourcePackResponseStatus
 
 // Possible statuses for a resource pack.
+
 const (
-	SuccessfulResourcePackResponseStatus     ResourcePackResponseStatus = packet.SuccessfulResourcePackResponseStatus
-	DeclinedResourcePackResponseStatus       ResourcePackResponseStatus = packet.DeclinedResourcePackResponseStatus
-	FailedDownloadResourcePackResponseStatus ResourcePackResponseStatus = packet.FailedDownloadResourcePackResponseStatus
-	AcceptedResourcePackResponseStatus       ResourcePackResponseStatus = packet.AcceptedResourcePackResponseStatus
+	// SuccessfulResourcePackResponseStatus indicates the resource pack was applied successfully.
+	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = iota
+	// DeclinedResourcePackResponseStatus indicates the player declined to download the resource pack.
+	DeclinedResourcePackResponseStatus
+	// FailedDownloadResourcePackResponseStatus indicates the player could not download the resource pack.
+	FailedDownloadResourcePackResponseStatus
+	// AcceptedResourcePackResponseStatus indicates the player has accepted the resource pack and is now downloading it.
+	AcceptedResourcePackResponseStatus
+	// DownloadedResourcePackResponseStatus indicates the player has downloaded the resource pack.
+	DownloadedResourcePackResponseStatus
+	// InvalidURLResourcePackResponseStatus indicates the URL of the resource pack failed to load.
+	InvalidURLResourcePackResponseStatus
+	// FailedToReloadResourcePackResponseStatus indicates the player failed to reload the resource pack.
+	FailedToReloadResourcePackResponseStatus
+	// DiscardedResourcePackResponseStatus indicates the resource pack was discarded.
+	DiscardedResourcePackResponseStatus
 )
 
 // PlayerResourcePackStatusEvent is fired when the status of a resource pack sent to the player by the server is
@@ -945,6 +958,18 @@ type ServerResourcePackSendEvent struct {
 	serverConn           *serverConnection
 }
 
+// newServerResourcePackSendEvent creates a new ServerResourcePackSendEvent.
+func newServerResourcePackSendEvent(
+	packInfo ResourcePackInfo,
+	serverConn *serverConnection,
+) *ServerResourcePackSendEvent {
+	return &ServerResourcePackSendEvent{
+		receivedResourcePack: packInfo,
+		providedResourcePack: packInfo,
+		serverConn:           serverConn,
+	}
+}
+
 // Allowed indicated whether sending the resource pack to the client is allowed.
 func (e *ServerResourcePackSendEvent) Allowed() bool {
 	return !e.denied
@@ -974,8 +999,6 @@ func (e *ServerResourcePackSendEvent) ProvidedResourcePack() ResourcePackInfo {
 func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackInfo) {
 	e.providedResourcePack = pack
 }
-
-// TODO PlayerClientBrandEvent
 
 //
 //
@@ -1046,6 +1069,25 @@ func (r *ServerLoginPluginMessageResult) Reply(response []byte) *ServerLoginPlug
 	return &ServerLoginPluginMessageResult{
 		Response: response,
 	}
+}
+
+//
+//
+//
+//
+
+// PlayerClientBrandEvent is fired when a Player sends the `minecraft:brand` plugin message.
+// The proxy will not wait on event handlers to finish firing.
+type PlayerClientBrandEvent struct {
+	player Player
+	brand  string
+}
+
+func (e *PlayerClientBrandEvent) Player() Player {
+	return e.player
+}
+func (e *PlayerClientBrandEvent) Brand() string {
+	return e.brand
 }
 
 //

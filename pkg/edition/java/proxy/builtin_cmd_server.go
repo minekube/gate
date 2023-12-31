@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"go.minekube.com/brigodier"
@@ -17,6 +18,7 @@ const serverCmdPermission = "gate.command.server"
 
 // command to list and connect to registered servers
 func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
+	const serverNameArg = "name"
 	return brigodier.Literal("server").
 		Requires(hasCmdPerm(proxy, serverCmdPermission)).
 		// List registered server.
@@ -24,7 +26,7 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 			return c.SendMessage(serversInfo(proxy, c.Source))
 		})).
 		// Switch server
-		Then(brigodier.Argument("name", brigodier.String).
+		Then(brigodier.Argument(serverNameArg, brigodier.String).
 			Suggests(serverSuggestionProvider(proxy)).
 			Executes(command.Command(func(c *command.Context) error {
 				player, ok := c.Source.(Player)
@@ -33,20 +35,36 @@ func newServerCmd(proxy *Proxy) brigodier.LiteralNodeBuilder {
 						Content: "Only players can connect to a server!"})
 				}
 
-				name := c.String("name")
-				rs := proxy.Server(name)
-				if rs == nil {
-					return c.Source.SendMessage(&Text{S: Style{Color: Red},
-						Content: fmt.Sprintf("Server %q doesn't exist.", name)})
-				}
-
-				ctx, cancel := context.WithTimeout(context.Background(),
-					time.Millisecond*time.Duration(proxy.cfg.ConnectionTimeout))
-				defer cancel()
-				player.CreateConnectionRequest(rs).ConnectWithIndication(ctx)
-				return nil
+				name := c.String(serverNameArg)
+				return connectPlayersToServer(c, proxy, name, player)
 			})),
 		)
+}
+
+func connectPlayersToServer(c *command.Context, proxy *Proxy, serverName string, players ...Player) error {
+	server := proxy.Server(serverName)
+	if server == nil {
+		return c.Source.SendMessage(&Text{S: Style{Color: Red},
+			Content: fmt.Sprintf("Server %q doesn't exist.", serverName)})
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(),
+			time.Millisecond*time.Duration(proxy.cfg.ConnectionTimeout))
+		defer cancel()
+
+		wg := new(sync.WaitGroup)
+		wg.Add(len(players))
+		for _, player := range players {
+			go func(player Player) {
+				defer wg.Done()
+				player.CreateConnectionRequest(server).ConnectWithIndication(ctx)
+			}(player)
+		}
+		wg.Wait()
+	}()
+
+	return nil
 }
 
 const maxServersToList = 50
@@ -132,12 +150,13 @@ func sortServers(s []RegisteredServer) {
 	})
 }
 
-func serverSuggestionProvider(p *Proxy) brigodier.SuggestionProvider {
+func serverSuggestionProvider(p *Proxy, additionalServers ...string) brigodier.SuggestionProvider {
 	return command.SuggestFunc(func(
 		_ *command.Context,
 		b *brigodier.SuggestionsBuilder,
 	) *brigodier.Suggestions {
-		return suggest.Similar(b, serverNames(p)).Build()
+		candidates := append(serverNames(p), additionalServers...)
+		return suggest.Similar(b, candidates).Build()
 	})
 }
 

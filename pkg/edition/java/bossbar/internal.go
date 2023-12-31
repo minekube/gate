@@ -2,6 +2,7 @@ package bossbar
 
 import (
 	"context"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"sync"
 
 	"go.minekube.com/common/minecraft/component"
@@ -113,15 +114,15 @@ func (b *bossBar) writeToViewers(p proto.Packet) {
 func (b *bossBar) Name() component.Component {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-	return b.BossBar.Name
+	return b.BossBar.Name.AsComponentOrNil()
 }
 func (b *bossBar) SetName(name component.Component) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if name == nil || b.BossBar.Name == name {
+	if name == nil {
 		return
 	}
-	b.BossBar.Name = name
+	b.BossBar.Name = chat.FromComponent(name)
 	b.writeToViewers(b.createTitleUpdate(name))
 }
 func (b *bossBar) Color() Color {
@@ -228,7 +229,7 @@ func (b *bossBar) createTitleUpdate(name component.Component) *bossbar.BossBar {
 	return &bossbar.BossBar{
 		ID:     b.BossBar.ID,
 		Action: bossbar.UpdateNameAction,
-		Name:   name,
+		Name:   chat.FromComponent(name),
 	}
 }
 func (b *bossBar) createFlagsUpdate(flags byte) *bossbar.BossBar {

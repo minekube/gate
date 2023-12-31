@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	VanillaMaximumUncompressedSize = 8 * 1024 * 1024  // 8MiB
-	HardMaximumUncompressedSize    = 16 * 1024 * 1024 // 16MiB
+	VanillaMaximumUncompressedSize = 8 * 1024 * 1024   // 8MiB
+	HardMaximumUncompressedSize    = 128 * 1024 * 1024 // 128MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
 )
 
@@ -30,7 +30,7 @@ type Encoder struct {
 	hexDump   bool // for debugging
 
 	mu          sync.Mutex // Protects following fields
-	wr          io.Writer  // the underlying writer to write successfully encoded packet to
+	wr          io.Writer  // the underlying writer to write successfully encoded packets to
 	registry    *state.ProtocolRegistry
 	state       *state.Registry
 	compression struct {
@@ -49,6 +49,11 @@ func NewEncoder(w io.Writer, direction proto.Direction, log logr.Logger) *Encode
 		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		state:     state.Handshake,
 	}
+}
+
+// Direction returns the encoder's direction.
+func (e *Encoder) Direction() proto.Direction {
+	return e.direction
 }
 
 func (e *Encoder) SetCompression(threshold, level int) (err error) {
@@ -85,7 +90,9 @@ func (e *Encoder) WritePacket(packet proto.Packet) (n int, err error) {
 		Payload:   nil,
 	}
 
-	if err = packet.Encode(ctx, buf); err != nil {
+	if err = util.RecoverFunc(func() error {
+		return packet.Encode(ctx, buf)
+	}); err != nil {
 		return
 	}
 

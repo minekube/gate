@@ -46,6 +46,14 @@ func (s *ServerLogin) Encode(c *proto.PacketContext, wr io.Writer) error {
 			}
 		}
 
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+			err = util.WriteUUID(wr, s.HolderID)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
 			okPlayerKey := s.PlayerKey != nil && s.PlayerKey.SignatureHolder() != uuid.Nil
 			ok := okPlayerKey || s.HolderID != uuid.Nil
@@ -92,6 +100,14 @@ func (s *ServerLogin) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 			} else {
 				s.PlayerKey = nil
 			}
+		}
+
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
+			s.HolderID, err = util.ReadUUID(rd)
+			if err != nil {
+				return err
+			}
+			return
 		}
 
 		if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
@@ -292,7 +308,7 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		s.UUID, err = util.ReadUUID(rd)
 	} else if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
-		s.UUID, err = util.ReadUUID(rd) // readUUIDIntArray?
+		s.UUID, err = util.ReadUUIDIntArray(rd)
 	} else {
 		var uuidString string
 		if c.Protocol.GreaterEqual(version.Minecraft_1_7_6) {
@@ -344,26 +360,17 @@ type LoginPluginMessage struct {
 }
 
 func (l *LoginPluginMessage) Encode(_ *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteVarInt(wr, l.ID)
-	if err != nil {
-		return err
-	}
-	err = util.WriteString(wr, l.Channel)
-	if err != nil {
-		return err
-	}
-	return util.WriteBytes(wr, l.Data)
+	w := util.PanicWriter(wr)
+	w.VarInt(l.ID)
+	w.String(l.Channel)
+	w.Bytes(l.Data)
+	return nil
 }
 
 func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
-	l.ID, err = util.ReadVarInt(rd)
-	if err != nil {
-		return err
-	}
-	l.Channel, err = util.ReadString(rd)
-	if err != nil {
-		return err
-	}
+	r := util.PanicReader(rd)
+	r.VarInt(&l.ID)
+	r.String(&l.Channel)
 	l.Data, err = util.ReadBytes(rd)
 	if errors.Is(err, io.EOF) {
 		// Ignore if we couldn't read data
@@ -372,10 +379,22 @@ func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err e
 	return
 }
 
-var _ proto.Packet = (*ServerLogin)(nil)
-var _ proto.Packet = (*ServerLoginSuccess)(nil)
-var _ proto.Packet = (*LoginPluginMessage)(nil)
-var _ proto.Packet = (*LoginPluginResponse)(nil)
-var _ proto.Packet = (*EncryptionRequest)(nil)
-var _ proto.Packet = (*EncryptionResponse)(nil)
-var _ proto.Packet = (*SetCompression)(nil)
+type LoginAcknowledged struct{}
+
+func (l *LoginAcknowledged) Encode(_ *proto.PacketContext, wr io.Writer) error {
+	return nil
+}
+func (l *LoginAcknowledged) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+	return nil
+}
+
+var (
+	_ proto.Packet = (*ServerLogin)(nil)
+	_ proto.Packet = (*ServerLoginSuccess)(nil)
+	_ proto.Packet = (*LoginPluginMessage)(nil)
+	_ proto.Packet = (*LoginPluginResponse)(nil)
+	_ proto.Packet = (*EncryptionRequest)(nil)
+	_ proto.Packet = (*EncryptionResponse)(nil)
+	_ proto.Packet = (*SetCompression)(nil)
+	_ proto.Packet = (*LoginAcknowledged)(nil)
+)

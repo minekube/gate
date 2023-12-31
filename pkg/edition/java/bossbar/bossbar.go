@@ -4,6 +4,7 @@ package bossbar
 import (
 	"go.minekube.com/common/minecraft/component"
 	packet "go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -58,7 +59,7 @@ func New(
 		viewers: make(map[uuid.UUID]*barViewer),
 		BossBar: packet.BossBar{
 			ID:      uuid.New(),
-			Name:    name,
+			Name:    chat.FromComponent(name),
 			Percent: percent,
 			Color:   color,
 			Overlay: overlay,

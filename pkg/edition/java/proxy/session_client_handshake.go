@@ -96,12 +96,12 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	}
 
 	// Update connection to requested state and protocol sent in the packet.
-	h.conn.SetState(nextState)
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
 	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
 	if h.config().Lite.Enabled {
+		h.conn.SetState(nextState)
 		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
@@ -118,7 +118,8 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
 		// Just update the session handler and wait for the StatusRequest packet.
-		h.conn.SetSessionHandler(newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse))
+		handler := newStatusSessionHandler(h.conn, inbound, h.sessionHandlerDeps, resolvePingResponse)
+		h.conn.SetActiveSessionHandler(state.Status, handler)
 	case state.Login:
 		// Client wants to join.
 		h.handleLogin(handshake, inbound)
@@ -136,10 +137,10 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
 	if h.loginsQuota != nil && h.loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
-		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
+		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
-		}))
+		}, proto.Protocol(p.ProtocolVersion), true))
 		return
 	}
 
@@ -149,15 +150,16 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 	// and lower, otherwise IP information will never get forwarded.
 	if h.config().Forwarding.Mode == config.VelocityForwardingMode &&
 		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
-		_ = netmc.CloseWith(h.conn, packet.DisconnectWith(&component.Text{
+		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
-		}))
+		}, proto.Protocol(p.ProtocolVersion), true))
 		return
 	}
 
 	lic := newLoginInboundConn(inbound)
 	h.eventMgr.Fire(&ConnectionHandshakeEvent{inbound: lic})
-	h.conn.SetSessionHandler(newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps))
+	handler := newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps)
+	h.conn.SetActiveSessionHandler(state.Login, handler)
 }
 
 func stateForProtocol(status int) *state.Registry {
@@ -213,7 +215,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.DisconnectWithProtocol(reason, i.Protocol()))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), true))
 }
 
 //
