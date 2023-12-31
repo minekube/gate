@@ -1,6 +1,6 @@
 module go.minekube.com/gate
 
-go 1.21.1
+go 1.21.5
 
 require (
 	github.com/Tnze/go-mc v1.20.2-0.20231123224931-bc3d77d78437
