@@ -36,7 +36,7 @@ features:
              has a great ecosystem of tools and libraries.
     link: /developers/
     linkText: Developers & Starter Template
-  - icon: 🖧
+  - icon: 🌐
     title: Supports Connect out of the box
     details: Get your public or local host proxy network in front of players with organic traffic.
     link: /guide/connect
