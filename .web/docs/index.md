@@ -30,12 +30,12 @@ features:
     details: Run Gate's tiny executable practically anywhere or in a container - No Java runtime needed!
     link: /guide/install/
     linkText: Install
-  - icon: 💻
+  - icon: 🚀
     title: Developer Friendly
     details: Gate is written in Go, a modern programming language that is easy to learn and
              has a great ecosystem of tools and libraries.
     link: /developers/
-    linkText: Developers
+    linkText: Developers & Starter Template
   - icon: 🖧
     title: Supports Connect out of the box
     details: Get your public or local host proxy network in front of players with organic traffic.

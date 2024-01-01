@@ -4,11 +4,17 @@ _If you want to learn how to extend Gate with your own code, you are in the righ
 
 <!--@include: ../badges.md -->
 
+## Starter Template
+
+The starter template is designed to help you get started with your own Gate powered project.
+Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
+
 ## Getting Started
 
 Gate is designed with developers in mind.
 
-All you need to get started is a working Go environment. You can find the Go installation instructions [here](https://golang.org/doc/install).
+All you need to get started is a working Go environment. You can find the Go installation
+instructions [here](https://golang.org/doc/install).
 
 Once you have Go installed, you create a new Go module and add Gate as a dependency:
 
@@ -22,17 +28,17 @@ Add and initialize your plugin and execute Gate, that's it!
 
 ```go mcproxy.go
 func main() {
-    // Add our "plug-in" to be initialized on Gate start.
-    proxy.Plugins = append(proxy.Plugins, proxy.Plugin{
-        Name: "SimpleProxy",
-        Init: func(ctx context.Context, proxy *proxy.Proxy) error {
-            return newSimpleProxy(proxy).init() // see code examples
-        },
-    })
-    
-    // Execute Gate entrypoint and block until shutdown.
-    // We could also run gate.Start if we don't need Gate's command-line.
-    gate.Execute()
+// Add our "plug-in" to be initialized on Gate start.
+proxy.Plugins = append(proxy.Plugins, proxy.Plugin{
+Name: "SimpleProxy",
+Init: func (ctx context.Context, proxy *proxy.Proxy) error {
+return newSimpleProxy(proxy).init() // see code examples
+},
+})
+
+// Execute Gate entrypoint and block until shutdown.
+// We could also run gate.Start if we don't need Gate's command-line.
+gate.Execute()
 }
 ```
 
