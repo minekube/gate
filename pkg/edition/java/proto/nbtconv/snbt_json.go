@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io"
 	"log/slog"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -99,12 +100,7 @@ func ConvertToSNBT(v any, b *strings.Builder) error {
 	case []any:
 		return sliceToSNBT(v, b)
 	case string:
-		// Quote strings that contain spaces or special characters
-		if strings.TrimSpace(v) == "" || strings.ContainsAny(v, " {}:[]/#@!^") {
-			b.WriteString(fmt.Sprintf(`"%s"`, v))
-		} else {
-			b.WriteString(v)
-		}
+		writeStr(v, b)
 	case bool:
 		if v {
 			b.WriteString("1")
@@ -122,7 +118,7 @@ func mapToSNBT(m map[string]any, b *strings.Builder) error {
 	sep := ""
 	for k, v := range m {
 		b.WriteString(sep)
-		b.WriteString(k)
+		writeStr(k, b)
 		b.WriteString(":")
 		err := ConvertToSNBT(v, b)
 		if err != nil {
@@ -132,6 +128,20 @@ func mapToSNBT(m map[string]any, b *strings.Builder) error {
 	}
 	b.WriteString("}")
 	return nil
+}
+
+var notToEscapeStrRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.+]+$`)
+
+func writeStr(s string, b *strings.Builder) {
+	if strings.TrimSpace(s) != "" && notToEscapeStrRe.MatchString(s) {
+		b.WriteString(s)
+	} else {
+		// Quote empty strings or that contain special characters.
+		// We cannot use strconv.Quote because we only want to escape " characters,
+		// but not \n, \t, etc.
+		escapedStr := strings.ReplaceAll(s, `"`, `\"`)
+		b.WriteString(`"` + escapedStr + `"`)
+	}
 }
 
 func sliceToSNBT(s []any, b *strings.Builder) error {
