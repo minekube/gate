@@ -51,3 +51,9 @@ graph LR
     linkStyle 2 stroke:purple
     linkStyle 3 stroke:orange
 ```
+
+## Developers Starter Template
+
+The starter template is designed to help you get started with your own Gate powered project.
+Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
+
