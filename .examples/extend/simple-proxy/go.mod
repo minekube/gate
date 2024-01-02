@@ -1,6 +1,6 @@
 module simple-proxy
 
-go 1.21.1
+go 1.21.5
 
 replace go.minekube.com/gate => ../../../
 
