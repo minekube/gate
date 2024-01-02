@@ -27,7 +27,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/connect v0.6.0
+	go.minekube.com/connect v0.6.1
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/sync v0.5.0
