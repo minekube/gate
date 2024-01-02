@@ -1,6 +1,7 @@
 package componentutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,13 @@ func ParseTextComponent(protocol proto.Protocol, s string) (t *component.Text, e
 	if strings.HasPrefix(s, "{") {
 		c, err = protoutil.JsonCodec(protocol).Unmarshal([]byte(s))
 	} else {
+		{
+			// If the string is a json string, try to unmarshal it.
+			st := strings.TrimSpace(s)
+			if strings.HasPrefix(st, `"`) && strings.HasSuffix(st, `"`) {
+				_ = json.Unmarshal([]byte(s), &s) // ignore error and continue
+			}
+		}
 		c, err = (&legacy.Legacy{}).Unmarshal([]byte(s))
 	}
 	if err != nil {

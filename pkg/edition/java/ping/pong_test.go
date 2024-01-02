@@ -2,6 +2,7 @@ package ping
 
 import (
 	"encoding/json"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -43,4 +44,27 @@ func TestServerPing_JSON(t *testing.T) {
 
 	// Compare.
 	require.Equal(t, p, &p2)
+}
+
+func TestServerPing_UnmarshalJSON_description_string(t *testing.T) {
+	const jsonStr = `{
+"description": "                §eGate Proxy\n             §6§lHello World"
+}`
+
+	var p ServerPing
+	err := json.Unmarshal([]byte(jsonStr), &p)
+	require.NoError(t, err)
+
+	dj, err := util.Marshal(-1, p.Description)
+	require.NoError(t, err)
+
+	// need this step for ordering of json keys
+	m := map[string]any{}
+	err = json.Unmarshal(dj, &m)
+	require.NoError(t, err)
+	js, err := json.Marshal(&m)
+	require.NoError(t, err)
+
+	const exp = `{"extra":[{"color":"yellow","text":"Gate Proxy\n             "},{"color":"gold","extra":[{"bold":true,"text":"Hello World"}],"text":""}],"text":"                "}`
+	require.Equal(t, exp, string(js))
 }
