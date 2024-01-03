@@ -75,7 +75,7 @@ type clientSettings struct {
 	s      *packet.ClientSettings
 }
 
-func (s *clientSettings) ClientListing() bool { return s.s.ClientListing }
+func (s *clientSettings) ClientListing() bool { return s.s.ClientListingAllowed }
 
 func (s *clientSettings) SkinParts() SkinParts {
 	return SkinParts(s.s.SkinParts)

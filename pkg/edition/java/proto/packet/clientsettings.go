@@ -8,108 +8,56 @@ import (
 )
 
 type ClientSettings struct {
-	Locale         string // may be empty
-	ViewDistance   byte
-	ChatVisibility int
-	ChatColors     bool
-	Difficulty     bool // 1.7 Protocol
-	SkinParts      byte
-	MainHand       int
-	TextFiltering  bool // 1.17+
-	ClientListing  bool // 1.18+, overwrites server-list "anonymous" mode
+	Locale               string // may be empty
+	ViewDistance         byte
+	ChatVisibility       int
+	ChatColors           bool
+	Difficulty           byte // 1.7 Protocol
+	SkinParts            byte
+	MainHand             int
+	ChatFilteringEnabled bool // 1.17+
+	ClientListingAllowed bool // 1.18+, overwrites server-list "anonymous" mode
 }
 
 func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
-	err := util.WriteString(wr, s.Locale)
-	if err != nil {
-		return err
-	}
-	err = util.WriteUint8(wr, s.ViewDistance)
-	if err != nil {
-		return err
-	}
-	err = util.WriteVarInt(wr, s.ChatVisibility)
-	if err != nil {
-		return err
-	}
-	err = util.WriteBool(wr, s.ChatColors)
-	if err != nil {
-		return err
-	}
+	w := util.PanicWriter(wr)
+	w.String(s.Locale)
+	w.Byte(s.ViewDistance)
+	w.VarInt(s.ChatVisibility)
+	w.Bool(s.ChatColors)
 	if c.Protocol.LowerEqual(version.Minecraft_1_7_6) {
-		err = util.WriteBool(wr, s.Difficulty)
-		if err != nil {
-			return err
-		}
+		w.Byte(s.Difficulty)
 	}
-	err = util.WriteUint8(wr, s.SkinParts)
-	if err != nil {
-		return err
-	}
+	w.Byte(s.SkinParts)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
-		err = util.WriteVarInt(wr, s.MainHand)
-		if err != nil {
-			return err
-		}
+		w.VarInt(s.MainHand)
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
-			err = util.WriteBool(wr, s.TextFiltering)
-			if err != nil {
-				return err
-			}
+			w.Bool(s.ChatFilteringEnabled)
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
-			err = util.WriteBool(wr, s.ClientListing)
-			if err != nil {
-				return err
-			}
+			w.Bool(s.ClientListingAllowed)
 		}
 	}
 	return nil
 }
 
 func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	s.Locale, err = util.ReadString(rd)
-	if err != nil {
-		return err
-	}
-	s.ViewDistance, err = util.ReadUint8(rd)
-	if err != nil {
-		return err
-	}
-	s.ChatVisibility, err = util.ReadVarInt(rd)
-	if err != nil {
-		return err
-	}
-	s.ChatColors, err = util.ReadBool(rd)
-	if err != nil {
-		return err
-	}
+	r := util.PanicReader(rd)
+	r.StringMax(&s.Locale, 16)
+	r.Byte(&s.ViewDistance)
+	r.VarInt(&s.ChatVisibility)
+	r.Bool(&s.ChatColors)
 	if c.Protocol.LowerEqual(version.Minecraft_1_7_6) {
-		s.Difficulty, err = util.ReadBool(rd)
-		if err != nil {
-			return err
-		}
+		r.Byte(&s.Difficulty)
 	}
-	s.SkinParts, err = util.ReadByte(rd)
-	if err != nil {
-		return err
-	}
+	r.Byte(&s.SkinParts) // Go bytes are unsigned already
 	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
-		s.MainHand, err = util.ReadVarInt(rd)
-		if err != nil {
-			return err
-		}
+		r.VarInt(&s.MainHand)
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
-			s.TextFiltering, err = util.ReadBool(rd)
-			if err != nil {
-				return err
-			}
+			r.Bool(&s.ChatFilteringEnabled)
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
-			s.ClientListing, err = util.ReadBool(rd)
-			if err != nil {
-				return err
-			}
+			r.Bool(&s.ClientListingAllowed)
 		}
 	}
 	return nil

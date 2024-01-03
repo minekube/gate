@@ -200,6 +200,8 @@ func init() {
 		m(0x27, version.Minecraft_1_20_2),
 		m(0x28, version.Minecraft_1_20_3),
 	)
+	Play.ServerBound.Register(&config.FinishedUpdate{},
+		m(0x0B, version.Minecraft_1_20_2))
 
 	Play.ClientBound.Register(&p.KeepAlive{},
 		m(0x00, version.Minecraft_1_7_2),
@@ -459,5 +461,4 @@ func init() {
 		m(0x65, version.Minecraft_1_20_2),
 		m(0x67, version.Minecraft_1_20_3),
 	)
-
 }

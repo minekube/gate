@@ -18,6 +18,14 @@ func (r *PReader) String(s *string) {
 	PReadString(r.r, s)
 }
 
+func (r *PReader) StringMax(s *string, max int) {
+	PReadStringMax(r.r, s, max)
+}
+
+func (r *PReader) Uint8(i *uint8) {
+	PReadUint8(r.r, i)
+}
+
 func (r *PReader) Bytes(b *[]byte) {
 	PReadBytes(r.r, b)
 }
@@ -93,6 +101,22 @@ func PReadString(rd io.Reader, s *string) {
 		panic(err)
 	}
 	*s = v
+}
+
+func PReadStringMax(rd io.Reader, s *string, max int) {
+	v, err := ReadStringMax(rd, max)
+	if err != nil {
+		panic(err)
+	}
+	*s = v
+}
+
+func PReadUint8(rd io.Reader, i *uint8) {
+	v, err := ReadUint8(rd)
+	if err != nil {
+		panic(err)
+	}
+	*i = v
 }
 
 func PReadBytes(rd io.Reader, b *[]byte) {

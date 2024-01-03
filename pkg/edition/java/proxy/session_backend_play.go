@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
@@ -36,17 +35,18 @@ type backendPlaySessionHandler struct {
 }
 
 func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHandler, error) {
-	cpsh, ok := serverConn.player.ActiveSessionHandler().(*clientPlaySessionHandler)
+	activeHandler := serverConn.player.ActiveSessionHandler()
+	psh, ok := activeHandler.(*clientPlaySessionHandler)
 	if !ok {
-		return nil, errors.New("initializing backendPlaySessionHandler with no backing client play session handler")
+		return nil, fmt.Errorf("initializing backendPlaySessionHandler with no backing client play session handler, got %T", activeHandler)
 	}
 	return &backendPlaySessionHandler{
 		serverConn: serverConn,
-		bungeeCordMessageResponder: bungeeCordMessageResponder(
+		bungeeCordMessageResponder: newBungeeCordMessageResponder(
 			serverConn.config().BungeePluginChannelEnabled,
 			serverConn.player, serverConn.player.proxy,
 		),
-		playerSessionHandler: cpsh,
+		playerSessionHandler: psh,
 	}, nil
 }
 
@@ -154,12 +154,15 @@ func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSetting
 }
 
 func (b *backendPlaySessionHandler) handleBossBar(p *bossbar.BossBar, pc *proto.PacketContext) {
+	b.playerSessionHandler.mu.Lock()
 	switch p.Action {
 	case bossbar.AddAction:
-		b.playerSessionHandler.serverBossBars[p.ID] = struct{}{}
+		b.playerSessionHandler.mu.serverBossBars[p.ID] = struct{}{}
 	case bossbar.RemoveAction:
-		delete(b.playerSessionHandler.serverBossBars, p.ID)
+		delete(b.playerSessionHandler.mu.serverBossBars, p.ID)
+	default:
 	}
+	b.playerSessionHandler.mu.Unlock()
 	b.forwardToPlayer(pc, nil) // forward on
 }
 

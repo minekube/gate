@@ -13,6 +13,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
+	"sync/atomic"
 )
 
 type authSessionHandler struct {
@@ -23,17 +24,17 @@ type authSessionHandler struct {
 	profile    *profile.GameProfile
 	onlineMode bool
 
-	loginState authLoginState // 1.20.2+
+	loginState *atomic.Pointer[authLoginState] // 1.20.2+
 
 	connectedPlayer *connectedPlayer
 }
 
 type authLoginState int
 
-const (
-	startAuthLoginState authLoginState = iota
-	successSentAuthLoginState
-	acknowledgedAuthLoginState
+var (
+	startAuthLoginState        authLoginState = 0
+	successSentAuthLoginState  authLoginState = 1
+	acknowledgedAuthLoginState authLoginState = 2
 )
 
 type playerRegistrar interface {
@@ -48,8 +49,10 @@ func newAuthSessionHandler(
 	onlineMode bool,
 	sessionHandlerDeps *sessionHandlerDeps,
 ) netmc.SessionHandler {
+	var defaultState atomic.Pointer[authLoginState]
+	defaultState.Store(&startAuthLoginState)
 	return &authSessionHandler{
-		loginState:         startAuthLoginState,
+		loginState:         &defaultState,
 		sessionHandlerDeps: sessionHandlerDeps,
 		log:                logr.FromContextOrDiscard(inbound.Context()).WithName("authSession"),
 		inbound:            inbound,
@@ -185,10 +188,10 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 			return
 		}
 
-		a.loginState = successSentAuthLoginState
+		a.loginState.Store(&successSentAuthLoginState)
 
 		if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) {
-			a.loginState = acknowledgedAuthLoginState
+			a.loginState.Store(&acknowledgedAuthLoginState)
 			a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Play,
 				newInitialConnectSessionHandler(a.connectedPlayer))
 
@@ -244,12 +247,12 @@ func (a *authSessionHandler) config() *config.Config {
 }
 
 func (a *authSessionHandler) handleLoginAcknowledged() bool {
-	if a.loginState != successSentAuthLoginState {
+	if *a.loginState.Load() != successSentAuthLoginState {
 		_ = a.inbound.disconnect(&component.Translation{
 			Key: "multiplayer.disconnect.invalid_player_data",
 		})
 	} else {
-		a.loginState = acknowledgedAuthLoginState
+		a.loginState.Store(&acknowledgedAuthLoginState)
 		a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Config,
 			newClientConfigSessionHandler(a.connectedPlayer))
 

@@ -331,23 +331,38 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 
 	if serverMc.Protocol().Lower(version.Minecraft_1_20_2) {
 		serverMc.SetActiveSessionHandler(state.Play,
-			newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.eventMgr, b.proxy))
+			newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.proxy))
 	} else {
-		_ = serverMc.WritePacket(&packet.LoginAcknowledged{})
-		sh, err := newBackendConfigSessionHandler(b.serverConn, b.requestCtx)
-		if err != nil {
+		fail := func(err error) {
+			b.log.V(1).Error(err, "error transitioning to backend config state")
 			b.requestCtx.result(nil, err)
 			b.serverConn.disconnect()
+		}
+		err := serverMc.WritePacket(&packet.LoginAcknowledged{})
+		if err != nil {
+			fail(err)
+			return
+		}
+		sh, err := newBackendConfigSessionHandler(b.serverConn, b.requestCtx)
+		if err != nil {
+			fail(err)
 			return
 		}
 		serverMc.SetActiveSessionHandler(state.Config, sh)
 		player := b.serverConn.player
 		if pkt := player.ClientSettingsPacket(); pkt != nil {
-			_ = serverMc.WritePacket(pkt)
+			err = serverMc.WritePacket(pkt)
+			if err != nil {
+				fail(err)
+				return
+			}
 		}
-		if csh, ok := player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler); ok {
+
+		ash := player.ActiveSessionHandler()
+		csh, ok := ash.(*clientPlaySessionHandler)
+		if ok {
 			serverMc.SetAutoReading(false)
-			csh.doSwitch().DoWhenTrue(func() {
+			csh.doSwitch().ThenAccept(func(any) {
 				serverMc.SetAutoReading(true)
 			})
 		}

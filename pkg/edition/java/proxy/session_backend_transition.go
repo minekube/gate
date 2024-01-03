@@ -3,19 +3,19 @@ package proxy
 import (
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
-	"reflect"
-
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
-	phase "go.minekube.com/gate/pkg/edition/java/proxy/phase"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"reflect"
+	"time"
 )
 
 type backendTransitionSessionHandler struct {
@@ -31,14 +31,13 @@ type backendTransitionSessionHandler struct {
 func newBackendTransitionSessionHandler(
 	serverConn *serverConnection,
 	requestCtx *connRequestCxt,
-	eventMgr event.Manager,
 	proxy *Proxy,
 ) netmc.SessionHandler {
 	return &backendTransitionSessionHandler{
-		eventMgr:   eventMgr,
+		eventMgr:   proxy.Event(),
 		serverConn: serverConn,
 		requestCtx: requestCtx,
-		bungeeCordMessageRecorder: bungeeCordMessageResponder(
+		bungeeCordMessageRecorder: newBungeeCordMessageResponder(
 			serverConn.config().BungeePluginChannelEnabled,
 			serverConn.player, proxy,
 		),
@@ -224,20 +223,43 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 			"previousAddr", previousServer.ServerInfo().Addr())
 	}
 
-	// Change client to use ClientPlaySessionHandler if required.
-	playHandler, ok := b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
-	if !ok {
-		playHandler = newClientPlaySessionHandler(b.serverConn.player)
-		b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play, playHandler)
+	var playHandler *clientPlaySessionHandler
+	const (
+		maxWait = time.Second * 3
+		tick    = time.Millisecond * 100
+	)
+	for waited := time.Duration(0); ; {
+		if !b.serverConn.active() {
+			failResult("server connection is no longer active")
+			return
+		}
+		if waited >= maxWait {
+			failResult("timed out waiting for client play session handler to be set")
+			return
+		}
+		playHandler, ok = b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
+		if ok {
+			break
+		}
+		b.log.V(1).Info("waiting for client play session handler to be set")
+		time.Sleep(tick)
+		waited += tick
 	}
+
+	// Change client to use ClientPlaySessionHandler if required.
+	//playHandler, ok := b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
+	//if !ok {
+	//	playHandler = newClientPlaySessionHandler(b.serverConn.player)
+	//	b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play, playHandler)
+	//}
 
 	if err := playHandler.handleBackendJoinGame(pc, p, b.serverConn); err != nil {
 		failResult("JoinGame packet could not be handled, client-side switching server failed: %w", err)
 		return // not handled
 	}
 
-	// Strap on the correct session handler for the server.
-	// We will have nothing more to do with this connection once this task finishes up.
+	// Set the new play session handler for the server. We will have nothing more to do
+	// with this connection once this task finishes up.
 	backendPlay, err := newBackendPlaySessionHandler(b.serverConn)
 	if err != nil {
 		failResult("error creating backend play session handler: %w", err)
@@ -254,7 +276,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	// Send client settings. In 1.20.2+ this is done in the config state.
 	if smc.Protocol().Lower(version.Minecraft_1_20_2) {
 		if csp := b.serverConn.player.ClientSettingsPacket(); csp != nil {
-			smc, ok := b.serverConn.ensureConnected()
+			smc, ok = b.serverConn.ensureConnected()
 			if ok {
 				_ = smc.WritePacket(csp)
 			}

@@ -63,7 +63,7 @@ func (k *KeyedTabList) Add(entries ...tablist.Entry) error {
 }
 
 func (k *KeyedTabList) RemoveAll(ids ...uuid.UUID) error {
-	toRemove := k.TabList.DeleteEntries(ids...)
+	toRemove := k.TabList.deleteEntries(ids...)
 	items := make([]legacytablist.PlayerListItemEntry, 0, len(toRemove))
 	for _, id := range toRemove {
 		items = append(items, legacytablist.PlayerListItemEntry{

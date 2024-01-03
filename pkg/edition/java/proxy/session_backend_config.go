@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -17,12 +18,11 @@ import (
 // This version is to accommodate 1.20.2+ switching. It handles the transition of a player between servers in a proxy setup.
 // This is a complex process that involves multiple stages and can be interrupted by various events, such as plugin messages or resource pack requests.
 type backendConfigSessionHandler struct {
-	serverConn                 *serverConnection
-	requestCtx                 *connRequestCxt
-	state                      backendConfigSessionState
-	resourcePackToApply        *ResourcePackInfo
-	playerConfigSessionHandler *clientConfigSessionHandler
-	log                        logr.Logger
+	serverConn          *serverConnection
+	requestCtx          *connRequestCxt
+	state               backendConfigSessionState
+	resourcePackToApply *ResourcePackInfo
+	log                 logr.Logger
 
 	nopSessionHandler
 }
@@ -32,17 +32,11 @@ func newBackendConfigSessionHandler(
 	serverConn *serverConnection,
 	requestCtx *connRequestCxt,
 ) (netmc.SessionHandler, error) {
-	clientSession, ok := serverConn.player.ActiveSessionHandler().(*clientConfigSessionHandler)
-	if !ok {
-		return nil, errors.New("initializing backend config session handler with non-client config session handler")
-	}
-
 	return &backendConfigSessionHandler{
-		serverConn:                 serverConn,
-		state:                      backendConfigSessionStateStart,
-		requestCtx:                 requestCtx,
-		playerConfigSessionHandler: clientSession,
-		log:                        serverConn.log.WithName("backendConfigSessionHandler"),
+		serverConn: serverConn,
+		state:      backendConfigSessionStateStart,
+		requestCtx: requestCtx,
+		log:        serverConn.log.WithName("backendConfigSessionHandler"),
 	}, nil
 }
 
@@ -127,18 +121,29 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 		return
 	}
 	player := b.serverConn.player
-	configHandler := b.playerConfigSessionHandler
+
+	activehandler := player.ActiveSessionHandler()
+	configHandler, ok := activehandler.(*clientConfigSessionHandler)
+	if !ok {
+		err := fmt.Errorf("expected client config session handler, got %T", activehandler)
+		b.log.Error(err, "error handling finished update packet")
+		b.serverConn.disconnect()
+		b.requestCtx.result(nil, err)
+		return
+	}
 
 	smc.SetAutoReading(false)
-	// Even when not auto reading messages are still decoded. Decode them with the correct state
 	smc.Reader().SetState(state.Play)
-	configHandler.handleBackendFinishUpdate(b.serverConn, p, func() {
+	configHandler.handleBackendFinishUpdate(b.serverConn, p).ThenAccept(func(any) {
 		defer smc.SetAutoReading(true)
 
 		if b.serverConn == player.connectedServer() {
 			if !smc.SwitchSessionHandler(state.Play) {
 				err := errors.New("failed to switch session handler")
 				b.log.Error(err, "expected to switch session handler to play state")
+				b.serverConn.disconnect()
+				b.requestCtx.result(nil, err)
+				return
 			}
 
 			header, footer := player.tabList.HeaderFooter()
@@ -150,12 +155,15 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 
 			// The client cleared the tab list.
 			//  TODO: Restore changes done via TabList API
-			player.tabList.DeleteEntries()
+			err = player.tabList.RemoveAll()
+			if err != nil {
+				b.log.Error(err, "error removing all tab list entries")
+				return
+			}
 		} else {
 			smc.SetActiveSessionHandler(state.Play,
 				newBackendTransitionSessionHandler(
-					b.serverConn, b.requestCtx,
-					b.proxy().Event(), b.proxy(),
+					b.serverConn, b.requestCtx, b.proxy(),
 				),
 			)
 		}

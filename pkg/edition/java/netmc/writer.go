@@ -22,6 +22,7 @@ type Writer interface {
 	Flush() (err error)
 
 	StateChanger
+	Direction() proto.Direction
 }
 
 // NewWriter returns a new packet writer.

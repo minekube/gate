@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
-	"go.minekube.com/gate/pkg/internal/oncetrue"
+	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
+	"go.minekube.com/gate/pkg/internal/future"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gammazero/deque"
@@ -36,26 +38,28 @@ import (
 // Handles communication with the connected Minecraft client.
 // This is effectively the primary nerve center that joins backend servers with players.
 type clientPlaySessionHandler struct {
-	log, log1           logr.Logger
-	player              *connectedPlayer
-	spawned             atomic.Bool
-	loginPluginMessages deque.Deque[*plugin.Message]
-	chatHandler         *chatHandler
-	chatTimeKeeper      chatTimeKeeper
-
-	configSwitchDone oncetrue.OnceWhenTrue
-
-	serverBossBars         map[uuid.UUID]struct{}
+	log, log1              logr.Logger
+	player                 *connectedPlayer
+	spawned                atomic.Bool
+	chatHandler            *chatHandler
+	chatTimeKeeper         chatTimeKeeper
 	outstandingTabComplete *packet.TabCompleteRequest
+
+	configSwitchFuture future.Future[any]
+
+	mu struct {
+		sync.RWMutex
+		loginPluginMessages deque.Deque[*plugin.Message]
+		serverBossBars      map[uuid.UUID]struct{}
+	}
 }
 
 func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
 	log := player.log.WithName("clientPlaySession")
-	return &clientPlaySessionHandler{
-		player:         player,
-		log:            log,
-		log1:           log.V(1),
-		serverBossBars: map[uuid.UUID]struct{}{},
+	h := &clientPlaySessionHandler{
+		player: player,
+		log:    log,
+		log1:   log.V(1),
 		chatHandler: &chatHandler{
 			log:            log,
 			eventMgr:       player.eventMgr,
@@ -64,6 +68,8 @@ func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHand
 			configProvider: player.proxy,
 		},
 	}
+	h.mu.serverBossBars = map[uuid.UUID]struct{}{}
+	return h
 }
 
 var _ netmc.SessionHandler = (*clientPlaySessionHandler)(nil)
@@ -98,14 +104,16 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.player.setClientSettings(p)
 		c.forwardToServer(pc) // forward to server
 	case *config.FinishedUpdate:
-		c.handleFinishUpdate(p)
+		c.handleFinishedUpdate(p)
 	default:
 		c.forwardToServer(pc)
 	}
 }
 
 func (c *clientPlaySessionHandler) Deactivated() {
-	c.loginPluginMessages.Clear()
+	c.mu.Lock()
+	c.mu.loginPluginMessages.Clear()
+	c.mu.Unlock()
 }
 
 func (c *clientPlaySessionHandler) Activated() {
@@ -154,8 +162,10 @@ func (c *clientPlaySessionHandler) FlushQueuedPluginMessages() {
 	if !ok {
 		return
 	}
-	for c.loginPluginMessages.Len() != 0 {
-		pm := c.loginPluginMessages.PopFront()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for c.mu.loginPluginMessages.Len() != 0 {
+		pm := c.mu.loginPluginMessages.PopFront()
 		_ = serverMc.BufferPacket(pm)
 	}
 	_ = serverMc.Flush()
@@ -297,7 +307,9 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		//
 		// We also need to make sure to retain these packets, so they can be flushed
 		// appropriately.
-		c.loginPluginMessages.PushBack(packet)
+		c.mu.Lock()
+		c.mu.loginPluginMessages.PushBack(packet)
+		c.mu.Unlock()
 	}
 }
 
@@ -361,7 +373,9 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 
 	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
 	// track them.
-	for barID := range c.serverBossBars {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for barID := range c.mu.serverBossBars {
 		deletePacket := &bossbar.BossBar{
 			ID:     barID,
 			Action: bossbar.RemoveAction,
@@ -370,7 +384,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 			return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
 		}
 	}
-	c.serverBossBars = make(map[uuid.UUID]struct{}) // clear
+	c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
 
 	// Tell the server about the proxy's plugin message channels.
 	serverVersion := serverMc.Protocol()
@@ -383,8 +397,8 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	}
 
 	// If we had plugin messages queued during login/FML handshake, send them now.
-	for c.loginPluginMessages.Len() != 0 {
-		pm := c.loginPluginMessages.PopFront()
+	for c.mu.loginPluginMessages.Len() != 0 {
+		pm := c.mu.loginPluginMessages.PopFront()
 		if err = serverMc.BufferPacket(pm); err != nil {
 			return fmt.Errorf("error buffering %T for backend: %w", pm, err)
 		}
@@ -767,7 +781,7 @@ func (c *clientPlaySessionHandler) updateTimeKeeper(t time.Time) bool {
 	return true
 }
 
-func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) {
+func (c *clientPlaySessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
 	// Complete client switch
 	if !c.player.MinecraftConn.SwitchSessionHandler(state.Config) {
 		panic("expected client to have config session handler")
@@ -783,15 +797,18 @@ func (c *clientPlaySessionHandler) handleFinishUpdate(p *config.FinishedUpdate) 
 			if !smc.SwitchSessionHandler(state.Config) {
 				err := errors.New("failed to switch session handler")
 				c.log.Error(err, "expected to switch session handler to config state")
+				panic(err)
 			}
 			smc.SetAutoReading(true)
 		}()
 	}
-	c.configSwitchDone.SetTrue()
+	c.configSwitchFuture.Complete(nil)
 }
 
 // doSwitch handles switching stages for swapping between servers.
-func (c *clientPlaySessionHandler) doSwitch() *oncetrue.OnceWhenTrue {
+func (c *clientPlaySessionHandler) doSwitch() *future.Future[any] {
+	c.log.V(1).WithName("doSwitch").Info("switching servers")
+
 	existingConn := c.player.connectedServer()
 	if existingConn != nil {
 		// Shut down the existing server connection.
@@ -800,17 +817,19 @@ func (c *clientPlaySessionHandler) doSwitch() *oncetrue.OnceWhenTrue {
 
 		// Send keep alive to try to avoid timeouts
 		if netmc.SendKeepAlive(c.player) != nil {
-			return new(oncetrue.OnceWhenTrue)
+			return future.New[any]().Complete(nil)
 		}
 
-		// Reset TabList header and footer to prevent de-sync
-		if err := c.player.tabList.SetHeaderFooter(nil, nil); err != nil {
-			c.log.Error(err, "error resetting tablist header and footer")
-			return new(oncetrue.OnceWhenTrue)
-		}
+		// Config state clears everything in the client. No need to clear later.
+		c.spawned.Store(false)
+		c.mu.Lock()
+		c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
+		c.mu.Unlock()
+		_ = c.player.tabList.RemoveAll()
+		_ = tablist.ClearTabListHeaderFooter(c.player.tabList)
 	}
 
-	c.spawned.Store(false)
 	c.player.switchToConfigState()
-	return &c.configSwitchDone
+
+	return &c.configSwitchFuture
 }

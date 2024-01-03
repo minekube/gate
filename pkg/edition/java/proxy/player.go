@@ -706,12 +706,15 @@ func (p *connectedPlayer) config() *config.Config {
 
 // switchToConfigState switches the connection of the client into config state.
 func (p *connectedPlayer) switchToConfigState() {
-	go func() {
-		if err := p.WritePacket(new(cfgpacket.StartUpdate)); err != nil {
-			p.log.Error(err, "error writing config packet")
-		}
-		p.SetState(state.Config)
-	}()
+	if err := p.BufferPacket(new(cfgpacket.StartUpdate)); err != nil {
+		p.log.Error(err, "error writing config packet")
+	}
+
+	p.MinecraftConn.Writer().SetState(state.Config)
+	// Make sure we don't send any play packets to the player after update start
+	p.MinecraftConn.EnablePlayPacketQueue()
+
+	_ = p.Flush() // Trigger switch finally
 }
 
 func (p *connectedPlayer) ClientBrand() string {

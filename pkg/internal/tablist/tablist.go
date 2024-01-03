@@ -58,9 +58,6 @@ type InternalTabList interface {
 	EmitActionRaw(action playerinfo.UpsertAction, entry *playerinfo.Entry) error
 	UpdateEntry(action legacytablist.PlayerListItemAction, entry tablist.Entry) error
 
-	// DeleteEntries deletes the entries with the given ids without sending a packet.
-	DeleteEntries(ids ...uuid.UUID) []uuid.UUID
-
 	Parent() InternalTabList // Used to resolve the parent root struct of an embedded tab list struct
 }
 
@@ -145,7 +142,7 @@ func (t *TabList) UpdateEntry(action legacytablist.PlayerListItemAction, entry t
 }
 
 func (t *TabList) RemoveAll(ids ...uuid.UUID) error {
-	if toRemove := t.DeleteEntries(ids...); len(toRemove) != 0 {
+	if toRemove := t.deleteEntries(ids...); len(toRemove) != 0 {
 		return t.Viewer.BufferPacket(&playerinfo.Remove{
 			PlayersToRemove: toRemove,
 		})
@@ -153,7 +150,7 @@ func (t *TabList) RemoveAll(ids ...uuid.UUID) error {
 	return nil
 }
 
-func (t *TabList) DeleteEntries(ids ...uuid.UUID) []uuid.UUID {
+func (t *TabList) deleteEntries(ids ...uuid.UUID) []uuid.UUID {
 	t.Lock()
 	defer t.Unlock()
 	if len(ids) == 0 { // Delete all

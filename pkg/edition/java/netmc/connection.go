@@ -71,6 +71,8 @@ type MinecraftConn interface { // TODO convert to exported struct as this interf
 	PacketWriter
 
 	Reader() Reader // Only use if you know what you are doing!
+	Writer() Writer
+	EnablePlayPacketQueue()
 }
 
 // Closed returns true if the connection is closed.
@@ -247,6 +249,7 @@ func (c *minecraftConn) startReadLoop() {
 }
 
 func (c *minecraftConn) Reader() Reader { return c.rd }
+func (c *minecraftConn) Writer() Writer { return c.wr }
 
 func (c *minecraftConn) SetAutoReading(enabled bool) {
 	c.log.V(1).Info("update auto reading", "enabled", enabled)
@@ -293,7 +296,7 @@ func (c *minecraftConn) bufferNoQueue(packet proto.Packet) error {
 	return c.bufferPacket(packet, false)
 }
 
-func (c *minecraftConn) bufferPacket(packet proto.Packet, queue bool) (err error) {
+func (c *minecraftConn) bufferPacket(packet proto.Packet, canQueue bool) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
@@ -302,10 +305,15 @@ func (c *minecraftConn) bufferPacket(packet proto.Packet, queue bool) (err error
 			c.closeOnWriteErr(err, "bufferPacket", fmt.Sprintf("%T", packet))
 		}
 	}()
-	if queue && c.playPacketQueue.Queue(packet) {
-		// Packet was queued, don't write it now
-		c.log.V(1).Info("queued packet", "packet", fmt.Sprintf("%T", packet))
-		return nil
+	if canQueue {
+		c.mu.Lock()
+		playPacketQueue := c.playPacketQueue
+		c.mu.Unlock()
+		if playPacketQueue.Queue(packet) {
+			// Packet was queued, don't write it now
+			c.log.V(1).Info("queued packet", "packet", fmt.Sprintf("%T", packet))
+			return nil
+		}
 	}
 	_, err = c.wr.WritePacket(packet)
 	return err
@@ -469,14 +477,26 @@ func (c *minecraftConn) SetState(s *state.Registry) {
 	}
 }
 
+func (c *minecraftConn) EnablePlayPacketQueue() {
+	if c.mu.TryLock() {
+		defer c.mu.Unlock()
+	}
+	c.activatePlayPacketQueue()
+}
+
+// calling function must hold c.mu
+func (c *minecraftConn) activatePlayPacketQueue() {
+	// Activate the play packet queue if not already
+	if c.playPacketQueue == nil {
+		c.playPacketQueue = queue.NewPlayPacketQueue(c.protocol, c.Writer().Direction())
+	}
+}
+
 // ensurePlayPacketQueue ensures the play packet queue is activated or deactivated
 // when the connection enters or leaves the play state. See PlayPacketQueue struct for more info.
 func (c *minecraftConn) ensurePlayPacketQueue(newState state.State) {
 	if newState == state.ConfigState { // state exists since 1.20.2+
-		// Activate the play packet queue if not already
-		if c.playPacketQueue == nil {
-			c.playPacketQueue = queue.NewPlayPacketQueue(c.protocol, c.direction)
-		}
+		c.activatePlayPacketQueue()
 		return
 	}
 

@@ -14,7 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
-func bungeeCordMessageResponder(
+func newBungeeCordMessageResponder(
 	bungeePluginChannelEnabled bool,
 	player *connectedPlayer,
 	proxy *Proxy,
