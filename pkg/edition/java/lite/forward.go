@@ -227,9 +227,9 @@ func dialRoute(
 			forceUpdatePacketContext = true
 		}
 	}
-	if route.RealIP && IsRealIP(handshake.ServerAddress) {
-		// Modify the handshake packet to use RealIP of the client.
-		handshake.ServerAddress = RealIP(handshake.ServerAddress, srcAddr)
+	if route.GetTCPShieldRealIP() && IsTCPShieldRealIP(handshake.ServerAddress) {
+		// Modify the handshake packet to use TCPShieldRealIP of the client.
+		handshake.ServerAddress = TCPShieldRealIP(handshake.ServerAddress, srcAddr)
 		forceUpdatePacketContext = true
 	}
 	if forceUpdatePacketContext {

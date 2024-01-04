@@ -147,8 +147,8 @@ The Lite configuration is located in the same Gate `config.yml` file under `lite
 Gate Lite mode supports proxy behind proxy setups meaning you can use another proxy like
 Gate, BungeeCord or Velocity as a backend server.
 
-To preserve the real player IP address you should enable `proxyProtocol: true` or `realIP: true`
-(if using TCPShield) for the route as well as on the backend server.
+To preserve the real player IP address you should enable `proxyProtocol: true` or `tcpShieldRealIP: true`
+(if using Gate behind TCPShield service) for the route as well as on the backend server.
 
 ```yaml config-lite.yml
 config:

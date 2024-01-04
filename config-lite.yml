@@ -41,7 +41,7 @@ config:
       - host: '*.example.com'
         backend: 172.16.0.12:25566
         proxyProtocol: true # Use proxy protocol to connect to backend.
-        realIP: true # Optionally you can also use TCPShield's RealIP protocol.
+        tcpShieldRealIP: true # Optionally you can also use TCPShield's RealIP protocol.
       # You can also match to multiple hosts to one or multiple random backends.
       - host: [ 127.0.0.1, localhost ]
         backend: [ 172.16.0.12:25566, backend.example.com:25566 ]

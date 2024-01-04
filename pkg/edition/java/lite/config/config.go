@@ -25,13 +25,15 @@ type (
 		Routes  []Route
 	}
 	Route struct {
-		Host              configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
-		Backend           configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
-		CachePingTTL      configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
-		Fallback          *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
-		ProxyProtocol     bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
-		RealIP            bool                             `json:"realIP,omitempty" yaml:"realIP,omitempty"`
-		ModifyVirtualHost bool                             `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		Host          configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
+		Backend       configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
+		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
+		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
+		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
+		// Deprecated: use TCPShieldRealIP instead.
+		RealIP            bool `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		TCPShieldRealIP   bool `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
+		ModifyVirtualHost bool `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
 	}
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
@@ -62,6 +64,9 @@ func (r *Route) GetCachePingTTL() time.Duration {
 
 // CachePingEnabled returns true if the route has a ping cache enabled.
 func (r *Route) CachePingEnabled() bool { return r.GetCachePingTTL() > 0 }
+
+// GetTCPShieldRealIP returns the configured TCPShieldRealIP or deprecated RealIP value.
+func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP }
 
 func (c Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
