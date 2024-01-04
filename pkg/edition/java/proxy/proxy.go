@@ -623,7 +623,7 @@ retry:
 			// occurred before we could acquire the lock at `retry`.
 			//
 			// Meaning we keep disconnecting incoming duplicates until
-			// we can register our connection, but this shall be uncommon anyways. :)
+			// we can register our connection, but this shall be uncommon anyway. :)
 			goto retry
 		}
 	} else {

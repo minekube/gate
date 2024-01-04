@@ -555,7 +555,6 @@ func (c *minecraftConn) SetActiveSessionHandler(registry *state.Registry, handle
 	}
 
 	c.sessionHandlerMu.Lock()
-	defer c.sessionHandlerMu.Unlock()
 
 	if c.sessionHandlerMu.activeSessionHandler != nil {
 		c.sessionHandlerMu.activeSessionHandler.Deactivated()
@@ -564,6 +563,12 @@ func (c *minecraftConn) SetActiveSessionHandler(registry *state.Registry, handle
 	c.sessionHandlerMu.sessionHandlers[registry] = handler
 	c.sessionHandlerMu.activeSessionHandler = handler
 	c.SetState(registry)
+
+	// Note: While a better practice anyway,
+	// we need to call Unlock before handler.Activated()
+	// to prevent deadlock pre-1.20.2 by clientAuthSessionHandler's completeLoginProtocolPhaseAndInitialize
+	c.sessionHandlerMu.Unlock()
+
 	handler.Activated()
 
 	c.log.V(1).WithName("SetActiveSessionHandler").

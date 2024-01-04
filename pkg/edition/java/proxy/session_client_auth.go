@@ -161,44 +161,45 @@ func (a *authSessionHandler) startLoginCompletion(player *connectedPlayer) {
 }
 
 func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *connectedPlayer) {
-	event.FireParallel(a.eventMgr, &LoginEvent{player: player}, func(loginEvent *LoginEvent) {
-		if !player.Active() {
-			a.eventMgr.Fire(&DisconnectEvent{
-				player:      player,
-				loginStatus: CanceledByUserBeforeCompleteLoginStatus,
-			})
-			return
-		}
+	loginEvent := &LoginEvent{player: player}
+	// should fire event in sync to retain unlocked decoder to update state
+	a.eventMgr.Fire(loginEvent)
+	if !player.Active() {
+		a.eventMgr.Fire(&DisconnectEvent{
+			player:      player,
+			loginStatus: CanceledByUserBeforeCompleteLoginStatus,
+		})
+		return
+	}
 
-		if !loginEvent.Allowed() {
-			player.Disconnect(loginEvent.Reason())
-			return
-		}
+	if !loginEvent.Allowed() {
+		player.Disconnect(loginEvent.Reason())
+		return
+	}
 
-		if !a.registrar.registerConnection(player) {
-			player.Disconnect(alreadyConnected)
-			return
-		}
+	if !a.registrar.registerConnection(player) {
+		player.Disconnect(alreadyConnected)
+		return
+	}
 
-		if player.WritePacket(&packet.ServerLoginSuccess{
-			UUID:       player.ID(),
-			Username:   player.Username(),
-			Properties: player.GameProfile().Properties,
-		}) != nil {
-			return
-		}
+	if player.WritePacket(&packet.ServerLoginSuccess{
+		UUID:       player.ID(),
+		Username:   player.Username(),
+		Properties: player.GameProfile().Properties,
+	}) != nil {
+		return
+	}
 
-		a.loginState.Store(&successSentAuthLoginState)
+	a.loginState.Store(&successSentAuthLoginState)
 
-		if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) {
-			a.loginState.Store(&acknowledgedAuthLoginState)
-			a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Play,
-				newInitialConnectSessionHandler(a.connectedPlayer))
+	if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) {
+		a.loginState.Store(&acknowledgedAuthLoginState)
+		a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Play,
+			newInitialConnectSessionHandler(a.connectedPlayer))
 
-			a.eventMgr.Fire(&PostLoginEvent{player: player})
-			a.connectToInitialServer(player)
-		}
-	})
+		a.eventMgr.Fire(&PostLoginEvent{player: player})
+		a.connectToInitialServer(player)
+	}
 }
 
 // connectToInitialServer connects the player to the initial server as per the player's information.

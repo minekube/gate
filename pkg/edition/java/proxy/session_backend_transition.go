@@ -224,34 +224,42 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 
 	var playHandler *clientPlaySessionHandler
-	const (
-		maxWait = time.Second * 3
-		tick    = time.Millisecond * 100
-	)
-	for waited := time.Duration(0); ; {
-		if !b.serverConn.active() {
-			failResult("server connection is no longer active")
-			return
-		}
-		if waited >= maxWait {
-			failResult("timed out waiting for client play session handler to be set")
-			return
-		}
+	if smc.Protocol().Lower(version.Minecraft_1_20_2) {
+		// Change client to use ClientPlaySessionHandler.
 		playHandler, ok = b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
-		if ok {
-			break
+		if !ok { // should always be true
+			playHandler = newClientPlaySessionHandler(b.serverConn.player)
+			b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play, playHandler)
 		}
-		b.log.V(1).Info("waiting for client play session handler to be set")
-		time.Sleep(tick)
-		waited += tick
+	} else {
+		// Wait for FinishedUpdate packet in clientConfigSessionHandler
+		// to set the clientPlaySessionHandler.
+		//
+		// JoinGame from backend and FinishedUpdate from client might
+		// arrive in any order, so we need to ensure that FinishedUpdate
+		// is handled before JoinGame.
+		const (
+			maxWait = time.Second * 3
+			tick    = time.Millisecond * 100
+		)
+		for waited := time.Duration(0); ; {
+			if !b.serverConn.active() {
+				failResult("server connection is no longer active")
+				return
+			}
+			if waited >= maxWait {
+				failResult("timed out waiting for client play session handler to be set")
+				return
+			}
+			playHandler, ok = b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
+			if ok {
+				break
+			}
+			b.log.V(1).Info("waiting for client play session handler to be set")
+			time.Sleep(tick)
+			waited += tick
+		}
 	}
-
-	// Change client to use ClientPlaySessionHandler if required.
-	//playHandler, ok := b.serverConn.player.MinecraftConn.ActiveSessionHandler().(*clientPlaySessionHandler)
-	//if !ok {
-	//	playHandler = newClientPlaySessionHandler(b.serverConn.player)
-	//	b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play, playHandler)
-	//}
 
 	if err := playHandler.handleBackendJoinGame(pc, p, b.serverConn); err != nil {
 		failResult("JoinGame packet could not be handled, client-side switching server failed: %w", err)
