@@ -28,17 +28,17 @@ Add and initialize your plugin and execute Gate, that's it!
 
 ```go mcproxy.go
 func main() {
-// Add our "plug-in" to be initialized on Gate start.
-proxy.Plugins = append(proxy.Plugins, proxy.Plugin{
-Name: "SimpleProxy",
-Init: func (ctx context.Context, proxy *proxy.Proxy) error {
-return newSimpleProxy(proxy).init() // see code examples
-},
-})
-
-// Execute Gate entrypoint and block until shutdown.
-// We could also run gate.Start if we don't need Gate's command-line.
-gate.Execute()
+    // Add our "plug-in" to be initialized on Gate start.
+    proxy.Plugins = append(proxy.Plugins, proxy.Plugin{
+        Name: "SimpleProxy",
+        Init: func (ctx context.Context, proxy *proxy.Proxy) error {
+            return newSimpleProxy(proxy).init() // see code examples
+        },
+    })
+    
+    // Execute Gate entrypoint and block until shutdown.
+    // We could also run gate.Start if we don't need Gate's command-line.
+    gate.Execute()
 }
 ```
 
