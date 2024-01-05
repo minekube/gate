@@ -42,7 +42,7 @@ func formatSNBT(snbt string) string { // TODO test properly
 // Example: {a:1,b:hello,c:"world",d:true} -> {"a":1,"b":"hello","c":"world","d":true}
 func SnbtToJSON(snbt string) (json.RawMessage, error) {
 	// Trim whitespace, newlines, return characters, and tabs
-	snbt = strings.Trim(snbt, " \n\r\t")
+	snbt = strings.TrimSpace(snbt)
 
 	// Ensure that input is not empty or trivially malformed
 	if len(snbt) < 2 || !strings.HasPrefix(snbt, "{") || !strings.HasSuffix(snbt, "}") {
@@ -59,7 +59,6 @@ func SnbtToJSON(snbt string) (json.RawMessage, error) {
 
 		// just a json string
 		return json.RawMessage(strconv.Quote(snbt)), nil
-
 	}
 
 	// Add spaces after colons that are not within quotes
@@ -81,7 +80,7 @@ func SnbtToJSON(snbt string) (json.RawMessage, error) {
 }
 
 // JsonToSNBT converts a JSON to stringified NBT.
-// Example: {"a":1,"b":"hello","c":"world","d":true} -> {a:1,b:hello,c:"world",d:true}
+// Example: {"a":1,"b":"hello","c":"world","d":true} -> {a:1,b:"hello",c:"world",d:1}
 func JsonToSNBT(j json.RawMessage) (string, error) {
 	var m map[string]any
 	if err := json.Unmarshal(j, &m); err != nil {
@@ -100,7 +99,7 @@ func ConvertToSNBT(v any, b *strings.Builder) error {
 	case []any:
 		return sliceToSNBT(v, b)
 	case string:
-		writeStr(v, b)
+		writeStr(v, b, false)
 	case bool:
 		if v {
 			b.WriteString("1")
@@ -118,7 +117,7 @@ func mapToSNBT(m map[string]any, b *strings.Builder) error {
 	sep := ""
 	for k, v := range m {
 		b.WriteString(sep)
-		writeStr(k, b)
+		writeStr(k, b, true)
 		b.WriteString(":")
 		err := ConvertToSNBT(v, b)
 		if err != nil {
@@ -132,8 +131,8 @@ func mapToSNBT(m map[string]any, b *strings.Builder) error {
 
 var notToEscapeStrRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.+]+$`)
 
-func writeStr(s string, b *strings.Builder) {
-	if strings.TrimSpace(s) != "" && notToEscapeStrRe.MatchString(s) {
+func writeStr(s string, b *strings.Builder, isKey bool) {
+	if isKey && strings.TrimSpace(s) != "" && notToEscapeStrRe.MatchString(s) {
 		b.WriteString(s)
 	} else {
 		// Quote empty strings or that contain special characters.
