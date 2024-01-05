@@ -62,9 +62,11 @@ func decode(a any) (time.Duration, error) {
 	case string:
 		return time.ParseDuration(v)
 	case float64:
-		return time.Duration(v) * time.Second, nil
+		return time.Duration(v) * time.Millisecond, nil
 	case int64:
-		return time.Duration(v) * time.Second, nil
+		return time.Duration(v) * time.Millisecond, nil
+	case int:
+		return time.Duration(v) * time.Millisecond, nil
 	default:
 		return 0, fmt.Errorf("invalid duration type %T: %v", v, v)
 	}

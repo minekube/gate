@@ -64,11 +64,11 @@ config:
     # Indicates what zlib compression level Gate should use.
     # It goes from -1 to 9 where zero means no compression and -1 the default.
     level: -1
-  # The time in milliseconds Gate waits to connect to a server before timing out.
-  connectionTimeout: 5000
-  # The time in milliseconds Gate waits to receive data from a server before timing out.
+  # The time Gate waits to connect to a server before timing out.
+  connectionTimeout: 5s
+  # The time Gate waits to receive data from a server before timing out.
   # If you use Forge, you may need to increase this setting.
-  readTimeout: 30000
+  readTimeout: 30s
   # Whether to reconnect the player when disconnected from a server.
   failoverOnUnexpectedServerDisconnect: true
   # Whether to kick existing connected player when an online-mode player with the same name joins.

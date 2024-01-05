@@ -97,8 +97,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts"`
 	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect"`
 
-	ConnectionTimeout int `yaml:"connectionTimeout"` // Write timeout
-	ReadTimeout       int `yaml:"readTimeout"`
+	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout"` // Write timeout
+	ReadTimeout       configutil.Duration `yaml:"readTimeout"`
 
 	Quota                Quota       `yaml:"quota"`
 	Compression          Compression `yaml:"compression"`

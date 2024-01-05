@@ -67,11 +67,11 @@ config:
 
   # The follow settings from standard Gate also apply to Lite mode.
   #
-  # The time in milliseconds Gate waits to connect to a server before timing out.
-  connectionTimeout: 5000
-  # The time in milliseconds Gate waits to receive data from a server before timing out.
+  # The time Gate waits to connect to a server before timing out.
+  connectionTimeout: 5s
+  # The time Gate waits to receive data from a server before timing out.
   # If you use Forge, you may need to increase this setting.
-  readTimeout: 30000
+  readTimeout: 30s
   # Enabled extra debug logging (only for debugging purposes).
   debug: false
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
