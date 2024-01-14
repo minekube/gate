@@ -205,9 +205,10 @@ func dialRoute(
 			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
 		}
 	}
+	dstConn := dst
 	defer func() {
 		if err != nil {
-			_ = dst.Close()
+			_ = dstConn.Close()
 		}
 	}()
 
@@ -238,7 +239,7 @@ func dialRoute(
 
 	// Forward handshake packet as is.
 	if err = writePacket(dst, handshakeCtx); err != nil {
-		return nil, fmt.Errorf("failed to write handshake packet to backend: %w", err)
+		return dst, fmt.Errorf("failed to write handshake packet to backend: %w", err)
 	}
 
 	return dst, nil
