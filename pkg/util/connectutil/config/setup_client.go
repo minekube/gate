@@ -56,6 +56,7 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 			dialCtx := metadata.AppendToOutgoingContext(ctx,
 				"Authorization", "Bearer "+token,
 				connect.MDEndpoint, c.Name,
+				connect.MDPrefix+"connector", "gate",
 			)
 
 			log := logr.FromContextOrDiscard(ctx)
