@@ -11,7 +11,7 @@ connecting to your backend servers directly.
 
 ::: tip
 
-This does not apply to [Lite mode](lite), where backend servers should do the authentication.
+In [Lite mode](/guide/lite), the backend servers do the authentication.
 
 :::
 
@@ -26,19 +26,28 @@ This is not good for your player experience nor your brand.
 There are many ways to protect your server from DDoS attacks.
 Here are common methods proven to work very well in production:
 
+### Minekube Connect <VPBadge>free, fast setup & low latency</VPBadge>
+
+Minekube Connect is our free proxy service that provides DDoS protection
+for your Minecraft endpoints. It is very easy to set up as you only need to
+[enable Connect mode](/guide/connect) in Gate's configuration, or install a plugin to your Java server/proxy,
+and update your DNS records if you have a custom domain.
+
+-> [Learn more about Connect Anti-DDoS](https://connect.minekube.com)
+
 ### OVHcloud Anti-DDoS <VPBadge>cheap & reliable</VPBadge>
 
 _OVH is a well known service provider that offers a very good
 [DDoS protection](https://www.ovhcloud.com/en/security/anti-ddos/) service for your servers._
 
 You don't need to host all your Minecraft servers on OVH, but you can set up
-[Gate Lite](lite) on a tiny [VPS instance](https://www.ovhcloud.com/en/vps/) and
+[Gate Lite](/guide/lite) on a tiny [VPS instance](https://www.ovhcloud.com/en/vps/) and
 forward all your traffic to your backend servers.
 
 ::: details OVH Anti-DDoS setup
 
 1. [Create a VPS instance](https://www.ovhcloud.com/en/vps/) _(any provider with good Anti-DDoS)_
-2. [Install Gate](install/) on your VPS with [Lite mode](lite) enabled to point to your actual servers (not required)
+2. [Install Gate](/guide/install/) on your VPS with [Lite mode](/guide/lite) enabled to point to your actual servers (not required)
 3. [Activate Anti-DDoS](https://www.ovhcloud.com/en/security/anti-ddos/) in the OVH dashboard for your VPS
 4. Configure your DNS to point your domain to your VPS IP address
 
