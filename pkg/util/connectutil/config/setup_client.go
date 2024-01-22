@@ -106,13 +106,20 @@ type proposalHandler struct {
 }
 
 func (h *proposalHandler) handle(ctx context.Context, proposal connect.SessionProposal) {
-	ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).
+	log := logr.FromContextOrDiscard(ctx).
 		WithName("session").
 		WithValues("session", proposal.Session().GetId()).
-		WithValues("username", proposal.Session().GetPlayer().GetProfile().GetName()),
-	)
+		WithValues("username", proposal.Session().GetPlayer().GetProfile().GetName()).
+		WithValues("playerAddr", proposal.Session().GetPlayer().GetAddr()).
+		WithValues("passthrough", proposal.Session().GetAuth().GetPassthrough())
+	ctx = logr.NewContext(ctx, log)
+
+	log.V(1).Info("full received session proposal", "proposal", proposal)
+
+	log.Info("received session proposal")
 	tc := &tunnelCreator{proposalHandler: h}
 	if err := tc.handle(ctx, proposal); err != nil {
+		log.Info("rejecting session proposal", "reason", err)
 		rejectCtx, cancel := context.WithTimeout(ctx, time.Second*20)
 		defer cancel()
 		_ = proposal.Reject(rejectCtx, status.FromContextError(err).Proto())
