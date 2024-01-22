@@ -126,10 +126,6 @@ export default defineConfig({
                             link: '/developers/',
                         },
                         {
-                            text: 'Security & DDoS Protection',
-                            link: '/guide/security'
-                        },
-                        {
                             text: 'Compatibility',
                             link: '/guide/compatibility'
                         },
@@ -157,6 +153,19 @@ export default defineConfig({
                         {
                             text: 'Rate Limiting',
                             link: '/guide/rate-limiting'
+                        },
+                    ]
+                },
+                {
+                    text: 'Security',
+                    items: [
+                        {
+                            text: 'Cybersecurity',
+                            link: '/guide/security/'
+                        },
+                        {
+                            text: 'DDoS Protection',
+                            link: '/guide/security/ddos'
                         },
                     ]
                 },
