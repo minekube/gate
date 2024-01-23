@@ -7,12 +7,12 @@ const paper = 'https://avatars.githubusercontent.com/u/7608950?s=200&v=4'
 const spigot = 'https://avatars.githubusercontent.com/u/4350249?s=48&v=4'
 
 const center = {x: 100, y: 0};
-const space = 100; // Define your space constant here
+const space = 120; // Increase the space constant here
 
 const nodes = [
   {x: center.x, y: center.y, image: '/minekube-logo.png', class: 'w-48'}, // Top center node
   {x: center.x - space, y: 200, image: velocity}, // First bottom node
-  {x: center.x, y: 200, image: paper, class: 'w-16'}, // Second bottom node
+  {x: center.x, y: 230, image: paper, class: 'w-16'}, // Second bottom node
   {x: center.x + space, y: 200, image: spigot}, // Third bottom node
 ];
 
