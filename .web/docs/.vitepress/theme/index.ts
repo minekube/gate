@@ -1,3 +1,4 @@
+import './tailwind.postcss'
 import DefaultTheme from 'vitepress/theme'
 import VPButton from 'vitepress/dist/client/theme-default/components/VPButton.vue'
 import VPBadge from 'vitepress/dist/client/theme-default/components/VPBadge.vue'

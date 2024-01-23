@@ -9,8 +9,17 @@
     "serve": "vitepress serve docs"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.20",
+    "tailwindcss": "^3.2.4",
     "vitepress": "^1.0.0-rc.31",
     "vue": "^3.2.45"
+  },
+  "postcss": {
+    "plugins": {
+      "tailwindcss": {},
+      "autoprefixer": {}
+    }
   },
   "dependencies": {
     "posthog-js": "^1.93.3"

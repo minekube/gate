@@ -2,6 +2,7 @@
 import DefaultTheme from 'vitepress/theme'
 import {useRouter} from 'vitepress';
 import {watch} from 'vue';
+import HomeHeroImage from "./HomeHeroImage.vue";
 
 const {Layout} = DefaultTheme
 
@@ -17,5 +18,9 @@ if (typeof window !== 'undefined' && window.posthog) {
 </script>
 
 <template>
-  <Layout/>
+  <Layout>
+    <template #home-hero-image>
+      <HomeHeroImage/>
+    </template>
+  </Layout>
 </template>
