@@ -36,9 +36,16 @@ const maxHeight = computed(() => Math.max(...props.nodes.map(node => node.y), ..
     <!-- Create each node -->
     <div v-for="(node, index) in nodes" :key="index"
          :style="{ position: 'absolute', left: `${node.x}px`, top: `${node.y}px`, zIndex: index }">
-      <VPImage v-if="node.image" :alt="`Image ${index + 1}`" :class="`image-src w-20 rounded-2xl ${node.class ?? ''}`"
-               :image="node.image"/>
-      <div v-else class="node-html" v-html="node.content"></div>
+      <a v-if="node.link" :href="node.link">
+        <VPImage v-if="node.image" :alt="`Image ${index + 1}`" :class="`image-src w-20 rounded-2xl ${node.class ?? ''}`"
+                 :image="node.image"/>
+        <div v-else class="node-html" v-html="node.content"></div>
+      </a>
+      <template v-else>
+        <VPImage v-if="node.image" :alt="`Image ${index + 1}`" :class="`image-src w-20 rounded-2xl ${node.class ?? ''}`"
+                 :image="node.image"/>
+        <div v-else class="node-html" v-html="node.content"></div>
+      </template>
     </div>
 
     <svg :height="maxHeight" :width="maxWidth">

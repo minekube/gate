@@ -10,10 +10,10 @@ const center = {x: 100, y: 0};
 const space = 120; // Increase the space constant here
 
 const nodes = [
-  {x: center.x, y: center.y, image: '/minekube-logo.png', class: 'w-48'}, // Top center node
-  {x: center.x - space, y: 200, image: velocity}, // First bottom node
-  {x: center.x, y: 230, image: paper, class: 'w-16'}, // Second bottom node
-  {x: center.x + space, y: 200, image: spigot}, // Third bottom node
+  {x: center.x, y: center.y, link: '/guide/', image: '/minekube-logo.png', class: 'w-48'}, // Top center node
+  {x: center.x - space, y: 200, link: '/guide/lite', image: velocity}, // First bottom node
+  {x: center.x, y: 230, link: '/guide/quick-start#configuring-backend-servers', image: paper, class: 'w-16'}, // Second bottom node
+  {x: center.x + space, y: 200, link: '/guide/quick-start#configuring-backend-servers', image: spigot}, // Third bottom node
 ];
 
 // Define connections between nodes by their index
