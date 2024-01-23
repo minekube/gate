@@ -12,6 +12,10 @@ export default defineConfig({
     description: ogDescription,
     appearance: 'dark',
 
+    sitemap: {
+        hostname: ogUrl,
+    },
+
     head: [
         ['link', {rel: 'icon', type: 'image/png', href: '/favicon.png'}],
         ['meta', {property: 'og:type', content: 'website'}],
