@@ -17,7 +17,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.1.1
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pires/go-proxyproto v0.7.0
+	github.com/pires/go-proxyproto v0.7.1-0.20231012122632-e5b291b295b4
 	github.com/robinbraemer/event v0.0.1
 	github.com/rs/xid v1.5.0
 	github.com/sandertv/go-raknet v1.12.1
