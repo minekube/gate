@@ -473,11 +473,12 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	playerIP := netutil.Host(s.player.RemoteAddr())
 	b := new(strings.Builder)
 	b.WriteString(s.server.ServerInfo().Addr().String())
-	b.WriteString("\000")
+	const sep = "\000"
+	b.WriteString(sep)
 	b.WriteString(playerIP)
-	b.WriteString("\000")
+	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
-	b.WriteString("\000")
+	b.WriteString(sep)
 	props, err := json.Marshal(s.player.profile.Properties)
 	if err != nil { // should never happen
 		panic(err)

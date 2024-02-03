@@ -465,6 +465,7 @@ func (c *minecraftConn) SetState(s *state.Registry) {
 	c.mu.Lock()
 	prevState := c.state
 	c.state = s
+	// TODO If the connection is LEGACY (<1.6), the decoder and encoder are not set.
 	c.rd.SetState(s)
 	c.wr.SetState(s)
 
