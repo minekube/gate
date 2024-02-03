@@ -30,6 +30,10 @@ var (
 			initialBackendPhase: NotStartedLegacyForgeHandshakeBackendPhase,
 		},
 	}
+	ModernForge ConnectionType = &connType{
+		initialClientPhase:  VanillaClientPhase,
+		initialBackendPhase: VanillaBackendPhase,
+	}
 )
 
 // ConnectionType is a connection type.

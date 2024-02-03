@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
 	"net"
 	"strings"
 	"sync"
@@ -351,6 +352,8 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	}
 	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
+	} else if s.player.Type() == phase.ModernForge {
+		vHost = modernforge.ModernToken(vHost)
 	}
 	return vHost
 }

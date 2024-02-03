@@ -283,10 +283,3 @@ func disconnectResult(reason component.Component, server RegisteredServer, safe 
 func (b *backendLoginSessionHandler) config() *config.Config {
 	return b.configProvider.config()
 }
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}

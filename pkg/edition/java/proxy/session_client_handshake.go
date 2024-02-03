@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
 	"net"
 	"strings"
 	"time"
@@ -173,6 +174,10 @@ func stateForProtocol(status int) *state.Registry {
 }
 
 func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
+	if strings.Contains(h.ServerAddress, modernforge.Token) &&
+		h.ProtocolVersion >= int(version.Minecraft_1_20_2.Protocol) {
+		return phase.ModernForge
+	}
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
 	if h.ProtocolVersion < int(version.Minecraft_1_13.Protocol) &&
 		strings.HasSuffix(h.ServerAddress, forge.HandshakeHostnameToken) {
