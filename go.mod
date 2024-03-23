@@ -42,7 +42,6 @@ require (
 	buf.build/gen/go/minekube/connect/protocolbuffers/go v1.32.0-20230517110945-04c17e7d2fd9.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/df-mc/atomic v1.10.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -71,6 +70,6 @@ require (
 	golang.org/x/image v0.11.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
