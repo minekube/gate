@@ -20,7 +20,7 @@ require (
 	github.com/pires/go-proxyproto v0.7.1-0.20231012122632-e5b291b295b4
 	github.com/robinbraemer/event v0.0.1
 	github.com/rs/xid v1.5.0
-	github.com/sandertv/go-raknet v1.12.1
+	github.com/sandertv/go-raknet v1.13.0
 	github.com/sandertv/gophertunnel v1.36.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
