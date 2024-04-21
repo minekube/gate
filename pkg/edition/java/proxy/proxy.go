@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
 	"github.com/pires/go-proxyproto"
@@ -177,7 +178,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	logInfo()
 
 	defer func() {
-		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
+		p.Shutdown(config.StrToTextComponent(p.config().ShutdownReason).T()) // disconnects players
 	}()
 
 	eg, ctx := errgroup.WithContext(ctx)

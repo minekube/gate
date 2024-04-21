@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/ping"
@@ -95,7 +96,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 			Online: p.PlayerCount(),
 			Max:    p.cfg.Status.ShowMaxPlayers,
 		},
-		Description: p.cfg.Status.Motd.T(),
+		Description: config.StrToTextComponent(p.cfg.Status.Motd).T(),
 		Favicon:     p.cfg.Status.Favicon,
 		ModInfo:     modInfo,
 	}
