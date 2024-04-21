@@ -19,11 +19,11 @@ var DefaultConfig = Config{
 
 // Config is the config for Connect.
 type Config struct {
-	Enabled                bool   `yaml:"enabled"`            // Whether to connect Gate to the WatchService
-	Name                   string `yaml:"name"`               // Endpoint name
-	EnforcePassthrough     bool   `yaml:"enforcePassthrough"` // Setting to true will reject all sessions in non-passthrough mode.
-	WatchServiceAddr       string `yaml:"watchServiceAddr"`
-	AllowUnencryptedTunnel bool   `yaml:"allowUnencryptedTunnel"`
+	Enabled                bool   `yaml:"enabled,omitempty" json:"enabled,omitempty"`                               // Whether to connect Gate to the WatchService
+	Name                   string `yaml:"name,omitempty" json:"name,omitempty"`                                     // Endpoint name
+	EnforcePassthrough     bool   `yaml:"enforcePassthrough,omitempty" json:"enforcePassthrough,omitempty"`         // Setting to true will reject all sessions in non-passthrough mode.
+	WatchServiceAddr       string `yaml:"watchServiceAddr,omitempty" json:"watchServiceAddr,omitempty"`             // The address of the WatchService
+	AllowUnencryptedTunnel bool   `yaml:"allowUnencryptedTunnel,omitempty" json:"allowUnencryptedTunnel,omitempty"` // Allow unencrypted tunnels
 
 	Service Service
 }

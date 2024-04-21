@@ -21,12 +21,12 @@ var DefaultConfig = Config{
 type (
 	// Config is the configuration for Lite mode.
 	Config struct {
-		Enabled bool
-		Routes  []Route
+		Enabled bool    `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		Routes  []Route `yaml:"routes,omitempty" json:"routes,omitempty"`
 	}
 	Route struct {
-		Host          configutil.SingleOrMulti[string] `json:"host" yaml:"host"`
-		Backend       configutil.SingleOrMulti[string] `json:"backend" yaml:"backend"`
+		Host          configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
+		Backend       configutil.SingleOrMulti[string] `json:"backend,omitempty" yaml:"backend,omitempty"`
 		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`

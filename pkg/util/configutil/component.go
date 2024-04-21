@@ -29,7 +29,8 @@ var (
 )
 
 func (t *TextComponent) MarshalYAML() (any, error) {
-	return t.MarshalJSON()
+	j, err := t.MarshalJSON()
+	return string(j), err
 }
 
 func (t *TextComponent) UnmarshalYAML(value *yaml.Node) error {
