@@ -81,42 +81,42 @@ func defaultShutdownReason() *configutil.TextComponent {
 type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go for generating output yaml and markdown for the docs
 	Bind string `yaml:"bind"` // The address to listen for connections.
 
-	OnlineMode                    bool `yaml:"onlineMode"`
-	Auth                          Auth `yaml:"auth"`
-	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers"` // Kicks existing players when a premium player with the same name joins.
+	OnlineMode                    bool `yaml:"onlineMode,omitempty" json:"onlineMode,omitempty"`                                       // Whether to enable online mode.
+	Auth                          Auth `yaml:"auth,omitempty" json:"auth,omitempty"`                                                   // Authentication settings.
+	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers,omitempty" json:"onlineModeKickExistingPlayers,omitempty"` // Kicks existing players when a premium player with the same name joins.
 
-	Forwarding Forwarding `yaml:"forwarding"`
-	Status     Status     `yaml:"status"`
-	Query      Query      `yaml:"query"`
+	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
+	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
+	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
-	AnnounceForge bool `yaml:"announceForge"`
+	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
 
-	Servers                              map[string]string `yaml:"servers"` // name:address
-	Try                                  []string          `yaml:"try"`     // Try server names order
-	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts"`
-	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect"`
+	Servers                              map[string]string `yaml:"servers,omitempty" json:"servers,omitempty"` // name:address
+	Try                                  []string          `yaml:"try,omitempty" json:"try,omitempty"`         // Try server names order
+	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts,omitempty" json:"forcedHosts,omitempty"`
+	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect,omitempty" json:"failoverOnUnexpectedServerDisconnect,omitempty"`
 
-	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout"` // Write timeout
-	ReadTimeout       configutil.Duration `yaml:"readTimeout"`
+	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"` // Write timeout
+	ReadTimeout       configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`             // Read timeout
 
-	Quota                Quota       `yaml:"quota"`
-	Compression          Compression `yaml:"compression"`
-	ProxyProtocol        bool        `yaml:"proxyProtocol"`        // Enable HA-Proxy protocol mode
-	ProxyProtocolBackend bool        `yaml:"proxyProtocolBackend"` // Enable HA-Proxy protocol mode for backend servers
+	Quota                Quota       `yaml:"quota,omitempty" json:"quota,omitempty"` // Rate limiting settings
+	Compression          Compression `yaml:"compression,omitempty" json:"compression,omitempty"`
+	ProxyProtocol        bool        `yaml:"proxyProtocol,omitempty" json:"proxyProtocol,omitempty"`     // Enable HA-Proxy protocol mode
+	ProxyProtocolBackend bool        `yaml:"proxyProtocolBackend" json:"proxyProtocolBackend,omitempty"` // Enable HA-Proxy protocol mode for backend servers
 
-	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections"` // Sends player IP to Mojang on login
+	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections" json:"shouldPreventClientProxyConnections,omitempty"` // Sends player IP to Mojang on login
 
-	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled"`
-	BuiltinCommands                  bool `yaml:"builtinCommands"`
-	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions"` // Whether builtin commands require player permissions
-	AnnounceProxyCommands            bool `yaml:"announceProxyCommands"`
-	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication"` // Added in 1.19
+	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled,omitempty" json:"bungeePluginChannelEnabled,omitempty"`             // Whether to enable BungeeCord plugin messaging
+	BuiltinCommands                  bool `yaml:"builtinCommands,omitempty" json:"builtinCommands,omitempty"`                                   // Whether to enable builtin commands
+	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions,omitempty" json:"requireBuiltinCommandPermissions,omitempty"` // Whether builtin commands require player permissions
+	AnnounceProxyCommands            bool `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`                       // Whether to announce proxy commands to players
+	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"`                     // Added in 1.19
 
-	Debug          bool                      `yaml:"debug"`
-	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason"`
+	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
+	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
 
-	Lite liteconfig.Config `yaml:"lite"`
+	Lite liteconfig.Config `yaml:"lite,omitempty" json:"lite,omitempty"` // Lite mode settings
 }
 
 type (

@@ -33,27 +33,27 @@ var DefaultConfig = Config{
 type Config struct {
 	// Config is the Java edition configuration.
 	// It is an alias for Editions.Java.Config.
-	Config jconfig.Config
+	Config jconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
 	// See Editions struct.
-	Editions Editions
+	Editions Editions `json:"editions,omitempty" yaml:"editions,omitempty"`
 	// See HealthService struct.
-	HealthService HealthService
+	HealthService HealthService `json:"healthService,omitempty" yaml:"healthService,omitempty"`
 	// See Connect struct.
-	Connect connect.Config
+	Connect connect.Config `json:"connect,omitempty" yaml:"connect,omitempty"`
 }
 
 // Editions provides Minecraft edition specific configs.
 // If multiple editions are enabled, cross-play is activated.
 // If no edition is enabled, all will be enabled.
 type Editions struct {
-	Java    Java
-	Bedrock Bedrock
+	Java    Java    `json:"java,omitempty" yaml:"java,omitempty"`
+	Bedrock Bedrock `json:"bedrock,omitempty" yaml:"bedrock,omitempty"`
 }
 
 // Java edition.
 type Java struct {
-	Enabled bool
-	Config  jconfig.Config
+	Enabled bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Config  jconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 // Bedrock edition.
