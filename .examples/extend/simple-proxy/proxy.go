@@ -210,7 +210,7 @@ func pingHandler() func(p *proxy.PingEvent) {
 	}
 }
 
-func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
+func (p *SimpleProxy) bossBarDisplay() func(*proxy.PostLoginEvent) {
 	// Create shared boss bar for all players
 	sharedBar := bossbar.New(
 		&Text{Content: "Welcome to Gate Sample proxy!", S: Style{
@@ -238,10 +238,7 @@ func (p *SimpleProxy) bossBarDisplay() func(*proxy.LoginEvent) {
 		bar.SetPercent(float32(now.Second()) / 60)
 	}
 
-	return func(e *proxy.LoginEvent) {
-		if !e.Allowed() {
-			return
-		}
+	return func(e *proxy.PostLoginEvent) {
 		player := e.Player()
 
 		// Add player to shared boss bar
