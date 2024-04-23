@@ -21,6 +21,41 @@ This command will pull and run the latest Gate image.
     - Alternatively using `-d` would run in detached mode.
 - `--rm` - Removes the container after it exits.
 
+### `Using a custome config`
+
+Make sure the file exists, a complete config is located in the [docs](../config/index.md).
+
+```sh console
+docker run -it -v PATH-TO-CONFIG/config.yml:/config.yml --rm ghcr.io/minekube/gate:latest
+```
+
+This command will pull and run the latest Gate image.
+
+- `-it` - Run interactively and allocate a pseudo-TTY.
+    - Alternatively using `-d` would run in detached mode.
+- `--rm` - Removes the container after it exits.
+- `-v PATH-TO-CONFIG/config.yml:/config.yml` - Mounts the config file from the hostsystem into the container.
+
+### `Using a custome config together with Minekube Connect`
+
+```sh console
+docker run -it -v PATH-TO-CONFIG/config.yml:/config.yml -v PATH-TO-CONFIG/connect.json:/config.yml --rm ghcr.io/minekube/gate:latest
+```
+
+This command will pull and run the latest Gate image.
+
+- `-it` - Run interactively and allocate a pseudo-TTY.
+    - Alternatively using `-d` would run in detached mode.
+- `--rm` - Removes the container after it exits.
+- `-v PATH-TO-CONFIG/config.yml:/config.yml` - Mounts the config file from the hostsystem into the container.
+- `-v PATH-TO-CONFIG/connect.json:/connect.json` - Mounts the token file from the hostsystem into the container.
+
+Make sure both files exists, a complete config is located in the [docs](../config/index.md), the connect.json looks like this format:
+
+```json connect.json
+{"token":"YOUR-TOKEN"}
+```
+
 ## `docker-compose.yaml`
 
 Copy the following snippet into a `docker-compose.yaml` file and run `docker-compose up`.
@@ -34,6 +69,47 @@ services:
     container_name: gate
     restart: unless-stopped
     network_mode: host
+```
+
+### `Using a custom config`
+
+Copy the following snippet into a `docker-compose.yaml` file and run `docker-compose up`. Make sure the file exists, a complete config is located in the [docs](../config/index.md).
+
+```yaml docker-compose.yaml
+version: "3.9"
+
+services:
+  gate:
+    image: ghcr.io/minekube/gate:latest
+    container_name: gate
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+    - PATH-TO-CONFIG/config.yml:/config.yml
+
+```
+
+### `Using a custom config together with Minekube Connect`
+
+Copy the following snippet into a `docker-compose.yaml` file and run `docker-compose up`. Make sure both files exists, a complete config is located in the [docs](../config/index.md), the connect.json looks like this:
+
+```json connect.json
+{"token":"YOUR-TOKEN"}
+```
+
+```yaml docker-compose.yaml
+version: "3.9"
+
+services:
+  gate:
+    image: ghcr.io/minekube/gate:latest
+    container_name: gate
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+    - PATH-TO-CONFIG/config.yml:/config.yml
+    - PATH-TO-TOKEN/connect.json:/connect.json
+
 ```
 
 Running `docker-compose down` will stop and remove the containers.
