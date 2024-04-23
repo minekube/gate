@@ -5,7 +5,7 @@ export const gitHubLink = 'https://github.com/minekube'
 
 export const editLink = (project: string): DefaultTheme.EditLink => {
     return {
-        pattern: `${gitHubLink}/gate/edit/master/.web/docs/:path`,
+        pattern: `${gitHubLink}/${project}/edit/master/.web/docs/:path`,
         text: 'Suggest changes to this page'
     }
 }
