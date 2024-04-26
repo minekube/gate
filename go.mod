@@ -3,7 +3,7 @@ module go.minekube.com/gate
 go 1.22.2
 
 require (
-	github.com/Tnze/go-mc v1.20.2-0.20231123224931-bc3d77d78437
+	github.com/Tnze/go-mc v1.20.1
 	github.com/agext/levenshtein v1.2.3
 	github.com/dboslee/lru v0.0.1
 	github.com/edwingeng/deque/v2 v2.1.1

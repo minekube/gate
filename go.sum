@@ -10,6 +10,8 @@ dmitri.shuralyov.com/service/change v0.0.0-20181023043359-a85b471d5412/go.mod h1
 dmitri.shuralyov.com/state v0.0.0-20180228185332-28bcc343414c/go.mod h1:0PRwlb0D6DFvNNtx+9ybjezNCa8XF0xaYcETyp6rHWU=
 git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/Tnze/go-mc v1.20.1 h1:1Mwxyg2nvIVgRtebf6CpjMjvXLtRIng95so5hTEQtXA=
+github.com/Tnze/go-mc v1.20.1/go.mod h1:c1znJQglgqa1Jjs3Dr29woN/msguiJrlNtWXhKedh2U=
 github.com/Tnze/go-mc v1.20.2-0.20231123224931-bc3d77d78437 h1:cINogPegf6TCIEmAon1kyVuKJttjoM0H7kyIM5WXre4=
 github.com/Tnze/go-mc v1.20.2-0.20231123224931-bc3d77d78437/go.mod h1:geoRj2HsXSkB3FJBuhr7wCzXegRlzWsVXd7h7jiJ6aQ=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
