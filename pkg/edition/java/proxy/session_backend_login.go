@@ -250,7 +250,7 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 }
 
 func (b *backendLoginSessionHandler) Disconnected() {
-	if b.config().Forwarding.Mode == config.LegacyForwardingMode {
+	if b.config().Forwarding.Mode == config.LegacyForwardingMode || b.config().Forwarding.Mode == config.BungeeGuardFowardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
 	} else {

@@ -342,7 +342,7 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ok bool
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 		if ha, ok = s.Server().(HandshakeAddresser); !ok {
-			if s.config().Forwarding.Mode == config.LegacyForwardingMode {
+			if s.config().Forwarding.Mode == config.LegacyForwardingMode || s.config().Forwarding.Mode == config.BungeeGuardFowardingMode {
 				return s.createLegacyForwardingAddress()
 			}
 		}
