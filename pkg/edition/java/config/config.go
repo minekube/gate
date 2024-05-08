@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
@@ -218,9 +219,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	case NoneForwardingMode:
 		w("Player forwarding is disabled! Backend servers will have players with " +
 			"offline-mode UUIDs and the same IP as the proxy.")
-	case LegacyForwardingMode, VelocityForwardingMode:
+	case LegacyForwardingMode, VelocityForwardingMode, BungeeGuardFowardingMode:
 	default:
-		e("Unknown forwarding mode %q, must be one of none,legacy,velocity", c.Forwarding.Mode)
+		e("Unknown forwarding mode %q, must be one of none,legacy,velocity,bungeeguard", c.Forwarding.Mode)
 	}
 
 	if len(c.Servers) == 0 {
