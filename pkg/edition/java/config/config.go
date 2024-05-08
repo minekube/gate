@@ -133,8 +133,9 @@ type (
 		ShowPlugins bool `yaml:"showPlugins"`
 	}
 	Forwarding struct {
-		Mode           ForwardingMode `yaml:"mode"`
-		VelocitySecret string         `yaml:"velocitySecret"` // Used with "velocity" mode
+		Mode              ForwardingMode `yaml:"mode"`
+		VelocitySecret    string         `yaml:"velocitySecret"`    // Used with "velocity" mode
+		BungeeguardSecret string         `yaml:"bungeeguardSecret"` // Used with "bungeeguard" mode
 	}
 	Compression struct {
 		Threshold int `yaml:"threshold"`
@@ -169,6 +170,8 @@ const (
 	// VelocityForwardingMode is a forwarding mode specified by the Velocity java proxy and
 	// supported by PaperSpigot for versions starting at 1.13.
 	VelocityForwardingMode ForwardingMode = "velocity"
+	// BungeeGuardFowardingMode is a forwarding mode used by versions lower than 1.13
+	BungeeGuardFowardingMode ForwardingMode = "bungeeguard"
 )
 
 // Validate validates Config.
