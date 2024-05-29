@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"go.minekube.com/gate/pkg/util/uuid"
 	"net"
 
 	"go.minekube.com/brigodier"
@@ -230,15 +231,17 @@ func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
 type PreLoginEvent struct {
 	connection Inbound
 	username   string
+	id         uuid.UUID // player's uuid, nil-able
 
 	result PreLoginResult
 	reason component.Component
 }
 
-func newPreLoginEvent(conn Inbound, username string) *PreLoginEvent {
+func newPreLoginEvent(conn Inbound, username string, id uuid.UUID) *PreLoginEvent {
 	return &PreLoginEvent{
 		connection: conn,
 		username:   username,
+		id:         id,
 		result:     AllowedPreLogin,
 	}
 }
@@ -257,6 +260,12 @@ const (
 // Username returns the username of the player.
 func (e *PreLoginEvent) Username() string {
 	return e.username
+}
+
+// ID returns the UUID of the player.
+// May be uuid.Nil!
+func (e *PreLoginEvent) ID() (uuid.UUID, bool) {
+	return e.id, e.id == uuid.Nil
 }
 
 // Conn returns the inbound connection that is connecting to the proxy.

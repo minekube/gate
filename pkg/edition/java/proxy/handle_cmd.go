@@ -18,8 +18,11 @@ import (
 
 func (c *chatHandler) handleCommand(packet proto.Packet) error {
 	if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
-		if p, ok := packet.(*chat.SessionPlayerCommand); ok {
+		switch p := packet.(type) {
+		case *chat.SessionPlayerCommand:
 			return c.handleSessionCommand(p)
+		case *chat.UnsignedPlayerCommand:
+			return c.handleSessionCommand(&p.SessionPlayerCommand)
 		}
 	} else if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) {
 		if p, ok := packet.(*chat.KeyedPlayerCommand); ok {
@@ -179,7 +182,7 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				return
 			}
 			// We seemingly can't actually do this if signed args exist, if not, we can probs keep stuff happy
-			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
 				_ = server.WritePacket(&chat.ChatAcknowledgement{
 					Offset: packet.LastSeenMessages.Offset,
 				})
@@ -235,7 +238,7 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				Timestamp: packet.Timestamp,
 			}).ToServer())
 		}
-		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
 			_ = server.WritePacket(&chat.ChatAcknowledgement{
 				Offset: packet.LastSeenMessages.Offset,
 			})

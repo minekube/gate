@@ -141,7 +141,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
-		}, proto.Protocol(p.ProtocolVersion), true))
+		}, proto.Protocol(p.ProtocolVersion), int(h.conn.State().State)))
 		return
 	}
 
@@ -153,7 +153,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
-		}, proto.Protocol(p.ProtocolVersion), true))
+		}, proto.Protocol(p.ProtocolVersion), int(h.conn.State().State)))
 		return
 	}
 
@@ -220,7 +220,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), true))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), int(i.State().State)))
 }
 
 //

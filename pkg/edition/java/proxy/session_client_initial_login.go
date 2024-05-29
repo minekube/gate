@@ -139,7 +139,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	l.inbound.playerKey = playerKey
 	l.login = login
 
-	e := newPreLoginEvent(l.inbound, l.login.Username)
+	e := newPreLoginEvent(l.inbound, l.login.Username, l.login.HolderID)
 	l.eventMgr.Fire(e)
 
 	if netmc.Closed(l.conn) {

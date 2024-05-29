@@ -159,6 +159,14 @@ func PReadInt64Val(rd io.Reader) int64 {
 	return v
 }
 
+func PReadIntVal(rd io.Reader) int {
+	v, err := ReadInt(rd)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func PReadBytesVal(rd io.Reader) []byte {
 	v, err := ReadBytes(rd)
 	if err != nil {

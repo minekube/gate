@@ -33,7 +33,11 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 			}
 			w.String(r.DimensionInfo.RegistryIdentifier)
 		} else {
-			w.String(r.DimensionInfo.RegistryIdentifier)
+			if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+				w.VarInt(r.Dimension)
+			} else {
+				w.String(r.DimensionInfo.RegistryIdentifier)
+			}
 			w.String(*r.DimensionInfo.LevelName)
 		}
 	} else {
@@ -73,16 +77,20 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 }
 func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	pr := util.PanicReader(rd)
-	var dimensionIdentifier, levelName string
+	var dimensionKey, levelName string
 	if c.Protocol.GreaterEqual(version.Minecraft_1_16) {
 		if c.Protocol.GreaterEqual(version.Minecraft_1_16_2) && c.Protocol.Lower(version.Minecraft_1_19) {
 			r.CurrentDimensionData, err = util.ReadCompoundTag(rd, c.Protocol)
 			if err != nil {
 				return fmt.Errorf("error reading current dimension data: %w", err)
 			}
-			pr.String(&dimensionIdentifier)
+			pr.String(&dimensionKey)
 		} else {
-			pr.String(&dimensionIdentifier)
+			if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+				pr.VarInt(&r.Dimension)
+			} else {
+				pr.String(&dimensionKey)
+			}
 			pr.String(&levelName)
 		}
 	} else {
@@ -100,10 +108,13 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 		debug := pr.Ok()
 		flat := pr.Ok()
 		r.DimensionInfo = &DimensionInfo{
-			RegistryIdentifier: dimensionIdentifier,
+			RegistryIdentifier: dimensionKey,
 			LevelName:          &levelName,
 			Flat:               flat,
 			DebugType:          debug,
+		}
+		if err = r.DimensionInfo.Validate(c.Protocol); err != nil {
+			return err
 		}
 
 		if c.Protocol.Lower(version.Minecraft_1_19_3) {

@@ -32,6 +32,10 @@ config:
     logPingRequests: false
     # Whether the proxy should present itself as Forge/FML-compatible server.
     announceForge: false
+  # Allows players transferred from other hosts via the
+  # Transfer packet (Minecraft 1.20.5) to be received.
+  # Default: false
+  acceptsTransfers: false
   # Whether the proxy should support bungee plugin channels.
   # (Disable this if your backend servers are untrusted.)
   bungeePluginChannelEnabled: true

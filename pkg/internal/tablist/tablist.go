@@ -182,17 +182,25 @@ func (t *TabList) Add(entries ...tablist.Entry) error {
 	if len(entries) == 0 {
 		return nil
 	}
+	var flush bool
 	for _, entry := range entries {
 		pkt, err := t.add(entry)
 		if err != nil {
 			return fmt.Errorf("error adding tab list entry %s: %w", entry.Profile(), err)
 		}
+		if len(pkt.ActionSet) == 0 {
+			continue
+		}
 		err = t.Viewer.BufferPacket(pkt)
 		if err != nil {
 			return fmt.Errorf("error buffering tab list entry %s: %w", entry.Profile(), err)
 		}
+		flush = true
 	}
-	return t.Viewer.Flush()
+	if flush {
+		return t.Viewer.Flush()
+	}
+	return nil
 }
 
 func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {

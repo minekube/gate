@@ -75,12 +75,15 @@ type clientSettings struct {
 	s      *packet.ClientSettings
 }
 
+// ClientListing is supported since 1.18.
 func (s *clientSettings) ClientListing() bool { return s.s.ClientListingAllowed }
 
+// SkinParts is supported since 1.8.
 func (s *clientSettings) SkinParts() SkinParts {
 	return SkinParts(s.s.SkinParts)
 }
 
+// MainHand is supported since 1.9.
 func (s *clientSettings) MainHand() MainHand {
 	if s.s.MainHand == 0 {
 		return LeftMainHand

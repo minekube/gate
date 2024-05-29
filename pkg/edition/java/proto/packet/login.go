@@ -239,34 +239,69 @@ func (l *LoginPluginResponse) Decode(_ *proto.PacketContext, rd io.Reader) (err 
 }
 
 type EncryptionRequest struct {
-	ServerID    string
-	PublicKey   []byte
-	VerifyToken []byte
+	ServerID            string
+	PublicKey           []byte
+	VerifyToken         []byte
+	DisableAuthenticate bool
 }
 
-func (e *EncryptionRequest) Encode(_ *proto.PacketContext, wr io.Writer) error {
+func (e *EncryptionRequest) Encode(c *proto.PacketContext, wr io.Writer) error {
 	err := util.WriteString(wr, e.ServerID)
 	if err != nil {
 		return err
 	}
-	err = util.WriteBytes(wr, e.PublicKey)
-	if err != nil {
-		return err
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
+		err = util.WriteBytes(wr, e.PublicKey)
+		if err != nil {
+			return err
+		}
+		err = util.WriteBytes(wr, e.VerifyToken)
+		if err != nil {
+			return err
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+			return util.WriteBool(wr, !e.DisableAuthenticate)
+		}
+		return nil
+	} else {
+		err = util.WriteBytes17(wr, e.PublicKey, false)
+		if err != nil {
+			return err
+		}
+		return util.WriteBytes17(wr, e.VerifyToken, false)
 	}
-	return util.WriteBytes(wr, e.VerifyToken)
 }
 
-func (e *EncryptionRequest) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
+func (e *EncryptionRequest) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	e.ServerID, err = util.ReadStringMax(rd, 20)
 	if err != nil {
 		return err
 	}
-	e.PublicKey, err = util.ReadBytesLen(rd, 256)
-	if err != nil {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
+		e.PublicKey, err = util.ReadBytesLen(rd, 256)
+		if err != nil {
+			return err
+		}
+		e.VerifyToken, err = util.ReadBytesLen(rd, 16)
+		if err != nil {
+			return err
+		}
+		if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+			shouldAuthenticate, err := util.ReadBool(rd)
+			if err != nil {
+				return err
+			}
+			e.DisableAuthenticate = !shouldAuthenticate
+		}
+		return nil
+	} else {
+		e.PublicKey, err = util.ReadBytes17(rd)
+		if err != nil {
+			return err
+		}
+		e.VerifyToken, err = util.ReadBytes17(rd)
 		return err
 	}
-	e.VerifyToken, err = util.ReadBytesLen(rd, 16)
-	return err
 }
 
 type ServerLoginSuccess struct {
@@ -274,6 +309,8 @@ type ServerLoginSuccess struct {
 	Username   string
 	Properties []profile.Property // 1.19+
 }
+
+const serverLoginSuccessStrictErrorHandling = true
 
 func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	if s.Username == "" {
@@ -297,6 +334,12 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		err = util.WriteProperties(wr, s.Properties)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		err = util.WriteBool(wr, serverLoginSuccessStrictErrorHandling)
 		if err != nil {
 			return err
 		}
@@ -333,6 +376,12 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
 		s.Properties, err = util.ReadProperties(rd)
+		if err != nil {
+			return
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		_, err = util.ReadBool(rd)
 		if err != nil {
 			return
 		}
