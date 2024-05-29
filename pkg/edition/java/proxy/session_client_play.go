@@ -207,20 +207,26 @@ func phaseHandle(
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	handleKeepAlive(p, c.player)
 }
+
 func handleKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
 	serverConn := player.connectedServer()
+	if !sendKeepAliveToBackend(serverConn, player, p) {
+		connInFlight := player.connectionInFlight()
+		sendKeepAliveToBackend(connInFlight, player, p)
+	}
+}
+
+func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlayer, p *packet.KeepAlive) bool {
 	if serverConn != nil {
-		sentTime, ok := serverConn.pendingPings.Get(p.RandomID)
-		if !ok {
-			return
-		}
-		serverConn.pendingPings.Delete(p.RandomID)
-		serverMc := serverConn.conn()
-		if serverMc != nil {
-			player.ping.Store(time.Since(sentTime))
-			_ = serverMc.WritePacket(p)
+		if sentTime, ok := serverConn.pendingPings.Get(p.RandomID); ok {
+			serverConn.pendingPings.Delete(p.RandomID)
+			if serverMc := serverConn.conn(); serverMc != nil {
+				player.ping.Store(time.Since(sentTime))
+				return serverMc.WritePacket(p) == nil
+			}
 		}
 	}
+	return false
 }
 
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {

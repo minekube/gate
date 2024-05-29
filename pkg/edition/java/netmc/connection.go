@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
 	"net"
 	"sync"
@@ -495,8 +496,8 @@ func (c *minecraftConn) activatePlayPacketQueue() {
 
 // ensurePlayPacketQueue ensures the play packet queue is activated or deactivated
 // when the connection enters or leaves the play state. See PlayPacketQueue struct for more info.
-func (c *minecraftConn) ensurePlayPacketQueue(newState state.State) {
-	if newState == state.ConfigState { // state exists since 1.20.2+
+func (c *minecraftConn) ensurePlayPacketQueue(newState states.State) {
+	if newState == states.ConfigState { // state exists since 1.20.2+
 		c.activatePlayPacketQueue()
 		return
 	}

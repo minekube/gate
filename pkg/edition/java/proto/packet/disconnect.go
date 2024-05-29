@@ -4,6 +4,7 @@ import (
 	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"io"
 	"log/slog"
 
@@ -16,7 +17,7 @@ type Disconnect struct {
 
 	// Not part of the packet data itself,
 	// but used to determine the state of the client.
-	State int
+	State states.State
 }
 
 func (d *Disconnect) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -28,20 +29,18 @@ func (d *Disconnect) Encode(c *proto.PacketContext, wr io.Writer) error {
 
 func (d *Disconnect) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	protocol := c.Protocol
-	if d.State == loginState {
+	if d.State == states.LoginState {
 		protocol = version.Minecraft_1_20_2.Protocol
 	}
 	d.Reason, err = chat.ReadComponentHolder(rd, protocol)
 	return err
 }
 
-const loginState = 2 // state.LoginState would be import cycle
-
 var _ proto.Packet = (*Disconnect)(nil)
 
 // NewDisconnect creates a new Disconnect packet.
-func NewDisconnect(reason component.Component, protocol proto.Protocol, stat int) *Disconnect {
-	if stat == loginState {
+func NewDisconnect(reason component.Component, protocol proto.Protocol, stat states.State) *Disconnect {
+	if stat == states.LoginState {
 		protocol = version.Minecraft_1_20_2.Protocol
 	}
 	if reason == nil {

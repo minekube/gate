@@ -621,7 +621,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), false)) == nil {
+	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), p.State().State)) == nil {
 		p.log.Info("player has been disconnected", "reason", r)
 	}
 }

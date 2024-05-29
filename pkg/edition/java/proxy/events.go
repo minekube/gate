@@ -87,11 +87,17 @@ func (e *ConnectionEvent) SetConnection(conn net.Conn) {
 // is established between a client and the proxy.
 type ConnectionHandshakeEvent struct {
 	inbound Inbound
+	intent  packet.HandshakeIntent
 }
 
 // Connection returns the inbound connection.
 func (e *ConnectionHandshakeEvent) Connection() Inbound {
 	return e.inbound
+}
+
+// Intent returns the handshake intent.
+func (e *ConnectionHandshakeEvent) Intent() packet.HandshakeIntent {
+	return e.intent
 }
 
 //

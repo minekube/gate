@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"net"
 	"strings"
 	"time"
@@ -81,12 +82,6 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, pc *proto.PacketContext) {
-	vHost := netutil.NewAddr(
-		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
-		h.conn.LocalAddr().Network(),
-	)
-	inbound := newInitialInbound(h.conn, vHost)
-
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
 	if nextState == nil {
@@ -115,6 +110,17 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		}
 	}
 
+	vHost := netutil.NewAddr(
+		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
+		h.conn.LocalAddr().Network(),
+	)
+	inbound := newInitialInbound(h.conn, vHost)
+
+	if handshake.Intent() == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
+		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
+		return
+	}
+
 	switch nextState {
 	case state.Status:
 		// Client wants to enter the Status state to get the server status.
@@ -131,7 +137,8 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 	// Check for supported client version.
 	if !version.Protocol(p.ProtocolVersion).Supported() {
 		_ = inbound.disconnect(&component.Translation{
-			Key: "multiplayer.disconnect.outdated_client",
+			Key:  "multiplayer.disconnect.outdated_client",
+			With: []component.Component{&component.Text{Content: version.SupportedVersionsString}},
 		})
 		return
 	}
@@ -141,7 +148,7 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
-		}, proto.Protocol(p.ProtocolVersion), int(h.conn.State().State)))
+		}, proto.Protocol(p.ProtocolVersion), h.conn.State().State))
 		return
 	}
 
@@ -153,21 +160,22 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		p.ProtocolVersion < int(version.Minecraft_1_13.Protocol) {
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "This server is only compatible with versions 1.13 and above.",
-		}, proto.Protocol(p.ProtocolVersion), int(h.conn.State().State)))
+		}, proto.Protocol(p.ProtocolVersion), h.conn.State().State))
 		return
 	}
 
 	lic := newLoginInboundConn(inbound)
-	h.eventMgr.Fire(&ConnectionHandshakeEvent{inbound: lic})
+	h.eventMgr.Fire(&ConnectionHandshakeEvent{inbound: lic, intent: p.Intent()})
 	handler := newInitialLoginSessionHandler(h.conn, lic, h.sessionHandlerDeps)
 	h.conn.SetActiveSessionHandler(state.Login, handler)
 }
 
 func stateForProtocol(status int) *state.Registry {
-	switch state.State(status) {
-	case state.StatusState:
+
+	switch states.State(status) {
+	case states.StatusState:
 		return state.Status
-	case state.LoginState:
+	case states.LoginState, states.State(packet.TransferHandshakeIntent):
 		return state.Login
 	}
 	return nil
@@ -220,7 +228,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), int(i.State().State)))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), i.State().State))
 }
 
 //

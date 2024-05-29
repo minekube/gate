@@ -1,10 +1,21 @@
 package packet
 
 import (
+	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"io"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
+)
+
+// HandshakeIntent represents the client intent in the Handshake state.
+type HandshakeIntent int
+
+const (
+	StatusHandshakeIntent   = HandshakeIntent(states.StatusState)
+	LoginHandshakeIntent    = HandshakeIntent(states.LoginState)
+	TransferHandshakeIntent = HandshakeIntent(3)
 )
 
 // https://wiki.vg/Protocol#Handshaking
@@ -13,6 +24,19 @@ type Handshake struct {
 	ServerAddress   string
 	Port            int
 	NextStatus      int
+}
+
+func (h *Handshake) Intent() HandshakeIntent {
+	switch h.NextStatus {
+	case 1:
+		return StatusHandshakeIntent
+	case 2:
+		return LoginHandshakeIntent
+	case 3:
+		return TransferHandshakeIntent
+	default:
+		panic(fmt.Errorf("unsupported next status %v -> handshake intent", h.NextStatus))
+	}
 }
 
 func (h *Handshake) Encode(_ *proto.PacketContext, wr io.Writer) error {

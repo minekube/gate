@@ -9,28 +9,17 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
-)
-
-// State is a Java edition client state.
-type State int
-
-// The states the Java edition client connection can be in.
-const (
-	HandshakeState State = 0
-	StatusState    State = 1
-	ConfigState    State = 4 // Minecraft 1.20.2+: After StatusState, before LoginState
-	LoginState     State = 2
-	PlayState      State = 3
 )
 
 // The registries storing the packets for a connection state.
 var (
-	Handshake = NewRegistry(HandshakeState)
-	Status    = NewRegistry(StatusState)
-	Config    = NewRegistry(ConfigState)
-	Login     = NewRegistry(LoginState)
-	Play      = NewRegistry(PlayState)
+	Handshake = NewRegistry(states.HandshakeState)
+	Status    = NewRegistry(states.StatusState)
+	Config    = NewRegistry(states.ConfigState)
+	Login     = NewRegistry(states.LoginState)
+	Play      = NewRegistry(states.PlayState)
 )
 
 func init() {
