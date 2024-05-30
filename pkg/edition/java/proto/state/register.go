@@ -95,7 +95,7 @@ func init() {
 		m(0x07, version.Minecraft_1_20_3),
 		m(0x09, version.Minecraft_1_20_5),
 	)
-	Config.ClientBound.Register(&p.TransferPacket{},
+	Config.ClientBound.Register(&p.Transfer{},
 		m(0x0B, version.Minecraft_1_20_5),
 	)
 	Config.ClientBound.Register(&config.ActiveFeatures{},
@@ -525,7 +525,7 @@ func init() {
 	Play.ClientBound.Register(&p.BundleDelimiter{},
 		m(0x00, version.Minecraft_1_19_4),
 	)
-	Play.ClientBound.Register(&p.TransferPacket{},
+	Play.ClientBound.Register(&p.Transfer{},
 		m(0x73, version.Minecraft_1_20_5),
 	)
 }

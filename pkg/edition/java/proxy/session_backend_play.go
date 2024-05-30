@@ -2,13 +2,16 @@ package proxy
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
+	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
+	"go.minekube.com/gate/pkg/util/netutil"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"reflect"
-	"regexp"
 	"time"
 
 	"github.com/robinbraemer/event"
@@ -30,6 +33,7 @@ type backendPlaySessionHandler struct {
 	bungeeCordMessageResponder bungeecord.MessageResponder
 	exceptionTriggered         atomic.Bool
 	playerSessionHandler       *clientPlaySessionHandler
+	log                        logr.Logger
 
 	nopSessionHandler
 }
@@ -47,6 +51,7 @@ func newBackendPlaySessionHandler(serverConn *serverConnection) (netmc.SessionHa
 			serverConn.player, serverConn.player.proxy,
 		),
 		playerSessionHandler: psh,
+		log:                  serverConn.log.WithName("backendPlaySessionHandler"),
 	}, nil
 }
 
@@ -83,11 +88,14 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *packet.ResourcePackRequest:
 		b.handleResourcePacketRequest(p)
 	case *packet.RemoveResourcePack:
-		b.forwardToPlayer(pc, nil) // TODO
+		b.handleRemoveResourcePack(p)
 	case *packet.ServerData:
 		b.handleServerData(p)
 	case *bossbar.BossBar:
 		b.handleBossBar(p, pc)
+	case *packet.BundleDelimiter:
+		b.serverConn.player.bundleHandler.ToggleBundleSession()
+		b.forwardToPlayer(pc, nil)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -149,7 +157,7 @@ func (b *backendPlaySessionHandler) handleStartUpdate(_ *config.StartUpdate) {
 
 func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSettings) {
 	if err := b.serverConn.connection.WritePacket(p); err != nil {
-		b.serverConn.log.V(1).Error(err, "error writing ClientSettings packet to server")
+		b.log.V(1).Error(err, "error writing ClientSettings packet to server")
 	}
 }
 
@@ -245,50 +253,32 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 	})
 }
 
-var sha1HexRegex = regexp.MustCompile(`[0-9a-fA-F]{40}`)
-
-// possibleResourcePackHash returns true if the given hash is a plausible SHA-1 hash.
-func possibleResourcePackHash(hash string) bool {
-	return sha1HexRegex.MatchString(hash)
-}
-
-func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (ResourcePackInfo, error) {
-	if p.URL == "" {
-		return ResourcePackInfo{}, fmt.Errorf("resource pack URL is empty")
+func toServerPromptedResourcePack(p *packet.ResourcePackRequest) (*ResourcePackInfo, error) {
+	info, err := resourcepack.InfoForRequest(p)
+	if err != nil {
+		return nil, err
 	}
-	packInfo := ResourcePackInfo{
-		ID:          p.ID,
-		URL:         p.URL,
-		ShouldForce: p.Required,
-		Prompt:      p.Prompt.AsComponentOrNil(),
-		Origin:      DownstreamServerResourcePackOrigin,
-	}
-	if p.Hash != "" && possibleResourcePackHash(p.Hash) {
-		var err error
-		packInfo.Hash, err = hex.DecodeString(p.Hash)
-		if err != nil {
-			return packInfo, fmt.Errorf("error decoding resource pack hash: %w", err)
-		}
-	}
-	return packInfo, nil
+	info.Origin = DownstreamServerResourcePackOrigin
+	return info, nil
 }
 
 func (b *backendPlaySessionHandler) handleResourcePacketRequest(p *packet.ResourcePackRequest) {
-	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event())
+	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event(), b.log)
 }
 
 func handleResourcePacketRequest(
 	p *packet.ResourcePackRequest,
 	serverConn *serverConnection,
 	eventMgr event.Manager,
+	log logr.Logger,
 ) {
 	packInfo, err := toServerPromptedResourcePack(p)
 	if err != nil {
-		serverConn.log.V(1).Error(err, "error converting ResourcePackRequest to ResourcePackInfo")
+		log.V(1).Error(err, "error converting ResourcePackRequest to ResourcePackInfo")
 		return
 	}
 
-	e := newServerResourcePackSendEvent(packInfo, serverConn)
+	e := newServerResourcePackSendEvent(*packInfo, serverConn)
 	eventMgr.Fire(e)
 
 	if netmc.Closed(serverConn.player) {
@@ -296,13 +286,53 @@ func handleResourcePacketRequest(
 	}
 	if e.Allowed() {
 		toSend := e.ProvidedResourcePack()
-		if reflect.DeepEqual(toSend, e.ReceivedResourcePack()) {
+		modifiedPack := false
+		if !reflect.DeepEqual(toSend, e.ReceivedResourcePack()) {
 			toSend.Origin = DownstreamServerResourcePackOrigin
+			modifiedPack = true
 		}
-
-		err = serverConn.player.queueResourcePack(toSend)
-		if err != nil {
-			serverConn.log.V(1).Error(err, "error queuing resource pack")
+		if serverConn.player.resourcePackHandler.HasPackAppliedByHash(toSend.Hash) {
+			// Do not apply a resource pack that has already been applied
+			if mcConn := serverConn.conn(); mcConn != nil {
+				err = mcConn.WritePacket(&packet.ResourcePackResponse{
+					ID:     p.ID,
+					Hash:   p.Hash,
+					Status: AcceptedResourcePackResponseStatus,
+				})
+				if err != nil {
+					log.V(1).Error(err, "error sending accepted resource pack response")
+					return
+				}
+				if mcConn.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
+					err = mcConn.WritePacket(&packet.ResourcePackResponse{
+						ID:     p.ID,
+						Hash:   p.Hash,
+						Status: DownloadedResourcePackResponseStatus,
+					})
+					if err != nil {
+						log.V(1).Error(err, "error sending downloaded resource pack response")
+						return
+					}
+				}
+				err = mcConn.WritePacket(&packet.ResourcePackResponse{
+					ID:     p.ID,
+					Hash:   p.Hash,
+					Status: SuccessfulResourcePackResponseStatus,
+				})
+				if err != nil {
+					log.V(1).Error(err, "error sending successful resource pack response")
+					return
+				}
+			}
+			if modifiedPack {
+				log.Info("A plugin has tried to modify a ResourcePack provided by the backend server " +
+					"with a ResourcePack already applied, the applying of the resource pack will be skipped.")
+			}
+		} else {
+			err = serverConn.player.resourcePackHandler.QueueResourcePack(&toSend)
+			if err != nil {
+				log.V(1).Error(err, "error queuing resource pack")
+			}
 		}
 	} else if smc, ok := serverConn.ensureConnected(); ok {
 		err = smc.WritePacket(&packet.ResourcePackResponse{
@@ -311,21 +341,58 @@ func handleResourcePacketRequest(
 			Status: DeclinedResourcePackResponseStatus,
 		})
 		if err != nil {
-			serverConn.log.V(1).Error(err, "error sending resource pack response")
+			log.V(1).Error(err, "error sending resource pack response")
 		}
 	}
 }
 
+func (b *backendPlaySessionHandler) handleRemoveResourcePack(p *packet.RemoveResourcePack) {
+	handler := b.serverConn.player.resourcePackHandler
+	if p.ID != uuid.Nil {
+		handler.Remove(p.ID)
+	} else {
+		handler.ClearAppliedResourcePacks()
+	}
+	b.forwardToPlayer(nil, p)
+}
+
+func (b *backendPlaySessionHandler) handleTransfer(p *packet.Transfer) {
+	handleTransfer(p, b.serverConn.player, b.log, b.proxy().Event())
+}
+func handleTransfer(p *packet.Transfer, player Player, log logr.Logger, mgr event.Manager) {
+	originalAddr, err := p.Addr()
+	if err != nil {
+		log.Error(err, "error getting address from Transfer packet received from Backend Server in Play State")
+		return
+	}
+	event.FireParallel(mgr, newPreTransferEvent(player, originalAddr), func(e *PreTransferEvent) {
+		if e.Allowed() {
+			resultedAddr := e.Addr()
+			if resultedAddr == nil {
+				resultedAddr = originalAddr
+			}
+			host, port := netutil.HostPort(resultedAddr)
+			err = player.WritePacket(&packet.Transfer{
+				Host: host,
+				Port: int(port),
+			})
+			if err != nil {
+				log.V(1).Error(err, "error sending Transfer packet to player")
+			}
+		}
+	})
+}
+
 func (b *backendPlaySessionHandler) handleLegacyPlayerListItem(p *legacytablist.PlayerListItem, pc *proto.PacketContext) {
 	if err := b.serverConn.player.tabList.ProcessLegacy(p); err != nil {
-		b.serverConn.log.Error(err, "error processing backend LegacyPlayerListItem packet, ignored")
+		b.log.Error(err, "error processing backend LegacyPlayerListItem packet, ignored")
 	}
 	b.forwardToPlayer(pc, nil)
 }
 
 func (b *backendPlaySessionHandler) handleUpsertPlayerInfo(p *playerinfo.Upsert, pc *proto.PacketContext) {
 	if err := b.serverConn.player.tabList.ProcessUpdate(p); err != nil {
-		b.serverConn.log.Error(err, "error processing backend UpsertPlayerInfo packet, ignored")
+		b.log.Error(err, "error processing backend UpsertPlayerInfo packet, ignored")
 	}
 	b.forwardToPlayer(pc, nil)
 }

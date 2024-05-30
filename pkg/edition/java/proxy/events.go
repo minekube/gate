@@ -268,8 +268,9 @@ func (e *PreLoginEvent) Username() string {
 	return e.username
 }
 
-// ID returns the UUID of the player.
-// May be uuid.Nil!
+// ID returns the UUID of the connecting player. May be uuid.Nil!
+// This value is nil on 1.19.2 and lower,
+// up to 1.20.1 it is optional and from 1.20.2 it will always be available.
 func (e *PreLoginEvent) ID() (uuid.UUID, bool) {
 	return e.id, e.id == uuid.Nil
 }
@@ -483,6 +484,51 @@ func (e *ServerPreConnectEvent) Allowed() bool {
 // nil if Allowed() returns false.
 func (e *ServerPreConnectEvent) Server() RegisteredServer {
 	return e.server
+}
+
+//
+//
+//
+//
+//
+//
+
+// PreTransferEvent is fired before a player is transferred to another host,
+// either by the backend server or by a plugin using the Player.TransferTo method.
+type PreTransferEvent struct {
+	player       Player
+	originalAddr net.Addr
+	targetAddr   net.Addr
+	denied       bool
+}
+
+func newPreTransferEvent(player Player, addr net.Addr) *PreTransferEvent {
+	return &PreTransferEvent{
+		player:       player,
+		originalAddr: addr,
+		targetAddr:   addr,
+	}
+}
+
+// TransferTo changes the target address the player will be transferred to.
+func (e *PreTransferEvent) TransferTo(addr net.Addr) {
+	e.targetAddr = addr
+	e.denied = false
+}
+
+// Addr returns the target address the player will be transferred to.
+func (e *PreTransferEvent) Addr() net.Addr {
+	return e.targetAddr
+}
+
+// Allowed returns true if the transfer is allowed.
+func (e *PreTransferEvent) Allowed() bool {
+	return !e.denied
+}
+
+// Player returns the player that is about to be transferred.
+func (e *PreTransferEvent) Player() Player {
+	return e.player
 }
 
 //
@@ -922,8 +968,26 @@ const (
 type PlayerResourcePackStatusEvent struct {
 	player        Player
 	status        ResourcePackResponseStatus
+	packID        uuid.UUID
 	packInfo      ResourcePackInfo
 	overwriteKick bool
+}
+
+func newPlayerResourcePackStatusEvent(
+	player Player,
+	status ResourcePackResponseStatus,
+	packID uuid.UUID,
+	packInfo ResourcePackInfo,
+) *PlayerResourcePackStatusEvent {
+	if packID == uuid.Nil {
+		packID = packInfo.ID
+	}
+	return &PlayerResourcePackStatusEvent{
+		player:   player,
+		status:   status,
+		packID:   packID,
+		packInfo: packInfo,
+	}
 }
 
 // Player returns the player affected by the change in resource pack status.

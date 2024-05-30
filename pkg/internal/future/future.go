@@ -32,13 +32,6 @@ func (f *Future[T]) ThenAccept(callback func(T)) {
 	}
 }
 
-// ThenAcceptParallel registers a callback to be called in a separate goroutine when the Future is completed.
-func (f *Future[T]) ThenAcceptParallel(callback func(T)) {
-	f.ThenAccept(func(t T) {
-		go callback(t)
-	})
-}
-
 // Complete sets the value and calls the registered callbacks if they haven't been called yet.
 func (f *Future[T]) Complete(value T) *Future[T] {
 	f.mu.Lock()

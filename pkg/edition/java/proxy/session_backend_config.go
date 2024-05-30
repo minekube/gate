@@ -101,8 +101,8 @@ func (b *backendConfigSessionHandler) shouldHandle() bool {
 func (b *backendConfigSessionHandler) Activated() {
 	player := b.serverConn.player
 	if player.Protocol() == version.Minecraft_1_20_2.Protocol {
-		b.resourcePackToApply = player.AppliedResourcePack()
-		player.appliedResourcePack = nil
+		b.resourcePackToApply = player.resourcePackHandler.FirstAppliedPack()
+		player.resourcePackHandler.ClearAppliedResourcePacks()
 	}
 }
 
@@ -112,7 +112,7 @@ func (b *backendConfigSessionHandler) Disconnected() {
 }
 
 func (b *backendConfigSessionHandler) handleResourcePackRequest(p *packet.ResourcePackRequest) {
-	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event())
+	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event(), b.log)
 }
 
 func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
@@ -168,10 +168,14 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 			)
 		}
 
-		if player.AppliedResourcePack() == nil && b.resourcePackToApply != nil {
-			_ = player.queueResourcePack(*b.resourcePackToApply)
+		if player.resourcePackHandler.FirstAppliedPack() == nil && b.resourcePackToApply != nil {
+			_ = player.resourcePackHandler.QueueResourcePack(b.resourcePackToApply)
 		}
 	})
+}
+
+func (b *backendConfigSessionHandler) handleTransfer(p *packet.Transfer) {
+	handleTransfer(p, b.serverConn.player, b.log, b.proxy().Event())
 }
 
 func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContext, p *plugin.Message) {
