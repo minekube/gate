@@ -139,7 +139,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	l.inbound.playerKey = playerKey
 	l.login = login
 
-	e := newPreLoginEvent(l.inbound, l.login.Username)
+	e := newPreLoginEvent(l.inbound, l.login.Username, l.login.HolderID)
 	l.eventMgr.Fire(e)
 
 	if netmc.Closed(l.conn) {
@@ -269,7 +269,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	// Once the client sends EncryptionResponse, encryption is enabled.
 	if err = l.conn.EnableEncryption(decryptedSharedSecret); err != nil {
 		l.log.Error(err, "error enabling encryption for connecting player")
-		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(internalServerConnectionError, l.conn.Protocol(), true))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(internalServerConnectionError, l.conn.Protocol(), l.conn.State().State))
 		return
 	}
 
@@ -295,21 +295,21 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 			// The player disconnected before receiving authentication response.
 			return
 		}
-		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), true))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), l.conn.State().State))
 		return
 	}
 
 	if !authResp.OnlineMode() {
 		log.Info("disconnect offline mode player")
 		// Apparently an offline-mode user logged onto this online-mode proxy.
-		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(onlineModeOnly, l.conn.Protocol(), true))
+		_ = netmc.CloseWith(l.conn, packet.NewDisconnect(onlineModeOnly, l.conn.Protocol(), l.conn.State().State))
 		return
 	}
 
 	// Extract game profile from response.
 	gameProfile, err := authResp.GameProfile()
 	if err != nil {
-		if netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), true)) == nil {
+		if netmc.CloseWith(l.conn, packet.NewDisconnect(unableAuthWithMojang, l.conn.Protocol(), l.conn.State().State)) == nil {
 			log.Error(err, "unable get GameProfile from Mojang authentication response")
 		}
 		return

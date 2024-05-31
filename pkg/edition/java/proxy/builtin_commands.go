@@ -5,10 +5,12 @@ import (
 	"go.minekube.com/gate/pkg/command"
 )
 
-func (p *Proxy) registerBuiltinCommands() {
-	p.command.Register(newServerCmd(p))
-	p.command.Register(newGlistCmd(p))
-	p.command.Register(newSendCmd(p))
+func (p *Proxy) registerBuiltinCommands() []string {
+	return []string{
+		p.command.Register(newServerCmd(p)).Name(),
+		p.command.Register(newGlistCmd(p)).Name(),
+		p.command.Register(newSendCmd(p)).Name(),
+	}
 }
 
 func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {

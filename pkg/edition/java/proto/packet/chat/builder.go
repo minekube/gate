@@ -29,7 +29,7 @@ const (
 	GameInfoMessageType
 )
 
-// Builder is a builder for chat packets.
+// Builder is a builder for protocol aware chat messages.
 type Builder struct {
 	// Protocol is the protocol version of the message.
 	// If not set, defaults to supporting older clients.
@@ -87,6 +87,13 @@ func (b *Builder) ToServer() proto.Packet {
 	}
 	if b.Protocol.GreaterEqual(version.Minecraft_1_19_3) { // Session chat
 		if strings.HasPrefix(b.Message, "/") {
+			if b.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+				return &UnsignedPlayerCommand{
+					SessionPlayerCommand: SessionPlayerCommand{
+						Command: strings.TrimPrefix(b.Message, "/"),
+					},
+				}
+			}
 			return &SessionPlayerCommand{
 				Command:   strings.TrimPrefix(b.Message, "/"),
 				Timestamp: b.Timestamp,

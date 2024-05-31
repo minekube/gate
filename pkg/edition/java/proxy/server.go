@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"net"
 	"strings"
 	"sync"
@@ -424,7 +425,7 @@ func (s *serverConnection) startHandshake(
 	protocol := s.player.Protocol()
 	handshake := &packet.Handshake{
 		ProtocolVersion: int(protocol),
-		NextStatus:      int(state.LoginState),
+		NextStatus:      int(states.LoginState),
 		Port:            int(netutil.Port(s.server.ServerInfo().Addr())),
 	}
 

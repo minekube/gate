@@ -1,17 +1,23 @@
 package proxy
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/robinbraemer/event"
 	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
+	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/internal/future"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/gammazero/deque"
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
@@ -43,6 +49,13 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	netmc.PacketWriter
 	command.Source
 	message.ChannelMessageSource
+	// ChannelMessageSink sends a plugin message to the player's client.
+	//
+	// Note that this method does not send a plugin message to the server the player
+	// is connected to. You should only use this method if you are trying to communicate
+	// with a mod that is installed on the player's client.
+	// To send a plugin message to the server from the player,
+	// you should use CurrentServer(), check for non-nil and then currSrv.SendPluginMessage().
 	message.ChannelMessageSink
 	crypto.KeyIdentifiable
 
@@ -66,33 +79,47 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	// If at all possible, specify an 20-byte SHA-1 hash of the resource pack file.
 	// To monitor the status of the sent resource pack, subscribe to PlayerResourcePackStatusEvent.
 	SendResourcePack(info ResourcePackInfo) error
-	// AppliedResourcePack returns the resource pack that was applied to the player.
-	// Returns nil if no resource pack was applied.
-	AppliedResourcePack() *ResourcePackInfo
-	// PendingResourcePack returns the resource pack that is currently being sent to the player.
-	// Returns nil if no resource pack is being sent.
-	PendingResourcePack() *ResourcePackInfo
+	// AppliedResourcePacks returns all applied resource packs that were applied to the player.
+	AppliedResourcePacks() []*ResourcePackInfo
+	// PendingResourcePacks returns all pending resource packs that are currently being sent to the player.
+	PendingResourcePacks() []*ResourcePackInfo
 	// SendActionBar sends an action bar to the player.
 	SendActionBar(msg component.Component) error
 	// TabList returns the player's tab list.
 	// Used for modifying the player's tab list and header/footer.
 	TabList() tablist.TabList
 	ClientBrand() string // Returns the player's client brand. Empty if unspecified.
-
+	// TransferToHost transfers the player to the specified host.
+	// The host should be in the format of "host:port" or just "host" in which case the port defaults to 25565.
+	// If the player is from a version lower than 1.20.5, this method will return ErrTransferUnsupportedClientProtocol.
+	TransferToHost(addr string) error
 	// Looking for title or bossbar methods? See the title and bossbar packages.
+
+	// AppliedResourcePack returns the resource pack that was applied to the player.
+	// Returns nil if no resource pack was applied.
+	//
+	// Deprecated: Use AppliedResourcePacks instead.
+	AppliedResourcePack() *ResourcePackInfo
+	// PendingResourcePack returns the resource pack that is currently being sent to the player.
+	// Returns nil if no resource pack is being sent.
+	//
+	// Deprecated: Use PendingResourcePacks instead.
+	PendingResourcePack() *ResourcePackInfo
 }
 
 type connectedPlayer struct {
 	netmc.MinecraftConn
 	*sessionHandlerDeps
 
-	log         logr.Logger
-	virtualHost net.Addr
-	onlineMode  bool
-	profile     *profile.GameProfile
-	ping        atomic.Duration
-	permFunc    permission.Func
-	playerKey   crypto.IdentifiedKey // 1.19+
+	log                 logr.Logger
+	virtualHost         net.Addr
+	onlineMode          bool
+	profile             *profile.GameProfile
+	ping                atomic.Duration
+	permFunc            permission.Func
+	playerKey           crypto.IdentifiedKey // 1.19+
+	resourcePackHandler resourcepack.Handler
+	bundleHandler       *resourcepack.BundleDelimiterHandler
 
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
@@ -100,18 +127,15 @@ type connectedPlayer struct {
 
 	tabList internaltablist.InternalTabList // Player's tab list
 
-	mu                       sync.RWMutex // Protects following fields
-	connectedServer_         *serverConnection
-	connInFlight             *serverConnection
-	settings                 player.Settings
-	clientSettingsPacket     *packet.ClientSettings
-	modInfo                  *modinfo.ModInfo
-	connPhase                phase.ClientConnectionPhase
-	outstandingResourcePacks deque.Deque[*ResourcePackInfo]
-	previousResourceResponse *bool
-	pendingResourcePack      *ResourcePackInfo
-	appliedResourcePack      *ResourcePackInfo
-	clientBrand              string // may be empty
+	mu                   sync.RWMutex // Protects following fields
+	connectedServer_     *serverConnection
+	connInFlight         *serverConnection
+	settings             player.Settings
+	clientSettingsPacket *packet.ClientSettings
+	modInfo              *modinfo.ModInfo
+	connPhase            phase.ClientConnectionPhase
+
+	clientBrand string // may be empty
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
@@ -143,6 +167,8 @@ func newConnectedPlayer(
 		permFunc:    func(string) permission.TriState { return permission.Undefined },
 		playerKey:   playerKey,
 	}
+	p.resourcePackHandler = resourcepack.NewHandler(p, p.eventMgr)
+	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
 	p.tabList = internaltablist.New(p)
 	return p
 }
@@ -220,125 +246,64 @@ func (p *connectedPlayer) ensureBackendConnection() (netmc.MinecraftConn, bool) 
 }
 
 func (p *connectedPlayer) SendResourcePack(info ResourcePackInfo) error {
+	if err := p.resourcePackHandler.CheckAlreadyAppliedPack(info.Hash); err != nil {
+		return err
+	}
 	if !p.Protocol().GreaterEqual(version.Minecraft_1_8) {
 		return nil
 	}
-	return p.queueResourcePack(info)
+	return p.resourcePackHandler.QueueResourcePack(&info)
 }
 
-// ResourcePackInfo is resource-pack options for Player.SendResourcePack.
-type ResourcePackInfo struct {
-	ID uuid.UUID // The ID of this resource-pack.
-	// The download link the resource-pack can be found at.
-	URL string
-	// The SHA-1 hash of the provided resource pack.
-	//
-	// Note: It is recommended to always set this hash.
-	// If this hash is not set/not present then the client will always download
-	// the resource pack even if it may still be cached. By having this hash present,
-	// the client will check first whether a resource pack by this hash is cached
-	// before downloading.
-	Hash []byte
-	// Whether the acceptance of the resource-pack is enforced.
-	//
-	// Sets the resource-pack as required to play on the network.
-	// This feature was introduced in 1.17.
-	// Setting this to true has one of two effects:
-	// If the client is on 1.17 or newer:
-	//  - The resource-pack prompt will display without a decline button
-	//  - Accept or disconnect are the only available options but players may still press escape.
-	//  - Forces the resource-pack offer prompt to display even if the player has
-	//    previously declined or disabled resource packs
-	//  - The player will be disconnected from the network if they close/skip the prompt.
-	// If the client is on a version older than 1.17:
-	//   - If the player accepts the resource pack or has previously accepted a resource-pack
-	//     then nothing else will happen.
-	//   - If the player declines the resource pack or has previously declined a resource-pack
-	//     the player will be disconnected from the network
-	ShouldForce bool
-	// The optional message that is displayed on the resource-pack prompt.
-	// This is only displayed if the client version is 1.17 or newer.
-	Prompt component.Component
-	Origin ResourcePackOrigin // The origin of the resource-pack.
-}
-
-// ResourcePackOrigin represents the origin of the resource-pack.
-type ResourcePackOrigin byte
-
-const (
-	DownstreamServerResourcePackOrigin ResourcePackOrigin = iota
-	PluginOnProxyResourcePackOrigin
-)
-
-func (p *connectedPlayer) queueResourcePack(info ResourcePackInfo) error {
-	if info.URL == "" {
-		return errors.New("missing resource-pack url")
-	}
-	if len(info.Hash) > 0 && len(info.Hash) != 20 {
-		return errors.New("resource-pack hash length must be 20")
-	}
-	p.mu.Lock()
-	p.outstandingResourcePacks.PushBack(&info)
-	size := p.outstandingResourcePacks.Len()
-	p.mu.Unlock()
-	if size == 1 {
-		return p.tickResourcePackQueue()
+//nolint:unused
+func (p *connectedPlayer) clearResourcePacks() error {
+	defer p.resourcePackHandler.ClearAppliedResourcePacks()
+	if p.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
+		return p.WritePacket(&packet.RemoveResourcePack{})
 	}
 	return nil
 }
 
-func (p *connectedPlayer) tickResourcePackQueue() error {
-	p.mu.RLock()
-	if p.outstandingResourcePacks.Len() == 0 {
-		p.mu.RUnlock()
+//nolint:unused
+func (p *connectedPlayer) removeResourcePacks(ids ...uuid.UUID) error {
+	if !p.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
 		return nil
 	}
-	queued := p.outstandingResourcePacks.Front()
-	previousResourceResponse := p.previousResourceResponse
-	p.mu.RUnlock()
-
-	// Check if the player declined a resource pack once already
-	if previousResourceResponse != nil && !*previousResourceResponse {
-		// If that happened we can flush the queue right away.
-		// Unless its 1.17+ and forced it will come back denied anyway
-		for {
-			p.mu.Lock()
-			if p.outstandingResourcePacks.Len() != 0 {
-				p.mu.Unlock()
-				break
+	for _, id := range ids {
+		if p.resourcePackHandler.Remove(id) {
+			err := p.WritePacket(&packet.RemoveResourcePack{ID: id})
+			if err != nil {
+				return err
 			}
-			queued = p.outstandingResourcePacks.Front()
-			p.mu.Unlock()
-			if queued.ShouldForce && p.Protocol().GreaterEqual(version.Minecraft_1_17) {
-				break
-			}
-			_ = p.onResourcePackResponse(packet.DeclinedResourcePackResponseStatus)
-			queued = nil
-		}
-		if queued == nil {
-			// Exit as the queue was cleared
-			return nil
 		}
 	}
-
-	req := &packet.ResourcePackRequest{
-		ID:       queued.ID,
-		URL:      queued.URL,
-		Required: queued.ShouldForce,
-		Prompt:   chat.FromComponentProtocol(queued.Prompt, p.Protocol()),
-	}
-	if len(queued.Hash) != 0 {
-		req.Hash = hex.EncodeToString(queued.Hash)
-	}
-	return p.WritePacket(req)
+	return nil
 }
+
+// ResourcePackInfo is resource-pack options for Player.SendResourcePack.
+type ResourcePackInfo = resourcepack.Info
+
+// ResourcePackOrigin represents the origin of the resource-pack.
+type ResourcePackOrigin = resourcepack.Origin
+
+const (
+	DownstreamServerResourcePackOrigin = resourcepack.DownstreamServerOrigin
+	PluginOnProxyResourcePackOrigin    = resourcepack.PluginOnProxyOrigin
+)
 
 // AppliedResourcePack returns the resource-pack that was applied and accepted by the player.
 // It returns nil if there is no applied resource-pack.
 func (p *connectedPlayer) AppliedResourcePack() *ResourcePackInfo {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.appliedResourcePack
+	return p.resourcePackHandler.FirstAppliedPack()
+}
+
+// AppliedResourcePacks returns all applied resource-packs that were applied and accepted by the player.
+func (p *connectedPlayer) AppliedResourcePacks() []*ResourcePackInfo {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.resourcePackHandler.AppliedResourcePacks()
 }
 
 // PendingResourcePack returns the resource-pack that is currently being sent to the player.
@@ -346,65 +311,14 @@ func (p *connectedPlayer) AppliedResourcePack() *ResourcePackInfo {
 func (p *connectedPlayer) PendingResourcePack() *ResourcePackInfo {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.pendingResourcePack
+	return p.resourcePackHandler.FirstPendingPack()
 }
 
-// Processes a client response to a sent resource-pack.
-func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStatus) bool {
-	peek := status.Intermediate()
-
-	p.mu.Lock()
-	if p.outstandingResourcePacks.Len() == 0 {
-		p.mu.Unlock()
-		return false
-	}
-
-	var queued *ResourcePackInfo
-	if peek {
-		queued = p.outstandingResourcePacks.Front()
-	} else {
-		queued = p.outstandingResourcePacks.PopFront()
-	}
-	p.mu.Unlock()
-
-	e := &PlayerResourcePackStatusEvent{
-		player:        p,
-		status:        status,
-		packInfo:      *queued,
-		overwriteKick: false,
-	}
-	p.eventMgr.Fire(e)
-
-	if e.Status() == DeclinedResourcePackResponseStatus &&
-		e.PackInfo().ShouldForce &&
-		(!e.OverwriteKick() || e.Player().Protocol().GreaterEqual(version.Minecraft_1_17)) {
-		e.Player().Disconnect(&component.Translation{
-			Key: "multiplayer.requiredTexturePrompt.disconnect",
-		})
-	}
-
-	p.mu.Lock()
-	switch status {
-	case AcceptedResourcePackResponseStatus:
-		b := true
-		p.previousResourceResponse = &b
-		p.pendingResourcePack = queued
-	case DeclinedResourcePackResponseStatus:
-		b := false
-		p.previousResourceResponse = &b
-	case SuccessfulResourcePackResponseStatus:
-		p.appliedResourcePack = queued
-		p.previousResourceResponse = nil
-		p.pendingResourcePack = nil
-	case FailedDownloadResourcePackResponseStatus:
-		p.pendingResourcePack = nil
-	}
-	p.mu.Unlock()
-
-	if !peek {
-		_ = p.tickResourcePackQueue()
-	}
-	return queued != nil && queued.Origin != DownstreamServerResourcePackOrigin
+// PendingResourcePacks returns all pending resource-packs that are currently being sent to the player.
+func (p *connectedPlayer) PendingResourcePacks() []*ResourcePackInfo {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.resourcePackHandler.PendingResourcePacks()
 }
 
 func (p *connectedPlayer) VirtualHost() net.Addr {
@@ -621,7 +535,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), false)) == nil {
+	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), p.State().State)) == nil {
 		p.log.Info("player has been disconnected", "reason", r)
 	}
 }
@@ -728,4 +642,71 @@ func (p *connectedPlayer) setClientBrand(brand string) {
 	p.mu.Lock()
 	p.clientBrand = brand
 	p.mu.Unlock()
+}
+
+var ErrTransferUnsupportedClientProtocol = errors.New("player version must be 1.20.5 to be able to transfer to another host")
+
+func (p *connectedPlayer) TransferToHost(addr string) error {
+	if strings.TrimSpace(addr) == "" {
+		return errors.New("empty address")
+	}
+	if p.Protocol().Lower(version.Minecraft_1_20_5) {
+		return fmt.Errorf("%w: but player is on %s", ErrTransferUnsupportedClientProtocol, p.Protocol())
+	}
+
+	host, port, err := net.SplitHostPort(addr)
+	var portInt int
+	if err != nil {
+		host = addr
+		portInt = 25565
+	} else {
+		portInt, err = strconv.Atoi(port)
+		if err != nil {
+			return fmt.Errorf("invalid port %s: %w", port, err)
+		}
+	}
+
+	targetAddr := netutil.NewAddr(fmt.Sprintf("%s:%d", host, portInt), "tcp")
+	f := future.NewChan[error]()
+	event.FireParallel(p.eventMgr, newPreTransferEvent(p, targetAddr), func(e *PreTransferEvent) {
+		defer f.Complete(nil)
+		if e.Allowed() {
+			resultedAddr := e.Addr()
+			if resultedAddr != nil {
+				resultedAddr = targetAddr
+			}
+			host, port := netutil.HostPort(resultedAddr)
+			err = p.WritePacket(&packet.Transfer{
+				Host: host,
+				Port: int(port),
+			})
+			if err != nil {
+				f.Complete(err)
+				return
+			}
+			p.log.Info("transferring player to host", "host", resultedAddr)
+		}
+	})
+	return f.Get()
+}
+
+func (p *connectedPlayer) BackendState() *states.State {
+	backend, ok := p.ensureBackendConnection()
+	if !ok {
+		return nil
+	}
+	return &backend.State().State
+}
+
+func (p *connectedPlayer) BundleHandler() *resourcepack.BundleDelimiterHandler {
+	return p.bundleHandler
+}
+
+func (p *connectedPlayer) BackendInFlight() proto.PacketWriter {
+	if connInFlight := p.connectionInFlight(); connInFlight != nil {
+		if mcConn := connInFlight.conn(); mcConn != nil {
+			return mcConn
+		}
+	}
+	return nil
 }

@@ -12,7 +12,7 @@ type ChatCompletionAction int
 const (
 	AddChatCompletionAction ChatCompletionAction = iota
 	RemoveChatCompletionAction
-	AlterChatCompletionAction
+	SetChatCompletionAction
 )
 
 type PlayerChatCompletion struct {
