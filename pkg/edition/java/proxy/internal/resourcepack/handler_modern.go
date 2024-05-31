@@ -17,15 +17,18 @@ type modernHandler struct {
 	player   Player
 	eventMgr event.Manager
 
-	sync.RWMutex
+	rwMutex
 	outstandingPacks multimap.MultiMap[uuid.UUID, *Info]
 	pendingPacks     map[uuid.UUID]*Info
 	appliedPacks     map[uuid.UUID]*Info
 }
 
-func newModernHandler(player Player) *modernHandler {
+type rwMutex = sync.RWMutex
+
+func newModernHandler(player Player, eventMgr event.Manager) *modernHandler {
 	return &modernHandler{
 		player:           player,
+		eventMgr:         eventMgr,
 		outstandingPacks: newMultiMap(),
 		pendingPacks:     make(map[uuid.UUID]*Info),
 		appliedPacks:     make(map[uuid.UUID]*Info),
@@ -113,14 +116,18 @@ func (m *modernHandler) CheckAlreadyAppliedPack(hash []byte) error {
 }
 
 func (m *modernHandler) tickResourcePackQueue(id uuid.UUID) error {
-	m.RLock()
+	locked := m.TryRLock()
 	outstandingResourcePacks := m.outstandingPacks.Get(id)
 	if len(outstandingResourcePacks) != 0 {
 		pack := m.outstandingPacks.Get(id)[0]
-		m.RUnlock()
+		if locked {
+			m.RUnlock()
+		}
 		return m.SendResourcePackRequestPacket(pack)
 	}
-	m.RUnlock()
+	if locked {
+		m.RUnlock()
+	}
 	return nil
 }
 

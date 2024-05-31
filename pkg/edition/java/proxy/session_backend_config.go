@@ -82,6 +82,8 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 			b.serverConn.player.Protocol(), b.serverConn.server, true,
 		)
 		b.requestCtx.result(result, nil)
+	case *packet.Transfer:
+		b.handleTransfer(p)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}

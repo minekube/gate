@@ -96,6 +96,8 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *packet.BundleDelimiter:
 		b.serverConn.player.bundleHandler.ToggleBundleSession()
 		b.forwardToPlayer(pc, nil)
+	case *packet.Transfer:
+		b.handleTransfer(p)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -272,10 +274,27 @@ func handleResourcePacketRequest(
 	eventMgr event.Manager,
 	log logr.Logger,
 ) {
+	err := handleResourcePacketRequest_(p, serverConn, eventMgr, log)
+	if err != nil {
+		log.V(1).Error(err, "error handling ResourcePackRequest packet from backend server, declining it")
+		if smc, ok := serverConn.ensureConnected(); ok {
+			_ = smc.WritePacket(&packet.ResourcePackResponse{
+				ID:     p.ID,
+				Hash:   p.Hash,
+				Status: DeclinedResourcePackResponseStatus,
+			})
+		}
+	}
+}
+func handleResourcePacketRequest_(
+	p *packet.ResourcePackRequest,
+	serverConn *serverConnection,
+	eventMgr event.Manager,
+	log logr.Logger,
+) (err error) {
 	packInfo, err := toServerPromptedResourcePack(p)
 	if err != nil {
-		log.V(1).Error(err, "error converting ResourcePackRequest to ResourcePackInfo")
-		return
+		return fmt.Errorf("error converting ResourcePackRequest to ResourcePackInfo: %w", err)
 	}
 
 	e := newServerResourcePackSendEvent(*packInfo, serverConn)
@@ -300,8 +319,7 @@ func handleResourcePacketRequest(
 					Status: AcceptedResourcePackResponseStatus,
 				})
 				if err != nil {
-					log.V(1).Error(err, "error sending accepted resource pack response")
-					return
+					return fmt.Errorf("error sending accepted resource pack response: %w", err)
 				}
 				if mcConn.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
 					err = mcConn.WritePacket(&packet.ResourcePackResponse{
@@ -310,8 +328,7 @@ func handleResourcePacketRequest(
 						Status: DownloadedResourcePackResponseStatus,
 					})
 					if err != nil {
-						log.V(1).Error(err, "error sending downloaded resource pack response")
-						return
+						return fmt.Errorf("error sending downloaded resource pack response: %w", err)
 					}
 				}
 				err = mcConn.WritePacket(&packet.ResourcePackResponse{
@@ -320,8 +337,7 @@ func handleResourcePacketRequest(
 					Status: SuccessfulResourcePackResponseStatus,
 				})
 				if err != nil {
-					log.V(1).Error(err, "error sending successful resource pack response")
-					return
+					return fmt.Errorf("error sending successful resource pack response: %w", err)
 				}
 			}
 			if modifiedPack {
@@ -331,7 +347,7 @@ func handleResourcePacketRequest(
 		} else {
 			err = serverConn.player.resourcePackHandler.QueueResourcePack(&toSend)
 			if err != nil {
-				log.V(1).Error(err, "error queuing resource pack")
+				return fmt.Errorf("error queuing resource pack: %w", err)
 			}
 		}
 	} else if smc, ok := serverConn.ensureConnected(); ok {
@@ -341,9 +357,10 @@ func handleResourcePacketRequest(
 			Status: DeclinedResourcePackResponseStatus,
 		})
 		if err != nil {
-			log.V(1).Error(err, "error sending resource pack response")
+			return err
 		}
 	}
+	return nil
 }
 
 func (b *backendPlaySessionHandler) handleRemoveResourcePack(p *packet.RemoveResourcePack) {

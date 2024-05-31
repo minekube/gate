@@ -2,6 +2,7 @@ package resourcepack
 
 import (
 	"errors"
+	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -56,21 +57,21 @@ type (
 		State() *state.Registry
 		// Protocol returns the protocol of the player.
 		Protocol() proto.Protocol
-		// Backend returns the writer to the backend server connection the player is connected to, if any.
-		Backend() proto.PacketWriter
+		// BackendInFlight returns the writer to the in-flight backend server connection the player is connected to, if any.
+		BackendInFlight() proto.PacketWriter
 		Disconnect(reason component.Component)
 	}
 )
 
 // NewHandler creates a new resource pack handler appropriate for the player's protocol version.
-func NewHandler(player Player) Handler {
+func NewHandler(player Player, eventMgr event.Manager) Handler {
 	if player.Protocol().Lower(version.Minecraft_1_17) {
-		return newLegacyHandler(player)
+		return newLegacyHandler(player, eventMgr)
 	}
 	if player.Protocol().Lower(version.Minecraft_1_20_3) {
-		return newLegacy117Handler(player)
+		return newLegacy117Handler(player, eventMgr)
 	}
-	return newModernHandler(player)
+	return newModernHandler(player, eventMgr)
 }
 
 func queueResourcePackRequest(request *packet.ResourcePackRequest, dep interface {
@@ -100,7 +101,7 @@ func handleResponseResult(queued *Info, bundle *ResponseBundle, player Player) (
 	// since it has no information that a resource pack has been sent
 	handled = queued != nil && queued.Origin == PluginOnProxyOrigin
 	if !handled {
-		backend := player.Backend()
+		backend := player.BackendInFlight()
 		if backend != nil {
 			return handled, backend.WritePacket(bundle.ResponsePacket())
 		}

@@ -167,7 +167,7 @@ func newConnectedPlayer(
 		permFunc:    func(string) permission.TriState { return permission.Undefined },
 		playerKey:   playerKey,
 	}
-	p.resourcePackHandler = resourcepack.NewHandler(p)
+	p.resourcePackHandler = resourcepack.NewHandler(p, p.eventMgr)
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
 	p.tabList = internaltablist.New(p)
 	return p
@@ -255,6 +255,7 @@ func (p *connectedPlayer) SendResourcePack(info ResourcePackInfo) error {
 	return p.resourcePackHandler.QueueResourcePack(&info)
 }
 
+//nolint:unused
 func (p *connectedPlayer) clearResourcePacks() error {
 	defer p.resourcePackHandler.ClearAppliedResourcePacks()
 	if p.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
@@ -263,6 +264,7 @@ func (p *connectedPlayer) clearResourcePacks() error {
 	return nil
 }
 
+//nolint:unused
 func (p *connectedPlayer) removeResourcePacks(ids ...uuid.UUID) error {
 	if !p.Protocol().GreaterEqual(version.Minecraft_1_20_3) {
 		return nil
@@ -700,9 +702,11 @@ func (p *connectedPlayer) BundleHandler() *resourcepack.BundleDelimiterHandler {
 	return p.bundleHandler
 }
 
-func (p *connectedPlayer) Backend() proto.PacketWriter {
-	if backend, ok := p.ensureBackendConnection(); ok {
-		return backend
+func (p *connectedPlayer) BackendInFlight() proto.PacketWriter {
+	if connInFlight := p.connectionInFlight(); connInFlight != nil {
+		if mcConn := connInFlight.conn(); mcConn != nil {
+			return mcConn
+		}
 	}
 	return nil
 }

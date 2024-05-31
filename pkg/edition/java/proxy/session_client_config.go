@@ -103,7 +103,8 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 }
 
 func handleResourcePackResponse(p *packet.ResourcePackResponse, handler resourcepack.Handler, log logr.Logger) bool {
-	handled, err := handler.OnResourcePackResponse(resourcepack.BundleForResponse(p))
+	handled, err := handler.OnResourcePackResponse(
+		resourcepack.BundleForResponse(p))
 	if err != nil {
 		log.V(1).Error(err, "Error handling resource pack response")
 		return true

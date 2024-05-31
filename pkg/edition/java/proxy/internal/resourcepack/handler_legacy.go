@@ -9,7 +9,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"sync"
 )
 
 // Legacy (Minecraft +1.17) ResourcePackHandler.
@@ -17,16 +16,17 @@ type legacyHandler struct {
 	player   Player
 	eventMgr event.Manager
 
-	sync.RWMutex
+	rwMutex
 	prevResourceResponse bool
 	outstandingPacks     *deque.Deque[*Info]
 	pendingPack          *Info
 	appliedPack          *Info
 }
 
-func newLegacyHandler(player Player) *legacyHandler {
+func newLegacyHandler(player Player, eventMgr event.Manager) *legacyHandler {
 	return &legacyHandler{
 		player:           player,
+		eventMgr:         eventMgr,
 		outstandingPacks: deque.NewDeque[*Info](),
 	}
 }

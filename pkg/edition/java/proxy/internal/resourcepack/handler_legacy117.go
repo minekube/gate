@@ -1,6 +1,7 @@
 package resourcepack
 
 import (
+	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -10,9 +11,9 @@ type legacy117Handler struct {
 	l *legacyHandler
 }
 
-func newLegacy117Handler(player Player) *legacy117Handler {
+func newLegacy117Handler(player Player, eventMgr event.Manager) *legacy117Handler {
 	return &legacy117Handler{
-		l: newLegacyHandler(player),
+		l: newLegacyHandler(player, eventMgr),
 	}
 }
 
