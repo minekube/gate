@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
@@ -17,9 +18,12 @@ type KnownPacks struct {
 }
 
 func (p *KnownPacks) Decode(c *proto.PacketContext, rd io.Reader) error {
-	packCount := util.PReadIntVal(rd)
+	packCount, err := util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
 	if packCount > MaxLengthPacks {
-		return ErrTooManyPacks
+		return fmt.Errorf("%w: %d", ErrTooManyPacks, packCount)
 	}
 	packs := make([]KnownPack, packCount)
 	for i := 0; i < packCount; i++ {

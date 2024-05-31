@@ -293,7 +293,8 @@ func (p *Proxy) init() (err error) {
 
 		// Register builtin commands
 		if c.BuiltinCommands {
-			p.registerBuiltinCommands()
+			names := p.registerBuiltinCommands()
+			p.log.Info("registered builtin commands", "count", len(names), "cmds", names)
 		}
 	}
 

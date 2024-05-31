@@ -939,7 +939,7 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 
 // ResourcePackResponseStatus represents the possible statuses for the resource pack.
-type ResourcePackResponseStatus = packet.ResourcePackResponseStatus
+type ResourcePackResponseStatus = packet.ResponseStatus
 
 // Possible statuses for a resource pack.
 

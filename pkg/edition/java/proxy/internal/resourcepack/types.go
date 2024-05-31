@@ -98,7 +98,7 @@ type ResponseBundle struct {
 	// The hash of the resource-pack.
 	Hash Hash
 	// The status of the resource-pack.
-	Status packet.ResourcePackResponseStatus
+	Status packet.ResponseStatus
 }
 
 // ResponsePacket creates a new resource-pack response from the response bundle.
@@ -106,6 +106,15 @@ func (r *ResponseBundle) ResponsePacket() *packet.ResourcePackResponse {
 	return &packet.ResourcePackResponse{
 		ID:     r.ID,
 		Hash:   string(r.Hash),
+		Status: r.Status,
+	}
+}
+
+// BundleForResponse creates a new response bundle from a resource-pack response.
+func BundleForResponse(r *packet.ResourcePackResponse) *ResponseBundle {
+	return &ResponseBundle{
+		ID:     r.ID,
+		Hash:   Hash(r.Hash),
 		Status: r.Status,
 	}
 }

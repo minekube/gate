@@ -93,13 +93,16 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleKeyedPlayerCommand(p)
 	case *chat.SessionPlayerCommand:
 		c.handleSessionPlayerCommand(p)
+	case *chat.UnsignedPlayerCommand:
+		c.handleSessionPlayerCommand(&p.SessionPlayerCommand)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
 		c.handlePluginMessage(p)
 	case *packet.ResourcePackResponse:
-		c.player.onResourcePackResponse(p.Status)
-		c.forwardToServer(pc) // forward to server
+		if !handleResourcePackResponse(p, c.player.resourcePackHandler, c.log) {
+			forwardToServer(pc, c.player)
+		}
 	case *packet.ClientSettings:
 		c.player.setClientSettings(p)
 		c.forwardToServer(pc) // forward to server

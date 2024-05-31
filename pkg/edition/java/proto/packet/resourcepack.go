@@ -105,20 +105,20 @@ type (
 	ResourcePackResponse struct {
 		ID     uuid.UUID // 1.20.3+
 		Hash   string
-		Status ResourcePackResponseStatus
+		Status ResponseStatus
 	}
-	ResourcePackResponseStatus int
+	ResponseStatus int
 )
 
 // Intermediate returns true if the resource pack status is intermediate, indicating that the player has
 // either accepted the resource pack and is currently downloading it or has successfully
 // downloaded it.
-func (s ResourcePackResponseStatus) Intermediate() bool {
+func (s ResponseStatus) Intermediate() bool {
 	return s == AcceptedResourcePackResponseStatus || s == DownloadedResourcePackResponseStatus
 }
 
 const (
-	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = iota
+	SuccessfulResourcePackResponseStatus ResponseStatus = iota
 	DeclinedResourcePackResponseStatus
 	FailedDownloadResourcePackResponseStatus
 	AcceptedResourcePackResponseStatus
@@ -158,7 +158,7 @@ func (r *ResourcePackResponse) Decode(c *proto.PacketContext, rd io.Reader) (err
 		}
 	}
 	status, err := util.ReadVarInt(rd)
-	r.Status = ResourcePackResponseStatus(status)
+	r.Status = ResponseStatus(status)
 	return
 }
 

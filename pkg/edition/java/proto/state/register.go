@@ -522,9 +522,11 @@ func init() {
 		m(0x67, version.Minecraft_1_20_3),
 		m(0x69, version.Minecraft_1_20_5),
 	)
-	Play.ClientBound.Register(&p.BundleDelimiter{},
-		m(0x00, version.Minecraft_1_19_4),
-	)
+	// For now, we do not process the BundleDelimiter packet on the proxy (therefore the BundleDelimiterHandler is inactive code),
+	// as there are many, many such 0x00 packets and resourcepack request only has one resource pack for us
+	//Play.ClientBound.Register(&p.BundleDelimiter{},
+	//	m(0x00, version.Minecraft_1_19_4),
+	//)
 	Play.ClientBound.Register(&p.Transfer{},
 		m(0x73, version.Minecraft_1_20_5),
 	)

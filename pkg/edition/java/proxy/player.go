@@ -7,7 +7,9 @@ import (
 	"github.com/robinbraemer/event"
 	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"net"
@@ -116,7 +118,7 @@ type connectedPlayer struct {
 	ping                atomic.Duration
 	permFunc            permission.Func
 	playerKey           crypto.IdentifiedKey // 1.19+
-	resourcePackHandler resourcepack.HandlerInterface
+	resourcePackHandler resourcepack.Handler
 	bundleHandler       *resourcepack.BundleDelimiterHandler
 
 	// This field is true if this connection is being disconnected
@@ -684,4 +686,23 @@ func (p *connectedPlayer) TransferToHost(addr string) error {
 		}
 	})
 	return f.Get()
+}
+
+func (p *connectedPlayer) BackendState() *states.State {
+	backend, ok := p.ensureBackendConnection()
+	if !ok {
+		return nil
+	}
+	return &backend.State().State
+}
+
+func (p *connectedPlayer) BundleHandler() *resourcepack.BundleDelimiterHandler {
+	return p.bundleHandler
+}
+
+func (p *connectedPlayer) Backend() proto.PacketWriter {
+	if backend, ok := p.ensureBackendConnection(); ok {
+		return backend
+	}
+	return nil
 }

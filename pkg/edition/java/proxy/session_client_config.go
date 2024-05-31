@@ -2,18 +2,21 @@ package proxy
 
 import (
 	"bytes"
+	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
 )
 
 type clientConfigSessionHandler struct {
 	player *connectedPlayer
+	log    logr.Logger
 
 	brandChannel string
 
@@ -27,6 +30,7 @@ func newClientConfigSessionHandler(
 ) *clientConfigSessionHandler {
 	return &clientConfigSessionHandler{
 		player: player,
+		log:    player.log.WithName("clientConfigSessionHandler"),
 	}
 }
 
@@ -46,7 +50,9 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *packet.ClientSettings:
 		h.player.setClientSettings(p)
 	case *packet.ResourcePackResponse:
-		h.handleResourcePackResponse(p)
+		if !handleResourcePackResponse(p, h.player.resourcePackHandler, h.log) {
+			forwardToServer(pc, h.player)
+		}
 	case *config.FinishedUpdate:
 		h.player.SetActiveSessionHandler(state.Play, newClientPlaySessionHandler(h.player))
 		h.configSwitchDone.Complete(nil)
@@ -59,6 +65,8 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 				_ = smc.WritePacket(p)
 			}
 		}
+	case *config.KnownPacks:
+		h.handleKnownPacks(p, pc)
 	default:
 		forwardToServer(pc, h.player)
 	}
@@ -94,16 +102,13 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 	return &h.configSwitchDone
 }
 
-func (h *clientConfigSessionHandler) handleResourcePackResponse(p *packet.ResourcePackResponse) {
-	if serverConn := h.player.connectionInFlight(); serverConn != nil {
-		smc, ok := serverConn.ensureConnected()
-		if ok {
-			_ = smc.WritePacket(p)
-		}
+func handleResourcePackResponse(p *packet.ResourcePackResponse, handler resourcepack.Handler, log logr.Logger) bool {
+	handled, err := handler.OnResourcePackResponse(resourcepack.BundleForResponse(p))
+	if err != nil {
+		log.V(1).Error(err, "Error handling resource pack response")
+		return true
 	}
-	if !h.player.onResourcePackResponse(p.Status) {
-		_ = h.player.WritePacket(p)
-	}
+	return handled
 }
 
 func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
@@ -127,6 +132,17 @@ func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
 			_ = smc.WritePacket(p)
 		}
 	}
+}
+
+func (h *clientConfigSessionHandler) handleKnownPacks(p *config.KnownPacks, pc *proto.PacketContext) {
+	if connInFlight := h.player.connectionInFlight(); connInFlight != nil {
+		smc, ok := connInFlight.ensureConnected()
+		if ok {
+			_ = smc.WritePacket(p)
+		}
+		return
+	}
+	forwardToServer(pc, h.player)
 }
 
 func (h *clientConfigSessionHandler) event() event.Manager {

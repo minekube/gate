@@ -1,211 +1,118 @@
 package resourcepack
 
 import (
+	"errors"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 type (
-	HandlerInterface interface {
+	// Handler is an internal interface implemented by
+	// resource pack handlers of different protocol versions.
+	Handler interface {
 		FirstAppliedPack() *Info
 		FirstPendingPack() *Info
 		AppliedResourcePacks() []*Info
 		PendingResourcePacks() []*Info
+		// ClearAppliedResourcePacks clears the applied resource pack field.
 		ClearAppliedResourcePacks()
 		Remove(id uuid.UUID) bool
+		// QueueResourcePack queues a resource-pack for sending to
+		// the player and sends it immediately if the queue is empty.
 		QueueResourcePack(*Info) error
 		// QueueResourcePackRequest queues a resource pack request to be sent to the player.
 		// Sends it immediately if the queue is empty.
 		QueueResourcePackRequest(*packet.ResourcePackRequest) error
 		SendResourcePackRequestPacket(pack *Info) error
-		OnResourcePackResponse(bundle *ResponseBundle)
-		handleResponseResult(queued *Info, bundle *ResponseBundle) (handled bool)
+		// OnResourcePackResponse processes a client response to a sent resource-pack.
+		// No action will be taken in the following cases:
+		//
+		//  - DOWNLOADED: The resource pack is downloaded and will be applied to the client,
+		// 	no action is required in Velocity.
+		// 	- INVALID_URL: The client has received a resource pack request
+		// 	and the first check it performs is if the URL is valid, if not,
+		// 	it will return this value.
+		// 	- FAILED_RELOAD: When trying to reload the client's resources,
+		// 	an error occurred while reloading a resource pack.
+		// 	- DECLINED: Only in modern versions, as the resource pack has already been rejected,
+		// 	there is nothing to do, if the resource pack is required,
+		// 	the client will be kicked out of the server.
+		OnResourcePackResponse(bundle *ResponseBundle) (bool, error)
+		HandleResponseResult(queued *Info, bundle *ResponseBundle) (handled bool, err error)
+		// HasPackAppliedByHash checks if a resource pack with the given hash has already been applied.
 		HasPackAppliedByHash(hash []byte) bool
 		CheckAlreadyAppliedPack(hash []byte) error
 	}
-	// Player is a player that can receive resource packs.
+	// Player is an internal player interface consumed by resource pack handlers
 	Player interface {
+		ID() uuid.UUID
 		// PacketWriter returns the writer to the player connection.
 		proto.PacketWriter
 		BundleHandler() *BundleDelimiterHandler
-		State() states.State
+		State() *state.Registry
 		// Protocol returns the protocol of the player.
 		Protocol() proto.Protocol
 		// Backend returns the writer to the backend server connection the player is connected to, if any.
 		Backend() proto.PacketWriter
-	}
-	baseHandler struct {
-		parent HandlerInterface
-		player Player
-	}
-	LegacyResourcePackHandler struct {
-		*baseHandler
-	}
-	Legacy117ResourcePackHandler struct {
-		*baseHandler
+		Disconnect(reason component.Component)
 	}
 )
 
-func NewHandler(player Player) HandlerInterface {
+// NewHandler creates a new resource pack handler appropriate for the player's protocol version.
+func NewHandler(player Player) Handler {
 	if player.Protocol().Lower(version.Minecraft_1_17) {
-		parent := &LegacyResourcePackHandler{}
-		parent.baseHandler = &baseHandler{parent: parent}
-		return parent
+		return newLegacyHandler(player)
 	}
 	if player.Protocol().Lower(version.Minecraft_1_20_3) {
-		parent := &Legacy117ResourcePackHandler{}
-		parent.baseHandler = &baseHandler{parent: parent}
-		return parent
+		return newLegacy117Handler(player)
 	}
 	return newModernHandler(player)
 }
 
-func queueResourcePackRequest(request *packet.ResourcePackRequest, next HandlerInterface) error {
+func queueResourcePackRequest(request *packet.ResourcePackRequest, dep interface {
+	CheckAlreadyAppliedPack(hash []byte) error
+	QueueResourcePack(*Info) error
+}) error {
 	info, err := InfoForRequest(request)
 	if err != nil {
 		return err
 	}
-	if next != nil {
-		if err = next.CheckAlreadyAppliedPack(info.Hash); err != nil {
-			return err
-		}
-		return next.QueueResourcePack(info)
+	if err = dep.CheckAlreadyAppliedPack(info.Hash); err != nil {
+		return err
 	}
-	return nil
+	return dep.QueueResourcePack(info)
 }
 
-func (h *baseHandler) SendResourcePackRequestPacket(queued *Info) error {
-	return h.player.WritePacket(queued.RequestPacket(h.player.Protocol()))
+func sendResourcePackRequestPacket(queued *Info, player Player) error {
+	if queued == nil {
+		return nil
+	}
+	return player.WritePacket(queued.RequestPacket(player.Protocol()))
 }
 
-func (h *baseHandler) handleResponseResult(queued *Info, bundle *ResponseBundle) (handled bool) {
+func handleResponseResult(queued *Info, bundle *ResponseBundle, player Player) (handled bool, err error) {
 	// If Gate, through a plugin, has sent a resource pack to the client,
 	// there is no need to report the status of the response to the server
 	// since it has no information that a resource pack has been sent
 	handled = queued != nil && queued.Origin == PluginOnProxyOrigin
 	if !handled {
-		backend := h.player.Backend()
+		backend := player.Backend()
 		if backend != nil {
-			_ = backend.WritePacket(bundle.ResponsePacket())
-			return true
+			return handled, backend.WritePacket(bundle.ResponsePacket())
 		}
 	}
-	return handled
+	return handled, nil
 }
 
-//
-//
-
-func (p *connectedPlayer) queueResourcePack(info ResourcePackInfo) error {
-	if info.URL == "" {
-		return errors.New("missing resource-pack url")
-	}
-	if len(info.Hash) > 0 && len(info.Hash) != 20 {
-		return errors.New("resource-pack hash length must be 20")
-	}
-	p.mu.Lock()
-	p.outstandingResourcePacks.PushBack(&info)
-	size := p.outstandingResourcePacks.Len()
-	p.mu.Unlock()
-	if size == 1 {
-		return p.tickResourcePackQueue()
+func checkAlreadyAppliedPack(hash []byte, dep interface {
+	HasPackAppliedByHash(hash []byte) bool
+}) error {
+	if dep.HasPackAppliedByHash(hash) {
+		return errors.New("cannot apply a resource pack already applied")
 	}
 	return nil
-}
-
-func (p *connectedPlayer) tickResourcePackQueue() error {
-	p.mu.RLock()
-	if p.outstandingResourcePacks.Len() == 0 {
-		p.mu.RUnlock()
-		return nil
-	}
-	queued := p.outstandingResourcePacks.Front()
-	previousResourceResponse := p.previousResourceResponse
-	p.mu.RUnlock()
-
-	// Check if the player declined a resource pack once already
-	if previousResourceResponse != nil && !*previousResourceResponse {
-		// If that happened we can flush the queue right away.
-		// Unless its 1.17+ and forced it will come back denied anyway
-		for {
-			p.mu.Lock()
-			if p.outstandingResourcePacks.Len() != 0 {
-				p.mu.Unlock()
-				break
-			}
-			queued = p.outstandingResourcePacks.Front()
-			p.mu.Unlock()
-			if queued.ShouldForce && p.Protocol().GreaterEqual(version.Minecraft_1_17) {
-				break
-			}
-			_ = p.onResourcePackResponse(packet.DeclinedResourcePackResponseStatus)
-			queued = nil
-		}
-		if queued == nil {
-			// Exit as the queue was cleared
-			return nil
-		}
-	}
-
-	return p.WritePacket(queued.RequestPacket(p.Protocol()))
-}
-
-
-// Processes a client response to a sent resource-pack.
-func (p *connectedPlayer) onResourcePackResponse(status ResourcePackResponseStatus) bool {
-	peek := status.Intermediate()
-
-	p.mu.Lock()
-	if p.outstandingResourcePacks.Len() == 0 {
-		p.mu.Unlock()
-		return false
-	}
-
-	var queued *ResourcePackInfo
-	if peek {
-		queued = p.outstandingResourcePacks.Front()
-	} else {
-		queued = p.outstandingResourcePacks.PopFront()
-	}
-	p.mu.Unlock()
-
-	e := newPlayerResourcePackStatusEvent(
-		p, status,, *queued, false,
-	)
-	p.eventMgr.Fire(e)
-
-	if e.Status() == DeclinedResourcePackResponseStatus &&
-		e.PackInfo().ShouldForce &&
-		(!e.OverwriteKick() || e.Player().Protocol().GreaterEqual(version.Minecraft_1_17)) {
-		e.Player().Disconnect(&component.Translation{
-			Key: "multiplayer.requiredTexturePrompt.disconnect",
-		})
-	}
-
-	p.mu.Lock()
-	switch status {
-	case AcceptedResourcePackResponseStatus:
-		b := true
-		p.previousResourceResponse = &b
-		p.pendingResourcePack = queued
-	case DeclinedResourcePackResponseStatus:
-		b := false
-		p.previousResourceResponse = &b
-	case SuccessfulResourcePackResponseStatus:
-		p.appliedResourcePack = queued
-		p.previousResourceResponse = nil
-		p.pendingResourcePack = nil
-	case FailedDownloadResourcePackResponseStatus:
-		p.pendingResourcePack = nil
-	}
-	p.mu.Unlock()
-
-	if !peek {
-		_ = p.tickResourcePackQueue()
-	}
-	return queued != nil && queued.Origin != DownstreamServerResourcePackOrigin
 }

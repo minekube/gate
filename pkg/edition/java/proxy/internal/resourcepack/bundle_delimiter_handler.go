@@ -13,7 +13,6 @@ import (
 type BundleDelimiterHandler struct {
 	Player interface {
 		proto.PacketWriter
-		State() states.State
 		BackendState() *states.State
 	}
 
