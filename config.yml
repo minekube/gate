@@ -35,7 +35,7 @@ config:
   # Allows players transferred from other hosts via the
   # Transfer packet (Minecraft 1.20.5) to be received.
   # Default: false
-  acceptsTransfers: false
+  acceptTransfers: false
   # Whether the proxy should support bungee plugin channels.
   # (Disable this if your backend servers are untrusted.)
   bungeePluginChannelEnabled: true
