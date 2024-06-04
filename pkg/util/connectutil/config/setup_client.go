@@ -49,7 +49,7 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 
 		return retryingRunnable(process.RunnableFunc(func(ctx context.Context) error {
 			// Load auth token
-			token, err := loadToken(tokenFilename)
+			token, err := loadToken(c.TokenFilePath)
 			if err != nil {
 				return err
 			}
