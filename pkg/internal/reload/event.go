@@ -9,6 +9,8 @@ import (
 type ConfigUpdateEvent[T any] struct {
 	// Config is the new config.
 	Config *T
+	// PrevConfig is the previous config.
+	PrevConfig *T
 }
 
 // Event implements event.Event.
@@ -26,11 +28,18 @@ func Map[C1, C2 event.Event](mgr event.Manager, forwarder func(*C1) *C2) func() 
 	}
 	return event.Subscribe(mgr, 0, func(e *ConfigUpdateEvent[C1]) {
 		c2 := forwarder(e.Config)
-		mgr.Fire(&ConfigUpdateEvent[C2]{Config: c2})
+		prevC2 := forwarder(e.PrevConfig)
+		mgr.Fire(&ConfigUpdateEvent[C2]{
+			Config:     c2,
+			PrevConfig: prevC2,
+		})
 	})
 }
 
 // FireConfigUpdate fires the config update event.
-func FireConfigUpdate[T any](mgr event.Manager, config *T) {
-	mgr.Fire(&ConfigUpdateEvent[T]{Config: config})
+func FireConfigUpdate[T any](mgr event.Manager, config *T, prevConfig *T) {
+	mgr.Fire(&ConfigUpdateEvent[T]{
+		Config:     config,
+		PrevConfig: prevConfig,
+	})
 }

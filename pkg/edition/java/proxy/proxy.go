@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"reflect"
@@ -190,23 +191,41 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return stop
 	}
 
-	bind := p.cfg.Bind
-	stopLn := listen(bind)
+	stopLn := listen(p.cfg.Bind)
 
 	// Listen for config reloads until we exit
 	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
-		cfg := e.Config
-		*p.cfg = *cfg
-		p.initQuota(&cfg.Quota)
-		if newBind := cfg.Bind; newBind != bind {
+		*p.cfg = *e.Config
+		p.initQuota(&e.Config.Quota)
+		fmt.Printf(e.PrevConfig.Bind, e.Config.Bind)
+		if e.PrevConfig.Bind != e.Config.Bind {
 			p.closeMu.Lock()
 			stopLn()
-			bind = newBind
-			stopLn = listen(bind)
+			stopLn = listen(e.Config.Bind)
 			p.closeMu.Unlock()
 		}
 		if err := p.init(); err != nil {
 			p.log.Error(err, "re-initialization error")
+		}
+		if e.Config.Lite.Enabled {
+			// reset whole cache if routes have changed because
+			// backend addrs might have moved to another route or a cacheTTL changed
+			if func() bool {
+				if len(e.Config.Lite.Routes) != len(p.cfg.Lite.Routes) {
+					return true
+				}
+				for i, route := range e.Config.Lite.Routes {
+					if !route.Equal(&e.PrevConfig.Lite.Routes[i]) {
+						return true
+					}
+				}
+				return false
+			}() {
+				lite.ResetPingCache()
+				p.log.Info("lite ping cache was reset")
+			}
+		} else {
+			lite.ResetPingCache()
 		}
 		logInfo()
 	})()
