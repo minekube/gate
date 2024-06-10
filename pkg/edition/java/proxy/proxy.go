@@ -197,7 +197,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
 		*p.cfg = *e.Config
 		p.initQuota(&e.Config.Quota)
-		fmt.Printf(e.PrevConfig.Bind, e.Config.Bind)
 		if e.PrevConfig.Bind != e.Config.Bind {
 			p.closeMu.Lock()
 			stopLn()
