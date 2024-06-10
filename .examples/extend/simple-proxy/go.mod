@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.0.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/gate v0.37.0
+	go.minekube.com/gate v0.37.1
 )
 
 require (
@@ -45,7 +45,7 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.18.2 // indirect
+	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/urfave/cli/v2 v2.27.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
@@ -57,7 +57,7 @@ require (
 	golang.org/x/exp v0.0.0-20240530194437-404ba88c7ed0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
 	google.golang.org/grpc v1.64.0 // indirect
