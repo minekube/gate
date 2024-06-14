@@ -6,13 +6,11 @@ on:
   release:
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -25,7 +23,7 @@ jobs:
         run: go build
 
       - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: gate
-        path: gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate
+          path: gate
