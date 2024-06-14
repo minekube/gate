@@ -286,7 +286,8 @@ func validateConfig(log logr.Logger, c *config.Config) error {
 		log.Info("config validation error", "error", e)
 	}
 	for _, w := range warns {
-		log.Info("config validation warn", "warn", w)
+		log.Info("config not valid", "warn", w)
+		return fmt.Errorf("waiting for the new config")
 	}
 	if len(errs) != 0 {
 		// Shouldn't run Gate with validation errors

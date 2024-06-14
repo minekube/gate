@@ -3,113 +3,29 @@ on:
   push:
   pull_request:
     types: [ opened, reopened ]
+  release:
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          args: --timeout 3m0s
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go with cache
-        uses: actions/setup-go@v5
-        with:
-          cache: true
-          go-version-file: go.mod
-
-      - name: Test
-        run: make test
   build:
-    if: ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
-    needs:
-      - lint
-      - test
-    runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image-ref.outputs.image }}
-      image_latest: ${{ steps.image-ref.outputs.image_latest }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create image ref
-        id: image-ref
-        run: |
-          REF=$(git rev-parse --short $GITHUB_SHA)
-          IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
-          IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
-          
-          echo "image=${IMAGE}" >> $GITHUB_STATE
-          echo "image_latest=${IMAGE_LATEST}" >> $GITHUB_OUTPUT
-          
-          echo "${IMAGE}" >> $GITHUB_STEP_SUMMARY
-
-      - name: Build and push docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
-          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
-          cache-to: type=inline
-          tags: |
-            ${{ steps.image-ref.outputs.image }}
-            ${{ steps.image-ref.outputs.image_latest }}
-  releaser:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      - build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          cache: true
           go-version-file: go.mod
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: go build
+
+      - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gate
+        path: gate
