@@ -342,8 +342,12 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ok bool
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 		if ha, ok = s.Server().(HandshakeAddresser); !ok {
-			if s.config().Forwarding.Mode == config.LegacyForwardingMode || s.config().Forwarding.Mode == config.BungeeGuardFowardingMode {
+			switch s.config().Forwarding.Mode {
+			case config.LegacyForwardingMode:
 				return s.createLegacyForwardingAddress()
+			case config.BungeeGuardForwardingMode:
+				secret := s.config().Forwarding.BungeeGuardSecret
+				return s.createBungeeGuardForwardingAddress(secret)
 			}
 		}
 	}
@@ -488,6 +492,10 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	}
 	b.WriteString(string(props)) // first convert props to string
 	return b.String()
+}
+
+func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) string {
+	// TODO see https://github.com/PaperMC/Velocity/blob/e60e2063a87c8904b5ad89680aa51698b1ef8a0c/proxy/src/main/java/com/velocitypowered/proxy/connection/backend/VelocityServerConnection.java#L154
 }
 
 // Returns the active backend server connection or false if inactive.

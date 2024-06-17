@@ -77,7 +77,7 @@ func (*legacyForgeConnType) AddGameProfileTokensIfRequired(
 	// since both use the "hostname" field in the handshake. We add a special property to the
 	// profile instead, which will be ignored by non-Forge servers and can be intercepted by a
 	// Forge coremod, such as SpongeForge.
-	if forwardingType == config.LegacyForwardingMode || forwardingType == config.BungeeGuardFowardingMode {
+	if forwardingType == config.LegacyForwardingMode || forwardingType == config.BungeeGuardForwardingMode {
 		original.Properties = append(original.Properties, profile.Property{Name: "forgeClient", Value: "true"})
 	}
 	return original

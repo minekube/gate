@@ -73,8 +73,8 @@ func (a *authSessionHandler) Activated() {
 	gameProfile := *a.inbound.delegate.Type().AddGameProfileTokensIfRequired(
 		a.profile, a.config().Forwarding.Mode)
 
-	if a.config().Forwarding.Mode == config.BungeeGuardFowardingMode {
-		gameProfile.Properties = append(gameProfile.Properties, profile.Property{Name: "bungeeguard-token", Value: a.config().Forwarding.BungeeguardSecret})
+	if a.config().Forwarding.Mode == config.BungeeGuardForwardingMode {
+		gameProfile.Properties = append(gameProfile.Properties, profile.Property{Name: "bungeeguard-token", Value: a.config().Forwarding.BungeeGuardSecret})
 	}
 	profileRequest := NewGameProfileRequestEvent(a.inbound, gameProfile, a.onlineMode)
 	a.eventMgr.Fire(profileRequest)
