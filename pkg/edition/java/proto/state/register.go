@@ -111,6 +111,12 @@ func init() {
 	Config.ClientBound.Register(&config.KnownPacks{},
 		m(0x0E, version.Minecraft_1_20_5),
 	)
+	Config.ClientBound.Register(&p.CustomReportDetails{},
+		m(0x0F, version.Minecraft_1_21),
+	)
+	Config.ClientBound.Register(&p.ServerLinks{},
+		m(0x10, version.Minecraft_1_21),
+	)
 
 	Login.ServerBound.Register(&p.ServerLogin{},
 		m(0x00, version.Minecraft_1_7_2))
@@ -529,5 +535,11 @@ func init() {
 	//)
 	Play.ClientBound.Register(&p.Transfer{},
 		m(0x73, version.Minecraft_1_20_5),
+	)
+	Play.ClientBound.Register(&p.CustomReportDetails{},
+		m(0x7A, version.Minecraft_1_21),
+	)
+	Play.ClientBound.Register(&p.ServerLinks{},
+		m(0x7B, version.Minecraft_1_21),
 	)
 }

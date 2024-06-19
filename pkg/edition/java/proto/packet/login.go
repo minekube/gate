@@ -338,7 +338,7 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 			return err
 		}
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+	if c.Protocol == version.Minecraft_1_20_5.Protocol || c.Protocol == version.Minecraft_1_21.Protocol {
 		err = util.WriteBool(wr, serverLoginSuccessStrictErrorHandling)
 		if err != nil {
 			return err
@@ -380,7 +380,7 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			return
 		}
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+	if c.Protocol == version.Minecraft_1_20_5.Protocol || c.Protocol == version.Minecraft_1_21.Protocol {
 		_, err = util.ReadBool(rd)
 		if err != nil {
 			return

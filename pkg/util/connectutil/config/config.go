@@ -9,6 +9,7 @@ var DefaultConfig = Config{
 	Name:                   "",
 	EnforcePassthrough:     false,
 	AllowUnencryptedTunnel: false,
+	TokenFilePath:          tokenFilename,
 	Service: Service{
 		Enabled:                 false,
 		Addr:                    "localhost:8443",
@@ -24,6 +25,7 @@ type Config struct {
 	EnforcePassthrough     bool   `yaml:"enforcePassthrough,omitempty" json:"enforcePassthrough,omitempty"`         // Setting to true will reject all sessions in non-passthrough mode.
 	WatchServiceAddr       string `yaml:"watchServiceAddr,omitempty" json:"watchServiceAddr,omitempty"`             // The address of the WatchService
 	AllowUnencryptedTunnel bool   `yaml:"allowUnencryptedTunnel,omitempty" json:"allowUnencryptedTunnel,omitempty"` // Allow unencrypted tunnels
+	TokenFilePath          string `yaml:"tokenFilePath,omitempty" json:"tokenFilePath,omitempty"`                   // Path to the token file
 
 	Service Service
 }
