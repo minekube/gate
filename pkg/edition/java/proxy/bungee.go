@@ -68,7 +68,7 @@ func (s *bungeeServer) Connect(player bungeecord.Player) {
 	if p == nil {
 		return
 	}
-	timeout := time.Duration(s.proxy.config().ConnectionTimeout) * time.Millisecond
+	timeout := time.Duration(s.proxy.config().ConnectionTimeout)
 	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
 	defer cancel()
 	_ = p.CreateConnectionRequest(s.s).ConnectWithIndication(ctx)

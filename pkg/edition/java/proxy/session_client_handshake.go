@@ -98,7 +98,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	var resolvePingResponse pingResolveFunc
 	if h.config().Lite.Enabled {
 		h.conn.SetState(nextState)
-		dialTimeout := time.Duration(h.config().ConnectionTimeout) * time.Millisecond
+		dialTimeout := time.Duration(h.config().ConnectionTimeout)
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
 			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc)
