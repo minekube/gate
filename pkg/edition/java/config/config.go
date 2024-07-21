@@ -8,6 +8,7 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/validation"
+	"time"
 )
 
 // DefaultConfig is a default Config.
@@ -37,8 +38,8 @@ var DefaultConfig = Config{
 	Try:                                  []string{},
 	ForcedHosts:                          map[string][]string{},
 	FailoverOnUnexpectedServerDisconnect: true,
-	ConnectionTimeout:                    5000,
-	ReadTimeout:                          30000,
+	ConnectionTimeout:                    configutil.Duration(5000 * time.Millisecond),
+	ReadTimeout:                          configutil.Duration(30000 * time.Millisecond),
 	Quota: Quota{
 		Connections: QuotaSettings{
 			Enabled:    true,
