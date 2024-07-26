@@ -24,7 +24,7 @@ require (
 	github.com/sandertv/gophertunnel v1.37.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/urfave/cli/v2 v2.27.2
+	github.com/urfave/cli/v2 v2.27.3
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
