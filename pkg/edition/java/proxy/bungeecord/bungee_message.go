@@ -63,6 +63,7 @@ type (
 		Username() string
 		RemoteAddr() net.Addr
 		Disconnect(reason component.Component)
+		Protocol() proto.Protocol
 	}
 	Server interface {
 		Name() string
@@ -152,6 +153,8 @@ func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
 		r.processServerIP(in)
 	case "KickPlayer":
 		r.processKick(in)
+	case "KickPlayerRaw":
+		r.processKickRaw(in)
 	default:
 		// Unknown sub-channel, do nothing
 	}
@@ -404,6 +407,20 @@ func (r *bungeeCordMessageResponder) processKick(in io.Reader) {
 			return
 		}
 		kickReason, err := (&legacy.Legacy{}).Unmarshal([]byte(msg))
+		if err != nil {
+			kickReason = &component.Text{} // fallback to blank reason
+		}
+		player.Disconnect(kickReason)
+	})
+}
+
+func (r *bungeeCordMessageResponder) processKickRaw(in io.Reader) {
+	r.readPlayer(in, func(player Player) {
+		msg, err := util.ReadUTF(in)
+		if err != nil {
+			return
+		}
+		kickReason, err := util.JsonCodec(r.player.Protocol()).Unmarshal([]byte(msg))
 		if err != nil {
 			kickReason = &component.Text{} // fallback to blank reason
 		}
