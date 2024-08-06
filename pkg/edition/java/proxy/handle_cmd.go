@@ -3,9 +3,10 @@ package proxy
 import (
 	"context"
 	"errors"
+	"go.minekube.com/gate/pkg/internal/future"
 	"strings"
+	"time"
 
-	"github.com/robinbraemer/event"
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
@@ -20,9 +21,9 @@ func (c *chatHandler) handleCommand(packet proto.Packet) error {
 	if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
 		switch p := packet.(type) {
 		case *chat.SessionPlayerCommand:
-			return c.handleSessionCommand(p)
+			return c.handleSessionCommand(p, false)
 		case *chat.UnsignedPlayerCommand:
-			return c.handleSessionCommand(&p.SessionPlayerCommand)
+			return c.handleSessionCommand(&p.SessionPlayerCommand, true)
 		}
 	} else if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) {
 		if p, ok := packet.(*chat.KeyedPlayerCommand); ok {
@@ -36,29 +37,43 @@ func (c *chatHandler) handleCommand(packet proto.Packet) error {
 	return nil
 }
 
-func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
-	cmd := strings.TrimPrefix(packet.Message, "/")
+func (c *chatHandler) queueCommandResult(
+	message string,
+	timestamp time.Time,
+	lastSeenMessages *chat.LastSeenMessages,
+	packetCreator func(event *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet,
+) {
+	cmd := strings.TrimPrefix(message, "/")
 	e := &CommandExecuteEvent{
 		source:          c.player,
 		commandline:     cmd,
 		originalCommand: cmd,
 	}
-	event.FireParallel(c.eventMgr, e, func(e *CommandExecuteEvent) {
+	c.eventMgr.Fire(e)
+
+	c.player.chatQueue.QueuePacket(func(lastSeenMessages *chat.LastSeenMessages) *future.Future[proto.Packet] {
+		f := future.New[proto.Packet]()
+		go func() {
+			pkt := packetCreator(e, lastSeenMessages)
+			// TODO log command execution
+			f.Complete(pkt)
+		}()
+		return f
+	}, timestamp, lastSeenMessages)
+}
+
+func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
+	c.queueCommandResult(packet.Message, time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
 		if !e.Allowed() {
-			return
-		}
-		server, ok := c.player.ensureBackendConnection()
-		if !ok {
-			return
+			return nil
 		}
 		commandToRun := e.Command()
 		if e.Forward() {
-			_ = server.WritePacket((&chat.Builder{
-				Protocol: server.Protocol(),
+			return (&chat.Builder{
+				Protocol: c.player.Protocol(),
 				Message:  "/" + commandToRun,
 				Sender:   c.player.ID(),
-			}).ToServer())
-			return
+			}).ToServer()
 		}
 
 		hasRun, err := executeCommand(commandToRun, c.player, c.cmdMgr)
@@ -68,26 +83,23 @@ func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
 				Content: "An error occurred while running this command.",
 				S:       component.Style{Color: color.Red},
 			})
-			return
+			return nil
 		}
 		if !hasRun {
-			_ = server.WritePacket((&chat.Builder{
-				Protocol: server.Protocol(),
+			return (&chat.Builder{
+				Protocol: c.player.Protocol(),
 				Message:  packet.Message,
 				Sender:   c.player.ID(),
-			}).ToServer())
+			}).ToServer()
 		}
+		return nil
 	})
 	return nil
 }
 
 func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error {
-	e := &CommandExecuteEvent{
-		source:          c.player,
-		commandline:     packet.Command,
-		originalCommand: packet.Command,
-	}
-	event.FireParallel(c.eventMgr, e, func(e *CommandExecuteEvent) {
+	c.queueCommandResult(packet.Command, packet.Timestamp, nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
+
 		playerKey := c.player.IdentifiedKey()
 		if !e.Allowed() {
 			if playerKey != nil {
@@ -95,35 +107,29 @@ func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error 
 					if c.disconnectIllegalProtocolState(c.player) {
 						c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
 					}
-					return
 				}
 			}
-			return
+			return nil
 		}
 
 		commandToRun := e.Command()
 		if e.Forward() {
-			server, ok := c.player.ensureBackendConnection()
-			if !ok {
-				return
-			}
 			if !packet.Unsigned && commandToRun == packet.Command {
-				_ = server.WritePacket(packet)
-				return
-			}
-			if !packet.Unsigned && playerKey != nil && keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) {
-				if c.disconnectIllegalProtocolState(c.player) {
-					c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+				return packet
+			} else {
+				if !packet.Unsigned && playerKey != nil && keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) {
+					if c.disconnectIllegalProtocolState(c.player) {
+						c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+					}
+					return nil
 				}
-				return
+				return (&chat.Builder{
+					Protocol:  c.player.Protocol(),
+					Message:   "/" + commandToRun,
+					Sender:    c.player.ID(),
+					Timestamp: packet.Timestamp,
+				}).ToServer()
 			}
-			_ = server.WritePacket((&chat.Builder{
-				Protocol:  server.Protocol(),
-				Message:   packet.Command,
-				Sender:    c.player.ID(),
-				Timestamp: packet.Timestamp,
-			}).ToServer())
-			return
 		}
 
 		hasRun, err := executeCommand(commandToRun, c.player, c.cmdMgr)
@@ -133,80 +139,87 @@ func (c *chatHandler) handleKeyedCommand(packet *chat.KeyedPlayerCommand) error 
 				Content: "An error occurred while running this command.",
 				S:       component.Style{Color: color.Red},
 			})
-			return
+			return nil
 		}
 		if !hasRun {
-			server, ok := c.player.ensureBackendConnection()
-			if !ok {
-				return
-			}
 			if commandToRun == packet.Command {
-				_ = server.WritePacket(packet)
-				return
+				return packet
 			}
 
 			if !packet.Unsigned && playerKey != nil &&
 				keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2) &&
 				c.disconnectIllegalProtocolState(c.player) {
 				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
-				return
+				return nil
 			}
 
-			_ = server.WritePacket((&chat.Builder{
-				Protocol:  server.Protocol(),
+			return (&chat.Builder{
+				Protocol:  c.player.Protocol(),
 				Message:   "/" + commandToRun,
 				Sender:    c.player.ID(),
 				Timestamp: packet.Timestamp,
-			}).ToServer())
+			}).ToServer()
 		}
+		return nil
 	})
+
 	return nil
 }
 
-func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) error {
-	e := &CommandExecuteEvent{
-		source:          c.player,
-		commandline:     packet.Command,
-		originalCommand: packet.Command,
-	}
-	event.FireParallel(c.eventMgr, e, func(e *CommandExecuteEvent) {
-		server, ok := c.player.ensureBackendConnection()
-		if !ok {
-			return
+func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand, unsigned bool) error {
+	consumeCommand := func(packet *chat.SessionPlayerCommand, hasLastSeenMessages bool) proto.Packet {
+		if !hasLastSeenMessages {
+			return nil
 		}
+		if packet.Signed() {
+			if c.disconnectIllegalProtocolState(c.player) {
+				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+			}
+			return nil
+		}
+
+		// An unsigned command with a 'last seen' update will not happen as of 1.20.5+, but for earlier versions - we still
+		// need to pass through the acknowledgement
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
+			return &chat.ChatAcknowledgement{
+				Offset: packet.LastSeenMessages.Offset,
+			}
+		}
+		return nil
+	}
+
+	modifyCommand := func(packet *chat.SessionPlayerCommand, newCommand string) proto.Packet {
+		if packet.Signed() && c.disconnectIllegalProtocolState(c.player) {
+			c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
+			return nil
+		}
+		return (&chat.Builder{
+			Protocol:  c.player.Protocol(),
+			Message:   "/" + newCommand,
+			Sender:    c.player.ID(),
+			Timestamp: packet.Timestamp,
+		}).ToServer()
+	}
+
+	forwardCommand := func(packet *chat.SessionPlayerCommand, newCommand string) proto.Packet {
+		if newCommand == packet.Command {
+			return packet
+		}
+		return modifyCommand(packet, newCommand)
+	}
+
+	c.queueCommandResult(packet.Command, packet.Timestamp, &packet.LastSeenMessages, func(e *CommandExecuteEvent, newLastSeenMessages *chat.LastSeenMessages) proto.Packet {
+		if newLastSeenMessages != nil && !unsigned {
+			packet.LastSeenMessages = *newLastSeenMessages // fixed packet
+		}
+
 		if !e.Allowed() {
-			if packet.Signed() {
-				if c.disconnectIllegalProtocolState(c.player) {
-					c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
-				}
-				return
-			}
-			// We seemingly can't actually do this if signed args exist, if not, we can probs keep stuff happy
-			if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
-				_ = server.WritePacket(&chat.ChatAcknowledgement{
-					Offset: packet.LastSeenMessages.Offset,
-				})
-			}
-			return
+			return consumeCommand(packet, newLastSeenMessages != nil)
 		}
 
 		commandToRun := e.Command()
 		if e.Forward() {
-			if packet.Signed() && commandToRun == packet.Command {
-				_ = server.WritePacket(packet)
-				return
-			}
-			if packet.Signed() && c.disconnectIllegalProtocolState(c.player) {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
-				return
-			}
-			_ = server.WritePacket((&chat.Builder{
-				Protocol:  server.Protocol(),
-				Message:   "/" + commandToRun,
-				Sender:    c.player.ID(),
-				Timestamp: packet.Timestamp,
-			}).ToServer())
-			return
+			return forwardCommand(packet, commandToRun)
 		}
 
 		hasRun, err := executeCommand(commandToRun, c.player, c.cmdMgr)
@@ -216,33 +229,12 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand) er
 				Content: "An error occurred while running this command.",
 				S:       component.Style{Color: color.Red},
 			})
-			return
+			return nil
 		}
-		if !hasRun {
-			server, ok := c.player.ensureBackendConnection()
-			if !ok {
-				return
-			}
-			if packet.Signed() && commandToRun == packet.Command {
-				_ = server.WritePacket(packet)
-				return
-			}
-			if packet.Signed() && c.disconnectIllegalProtocolState(c.player) {
-				c.log.Info("A plugin tried to deny a command with signable component(s). This is not supported with forceKeyAuthentication enabled.")
-				return
-			}
-			_ = server.WritePacket((&chat.Builder{
-				Protocol:  server.Protocol(),
-				Message:   "/" + commandToRun,
-				Sender:    c.player.ID(),
-				Timestamp: packet.Timestamp,
-			}).ToServer())
+		if hasRun {
+			return consumeCommand(packet, newLastSeenMessages != nil)
 		}
-		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
-			_ = server.WritePacket(&chat.ChatAcknowledgement{
-				Offset: packet.LastSeenMessages.Offset,
-			})
-		}
+		return forwardCommand(packet, commandToRun)
 	})
 	return nil
 }

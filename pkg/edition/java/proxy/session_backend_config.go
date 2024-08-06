@@ -12,6 +12,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/uuid"
+	"time"
 )
 
 // backendConfigSessionHandler is a special session handler that catches "last minute" disconnects.
@@ -63,11 +65,13 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	}
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
-		b.forwardToServer(pc, nil)
+		b.handleKeepAlive(p)
 	case *config.StartUpdate:
 		b.forwardToServer(pc, nil)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePackRequest(p)
+	case *packet.RemoveResourcePack:
+		b.handleRemoveResourcePackRequest(p)
 	case *config.FinishedUpdate:
 		b.handleFinishedUpdate(p)
 	case *config.TagsUpdate:
@@ -117,6 +121,19 @@ func (b *backendConfigSessionHandler) handleResourcePackRequest(p *packet.Resour
 	handleResourcePacketRequest(p, b.serverConn, b.proxy().Event(), b.log)
 }
 
+func (b *backendConfigSessionHandler) handleRemoveResourcePackRequest(p *packet.RemoveResourcePack) {
+	player := b.serverConn.player
+
+	// TODO add ServerResourcePackRemoveEvent
+	handler := player.resourcePackHandler
+	if p.ID != uuid.Nil {
+		handler.Remove(p.ID)
+	} else {
+		handler.ClearAppliedResourcePacks()
+	}
+	_ = player.WritePacket(p)
+}
+
 func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
 	smc, ok := b.serverConn.ensureConnected()
 	if !ok {
@@ -134,10 +151,15 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 		return
 	}
 
-	smc.SetAutoReading(false)
 	smc.Reader().SetState(state.Play)
 	configHandler.handleBackendFinishUpdate(b.serverConn, p).ThenAccept(func(any) {
-		defer smc.SetAutoReading(true)
+		err := smc.WritePacket(&config.FinishedUpdate{})
+		if err != nil {
+			b.log.Error(err, "error writing finished update packet")
+			b.serverConn.disconnect()
+			b.requestCtx.result(nil, fmt.Errorf("error writing finished update packet: %w", err))
+			return
+		}
 
 		if b.serverConn == player.connectedServer() {
 			if !smc.SwitchSessionHandler(state.Play) {
@@ -187,6 +209,11 @@ func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContex
 	} else {
 		b.forwardToPlayer(pc, nil)
 	}
+}
+
+func (b *backendConfigSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
+	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
+	_ = b.serverConn.player.WritePacket(p)
 }
 
 // forwardToPlayer forwards packets to the player. It prefers PacketContext over Packet.

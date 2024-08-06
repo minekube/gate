@@ -19,7 +19,7 @@ func New[T any]() *Future[T] {
 }
 
 // ThenAccept registers a callback to be called when the Future is completed.
-func (f *Future[T]) ThenAccept(callback func(T)) {
+func (f *Future[T]) ThenAccept(callback func(T)) *Future[T] {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -30,6 +30,19 @@ func (f *Future[T]) ThenAccept(callback func(T)) {
 		// Append the new callback to the slice of callbacks
 		f.callback = append(f.callback, callback)
 	}
+
+	return f
+}
+
+// ThenCompose registers a callback to be called when the Future is completed and returns a new Future.
+func ThenCompose[T any, U any](f *Future[T], callback func(T) *Future[U]) *Future[U] {
+	out := New[U]()
+	f.ThenAccept(func(value T) {
+		callback(value).ThenAccept(func(value U) {
+			out.Complete(value)
+		})
+	})
+	return out
 }
 
 // Complete sets the value and calls the registered callbacks if they haven't been called yet.

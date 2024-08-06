@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/internal/future"
 )
 
 type chatHandler struct {
@@ -24,7 +25,7 @@ type chatHandler struct {
 func (c *chatHandler) handleChat(packet proto.Packet) error {
 	if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) {
 		if p, ok := packet.(*chat.SessionPlayerChat); ok {
-			return c.handleSessionChat(p)
+			return c.handleSessionChat(p, false)
 		}
 	} else if c.player.Protocol().GreaterEqual(version.Minecraft_1_19) {
 		if p, ok := packet.(*chat.KeyedPlayerChat); ok {
@@ -52,19 +53,19 @@ func (c *chatHandler) handleLegacyChat(packet *chat.LegacyChat) error {
 		return nil
 	}
 	return server.WritePacket((&chat.Builder{
-		Protocol: server.Protocol(),
+		Protocol: c.player.Protocol(),
 		Message:  evt.Message(),
 		Sender:   evt.player.ID(),
 	}).ToServer())
 }
 
-//type ChatQueue interface {
+//type chatQueue interface {
 //	// Enqueue enqueues a chat message to be sent to the server.
 //	// The message is sent to the server when the player is connected to the server.
 //	Enqueue(message string)
 //}
 
-func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat) error {
+func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat, unsigned bool) error {
 	server, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return nil
@@ -74,24 +75,35 @@ func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat) error {
 		original: packet.Message,
 	}
 	c.eventMgr.Fire(evt)
-	if !evt.Allowed() {
-		if packet.Signed {
-			c.invalidCancel(c.log, c.player)
-		}
-		return nil
+
+	asFuture := func(p proto.Packet) *future.Future[proto.Packet] {
+		return future.New[proto.Packet]().Complete(p)
 	}
-	if evt.Message() != packet.Message {
-		if packet.Signed && c.invalidChange(c.log, c.player) {
-			return nil
+
+	c.player.chatQueue.QueuePacket(func(newLastSeenMessages *chat.LastSeenMessages) *future.Future[proto.Packet] {
+		if !evt.Allowed() {
+			if packet.Signed {
+				c.invalidCancel(c.log, c.player)
+			}
+			return asFuture(nil)
 		}
-		return server.WritePacket((&chat.Builder{
-			Protocol:  server.Protocol(),
-			Message:   packet.Message,
-			Sender:    c.player.ID(),
-			Timestamp: packet.Timestamp,
-		}).ToServer())
-	}
-	return server.WritePacket(packet)
+		if evt.Message() != packet.Message {
+			if packet.Signed && c.invalidChange(c.log, c.player) {
+				return nil
+			}
+			return asFuture((&chat.Builder{
+				Protocol:  server.Protocol(),
+				Message:   packet.Message,
+				Sender:    c.player.ID(),
+				Timestamp: packet.Timestamp,
+			}).ToServer())
+		}
+		if newLastSeenMessages == nil && !unsigned {
+			packet.LastSeenMessages = *newLastSeenMessages
+		}
+		return asFuture(packet)
+	}, packet.Timestamp, &packet.LastSeenMessages)
+	return nil
 }
 
 func (c *chatHandler) handleKeyedChat(packet *chat.KeyedPlayerChat) error {
@@ -105,23 +117,34 @@ func (c *chatHandler) handleKeyedChat(packet *chat.KeyedPlayerChat) error {
 	}
 	c.eventMgr.Fire(evt)
 
+	var msg proto.Packet
 	if c.player.IdentifiedKey() != nil && !packet.Unsigned {
 		// 1.19->1.19.2 signed version
-		return c.handleOldSignedChat(server, packet, evt)
+		msg = c.handleOldSignedChat(server, packet, evt)
+	} else {
+		// 1.19->1.19.2 unsigned version
+		if !evt.Allowed() {
+			return nil
+		}
+		msg = (&chat.Builder{
+			Protocol:  server.Protocol(),
+			Message:   evt.Message(),
+			Sender:    c.player.ID(),
+			Timestamp: packet.Expiry,
+		}).ToServer()
 	}
-	// 1.19->1.19.2 unsigned version
-	if !evt.Allowed() {
-		return nil
-	}
-	return server.WritePacket((&chat.Builder{
-		Protocol:  server.Protocol(),
-		Message:   evt.Message(),
-		Sender:    c.player.ID(),
-		Timestamp: packet.Expiry,
-	}).ToServer())
+	c.player.chatQueue.QueuePacket(
+		func(*chat.LastSeenMessages) *future.Future[proto.Packet] {
+			return future.New[proto.Packet]().Complete(msg)
+		},
+		packet.Expiry,
+		nil,
+	)
+
+	return nil
 }
 
-func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *chat.KeyedPlayerChat, event *PlayerChatEvent) error {
+func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *chat.KeyedPlayerChat, event *PlayerChatEvent) proto.Packet {
 	playerKey := c.player.IdentifiedKey()
 	denyRevision := keyrevision.RevisionIndex(playerKey.KeyRevision()) >= keyrevision.RevisionIndex(keyrevision.LinkedV2)
 	if !event.Allowed() {
@@ -138,14 +161,14 @@ func (c *chatHandler) handleOldSignedChat(server netmc.MinecraftConn, packet *ch
 			return nil
 		}
 		c.log.Info("a plugin changed a signed chat message. The server may not accept it")
-		return server.WritePacket((&chat.Builder{
+		return (&chat.Builder{
 			Protocol:  server.Protocol(),
 			Message:   event.Message(),
 			Sender:    c.player.ID(),
 			Timestamp: packet.Expiry,
-		}).ToServer())
+		}).ToServer()
 	}
-	return server.WritePacket(packet)
+	return packet
 }
 
 func (c *chatHandler) invalidCancel(log logr.Logger, player *connectedPlayer) {

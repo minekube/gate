@@ -46,7 +46,7 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	}
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
-		handleKeepAlive(p, h.player)
+		forwardKeepAlive(p, h.player)
 	case *packet.ClientSettings:
 		h.player.setClientSettings(p)
 	case *packet.ResourcePackResponse:
@@ -93,11 +93,7 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 	if err := h.player.WritePacket(p); err != nil {
 		return nil
 	}
-
-	if err := smc.WritePacket(p); err != nil {
-		return nil
-	}
-	smc.Writer().SetState(state.Play)
+	h.player.Writer().SetState(state.Play)
 
 	return &h.configSwitchDone
 }
@@ -136,14 +132,10 @@ func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
 }
 
 func (h *clientConfigSessionHandler) handleKnownPacks(p *config.KnownPacks, pc *proto.PacketContext) {
-	if connInFlight := h.player.connectionInFlight(); connInFlight != nil {
-		smc, ok := connInFlight.ensureConnected()
-		if ok {
-			_ = smc.WritePacket(p)
-		}
-		return
+	smc, ok := h.player.connectionInFlightOrConnectedServer().ensureConnected()
+	if ok {
+		_ = smc.WritePacket(p)
 	}
-	forwardToServer(pc, h.player)
 }
 
 func (h *clientConfigSessionHandler) event() event.Manager {

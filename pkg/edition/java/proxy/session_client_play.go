@@ -108,6 +108,8 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.forwardToServer(pc) // forward to server
 	case *config.FinishedUpdate:
 		c.handleFinishedUpdate(p)
+	case *chat.ChatAcknowledgement:
+		c.handleChatAcknowledgement(p)
 	default:
 		c.forwardToServer(pc)
 	}
@@ -208,10 +210,10 @@ func phaseHandle(
 }
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	handleKeepAlive(p, c.player)
+	forwardKeepAlive(p, c.player)
 }
 
-func handleKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
+func forwardKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
 	serverConn := player.connectedServer()
 	if !sendKeepAliveToBackend(serverConn, player, p) {
 		connInFlight := player.connectionInFlight()
@@ -812,6 +814,13 @@ func (c *clientPlaySessionHandler) handleFinishedUpdate(p *config.FinishedUpdate
 		}()
 	}
 	c.configSwitchFuture.Complete(nil)
+}
+
+func (c *clientPlaySessionHandler) handleChatAcknowledgement(p *chat.ChatAcknowledgement) {
+	if c.player.CurrentServer() == nil {
+		return
+	}
+	c.player.chatQueue.HandleAcknowledgement(p.Offset)
 }
 
 // doSwitch handles switching stages for swapping between servers.
