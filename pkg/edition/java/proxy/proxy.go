@@ -210,7 +210,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 			// reset whole cache if routes have changed because
 			// backend addrs might have moved to another route or a cacheTTL changed
 			if func() bool {
-				if len(e.Config.Lite.Routes) != len(p.cfg.Lite.Routes) {
+				if len(e.Config.Lite.Routes) != len(e.PrevConfig.Lite.Routes) {
 					return true
 				}
 				for i, route := range e.Config.Lite.Routes {

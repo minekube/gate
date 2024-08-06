@@ -120,6 +120,7 @@ type connectedPlayer struct {
 	playerKey           crypto.IdentifiedKey // 1.19+
 	resourcePackHandler resourcepack.Handler
 	bundleHandler       *resourcepack.BundleDelimiterHandler
+	chatQueue           *chatQueue
 
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
@@ -169,6 +170,7 @@ func newConnectedPlayer(
 	}
 	p.resourcePackHandler = resourcepack.NewHandler(p, p.eventMgr)
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
+	p.chatQueue = newChatQueue(p)
 	p.tabList = internaltablist.New(p)
 	return p
 }
@@ -179,6 +181,15 @@ func (p *connectedPlayer) connectionInFlight() *serverConnection {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.connInFlight
+}
+
+func (p *connectedPlayer) connectionInFlightOrConnectedServer() *serverConnection {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.connInFlight != nil {
+		return p.connInFlight
+	}
+	return p.connectedServer_
 }
 
 func (p *connectedPlayer) phase() phase.ClientConnectionPhase {
@@ -219,15 +230,26 @@ func (p *connectedPlayer) SpoofChatInput(input string) error {
 		return ErrTooLongChatMessage
 	}
 
+	msg := &chat.Builder{
+		Protocol: p.Protocol(),
+		Sender:   p.ID(),
+		Message:  input,
+	}
+
+	if p.Protocol().GreaterEqual(version.Minecraft_1_19) {
+		p.chatQueue.QueuePacketWithFunction(func(chatState *ChatState) proto.Packet {
+			msg.Timestamp = chatState.LastTimestamp()
+			msg.LastSeenMessages = chatState.CreateLastSeen()
+			return msg.ToServer()
+		})
+		return nil
+	}
+
 	serverMc, ok := p.ensureBackendConnection()
 	if !ok {
 		return ErrNoBackendConnection
 	}
-	return serverMc.WritePacket((&chat.Builder{
-		Protocol: p.Protocol(),
-		Sender:   p.ID(),
-		Message:  input,
-	}).ToServer())
+	return serverMc.WritePacket(msg.ToServer())
 }
 
 func (p *connectedPlayer) ensureBackendConnection() (netmc.MinecraftConn, bool) {

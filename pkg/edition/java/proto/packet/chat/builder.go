@@ -46,6 +46,8 @@ type Builder struct {
 	Sender uuid.UUID
 	// Timestamp is the time the message was sent.
 	Timestamp time.Time
+	// LastSeenMessages is the last seen messages state of the player.
+	LastSeenMessages LastSeenMessages
 }
 
 // ToClient creates a packet which can be sent to the client;
@@ -95,14 +97,16 @@ func (b *Builder) ToServer() proto.Packet {
 				}
 			}
 			return &SessionPlayerCommand{
-				Command:   strings.TrimPrefix(b.Message, "/"),
-				Timestamp: b.Timestamp,
+				Command:          strings.TrimPrefix(b.Message, "/"),
+				Timestamp:        b.Timestamp,
+				LastSeenMessages: b.LastSeenMessages,
 			}
 		}
 		return &SessionPlayerChat{
-			Message:   b.Message,
-			Timestamp: b.Timestamp,
-			Signature: []byte{0},
+			Message:          b.Message,
+			Timestamp:        b.Timestamp,
+			Signature:        []byte{0},
+			LastSeenMessages: b.LastSeenMessages,
 		}
 	} else if b.Protocol.GreaterEqual(version.Minecraft_1_19) { // Keyed chat
 		if strings.HasPrefix(b.Message, "/") {
