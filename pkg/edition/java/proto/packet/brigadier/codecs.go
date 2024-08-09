@@ -14,13 +14,13 @@ import (
 
 type ArgumentPropertyCodec interface {
 	Encode(wr io.Writer, v any, protocol proto.Protocol) error
-	Decode(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error)
+	Decode(rd io.Reader, protocol proto.Protocol) (any, error)
 }
 
 // ArgumentPropertyCodecFuncs implements ArgumentPropertyCodec.
 type ArgumentPropertyCodecFuncs struct {
 	EncodeFn func(wr io.Writer, v any, protocol proto.Protocol) error
-	DecodeFn func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error)
+	DecodeFn func(rd io.Reader, protocol proto.Protocol) (any, error)
 }
 
 func (c *ArgumentPropertyCodecFuncs) Encode(wr io.Writer, v any, protocol proto.Protocol) error {
@@ -30,7 +30,7 @@ func (c *ArgumentPropertyCodecFuncs) Encode(wr io.Writer, v any, protocol proto.
 	return c.EncodeFn(wr, v, protocol)
 }
 
-func (c *ArgumentPropertyCodecFuncs) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+func (c *ArgumentPropertyCodecFuncs) Decode(rd io.Reader, protocol proto.Protocol) (any, error) {
 	if c.DecodeFn == nil {
 		return nil, nil
 	}
@@ -48,21 +48,21 @@ var (
 			}
 			return nil
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			return brigodier.Bool, nil
 		},
 	}
 	ByteArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
-			b, ok := v.(ByteArgumentType)
+			b, ok := v.(byte)
 			if !ok {
 				return fmt.Errorf("expected byte but got %T", v)
 			}
-			return util.WriteByte(wr, byte(b))
+			return util.WriteByte(wr, b)
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			b, err := util.ReadByte(rd)
-			return ByteArgumentType(b), err
+			return b, err
 		},
 	}
 	StringArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
@@ -78,7 +78,7 @@ var (
 				return fmt.Errorf("invalid string argument type %d", t)
 			}
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			t, err := util.ReadVarInt(rd)
 			if err != nil {
 				return nil, err
@@ -99,7 +99,7 @@ var (
 			}
 			return util.WriteString(wr, i.Identifier)
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			id, err := util.ReadString(rd)
 			if err != nil {
 				return nil, err
@@ -115,7 +115,7 @@ var (
 			}
 			return util.WriteString(wr, i.Identifier)
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			id, err := util.ReadString(rd)
 			if err != nil {
 				return nil, err
@@ -131,7 +131,7 @@ var (
 			}
 			return util.WriteString(wr, i.Identifier)
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			id, err := util.ReadString(rd)
 			if err != nil {
 				return nil, err
@@ -149,7 +149,7 @@ var (
 			}
 			return nil
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
 				b, err := util.ReadInt(rd)
 				return IntArgumentType(b), err
@@ -183,7 +183,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -230,7 +230,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -278,7 +278,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -325,7 +325,7 @@ var (
 			}
 			return err
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			flags, err := util.ReadByte(rd)
 			if err != nil {
 				return nil, err
@@ -352,7 +352,7 @@ var (
 			// This is special-cased by ArgumentPropertyRegistry
 			return fmt.Errorf("unsupported operation")
 		},
-		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (brigodier.ArgumentType, error) {
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			var identifier *ArgumentIdentifier
 			if protocol.GreaterEqual(version.Minecraft_1_19) {
 				idx, err := util.ReadVarInt(rd)

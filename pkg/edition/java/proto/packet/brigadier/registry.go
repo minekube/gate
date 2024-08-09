@@ -52,6 +52,9 @@ func (r *argPropReg) Encode(wr io.Writer, argType brigodier.ArgumentType, protoc
 		if err != nil {
 			return err
 		}
+		if property.result != nil {
+			return property.codec.Encode(wr, property.result, protocol)
+		}
 		return nil
 	case *ModArgumentProperty:
 		err := r.writeIdentifier(wr, property.Identifier, protocol)
@@ -89,15 +92,22 @@ func (r *argPropReg) Decode(rd io.Reader, protocol proto.Protocol) (brigodier.Ar
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
+	if res, ok := result.(brigodier.ArgumentType); ok {
+		return res, nil
+	} else {
 		return &passthroughProperty{
 			identifier: identifier,
+			codec:      codec,
+			result:     result,
 		}, nil
 	}
-	return result, nil
 }
 
-type passthroughProperty struct{ identifier *ArgumentIdentifier }
+type passthroughProperty struct {
+	identifier *ArgumentIdentifier
+	codec      ArgumentPropertyCodec
+	result     any
+}
 
 var _ brigodier.ArgumentType = (*passthroughProperty)(nil)
 
@@ -171,7 +181,7 @@ func init() {
 	register(id("brigadier:string", mapSet(Minecraft_1_19, 5)), brigodier.String, StringArgumentPropertyCodec)
 
 	// Minecraft argument types
-	register(id("minecraft:entity", mapSet(Minecraft_1_19, 6)), ByteArgumentType(0), ByteArgumentPropertyCodec)
+	emptyWithCodec(id("minecraft:entity", mapSet(Minecraft_1_19, 6)), ByteArgumentPropertyCodec)
 	empty(id("minecraft:game_profile", mapSet(Minecraft_1_19, 7)))
 	empty(id("minecraft:block_pos", mapSet(Minecraft_1_19, 8)))
 	empty(id("minecraft:column_pos", mapSet(Minecraft_1_19, 9)))
@@ -195,7 +205,7 @@ func init() {
 	empty(id("minecraft:angle", mapSet(Minecraft_1_20_3, 27), mapSet(Minecraft_1_19, 26)))
 	empty(id("minecraft:rotation", mapSet(Minecraft_1_20_3, 28), mapSet(Minecraft_1_19, 27)))
 	empty(id("minecraft:scoreboard_slot", mapSet(Minecraft_1_20_3, 29), mapSet(Minecraft_1_19, 28)))
-	register(id("minecraft:score_holder", mapSet(Minecraft_1_20_3, 30), mapSet(Minecraft_1_19, 29)), ByteArgumentType(0), ByteArgumentPropertyCodec)
+	emptyWithCodec(id("minecraft:score_holder", mapSet(Minecraft_1_20_3, 30), mapSet(Minecraft_1_19, 29)), ByteArgumentPropertyCodec)
 	empty(id("minecraft:swizzle", mapSet(Minecraft_1_20_3, 31), mapSet(Minecraft_1_19, 30)))
 	empty(id("minecraft:team", mapSet(Minecraft_1_20_3, 32), mapSet(Minecraft_1_19, 31)))
 	empty(id("minecraft:item_slot", mapSet(Minecraft_1_20_3, 33), mapSet(Minecraft_1_19, 32)))
@@ -210,7 +220,7 @@ func init() {
 	empty(id("minecraft:entity_summon", mapSet(Minecraft_1_19_3, -1), mapSet(Minecraft_1_19, 40)))
 	empty(id("minecraft:dimension", mapSet(Minecraft_1_20_5, 40), mapSet(Minecraft_1_20_3, 39), mapSet(Minecraft_1_19_3, 38), mapSet(Minecraft_1_19, 41)))
 	empty(id("minecraft:gamemode", mapSet(Minecraft_1_20_5, 41), mapSet(Minecraft_1_20_3, 40), mapSet(Minecraft_1_19_3, 39)))
-	register(id("minecraft:time", mapSet(Minecraft_1_20_5, 42), mapSet(Minecraft_1_20_3, 41), mapSet(Minecraft_1_19_3, 40), mapSet(Minecraft_1_19, 42)), IntArgumentType(0), TimeArgumentPropertyCodec)
+	emptyWithCodec(id("minecraft:time", mapSet(Minecraft_1_20_5, 42), mapSet(Minecraft_1_20_3, 41), mapSet(Minecraft_1_19_3, 40), mapSet(Minecraft_1_19, 42)), TimeArgumentPropertyCodec)
 	register(id("minecraft:resource_or_tag", mapSet(Minecraft_1_20_5, 43), mapSet(Minecraft_1_20_3, 42), mapSet(Minecraft_1_19_3, 41), mapSet(Minecraft_1_19, 43)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
 	register(id("minecraft:resource_or_tag_key", mapSet(Minecraft_1_20_5, 44), mapSet(Minecraft_1_20_3, 43), mapSet(Minecraft_1_19_3, 42)), ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
 	register(id("minecraft:resource", mapSet(Minecraft_1_20_5, 45), mapSet(Minecraft_1_20_3, 44), mapSet(Minecraft_1_19_3, 43), mapSet(Minecraft_1_19, 44)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
