@@ -142,9 +142,9 @@ var (
 	TimeArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
-				i, ok := v.(IntArgumentType)
+				i, ok := v.(int)
 				if ok {
-					return util.WriteInt(wr, int(i))
+					return util.WriteInt(wr, i)
 				}
 			}
 			return nil
@@ -152,9 +152,9 @@ var (
 		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
 			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
 				b, err := util.ReadInt(rd)
-				return IntArgumentType(b), err
+				return b, err
 			}
-			return IntArgumentType(0), nil
+			return 0, nil
 		},
 	}
 
