@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.0.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/gate v0.39.2
+	go.minekube.com/gate v0.39.3
 )
 
 require (
@@ -47,7 +47,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/urfave/cli/v2 v2.27.3 // indirect
+	github.com/urfave/cli/v2 v2.27.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.minekube.com/connect v0.6.1 // indirect
