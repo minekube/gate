@@ -19,7 +19,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.7.1-0.20231012122632-e5b291b295b4
 	github.com/robinbraemer/event v0.0.1
-	github.com/rs/xid v1.5.0
+	github.com/rs/xid v1.6.0
 	github.com/sandertv/go-raknet v1.13.0
 	github.com/sandertv/gophertunnel v1.37.0
 	github.com/spf13/viper v1.19.0
