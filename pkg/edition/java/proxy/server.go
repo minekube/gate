@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"net"
 	"strings"
 	"sync"
@@ -495,7 +496,24 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 }
 
 func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) string {
-	// TODO see https://github.com/PaperMC/Velocity/blob/e60e2063a87c8904b5ad89680aa51698b1ef8a0c/proxy/src/main/java/com/velocitypowered/proxy/connection/backend/VelocityServerConnection.java#L154
+	// Bungeeguard IP forwading is the same as the legacy Bungeecord IP forwarding but with an additional
+	// property in the profile properties that contains the bungeeguard-token.
+	playerIP := netutil.Host(s.player.RemoteAddr())
+	b := new(strings.Builder)
+	b.WriteString(s.server.ServerInfo().Addr().String())
+	const sep = "\000"
+	b.WriteString(sep)
+	b.WriteString(playerIP)
+	b.WriteString(sep)
+	b.WriteString(s.player.profile.ID.Undashed())
+	b.WriteString(sep)
+	props, err := json.Marshal(
+		append(s.player.profile.Properties, profile.Property{Name: "bungeeguard-token", Value: secret}))
+	if err != nil { // should never happen
+		panic(err)
+	}
+	b.WriteString(string(props)) // first convert props to string
+	return b.String()
 }
 
 // Returns the active backend server connection or false if inactive.
