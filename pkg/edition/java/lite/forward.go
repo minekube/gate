@@ -222,6 +222,15 @@ func dialRoute(
 	if route.ModifyVirtualHost {
 		clearedHost := ClearVirtualHost(handshake.ServerAddress)
 		backendHost := netutil.HostStr(backendAddr)
+		
+		fmlsuffix := "\x00FML\x00"
+		// 检查字符串是否以指定的后缀结尾
+		if strings.HasSuffix(handshake.ServerAddress, fmlsuffix) {
+			// 移除字符串尾部的后缀
+			handshake.ServerAddress = strings.TrimSuffix(handshake.ServerAddress, fmlsuffix)
+		}
+		fmt.Println("Modified string:", handshake.ServerAddress)
+	
 		if !strings.EqualFold(clearedHost, backendHost) {
 			// Modify the handshake packet to use the backend host as virtual host.
 			handshake.ServerAddress = strings.ReplaceAll(handshake.ServerAddress, clearedHost, backendHost)
