@@ -35,6 +35,10 @@ type (
 		RealIP            bool `json:"realIP,omitempty" yaml:"realIP,omitempty"`
 		TCPShieldRealIP   bool `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
 		ModifyVirtualHost bool `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		UseSocks5Proxy    bool `json:"UseSocks5Proxy,omitempty" yaml:"UseSocks5Proxy,omitempty"`     // 是否使用 SOCKS5 代理
+		Socks5ProxyAddr  string `json:"Socks5ProxyAddr,omitempty" yaml:"Socks5ProxyAddr,omitempty"`  // SOCKS5 代理地址
+		Socks5ProxyUser  string `json:"Socks5ProxyUser,omitempty" yaml:"Socks5ProxyUser,omitempty"`  // SOCKS5 代理用户名
+		Socks5ProxyPass  string `json:"Socks5ProxyPass,omitempty" yaml:"Socks5ProxyPass,omitempty"`  // SOCKS5 代理密码
 	}
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`

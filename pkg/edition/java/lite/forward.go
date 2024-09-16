@@ -24,6 +24,7 @@ import (
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"golang.org/x/sync/singleflight"
+	"golang.org/x/net/proxy"
 )
 
 // Forward forwards a client connection to a matching backend route.
@@ -181,77 +182,89 @@ func findRoute(
 }
 
 func dialRoute(
-	ctx context.Context,
-	dialTimeout time.Duration,
-	srcAddr net.Addr,
-	route *config.Route,
-	backendAddr string,
-	handshake *packet.Handshake,
-	handshakeCtx *proto.PacketContext,
-	forceUpdatePacketContext bool,
+    ctx context.Context,
+    dialTimeout time.Duration,
+    srcAddr net.Addr,
+    route *config.Route,
+    backendAddr string,
+    handshake *packet.Handshake,
+    handshakeCtx *proto.PacketContext,
+    forceUpdatePacketContext bool,
 ) (dst net.Conn, err error) {
-	dialCtx, cancel := context.WithTimeout(ctx, dialTimeout)
-	defer cancel()
+    dialCtx, cancel := context.WithTimeout(ctx, dialTimeout)
+    defer cancel()
 
-	var dialer net.Dialer
-	dst, err = dialer.DialContext(dialCtx, "tcp", backendAddr)
-	if err != nil {
-		v := 0
-		if dialCtx.Err() != nil {
-			v++
-		}
-		return nil, &errs.VerbosityError{
-			Verbosity: v,
-			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
-		}
-	}
-	dstConn := dst
-	defer func() {
-		if err != nil {
-			_ = dstConn.Close()
-		}
-	}()
+    var dialer proxy.Dialer
 
-	if route.ProxyProtocol {
-		header := protoutil.ProxyHeader(srcAddr, dst.RemoteAddr())
-		if _, err = header.WriteTo(dst); err != nil {
-			return dst, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
-		}
-	}
+    if route.UseSocks5Proxy {
+		fmt.Printf("%s Using Socks Proxy %s \n", ClearVirtualHost(handshake.ServerAddress), route.Socks5ProxyAddr)
+        socks5ProxyAddr := route.Socks5ProxyAddr  // 从 route 配置中读取代理地址
+        auth := &proxy.Auth{
+            User:     route.Socks5ProxyUser,  // 你的 SOCKS5 代理用户名
+            Password: route.Socks5ProxyPass,  // 你的 SOCKS5 代理密码
+        }
+        // 创建 SOCKS5 拨号器
+        dialer, err = proxy.SOCKS5("tcp", socks5ProxyAddr, auth, proxy.Direct)
+        if err != nil {
+            return nil, fmt.Errorf("failed to create SOCKS5 proxy dialer with auth: %w", err)
+        }
+    } else {
+		fmt.Printf("%s Not Using Socks Proxy \n", ClearVirtualHost(handshake.ServerAddress))
+        // 不使用代理时，直接使用默认拨号器
+        dialer = &net.Dialer{}
+        dst, err = dialer.(*net.Dialer).DialContext(dialCtx, "tcp", backendAddr)
+    }
 
-	if route.ModifyVirtualHost {
-		clearedHost := ClearVirtualHost(handshake.ServerAddress)
-		backendHost := netutil.HostStr(backendAddr)
-		
-		fmlsuffix := "\x00FML\x00"
-		// 检查字符串是否以指定的后缀结尾
-		if strings.HasSuffix(handshake.ServerAddress, fmlsuffix) {
-			// 移除字符串尾部的后缀
-			handshake.ServerAddress = strings.TrimSuffix(handshake.ServerAddress, fmlsuffix)
-		}
-		fmt.Println("Modified string:", handshake.ServerAddress)
-	
-		if !strings.EqualFold(clearedHost, backendHost) {
-			// Modify the handshake packet to use the backend host as virtual host.
-			handshake.ServerAddress = strings.ReplaceAll(handshake.ServerAddress, clearedHost, backendHost)
-			forceUpdatePacketContext = true
-		}
-	}
-	if route.GetTCPShieldRealIP() && IsTCPShieldRealIP(handshake.ServerAddress) {
-		// Modify the handshake packet to use TCPShieldRealIP of the client.
-		handshake.ServerAddress = TCPShieldRealIP(handshake.ServerAddress, srcAddr)
-		forceUpdatePacketContext = true
-	}
-	if forceUpdatePacketContext {
-		update(handshakeCtx, handshake)
-	}
+    // 使用代理拨号器（或直接拨号器）连接目标地址
+    dst, err = dialer.Dial("tcp", backendAddr)
+    if err != nil {
+        return nil, fmt.Errorf("failed to connect to backend %s via SOCKS5 proxy: %w", backendAddr, err)
+    }
+    
+    defer func() {
+        if err != nil {
+            _ = dst.Close()
+        }
+    }()
 
-	// Forward handshake packet as is.
-	if err = writePacket(dst, handshakeCtx); err != nil {
-		return dst, fmt.Errorf("failed to write handshake packet to backend: %w", err)
-	}
+    if route.ProxyProtocol {
+        header := protoutil.ProxyHeader(srcAddr, dst.RemoteAddr())
+        if _, err = header.WriteTo(dst); err != nil {
+            return dst, fmt.Errorf("failed to write proxy protocol header to backend: %w", err)
+        }
+    }
 
-	return dst, nil
+    if route.ModifyVirtualHost {
+        clearedHost := ClearVirtualHost(handshake.ServerAddress)
+        backendHost := netutil.HostStr(backendAddr)
+        
+        fmlsuffix := "\x00FML\x00"
+        // 检查字符串是否以指定的后缀结尾
+        if strings.HasSuffix(handshake.ServerAddress, fmlsuffix) {
+            // 移除字符串尾部的后缀
+            handshake.ServerAddress = strings.TrimSuffix(handshake.ServerAddress, fmlsuffix)
+        }
+
+        if !strings.EqualFold(clearedHost, backendHost) {
+            handshake.ServerAddress = strings.ReplaceAll(handshake.ServerAddress, clearedHost, backendHost)
+            forceUpdatePacketContext = true
+        }
+    }
+
+    if route.GetTCPShieldRealIP() && IsTCPShieldRealIP(handshake.ServerAddress) {
+        handshake.ServerAddress = TCPShieldRealIP(handshake.ServerAddress, srcAddr)
+        forceUpdatePacketContext = true
+    }
+
+    if forceUpdatePacketContext {
+        update(handshakeCtx, handshake)
+    }
+
+    if err = writePacket(dst, handshakeCtx); err != nil {
+        return dst, fmt.Errorf("failed to write handshake packet to backend: %w", err)
+    }
+
+    return dst, nil
 }
 
 func writePacket(dst net.Conn, pc *proto.PacketContext) error {
