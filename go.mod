@@ -15,7 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.5.4
 	github.com/jellydator/ttlcache/v3 v3.3.0
-	github.com/knadh/koanf/providers/file v1.1.0
+	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.7.1-0.20231012122632-e5b291b295b4
 	github.com/robinbraemer/event v0.0.1
