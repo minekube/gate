@@ -238,7 +238,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(
 		ctx, configLog, eventMgr,
-		c.autoConfigReloadWatchPath,
+		c.autoConfigReloadWatchPath, c.conf,
 	)
 	if err != nil {
 		return fmt.Errorf("error setting up auto config reload: %w", err)
@@ -254,11 +254,13 @@ func setupAutoConfigReload(
 	log logr.Logger,
 	mgr event.Manager,
 	path string,
+	initialCfg *config.Config,
 ) error {
 	if path == "" {
 		return nil // No auto config reload
 	}
 	log.Info("auto config reload enabled", "path", path)
+	prevCfg := initialCfg
 	// Watch config file for changes
 	return reload.Watch(ctx, path, func() error {
 		cfg, err := LoadConfig(Viper)
@@ -268,7 +270,8 @@ func setupAutoConfigReload(
 		if err = validateConfig(log, cfg); err != nil {
 			return err
 		}
-		reload.FireConfigUpdate(mgr, cfg)
+		reload.FireConfigUpdate(mgr, cfg, prevCfg)
+		prevCfg = cfg
 		return nil
 	})
 }

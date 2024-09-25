@@ -93,18 +93,23 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleKeyedPlayerCommand(p)
 	case *chat.SessionPlayerCommand:
 		c.handleSessionPlayerCommand(p)
+	case *chat.UnsignedPlayerCommand:
+		c.handleSessionPlayerCommand(&p.SessionPlayerCommand)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
 		c.handlePluginMessage(p)
 	case *packet.ResourcePackResponse:
-		c.player.onResourcePackResponse(p.Status)
-		c.forwardToServer(pc) // forward to server
+		if !handleResourcePackResponse(p, c.player.resourcePackHandler, c.log) {
+			forwardToServer(pc, c.player)
+		}
 	case *packet.ClientSettings:
 		c.player.setClientSettings(p)
 		c.forwardToServer(pc) // forward to server
 	case *config.FinishedUpdate:
 		c.handleFinishedUpdate(p)
+	case *chat.ChatAcknowledgement:
+		c.handleChatAcknowledgement(p)
 	default:
 		c.forwardToServer(pc)
 	}
@@ -205,22 +210,28 @@ func phaseHandle(
 }
 
 func (c *clientPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	handleKeepAlive(p, c.player)
+	forwardKeepAlive(p, c.player)
 }
-func handleKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
+
+func forwardKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
 	serverConn := player.connectedServer()
+	if !sendKeepAliveToBackend(serverConn, player, p) {
+		connInFlight := player.connectionInFlight()
+		sendKeepAliveToBackend(connInFlight, player, p)
+	}
+}
+
+func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlayer, p *packet.KeepAlive) bool {
 	if serverConn != nil {
-		sentTime, ok := serverConn.pendingPings.Get(p.RandomID)
-		if !ok {
-			return
-		}
-		serverConn.pendingPings.Delete(p.RandomID)
-		serverMc := serverConn.conn()
-		if serverMc != nil {
-			player.ping.Store(time.Since(sentTime))
-			_ = serverMc.WritePacket(p)
+		if sentTime, ok := serverConn.pendingPings.Get(p.RandomID); ok {
+			serverConn.pendingPings.Delete(p.RandomID)
+			if serverMc := serverConn.conn(); serverMc != nil {
+				player.ping.Store(time.Since(sentTime))
+				return serverMc.WritePacket(p) == nil
+			}
 		}
 	}
+	return false
 }
 
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
@@ -803,6 +814,13 @@ func (c *clientPlaySessionHandler) handleFinishedUpdate(p *config.FinishedUpdate
 		}()
 	}
 	c.configSwitchFuture.Complete(nil)
+}
+
+func (c *clientPlaySessionHandler) handleChatAcknowledgement(p *chat.ChatAcknowledgement) {
+	if c.player.CurrentServer() == nil {
+		return
+	}
+	c.player.chatQueue.HandleAcknowledgement(p.Offset)
 }
 
 // doSwitch handles switching stages for swapping between servers.

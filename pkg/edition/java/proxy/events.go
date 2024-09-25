@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"net"
 
 	"go.minekube.com/brigodier"
@@ -10,7 +12,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
 	"go.minekube.com/gate/pkg/util/permission"
@@ -86,11 +87,17 @@ func (e *ConnectionEvent) SetConnection(conn net.Conn) {
 // is established between a client and the proxy.
 type ConnectionHandshakeEvent struct {
 	inbound Inbound
+	intent  packet.HandshakeIntent
 }
 
 // Connection returns the inbound connection.
 func (e *ConnectionHandshakeEvent) Connection() Inbound {
 	return e.inbound
+}
+
+// Intent returns the handshake intent.
+func (e *ConnectionHandshakeEvent) Intent() packet.HandshakeIntent {
+	return e.intent
 }
 
 //
@@ -230,15 +237,17 @@ func (p *PermissionsSetupEvent) SetFunc(fn permission.Func) {
 type PreLoginEvent struct {
 	connection Inbound
 	username   string
+	id         uuid.UUID // player's uuid, nil-able
 
 	result PreLoginResult
 	reason component.Component
 }
 
-func newPreLoginEvent(conn Inbound, username string) *PreLoginEvent {
+func newPreLoginEvent(conn Inbound, username string, id uuid.UUID) *PreLoginEvent {
 	return &PreLoginEvent{
 		connection: conn,
 		username:   username,
+		id:         id,
 		result:     AllowedPreLogin,
 	}
 }
@@ -257,6 +266,13 @@ const (
 // Username returns the username of the player.
 func (e *PreLoginEvent) Username() string {
 	return e.username
+}
+
+// ID returns the UUID of the connecting player. May be uuid.Nil!
+// This value is nil on 1.19.2 and lower,
+// up to 1.20.1 it is optional and from 1.20.2 it will always be available.
+func (e *PreLoginEvent) ID() (uuid.UUID, bool) {
+	return e.id, e.id == uuid.Nil
 }
 
 // Conn returns the inbound connection that is connecting to the proxy.
@@ -468,6 +484,51 @@ func (e *ServerPreConnectEvent) Allowed() bool {
 // nil if Allowed() returns false.
 func (e *ServerPreConnectEvent) Server() RegisteredServer {
 	return e.server
+}
+
+//
+//
+//
+//
+//
+//
+
+// PreTransferEvent is fired before a player is transferred to another host,
+// either by the backend server or by a plugin using the Player.TransferTo method.
+type PreTransferEvent struct {
+	player       Player
+	originalAddr net.Addr
+	targetAddr   net.Addr
+	denied       bool
+}
+
+func newPreTransferEvent(player Player, addr net.Addr) *PreTransferEvent {
+	return &PreTransferEvent{
+		player:       player,
+		originalAddr: addr,
+		targetAddr:   addr,
+	}
+}
+
+// TransferTo changes the target address the player will be transferred to.
+func (e *PreTransferEvent) TransferTo(addr net.Addr) {
+	e.targetAddr = addr
+	e.denied = false
+}
+
+// Addr returns the target address the player will be transferred to.
+func (e *PreTransferEvent) Addr() net.Addr {
+	return e.targetAddr
+}
+
+// Allowed returns true if the transfer is allowed.
+func (e *PreTransferEvent) Allowed() bool {
+	return !e.denied
+}
+
+// Player returns the player that is about to be transferred.
+func (e *PreTransferEvent) Player() Player {
+	return e.player
 }
 
 //
@@ -878,69 +939,33 @@ func (p *PlayerAvailableCommandsEvent) RootNode() *brigodier.RootCommandNode {
 //
 
 // ResourcePackResponseStatus represents the possible statuses for the resource pack.
-type ResourcePackResponseStatus = packet.ResourcePackResponseStatus
+type ResourcePackResponseStatus = resourcepack.ResponseStatus
 
 // Possible statuses for a resource pack.
 
 const (
 	// SuccessfulResourcePackResponseStatus indicates the resource pack was applied successfully.
-	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = iota
+	SuccessfulResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.SuccessfulResponseStatus
 	// DeclinedResourcePackResponseStatus indicates the player declined to download the resource pack.
-	DeclinedResourcePackResponseStatus
+	DeclinedResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.DeclinedResponseStatus
 	// FailedDownloadResourcePackResponseStatus indicates the player could not download the resource pack.
-	FailedDownloadResourcePackResponseStatus
+	FailedDownloadResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.FailedDownloadResponseStatus
 	// AcceptedResourcePackResponseStatus indicates the player has accepted the resource pack and is now downloading it.
-	AcceptedResourcePackResponseStatus
+	AcceptedResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.AcceptedResponseStatus
 	// DownloadedResourcePackResponseStatus indicates the player has downloaded the resource pack.
-	DownloadedResourcePackResponseStatus
+	DownloadedResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.DownloadedResponseStatus
 	// InvalidURLResourcePackResponseStatus indicates the URL of the resource pack failed to load.
-	InvalidURLResourcePackResponseStatus
+	InvalidURLResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.InvalidURLResponseStatus
 	// FailedToReloadResourcePackResponseStatus indicates the player failed to reload the resource pack.
-	FailedToReloadResourcePackResponseStatus
+	FailedToReloadResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.FailedToReloadResponseStatus
 	// DiscardedResourcePackResponseStatus indicates the resource pack was discarded.
-	DiscardedResourcePackResponseStatus
+	DiscardedResourcePackResponseStatus ResourcePackResponseStatus = resourcepack.DiscardedResponseStatus
 )
 
 // PlayerResourcePackStatusEvent is fired when the status of a resource pack sent to the player by the server is
 // changed. Depending on the result of this event (which the proxy will wait until completely fired),
 // the player may be kicked from the server.
-type PlayerResourcePackStatusEvent struct {
-	player        Player
-	status        ResourcePackResponseStatus
-	packInfo      ResourcePackInfo
-	overwriteKick bool
-}
-
-// Player returns the player affected by the change in resource pack status.
-func (p *PlayerResourcePackStatusEvent) Player() Player {
-	return p.player
-}
-
-// Status returns the new status for the resource pack.
-func (p *PlayerResourcePackStatusEvent) Status() ResourcePackResponseStatus {
-	return p.status
-}
-
-// PackInfo returns the ResourcePackInfo this response is for.
-func (p *PlayerResourcePackStatusEvent) PackInfo() ResourcePackInfo {
-	return p.packInfo
-}
-
-// OverwriteKick returns whether to override the kick resulting from ResourcePackInfo.ShouldForce() being true.
-func (p *PlayerResourcePackStatusEvent) OverwriteKick() bool {
-	return p.overwriteKick
-}
-
-// SetOverwriteKick can set to true to prevent ResourcePackInfo.ShouldForce()
-// from kicking the player. Overwriting this kick is only possible on versions older than 1.17,
-// as the client or server will enforce this regardless. Cancelling the resulting
-// kick-events will not prevent the player from disconnecting from the proxy.
-func (p *PlayerResourcePackStatusEvent) SetOverwriteKick(overwriteKick bool) {
-	if p.player.Protocol().LowerEqual(version.Minecraft_1_17) {
-		return // overwriteKick is not supported on 1.17 or newer
-	}
-	p.overwriteKick = overwriteKick
-}
+type PlayerResourcePackStatusEvent = resourcepack.PlayerResourcePackStatusEvent
 
 //
 //

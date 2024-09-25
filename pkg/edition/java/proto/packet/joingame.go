@@ -31,6 +31,7 @@ type JoinGame struct {
 	SimulationDistance   int                    // 1.18+
 	LastDeathPosition    *DeathPosition         // 1.19+
 	PortalCooldown       int                    // 1.20+
+	EnforcesSecureChat   bool                   // 1.20.5+
 }
 
 type DimensionInfo struct {
@@ -38,6 +39,16 @@ type DimensionInfo struct {
 	LevelName          *string // nil-able
 	Flat               bool
 	DebugType          bool
+}
+
+// Validate checks if the dimension info is valid for the given protocol version.
+func (d *DimensionInfo) Validate(p proto.Protocol) error {
+	if p.Lower(version.Minecraft_1_20_5) {
+		if d.RegistryIdentifier == "" {
+			return fmt.Errorf("dimension info registry identifier must not be empty since %s", version.Minecraft_1_20_5)
+		}
+	}
+	return nil
 }
 
 type DeathPosition struct {
@@ -179,7 +190,11 @@ func (j *JoinGame) encode1202Up(c *proto.PacketContext, wr io.Writer) error {
 	w.Bool(j.ReducedDebugInfo)
 	w.Bool(j.ShowRespawnScreen)
 	w.Bool(j.DoLimitedCrafting)
-	w.String(j.DimensionInfo.RegistryIdentifier)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		w.VarInt(j.Dimension)
+	} else {
+		w.String(j.DimensionInfo.RegistryIdentifier)
+	}
 	if j.DimensionInfo.LevelName == nil {
 		return errors.New("dimension info level name must not be nil")
 	}
@@ -197,6 +212,9 @@ func (j *JoinGame) encode1202Up(c *proto.PacketContext, wr io.Writer) error {
 		w.Bool(false)
 	}
 	w.VarInt(j.PortalCooldown)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		w.Bool(j.EnforcesSecureChat)
+	}
 	return nil
 }
 
@@ -312,6 +330,9 @@ func (j *JoinGame) decode116Up(c *proto.PacketContext, rd io.Reader) (err error)
 		Flat:               flat,
 		DebugType:          debug,
 	}
+	if err = j.DimensionInfo.Validate(c.Protocol); err != nil {
+		return err
+	}
 
 	// optional death location
 	if c.Protocol.GreaterEqual(version.Minecraft_1_19) {
@@ -339,7 +360,12 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 	r.Bool(&j.ShowRespawnScreen)
 	r.Bool(&j.DoLimitedCrafting)
 
-	dimensionIdentifier := util.PReadStringVal(rd)
+	dimensionKey := ""
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		r.VarInt(&j.Dimension)
+	} else {
+		r.String(&dimensionKey)
+	}
 	levelName := util.PReadStringVal(rd)
 	r.Int64(&j.PartialHashedSeed)
 
@@ -349,10 +375,13 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 	isDebug := r.Ok()
 	isFlat := r.Ok()
 	j.DimensionInfo = &DimensionInfo{
-		RegistryIdentifier: dimensionIdentifier,
+		RegistryIdentifier: dimensionKey,
 		LevelName:          &levelName,
 		Flat:               isFlat,
 		DebugType:          isDebug,
+	}
+	if err := j.DimensionInfo.Validate(c.Protocol); err != nil {
+		return err
 	}
 
 	// optional death location
@@ -364,6 +393,9 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 	}
 
 	r.VarInt(&j.PortalCooldown)
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		r.Bool(&j.EnforcesSecureChat)
+	}
 
 	return nil
 }

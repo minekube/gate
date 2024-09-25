@@ -2,21 +2,21 @@ package state
 
 import (
 	"fmt"
-	"reflect"
-
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"reflect"
 )
 
 // Registry stores server/client bound packets for a specific State.
 type Registry struct {
-	State
+	states.State
 	ServerBound *PacketRegistry
 	ClientBound *PacketRegistry
 }
 
 // NewRegistry returns a new state registry.
-func NewRegistry(state State) *Registry {
+func NewRegistry(state states.State) *Registry {
 	return &Registry{
 		State:       state,
 		ServerBound: NewPacketRegistry(proto.ServerBound),
@@ -203,21 +203,4 @@ func versionRange(versions []*proto.Version, from, to proto.Protocol, fn func(pr
 			}
 		}
 	}
-}
-
-// String implements fmt.Stringer.
-func (s State) String() string {
-	switch s {
-	case HandshakeState:
-		return "Handshake"
-	case StatusState:
-		return "Status"
-	case ConfigState:
-		return "Config"
-	case LoginState:
-		return "Login"
-	case PlayState:
-		return "Play"
-	}
-	return "UnknownState"
 }

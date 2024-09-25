@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -92,4 +93,17 @@ func (c Config) Validate() (warns []error, errs []error) {
 	}
 
 	return
+}
+
+// Equal returns true if the Routes are equal.
+func (r *Route) Equal(other *Route) bool {
+	j, err := json.Marshal(r)
+	if err != nil {
+		return false
+	}
+	o, err := json.Marshal(other)
+	if err != nil {
+		return false
+	}
+	return string(j) == string(o)
 }

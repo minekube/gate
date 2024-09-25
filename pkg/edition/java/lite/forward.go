@@ -309,6 +309,12 @@ var (
 	sfg       = new(singleflight.Group)
 )
 
+// ResetPingCache resets the ping cache.
+func ResetPingCache() {
+	pingCache.DeleteAll()
+	compiledRegexCache.DeleteAll()
+}
+
 func init() {
 	go pingCache.Start() // start ttl eviction once
 }

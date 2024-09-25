@@ -275,11 +275,13 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 	smc.SetActiveSessionHandler(state.Play, backendPlay)
 
-	// Clean up disabling auto-read while the connected event was being processed.
-	smc.SetAutoReading(true)
-
 	// Now set the connected server.
 	b.serverConn.player.setConnectedServer(b.serverConn)
+
+	// Clean up disabling auto-read while the connected event was being processed.
+	// Do this after setting the connection, so no incoming packets are processed before
+	// the API knows which server the player is connected to.
+	smc.SetAutoReading(true)
 
 	// Send client settings. In 1.20.2+ this is done in the config state.
 	if smc.Protocol().Lower(version.Minecraft_1_20_2) {

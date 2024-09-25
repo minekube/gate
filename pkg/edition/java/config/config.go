@@ -9,6 +9,7 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/validation"
+	"time"
 )
 
 // DefaultConfig is a default Config.
@@ -38,8 +39,8 @@ var DefaultConfig = Config{
 	Try:                                  []string{},
 	ForcedHosts:                          map[string][]string{},
 	FailoverOnUnexpectedServerDisconnect: true,
-	ConnectionTimeout:                    5000,
-	ReadTimeout:                          30000,
+	ConnectionTimeout:                    configutil.Duration(5000 * time.Millisecond),
+	ReadTimeout:                          configutil.Duration(30000 * time.Millisecond),
 	Quota: Quota{
 		Connections: QuotaSettings{
 			Enabled:    true,
@@ -108,6 +109,7 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 
 	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections" json:"shouldPreventClientProxyConnections,omitempty"` // Sends player IP to Mojang on login
 
+	AcceptTransfers                  bool `yaml:"acceptTransfers,omitempty" json:"acceptTransfers,omitempty"`                                   // Whether to accept transfers from other hosts via transfer packet
 	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled,omitempty" json:"bungeePluginChannelEnabled,omitempty"`             // Whether to enable BungeeCord plugin messaging
 	BuiltinCommands                  bool `yaml:"builtinCommands,omitempty" json:"builtinCommands,omitempty"`                                   // Whether to enable builtin commands
 	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions,omitempty" json:"requireBuiltinCommandPermissions,omitempty"` // Whether builtin commands require player permissions

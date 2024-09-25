@@ -13,7 +13,7 @@ import (
 type ServerData struct {
 	Description        *chat.ComponentHolder // nil-able
 	Favicon            favicon.Favicon       // may be empty
-	SecureChatEnforced bool                  // Added in 1.19.1
+	SecureChatEnforced bool                  // Added in 1.19.1 - Removed in 1.20.5
 }
 
 func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -40,7 +40,7 @@ func (s *ServerData) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
 		w.Bool(false)
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) && c.Protocol.Lower(version.Minecraft_1_20_5) {
 		w.Bool(s.SecureChatEnforced)
 	}
 	return nil
@@ -64,7 +64,7 @@ func (s *ServerData) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if c.Protocol.Lower(version.Minecraft_1_19_3) {
 		_ = r.Ok()
 	}
-	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) {
+	if c.Protocol.GreaterEqual(version.Minecraft_1_19_1) && c.Protocol.Lower(version.Minecraft_1_20_5) {
 		r.Bool(&s.SecureChatEnforced)
 	}
 	return nil
