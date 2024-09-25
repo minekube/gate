@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"net"
 	"strings"
@@ -343,8 +344,12 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ok bool
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 		if ha, ok = s.Server().(HandshakeAddresser); !ok {
-			if s.config().Forwarding.Mode == config.LegacyForwardingMode {
+			switch s.config().Forwarding.Mode {
+			case config.LegacyForwardingMode:
 				return s.createLegacyForwardingAddress()
+			case config.BungeeGuardForwardingMode:
+				secret := s.config().Forwarding.BungeeGuardSecret
+				return s.createBungeeGuardForwardingAddress(secret)
 			}
 		}
 	}
@@ -484,6 +489,27 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
 	props, err := json.Marshal(s.player.profile.Properties)
+	if err != nil { // should never happen
+		panic(err)
+	}
+	b.WriteString(string(props)) // first convert props to string
+	return b.String()
+}
+
+func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) string {
+	// Bungeeguard IP forwading is the same as the legacy Bungeecord IP forwarding but with an additional
+	// property in the profile properties that contains the bungeeguard-token.
+	playerIP := netutil.Host(s.player.RemoteAddr())
+	b := new(strings.Builder)
+	b.WriteString(s.server.ServerInfo().Addr().String())
+	const sep = "\000"
+	b.WriteString(sep)
+	b.WriteString(playerIP)
+	b.WriteString(sep)
+	b.WriteString(s.player.profile.ID.Undashed())
+	b.WriteString(sep)
+	props, err := json.Marshal(
+		append(s.player.profile.Properties, profile.Property{Name: "bungeeguard-token", Value: secret}))
 	if err != nil { // should never happen
 		panic(err)
 	}

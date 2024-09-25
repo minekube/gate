@@ -13,14 +13,14 @@ We highly recommend using [Paper](https://papermc.io/) for running a server in m
 Gate is tested with older and most recent versions of it.
 
 You can use `modern` forwarding (like Velocity does) if you run Paper
-1.13.2 or higher. If you use Paper 1.12.2 or lower, you must use `legacy` BungeeCord-style forwarding.
+1.13.2 or higher. If you use Paper 1.12.2 or lower, you can use `legacy` BungeeCord-style forwarding or the more secure `bungeeguard` [Bungeeguard](https://www.spigotmc.org/resources/bungeeguard.79601/) forwarding.
 
 ## Spigot
 
 Spigot is not well-tested with Gate.
 However, it is based on vanilla and as it is the base for Paper, it is relatively well-supported.
 
-Spigot does not support Gate/Velocity modern forwarding, but does support legacy BungeeCord forwarding.
+Spigot does not support Gate/Velocity modern forwarding, but does support legacy BungeeCord forwarding and the more secure Bungeeguard forwarding when using the [Bungeeguard](https://www.spigotmc.org/resources/bungeeguard.79601/) plugin.
 
 ## Forks of Spigot/Paper
 
