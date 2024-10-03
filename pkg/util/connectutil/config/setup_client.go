@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/go-logr/logr"
 	"go.minekube.com/connect"
 	"go.minekube.com/connect/ws"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"nhooyr.io/websocket"
 
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"

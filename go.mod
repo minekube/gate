@@ -5,6 +5,7 @@ go 1.22.2
 require (
 	github.com/Tnze/go-mc v1.20.2
 	github.com/agext/levenshtein v1.2.3
+	github.com/coder/websocket v1.8.12
 	github.com/dboslee/lru v0.0.1
 	github.com/edwingeng/deque/v2 v2.1.1
 	github.com/gammazero/deque v0.2.1
@@ -28,7 +29,7 @@ require (
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
-	go.minekube.com/connect v0.6.1
+	go.minekube.com/connect v0.6.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
@@ -37,7 +38,6 @@ require (
 	golang.org/x/time v0.6.0
 	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
-	nhooyr.io/websocket v1.8.11
 )
 
 require (
