@@ -919,6 +919,53 @@ func (t *TabCompleteEvent) PartialMessage() string {
 //
 //
 
+// ConnectionErrorEvent is fired after unexpected disconnects.
+type ConnectionErrorEvent struct {
+	err    error
+	safe   bool
+	player Player
+	server RegisteredServer
+}
+
+// newConnectionErrorEvent creates a new ConnectionErrorEvent.
+func newConnectionErrorEvent(
+	err error, safe bool,
+	player Player,
+	server RegisteredServer,
+) *ConnectionErrorEvent {
+	return &ConnectionErrorEvent{
+		err:    err,
+		safe:   safe,
+		player: player,
+		server: server,
+	}
+}
+
+// Safe returns true when we can safely reconnect to a new server.
+func (c *ConnectionErrorEvent) Safe() bool {
+	return c.safe
+}
+
+// Error specifies connection error itself.
+func (c *ConnectionErrorEvent) Error() error {
+	return c.err
+}
+
+// Player returns the player caused connection error.
+func (c *ConnectionErrorEvent) Player() Player {
+	return c.player
+}
+
+// Server contains the server we disconnected from.
+func (c *ConnectionErrorEvent) Server() RegisteredServer {
+	return c.server
+}
+
+//
+//
+//
+//
+
 // PlayerAvailableCommandsEvent allows plugins to modify the packet
 // indicating commands available on the server to a Minecraft 1.13+ client.
 type PlayerAvailableCommandsEvent struct {
