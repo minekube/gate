@@ -160,6 +160,9 @@ func (p *connectedPlayer) handleConnectionErr(server RegisteredServer, err error
 		"serverAddr", server.ServerInfo().Addr())
 	log.V(1).Info("could not connect player to server", "error", err)
 
+	errorEvent := newConnectionErrorEvent(err, safe, p, server)
+	p.eventMgr.Fire(errorEvent)
+
 	if !p.Active() {
 		// If the connection is no longer active, we don't have to try recover it.
 		return
