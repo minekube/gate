@@ -45,6 +45,7 @@ var (
 	Minecraft_1_20_3 = v(765, "1.20.3", "1.20.4")
 	Minecraft_1_20_5 = v(766, "1.20.5", "1.20.6")
 	Minecraft_1_21   = v(767, "1.21", "1.21.1")
+	Minecraft_1_21_2 = v(768, "1.21.2", "1.21.3")
 
 	// Versions ordered from lowest to highest
 	Versions = []*proto.Version{
@@ -64,7 +65,7 @@ var (
 		Minecraft_1_18, Minecraft_1_18_2,
 		Minecraft_1_19, Minecraft_1_19_1, Minecraft_1_19_3, Minecraft_1_19_4,
 		Minecraft_1_20, Minecraft_1_20_2, Minecraft_1_20_3, Minecraft_1_20_5,
-		Minecraft_1_21,
+		Minecraft_1_21, Minecraft_1_21_2,
 	}
 )
 

@@ -4,16 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
-	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
-	"go.minekube.com/gate/pkg/internal/future"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
+	"go.minekube.com/gate/pkg/internal/future"
+
 	"github.com/gammazero/deque"
 	"go.minekube.com/common/minecraft/component"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
@@ -21,11 +24,11 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"go.uber.org/atomic"
 
 	"github.com/go-logr/logr"
 
 	"github.com/robinbraemer/event"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
@@ -520,6 +523,7 @@ func respawnFromJoinGame(joinGame *packet.JoinGame) *packet.Respawn {
 		CurrentDimensionData: joinGame.CurrentDimensionData,
 		LastDeathPosition:    joinGame.LastDeathPosition,
 		PortalCooldown:       joinGame.PortalCooldown,
+		SeaLevel:             joinGame.SeaLevel,
 	}
 }
 

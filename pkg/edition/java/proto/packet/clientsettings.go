@@ -1,10 +1,11 @@
 package packet
 
 import (
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type ClientSettings struct {
@@ -15,8 +16,9 @@ type ClientSettings struct {
 	Difficulty           byte // 1.7 Protocol
 	SkinParts            byte
 	MainHand             int
-	ChatFilteringEnabled bool // 1.17+
+	TextFilteringEnabled bool // 1.17+
 	ClientListingAllowed bool // 1.18+, overwrites server-list "anonymous" mode
+	ParticleStatus       int  // Added in 1.21.2
 }
 
 func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
@@ -32,10 +34,14 @@ func (s *ClientSettings) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
 		w.VarInt(s.MainHand)
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
-			w.Bool(s.ChatFilteringEnabled)
+			w.Bool(s.TextFilteringEnabled)
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
 			w.Bool(s.ClientListingAllowed)
+
+			if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+				w.VarInt(s.ParticleStatus)
+			}
 		}
 	}
 	return nil
@@ -54,10 +60,14 @@ func (s *ClientSettings) Decode(c *proto.PacketContext, rd io.Reader) (err error
 	if c.Protocol.GreaterEqual(version.Minecraft_1_9) {
 		r.VarInt(&s.MainHand)
 		if c.Protocol.GreaterEqual(version.Minecraft_1_17) {
-			r.Bool(&s.ChatFilteringEnabled)
+			r.Bool(&s.TextFilteringEnabled)
 		}
 		if c.Protocol.GreaterEqual(version.Minecraft_1_18) {
 			r.Bool(&s.ClientListingAllowed)
+
+			if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+				r.VarInt(&s.ParticleStatus)
+			}
 		}
 	}
 	return nil

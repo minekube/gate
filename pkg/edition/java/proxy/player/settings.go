@@ -1,9 +1,11 @@
 package player
 
 import (
-	"go.minekube.com/gate/pkg/edition/java/proto/packet"
-	"golang.org/x/text/language"
 	"strings"
+
+	"golang.org/x/text/language"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 )
 
 // Settings are the client settings the player gave us.
@@ -21,15 +23,29 @@ type Settings interface {
 	//
 	// This feature was introduced in 1.18.
 	ClientListing() bool
+	TextFiltering() bool            // Whether the client has text filtering enabled.
+	ParticleStatus() ParticleStatus // The particle status of the client.
 }
 
 var DefaultSettings = NewSettings(&packet.ClientSettings{
-	Locale:       "en_US",
-	ViewDistance: 10,
-	ChatColors:   true,
-	SkinParts:    127,
-	MainHand:     1,
+	Locale:               "en_US",
+	ViewDistance:         2,
+	ChatVisibility:       0,
+	ChatColors:           true,
+	SkinParts:            0,
+	MainHand:             1,
+	TextFilteringEnabled: false,
+	ClientListingAllowed: false,
+	ParticleStatus:       int(AllParticleStatus),
 })
+
+type ParticleStatus int
+
+const (
+	AllParticleStatus ParticleStatus = iota
+	DecreasedParticleStatus
+	MinimalParticleStatus
+)
 
 type ChatMode string
 
@@ -100,17 +116,28 @@ func (s *clientSettings) ViewDistance() uint8 {
 }
 
 func (s *clientSettings) ChatMode() ChatMode {
-	if s.s.ChatVisibility <= 0 || s.s.ChatVisibility > 2 {
+	switch s.s.ChatVisibility {
+	case 0:
+		return ShownChatMode
+	case 1:
+		return CommandsOnly
+	case 2:
+		return Hidden
+	default:
 		return ShownChatMode
 	}
-	if s.s.ChatVisibility == 1 {
-		return CommandsOnly
-	}
-	return Hidden
 }
 
 func (s *clientSettings) ChatColors() bool {
 	return s.s.ChatColors
+}
+
+func (s *clientSettings) TextFiltering() bool {
+	return s.s.TextFilteringEnabled
+}
+
+func (s *clientSettings) ParticleStatus() ParticleStatus {
+	return ParticleStatus(s.s.ParticleStatus)
 }
 
 func NewSettings(packet *packet.ClientSettings) Settings {

@@ -21,6 +21,7 @@ type Respawn struct {
 	CurrentDimensionData util.CompoundBinaryTag // 1.16.2+
 	LastDeathPosition    *DeathPosition         // 1.19+
 	PortalCooldown       int                    // 1.20+
+	SeaLevel             int                    // 1.21.2+
 }
 
 func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
@@ -69,6 +70,9 @@ func (r *Respawn) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
 		w.VarInt(r.PortalCooldown)
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+		w.VarInt(r.SeaLevel)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
 		w.Byte(r.DataToKeep)
@@ -137,6 +141,9 @@ func (r *Respawn) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20) {
 		pr.VarInt(&r.PortalCooldown)
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+		pr.VarInt(&r.SeaLevel)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20_2) {
 		pr.Byte(&r.DataToKeep)
