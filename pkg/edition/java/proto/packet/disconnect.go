@@ -22,12 +22,15 @@ func (d *Disconnect) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if d.Reason == nil {
 		return errors.New("no reason specified")
 	}
+	if c.PacketID == 0x00 && c.Direction == proto.ClientBound { // states.LoginState
+		c.Protocol = version.Minecraft_1_20_2.Protocol
+	}
 	return d.Reason.Write(wr, c.Protocol)
 }
 
 func (d *Disconnect) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	protocol := c.Protocol
-	if c.PacketID == 0x00 { // states.LoginState
+	if c.PacketID == 0x00 && c.Direction == proto.ClientBound { // states.LoginState
 		protocol = version.Minecraft_1_20_2.Protocol
 	}
 	d.Reason, err = chat.ReadComponentHolder(rd, protocol)
