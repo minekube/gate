@@ -3,10 +3,12 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/Tnze/go-mc/nbt"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type (

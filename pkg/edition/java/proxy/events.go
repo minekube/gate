@@ -1,12 +1,14 @@
 package proxy
 
 import (
+	"net"
+
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"net"
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
@@ -603,14 +605,14 @@ func (e *KickedFromServerEvent) KickedDuringServerConnect() bool {
 	return e.duringServerConnect
 }
 
-// KickedDuringServerConnect returns current kick result.
+// Result returns current kick result.
 // The proxy sets a default non-nil result but an event handler
 // may has set it nil when handling the event.
 func (e *KickedFromServerEvent) Result() ServerKickResult {
 	return e.result
 }
 
-// KickedDuringServerConnect sets the kick result.
+// SetResult sets the kick result.
 func (e *KickedFromServerEvent) SetResult(result ServerKickResult) {
 	e.result = result
 }
@@ -812,6 +814,7 @@ func (c *PlayerChatEvent) Original() string {
 }
 
 // SetAllowed sets whether the chat message is allowed.
+// Deprecated: for 1.19.1 and newer, set this as denied will kick users.
 func (c *PlayerChatEvent) SetAllowed(allowed bool) {
 	c.denied = !allowed
 }

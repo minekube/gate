@@ -31,6 +31,7 @@ type JoinGame struct {
 	SimulationDistance   int                    // 1.18+
 	LastDeathPosition    *DeathPosition         // 1.19+
 	PortalCooldown       int                    // 1.20+
+	SeaLevel             int                    // 1.21.2+
 	EnforcesSecureChat   bool                   // 1.20.5+
 }
 
@@ -211,6 +212,9 @@ func (j *JoinGame) encode1202Up(c *proto.PacketContext, wr io.Writer) error {
 	} else {
 		w.Bool(false)
 	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+		w.VarInt(j.SeaLevel)
+	}
 	w.VarInt(j.PortalCooldown)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
 		w.Bool(j.EnforcesSecureChat)
@@ -390,6 +394,10 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 			Key:   util.PReadStringVal(rd),
 			Value: util.PReadInt64Val(rd),
 		}
+	}
+
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
+		r.VarInt(&j.SeaLevel)
 	}
 
 	r.VarInt(&j.PortalCooldown)

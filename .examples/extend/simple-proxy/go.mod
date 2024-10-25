@@ -16,7 +16,7 @@ require (
 	github.com/Tnze/go-mc v1.20.2 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/dboslee/lru v0.0.1 // indirect
 	github.com/edwingeng/deque/v2 v2.1.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -30,13 +30,13 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
-	github.com/knadh/koanf/providers/file v1.1.1 // indirect
+	github.com/knadh/koanf/providers/file v1.1.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/pires/go-proxyproto v0.7.1-0.20240628150027-b718e7ce4964 // indirect
+	github.com/pires/go-proxyproto v0.8.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/urfave/cli/v2 v2.27.4 // indirect
+	github.com/urfave/cli/v2 v2.27.5 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.minekube.com/connect v0.6.2 // indirect
@@ -58,8 +58,8 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/time v0.6.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/time v0.7.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect

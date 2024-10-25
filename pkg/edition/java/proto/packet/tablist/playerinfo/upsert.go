@@ -22,7 +22,8 @@ type (
 		Listed            bool
 		Latency           int // in milliseconds
 		GameMode          int
-		DisplayName       *chat.ComponentHolder   // nil-able
+		DisplayName       *chat.ComponentHolder // nil-able
+		ListOrder         int
 		RemoteChatSession *chat.RemoteChatSession // nil-able
 	}
 )
@@ -103,6 +104,7 @@ var (
 	UpdateListedAction      UpsertAction = &updateListedAction{}
 	UpdateLatencyAction     UpsertAction = &updateLatencyAction{}
 	UpdateDisplayNameAction UpsertAction = &updateDisplayNameAction{}
+	UpdateListOrderAction   UpsertAction = &updateListOrderAction{}
 
 	UpsertActions = []UpsertAction{
 		AddPlayerAction,
@@ -111,6 +113,7 @@ var (
 		UpdateListedAction,
 		UpdateLatencyAction,
 		UpdateDisplayNameAction,
+		UpdateListOrderAction,
 	}
 )
 
@@ -233,5 +236,16 @@ func (a *updateDisplayNameAction) Decode(c *proto.PacketContext, rd io.Reader, i
 	} else {
 		info.DisplayName = nil
 	}
+	return err
+}
+
+type updateListOrderAction struct{}
+
+func (a *updateListOrderAction) Encode(c *proto.PacketContext, wr io.Writer, info *Entry) error {
+	return util.WriteVarInt(wr, info.ListOrder)
+}
+
+func (a *updateListOrderAction) Decode(c *proto.PacketContext, rd io.Reader, info *Entry) (err error) {
+	info.ListOrder, err = util.ReadVarInt(rd)
 	return err
 }

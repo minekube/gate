@@ -3,14 +3,16 @@ package chat
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
+
 	"github.com/Tnze/go-mc/nbt"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
-	"log/slog"
 )
 
 func FromComponent(comp component.Component) *ComponentHolder {

@@ -4,7 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/robinbraemer/event"
+
 	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
@@ -12,15 +19,12 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
 	"go.minekube.com/gate/pkg/util/netutil"
-	"net"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -29,7 +33,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	internaltablist "go.minekube.com/gate/pkg/internal/tablist"
-	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/profile"
