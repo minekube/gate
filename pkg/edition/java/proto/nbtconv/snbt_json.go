@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Tnze/go-mc/nbt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Tnze/go-mc/nbt"
+	"gopkg.in/yaml.v3"
 )
 
 // formatSNBT adds spaces after colons that are not within quotes.
@@ -219,7 +220,7 @@ func SnbtToBinaryTag(snbt string) (nbt.RawMessage, error) {
 
 	var m nbt.RawMessage
 	if _, err = dec.Decode(&m); err != nil {
-		return m, fmt.Errorf("error decoding binary tag: %w", err)
+		return m, fmt.Errorf("error decoding snbt to binary tag: %w", err)
 	}
 	return m, nil
 }
