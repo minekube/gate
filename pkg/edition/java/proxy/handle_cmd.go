@@ -3,13 +3,14 @@ package proxy
 import (
 	"context"
 	"errors"
-	"go.minekube.com/gate/pkg/internal/future"
-	"strings"
 	"time"
+
+	"go.minekube.com/gate/pkg/internal/future"
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -43,7 +44,7 @@ func (c *chatHandler) queueCommandResult(
 	lastSeenMessages *chat.LastSeenMessages,
 	packetCreator func(event *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet,
 ) {
-	cmd := strings.TrimPrefix(message, "/")
+	cmd := message
 	e := &CommandExecuteEvent{
 		source:          c.player,
 		commandline:     cmd,
