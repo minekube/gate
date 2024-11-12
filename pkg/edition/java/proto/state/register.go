@@ -311,7 +311,7 @@ func init() {
 		m(0x43, version.Minecraft_1_20_2),
 		m(0x45, version.Minecraft_1_20_3),
 		m(0x47, version.Minecraft_1_20_5),
-		m(0x4C, version.Minecraft_1_21_2),	  
+		m(0x4C, version.Minecraft_1_21_2),
 	)
 	Play.ClientBound.Register(&p.Disconnect{},
 		m(0x40, version.Minecraft_1_7_2),

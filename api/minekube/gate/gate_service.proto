@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package minekube.gate.v1;
+
+// GateService is the service of a Gate instance.
+service GateService {
+  // GetPlayer returns the player by the given id or username.
+  // If the player is not online, the rpc fails with a NOT_FOUND error code.
+  rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
+}
+
+// GetPlayerRequest is the request for GetPlayer method.
+message GetPlayerRequest {
+  // Gets the player by the given id (Minecraft UUID).
+  // Optional, if not set the username will be used.
+  // If both id and username are set, the id will be used.
+  //
+  // Format but be a valid Minecraft UUID.
+  string id = 1;
+  // Gets the player by the given username.
+  // Optional, if not set the id will be used.
+  string username = 2;
+}
+
+// GetPlayerResponse is the response for GetPlayer method.
+message GetPlayerResponse {
+  // The player matching the request.
+  Player player = 1;
+}
+
+// Player is a Gate player.
+message Player {
+  string id = 1;
+  string username = 2;
+}

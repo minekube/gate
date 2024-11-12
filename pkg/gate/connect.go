@@ -3,13 +3,13 @@ package gate
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
-	"encoding/json"
 	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
+
 	"go.minekube.com/gate/pkg/gate/config"
+	"go.minekube.com/gate/pkg/internal/hashutil"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
@@ -39,7 +39,7 @@ func setupConnect(
 				return
 			}
 
-			newConfigHash, err := jsonHash(connect)
+			newConfigHash, err := hashutil.JsonHash(connect)
 			if err != nil {
 				log.Error(err, "error hashing Connect config")
 				return
@@ -88,14 +88,4 @@ func setupConnect(
 		<-ctx.Done()
 		return nil
 	}))
-}
-
-// jsonHash returns the sha1 hash of the JSON representation of v.
-func jsonHash(v any) ([]byte, error) {
-	j, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-	h := sha1.Sum(j)
-	return h[:], nil
 }

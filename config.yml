@@ -202,3 +202,13 @@ connect:
   # It is supported to run multiple Gates on the same endpoint name for load balancing
   # (use the same connect.json token file from first Gate instance).
   #name: your-endpoint-name
+
+# Gate HTTP API configuration.
+# See https://gate.minekube.com/guide/api for more information.
+api:
+  # Whether to enable the API for Gate.
+  # Default: false
+  enabled: false
+  # The bind address to listen for API connections.
+  # Default: localhost:8080
+  bind: localhost:8080
