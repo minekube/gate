@@ -1,0 +1,10 @@
+{
+    "include": [
+      "/api/extensions",
+      "/api/go-modules"
+    ],
+    "exclude": [
+      "/*"
+    ]
+  }
+  

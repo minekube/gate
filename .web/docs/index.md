@@ -15,6 +15,9 @@ hero:
       text: Quick Start
       link: /guide/quick-start
     - theme: alt
+      text: Extensions
+      link: /extensions
+    - theme: alt
       text: View on GitHub
       link: https://github.com/minekube/gate
     - theme: alt
