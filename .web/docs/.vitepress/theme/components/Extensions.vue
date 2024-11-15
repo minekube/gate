@@ -164,12 +164,15 @@ export default {
                 console.error("Error fetching data:", error);
                 this.error = "Error reaching the API."; // Set error message
 
-                // Show the cached data as a fallback if API fails
-                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-                if (cachedData) {
-                    this.extensions = cachedData.extensions;
-                    this.goModules = cachedData.goModules;
-                    this.isCachedData = true; // Indicate we're showing cached data
+                // Check if we're in a browser environment before accessing localStorage
+                if (typeof window !== "undefined" && window.localStorage) {
+                    // Show the cached data as a fallback if API fails
+                    const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+                    if (cachedData) {
+                        this.extensions = cachedData.extensions;
+                        this.goModules = cachedData.goModules;
+                        this.isCachedData = true; // Indicate we're showing cached data
+                    }
                 }
             } finally {
                 this.loading = false;
