@@ -197,7 +197,7 @@ export default {
         },
         noResultsMessage() {
             // Show cached results message only if there was an API failure and we are showing cached data
-            if (this.error && this.isCacheFallback) {
+            if (this.isCacheFallback) {
                 return "Error reaching the API. Showing locally cached results. To see updated results, please try again later.";
             }
 
