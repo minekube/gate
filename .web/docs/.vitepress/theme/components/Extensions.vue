@@ -114,70 +114,68 @@ export default {
             const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
             const currentTime = new Date().getTime();
 
-            // Check for cached data first
+            // Check if there is cached data that hasn't expired
+            let cachedData = null;
             if (typeof window !== "undefined" && window.localStorage) {
-                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-                if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
-                    this.extensions = cachedData.extensions;
-                    this.goModules = cachedData.goModules;
-                    this.isCachedData = true; // Indicate we're using cached data
-                    return; // Exit early, no need to fetch from API
-                }
+                cachedData = JSON.parse(localStorage.getItem(cacheKey));
             }
 
-            // Reset states before fetching data
-            this.loading = true;
-            this.error = null; // Reset error message before fetching
-            this.isCacheFallback = false; // Reset cache fallback flag
+            if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
+                // Use cached data if it hasn't expired
+                this.extensions = cachedData.extensions;
+                this.goModules = cachedData.goModules;
+                this.isCachedData = true; // Indicate we're using cached data
+            } else {
+                // If there's no valid cache, or cache expired, fetch new data
+                this.loading = true;
+                this.error = null; // Reset error message before fetching
+                this.isCacheFallback = false; // Reset cache fallback flag
 
-            try {
-                // Fetch data from API
-                const [extensionsResponse, goModulesResponse] = await Promise.all([
-                    fetch("/api/extensions"),
-                    fetch("/api/go-modules")
-                ]);
+                try {
+                    // Fetch data from the API
+                    const [extensionsResponse, goModulesResponse] = await Promise.all([
+                        fetch("/api/extensions"),
+                        fetch("/api/go-modules")
+                    ]);
 
-                if (!extensionsResponse.ok || !goModulesResponse.ok) {
-                    throw new Error("Error fetching data from API");
-                }
+                    if (!extensionsResponse.ok || !goModulesResponse.ok) {
+                        throw new Error("Error fetching data from API");
+                    }
 
-                const extensionsData = await extensionsResponse.json();
-                const goModulesData = await goModulesResponse.json();
+                    const extensionsData = await extensionsResponse.json();
+                    const goModulesData = await goModulesResponse.json();
 
-                // Process and sort data
-                this.extensions = extensionsData
-                    .map(item => ({ ...item, stars: Number(item.stars) }))
-                    .sort((a, b) => b.stars - a.stars);
+                    // Process and sort data
+                    this.extensions = extensionsData
+                        .map(item => ({ ...item, stars: Number(item.stars) }))
+                        .sort((a, b) => b.stars - a.stars);
 
-                this.goModules = goModulesData
-                    .map(item => ({ ...item, stars: Number(item.stars) }))
-                    .sort((a, b) => b.stars - a.stars);
+                    this.goModules = goModulesData
+                        .map(item => ({ ...item, stars: Number(item.stars) }))
+                        .sort((a, b) => b.stars - a.stars);
 
-                // Cache the data if API request is successful
-                if (typeof window !== "undefined" && window.localStorage) {
-                    localStorage.setItem(cacheKey, JSON.stringify({
-                        extensions: this.extensions,
-                        goModules: this.goModules,
-                        timestamp: currentTime,
-                    }));
-                }
+                    // Cache the data if API request is successful
+                    if (typeof window !== "undefined" && window.localStorage) {
+                        localStorage.setItem(cacheKey, JSON.stringify({
+                            extensions: this.extensions,
+                            goModules: this.goModules,
+                            timestamp: currentTime,
+                        }));
+                    }
 
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                this.error = "Error reaching the API."; // Set error message
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                    this.error = "Error reaching the API."; // Set error message
 
-                // Check if we're in a browser environment before accessing localStorage
-                if (typeof window !== "undefined" && window.localStorage) {
-                    // Show the cached data as a fallback if API fails
-                    const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+                    // Use cached data if API fails and it's available
                     if (cachedData) {
                         this.extensions = cachedData.extensions;
                         this.goModules = cachedData.goModules;
                         this.isCacheFallback = true; // Mark that we're using cached data as fallback
                     }
+                } finally {
+                    this.loading = false;
                 }
-            } finally {
-                this.loading = false;
             }
         },
         updateTitle() {
@@ -196,12 +194,12 @@ export default {
             );
         },
         noResultsMessage() {
-            // Show cached results message only if there was an API failure and we are showing cached data
+            // Show cached results message only if the API is unreachable and we're using cached data
             if (this.isCacheFallback) {
                 return "Error reaching the API. Showing locally cached results. To see updated results, please try again later.";
             }
 
-            // Show the general error message if the API failed but there's no cached fallback
+            // Show the general error message if the API failed and there's no cached data
             if (this.error && !this.isCacheFallback) {
                 return "Error reaching the API. To see updated results, please try again later.";
             }
