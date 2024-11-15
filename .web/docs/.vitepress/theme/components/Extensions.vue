@@ -94,17 +94,19 @@ export default {
             const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
             const currentTime = new Date().getTime();
 
-            // Check if cached data exists and is still valid (less than an hour old)
-            const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-            if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
-                this.extensions = cachedData.extensions;
-                this.goModules = cachedData.goModules;
-                return;
+            // Ensure localStorage is only used in the browser
+            if (typeof window !== "undefined" && window.localStorage) {
+                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+                if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
+                    this.extensions = cachedData.extensions;
+                    this.goModules = cachedData.goModules;
+                    return;
+                }
             }
 
             this.loading = true;
             try {
-                // Fetch both extensions and go-modules in parallel
+                // Fetch data
                 const [extensionsResponse, goModulesResponse] = await Promise.all([
                     fetch("/api/extensions"),
                     fetch("/api/go-modules")
@@ -113,26 +115,23 @@ export default {
                 const extensionsData = await extensionsResponse.json();
                 const goModulesData = await goModulesResponse.json();
 
-                if (!Array.isArray(extensionsData) || !Array.isArray(goModulesData)) {
-                    console.error("Malformed response from server when requesting extensions or go-modules");
-                    return;
-                }
-
-                // Ensure stars are treated as numbers and sort by stars (in descending order)
+                // Process and sort data
                 this.extensions = extensionsData
-                    .map(item => ({ ...item, stars: Number(item.stars) }))  // Ensure stars is a number
+                    .map(item => ({ ...item, stars: Number(item.stars) }))
                     .sort((a, b) => b.stars - a.stars);
 
                 this.goModules = goModulesData
-                    .map(item => ({ ...item, stars: Number(item.stars) }))  // Ensure stars is a number
+                    .map(item => ({ ...item, stars: Number(item.stars) }))
                     .sort((a, b) => b.stars - a.stars);
 
-                // Cache the data with a timestamp
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    extensions: this.extensions,
-                    goModules: this.goModules,
-                    timestamp: currentTime
-                }));
+                // Cache data only if localStorage is available
+                if (typeof window !== "undefined" && window.localStorage) {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        extensions: this.extensions,
+                        goModules: this.goModules,
+                        timestamp: currentTime,
+                    }));
+                }
             } catch (error) {
                 console.error("Error fetching data:", error);
                 this.extensions = [];
