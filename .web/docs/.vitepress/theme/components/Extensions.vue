@@ -114,7 +114,7 @@ export default {
             const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
             const currentTime = new Date().getTime();
 
-            // Check if there is cached data that hasn't expired
+            // Try to fetch cached data (check if it exists and isn't expired)
             let cachedData = null;
             if (typeof window !== "undefined" && window.localStorage) {
                 cachedData = JSON.parse(localStorage.getItem(cacheKey));
@@ -125,57 +125,59 @@ export default {
                 this.extensions = cachedData.extensions;
                 this.goModules = cachedData.goModules;
                 this.isCachedData = true; // Indicate we're using cached data
-            } else {
-                // If there's no valid cache, or cache expired, fetch new data
-                this.loading = true;
-                this.error = null; // Reset error message before fetching
-                this.isCacheFallback = false; // Reset cache fallback flag
+                this.isCacheFallback = false; // Reset cache fallback flag (no warning)
+                return; // No need to fetch data, just use cached data
+            }
 
-                try {
-                    // Fetch data from the API
-                    const [extensionsResponse, goModulesResponse] = await Promise.all([
-                        fetch("/api/extensions"),
-                        fetch("/api/go-modules")
-                    ]);
+            // If cache is expired or no cached data, attempt to fetch data from the API
+            this.loading = true;
+            this.error = null; // Reset error message before fetching
+            this.isCacheFallback = false; // Reset cache fallback flag
 
-                    if (!extensionsResponse.ok || !goModulesResponse.ok) {
-                        throw new Error("Error fetching data from API");
-                    }
+            try {
+                // Fetch data from the API
+                const [extensionsResponse, goModulesResponse] = await Promise.all([
+                    fetch("/api/extensions"),
+                    fetch("/api/go-modules")
+                ]);
 
-                    const extensionsData = await extensionsResponse.json();
-                    const goModulesData = await goModulesResponse.json();
-
-                    // Process and sort data
-                    this.extensions = extensionsData
-                        .map(item => ({ ...item, stars: Number(item.stars) }))
-                        .sort((a, b) => b.stars - a.stars);
-
-                    this.goModules = goModulesData
-                        .map(item => ({ ...item, stars: Number(item.stars) }))
-                        .sort((a, b) => b.stars - a.stars);
-
-                    // Cache the data if API request is successful
-                    if (typeof window !== "undefined" && window.localStorage) {
-                        localStorage.setItem(cacheKey, JSON.stringify({
-                            extensions: this.extensions,
-                            goModules: this.goModules,
-                            timestamp: currentTime,
-                        }));
-                    }
-
-                } catch (error) {
-                    console.error("Error fetching data:", error);
-                    this.error = "Error reaching the API."; // Set error message
-
-                    // Use cached data if API fails and it's available
-                    if (cachedData) {
-                        this.extensions = cachedData.extensions;
-                        this.goModules = cachedData.goModules;
-                        this.isCacheFallback = true; // Mark that we're using cached data as fallback
-                    }
-                } finally {
-                    this.loading = false;
+                if (!extensionsResponse.ok || !goModulesResponse.ok) {
+                    throw new Error("Error fetching data from API");
                 }
+
+                const extensionsData = await extensionsResponse.json();
+                const goModulesData = await goModulesResponse.json();
+
+                // Process and sort data
+                this.extensions = extensionsData
+                    .map(item => ({ ...item, stars: Number(item.stars) }))
+                    .sort((a, b) => b.stars - a.stars);
+
+                this.goModules = goModulesData
+                    .map(item => ({ ...item, stars: Number(item.stars) }))
+                    .sort((a, b) => b.stars - a.stars);
+
+                // Cache the data if API request is successful
+                if (typeof window !== "undefined" && window.localStorage) {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        extensions: this.extensions,
+                        goModules: this.goModules,
+                        timestamp: currentTime,
+                    }));
+                }
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                this.error = "Error reaching the API."; // Set error message
+
+                // If API fails and cached data is available, use it
+                if (cachedData) {
+                    this.extensions = cachedData.extensions;
+                    this.goModules = cachedData.goModules;
+                    this.isCacheFallback = true; // Mark that we're using cached data as fallback
+                }
+            } finally {
+                this.loading = false;
             }
         },
         updateTitle() {
