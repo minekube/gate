@@ -96,7 +96,6 @@ export default {
             searchMode: "extensions", // Default mode is 'extensions'
             error: null,         // To store error message
             isCachedData: false,  // Flag to indicate if we're showing cached data
-            isCacheFallback: false, // Flag to indicate we're using cached data as fallback due to API failure
         };
     },
     created() {
@@ -111,36 +110,19 @@ export default {
         },
         async fetchData() {
             const cacheKey = "extensionsAndGoModulesData";
-            const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
-            const currentTime = new Date().getTime();
 
-            // Check for cached data (valid or expired)
-            let cachedData = null;
-            if (typeof window !== "undefined" && window.localStorage) {
-                cachedData = JSON.parse(localStorage.getItem(cacheKey));
-            }
-
-            // If cached data exists and is valid (not expired)
-            if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
-                this.extensions = cachedData.extensions;
-                this.goModules = cachedData.goModules;
-                this.isCachedData = true; // Mark that we're using cached data
-                this.isCacheFallback = false; // No fallback needed if cache is still valid
-                return; // Skip API request as the data is valid in the cache
-            }
-
-            // If cache is expired or not available, attempt to fetch data from the API
+            // Reset the loading state and error message
             this.loading = true;
-            this.error = null; // Reset error message before fetching
-            this.isCacheFallback = false; // Reset fallback flag for new API call
+            this.error = null;
 
             try {
-                // Fetch data from the API
+                // Attempt to fetch data from the API
                 const [extensionsResponse, goModulesResponse] = await Promise.all([
                     fetch("/api/extensions"),
                     fetch("/api/go-modules")
                 ]);
 
+                // If any of the API responses is not OK, throw an error
                 if (!extensionsResponse.ok || !goModulesResponse.ok) {
                     throw new Error("Error fetching data from API");
                 }
@@ -157,8 +139,9 @@ export default {
                     .map(item => ({ ...item, stars: Number(item.stars) }))
                     .sort((a, b) => b.stars - a.stars);
 
-                // Cache the data if API request is successful
+                // Cache the data after fetching from the API
                 if (typeof window !== "undefined" && window.localStorage) {
+                    const currentTime = new Date().getTime();
                     localStorage.setItem(cacheKey, JSON.stringify({
                         extensions: this.extensions,
                         goModules: this.goModules,
@@ -166,15 +149,19 @@ export default {
                     }));
                 }
 
+                // No warning, fresh data loaded
+                this.isCachedData = false;
+
             } catch (error) {
                 console.error("Error fetching data:", error);
                 this.error = "Error reaching the API."; // Set error message
 
-                // If the API is unreachable and we have cached data, use the cache as fallback
+                // Check if there is cached data
+                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
                 if (cachedData) {
                     this.extensions = cachedData.extensions;
                     this.goModules = cachedData.goModules;
-                    this.isCacheFallback = true; // Indicate that we're using cached data because the API is unreachable
+                    this.isCachedData = true; // Set flag to show that we're using cached data
                 }
             } finally {
                 this.loading = false;
@@ -196,17 +183,12 @@ export default {
             );
         },
         noResultsMessage() {
-            // Show warning only if using cached data as fallback due to API failure
-            if (this.isCacheFallback) {
-                return "Error reaching the API. Showing locally cached results. To see updated results, please try again later.";
+            // If the API is unreachable and cached data is being used, show the warning
+            if (this.isCachedData && this.error) {
+                return "Warning: Showing locally cached results. To see updated results, please try again later.";
             }
 
-            // Show error message when the API fails and we don't have cached data
-            if (this.error && !this.isCacheFallback) {
-                return "Error reaching the API. To see updated results, please try again later.";
-            }
-
-            // Default message when no results found
+            // If no results are found, show a generic message
             if (this.filteredExtensions.length === 0) {
                 const message = this.searchMode === "extensions" 
                     ? "No extensions found"
