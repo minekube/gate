@@ -96,7 +96,7 @@ export default {
             searchMode: "extensions", // Default mode is 'extensions'
             error: null,         // To store error message
             isCachedData: false,  // Flag to indicate if we're showing cached data
-            isCacheFallback: false, // Flag to indicate we used cached data as a fallback due to an API error
+            isCacheFallback: false, // Flag to indicate we're using cached data as fallback due to API failure
         };
     },
     created() {
@@ -114,25 +114,25 @@ export default {
             const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
             const currentTime = new Date().getTime();
 
-            // Try to fetch cached data (check if it exists and isn't expired)
+            // Check for cached data (valid or expired)
             let cachedData = null;
             if (typeof window !== "undefined" && window.localStorage) {
                 cachedData = JSON.parse(localStorage.getItem(cacheKey));
             }
 
+            // If cached data exists and is valid (not expired)
             if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
-                // Use cached data if it hasn't expired
                 this.extensions = cachedData.extensions;
                 this.goModules = cachedData.goModules;
-                this.isCachedData = true; // Indicate we're using cached data
-                this.isCacheFallback = false; // Reset cache fallback flag (no warning)
-                return; // No need to fetch data, just use cached data
+                this.isCachedData = true; // Mark that we're using cached data
+                this.isCacheFallback = false; // No fallback needed if cache is still valid
+                return; // Skip API request as the data is valid in the cache
             }
 
-            // If cache is expired or no cached data, attempt to fetch data from the API
+            // If cache is expired or not available, attempt to fetch data from the API
             this.loading = true;
             this.error = null; // Reset error message before fetching
-            this.isCacheFallback = false; // Reset cache fallback flag
+            this.isCacheFallback = false; // Reset fallback flag for new API call
 
             try {
                 // Fetch data from the API
@@ -170,11 +170,11 @@ export default {
                 console.error("Error fetching data:", error);
                 this.error = "Error reaching the API."; // Set error message
 
-                // If API fails and cached data is available, use it
+                // If the API is unreachable and we have cached data, use the cache as fallback
                 if (cachedData) {
                     this.extensions = cachedData.extensions;
                     this.goModules = cachedData.goModules;
-                    this.isCacheFallback = true; // Mark that we're using cached data as fallback
+                    this.isCacheFallback = true; // Indicate that we're using cached data because the API is unreachable
                 }
             } finally {
                 this.loading = false;
@@ -196,12 +196,12 @@ export default {
             );
         },
         noResultsMessage() {
-            // Show cached results message only if the API is unreachable and we're using cached data
+            // Show warning only if using cached data as fallback due to API failure
             if (this.isCacheFallback) {
                 return "Error reaching the API. Showing locally cached results. To see updated results, please try again later.";
             }
 
-            // Show the general error message if the API failed and there's no cached data
+            // Show error message when the API fails and we don't have cached data
             if (this.error && !this.isCacheFallback) {
                 return "Error reaching the API. To see updated results, please try again later.";
             }
