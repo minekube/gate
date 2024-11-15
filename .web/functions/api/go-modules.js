@@ -1,5 +1,3 @@
-// functions/api/go-modules.js
-
 const CACHE_DURATION = 60 * 60; // Cache duration in seconds
 
 export async function onRequest(context) {
@@ -36,10 +34,20 @@ export async function onRequest(context) {
     }
 
     const data = await response.json();
+    const uniqueRepos = new Set(); // Set to track processed repository names
     const libraries = [];
 
     for (const item of data.items) {
       const repo = item.repository;
+
+      // Skip duplicate repositories
+      if (uniqueRepos.has(repo.full_name)) {
+        console.log(`Skipping duplicate repository: ${repo.full_name}`);
+        continue;
+      }
+
+      // Mark the repository as processed
+      uniqueRepos.add(repo.full_name);
 
       // Fetch additional repo details
       const repoDetails = await fetchRepositoryDetails(repo.full_name, githubToken);
@@ -54,7 +62,7 @@ export async function onRequest(context) {
       }
     }
 
-    // Cache the response
+    // Cache the deduplicated response
     await GITHUB_CACHE.put(cacheKey, JSON.stringify(libraries), { expirationTtl: CACHE_DURATION });
 
     return new Response(JSON.stringify(libraries), {
