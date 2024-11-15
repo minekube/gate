@@ -83,11 +83,13 @@ export default {
     },
     created() {
         this.fetchData(); // Fetch data for both categories on initial load
+        this.updateTitle(); // Set the initial title based on default searchMode
     },
     methods: {
         toggleSearchMode() {
             // Toggle between 'extensions' and 'go-modules'
             this.searchMode = this.searchMode === "extensions" ? "go-modules" : "extensions";
+            this.updateTitle(); // Update the title when searchMode changes
         },
         async fetchData() {
             const cacheKey = "extensionsAndGoModulesData";
@@ -140,6 +142,13 @@ export default {
                 this.loading = false;
             }
         },
+        updateTitle() {
+            // Dynamically set the tab title based on the current search mode
+            const title = this.searchMode === "extensions"
+                ? "Extensions | Gate Proxy"
+                : "Minekube Libraries | Gate Proxy";
+            document.title = title;
+        },
     },
     computed: {
         filteredExtensions() {
@@ -147,6 +156,12 @@ export default {
             return data.filter((item) =>
                 item.name.toLowerCase().includes(this.searchText.toLowerCase())
             );
+        },
+    },
+    watch: {
+        // Watch for changes in searchMode and update the title accordingly
+        searchMode() {
+            this.updateTitle();
         },
     },
 };
