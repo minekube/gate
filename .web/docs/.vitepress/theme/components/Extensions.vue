@@ -180,11 +180,6 @@ export default {
             );
         },
         noResultsMessage() {
-            // If the API is unreachable and cached data is being used, show the warning
-            if (this.isCachedData && this.error) {
-                return "Warning: Showing locally cached results. To see updated results, please try again later.";
-            }
-
             // If no results are found, show a generic message
             if (this.filteredExtensions.length === 0) {
                 const message = this.searchMode === "extensions" 
