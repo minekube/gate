@@ -96,6 +96,7 @@ export default {
             searchMode: "extensions", // Default mode is 'extensions'
             error: null,         // To store error message
             isCachedData: false,  // Flag to indicate if we're showing cached data
+            isCacheFallback: false, // Flag to indicate we used cached data as a fallback due to an API error
         };
     },
     created() {
@@ -127,6 +128,7 @@ export default {
             // Reset states before fetching data
             this.loading = true;
             this.error = null; // Reset error message before fetching
+            this.isCacheFallback = false; // Reset cache fallback flag
 
             try {
                 // Fetch data from API
@@ -171,7 +173,7 @@ export default {
                     if (cachedData) {
                         this.extensions = cachedData.extensions;
                         this.goModules = cachedData.goModules;
-                        this.isCachedData = true; // Indicate we're showing cached data
+                        this.isCacheFallback = true; // Mark that we're using cached data as fallback
                     }
                 }
             } finally {
@@ -194,8 +196,13 @@ export default {
             );
         },
         noResultsMessage() {
-            // Show cached results message even when results are found
-            if (this.error && !this.isCachedData) {
+            // Show cached results message only if there was an API failure and we are showing cached data
+            if (this.error && this.isCacheFallback) {
+                return "Error reaching the API. Showing locally cached results. To see updated results, please try again later.";
+            }
+
+            // Show the general error message if the API failed but there's no cached fallback
+            if (this.error && !this.isCacheFallback) {
                 return "Error reaching the API. To see updated results, please try again later.";
             }
 
