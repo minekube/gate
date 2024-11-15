@@ -110,10 +110,8 @@ export default {
         },
         async fetchData() {
             const cacheKey = "extensionsAndGoModulesData";
-
-            // Reset the loading state and error message
             this.loading = true;
-            this.error = null;
+            this.error = null; // Reset error message before fetching data
 
             try {
                 // Attempt to fetch data from the API
@@ -122,7 +120,6 @@ export default {
                     fetch("/api/go-modules")
                 ]);
 
-                // If any of the API responses is not OK, throw an error
                 if (!extensionsResponse.ok || !goModulesResponse.ok) {
                     throw new Error("Error fetching data from API");
                 }
@@ -139,7 +136,7 @@ export default {
                     .map(item => ({ ...item, stars: Number(item.stars) }))
                     .sort((a, b) => b.stars - a.stars);
 
-                // Cache the data after fetching from the API
+                // Cache the data if API request is successful (only if window is available)
                 if (typeof window !== "undefined" && window.localStorage) {
                     const currentTime = new Date().getTime();
                     localStorage.setItem(cacheKey, JSON.stringify({
@@ -149,19 +146,19 @@ export default {
                     }));
                 }
 
-                // No warning, fresh data loaded
-                this.isCachedData = false;
-
+                this.isCachedData = false; // No need to show cached data warning
             } catch (error) {
                 console.error("Error fetching data:", error);
                 this.error = "Error reaching the API."; // Set error message
 
-                // Check if there is cached data
-                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-                if (cachedData) {
-                    this.extensions = cachedData.extensions;
-                    this.goModules = cachedData.goModules;
-                    this.isCachedData = true; // Set flag to show that we're using cached data
+                // Check if there is cached data (only if window is available)
+                if (typeof window !== "undefined" && window.localStorage) {
+                    const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+                    if (cachedData) {
+                        this.extensions = cachedData.extensions;
+                        this.goModules = cachedData.goModules;
+                        this.isCachedData = true; // Indicate cached data is being used
+                    }
                 }
             } finally {
                 this.loading = false;
