@@ -36,7 +36,20 @@
                 placeholder="Search..."
             />
 
+            <!-- Show message when cached data is being used -->
+            <div v-if="isCachedData && !loading" class="my-3 text-center text-yellow-600">
+                <strong>Warning:</strong> Showing locally cached results. To see updated results, please try again later.
+            </div>
+
+            <!-- Show loading indicator while data is being fetched -->
             <div v-if="loading" class="my-3 text-center">Loading...</div>
+
+            <!-- Show error message -->
+            <div v-if="error && !isCachedData" class="my-3 text-center text-red-600">
+                Error reaching the API. To see updated results, please try again later.
+            </div>
+
+            <!-- Display Results -->
             <ul
                 v-else-if="filteredExtensions.length > 0"
                 class="grid grid-cols-1 lg:grid-cols-2 gap-2"
@@ -64,7 +77,9 @@
                     </p>
                 </a>
             </ul>
-            <p v-else class="my-3">No extensions found.</p>
+
+            <!-- No Results Message -->
+            <p v-else class="my-3">{{ noResultsMessage }}</p>
         </div>
     </div>
 </template>
@@ -79,6 +94,8 @@ export default {
             searchText: "",
             loading: false,
             searchMode: "extensions", // Default mode is 'extensions'
+            error: null,         // To store error message
+            isCachedData: false,  // Flag to indicate if we're showing cached data
         };
     },
     created() {
@@ -96,23 +113,31 @@ export default {
             const cacheExpiration = 60 * 60 * 1000; // Cache expiration time (1 hour in ms)
             const currentTime = new Date().getTime();
 
-            // Ensure localStorage is only used in the browser
+            // Check for cached data first
             if (typeof window !== "undefined" && window.localStorage) {
                 const cachedData = JSON.parse(localStorage.getItem(cacheKey));
                 if (cachedData && (currentTime - cachedData.timestamp) < cacheExpiration) {
                     this.extensions = cachedData.extensions;
                     this.goModules = cachedData.goModules;
-                    return;
+                    this.isCachedData = true; // Indicate we're using cached data
+                    return; // Exit early, no need to fetch from API
                 }
             }
 
+            // Reset states before fetching data
             this.loading = true;
+            this.error = null; // Reset error message before fetching
+
             try {
-                // Fetch data
+                // Fetch data from API
                 const [extensionsResponse, goModulesResponse] = await Promise.all([
                     fetch("/api/extensions"),
                     fetch("/api/go-modules")
                 ]);
+
+                if (!extensionsResponse.ok || !goModulesResponse.ok) {
+                    throw new Error("Error fetching data from API");
+                }
 
                 const extensionsData = await extensionsResponse.json();
                 const goModulesData = await goModulesResponse.json();
@@ -126,7 +151,7 @@ export default {
                     .map(item => ({ ...item, stars: Number(item.stars) }))
                     .sort((a, b) => b.stars - a.stars);
 
-                // Cache data only if localStorage is available
+                // Cache the data if API request is successful
                 if (typeof window !== "undefined" && window.localStorage) {
                     localStorage.setItem(cacheKey, JSON.stringify({
                         extensions: this.extensions,
@@ -134,10 +159,18 @@ export default {
                         timestamp: currentTime,
                     }));
                 }
+
             } catch (error) {
                 console.error("Error fetching data:", error);
-                this.extensions = [];
-                this.goModules = [];
+                this.error = "Error reaching the API."; // Set error message
+
+                // Show the cached data as a fallback if API fails
+                const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+                if (cachedData) {
+                    this.extensions = cachedData.extensions;
+                    this.goModules = cachedData.goModules;
+                    this.isCachedData = true; // Indicate we're showing cached data
+                }
             } finally {
                 this.loading = false;
             }
@@ -156,6 +189,23 @@ export default {
             return data.filter((item) =>
                 item.name.toLowerCase().includes(this.searchText.toLowerCase())
             );
+        },
+        noResultsMessage() {
+            // Show cached results message even when results are found
+            if (this.error && !this.isCachedData) {
+                return "Error reaching the API. To see updated results, please try again later.";
+            }
+
+            // Default message when no results found
+            if (this.filteredExtensions.length === 0) {
+                const message = this.searchMode === "extensions" 
+                    ? "No extensions found"
+                    : "No projects found";
+
+                return `${message}. Make sure you're typing the name correctly, or try again later.`;
+            }
+
+            return "";
         },
     },
     watch: {
