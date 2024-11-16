@@ -81,6 +81,7 @@ export default defineConfig({
             {text: 'Developer Guide', link: '/developers/'},
             {text: 'Config', link: '/guide/config/'},
             {text: 'Downloads', link: '/guide/install/'},
+            {text: 'Extensions', link: '/extensions'},
             {
                 text: 'Blog',
                 link: 'https://connect.minekube.com/blog',
