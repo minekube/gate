@@ -67,7 +67,7 @@
             :class="{
               'bg-white dark:bg-gray-900 text-vp-c-brand dark:text-white font-semibold ring-2 ring-white/50 dark:ring-gray-700 ring-offset-2 ring-offset-vp-c-brand':
                 searchMode === 'go-modules',
-              ' hover:text-white hover:bg-white/10':
+              ' hover:text-[var(--vp-c-text-2)] hover:bg-white/10':
                 searchMode !== 'go-modules',
             }"
             class="px-6 py-2.5 rounded-md transition-all duration-200 cursor-pointer flex items-center gap-2"
