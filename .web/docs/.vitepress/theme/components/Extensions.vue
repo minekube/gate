@@ -2,7 +2,7 @@
     <div class="VPDoc px-[32px] py-[48px]">
         <div class="flex flex-col gap-2 relative mx-auto max-w-[948px]">
             <h1 class="text-vp-c-text-1 text-3xl font-semibold mb-4">
-                {{ searchMode === 'extensions' ? 'Extensions' : 'Projects using Minekube Libraries' }}
+                {{ searchMode === 'extensions' ? 'Gate Extensions' : 'Gate Libraries/Projects' }}
             </h1>
             <p class="text-vp-c-text-3 font-normal text-md mb-4">
                 <span v-if="searchMode === 'extensions'">
@@ -18,23 +18,49 @@
             </p>
 
             <!-- Toggle Button for Search Mode -->
-            <div class="mb-4">
-                <label class="font-semibold mr-2">Search Mode:</label>
-                <button
-                    @click="toggleSearchMode"
-                    :class="{'bg-vp-c-brand-3 text-white': searchMode === 'extensions', 'bg-vp-c-border text-vp-c-text-1': searchMode === 'go-modules'}"
-                    class="rounded-lg px-4 py-2 mr-2 focus:outline-none"
-                >
-                    {{ searchMode === 'extensions' ? 'Extensions' : 'Minekube Libraries' }}
-                </button>
+            <div class="mb-6">
+                <div class="inline-flex rounded-lg p-1.5 bg-vp-c-bg border-2 border-vp-c-border shadow-sm">
+                    <button
+                        @click="() => { searchMode = 'extensions' }"
+                        :class="{
+                            'bg-vp-c-brand text-white shadow-md scale-[1.02] ring-2 ring-vp-c-brand ring-offset-2': searchMode === 'extensions',
+                            'text-vp-c-text-2 hover:bg-vp-c-bg-soft hover:scale-[1.02] opacity-75': searchMode !== 'extensions'
+                        }"
+                        class="px-6 py-3 rounded-md transition-all duration-200 font-medium 
+                               hover:shadow-md cursor-pointer flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                        Extensions
+                    </button>
+                    <button
+                        @click="() => { searchMode = 'go-modules' }"
+                        :class="{
+                            'bg-vp-c-brand text-white shadow-md scale-[1.02] ring-2 ring-vp-c-brand ring-offset-2': searchMode === 'go-modules',
+                            'text-vp-c-text-2 hover:bg-vp-c-bg-soft hover:scale-[1.02] opacity-75': searchMode !== 'go-modules'
+                        }"
+                        class="px-6 py-3 rounded-md transition-all duration-200 font-medium 
+                               hover:shadow-md cursor-pointer flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+                        </svg>
+                        Libraries/Projects
+                    </button>
+                </div>
             </div>
 
             <!-- Search Input -->
-            <input
-                v-model="searchText"
-                class="rounded-lg px-3 py-2 w-[calc(100%-2px)] translate-x-[1px] bg-vp-c-bg focus:ring-vp-c-brand-2 text-vp-c-text-2 transition-colors font-base ring-vp-c-border ring-1"
-                placeholder="Search..."
-            />
+            <div class="relative mb-6">
+                <input
+                    v-model="searchText"
+                    class="rounded-lg px-4 py-3 w-full bg-vp-c-bg focus:ring-2 focus:ring-vp-c-brand-2 
+                           text-vp-c-text-1 transition-all duration-200 font-medium 
+                           ring-1 ring-vp-c-border focus:outline-none"
+                    :placeholder="searchMode === 'extensions' ? 'Search extensions...' : 'Search libraries and projects...'"
+                />
+            </div>
 
             <!-- Show message when cached data is being used -->
             <div v-if="isCachedData && !loading" class="my-3 text-center text-yellow-600">
