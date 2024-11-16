@@ -134,6 +134,10 @@ export default defineConfig({
                             link: '/developers/',
                         },
                         {
+                            text: 'HTTP API',
+                            link: '/developers/api/',
+                        },
+                        {
                             text: 'Compatibility',
                             link: '/guide/compatibility'
                         },
