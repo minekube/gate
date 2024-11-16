@@ -105,8 +105,7 @@
         v-if="isCachedData && !loading"
         class="my-3 text-center text-yellow-600"
       >
-        <strong>Warning:</strong> Showing locally cached results. To see updated
-        results, please try again later.
+        <strong>Warning:</strong> You are viewing cached results. To see the latest data, please try again later. Note that results are refreshed every 60 minutes.
       </div>
 
       <!-- Show loading indicator while data is being fetched -->
