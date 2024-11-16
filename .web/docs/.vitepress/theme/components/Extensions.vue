@@ -115,17 +115,16 @@ export default {
 
             try {
                 // Attempt to fetch data from the API
-                const [extensionsResponse, goModulesResponse] = await Promise.all([
-                    fetch("/api/extensions"),
-                    fetch("/api/go-modules")
+                const [extensionsData, goModulesData] = await Promise.all([
+                    fetch("/api/extensions").then(res => {
+                        if (!res.ok) throw new Error("Error fetching extensions data");
+                        return res.json();
+                    }),
+                    fetch("/api/go-modules").then(res => {
+                        if (!res.ok) throw new Error("Error fetching go-modules data");
+                        return res.json();
+                    })
                 ]);
-
-                if (!extensionsResponse.ok || !goModulesResponse.ok) {
-                    throw new Error("Error fetching data from API");
-                }
-
-                const extensionsData = await extensionsResponse.json();
-                const goModulesData = await goModulesResponse.json();
 
                 // Process and sort data
                 this.extensions = extensionsData
