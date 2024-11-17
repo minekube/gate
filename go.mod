@@ -34,7 +34,7 @@ require (
 	go.minekube.com/connect v0.6.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	golang.org/x/sync v0.9.0
 	golang.org/x/text v0.20.0
 	golang.org/x/time v0.8.0
