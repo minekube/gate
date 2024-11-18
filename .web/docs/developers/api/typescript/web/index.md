@@ -19,7 +19,7 @@ pnpm config set @buf:registry https://buf.build/gen/npm/v1/
 To install dependencies:
 
 ```bash
-bun add @buf/minekube_gate.connectrpc_es@latest
+pnpm add @buf/minekube_gate.connectrpc_es@latest
 ```
 
 Refer to the [ConnectRPC](https://connectrpc.com/docs/web/using-clients) documentation for more information on how to use ConnectRPC with TypeScript on browser side.
