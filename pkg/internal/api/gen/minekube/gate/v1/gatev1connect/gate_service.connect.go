@@ -35,12 +35,15 @@ const (
 const (
 	// GateServiceGetPlayerProcedure is the fully-qualified name of the GateService's GetPlayer RPC.
 	GateServiceGetPlayerProcedure = "/minekube.gate.v1.GateService/GetPlayer"
+	// GateServiceListServersProcedure is the fully-qualified name of the GateService's ListServers RPC.
+	GateServiceListServersProcedure = "/minekube.gate.v1.GateService/ListServers"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	gateServiceServiceDescriptor         = v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService")
-	gateServiceGetPlayerMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
+	gateServiceServiceDescriptor           = v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService")
+	gateServiceGetPlayerMethodDescriptor   = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
+	gateServiceListServersMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("ListServers")
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -48,6 +51,8 @@ type GateServiceClient interface {
 	// GetPlayer returns the player by the given id or username.
 	// If the player is not online, the rpc fails with a NOT_FOUND error code.
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
+	// ListServers returns all registered servers.
+	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -66,12 +71,19 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(gateServiceGetPlayerMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listServers: connect.NewClient[v1.ListServersRequest, v1.ListServersResponse](
+			httpClient,
+			baseURL+GateServiceListServersProcedure,
+			connect.WithSchema(gateServiceListServersMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // gateServiceClient implements GateServiceClient.
 type gateServiceClient struct {
-	getPlayer *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
+	getPlayer   *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
+	listServers *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -79,11 +91,18 @@ func (c *gateServiceClient) GetPlayer(ctx context.Context, req *connect.Request[
 	return c.getPlayer.CallUnary(ctx, req)
 }
 
+// ListServers calls minekube.gate.v1.GateService.ListServers.
+func (c *gateServiceClient) ListServers(ctx context.Context, req *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error) {
+	return c.listServers.CallUnary(ctx, req)
+}
+
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
 	// If the player is not online, the rpc fails with a NOT_FOUND error code.
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
+	// ListServers returns all registered servers.
+	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -98,10 +117,18 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(gateServiceGetPlayerMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	gateServiceListServersHandler := connect.NewUnaryHandler(
+		GateServiceListServersProcedure,
+		svc.ListServers,
+		connect.WithSchema(gateServiceListServersMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GateServiceGetPlayerProcedure:
 			gateServiceGetPlayerHandler.ServeHTTP(w, r)
+		case GateServiceListServersProcedure:
+			gateServiceListServersHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -113,4 +140,8 @@ type UnimplementedGateServiceHandler struct{}
 
 func (UnimplementedGateServiceHandler) GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetPlayer is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ListServers is not implemented"))
 }

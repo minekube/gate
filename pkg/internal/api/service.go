@@ -28,6 +28,14 @@ type (
 	}
 )
 
+var _ Handler = (*Service)(nil)
+
+func (s *Service) ListServers(ctx context.Context, c *connect.Request[pb.ListServersRequest]) (*connect.Response[pb.ListServersResponse], error) {
+	return connect.NewResponse(&pb.ListServersResponse{
+		Servers: ServersToProto(s.p.Servers()),
+	}), nil
+}
+
 func (s *Service) GetPlayer(ctx context.Context, c *connect.Request[pb.GetPlayerRequest]) (*connect.Response[pb.GetPlayerResponse], error) {
 	req := c.Msg
 
@@ -53,5 +61,3 @@ func (s *Service) GetPlayer(ctx context.Context, c *connect.Request[pb.GetPlayer
 		Player: PlayerToProto(player),
 	}), nil
 }
-
-var _ Handler = (*Service)(nil)

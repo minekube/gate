@@ -7,6 +7,23 @@ service GateService {
   // GetPlayer returns the player by the given id or username.
   // If the player is not online, the rpc fails with a NOT_FOUND error code.
   rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
+  // ListServers returns all registered servers.
+  rpc ListServers(ListServersRequest) returns (ListServersResponse);
+}
+
+// ListServersRequest is the request for ListServers method.
+message ListServersRequest {
+}
+// ListServersResponse is the response for ListServers method.
+message ListServersResponse {
+  repeated Server servers = 1;
+}
+
+// Server is a backend server where Gate can connect players to.
+message Server {
+  string name = 1;
+  string address = 2;
+  int32 players = 3;
 }
 
 // GetPlayerRequest is the request for GetPlayer method.

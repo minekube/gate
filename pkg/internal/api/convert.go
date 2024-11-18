@@ -11,3 +11,19 @@ func PlayerToProto(p proxy.Player) *pb.Player {
 		Username: p.Username(),
 	}
 }
+
+func ServersToProto(s []proxy.RegisteredServer) []*pb.Server {
+	var servers []*pb.Server
+	for _, server := range s {
+		servers = append(servers, ServerToProto(server))
+	}
+	return servers
+}
+
+func ServerToProto(s proxy.RegisteredServer) *pb.Server {
+	return &pb.Server{
+		Name:    s.ServerInfo().Name(),
+		Address: s.ServerInfo().Addr().String(),
+		Players: int32(s.Players().Len()),
+	}
+}
