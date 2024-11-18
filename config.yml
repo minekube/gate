@@ -208,7 +208,7 @@ connect:
 api:
   # Whether to enable the API for Gate.
   # Default: false
-  enabled: true
+  enabled: false
   # The bind address to listen for API connections.
   # Default: localhost:8080
   bind: localhost:8080
