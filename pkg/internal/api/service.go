@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	pb "buf.build/gen/go/minekube/gate/protocolbuffers/go/minekube/gate"
+	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
+	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
 
-	"buf.build/gen/go/minekube/gate/connectrpc/go/minekube/gate/gatev1connect"
 	"connectrpc.com/connect"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy"

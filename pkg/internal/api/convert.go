@@ -1,9 +1,8 @@
 package api
 
 import (
-	pb "buf.build/gen/go/minekube/gate/protocolbuffers/go/minekube/gate"
-
 	"go.minekube.com/gate/pkg/edition/java/proxy"
+	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 )
 
 func PlayerToProto(p proxy.Player) *pb.Player {

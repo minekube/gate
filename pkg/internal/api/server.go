@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"buf.build/gen/go/minekube/gate/connectrpc/go/minekube/gate/gatev1connect"
 	"github.com/go-logr/logr"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
+
+	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
 )
 
 func NewServer(cfg Config, h Handler) *Server {
