@@ -16,44 +16,7 @@ api:
 
 :::
 
-## Features
-
-::: info Why Gate API?
-The HTTP API enables you to build and deploy functionality independently from your proxy - perfect for rapid iteration without disrupting your players.
-:::
-
-<div class="vp-features">
-  <div class="vp-feature">
-    <div class="title">🚀 Independent Updates</div>
-    <div class="details">Ship updates without restarting Gate or disconnecting players</div>
-  </div>
-  <div class="vp-feature">
-    <div class="title">🌐 Cross-Language Support</div>
-    <div class="details">Access Gate's core functionality from any programming language</div>
-  </div>
-  <div class="vp-feature">
-    <div class="title">🔌 Plugin Development</div>
-    <div class="details">Build extensions and plugins in your preferred language</div>
-  </div>
-  <div class="vp-feature">
-    <div class="title">🤖 Automation</div>
-    <div class="details">Automate server registration and management tasks</div>
-  </div>
-  <div class="vp-feature">
-    <div class="title">🎮 Custom Tools</div>
-    <div class="details">Create administrative interfaces and management tools</div>
-  </div>
-  <div class="vp-feature">
-    <div class="title">🔄 Integration</div>
-    <div class="details">Connect Gate with external systems and services</div>
-  </div>
-</div>
-
 ## Getting Started
-
-::: warning Go Applications
-While Go applications can use this HTTP API as well, we recommend using Gate's native Go library as it provides the most complete and type-safe access to Gate's functionality, unless you need out-of-process execution or want to iterate and deploy updates independently from your proxy.
-:::
 
 Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build/minekube/gate/sdks), where you can directly pull client libraries using your preferred language's package manager:
 
@@ -111,6 +74,39 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
       </div>
       <div class="details">via Maven artifacts</div>
     </a>
+  </div>
+</div>
+
+## Features
+
+::: info Why Gate API?
+The HTTP API enables you to build and deploy functionality independently from your proxy - perfect for rapid iteration without disrupting your players.
+:::
+
+<div class="vp-features">
+  <div class="vp-feature">
+    <div class="title">🚀 Independent Updates</div>
+    <div class="details">Ship updates without restarting Gate or disconnecting players</div>
+  </div>
+  <div class="vp-feature">
+    <div class="title">🌐 Cross-Language Support</div>
+    <div class="details">Access Gate's core functionality from any programming language</div>
+  </div>
+  <div class="vp-feature">
+    <div class="title">🔌 Plugin Development</div>
+    <div class="details">Build extensions and plugins in your preferred language</div>
+  </div>
+  <div class="vp-feature">
+    <div class="title">🤖 Automation</div>
+    <div class="details">Automate server registration and management tasks</div>
+  </div>
+  <div class="vp-feature">
+    <div class="title">🎮 Custom Tools</div>
+    <div class="details">Create administrative interfaces and management tools</div>
+  </div>
+  <div class="vp-feature">
+    <div class="title">🔄 Integration</div>
+    <div class="details">Connect Gate with external systems and services</div>
   </div>
 </div>
 

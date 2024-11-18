@@ -228,6 +228,10 @@ export default defineConfig({
                   ],
                 },
                 {
+                  text: 'Go',
+                  link: '/developers/api/go/',
+                },
+                {
                   text: 'Glossary',
                   link: '/developers/api/glossary',
                 },
