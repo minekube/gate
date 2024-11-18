@@ -1,0 +1,2 @@
+[install.scopes]
+"@buf" = "https://buf.build/gen/npm/v1/"
