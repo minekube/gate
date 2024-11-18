@@ -36,34 +36,11 @@ Choose your preferred runtime environment:
   </div>
 </div>
 
-## Quick Example
-
-Here's a simple example of using the Gate client to list servers:
-
-```typescript
-import { createGateClient } from '@buf/minekube_gate.connect-web/minekube/gate/v1/gate_service_connect';
-import { createConnectTransport } from '@connectrpc/connect-web';
-
-// Create a client
-const transport = createConnectTransport({
-  baseUrl: 'http://localhost:8080',
-});
-const client = createGateClient(transport);
-
-// List all servers
-const response = await client.listServers({});
-console.log('Servers:', response.servers);
-
-// Get a player by username
-const player = await client.getPlayer({ username: 'Notch' });
-console.log('Player:', player);
-```
-
 ## Features
 
 - **Type Safety**: Full TypeScript support with generated types
 - **Modern APIs**: Promise-based async/await API
-- **Cross-Platform**: Works in Node.js, Deno, Bun, and browsers
+- **Cross-Platform**: Works in Node.js, Bun, and web browsers
 - **Efficient**: Uses Protocol Buffers for efficient data transfer
 - **Secure**: HTTPS support with customizable transport options
 
