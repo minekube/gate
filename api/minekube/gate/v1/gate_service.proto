@@ -9,6 +9,38 @@ service GateService {
   rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
   // ListServers returns all registered servers.
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
+  // AddServer adds a server to the proxy, will fail if server is already registered.
+  rpc AddServer(AddServerRequest) returns (GetServerResponse);
+  // RemoveServer removes a server from the proxy using the name and address of the server.
+  rpc RemoveServer(RemoveServerRequest) returns (RemoveServerResponse);
+}
+
+message RemoveServerRequest {
+  string name = 1;
+  string address = 2;
+}
+
+message RemoveServerResponse {
+  ServerRemoval server = 1;
+}
+
+message ServerRemoval {
+  string name = 1;
+  string address = 2;
+}
+
+message AddServerRequest {
+  string name = 1;
+  string address = 2;
+}
+
+message GetServerResponse {
+  ServerAddition server = 1;
+}
+
+message ServerAddition {
+  string name = 1;
+  string address = 2;
 }
 
 // ListServersRequest is the request for ListServers method.
