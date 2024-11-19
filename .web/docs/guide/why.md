@@ -1,52 +1,123 @@
-# Why
+# Why Gate?
 
-_We recommend reading the [Introduction](index) if you haven't already._
+<div class="why-cards">
+  <div class="why-card">
+    <h3>🚀 Performance First</h3>
+    <ul>
+      <li>Minimal resource footprint (10MB RAM)</li>
+      <li>Optimized for high throughput</li>
+      <li>Efficient protocol handling</li>
+      <li>Perfect for large networks</li>
+    </ul>
+  </div>
 
-Let's start with where we come from, the problem definition,
-different parties involved and the solution space.
+  <div class="why-card">
+    <h3>🎮 Protocol Support</h3>
+    <ul>
+      <li>Minecraft 1.7 to latest</li>
+      <li>Forge mod support</li>
+      <li>BungeeCord compatibility</li>
+      <li>Velocity forwarding</li>
+    </ul>
+  </div>
 
-## Advantages
+  <div class="why-card">
+    <h3>💻 Developer Experience</h3>
+    <ul>
+      <li>Modern Go-based architecture</li>
+      <li>Clean, documented APIs</li>
+      <li>Multiple SDK options</li>
+      <li>Active community</li>
+    </ul>
+  </div>
+</div>
 
-- Fast and needs less resources (CPU/Memory) leading to improved scalability
-- Excellent protocol version support
-  - Allows newest version down to 1.7
-  - Forge support (for modded servers)
-  - BungeeCord compatible plugin channels
-  - BungeeCord or Velocity's player info forwarding
-- A simple API for plugins/extensions
-  - Extend with [your Go code](https://github.com/minekube/gate/tree/master/.examples/extend/simple-proxy)
-  - Or use a [script language](https://github.com/minekube/gate/issues/9)
-- Perfect for Go developers - Gate and developers immensely benefit from the Go language and its wide ecosystem
+## Who is Gate For?
 
-Similar to the Minecraft proxies written in Java: BungeeCord, Waterfall and Velocity
-_(where much of the knowledge comes from)_
-Gate delivers a rich interface to interact with connected players
-on your cluster of Minecraft servers.
+<div class="audience-cards">
+  <div class="audience-card">
+    <h4>Server Networks</h4>
+    <p>Perfect for networks serving thousands of concurrent players with needs for custom functionality and scalability.</p>
+  </div>
 
+  <div class="audience-card">
+    <h4>Go Developers</h4>
+    <p>Ideal for developers who want to leverage Go's performance and ecosystem for Minecraft infrastructure.</p>
+  </div>
+</div>
 
-## Target audience
+::: warning Coming from Java?
+If your existing codebase is in Java or you need BungeeCord/Velocity plugins, you might want to stick with those platforms. Gate doesn't support Java plugins from SpigotMC.
+:::
 
-Gate supports small and large Minecraft networks that need to serve thousands of
-concurrent players and encourages new and established Golang developers to extend Gate.
+## Why Go?
 
-Although Gate targets better performance, has more version support
-(modded servers) and has a simpler API than the BungeeCord Java proxy,
-and Gate lets you write extension code in the awesome Go programming language...
+Gate leverages Go's strengths to deliver:
 
-_If you already have all your code base in Java or need to
-use plugins for other proxies like BungeeCord and Velocity, just stay there._
-You can't use Java plugins from SpigotMC with Gate.
+- 🏃‍♂️ Fast compilation and deployment
+- 🔧 Simple dependency management
+- 🌐 Excellent networking capabilities
+- ☁️ First-class cloud integration
+- 📦 Single binary distribution
 
-## Why not use an existing proxy written in Java?
+<style>
+.why-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
 
-Because the less Java a smart Go developer needs to maintain, the happier the Go community.
-Since Go developers work in a very fast-paced and cloud-centric ecosystem with a lot of modern
-software written in Go there is simply no cognitive space and time left for [Java, where
-everything is bigger](https://youtu.be/PAAkCSZUG1c?t=317).
+.why-card {
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s;
+}
 
-_The ONLY Java code you must write is for Paper/Spigot/Minestom plugins,
-since there is no Go Minecraft server implementation as
-nobody can keep up-to-date quick enough with Mojang's releases
-of new vanilla server versions that break the protocol everytime._ - unless you are using
-[Skript](https://forums.skunity.com/resources/skript.323/) ;), it's awesome for beginners
-and has no limits for advanced use-cases.
+.why-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 2px 12px 0 var(--vp-c-divider);
+}
+
+.why-card h3 {
+  margin-top: 0;
+  color: var(--vp-c-brand-1);
+}
+
+.why-card ul {
+  padding-left: 20px;
+  margin-bottom: 0;
+}
+
+.why-card li {
+  margin: 8px 0;
+  color: var(--vp-c-text-2);
+}
+
+.audience-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.audience-card {
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.audience-card h4 {
+  margin-top: 0;
+  color: var(--vp-c-brand-1);
+}
+
+.audience-card p {
+  margin-bottom: 0;
+  color: var(--vp-c-text-2);
+}
+</style>

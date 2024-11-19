@@ -1,58 +1,158 @@
-
 # Introduction
 
 _Gate is a modern cloud-native, open source, fast, batteries-included and secure proxy for Minecraft servers
-with a focus on scalability, flexibility, multi-version support and developer friendliness._
+that focuses on scalability, flexibility, multi-version support and developer friendliness._
 
 ---
 
-![server list ping](/images/server-list.png)
+<div class="feature-image">
+  <img src="/images/server-list.png" alt="Gate server list ping example" />
+</div>
 
 <!--@include: ../badges.md -->
 
-Gate is a tiny [binary](install/binaries) and can run locally, in [Docker](install/docker) containers or
-scale with your growing demands in a [Kubernetes](install/kubernetes)-orchestrated
-production environment in the cloud.
+## What is Gate?
 
-It replaces legacy proxies like BungeeCord but also runs alongside them.
-Gate is entirely written in Go and heavily inspired by the Velocity project.
+Gate is a lightweight yet powerful Minecraft proxy that can run anywhere - from your local machine to large-scale cloud deployments:
 
-::: tip What is Go?
-Gate is written in [Go](https://go.dev/),
-an easy-to-learn, fast, reliable, efficient, statically typed, compiled programming language designed at Google.
-It is one of the most used languages for modern applications and one of the fastest growing programming languages
-that is used by companies like Google, Microsoft, Meta, Amazon, Twitter, PayPal, Twitch, Netflix, Dropbox, Uber, Cloudflare, Docker, and many more.
+- 🚀 Run locally as a simple [binary](install/binaries)
+- 🐳 Deploy with [Docker](install/docker) containers
+- ☸️ Scale infinitely in [Kubernetes](install/kubernetes) clusters
+
+It's designed as a modern replacement for legacy proxies like BungeeCord, while maintaining compatibility to run alongside them. Built entirely in Go and inspired by the Velocity project, Gate brings enterprise-grade performance to Minecraft server networks.
+
+::: tip Why Go?
+Gate is written in [Go](https://go.dev/) - a modern, fast, and reliable programming language designed by Google.
+
+Go powers the world's largest platforms and is used by companies like:
+Google, Microsoft, Meta, Amazon, Twitter, PayPal, Twitch, Netflix, Dropbox, Uber, Cloudflare, Docker, and many more.
 :::
 
 ## Quick Start
 
-If you already know the concepts of a Minecraft proxy,
-you can skip this page and jump to the [Quick Start](quick-start) guide.
+Ready to jump in? Choose your path:
 
-If you are a developer checkout the [Developers Guide](/developers/).
+- 🎮 **Server Owners**: Head to the [Quick Start](quick-start) guide
+- 💻 **Developers**: Check out the [Developer Guide](/developers/)
 
-## Why do we need a Minecraft proxy?
+## Why Use a Minecraft Proxy?
 
-### Use-cases
+<div class="feature-cards">
+  <div class="feature-card">
+    <div class="card-content">
+      <h3>🎮 Seamless Player Experience</h3>
+      <ul>
+        <li>Move players between servers instantly</li>
+        <li>No disconnects during server switches</li>
+        <li>Smooth transitions between game modes</li>
+        <li>Single point of entry for your network</li>
+      </ul>
+    </div>
+  </div>
 
-* You want to keep players connected to the proxy to move them between your different game servers like they would change the world.
-* You want to enable cross game server plugins that e.g. handle player chat events or register proxy-wide commands
-  broadcast messages and more.
-* You want to intercept and log packets on the network traffic between players and servers
+  <div class="feature-card">
+    <div class="card-content">
+      <h3>🔌 Network-Wide Features</h3>
+      <ul>
+        <li>Cross-server chat systems</li>
+        <li>Global command handling</li>
+        <li>Network-wide player management</li>
+        <li>Unified permission systems</li>
+      </ul>
+    </div>
+  </div>
 
-### How does a Minecraft proxy work?
+  <div class="feature-card">
+    <div class="card-content">
+      <h3>🔍 Advanced Monitoring</h3>
+      <ul>
+        <li>Real-time packet inspection</li>
+        <li>Network traffic analysis</li>
+        <li>Performance monitoring</li>
+        <li>Security audit capabilities</li>
+      </ul>
+    </div>
+  </div>
 
-Gate presents itself as a normal Minecraft server in the player's server list,
-but once the player connects Gate forwards the connection to one of the actual
-game servers (e.g. Minecraft vanilla, paper, spigot, sponge, etc.) to play the game.
+  <a href="/guide/why" class="feature-card" style="text-decoration: none; color: inherit;">
+    <div class="card-content">
+      <h3>Why Gate?</h3>
+      <ul>
+        <li>Minimal resource footprint (10MB RAM)</li>
+        <li>Minecraft 1.7 to latest support</li>
+        <li>Modern Go-based architecture</li>
+        <li>Clean, documented APIs</li>
+      </ul>
+    </div>
+  </a>
+</div>
 
-The player can be moved around the network of Minecraft servers **without**
-fully disconnecting, since we want the player to stay connected (and not want
-them to re-login via the server-list every time).
+### How It Works
 
-Therefore, Gate reads all packets sent between players (Minecraft client) and
-upstream servers, logs session state changes, emits different events like
-[Login, Disconnect, ServerConnect, Chat, Kick etc.](https://github.com/minekube/gate/blob/master/pkg/edition/java/proxy/events.go)
-that custom plugins/code can react to.
+Gate acts as an intelligent middleware between players and your Minecraft servers:
 
-The **advantages** for using a proxy are far-reaching depending on your use-case.
+1. Players connect to Gate like a normal Minecraft server
+2. Gate forwards connections to your actual game servers (vanilla, Paper, Spigot, etc.)
+3. Players can move between servers while maintaining their connection
+4. Gate monitors all network traffic and emits events for:
+   - Login/Logout
+   - Server Connections
+   - Chat Messages
+   - Player Kicks
+   - [And more!](https://github.com/minekube/gate/blob/master/pkg/edition/java/proxy/events.go)
+
+This architecture enables powerful features like load balancing, server maintenance without disconnects, and network-wide plugins.
+
+<style>
+.feature-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+
+.feature-card {
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 12px 0 var(--vp-c-divider);
+  border-color: var(--vp-c-brand-1);
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--vp-c-brand-1);
+}
+
+.feature-card ul {
+  padding-left: 20px;
+  margin-bottom: 0;
+}
+
+.feature-card li {
+  margin: 8px 0;
+  color: var(--vp-c-text-2);
+}
+
+.feature-image {
+  margin: 2rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feature-image img {
+  width: 100%;
+  display: block;
+}
+</style>

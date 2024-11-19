@@ -81,10 +81,10 @@ export default defineConfig({
     },
 
     nav: [
-      { text: 'Quick Start', link: '/guide/quick-start' },
       { text: 'Guide', link: '/guide/' },
       { text: 'Lite mode', link: '/guide/lite' },
-      { text: 'Developer Guide', link: '/developers/' },
+      { text: 'Developers', link: '/developers/' },
+      { text: 'API', link: '/developers/api/' },
       { text: 'Config', link: '/guide/config/' },
       { text: 'Downloads', link: '/guide/install/' },
       { text: 'Extensions', link: '/extensions' },
