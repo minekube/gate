@@ -125,6 +125,8 @@
           v-for="item in filteredExtensions"
           :key="item.name"
           :href="item.url"
+          target="_blank"
+          rel="noopener noreferrer"
           class="p-4 group bg-vp-c-bg transition-all flex flex-col rounded-lg border border-vp-c-border hover:border-vp-c-brand-2 animate-in fade-in-40 relative"
         >
           <h2 class="font-bold">
@@ -166,6 +168,8 @@
         </p>
         <a
           href="https://github.com/minekube/awesome"
+          target="_blank"
+          rel="noopener noreferrer"
           class="inline-flex items-center gap-2 px-6 py-3 bg-[#24292e] text-white rounded-lg hover:bg-[#2f363d] transition-colors font-medium shadow-sm"
         >
           <!-- GitHub Icon -->
