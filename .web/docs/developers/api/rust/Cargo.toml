@@ -1,0 +1,10 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+minekube_gate_community_neoeinstein-prost = { version = "0.4.0-20241118150055-50fffb007499.1", registry = "buf" }
+minekube_gate_community_neoeinstein-tonic = { version = "0.4.1-20241118150055-50fffb007499.1", registry = "buf" }
+tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }
+tonic = "0.12.3"

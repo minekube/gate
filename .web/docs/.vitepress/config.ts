@@ -238,6 +238,10 @@ export default defineConfig({
               link: '/developers/api/go/',
             },
             {
+              text: 'Rust',
+              link: '/developers/api/rust/',
+            },
+            {
               text: 'Java',
               link: '/developers/api/java/',
             },
