@@ -80,6 +80,7 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 	var err error
 
 	for _, op := range c.Msg.Operations {
+
 		switch op.Operation {
 		case pb.Operation_OPERATION_CREATE:
 
@@ -108,20 +109,85 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 			}
 
 		case pb.Operation_OPERATION_DELETE:
+			var serverInfo *ConcreteServerInfo
 
-			serverAddr := netutil.NewAddr(op.Address, "tcp")
+			if op.Name != "" && op.Address != "" {
+				serverAddr := netutil.NewAddr(op.Address, "tcp")
+				serverInfo = &ConcreteServerInfo{
+					name:    op.Name,
+					address: serverAddr,
+				}
 
-			serverInfo := &ConcreteServerInfo{
-				name:    op.Name,
-				address: serverAddr,
+			} else if op.Name != "" {
+				registeredServer := s.p.Server(op.Name)
+				if registeredServer != nil {
+					var ok bool
+					serverInfo, ok = registeredServer.ServerInfo().(*ConcreteServerInfo)
+					if !ok {
+						responses = append(responses, &pb.ServerResponse{
+							Name:         op.Name,
+							Address:      op.Address,
+							Success:      false,
+							ErrorMessage: "server info type mismatch",
+						})
+						continue
+					}
+				} else {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: "server not found by name",
+					})
+					continue
+				}
+			} else if op.Address != "" {
+				var found bool
+				registeredServers := s.p.Servers()
+				for _, registeredServer := range registeredServers {
+					if registeredServer.ServerInfo().Addr().String() == op.Address {
+						var ok bool
+						serverInfo, ok = registeredServer.ServerInfo().(*ConcreteServerInfo)
+						if !ok {
+							responses = append(responses, &pb.ServerResponse{
+								Name:         op.Name,
+								Address:      op.Address,
+								Success:      false,
+								ErrorMessage: "server info type mismatch",
+							})
+							continue
+						}
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: "server not found by address",
+					})
+					continue
+				}
+
+			} else {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      false,
+					ErrorMessage: "invalid request: must specify either name or address",
+				})
 			}
+
 			success := s.p.Unregister(serverInfo)
 			if !success {
 				responses = append(responses, &pb.ServerResponse{
 					Name:         op.Name,
 					Address:      op.Address,
 					Success:      false,
-					ErrorMessage: "server not found",
+					ErrorMessage: "failed to remove server",
 				})
 			} else {
 				responses = append(responses, &pb.ServerResponse{
@@ -133,7 +199,6 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 			}
 
 		case pb.Operation_OPERATION_UNSPECIFIED:
-
 			serverAddr := netutil.NewAddr(op.Address, "tcp")
 
 			serverInfo := &ConcreteServerInfo{
@@ -143,17 +208,27 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 
 			registeredServer := s.p.Server(op.Name)
 
-			if registeredServer.ServerInfo().Addr().String() == serverInfo.address.String() {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      true,
-					ErrorMessage: "failed to update server: already matches the existing address",
-				})
-				continue
-			}
-
 			if registeredServer != nil {
+				if registeredServer.ServerInfo() != nil && registeredServer.ServerInfo().Addr() != nil {
+					if registeredServer.ServerInfo().Addr().String() == serverInfo.address.String() {
+						responses = append(responses, &pb.ServerResponse{
+							Name:         op.Name,
+							Address:      op.Address,
+							Success:      true,
+							ErrorMessage: "failed to update server: already matches the existing address",
+						})
+						continue
+					}
+				} else {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: "server info or address is nil",
+					})
+					continue
+				}
+
 				success := s.p.Unregister(registeredServer.ServerInfo())
 				if !success {
 					responses = append(responses, &pb.ServerResponse{
@@ -190,7 +265,7 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 						Name:         op.Name,
 						Address:      op.Address,
 						Success:      false,
-						ErrorMessage: fmt.Sprintf("failed to re-add server: %v", err),
+						ErrorMessage: fmt.Sprintf("failed to add new server: %v", err),
 					})
 					continue
 				}
@@ -201,11 +276,8 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 					Success:      true,
 					ErrorMessage: "",
 				})
-
 			}
-
 		}
 	}
-
 	return connect.NewResponse(&pb.UpdateServersResponse{Responses: responses}), nil
 }
