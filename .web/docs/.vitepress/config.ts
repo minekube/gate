@@ -238,6 +238,10 @@ export default defineConfig({
               link: '/developers/api/java/',
             },
             {
+              text: 'Kotlin',
+              link: '/developers/api/kotlin/',
+            },
+            {
               text: 'Glossary',
               link: '/developers/api/glossary',
             },
