@@ -230,6 +230,10 @@ export default defineConfig({
               ],
             },
             {
+              text: 'Python',
+              link: '/developers/api/python/',
+            },
+            {
               text: 'Go',
               link: '/developers/api/go/',
             },

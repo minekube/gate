@@ -127,6 +127,10 @@ servers {
 }
 ```
 
+::: info Learn More
+For more details on using gRPC with Java, check out the [gRPC Java Documentation](https://grpc.io/docs/languages/java/basics/).
+:::
+
 <style>
 .tech-icon {
   width: 32px;

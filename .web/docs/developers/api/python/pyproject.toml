@@ -1,0 +1,13 @@
+[project]
+name = "python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "minekube-gate-grpc-python>=1.68.0.1.20241118150055",
+    "minekube-gate-protocolbuffers-python>=28.3.0.2.20241118150055",
+]
+
+[[tool.uv.index]]
+url = "https://buf.build/gen/python"
