@@ -242,12 +242,12 @@ export default defineConfig({
               link: '/developers/api/rust/',
             },
             {
-              text: 'Java',
-              link: '/developers/api/java/',
-            },
-            {
               text: 'Kotlin',
               link: '/developers/api/kotlin/',
+            },
+            {
+              text: 'Java',
+              link: '/developers/api/java/',
             },
             {
               text: 'Glossary',

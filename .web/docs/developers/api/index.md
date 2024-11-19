@@ -40,15 +40,6 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="./java/" class="feature-link">
-      <div class="title">
-        <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" class="tech-icon" alt="Java" />
-        Java
-      </div>
-      <div class="details">via Maven artifacts</div>
-    </a>
-  </div>
-  <div class="vp-feature-small">
     <a style="text-decoration: none" href="./go/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" class="tech-icon" alt="Go" />
@@ -71,6 +62,15 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/kotlin/kotlin-original.svg" class="tech-icon" alt="Kotlin" />
         Kotlin
+      </div>
+      <div class="details">via Maven artifacts</div>
+    </a>
+  </div>
+  <div class="vp-feature-small">
+    <a style="text-decoration: none" href="./java/" class="feature-link">
+      <div class="title">
+        <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" class="tech-icon" alt="Java" />
+        Java
       </div>
       <div class="details">via Maven artifacts</div>
     </a>
