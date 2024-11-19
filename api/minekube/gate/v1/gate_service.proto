@@ -9,38 +9,35 @@ service GateService {
   rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
   // ListServers returns all registered servers.
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
-  // AddServer adds a server to the proxy, will fail if server is already registered.
-  rpc AddServer(AddServerRequest) returns (GetServerResponse);
-  // RemoveServer removes a server from the proxy using the name and address of the server.
-  rpc RemoveServer(RemoveServerRequest) returns (RemoveServerResponse);
+  // UpdateServers allows multiple servers to be added or removed in a single request.
+  rpc UpdateServers(UpdateServersRequest) returns (UpdateServersResponse);
 }
 
-message RemoveServerRequest {
+enum Operation {
+  OPERATION_UNSPECIFIED = 0;
+  OPERATION_CREATE = 1;  // Add server
+  OPERATION_DELETE = 2;  // Remove server
+}
+
+message UpdateServersRequest {
+  repeated ServerOperation operations = 1; // List of operations to add or remove servers
+}
+
+message ServerOperation {
+  Operation operation = 1;  // The operation (create or delete)
+  string name = 2;          // The name of the server
+  string address = 3;       // The address of the server
+}
+
+message UpdateServersResponse {
+  repeated ServerResponse responses = 1;  // List of responses, one for each operation
+}
+
+message ServerResponse {
   string name = 1;
   string address = 2;
-}
-
-message RemoveServerResponse {
-  ServerRemoval server = 1;
-}
-
-message ServerRemoval {
-  string name = 1;
-  string address = 2;
-}
-
-message AddServerRequest {
-  string name = 1;
-  string address = 2;
-}
-
-message GetServerResponse {
-  ServerAddition server = 1;
-}
-
-message ServerAddition {
-  string name = 1;
-  string address = 2;
+  bool success = 3;           // Whether the operation was successful
+  string error_message = 4;   // Error message, if any
 }
 
 // ListServersRequest is the request for ListServers method.

@@ -37,20 +37,17 @@ const (
 	GateServiceGetPlayerProcedure = "/minekube.gate.v1.GateService/GetPlayer"
 	// GateServiceListServersProcedure is the fully-qualified name of the GateService's ListServers RPC.
 	GateServiceListServersProcedure = "/minekube.gate.v1.GateService/ListServers"
-	// GateServiceAddServerProcedure is the fully-qualified name of the GateService's AddServer RPC.
-	GateServiceAddServerProcedure = "/minekube.gate.v1.GateService/AddServer"
-	// GateServiceRemoveServerProcedure is the fully-qualified name of the GateService's RemoveServer
+	// GateServiceUpdateServersProcedure is the fully-qualified name of the GateService's UpdateServers
 	// RPC.
-	GateServiceRemoveServerProcedure = "/minekube.gate.v1.GateService/RemoveServer"
+	GateServiceUpdateServersProcedure = "/minekube.gate.v1.GateService/UpdateServers"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	gateServiceServiceDescriptor            = v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService")
-	gateServiceGetPlayerMethodDescriptor    = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
-	gateServiceListServersMethodDescriptor  = gateServiceServiceDescriptor.Methods().ByName("ListServers")
-	gateServiceAddServerMethodDescriptor    = gateServiceServiceDescriptor.Methods().ByName("AddServer")
-	gateServiceRemoveServerMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("RemoveServer")
+	gateServiceServiceDescriptor             = v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService")
+	gateServiceGetPlayerMethodDescriptor     = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
+	gateServiceListServersMethodDescriptor   = gateServiceServiceDescriptor.Methods().ByName("ListServers")
+	gateServiceUpdateServersMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("UpdateServers")
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -60,10 +57,8 @@ type GateServiceClient interface {
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
 	// ListServers returns all registered servers.
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
-	// AddServer adds a server to the proxy, will fail if server is already registered.
-	AddServer(context.Context, *connect.Request[v1.AddServerRequest]) (*connect.Response[v1.GetServerResponse], error)
-	// RemoveServer removes a server from the proxy using the name and address of the server.
-	RemoveServer(context.Context, *connect.Request[v1.RemoveServerRequest]) (*connect.Response[v1.RemoveServerResponse], error)
+	// UpdateServers allows multiple servers to be added or removed in a single request.
+	UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -88,16 +83,10 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(gateServiceListServersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		addServer: connect.NewClient[v1.AddServerRequest, v1.GetServerResponse](
+		updateServers: connect.NewClient[v1.UpdateServersRequest, v1.UpdateServersResponse](
 			httpClient,
-			baseURL+GateServiceAddServerProcedure,
-			connect.WithSchema(gateServiceAddServerMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
-		removeServer: connect.NewClient[v1.RemoveServerRequest, v1.RemoveServerResponse](
-			httpClient,
-			baseURL+GateServiceRemoveServerProcedure,
-			connect.WithSchema(gateServiceRemoveServerMethodDescriptor),
+			baseURL+GateServiceUpdateServersProcedure,
+			connect.WithSchema(gateServiceUpdateServersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -105,10 +94,9 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // gateServiceClient implements GateServiceClient.
 type gateServiceClient struct {
-	getPlayer    *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
-	listServers  *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
-	addServer    *connect.Client[v1.AddServerRequest, v1.GetServerResponse]
-	removeServer *connect.Client[v1.RemoveServerRequest, v1.RemoveServerResponse]
+	getPlayer     *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
+	listServers   *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
+	updateServers *connect.Client[v1.UpdateServersRequest, v1.UpdateServersResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -121,14 +109,9 @@ func (c *gateServiceClient) ListServers(ctx context.Context, req *connect.Reques
 	return c.listServers.CallUnary(ctx, req)
 }
 
-// AddServer calls minekube.gate.v1.GateService.AddServer.
-func (c *gateServiceClient) AddServer(ctx context.Context, req *connect.Request[v1.AddServerRequest]) (*connect.Response[v1.GetServerResponse], error) {
-	return c.addServer.CallUnary(ctx, req)
-}
-
-// RemoveServer calls minekube.gate.v1.GateService.RemoveServer.
-func (c *gateServiceClient) RemoveServer(ctx context.Context, req *connect.Request[v1.RemoveServerRequest]) (*connect.Response[v1.RemoveServerResponse], error) {
-	return c.removeServer.CallUnary(ctx, req)
+// UpdateServers calls minekube.gate.v1.GateService.UpdateServers.
+func (c *gateServiceClient) UpdateServers(ctx context.Context, req *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error) {
+	return c.updateServers.CallUnary(ctx, req)
 }
 
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
@@ -138,10 +121,8 @@ type GateServiceHandler interface {
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
 	// ListServers returns all registered servers.
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
-	// AddServer adds a server to the proxy, will fail if server is already registered.
-	AddServer(context.Context, *connect.Request[v1.AddServerRequest]) (*connect.Response[v1.GetServerResponse], error)
-	// RemoveServer removes a server from the proxy using the name and address of the server.
-	RemoveServer(context.Context, *connect.Request[v1.RemoveServerRequest]) (*connect.Response[v1.RemoveServerResponse], error)
+	// UpdateServers allows multiple servers to be added or removed in a single request.
+	UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -162,16 +143,10 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(gateServiceListServersMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	gateServiceAddServerHandler := connect.NewUnaryHandler(
-		GateServiceAddServerProcedure,
-		svc.AddServer,
-		connect.WithSchema(gateServiceAddServerMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
-	gateServiceRemoveServerHandler := connect.NewUnaryHandler(
-		GateServiceRemoveServerProcedure,
-		svc.RemoveServer,
-		connect.WithSchema(gateServiceRemoveServerMethodDescriptor),
+	gateServiceUpdateServersHandler := connect.NewUnaryHandler(
+		GateServiceUpdateServersProcedure,
+		svc.UpdateServers,
+		connect.WithSchema(gateServiceUpdateServersMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,10 +155,8 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 			gateServiceGetPlayerHandler.ServeHTTP(w, r)
 		case GateServiceListServersProcedure:
 			gateServiceListServersHandler.ServeHTTP(w, r)
-		case GateServiceAddServerProcedure:
-			gateServiceAddServerHandler.ServeHTTP(w, r)
-		case GateServiceRemoveServerProcedure:
-			gateServiceRemoveServerHandler.ServeHTTP(w, r)
+		case GateServiceUpdateServersProcedure:
+			gateServiceUpdateServersHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -201,10 +174,6 @@ func (UnimplementedGateServiceHandler) ListServers(context.Context, *connect.Req
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ListServers is not implemented"))
 }
 
-func (UnimplementedGateServiceHandler) AddServer(context.Context, *connect.Request[v1.AddServerRequest]) (*connect.Response[v1.GetServerResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.AddServer is not implemented"))
-}
-
-func (UnimplementedGateServiceHandler) RemoveServer(context.Context, *connect.Request[v1.RemoveServerRequest]) (*connect.Response[v1.RemoveServerResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.RemoveServer is not implemented"))
+func (UnimplementedGateServiceHandler) UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdateServers is not implemented"))
 }

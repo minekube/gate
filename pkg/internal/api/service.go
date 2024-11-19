@@ -10,6 +10,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -74,75 +75,137 @@ func (s *Service) GetPlayer(ctx context.Context, c *connect.Request[pb.GetPlayer
 	}), nil
 }
 
-func (s *Service) AddServer(ctx context.Context, c *connect.Request[pb.AddServerRequest]) (*connect.Response[pb.GetServerResponse], error) {
-	name := c.Msg.GetName()
-	address := c.Msg.GetAddress()
+func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.UpdateServersRequest]) (*connect.Response[pb.UpdateServersResponse], error) {
+	var responses []*pb.ServerResponse
+	var err error
 
-	if name == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("name is required"))
-	}
+	for _, op := range c.Msg.Operations {
+		switch op.Operation {
+		case pb.Operation_OPERATION_CREATE:
 
-	if address == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("address is required"))
-	}
+			serverAddr := netutil.NewAddr(op.Address, "tcp")
 
-	serverAddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid address: %v", err))
-	}
+			serverInfo := &ConcreteServerInfo{
+				name:    op.Name,
+				address: serverAddr,
+			}
 
-	serverInfo := &ConcreteServerInfo{
-		name:    name,
-		address: serverAddr,
-	}
+			_, err = s.p.Register(serverInfo)
+			if err != nil {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      false,
+					ErrorMessage: fmt.Sprintf("failed to add server: %v", err),
+				})
+			} else {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      true,
+					ErrorMessage: "",
+				})
+			}
 
-	registeredServer, err := s.p.Register(serverInfo)
-	if err != nil {
-		if errors.Is(err, proxy.ErrServerAlreadyExists) {
-			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("server %s already exists", name))
+		case pb.Operation_OPERATION_DELETE:
+
+			serverAddr := netutil.NewAddr(op.Address, "tcp")
+
+			serverInfo := &ConcreteServerInfo{
+				name:    op.Name,
+				address: serverAddr,
+			}
+			success := s.p.Unregister(serverInfo)
+			if !success {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      false,
+					ErrorMessage: "server not found",
+				})
+			} else {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      true,
+					ErrorMessage: "",
+				})
+			}
+
+		case pb.Operation_OPERATION_UNSPECIFIED:
+
+			serverAddr := netutil.NewAddr(op.Address, "tcp")
+
+			serverInfo := &ConcreteServerInfo{
+				name:    op.Name,
+				address: serverAddr,
+			}
+
+			registeredServer := s.p.Server(op.Name)
+
+			if registeredServer.ServerInfo().Addr().String() == serverInfo.address.String() {
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      true,
+					ErrorMessage: "failed to update server: already matches the existing address",
+				})
+				continue
+			}
+
+			if registeredServer != nil {
+				success := s.p.Unregister(registeredServer.ServerInfo())
+				if !success {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: "failed to remove existing server",
+					})
+					continue
+				}
+
+				_, err := s.p.Register(serverInfo)
+				if err != nil {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: fmt.Sprintf("failed to re-add server: %v", err),
+					})
+					continue
+				}
+
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      true,
+					ErrorMessage: "",
+				})
+
+			} else {
+				_, err := s.p.Register(serverInfo)
+				if err != nil {
+					responses = append(responses, &pb.ServerResponse{
+						Name:         op.Name,
+						Address:      op.Address,
+						Success:      false,
+						ErrorMessage: fmt.Sprintf("failed to re-add server: %v", err),
+					})
+					continue
+				}
+
+				responses = append(responses, &pb.ServerResponse{
+					Name:         op.Name,
+					Address:      op.Address,
+					Success:      true,
+					ErrorMessage: "",
+				})
+
+			}
+
 		}
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add server: %v", err))
 	}
 
-	return connect.NewResponse(&pb.GetServerResponse{
-		Server: &pb.ServerAddition{
-			Name:    registeredServer.ServerInfo().Name(),
-			Address: registeredServer.ServerInfo().Addr().String(),
-		},
-	}), nil
-}
-
-func (s *Service) RemoveServer(ctx context.Context, c *connect.Request[pb.RemoveServerRequest]) (*connect.Response[pb.RemoveServerResponse], error) {
-	name := c.Msg.GetName()
-	address := c.Msg.GetAddress()
-
-	if name == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("name is required"))
-	}
-
-	if address == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("address is required"))
-	}
-
-	serverAddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid address: %v", err))
-	}
-
-	serverInfo := &ConcreteServerInfo{
-		name:    name,
-		address: serverAddr,
-	}
-
-	success := s.p.Unregister(serverInfo)
-	if !success {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("server %s with address %s not found", name, address))
-	}
-
-	return connect.NewResponse(&pb.RemoveServerResponse{
-		Server: &pb.ServerRemoval{
-			Name:    name,
-			Address: address,
-		},
-	}), nil
+	return connect.NewResponse(&pb.UpdateServersResponse{Responses: responses}), nil
 }
