@@ -1,4 +1,4 @@
-# bun
+# <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bun/bun-original.svg" class="tech-icon" alt="Bun" /> Bun
 
 You can use the following `bunfig.toml` to install the dependencies from the `buf.build` registry.
 
@@ -12,9 +12,27 @@ You can use the following `bunfig.toml` to install the dependencies from the `bu
 
 To install dependencies:
 
-```bash
+To install dependencies:
+
+::: code-group
+
+```bash [bun]
 bun add @buf/minekube_gate.connectrpc_es@latest
 ```
+
+```bash [pnpm]
+pnpm add @buf/minekube_gate.connectrpc_es@latest
+```
+
+```bash [npm]
+npm install @buf/minekube_gate.connectrpc_es@latest
+```
+
+```bash [yarn]
+yarn add @buf/minekube_gate.connectrpc_es@latest
+```
+
+:::
 
 Refer to the [ConnectRPC](https://connectrpc.com/docs/node/using-clients) documentation for more information on how to use ConnectRPC with TypeScript on server side.
 
@@ -71,3 +89,15 @@ bun run index.ts
 ```
 
 This project was created using `bun init` in bun v1.1.26. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+
+<style>
+.tech-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 12px;
+  position: relative;
+  top: -2px;
+}
+</style>

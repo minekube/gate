@@ -1,4 +1,4 @@
-# Node.js
+# <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" class="tech-icon" alt="Node.js" /> Node.js
 
 You can use the following `.npmrc` to install the dependencies from the `buf.build` registry.
 

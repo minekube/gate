@@ -11,7 +11,11 @@ Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate
 
 ## Any Language
 
-Go to the [API](/developers/api/) section to learn how to use Gate's API from any programming language.
+Go to the [API](/developers/api/) 🌐 section to learn how to use Gate's API from any programming language.
+
+## Integration Options
+
+<!--@include: ./api/go/integration-options.md -->
 
 ## Getting Started
 

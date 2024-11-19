@@ -1,4 +1,4 @@
-# TypeScript/JavaScript Guide
+# <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" class="tech-icon" alt="TypeScript" /> TypeScript Guide
 
 Gate's TypeScript/JavaScript client libraries allow you to interact with Gate's API using your preferred runtime environment. This guide covers installation and usage across different JavaScript runtimes.
 
@@ -17,7 +17,7 @@ Choose your preferred runtime environment:
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="./typescript/node" class="feature-link">
+    <a style="text-decoration: none" href="./node" class="feature-link">
       <div class="title">
         <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" class="tech-icon" alt="Node.js" />
         Node.js
@@ -26,7 +26,7 @@ Choose your preferred runtime environment:
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="./typescript/web" class="feature-link">
+    <a style="text-decoration: none" href="./web" class="feature-link">
       <div class="title">
         <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/chrome/chrome-original.svg" class="tech-icon" alt="Web" />
         Web
@@ -90,10 +90,19 @@ Choose your preferred runtime environment:
 }
 
 .tech-icon {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: inline-block;
   vertical-align: middle;
+  margin-right: 12px;
+  position: relative;
+  top: -2px;
+}
+
+.vp-feature-small .tech-icon {
+  width: 24px;
+  height: 24px;
   margin-right: 8px;
+  top: 0;
 }
 </style>

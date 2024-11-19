@@ -201,41 +201,41 @@ export default defineConfig({
               text: 'Events',
               link: '/developers/events',
             },
+          ],
+        },
+        {
+          text: 'HTTP API',
+          link: '/developers/api/',
+          items: [
             {
-              text: 'HTTP API',
+              text: 'Getting Started',
               link: '/developers/api/',
+            },
+            {
+              text: 'TypeScript',
+              link: '/developers/api/typescript/',
               items: [
                 {
-                  text: 'Getting Started',
-                  link: '/developers/api/',
+                  text: 'Bun',
+                  link: '/developers/api/typescript/bun/',
                 },
                 {
-                  text: 'TypeScript',
-                  link: '/developers/api/typescript/',
-                  items: [
-                    {
-                      text: 'Bun',
-                      link: '/developers/api/typescript/bun/',
-                    },
-                    {
-                      text: 'Node.js',
-                      link: '/developers/api/typescript/node/',
-                    },
-                    {
-                      text: 'Web',
-                      link: '/developers/api/typescript/web/',
-                    },
-                  ],
+                  text: 'Node.js',
+                  link: '/developers/api/typescript/node/',
                 },
                 {
-                  text: 'Go',
-                  link: '/developers/api/go/',
-                },
-                {
-                  text: 'Glossary',
-                  link: '/developers/api/glossary',
+                  text: 'Web',
+                  link: '/developers/api/typescript/web/',
                 },
               ],
+            },
+            {
+              text: 'Go',
+              link: '/developers/api/go/',
+            },
+            {
+              text: 'Glossary',
+              link: '/developers/api/glossary',
             },
           ],
         },

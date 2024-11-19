@@ -2,9 +2,9 @@
 
 Gate provides a powerful API that exposes its functionality to a wide ecosystem of languages and tools. Using modern technologies like Protocol Buffers, gRPC, and ConnectRPC with schemas managed through buf.build.
 
-::: tip Quick Start
+## Quick Start
+
 Simply enable the API in Gate's configuration, choose your preferred language's client library, and start building!
-:::
 
 ::: code-group
 
@@ -16,13 +16,13 @@ api:
 
 :::
 
-## Getting Started
+## Official SDKs
 
 Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build/minekube/gate/sdks), where you can directly pull client libraries using your preferred language's package manager:
 
 <div class="vp-features">
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/typescript/" class="feature-link">
+    <a style="text-decoration: none" href="./typescript/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" class="tech-icon" alt="TypeScript" />
         TypeScript
@@ -31,7 +31,7 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/python/" class="feature-link">
+    <a style="text-decoration: none" href="./python/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" class="tech-icon" alt="Python" />
         Python
@@ -40,7 +40,7 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/java/" class="feature-link">
+    <a style="text-decoration: none" href="./java/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" class="tech-icon" alt="Java" />
         Java
@@ -49,7 +49,7 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/go/" class="feature-link">
+    <a style="text-decoration: none" href="./go/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" class="tech-icon" alt="Go" />
         Go
@@ -58,7 +58,7 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/rust/" class="feature-link">
+    <a style="text-decoration: none" href="./rust/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/rust/rust-original.svg" class="tech-icon" alt="Rust" />
         Rust
@@ -67,7 +67,7 @@ Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build
     </a>
   </div>
   <div class="vp-feature-small">
-    <a style="text-decoration: none" href="/developers/api/kotlin/" class="feature-link">
+    <a style="text-decoration: none" href="./kotlin/" class="feature-link">
       <div class="title">
         <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/kotlin/kotlin-original.svg" class="tech-icon" alt="Kotlin" />
         Kotlin
