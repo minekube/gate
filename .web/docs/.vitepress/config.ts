@@ -234,6 +234,10 @@ export default defineConfig({
               link: '/developers/api/go/',
             },
             {
+              text: 'Java',
+              link: '/developers/api/java/',
+            },
+            {
               text: 'Glossary',
               link: '/developers/api/glossary',
             },
