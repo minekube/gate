@@ -40,6 +40,9 @@ const (
 	// GateServiceUpdateServersProcedure is the fully-qualified name of the GateService's UpdateServers
 	// RPC.
 	GateServiceUpdateServersProcedure = "/minekube.gate.v1.GateService/UpdateServers"
+	// GateServiceUpdatePlayerProcedure is the fully-qualified name of the GateService's UpdatePlayer
+	// RPC.
+	GateServiceUpdatePlayerProcedure = "/minekube.gate.v1.GateService/UpdatePlayer"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -48,6 +51,7 @@ var (
 	gateServiceGetPlayerMethodDescriptor     = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
 	gateServiceListServersMethodDescriptor   = gateServiceServiceDescriptor.Methods().ByName("ListServers")
 	gateServiceUpdateServersMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("UpdateServers")
+	gateServiceUpdatePlayerMethodDescriptor  = gateServiceServiceDescriptor.Methods().ByName("UpdatePlayer")
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -59,6 +63,8 @@ type GateServiceClient interface {
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
 	// UpdateServers allows multiple servers to be added or removed in a single request.
 	UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error)
+	// UpdatePlayer allows you to send or kick players in a single request.
+	UpdatePlayer(context.Context, *connect.Request[v1.UpdatePlayerRequest]) (*connect.Response[v1.UpdatePlayerResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -89,6 +95,12 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(gateServiceUpdateServersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		updatePlayer: connect.NewClient[v1.UpdatePlayerRequest, v1.UpdatePlayerResponse](
+			httpClient,
+			baseURL+GateServiceUpdatePlayerProcedure,
+			connect.WithSchema(gateServiceUpdatePlayerMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -97,6 +109,7 @@ type gateServiceClient struct {
 	getPlayer     *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
 	listServers   *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
 	updateServers *connect.Client[v1.UpdateServersRequest, v1.UpdateServersResponse]
+	updatePlayer  *connect.Client[v1.UpdatePlayerRequest, v1.UpdatePlayerResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -114,6 +127,11 @@ func (c *gateServiceClient) UpdateServers(ctx context.Context, req *connect.Requ
 	return c.updateServers.CallUnary(ctx, req)
 }
 
+// UpdatePlayer calls minekube.gate.v1.GateService.UpdatePlayer.
+func (c *gateServiceClient) UpdatePlayer(ctx context.Context, req *connect.Request[v1.UpdatePlayerRequest]) (*connect.Response[v1.UpdatePlayerResponse], error) {
+	return c.updatePlayer.CallUnary(ctx, req)
+}
+
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
@@ -123,6 +141,8 @@ type GateServiceHandler interface {
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
 	// UpdateServers allows multiple servers to be added or removed in a single request.
 	UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error)
+	// UpdatePlayer allows you to send or kick players in a single request.
+	UpdatePlayer(context.Context, *connect.Request[v1.UpdatePlayerRequest]) (*connect.Response[v1.UpdatePlayerResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -149,6 +169,12 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(gateServiceUpdateServersMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	gateServiceUpdatePlayerHandler := connect.NewUnaryHandler(
+		GateServiceUpdatePlayerProcedure,
+		svc.UpdatePlayer,
+		connect.WithSchema(gateServiceUpdatePlayerMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GateServiceGetPlayerProcedure:
@@ -157,6 +183,8 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 			gateServiceListServersHandler.ServeHTTP(w, r)
 		case GateServiceUpdateServersProcedure:
 			gateServiceUpdateServersHandler.ServeHTTP(w, r)
+		case GateServiceUpdatePlayerProcedure:
+			gateServiceUpdatePlayerHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -176,4 +204,8 @@ func (UnimplementedGateServiceHandler) ListServers(context.Context, *connect.Req
 
 func (UnimplementedGateServiceHandler) UpdateServers(context.Context, *connect.Request[v1.UpdateServersRequest]) (*connect.Response[v1.UpdateServersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdateServers is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) UpdatePlayer(context.Context, *connect.Request[v1.UpdatePlayerRequest]) (*connect.Response[v1.UpdatePlayerResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdatePlayer is not implemented"))
 }

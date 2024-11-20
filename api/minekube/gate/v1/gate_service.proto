@@ -11,6 +11,36 @@ service GateService {
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
   // UpdateServers allows multiple servers to be added or removed in a single request.
   rpc UpdateServers(UpdateServersRequest) returns (UpdateServersResponse);
+  // UpdatePlayer allows you to send or kick players in a single request.
+  rpc UpdatePlayer(UpdatePlayerRequest) returns (UpdatePlayerResponse);
+}
+
+enum PlayerOperationType {
+  PLAYER_OPERATION_UNSPECIFIED = 0;
+  PLAYER_OPERATION_SEND = 1; // Send player to server
+  PLAYER_OPERATION_KICK = 2; // Kick player from network
+}
+
+message UpdatePlayerRequest {
+  repeated PlayerOperation operations = 1; // List of operations to perform on players
+}
+
+message PlayerOperation {
+  PlayerOperationType operation = 1; // Type of operation (e.g., send or kick)
+  string player = 2;                 // The player's username or ID
+  string server = 3;                 // The target server (only for SEND operation)
+  string reason = 4;                 // Reason for kicking (only for KICK operation)
+}
+
+message UpdatePlayerResponse {
+  repeated PlayerResponse responses = 1; // List of responses, one for each operation
+}
+
+message PlayerResponse {
+  string player = 1;         // The player's username or ID
+  PlayerOperationType operation = 2; // The performed operation
+  bool success = 3;          // Whether the operation was successful
+  string error_message = 4;  // Error message, if any
 }
 
 enum Operation {

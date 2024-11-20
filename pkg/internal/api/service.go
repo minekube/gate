@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"connectrpc.com/connect"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
@@ -280,4 +281,91 @@ func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.Updat
 		}
 	}
 	return connect.NewResponse(&pb.UpdateServersResponse{Responses: responses}), nil
+}
+
+func (s *Service) UpdatePlayer(ctx context.Context, c *connect.Request[pb.UpdatePlayerRequest]) (*connect.Response[pb.UpdatePlayerResponse], error) {
+	var responses []*pb.PlayerResponse
+
+	for _, op := range c.Msg.Operations {
+
+		switch op.Operation {
+		case pb.PlayerOperationType_PLAYER_OPERATION_SEND:
+			var player proxy.Player
+			if op.Player != "" {
+				player = s.p.PlayerByName(op.Player)
+			}
+			if player == nil {
+				responses = append(responses, &pb.PlayerResponse{
+					Player:       op.Player,
+					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
+					Success:      false,
+					ErrorMessage: "player not found",
+				})
+				continue
+			}
+
+			targetServer := s.p.Server(op.Server)
+			if targetServer == nil {
+				responses = append(responses, &pb.PlayerResponse{
+					Player:       op.Player,
+					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
+					Success:      false,
+					ErrorMessage: "server not found",
+				})
+				continue
+			}
+
+			connectionRequest := player.CreateConnectionRequest(targetServer)
+			_, err := connectionRequest.Connect(ctx)
+			if err != nil {
+				responses = append(responses, &pb.PlayerResponse{
+					Player:       op.Player,
+					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
+					Success:      false,
+					ErrorMessage: fmt.Sprintf("failed to send player: %v", err),
+				})
+			} else {
+				responses = append(responses, &pb.PlayerResponse{
+					Player:       op.Player,
+					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
+					Success:      true,
+					ErrorMessage: "",
+				})
+			}
+
+		case pb.PlayerOperationType_PLAYER_OPERATION_KICK:
+			var player proxy.Player
+			if op.Player != "" {
+				player = s.p.PlayerByName(op.Player)
+			}
+			if player == nil {
+				responses = append(responses, &pb.PlayerResponse{
+					Player:       op.Player,
+					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_KICK,
+					Success:      false,
+					ErrorMessage: "player not found",
+				})
+				continue
+			}
+
+			reasonText := op.Reason
+			if reasonText == "" {
+				reasonText = "You have been kicked."
+			}
+
+			reasonComponent := &component.Text{
+				Content: reasonText,
+			}
+
+			player.Disconnect(reasonComponent)
+
+			responses = append(responses, &pb.PlayerResponse{
+				Player:       op.Player,
+				Operation:    pb.PlayerOperationType_PLAYER_OPERATION_KICK,
+				Success:      true,
+				ErrorMessage: "",
+			})
+		}
+	}
+	return connect.NewResponse(&pb.UpdatePlayerResponse{Responses: responses}), nil
 }
