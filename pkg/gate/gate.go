@@ -14,6 +14,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
+
 	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
@@ -25,7 +27,6 @@ import (
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errorsutil "go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/interrupt"
-	"gopkg.in/yaml.v3"
 )
 
 // Options are Gate options.
@@ -110,6 +111,10 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	if err = setupConnect(gate.proc, c, eventMgr, gate.Java()); err != nil {
+		return nil, err
+	}
+
+	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java())); err != nil {
 		return nil, err
 	}
 

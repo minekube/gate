@@ -9,6 +9,14 @@ _If you want to learn how to extend Gate with your own code, you are in the righ
 The starter template is designed to help you get started with your own Gate powered project.
 Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
 
+## Any Language
+
+Go to the [API](/developers/api/) 🌐 section to learn how to use Gate's API from any programming language.
+
+## Integration Options
+
+<!--@include: ./api/go/integration-options.md -->
+
 ## Getting Started
 
 Gate is designed with developers in mind.
@@ -35,7 +43,7 @@ func main() {
             return newSimpleProxy(proxy).init() // see code examples
         },
     })
-    
+
     // Execute Gate entrypoint and block until shutdown.
     // We could also run gate.Start if we don't need Gate's command-line.
     gate.Execute()

@@ -5,6 +5,7 @@ import (
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/internal/api"
 	connect "go.minekube.com/gate/pkg/util/connectutil/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
@@ -27,6 +28,10 @@ var DefaultConfig = Config{
 		Bind:    "0.0.0.0:9090",
 	},
 	Connect: connect.DefaultConfig,
+	API: API{
+		Enabled: false,
+		Config:  api.DefaultConfig,
+	},
 }
 
 // Config is the root configuration of Gate.
@@ -40,6 +45,8 @@ type Config struct {
 	HealthService HealthService `json:"healthService,omitempty" yaml:"healthService,omitempty"`
 	// See Connect struct.
 	Connect connect.Config `json:"connect,omitempty" yaml:"connect,omitempty"`
+	// See API struct.
+	API API `json:"api,omitempty" yaml:"api,omitempty"`
 }
 
 // Editions provides Minecraft edition specific configs.
@@ -58,15 +65,21 @@ type Java struct {
 
 // Bedrock edition.
 type Bedrock struct {
-	Enabled bool
-	Config  bconfig.Config
+	Enabled bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Config  bconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 // HealthService is a GRPC health probe service for use with Kubernetes pods.
 // (https://github.com/grpc-ecosystem/grpc-health-probe)
 type HealthService struct {
-	Enabled bool
-	Bind    string
+	Enabled bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Bind    string `json:"bind,omitempty" yaml:"bind,omitempty"`
+}
+
+// API is the configuration for the Gate API.
+type API struct {
+	Enabled bool       `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Config  api.Config `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 // Validate validates a Config and all enabled edition configs (Java / Bedrock).
@@ -96,10 +109,15 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		warns = append(warns, prefix("java", warns2)...)
 		errs = append(errs, prefix("java", errs2)...)
 	}
-	if c.Editions.Bedrock.Enabled {
-		warns2, errs2 := c.Editions.Java.Config.Validate()
-		warns = append(warns, prefix("bedrock", warns2)...)
-		errs = append(errs, prefix("bedrock", errs2)...)
+	//if c.Editions.Bedrock.Enabled {
+	//	warns2, errs2 := c.Editions.Bedrock.Config.Validate()
+	//	warns = append(warns, prefix("bedrock", warns2)...)
+	//	errs = append(errs, prefix("bedrock", errs2)...)
+	//}
+	if c.API.Enabled {
+		warns2, errs2 := c.API.Config.Validate()
+		warns = append(warns, prefix("api", warns2)...)
+		errs = append(errs, prefix("api", errs2)...)
 	}
 	return
 }

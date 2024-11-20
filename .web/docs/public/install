@@ -1,0 +1,218 @@
+#!/bin/bash
+set -e
+
+# Colors for terminal output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Constants
+REPO_OWNER="minekube"
+REPO_NAME="gate"
+INSTALL_DIR="${GATE_INSTALL_DIR:-$HOME/.local/bin}"
+TEMP_DIR="/tmp/gate-installer"
+REQUIRED_SPACE_MB=50
+
+# Functions
+
+# Print messages with colors
+print_info() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}$1${NC}"
+}
+
+# Detect system architecture
+detect_arch() {
+    local arch
+    arch=$(uname -m)
+    case $arch in
+        x86_64) echo "amd64" ;;
+        aarch64|arm64) echo "arm64" ;;
+        i386|i686) echo "386" ;;
+        *) 
+            print_error "Unsupported architecture: $arch"
+            exit 1 
+            ;;
+    esac
+}
+
+# Detect operating system
+detect_os() {
+    local os
+    os=$(uname -s)
+    case $os in
+        Linux) echo "linux" ;;
+        Darwin) echo "darwin" ;;
+        *) 
+            print_error "Unsupported OS: $os"
+            exit 1 
+            ;;
+    esac
+}
+
+# Check available disk space
+check_disk_space() {
+    local install_dir="$1"
+    local available_space
+
+    available_space=$(df -m "$install_dir" | awk 'NR==2 {print $4}')
+    
+    if [ "$available_space" -lt "$REQUIRED_SPACE_MB" ]; then
+        print_error "Insufficient disk space. Required: ${REQUIRED_SPACE_MB}MB, Available: ${available_space}MB"
+        exit 1
+    fi
+}
+
+# Download a file using curl or wget
+download() {
+    local url="$1"
+    local output="$2"
+    
+    mkdir -p "$TEMP_DIR"
+
+    if command -v curl >/dev/null; then
+        curl -L "$url" --output "$output" && return 0
+    elif command -v wget >/dev/null; then
+        wget -q "$url" -O "$output" && return 0
+    fi
+
+    print_error "Failed to download from $url using curl or wget."
+    rm -rf "$TEMP_DIR"
+    return 1
+}
+
+# Verify the checksum of the downloaded file
+verify_checksum() {
+    local file="$1"
+    local checksum_file="$2"
+    local filename
+    local expected_checksum
+    local actual_checksum
+
+    filename=$(basename "$file")
+    expected_checksum=$(grep "$filename" "$checksum_file" | awk '{print $1}')
+
+    if command -v sha256sum >/dev/null; then
+        actual_checksum=$(sha256sum "$file" | awk '{print $1}')
+    elif command -v shasum >/dev/null; then
+        actual_checksum=$(shasum -a 256 "$file" | awk '{print $1}')
+    else
+        print_warning "No SHA256 checksum tool found. Skipping verification."
+        return 0
+    fi
+
+    if [ "$expected_checksum" != "$actual_checksum" ]; then
+        print_error "Checksum verification failed for $filename."
+        print_error "Expected: $expected_checksum"
+        print_error "Actual:   $actual_checksum"
+        rm -f "$file" "$checksum_file"
+        exit 1
+    fi
+
+    print_info "✅ Checksum verified for $filename"
+    rm -f "$checksum_file"
+}
+
+# Get installation path
+get_install_path() {
+    echo "$INSTALL_DIR/gate"
+}
+
+# Update PATH for the current session
+update_path_session() {
+    export PATH="$INSTALL_DIR:$PATH"
+}
+
+# Add PATH permanently
+add_path_permanently() {
+    local shell_rc
+    shell_rc="$HOME/.$(basename "$SHELL")rc"
+
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$shell_rc"
+    source "$shell_rc"
+}
+
+# Main installation function
+install_gate() {
+    print_info "✨ Installing Gate..."
+
+    mkdir -p "$INSTALL_DIR"
+    mkdir -p "$TEMP_DIR"
+
+    check_disk_space "$INSTALL_DIR"
+
+    OS=$(detect_os)
+    ARCH=$(detect_arch)
+
+    # Fetch the latest version from GitHub API
+    VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
+    if [ -z "$VERSION" ]; then
+        print_error "Failed to detect the latest version."
+        exit 1
+    fi
+
+    INSTALL_PATH=$(get_install_path)
+
+    # Inform if updating
+    if [ -f "$INSTALL_PATH" ]; then
+        current_version=$("$INSTALL_PATH" version 2>/dev/null || echo "unknown")
+        if [ "$current_version" != "unknown" ]; then
+            print_warning "🔄 Updating Gate from version $current_version to $VERSION at $INSTALL_PATH"
+        else
+            print_warning "🔄 Updating existing Gate installation at $INSTALL_PATH"
+        fi
+    fi
+
+    # Set download URLs
+    BINARY_NAME="gate_${VERSION}_${OS}_${ARCH}"
+    if [ "$OS" = "windows" ]; then
+        BINARY_NAME="${BINARY_NAME}.exe"
+    fi
+
+    DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${VERSION}/${BINARY_NAME}"
+    CHECKSUMS_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${VERSION}/checksums.txt"
+
+    print_info "⚡ Downloading Gate ${VERSION} for ${OS}-${ARCH}..."
+    echo "📥 From: $DOWNLOAD_URL"
+    
+    # ✨ Change: Download binary with original name to TEMP_DIR
+    download "$DOWNLOAD_URL" "$TEMP_DIR/$BINARY_NAME"
+    
+    # ✨ Change: Download checksums file
+    download "$CHECKSUMS_URL" "$TEMP_DIR/checksums.txt"
+    
+    # ✨ Change: Verify checksum using the correctly named binary
+    verify_checksum "$TEMP_DIR/$BINARY_NAME" "$TEMP_DIR/checksums.txt"
+    
+    # ✨ Change: Move the verified binary to the installation path as 'gate'
+    mv "$TEMP_DIR/$BINARY_NAME" "$INSTALL_PATH"
+    chmod +x "$INSTALL_PATH"
+
+    # Update PATH for the current session
+    update_path_session
+
+    # Final messages
+    print_info "✨ Successfully installed Gate ${VERSION}!"
+    echo "📍 Location: $INSTALL_PATH"
+    echo
+
+    # Provide PATH update instructions
+    print_warning "To use Gate, run this command now:"
+    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo
+    print_warning "Or add it permanently by running:"
+    echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> \"\$HOME/.$(basename $SHELL)rc\" && source \"\$HOME/.$(basename $SHELL)rc\""
+    echo
+    print_info "🚀 Run gate to start the proxy"
+}
+
+# Execute installation
+install_gate

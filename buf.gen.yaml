@@ -1,0 +1,17 @@
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: go.minekube.com/gate/pkg/internal/api/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: pkg/internal/api/gen
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: pkg/internal/api/gen
+    opt: paths=source_relative
+  - remote: buf.build/community/pseudomuto-doc
+    out: .web/docs/developers/api/gen
+    opt: markdown,definition.gen.md

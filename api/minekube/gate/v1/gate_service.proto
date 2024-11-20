@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package minekube.gate.v1;
+
+// GateService is the service API for managing a Gate proxy instance.
+// It provides methods for managing players and servers.
+// All methods follow standard gRPC error codes and include detailed error messages.
+service GateService {
+  // GetPlayer returns the player by the given id or username.
+  // Returns NOT_FOUND if the player is not online.
+  // Returns INVALID_ARGUMENT if neither id nor username is provided, or if the id format is invalid.
+  rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
+
+  // ListPlayers returns all online players.
+  // If servers are specified in the request, only returns players on those servers.
+  rpc ListPlayers(ListPlayersRequest) returns (ListPlayersResponse);
+
+  // ListServers returns all registered servers.
+  rpc ListServers(ListServersRequest) returns (ListServersResponse);
+
+  // RegisterServer adds a server to the proxy.
+  // Returns ALREADY_EXISTS if a server with the same name is already registered.
+  // Returns INVALID_ARGUMENT if the server name or address is invalid.
+  rpc RegisterServer(RegisterServerRequest) returns (RegisterServerResponse);
+
+  // UnregisterServer removes a server from the proxy.
+  // Returns NOT_FOUND if no matching server is found.
+  // Returns INVALID_ARGUMENT if neither name nor address is provided.
+  rpc UnregisterServer(UnregisterServerRequest) returns (UnregisterServerResponse);
+
+  // ConnectPlayer connects a player to a specified server.
+  // Returns NOT_FOUND if either the player or target server doesn't exist.
+  // Returns FAILED_PRECONDITION if the connection attempt fails.
+  rpc ConnectPlayer(ConnectPlayerRequest) returns (ConnectPlayerResponse);
+
+  // DisconnectPlayer disconnects a player from the proxy.
+  // Returns NOT_FOUND if the player doesn't exist.
+  // Returns INVALID_ARGUMENT if the reason text is malformed.
+  rpc DisconnectPlayer(DisconnectPlayerRequest) returns (DisconnectPlayerResponse);
+}
+
+// DisconnectPlayerRequest is the request for DisconnectPlayer method.
+message DisconnectPlayerRequest {
+  // The player's username or ID to disconnect
+  string player = 1;
+  // The reason displayed to the player when they are disconnected.
+  //
+  // Formats:
+  //
+  // - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+  //
+  // - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
+  //
+  // Optional, if empty no reason will be shown.
+  string reason = 2;
+}
+
+// DisconnectPlayerResponse is the response for DisconnectPlayer method.
+message DisconnectPlayerResponse {}
+
+// ConnectPlayerRequest is the request for ConnectPlayer method.
+message ConnectPlayerRequest {
+  // The player's username or ID to connect
+  string player = 1;
+  // The target server name to connect the player to
+  string server = 2;
+}
+
+// ConnectPlayerResponse is the response for ConnectPlayer method.
+message ConnectPlayerResponse {}
+
+// RegisterServerRequest is the request for RegisterServer method.
+message RegisterServerRequest {
+  // The unique name of the server
+  string name = 1;
+  // The network address of the server (e.g. "localhost:25565")
+  string address = 2;
+}
+
+// RegisterServerResponse is the response for RegisterServer method.
+message RegisterServerResponse {}
+
+// UnregisterServerRequest is the request for UnregisterServer method.
+message UnregisterServerRequest {
+  // The name of the server.
+  // Optional, if not set, the address will be used to match servers.
+  string name = 1;
+
+  // The address of the server.
+  // Optional, if not set, the name will be used to match servers.
+  // If both name and address are set, only the server that matches both properties exactly will be unregistered.
+  // If only the address is set, the first server matching that address will be unregistered.
+  string address = 2;
+}
+
+// UnregisterServerResponse is the response for UnregisterServer method.
+message UnregisterServerResponse {}
+
+// ListServersRequest is the request for ListServers method.
+message ListServersRequest {}
+
+// ListServersResponse is the response for ListServers method.
+message ListServersResponse {
+  repeated Server servers = 1;
+}
+
+// Server represents a backend server where Gate can connect players to.
+message Server {
+  // The unique name of the server.
+  string name = 1;
+  // The network address of the server.
+  string address = 2;
+  // The number of players currently on the server.
+  int32 players = 3;
+}
+
+// GetPlayerRequest is the request for GetPlayer method.
+message GetPlayerRequest {
+  // Gets the player by their Minecraft UUID.
+  // Optional, if not set the username will be used.
+  // If both id and username are set, the id will be used.
+  // Must be a valid Minecraft UUID format (e.g. "550e8400-e29b-41d4-a716-446655440000")
+  string id = 1;
+  // Gets the player by their username.
+  // Optional, if not set the id will be used.
+  // Case-sensitive.
+  string username = 2;
+}
+
+// GetPlayerResponse is the response for GetPlayer method.
+message GetPlayerResponse {
+  // The player matching the request criteria
+  Player player = 1;
+}
+
+// ListPlayersRequest is the request for ListPlayers method.
+message ListPlayersRequest {
+  // Filter players by server names.
+  // Optional, if empty all online players are returned.
+  // If specified, only returns players on the listed servers.
+  repeated string servers = 1;
+}
+
+// ListPlayersResponse is the response for ListPlayers method.
+message ListPlayersResponse {
+  repeated Player players = 1;
+}
+
+// Player represents an online player on the proxy.
+message Player {
+  // The player's Minecraft UUID
+  string id = 1;
+  // The player's username
+  string username = 2;
+}

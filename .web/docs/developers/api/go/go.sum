@@ -1,0 +1,14 @@
+buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241118150055-50fffb007499.1 h1:PuMlOYaWQWlaFIbEHYQf3/BDSP9t9sr4vIPbg6pLBSI=
+buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241118150055-50fffb007499.1/go.mod h1:4dsv7Pyg90q6BS9Axo0HpbmoIUaFpI3jCOivdcA+luM=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1 h1:8PC1CKMQ003wd5wErIm76IsKcXXHbjlXt/MQ81e3P08=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1/go.mod h1:K6y2JBJAi5uHKdVriZl83y65fmpymf6utjiVR03NA2w=
+connectrpc.com/connect v1.17.0 h1:W0ZqMhtVzn9Zhn2yATuUokDLO5N+gIuBWMOnsQrfmZk=
+connectrpc.com/connect v1.17.0/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
+github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
+github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+golang.org/x/net v0.23.0 h1:7EYJ93RZ9vYSZAIb2x3lnuvqO5zneoD6IvWjuhfxjTs=
+golang.org/x/net v0.23.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
+google.golang.org/protobuf v1.35.2 h1:8Ar7bF+apOIoThw1EdZl0p1oWvMqTHmpA2fRTyZO8io=
+google.golang.org/protobuf v1.35.2/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=

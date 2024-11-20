@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -9,7 +11,6 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/validation"
-	"time"
 )
 
 // DefaultConfig is a default Config.
@@ -187,7 +188,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		return
 	}
 
-	if len(c.Bind) == 0 {
+	if strings.TrimSpace(c.Bind) == "" {
 		e("Bind is empty")
 	} else {
 		if err := validation.ValidHostPort(c.Bind); err != nil {

@@ -35,9 +35,7 @@ features:
     linkText: Install
   - icon: 🚀
     title: Developer Friendly
-    details:
-      Gate is written in Go, a modern programming language that is easy to learn and
-      has a great ecosystem of tools and libraries.
+    details: Build integrations in TypeScript, Python, Go, Rust, Kotlin, or Java using our modern API with official SDKs.
     link: /developers/
     linkText: Developers & Starter Template
   - icon: 🌐
