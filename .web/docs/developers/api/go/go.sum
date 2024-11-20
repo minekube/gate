@@ -1,5 +1,7 @@
 buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241118150055-50fffb007499.1 h1:PuMlOYaWQWlaFIbEHYQf3/BDSP9t9sr4vIPbg6pLBSI=
 buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241118150055-50fffb007499.1/go.mod h1:4dsv7Pyg90q6BS9Axo0HpbmoIUaFpI3jCOivdcA+luM=
+buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241120101512-f1a10b5029ce.1 h1:0Uyher5gveBTo1ZP5XSVdeF7J4WklfDQyu05/i3wO6c=
+buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241120101512-f1a10b5029ce.1/go.mod h1:xa+ssBCNB1cmmw6HJr8IIkAvy0mCF2ETM9Dlqps7f10=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1 h1:8PC1CKMQ003wd5wErIm76IsKcXXHbjlXt/MQ81e3P08=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1/go.mod h1:K6y2JBJAi5uHKdVriZl83y65fmpymf6utjiVR03NA2w=
 connectrpc.com/connect v1.17.0 h1:W0ZqMhtVzn9Zhn2yATuUokDLO5N+gIuBWMOnsQrfmZk=
