@@ -3,6 +3,7 @@ import DefaultTheme from 'vitepress/theme'
 import {useRouter} from 'vitepress';
 import {watch} from 'vue';
 import HomeHeroImage from "./HomeHeroImage.vue";
+import LandingAfter from './LandingAfter.vue';
 
 const {Layout} = DefaultTheme
 
@@ -21,6 +22,9 @@ if (typeof window !== 'undefined' && window.posthog) {
   <Layout>
     <template #home-hero-image>
       <HomeHeroImage/>
+    </template>
+    <template #home-features-after>
+      <LandingAfter/>
     </template>
   </Layout>
 </template>
