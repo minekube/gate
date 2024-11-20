@@ -12,8 +12,6 @@ You can use the following `bunfig.toml` to install the dependencies from the `bu
 
 To install dependencies:
 
-To install dependencies:
-
 ::: code-group
 
 ```bash [bun]
