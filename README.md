@@ -24,9 +24,11 @@ guides and any more information needed!
 
 Follow our [quick start guide](https://gate.minekube.com/guide/quick-start/) on creating a simple Minecraft network!
 
-```shell
-go run go.minekube.com/gate@latest
-```
+| Platform     | Installation Command |
+|-------------|---------------------|
+| Go          | `go run go.minekube.com/gate@latest` |
+| Linux/macOS | `curl -fsSL https://gate.minekube.com/install \| bash` |
+| Windows     | `powershell -c "irm https://gate.minekube.com/install.ps1 \| iex"` |
 
 [![Server list](.web/docs/images/server-list.png)](https://gate.minekube.com)
 
@@ -45,7 +47,7 @@ graph LR
     C -->|10.0.0.1| D[Backend A]
     C -->|10.0.0.2| E[Backend B]
     C -->|10.0.0.3| F[Another Proxy]
-    
+
     linkStyle 0 stroke:orange
     linkStyle 1 stroke:purple
     linkStyle 2 stroke:purple
@@ -56,4 +58,3 @@ graph LR
 
 The starter template is designed to help you get started with your own Gate powered project.
 Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
-
