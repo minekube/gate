@@ -212,6 +212,10 @@ export default defineConfig({
               link: '/developers/api/',
             },
             {
+              text: 'Definition',
+              link: '/developers/api/definition',
+            },
+            {
               text: 'TypeScript',
               link: '/developers/api/typescript/',
               items: [
