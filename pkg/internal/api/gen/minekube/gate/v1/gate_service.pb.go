@@ -31,7 +31,9 @@ type DisconnectPlayerRequest struct {
 	// The reason displayed to the player when they are disconnected.
 	//
 	// Formats:
+	//
 	// - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+	//
 	// - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
 	//
 	// Optional, if empty no reason will be shown.
@@ -559,7 +561,6 @@ type GetPlayerRequest struct {
 	// Gets the player by their Minecraft UUID.
 	// Optional, if not set the username will be used.
 	// If both id and username are set, the id will be used.
-	//
 	// Must be a valid Minecraft UUID format (e.g. "550e8400-e29b-41d4-a716-446655440000")
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Gets the player by their username.

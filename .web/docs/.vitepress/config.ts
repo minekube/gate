@@ -212,10 +212,6 @@ export default defineConfig({
               link: '/developers/api/',
             },
             {
-              text: 'Definition',
-              link: '/developers/api/definition',
-            },
-            {
               text: 'TypeScript',
               link: '/developers/api/typescript/',
               items: [
@@ -252,6 +248,10 @@ export default defineConfig({
             {
               text: 'Java',
               link: '/developers/api/java/',
+            },
+            {
+              text: 'Definition',
+              link: '/developers/api/definition',
             },
             {
               text: 'Glossary',
