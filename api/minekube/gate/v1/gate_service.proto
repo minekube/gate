@@ -7,13 +7,78 @@ service GateService {
   // GetPlayer returns the player by the given id or username.
   // If the player is not online, the rpc fails with a NOT_FOUND error code.
   rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse);
+  // ListPlayers returns all online players.
+  rpc ListPlayers(ListPlayersRequest) returns (ListPlayersResponse);
   // ListServers returns all registered servers.
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
+  // RegisterServer allows you to add a server to the proxy.
+  rpc RegisterServer(RegisterServerRequest) returns (RegisterServerResponse);
+  // UnregisterServer allows you to remove a server from the proxy.
+  rpc UnregisterServer(UnregisterServerRequest) returns (UnregisterServerResponse);
+  // ConnectPlayer allows you to connect a player to a server.
+  rpc ConnectPlayer(ConnectPlayerRequest) returns (ConnectPlayerResponse);
+  // DisconnectPlayer allows you to disconnect a player from the proxy.
+  rpc DisconnectPlayer(DisconnectPlayerRequest) returns (DisconnectPlayerResponse);
 }
 
-// ListServersRequest is the request for ListServers method.
-message ListServersRequest {
+// DisconnectPlayerRequest is the request for DisconnectPlayer method.
+message DisconnectPlayerRequest {
+  // The player's username or ID
+  string player = 1;
+  // The reason displayed to the player when they are disconnected.
+  //
+  // Formats:
+  // - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+  // - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
+  //
+  // Optional, if empty the default message will be used.
+  string reason = 2;
 }
+
+// DisconnectPlayerResponse is the response for DisconnectPlayer method.
+message DisconnectPlayerResponse {}
+
+// ConnectPlayerRequest is the request for ConnectPlayer method.
+message ConnectPlayerRequest {
+  // The player's username or ID
+  string player = 1;
+  // The target server name to connect the player to.
+  string server = 2;
+}
+
+// ConnectPlayerResponse is the response for ConnectPlayer method.
+message ConnectPlayerResponse {}
+
+// RegisterServerRequest is the request for RegisterServer method.
+message RegisterServerRequest {
+  // The name of the server
+  string name = 1;
+  // The address of the server
+  string address = 2;
+}
+
+// RegisterServerResponse is the response for RegisterServer method.
+message RegisterServerResponse {}
+
+// UnregisterServerRequest is the request for UnregisterServer method.
+message UnregisterServerRequest {
+  // The name of the server.
+  // Optional, if not set, the address will be used to match servers.
+  string name = 1;
+
+  // The address of the server.
+  // Optional, if not set, the name will be used to match servers.
+  // If both name and address are set, only the server that fully matches both properties is unregistered.
+  // If only the address is set, all servers with the matching address will be unregistered.
+  string address = 2;
+}
+
+// UnregisterServerResponse is the response for UnregisterServer method.
+message UnregisterServerResponse {}
+
+// ListServersRequest is the request for ListServers method.
+message ListServersRequest {}
+
 // ListServersResponse is the response for ListServers method.
 message ListServersResponse {
   repeated Server servers = 1;
@@ -21,8 +86,11 @@ message ListServersResponse {
 
 // Server is a backend server where Gate can connect players to.
 message Server {
+  // The name of the server.
   string name = 1;
+  // The address of the server.
   string address = 2;
+  // The number of players currently on the server.
   int32 players = 3;
 }
 
@@ -45,8 +113,22 @@ message GetPlayerResponse {
   Player player = 1;
 }
 
+// ListPlayersRequest is the request for ListPlayers method.
+message ListPlayersRequest {
+  // The server name to filter players by.
+  // Optional, if empty all players are returned.
+  repeated string servers = 1;
+}
+
+// ListPlayersResponse is the response for ListPlayers method.
+message ListPlayersResponse {
+  repeated Player players = 1;
+}
+
 // Player is a Gate player.
 message Player {
+  // The player's id (Minecraft UUID).
   string id = 1;
+  // The player's username.
   string username = 2;
 }
