@@ -244,27 +244,59 @@
         </div>
 
         <!-- Quick command with OS detection and manual toggle -->
-        <div class="mt-8 flex flex-col items-center">
-          <div class="relative group">
-            <div
-              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
-            ></div>
-            <div
-              class="relative flex items-center bg-[--vp-c-bg-alt] px-6 py-4 rounded-xl leading-none"
+        <div class="mt-8 flex flex-col items-center px-4 sm:px-0">
+          <!-- OS Toggle - Centered -->
+          <div class="mb-4 inline-flex items-center rounded-full bg-[--vp-c-bg-alt] p-1">
+            <button
+              @click="showWindowsCommand = false"
+              :class="[
+                'flex items-center gap-2 px-3 py-1.5 text-sm transition-colors rounded-full',
+                !showWindowsCommand ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]' : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]'
+              ]"
             >
-              <div v-if="showWindowsCommand">
-                <code class="text-sm font-mono text-[--vp-c-text-1]"
-                  >powershell -c "irm https://gate.minekube.com/install.ps1 |
-                  iex"</code
-                >
+              <div class="flex items-center gap-1">
+                <img
+                  src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg"
+                  class="h-4 w-4"
+                  alt="Linux"
+                />
+                <img
+                  src="https://raw.githubusercontent.com/devicons/devicon/master/icons/apple/apple-original.svg"
+                  class="h-4 w-4"
+                  alt="macOS"
+                />
               </div>
-              <div v-else>
-                <code class="text-sm font-mono text-[--vp-c-text-1]"
-                  >curl -sSL https://gate.minekube.com/install.sh | sh</code
-                >
+              <span>Unix</span>
+            </button>
+            <button
+              @click="showWindowsCommand = true"
+              :class="[
+                'flex items-center gap-2 px-3 py-1.5 text-sm transition-colors rounded-full',
+                showWindowsCommand ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]' : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]'
+              ]"
+            >
+              <img
+                src="https://raw.githubusercontent.com/devicons/devicon/master/icons/windows8/windows8-original.svg"
+                class="h-4 w-4"
+                alt="Windows"
+              />
+              <span>Windows</span>
+            </button>
+          </div>
+
+          <!-- Command Box -->
+          <div class="relative group w-full max-w-full sm:max-w-2xl">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+            <div class="relative flex items-center bg-[--vp-c-bg-alt] px-4 py-4 rounded-xl">
+              <div class="flex-1 overflow-x-auto scrollbar-hide">
+                <div class="min-w-0 flex items-center">
+                  <code class="text-[13px] font-mono text-[--vp-c-text-1] truncate">
+                    {{ showWindowsCommand ? 'powershell -c "irm https://gate.minekube.com/install.ps1 | iex"' : 'curl -sSL https://gate.minekube.com/install.sh | sh' }}
+                  </code>
+                </div>
               </div>
               <button
-                class="ml-4 text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1]"
+                class="ml-4 flex-shrink-0 text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-colors"
                 @click="copyInstallCommand"
               >
                 <svg
@@ -283,220 +315,181 @@
               </button>
             </div>
           </div>
-
-          <!-- OS Toggle -->
-          <div
-            class="mt-4 flex items-center gap-3 text-sm text-[--vp-c-text-2]"
-          >
-            <button
-              @click="showWindowsCommand = false"
-              :class="{ 'text-[--vp-c-brand-1]': !showWindowsCommand }"
-              class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
-            >
-              <img
-                src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg"
-                class="h-4 w-4"
-                alt="Linux"
-              />
-              <img
-                src="https://raw.githubusercontent.com/devicons/devicon/master/icons/apple/apple-original.svg"
-                class="h-4 w-4"
-                alt="macOS"
-              />
-              Unix
-            </button>
-            <span class="text-[--vp-c-text-3]">|</span>
-            <button
-              @click="showWindowsCommand = true"
-              :class="{ 'text-[--vp-c-brand-1]': showWindowsCommand }"
-              class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
-            >
-              <img
-                src="https://raw.githubusercontent.com/devicons/devicon/master/icons/windows8/windows8-original.svg"
-                class="h-4 w-4"
-                alt="Windows"
-              />
-              Windows
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lite Mode Section -->
-  <div class="py-24 sm:py-32">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl lg:text-center">
-        <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
-          Ultra-Lightweight Mode
-        </h2>
-        <p
-          class="mt-2 text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
-        >
-          Host-based routing made simple
-        </p>
-        <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
-          Gate Lite acts as an ultra-thin reverse proxy, efficiently routing
-          connections based on hostnames. Protect multiple backend servers
-          behind a single port with minimal overhead.
-        </p>
-      </div>
-
-      <!-- Diagram -->
-      <div class="mt-16 flex justify-center">
-        <div class="w-full max-w-2xl">
-          <img
-            src="/images/lite-mermaid-diagram-LR.svg"
-            alt="Lite Mode Diagram"
-            class="w-full h-auto dark:invert dark:opacity-90 object-contain max-h-[200px] opacity-90"
-            style="filter: contrast(90%) saturate(95%)"
-          />
-        </div>
-      </div>
-
-      <!-- Feature Grid -->
-      <div class="mx-auto mt-16 max-w-2xl lg:max-w-4xl">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <!-- Host Routing -->
-          <a
-            href="/guide/lite/#host-based-routing"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 104 0 2 2 0 012-2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Host Routing
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">Route by domain</p>
-              </div>
-            </div>
-          </a>
-
-          <!-- Response Caching -->
-          <a
-            href="/guide/lite/#ping-response-caching"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Response Caching
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">
-                  Optimized ping responses
-                </p>
-              </div>
-            </div>
-          </a>
-
-          <!-- Proxy Support -->
-          <a
-            href="/guide/lite/#proxy-behind-proxy"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Proxy Support
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">
-                  Chain multiple proxies
-                </p>
-              </div>
-            </div>
-          </a>
         </div>
 
-        <!-- Example Config -->
-        <div class="mt-8">
-          <div class="relative group">
-            <div
-              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
-            ></div>
-            <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
-                <button
-                  @click="copyLiteConfig"
-                  class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
-                  :class="{ 'copy-success': showLiteCopySuccess }"
-                >
-                  <svg
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      v-if="!showLiteCopySuccess"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                    <path
-                      v-else
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </button>
+        <!-- Lite Mode Section -->
+        <div class="py-24 sm:py-32">
+          <div class="mx-auto max-w-7xl px-6 lg:px-8">
+            <div class="mx-auto max-w-2xl lg:text-center">
+              <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
+                Ultra-Lightweight Mode
+              </h2>
+              <p
+                class="mt-2 text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
+              >
+                Host-based routing made simple
+              </p>
+              <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
+                Gate Lite acts as an ultra-thin reverse proxy, efficiently routing
+                connections based on hostnames. Protect multiple backend servers
+                behind a single port with minimal overhead.
+              </p>
+            </div>
+
+            <!-- Diagram -->
+            <div class="mt-16 flex justify-center">
+              <div class="w-full max-w-2xl">
+                <img
+                  src="/images/lite-mermaid-diagram-LR.svg"
+                  alt="Lite Mode Diagram"
+                  class="w-full h-auto dark:invert dark:opacity-90 object-contain max-h-[200px] opacity-90"
+                  style="filter: contrast(90%) saturate(95%)"
+                />
               </div>
-              <pre class="text-sm font-mono overflow-x-auto"><code>config:
+            </div>
+
+            <!-- Feature Grid -->
+            <div class="mx-auto mt-16 max-w-2xl lg:max-w-4xl">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <!-- Host Routing -->
+                <a
+                  href="/guide/lite/#host-based-routing"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 104 0 2 2 0 012-2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Host Routing
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">Route by domain</p>
+                    </div>
+                  </div>
+                </a>
+
+                <!-- Response Caching -->
+                <a
+                  href="/guide/lite/#ping-response-caching"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Response Caching
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Optimized ping responses
+                      </p>
+                    </div>
+                  </div>
+                </a>
+
+                <!-- Proxy Support -->
+                <a
+                  href="/guide/lite/#proxy-behind-proxy"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Proxy Support
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Chain multiple proxies
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Example Config -->
+              <div class="mt-8">
+                <div class="relative group">
+                  <div
+                    class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+                  ></div>
+                  <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
+                      <button
+                        @click="copyLiteConfig"
+                        class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
+                        :class="{ 'copy-success': showLiteCopySuccess }"
+                      >
+                        <svg
+                          class="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            v-if="!showLiteCopySuccess"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                          <path
+                            v-else
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <pre class="text-sm font-mono overflow-x-auto"><code>config:
   lite:
     enabled: true
     routes:
@@ -505,187 +498,187 @@
       - host: [ example.com, localhost ]
         backend: [ 10.0.0.2:25566 ]
         cachePingTTL: 3m</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Learn More Button -->
+              <div class="mt-8 flex justify-center">
+                <a
+                  href="/guide/lite/"
+                  class="rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
+                >
+                  Learn More About Lite Mode →
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Learn More Button -->
-        <div class="mt-8 flex justify-center">
-          <a
-            href="/guide/lite/"
-            class="rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
-          >
-            Learn More About Lite Mode →
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Configuration section -->
-  <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl lg:text-center">
-        <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
-          Live Configuration
-        </h2>
-        <p
-          class="mt-2 text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
-        >
-          Configure without restarts
-        </p>
-        <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
-          Gate watches your config file for changes and applies them instantly
-          without disconnecting players. Switch modes, add servers, or update
-          settings - all while staying live.
-        </p>
-      </div>
-
-      <div class="mx-auto mt-16 max-w-2xl lg:max-w-4xl">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <!-- Live Reload -->
-          <a
-            href="/guide/config/reload"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Auto Reload
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">
-                  Changes apply instantly without restarts
-                </p>
-              </div>
+        <!-- Configuration section -->
+        <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
+          <div class="mx-auto max-w-7xl px-6 lg:px-8">
+            <div class="mx-auto max-w-2xl lg:text-center">
+              <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
+                Live Configuration
+              </h2>
+              <p
+                class="mt-2 text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
+              >
+                Configure without restarts
+              </p>
+              <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
+                Gate watches your config file for changes and applies them instantly
+                without disconnecting players. Switch modes, add servers, or update
+                settings - all while staying live.
+              </p>
             </div>
-          </a>
 
-          <!-- Safe Updates -->
-          <a
-            href="/guide/config/reload#how-it-works"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
+            <div class="mx-auto mt-16 max-w-2xl lg:max-w-4xl">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <!-- Live Reload -->
+                <a
+                  href="/guide/config/reload"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Safe Validation
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">
-                  Changes validated before applying
-                </p>
-              </div>
-            </div>
-          </a>
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Auto Reload
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Changes apply instantly without restarts
+                      </p>
+                    </div>
+                  </div>
+                </a>
 
-          <!-- Flexible Modes -->
-          <a
-            href="/guide/lite/"
-            class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
-          >
-            <div class="flex items-center gap-4">
-              <div class="flex h-11 w-11 items-center justify-center">
-                <svg
-                  class="h-6 w-6 text-[--vp-c-brand-1]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
+                <!-- Safe Updates -->
+                <a
+                  href="/guide/config/reload#how-it-works"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3
-                  class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
-                >
-                  Switch Modes
-                </h3>
-                <p class="mt-1 text-sm text-[--vp-c-text-2]">
-                  Toggle between Lite and Connect modes
-                </p>
-              </div>
-            </div>
-          </a>
-        </div>
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Safe Validation
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Changes validated before applying
+                      </p>
+                    </div>
+                  </div>
+                </a>
 
-        <!-- Config Example -->
-        <div class="mt-8">
-          <div class="relative group">
-            <div
-              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
-            ></div>
-            <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
-                <button
-                  @click="copyConfigWithEffect"
-                  class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
-                  :class="{ 'copy-success': showCopySuccess }"
+                <!-- Flexible Modes -->
+                <a
+                  href="/guide/lite/"
+                  class="group relative rounded-2xl border border-[--vp-c-divider] p-6 hover:border-[--vp-c-brand-1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-[--vp-c-bg-alt]"
                 >
-                  <svg
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      v-if="!showCopySuccess"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                    <path
-                      v-else
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </button>
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-11 w-11 items-center justify-center">
+                      <svg
+                        class="h-6 w-6 text-[--vp-c-brand-1]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3
+                        class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
+                      >
+                        Switch Modes
+                      </h3>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Toggle between Lite and Connect modes
+                      </p>
+                    </div>
+                  </div>
+                </a>
               </div>
-              <pre
-                class="text-sm font-mono overflow-x-auto"
-              ><code>bind: 0.0.0.0:25565
+
+              <!-- Config Example -->
+              <div class="mt-8">
+                <div class="relative group">
+                  <div
+                    class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+                  ></div>
+                  <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
+                      <button
+                        @click="copyConfigWithEffect"
+                        class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
+                        :class="{ 'copy-success': showCopySuccess }"
+                      >
+                        <svg
+                          class="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            v-if="!showCopySuccess"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                          <path
+                            v-else
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <pre
+                      class="text-sm font-mono overflow-x-auto"
+                    ><code>bind: 0.0.0.0:25565
 servers:
   lobby:
     addr: 127.0.0.1:25566
@@ -694,101 +687,97 @@ servers:
 try:
   - lobby
   - minigames</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Learn More Button -->
+              <div class="mt-8 flex justify-center">
+                <a
+                  href="/guide/config/"
+                  class="rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
+                >
+                  Learn More About Configuration →
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Learn More Button -->
-        <div class="mt-8 flex justify-center">
-          <a
-            href="/guide/config/"
-            class="rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
-          >
-            Learn More About Configuration →
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
+        <!-- Final Call to Action -->
+        <div class="py-16 sm:py-24">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-2xl text-center">
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl">
+                Scale your Minecraft network today
+              </h2>
+              <p class="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-[--vp-c-text-2]">
+                Start using Gate in under 5 minutes. Join hundreds of server owners
+                building better networks with Minekube technology.
+              </p>
 
-  <!-- Final Call to Action -->
-  <div class="py-24 sm:py-32">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl text-center">
-        <h2
-          class="text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
-        >
-          Scale your Minecraft network today
-        </h2>
-        <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
-          Start using Gate in under 5 minutes. Join hundreds of server owners
-          building better networks with Minekube technology.
-        </p>
+              <!-- Social proof stats - made more compact on mobile -->
+              <div class="mt-6 sm:mt-8 flex justify-center gap-4 sm:gap-8 text-center">
+                <div>
+                  <div class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
+                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">Discord Members</div>
+                </div>
+                <div class="w-px bg-[--vp-c-divider]"></div>
+                <div>
+                  <div class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
+                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">GitHub Stars</div>
+                </div>
+              </div>
 
-        <!-- Add social proof stats -->
-        <div class="mt-8 flex justify-center gap-8 text-center">
-          <div>
-            <div class="text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
-            <div class="text-sm text-[--vp-c-text-2]">Discord Members</div>
+              <!-- Buttons stack on mobile -->
+              <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                <a
+                  href="/guide/quick-start"
+                  class="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
+                >
+                  Quick Start Guide
+                </a>
+                <a
+                  href="https://minekube.com/discord"
+                  target="_blank"
+                  rel="noopener"
+                  class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[--vp-c-text-1] border border-[--vp-c-divider] hover:border-[--vp-c-brand-1] transition-colors bg-[--vp-c-bg-alt]"
+                >
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
+                  </svg>
+                  Join Discord
+                </a>
+              </div>
+
+              <!-- Social links stack better on mobile -->
+              <div class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4 text-xs sm:text-sm text-[--vp-c-text-2]">
+                <a
+                  href="https://github.com/minekube/gate"
+                  target="_blank"
+                  rel="noopener"
+                  class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
+                >
+                  <svg class="h-4 sm:h-5 w-4 sm:w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                  </svg>
+                  Star on GitHub
+                </a>
+                <span class="text-[--vp-c-text-3]">•</span>
+                <a
+                  href="https://twitter.com/minekube"
+                  target="_blank"
+                  rel="noopener"
+                  class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
+                >
+                  <svg class="h-4 sm:h-5 w-4 sm:w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  Follow on X
+                </a>
+              </div>
+            </div>
           </div>
-          <div class="w-px bg-[--vp-c-divider]"></div>
-          <div>
-            <div class="text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
-            <div class="text-sm text-[--vp-c-text-2]">GitHub Stars</div>
-          </div>
-        </div>
-
-        <div class="mt-10 flex items-center justify-center gap-6">
-          <a
-            href="/guide/quick-start"
-            class="rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
-          >
-            Quick Start Guide
-          </a>
-          <a
-            href="https://minekube.com/discord"
-            target="_blank"
-            rel="noopener"
-            class="flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[--vp-c-text-1] border border-[--vp-c-divider] hover:border-[--vp-c-brand-1] transition-colors bg-[--vp-c-bg-alt]"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"
-              />
-            </svg>
-            Join Discord
-          </a>
-        </div>
-        <div
-          class="mt-8 flex justify-center items-center gap-4 text-sm text-[--vp-c-text-2]"
-        >
-          <a
-            href="https://github.com/minekube/gate"
-            target="_blank"
-            rel="noopener"
-            class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
-              />
-            </svg>
-            Star on GitHub
-          </a>
-          <span class="text-[--vp-c-text-3]">•</span>
-          <a
-            href="https://twitter.com/minekube"
-            target="_blank"
-            rel="noopener"
-            class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-              />
-            </svg>
-            Follow on X
-          </a>
         </div>
       </div>
     </div>
@@ -985,13 +974,6 @@ button svg {
   transition: all 0.2s ease;
 }
 
-/* Ensure sections don't overflow viewport */
-.py-24 {
-  min-height: min-content;
-  max-height: 100vh;
-  overflow-y: auto;
-}
-
 /* Ensure content is properly spaced */
 .mx-auto {
   height: fit-content;
@@ -1012,5 +994,33 @@ img.object-contain {
 /* Optional hover effect */
 img.object-contain:hover {
   opacity: 1;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Ensure the command text doesn't wrap but scrolls horizontally */
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+/* Improve command box text handling */
+.truncate {
+  text-overflow: ellipsis;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 </style>
