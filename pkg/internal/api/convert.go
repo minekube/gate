@@ -5,6 +5,14 @@ import (
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 )
 
+func PlayersToProto(p []proxy.Player) []*pb.Player {
+	var players []*pb.Player
+	for _, player := range p {
+		players = append(players, PlayerToProto(player))
+	}
+	return players
+}
+
 func PlayerToProto(p proxy.Player) *pb.Player {
 	return &pb.Player{
 		Id:       p.ID().String(),

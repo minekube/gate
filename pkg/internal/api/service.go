@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 
 	"connectrpc.com/connect"
 	"go.minekube.com/common/minecraft/component"
+
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
+	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -29,20 +30,118 @@ type (
 	}
 )
 
-type ConcreteServerInfo struct {
-	name    string
-	address net.Addr
-}
-
-func (c *ConcreteServerInfo) Name() string {
-	return c.name
-}
-
-func (c *ConcreteServerInfo) Addr() net.Addr {
-	return c.address
-}
-
 var _ Handler = (*Service)(nil)
+
+func (s *Service) ListPlayers(ctx context.Context, c *connect.Request[pb.ListPlayersRequest]) (*connect.Response[pb.ListPlayersResponse], error) {
+	var players []proxy.Player
+	if len(c.Msg.Servers) == 0 {
+		players = s.p.Players()
+	} else {
+		for _, svr := range c.Msg.Servers {
+			if s := s.p.Server(svr); s != nil {
+				s.Players().Range(func(p proxy.Player) bool {
+					players = append(players, p)
+					return true
+				})
+			}
+		}
+	}
+	return connect.NewResponse(&pb.ListPlayersResponse{
+		Players: PlayersToProto(players),
+	}), nil
+}
+
+func (s *Service) RegisterServer(ctx context.Context, c *connect.Request[pb.RegisterServerRequest]) (*connect.Response[pb.RegisterServerResponse], error) {
+	serverAddr := netutil.NewAddr(c.Msg.Address, "tcp")
+	serverInfo := proxy.NewServerInfo(c.Msg.Name, serverAddr)
+
+	_, err := s.p.Register(serverInfo)
+	if err != nil {
+		if errors.Is(err, proxy.ErrServerAlreadyExists) {
+			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("server %q already exists", serverInfo.Name()))
+		}
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to register server: %v", err))
+	}
+
+	return connect.NewResponse(&pb.RegisterServerResponse{}), nil
+}
+
+func (s *Service) UnregisterServer(ctx context.Context, c *connect.Request[pb.UnregisterServerRequest]) (*connect.Response[pb.UnregisterServerResponse], error) {
+	var serverInfo proxy.ServerInfo
+
+	switch {
+	case c.Msg.Name != "" && c.Msg.Address != "":
+		serverAddr := netutil.NewAddr(c.Msg.Address, "tcp")
+		serverInfo = proxy.NewServerInfo(c.Msg.Name, serverAddr)
+	case c.Msg.Name != "":
+		if s := s.p.Server(c.Msg.Name); s != nil {
+			serverInfo = s.ServerInfo()
+		} else {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("server not found by name"))
+		}
+	case c.Msg.Address != "":
+		var found bool
+		for _, s := range s.p.Servers() {
+			if s.ServerInfo().Addr().String() == c.Msg.Address {
+				serverInfo = s.ServerInfo()
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("server not found by address"))
+		}
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid request: must specify either name and/or address"))
+	}
+
+	found := s.p.Unregister(serverInfo)
+	if !found {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("server not found"))
+	}
+
+	return connect.NewResponse(&pb.UnregisterServerResponse{}), nil
+}
+
+func (s *Service) ConnectPlayer(ctx context.Context, c *connect.Request[pb.ConnectPlayerRequest]) (*connect.Response[pb.ConnectPlayerResponse], error) {
+	player := s.p.PlayerByName(c.Msg.Player)
+	if player == nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
+	}
+
+	targetServer := s.p.Server(c.Msg.Server)
+	if targetServer == nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("server not found"))
+	}
+
+	connectionRequest := player.CreateConnectionRequest(targetServer)
+	_, err := connectionRequest.Connect(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to connect player: %v", err))
+	}
+
+	return connect.NewResponse(&pb.ConnectPlayerResponse{}), nil
+}
+
+func (s *Service) DisconnectPlayer(ctx context.Context, c *connect.Request[pb.DisconnectPlayerRequest]) (*connect.Response[pb.DisconnectPlayerResponse], error) {
+	player := s.p.PlayerByName(c.Msg.Player)
+	if player == nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
+	}
+
+	var reason *component.Text
+	if c.Msg.Reason != "" {
+		var err error
+		reason, err = componentutil.ParseTextComponent(player.Protocol(), c.Msg.Reason)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("could not parse reason: %v", err))
+		}
+	}
+
+	player.Disconnect(reason)
+
+	return connect.NewResponse(&pb.DisconnectPlayerResponse{}), nil
+}
 
 func (s *Service) ListServers(ctx context.Context, c *connect.Request[pb.ListServersRequest]) (*connect.Response[pb.ListServersResponse], error) {
 	return connect.NewResponse(&pb.ListServersResponse{
@@ -74,298 +173,4 @@ func (s *Service) GetPlayer(ctx context.Context, c *connect.Request[pb.GetPlayer
 	return connect.NewResponse(&pb.GetPlayerResponse{
 		Player: PlayerToProto(player),
 	}), nil
-}
-
-func (s *Service) UpdateServers(ctx context.Context, c *connect.Request[pb.UpdateServersRequest]) (*connect.Response[pb.UpdateServersResponse], error) {
-	var responses []*pb.ServerResponse
-	var err error
-
-	for _, op := range c.Msg.Operations {
-
-		switch op.Operation {
-		case pb.Operation_OPERATION_CREATE:
-
-			serverAddr := netutil.NewAddr(op.Address, "tcp")
-
-			serverInfo := &ConcreteServerInfo{
-				name:    op.Name,
-				address: serverAddr,
-			}
-
-			_, err = s.p.Register(serverInfo)
-			if err != nil {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      false,
-					ErrorMessage: fmt.Sprintf("failed to add server: %v", err),
-				})
-			} else {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      true,
-					ErrorMessage: "",
-				})
-			}
-
-		case pb.Operation_OPERATION_DELETE:
-			var serverInfo *ConcreteServerInfo
-
-			if op.Name != "" && op.Address != "" {
-				serverAddr := netutil.NewAddr(op.Address, "tcp")
-				serverInfo = &ConcreteServerInfo{
-					name:    op.Name,
-					address: serverAddr,
-				}
-
-			} else if op.Name != "" {
-				registeredServer := s.p.Server(op.Name)
-				if registeredServer != nil {
-					var ok bool
-					serverInfo, ok = registeredServer.ServerInfo().(*ConcreteServerInfo)
-					if !ok {
-						responses = append(responses, &pb.ServerResponse{
-							Name:         op.Name,
-							Address:      op.Address,
-							Success:      false,
-							ErrorMessage: "server info type mismatch",
-						})
-						continue
-					}
-				} else {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: "server not found by name",
-					})
-					continue
-				}
-			} else if op.Address != "" {
-				var found bool
-				registeredServers := s.p.Servers()
-				for _, registeredServer := range registeredServers {
-					if registeredServer.ServerInfo().Addr().String() == op.Address {
-						var ok bool
-						serverInfo, ok = registeredServer.ServerInfo().(*ConcreteServerInfo)
-						if !ok {
-							responses = append(responses, &pb.ServerResponse{
-								Name:         op.Name,
-								Address:      op.Address,
-								Success:      false,
-								ErrorMessage: "server info type mismatch",
-							})
-							continue
-						}
-						found = true
-						break
-					}
-				}
-
-				if !found {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: "server not found by address",
-					})
-					continue
-				}
-
-			} else {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      false,
-					ErrorMessage: "invalid request: must specify either name or address",
-				})
-			}
-
-			success := s.p.Unregister(serverInfo)
-			if !success {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      false,
-					ErrorMessage: "failed to remove server",
-				})
-			} else {
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      true,
-					ErrorMessage: "",
-				})
-			}
-
-		case pb.Operation_OPERATION_UNSPECIFIED:
-			serverAddr := netutil.NewAddr(op.Address, "tcp")
-
-			serverInfo := &ConcreteServerInfo{
-				name:    op.Name,
-				address: serverAddr,
-			}
-
-			registeredServer := s.p.Server(op.Name)
-
-			if registeredServer != nil {
-				if registeredServer.ServerInfo() != nil && registeredServer.ServerInfo().Addr() != nil {
-					if registeredServer.ServerInfo().Addr().String() == serverInfo.address.String() {
-						responses = append(responses, &pb.ServerResponse{
-							Name:         op.Name,
-							Address:      op.Address,
-							Success:      true,
-							ErrorMessage: "failed to update server: already matches the existing address",
-						})
-						continue
-					}
-				} else {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: "server info or address is nil",
-					})
-					continue
-				}
-
-				success := s.p.Unregister(registeredServer.ServerInfo())
-				if !success {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: "failed to remove existing server",
-					})
-					continue
-				}
-
-				_, err := s.p.Register(serverInfo)
-				if err != nil {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: fmt.Sprintf("failed to re-add server: %v", err),
-					})
-					continue
-				}
-
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      true,
-					ErrorMessage: "",
-				})
-
-			} else {
-				_, err := s.p.Register(serverInfo)
-				if err != nil {
-					responses = append(responses, &pb.ServerResponse{
-						Name:         op.Name,
-						Address:      op.Address,
-						Success:      false,
-						ErrorMessage: fmt.Sprintf("failed to add new server: %v", err),
-					})
-					continue
-				}
-
-				responses = append(responses, &pb.ServerResponse{
-					Name:         op.Name,
-					Address:      op.Address,
-					Success:      true,
-					ErrorMessage: "",
-				})
-			}
-		}
-	}
-	return connect.NewResponse(&pb.UpdateServersResponse{Responses: responses}), nil
-}
-
-func (s *Service) UpdatePlayer(ctx context.Context, c *connect.Request[pb.UpdatePlayerRequest]) (*connect.Response[pb.UpdatePlayerResponse], error) {
-	var responses []*pb.PlayerResponse
-
-	for _, op := range c.Msg.Operations {
-
-		switch op.Operation {
-		case pb.PlayerOperationType_PLAYER_OPERATION_SEND:
-			var player proxy.Player
-			if op.Player != "" {
-				player = s.p.PlayerByName(op.Player)
-			}
-			if player == nil {
-				responses = append(responses, &pb.PlayerResponse{
-					Player:       op.Player,
-					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
-					Success:      false,
-					ErrorMessage: "player not found",
-				})
-				continue
-			}
-
-			targetServer := s.p.Server(op.Server)
-			if targetServer == nil {
-				responses = append(responses, &pb.PlayerResponse{
-					Player:       op.Player,
-					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
-					Success:      false,
-					ErrorMessage: "server not found",
-				})
-				continue
-			}
-
-			connectionRequest := player.CreateConnectionRequest(targetServer)
-			_, err := connectionRequest.Connect(ctx)
-			if err != nil {
-				responses = append(responses, &pb.PlayerResponse{
-					Player:       op.Player,
-					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
-					Success:      false,
-					ErrorMessage: fmt.Sprintf("failed to send player: %v", err),
-				})
-			} else {
-				responses = append(responses, &pb.PlayerResponse{
-					Player:       op.Player,
-					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_SEND,
-					Success:      true,
-					ErrorMessage: "",
-				})
-			}
-
-		case pb.PlayerOperationType_PLAYER_OPERATION_KICK:
-			var player proxy.Player
-			if op.Player != "" {
-				player = s.p.PlayerByName(op.Player)
-			}
-			if player == nil {
-				responses = append(responses, &pb.PlayerResponse{
-					Player:       op.Player,
-					Operation:    pb.PlayerOperationType_PLAYER_OPERATION_KICK,
-					Success:      false,
-					ErrorMessage: "player not found",
-				})
-				continue
-			}
-
-			reasonText := op.Reason
-			if reasonText == "" {
-				reasonText = "You have been kicked."
-			}
-
-			reasonComponent := &component.Text{
-				Content: reasonText,
-			}
-
-			player.Disconnect(reasonComponent)
-
-			responses = append(responses, &pb.PlayerResponse{
-				Player:       op.Player,
-				Operation:    pb.PlayerOperationType_PLAYER_OPERATION_KICK,
-				Success:      true,
-				ErrorMessage: "",
-			})
-		}
-	}
-	return connect.NewResponse(&pb.UpdatePlayerResponse{Responses: responses}), nil
 }
