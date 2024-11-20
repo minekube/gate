@@ -106,47 +106,22 @@ If you encounter any issues:
 
 Our installation scripts are designed to be transparent and secure. Here's exactly what they do:
 
-#### Linux/macOS (`install`)
-
 1. **Safety First**:
-
-   - Installs to user space (`~/.local/bin`) without requiring root/sudo
+   - Installs to user space (Linux/macOS: `~/.local/bin`, Windows: `%LOCALAPPDATA%\Gate\bin`)
    - Downloads only from official GitHub releases
    - Verifies file integrity using SHA256 checksums
 
 2. **Installation Steps**:
-
-   - Detects your OS (Linux/macOS) and architecture (amd64/arm64)
-   - Creates `~/.local/bin` if it doesn't exist
+   - Detects system architecture (amd64/arm64)
+   - Creates installation directory if it doesn't exist
    - Downloads the appropriate Gate binary
    - Verifies the checksum to ensure file integrity
-   - Makes the binary executable
+   - Makes the binary executable (Linux/macOS only)
    - Provides clear PATH setup instructions
 
 3. **No System Changes**:
    - Only writes to your user directory
    - Suggests PATH changes but doesn't modify system files
-   - Can be easily uninstalled by removing the binary
-
-#### Windows (`install.ps1`)
-
-1. **Safety First**:
-
-   - Installs to user space (`%LOCALAPPDATA%\Gate\bin`)
-   - Downloads only from official GitHub releases
-   - Verifies file integrity using SHA256 checksums
-
-2. **Installation Steps**:
-
-   - Detects your Windows architecture (amd64/arm64)
-   - Creates installation directory if it doesn't exist
-   - Downloads the appropriate Gate binary
-   - Verifies the checksum to ensure file integrity
-   - Provides clear PATH setup instructions
-
-3. **No System Changes**:
-   - Only writes to your user directory
-   - Suggests PATH changes but doesn't modify system PATH without permission
    - Can be easily uninstalled by removing the binary
 
 ### Verifying the Scripts
