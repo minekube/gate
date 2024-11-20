@@ -60,7 +60,7 @@ func (s *Service) RegisterServer(ctx context.Context, c *connect.Request[pb.Regi
 		if errors.Is(err, proxy.ErrServerAlreadyExists) {
 			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("server %q already exists", serverInfo.Name()))
 		}
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to register server: %v", err))
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid server info: %v", err))
 	}
 
 	return connect.NewResponse(&pb.RegisterServerResponse{}), nil
@@ -97,14 +97,20 @@ func (s *Service) UnregisterServer(ctx context.Context, c *connect.Request[pb.Un
 
 	found := s.p.Unregister(serverInfo)
 	if !found {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("server not found"))
+		return nil, connect.NewError(connect.CodeNotFound, 
+			fmt.Errorf("server not found with name %q and address %q", serverInfo.Name(), serverInfo.Addr()))
 	}
 
 	return connect.NewResponse(&pb.UnregisterServerResponse{}), nil
 }
 
 func (s *Service) ConnectPlayer(ctx context.Context, c *connect.Request[pb.ConnectPlayerRequest]) (*connect.Response[pb.ConnectPlayerResponse], error) {
-	player := s.p.PlayerByName(c.Msg.Player)
+	var player proxy.Player
+	if id, err := uuid.Parse(c.Msg.Player); err == nil {
+		player = s.p.Player(id)
+	} else {
+		player = s.p.PlayerByName(c.Msg.Player)
+	}
 	if player == nil {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
 	}
@@ -117,14 +123,20 @@ func (s *Service) ConnectPlayer(ctx context.Context, c *connect.Request[pb.Conne
 	connectionRequest := player.CreateConnectionRequest(targetServer)
 	_, err := connectionRequest.Connect(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to connect player: %v", err))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 
 	return connect.NewResponse(&pb.ConnectPlayerResponse{}), nil
 }
 
 func (s *Service) DisconnectPlayer(ctx context.Context, c *connect.Request[pb.DisconnectPlayerRequest]) (*connect.Response[pb.DisconnectPlayerResponse], error) {
-	player := s.p.PlayerByName(c.Msg.Player)
+	var player proxy.Player
+	if id, err := uuid.Parse(c.Msg.Player); err == nil {
+		player = s.p.Player(id)
+	} else {
+		player = s.p.PlayerByName(c.Msg.Player)
+	}
+	
 	if player == nil {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
 	}
