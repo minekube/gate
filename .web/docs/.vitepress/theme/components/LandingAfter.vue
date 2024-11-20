@@ -325,7 +325,7 @@
   </div>
 
   <!-- Lite Mode Section -->
-  <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
+  <div class="py-24 sm:py-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl lg:text-center">
         <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
@@ -523,7 +523,7 @@
   </div>
 
   <!-- Configuration section -->
-  <div class="py-24 sm:py-32">
+  <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl lg:text-center">
         <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
@@ -712,7 +712,7 @@ try:
   </div>
 
   <!-- Final Call to Action -->
-  <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
+  <div class="py-24 sm:py-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl text-center">
         <h2
@@ -733,10 +733,8 @@ try:
           </div>
           <div class="w-px bg-[--vp-c-divider]"></div>
           <div>
-            <div class="text-3xl font-semibold text-[--vp-c-brand-1]">
-              Open Source
-            </div>
-            <div class="text-sm text-[--vp-c-text-2]">Apache 2.0 Licensed</div>
+            <div class="text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
+            <div class="text-sm text-[--vp-c-text-2]">GitHub Stars</div>
           </div>
         </div>
 

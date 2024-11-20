@@ -76,7 +76,7 @@ export default defineConfig({
     // },
 
     footer: {
-      message: `Released under the MIT License. (web version: ${commitRef})`,
+      message: `Released under the Apache 2.0 License. (web version: ${commitRef})`,
       copyright: 'Copyright © 2022-present Minekube & Contributors',
     },
 
