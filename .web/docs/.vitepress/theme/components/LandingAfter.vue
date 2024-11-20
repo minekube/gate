@@ -39,7 +39,7 @@
           <div class="mt-4 flex items-center gap-2 text-[--vp-c-text-2]">
             <!-- Multiple package managers -->
             <template v-if="lang.packageManagers">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-nowrap items-center gap-2">
                 <div
                   v-for="pm in lang.packageManagers"
                   :key="pm.name"
@@ -50,17 +50,19 @@
                     :alt="pm.name"
                     class="w-4 h-4 object-contain"
                   />
-                  <span class="text-xs">{{ pm.name }}</span>
+                  <span class="hidden sm:inline text-xs">{{ pm.name }}</span>
                 </div>
               </div>
             </template>
-            <!-- Single package manager text only for Go and Rust -->
+            <!-- Single package manager for Go and Rust -->
             <template v-else-if="['Go', 'Rust'].includes(lang.name)">
-              <span class="text-sm">via {{ lang.packageManager.name }}</span>
+              <div class="flex items-center gap-1 bg-[--vp-c-bg-soft] px-2 py-1 rounded h-7">
+                <span class="text-xs">{{ lang.packageManager.name }}</span>
+              </div>
             </template>
             <!-- Multiple package managers for JVM languages -->
             <template v-else>
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-nowrap items-center gap-2">
                 <div
                   v-for="pm in lang.packageManagers"
                   :key="pm.name"
@@ -71,7 +73,7 @@
                     :alt="pm.name"
                     class="w-4 h-4 object-contain"
                   />
-                  <span class="text-xs">{{ pm.name }}</span>
+                  <span class="hidden sm:inline text-xs">{{ pm.name }}</span>
                 </div>
               </div>
             </template>
@@ -246,12 +248,16 @@
         <!-- Quick command with OS detection and manual toggle -->
         <div class="mt-8 flex flex-col items-center px-4 sm:px-0">
           <!-- OS Toggle - Centered -->
-          <div class="mb-4 inline-flex items-center rounded-full bg-[--vp-c-bg-alt] p-1">
+          <div
+            class="mb-4 inline-flex items-center rounded-full bg-[--vp-c-bg-alt] p-1"
+          >
             <button
               @click="showWindowsCommand = false"
               :class="[
                 'flex items-center gap-2 px-3 py-1.5 text-sm transition-colors rounded-full',
-                !showWindowsCommand ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]' : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]'
+                !showWindowsCommand
+                  ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]'
+                  : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]',
               ]"
             >
               <div class="flex items-center gap-1">
@@ -272,7 +278,9 @@
               @click="showWindowsCommand = true"
               :class="[
                 'flex items-center gap-2 px-3 py-1.5 text-sm transition-colors rounded-full',
-                showWindowsCommand ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]' : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]'
+                showWindowsCommand
+                  ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]'
+                  : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]',
               ]"
             >
               <img
@@ -286,12 +294,22 @@
 
           <!-- Command Box -->
           <div class="relative group w-full max-w-full sm:max-w-2xl">
-            <div class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-            <div class="relative flex items-center bg-[--vp-c-bg-alt] px-4 py-4 rounded-xl">
+            <div
+              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+            ></div>
+            <div
+              class="relative flex items-center bg-[--vp-c-bg-alt] px-4 py-4 rounded-xl"
+            >
               <div class="flex-1 overflow-x-auto scrollbar-hide">
                 <div class="min-w-0 flex items-center">
-                  <code class="text-[13px] font-mono text-[--vp-c-text-1] truncate">
-                    {{ showWindowsCommand ? 'powershell -c "irm https://gate.minekube.com/install.ps1 | iex"' : 'curl -sSL https://gate.minekube.com/install.sh | sh' }}
+                  <code
+                    class="text-[13px] font-mono text-[--vp-c-text-1] truncate"
+                  >
+                    {{
+                      showWindowsCommand
+                        ? 'powershell -c "irm https://gate.minekube.com/install.ps1 | iex"'
+                        : 'curl -sSL https://gate.minekube.com/install.sh | sh'
+                    }}
                   </code>
                 </div>
               </div>
@@ -321,7 +339,9 @@
         <div class="py-24 sm:py-32">
           <div class="mx-auto max-w-7xl px-6 lg:px-8">
             <div class="mx-auto max-w-2xl lg:text-center">
-              <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
+              <h2
+                class="text-base font-semibold leading-7 text-[--vp-c-brand-2]"
+              >
                 Ultra-Lightweight Mode
               </h2>
               <p
@@ -330,9 +350,9 @@
                 Host-based routing made simple
               </p>
               <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
-                Gate Lite acts as an ultra-thin reverse proxy, efficiently routing
-                connections based on hostnames. Protect multiple backend servers
-                behind a single port with minimal overhead.
+                Gate Lite acts as an ultra-thin reverse proxy, efficiently
+                routing connections based on hostnames. Protect multiple backend
+                servers behind a single port with minimal overhead.
               </p>
             </div>
 
@@ -378,7 +398,9 @@
                       >
                         Host Routing
                       </h3>
-                      <p class="mt-1 text-sm text-[--vp-c-text-2]">Route by domain</p>
+                      <p class="mt-1 text-sm text-[--vp-c-text-2]">
+                        Route by domain
+                      </p>
                     </div>
                   </div>
                 </a>
@@ -460,7 +482,9 @@
                   ></div>
                   <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
+                      <span class="text-sm text-[--vp-c-text-2]"
+                        >config.yml</span
+                      >
                       <button
                         @click="copyLiteConfig"
                         class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
@@ -519,7 +543,9 @@
         <div class="py-24 sm:py-32 bg-[--vp-c-bg-soft]">
           <div class="mx-auto max-w-7xl px-6 lg:px-8">
             <div class="mx-auto max-w-2xl lg:text-center">
-              <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
+              <h2
+                class="text-base font-semibold leading-7 text-[--vp-c-brand-2]"
+              >
                 Live Configuration
               </h2>
               <p
@@ -528,9 +554,9 @@
                 Configure without restarts
               </p>
               <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
-                Gate watches your config file for changes and applies them instantly
-                without disconnecting players. Switch modes, add servers, or update
-                settings - all while staying live.
+                Gate watches your config file for changes and applies them
+                instantly without disconnecting players. Switch modes, add
+                servers, or update settings - all while staying live.
               </p>
             </div>
 
@@ -647,7 +673,9 @@
                   ></div>
                   <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-sm text-[--vp-c-text-2]">config.yml</span>
+                      <span class="text-sm text-[--vp-c-text-2]"
+                        >config.yml</span
+                      >
                       <button
                         @click="copyConfigWithEffect"
                         class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
@@ -708,29 +736,49 @@ try:
         <div class="py-16 sm:py-24">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl">
+              <h2
+                class="text-2xl sm:text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
+              >
                 Scale your Minecraft network today
               </h2>
-              <p class="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-[--vp-c-text-2]">
-                Start using Gate in under 5 minutes. Join hundreds of server owners
-                building better networks with Minekube technology.
+              <p
+                class="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-[--vp-c-text-2]"
+              >
+                Start using Gate in under 5 minutes. Join hundreds of server
+                owners building better networks with Minekube technology.
               </p>
 
               <!-- Social proof stats - made more compact on mobile -->
-              <div class="mt-6 sm:mt-8 flex justify-center gap-4 sm:gap-8 text-center">
+              <div
+                class="mt-6 sm:mt-8 flex justify-center gap-4 sm:gap-8 text-center"
+              >
                 <div>
-                  <div class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
-                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">Discord Members</div>
+                  <div
+                    class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
+                  >
+                    650+
+                  </div>
+                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
+                    Discord Members
+                  </div>
                 </div>
                 <div class="w-px bg-[--vp-c-divider]"></div>
                 <div>
-                  <div class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]">650+</div>
-                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">GitHub Stars</div>
+                  <div
+                    class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
+                  >
+                    650+
+                  </div>
+                  <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
+                    GitHub Stars
+                  </div>
                 </div>
               </div>
 
               <!-- Buttons stack on mobile -->
-              <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <div
+                class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+              >
                 <a
                   href="/guide/quick-start"
                   class="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
@@ -744,22 +792,32 @@ try:
                   class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[--vp-c-text-1] border border-[--vp-c-divider] hover:border-[--vp-c-brand-1] transition-colors bg-[--vp-c-bg-alt]"
                 >
                   <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
+                    <path
+                      d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"
+                    />
                   </svg>
                   Join Discord
                 </a>
               </div>
 
               <!-- Social links stack better on mobile -->
-              <div class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4 text-xs sm:text-sm text-[--vp-c-text-2]">
+              <div
+                class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4 text-xs sm:text-sm text-[--vp-c-text-2]"
+              >
                 <a
                   href="https://github.com/minekube/gate"
                   target="_blank"
                   rel="noopener"
                   class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
                 >
-                  <svg class="h-4 sm:h-5 w-4 sm:w-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                  <svg
+                    class="h-4 sm:h-5 w-4 sm:w-5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
+                    />
                   </svg>
                   Star on GitHub
                 </a>
@@ -770,8 +828,14 @@ try:
                   rel="noopener"
                   class="flex items-center gap-2 hover:text-[--vp-c-brand-1] transition-colors"
                 >
-                  <svg class="h-4 sm:h-5 w-4 sm:w-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  <svg
+                    class="h-4 sm:h-5 w-4 sm:w-5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                    />
                   </svg>
                   Follow on X
                 </a>
@@ -998,11 +1062,11 @@ img.object-contain:hover {
 
 /* Hide scrollbar but keep functionality */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Ensure the command text doesn't wrap but scrolls horizontally */
