@@ -19,7 +19,7 @@ val protobufVersion = "4.28.3"
 dependencies {
     // Kotlin
     implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
     // Connect-RPC
     implementation("build.buf.gen:minekube_gate_connectrpc_kotlin:${connectVersion}.1.20241118150055.50fffb007499")
