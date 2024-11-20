@@ -145,7 +145,7 @@
                 <h3
                   class="font-semibold text-[--vp-c-text-1] group-hover:text-[--vp-c-brand-1]"
                 >
-                  Binary Download
+                  Binary
                 </h3>
                 <p class="mt-1 text-sm text-[--vp-c-text-2]">
                   Download prebuilt binary for your OS
