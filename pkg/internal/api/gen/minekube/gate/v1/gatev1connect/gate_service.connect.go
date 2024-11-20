@@ -68,19 +68,29 @@ var (
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
 type GateServiceClient interface {
 	// GetPlayer returns the player by the given id or username.
-	// If the player is not online, the rpc fails with a NOT_FOUND error code.
+	// Returns NOT_FOUND if the player is not online.
+	// Returns INVALID_ARGUMENT if neither id nor username is provided, or if the id format is invalid.
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
 	// ListPlayers returns all online players.
+	// If servers are specified in the request, only returns players on those servers.
 	ListPlayers(context.Context, *connect.Request[v1.ListPlayersRequest]) (*connect.Response[v1.ListPlayersResponse], error)
 	// ListServers returns all registered servers.
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
-	// RegisterServer allows you to add a server to the proxy.
+	// RegisterServer adds a server to the proxy.
+	// Returns ALREADY_EXISTS if a server with the same name is already registered.
+	// Returns INVALID_ARGUMENT if the server name or address is invalid.
 	RegisterServer(context.Context, *connect.Request[v1.RegisterServerRequest]) (*connect.Response[v1.RegisterServerResponse], error)
-	// UnregisterServer allows you to remove a server from the proxy.
+	// UnregisterServer removes a server from the proxy.
+	// Returns NOT_FOUND if no matching server is found.
+	// Returns INVALID_ARGUMENT if neither name nor address is provided.
 	UnregisterServer(context.Context, *connect.Request[v1.UnregisterServerRequest]) (*connect.Response[v1.UnregisterServerResponse], error)
-	// ConnectPlayer allows you to connect a player to a server.
+	// ConnectPlayer connects a player to a specified server.
+	// Returns NOT_FOUND if either the player or target server doesn't exist.
+	// Returns FAILED_PRECONDITION if the connection attempt fails.
 	ConnectPlayer(context.Context, *connect.Request[v1.ConnectPlayerRequest]) (*connect.Response[v1.ConnectPlayerResponse], error)
-	// DisconnectPlayer allows you to disconnect a player from the proxy.
+	// DisconnectPlayer disconnects a player from the proxy.
+	// Returns NOT_FOUND if the player doesn't exist.
+	// Returns INVALID_ARGUMENT if the reason text is malformed.
 	DisconnectPlayer(context.Context, *connect.Request[v1.DisconnectPlayerRequest]) (*connect.Response[v1.DisconnectPlayerResponse], error)
 }
 
@@ -188,19 +198,29 @@ func (c *gateServiceClient) DisconnectPlayer(ctx context.Context, req *connect.R
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
-	// If the player is not online, the rpc fails with a NOT_FOUND error code.
+	// Returns NOT_FOUND if the player is not online.
+	// Returns INVALID_ARGUMENT if neither id nor username is provided, or if the id format is invalid.
 	GetPlayer(context.Context, *connect.Request[v1.GetPlayerRequest]) (*connect.Response[v1.GetPlayerResponse], error)
 	// ListPlayers returns all online players.
+	// If servers are specified in the request, only returns players on those servers.
 	ListPlayers(context.Context, *connect.Request[v1.ListPlayersRequest]) (*connect.Response[v1.ListPlayersResponse], error)
 	// ListServers returns all registered servers.
 	ListServers(context.Context, *connect.Request[v1.ListServersRequest]) (*connect.Response[v1.ListServersResponse], error)
-	// RegisterServer allows you to add a server to the proxy.
+	// RegisterServer adds a server to the proxy.
+	// Returns ALREADY_EXISTS if a server with the same name is already registered.
+	// Returns INVALID_ARGUMENT if the server name or address is invalid.
 	RegisterServer(context.Context, *connect.Request[v1.RegisterServerRequest]) (*connect.Response[v1.RegisterServerResponse], error)
-	// UnregisterServer allows you to remove a server from the proxy.
+	// UnregisterServer removes a server from the proxy.
+	// Returns NOT_FOUND if no matching server is found.
+	// Returns INVALID_ARGUMENT if neither name nor address is provided.
 	UnregisterServer(context.Context, *connect.Request[v1.UnregisterServerRequest]) (*connect.Response[v1.UnregisterServerResponse], error)
-	// ConnectPlayer allows you to connect a player to a server.
+	// ConnectPlayer connects a player to a specified server.
+	// Returns NOT_FOUND if either the player or target server doesn't exist.
+	// Returns FAILED_PRECONDITION if the connection attempt fails.
 	ConnectPlayer(context.Context, *connect.Request[v1.ConnectPlayerRequest]) (*connect.Response[v1.ConnectPlayerResponse], error)
-	// DisconnectPlayer allows you to disconnect a player from the proxy.
+	// DisconnectPlayer disconnects a player from the proxy.
+	// Returns NOT_FOUND if the player doesn't exist.
+	// Returns INVALID_ARGUMENT if the reason text is malformed.
 	DisconnectPlayer(context.Context, *connect.Request[v1.DisconnectPlayerRequest]) (*connect.Response[v1.DisconnectPlayerResponse], error)
 }
 

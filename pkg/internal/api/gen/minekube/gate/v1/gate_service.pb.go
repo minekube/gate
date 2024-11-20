@@ -26,7 +26,7 @@ type DisconnectPlayerRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The player's username or ID
+	// The player's username or ID to disconnect
 	Player string `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
 	// The reason displayed to the player when they are disconnected.
 	//
@@ -34,7 +34,7 @@ type DisconnectPlayerRequest struct {
 	// - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
 	// - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
 	//
-	// Optional, if empty the default message will be used.
+	// Optional, if empty no reason will be shown.
 	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 }
 
@@ -125,9 +125,9 @@ type ConnectPlayerRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The player's username or ID
+	// The player's username or ID to connect
 	Player string `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
-	// The target server name to connect the player to.
+	// The target server name to connect the player to
 	Server string `protobuf:"bytes,2,opt,name=server,proto3" json:"server,omitempty"`
 }
 
@@ -218,9 +218,9 @@ type RegisterServerRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The name of the server
+	// The unique name of the server
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The address of the server
+	// The network address of the server (e.g. "localhost:25565")
 	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 }
 
@@ -316,8 +316,8 @@ type UnregisterServerRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The address of the server.
 	// Optional, if not set, the name will be used to match servers.
-	// If both name and address are set, only the server that fully matches both properties is unregistered.
-	// If only the address is set, all servers with the matching address will be unregistered.
+	// If both name and address are set, only the server that matches both properties exactly will be unregistered.
+	// If only the address is set, the first server matching that address will be unregistered.
 	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 }
 
@@ -485,15 +485,15 @@ func (x *ListServersResponse) GetServers() []*Server {
 	return nil
 }
 
-// Server is a backend server where Gate can connect players to.
+// Server represents a backend server where Gate can connect players to.
 type Server struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The name of the server.
+	// The unique name of the server.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The address of the server.
+	// The network address of the server.
 	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 	// The number of players currently on the server.
 	Players int32 `protobuf:"varint,3,opt,name=players,proto3" json:"players,omitempty"`
@@ -556,14 +556,15 @@ type GetPlayerRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Gets the player by the given id (Minecraft UUID).
+	// Gets the player by their Minecraft UUID.
 	// Optional, if not set the username will be used.
 	// If both id and username are set, the id will be used.
 	//
-	// Format but be a valid Minecraft UUID.
+	// Must be a valid Minecraft UUID format (e.g. "550e8400-e29b-41d4-a716-446655440000")
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Gets the player by the given username.
+	// Gets the player by their username.
 	// Optional, if not set the id will be used.
+	// Case-sensitive.
 	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 }
 
@@ -617,7 +618,7 @@ type GetPlayerResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The player matching the request.
+	// The player matching the request criteria
 	Player *Player `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
 }
 
@@ -664,8 +665,9 @@ type ListPlayersRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The server name to filter players by.
-	// Optional, if empty all players are returned.
+	// Filter players by server names.
+	// Optional, if empty all online players are returned.
+	// If specified, only returns players on the listed servers.
 	Servers []string `protobuf:"bytes,1,rep,name=servers,proto3" json:"servers,omitempty"`
 }
 
@@ -752,15 +754,15 @@ func (x *ListPlayersResponse) GetPlayers() []*Player {
 	return nil
 }
 
-// Player is a Gate player.
+// Player represents an online player on the proxy.
 type Player struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The player's id (Minecraft UUID).
+	// The player's Minecraft UUID
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The player's username.
+	// The player's username
 	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 }
 
