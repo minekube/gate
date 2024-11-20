@@ -4,6 +4,8 @@ buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241120101512-f1a10b5029ce
 buf.build/gen/go/minekube/gate/connectrpc/go v1.17.0-20241120101512-f1a10b5029ce.1/go.mod h1:xa+ssBCNB1cmmw6HJr8IIkAvy0mCF2ETM9Dlqps7f10=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1 h1:8PC1CKMQ003wd5wErIm76IsKcXXHbjlXt/MQ81e3P08=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241118150055-50fffb007499.1/go.mod h1:K6y2JBJAi5uHKdVriZl83y65fmpymf6utjiVR03NA2w=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241120101512-f1a10b5029ce.1 h1:pYcy74SMrzVy9guikjZrux5dsn/ZRNnQ3xCBCjsCW8Y=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241120101512-f1a10b5029ce.1/go.mod h1:K6y2JBJAi5uHKdVriZl83y65fmpymf6utjiVR03NA2w=
 connectrpc.com/connect v1.17.0 h1:W0ZqMhtVzn9Zhn2yATuUokDLO5N+gIuBWMOnsQrfmZk=
 connectrpc.com/connect v1.17.0/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
