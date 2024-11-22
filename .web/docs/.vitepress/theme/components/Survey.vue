@@ -1,15 +1,14 @@
 <template>
-  <template v-if="phid && phsid">
-    <iframe
-      :src="`https://formless.ai/c/PMr93Z8ztjUe?phid=${phid}&phsid=${phsid}`"
-      class="formless-embed"
-      width="100%"
-      height="100%"
-      loading="lazy"
-      allow="microphone"
-      style="border: 0; display: block; height: 100vh"
-    ></iframe>
-  </template>
+  <iframe
+    :src="tallyUrl"
+    loading="lazy"
+    width="100%"
+    height="500"
+    frameborder="0"
+    marginheight="0"
+    marginwidth="0"
+    title="Gate"
+  ></iframe>
 </template>
 
 <script setup>
@@ -17,6 +16,18 @@ import { ref, onMounted } from 'vue';
 
 const phid = ref('');
 const phsid = ref('');
+const tallyUrl = ref('');
+
+// Function to construct the Tally URL with query parameters
+const constructTallyUrl = () => {
+  const baseUrl = 'https://tally.so/embed/mZGDBA';
+  const params = new URLSearchParams({
+    dynamicHeight: '1',
+    phid: phid.value,
+    phsid: phsid.value,
+  });
+  tallyUrl.value = `${baseUrl}?${params.toString()}`;
+};
 
 onMounted(() => {
   // Wait for PostHog to be available
@@ -28,6 +39,7 @@ onMounted(() => {
     ) {
       phid.value = window.posthog.get_distinct_id();
       phsid.value = window.posthog.get_session_id();
+      constructTallyUrl(); // Construct the URL once IDs are available
     } else {
       // Retry after a short delay if PostHog isn't loaded yet
       setTimeout(getPostHogIds, 10);
@@ -37,13 +49,14 @@ onMounted(() => {
   getPostHogIds();
 });
 
-// Load the Formless AI script dynamically
-const loadFormlessScript = () => {
+// Include the Tally widget script in the <head> section of your page
+const loadTallyScript = () => {
   const script = document.createElement('script');
-  script.src = 'https://embed.formless.ai/embed.js';
+  script.src = 'https://tally.so/widgets/embed.js';
   script.async = true;
-  document.body.appendChild(script);
+  document.head.appendChild(script);
 };
 
-loadFormlessScript();
+// Load all embeds on the page
+loadTallyScript();
 </script>
