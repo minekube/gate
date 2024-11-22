@@ -838,11 +838,18 @@ try:
       </div>
     </div>
   </div>
+
+  <!-- Survey Section -->
+  <div class="py-24 sm:py-32">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <Survey />
+    </div>
+  </div>
 </template>
 
 <script setup>
-// OS detection with reactive state for manual toggle
 import { ref } from 'vue';
+import Survey from './Survey.vue';
 
 const isWindows =
   typeof navigator !== 'undefined' && /Win/.test(navigator.platform);

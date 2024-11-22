@@ -106,6 +106,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Quick Start', link: '/guide/quick-start' },
             { text: 'Why', link: '/guide/why' },
+            { text: 'Feedback', link: '/guide/feedback' },
           ],
         },
         {
