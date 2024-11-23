@@ -270,7 +270,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Back to Guides',
+          text: '← Back to Guides',
           link: '/guide/',
         },
       ],
