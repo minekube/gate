@@ -5,7 +5,7 @@ go 1.23.2
 replace go.minekube.com/gate => ../../../
 
 require (
-	github.com/robinbraemer/event v0.0.1
+	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.5
 	go.minekube.com/gate v0.43.0
