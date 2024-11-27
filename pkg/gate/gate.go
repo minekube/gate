@@ -247,11 +247,15 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	}
 
 	// Initialize OpenTelemetry
-	otelShutdown, err := otelutil.Init()
+	cleanOtel, err := otelutil.Init(ctx)
 	if err != nil {
 		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
 	}
-	defer otelShutdown()
+	defer func() {
+		if err := cleanOtel(); err != nil {
+			log.Error(err, "error stopping OpenTelemetry")
+		}
+	}()
 
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(
