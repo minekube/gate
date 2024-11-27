@@ -5,22 +5,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"net"
 	"strings"
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+
 	"github.com/dboslee/lru"
 	"github.com/go-logr/logr"
+	"go.uber.org/atomic"
+
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
@@ -311,6 +316,12 @@ type ServerDialer interface {
 }
 
 func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
+	ctx, span := tracer.Start(ctx, "serverConnection.dial", trace.WithAttributes(
+		attribute.String("server.name", s.server.info.Name()),
+		attribute.Stringer("server.addr", s.server.info.Addr()),
+	))
+	defer span.End()
+
 	var (
 		sd ServerDialer
 		ok bool
@@ -318,6 +329,7 @@ func (s *serverConnection) dial(ctx context.Context) (net.Conn, error) {
 	if sd, ok = s.Server().ServerInfo().(ServerDialer); !ok {
 		if sd, ok = s.Server().(ServerDialer); !ok {
 			dstAddr := s.Server().ServerInfo().Addr()
+			span.SetAttributes(attribute.Stringer("server.addr", dstAddr))
 			var d net.Dialer
 			conn, err := d.DialContext(ctx, "tcp", dstAddr.String())
 			if err != nil {

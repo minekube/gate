@@ -6,15 +6,22 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
-	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
+
 	"github.com/go-logr/logr"
-	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.uber.org/atomic"
+
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -203,6 +210,8 @@ func (c *minecraftConn) startReadLoop() {
 	// Make sure to close connection on return, if not already closed
 	defer func() { _ = c.closeKnown(false) }()
 
+	debug := c.log.V(1)
+
 	next := func() bool {
 		// Wait until auto reading is enabled, if not already
 		c.autoReading.Wait()
@@ -224,8 +233,21 @@ func (c *minecraftConn) startReadLoop() {
 		//  - statistics / count bytes
 		//  - in turn call session handler
 
+		sessionHandler := c.ActiveSessionHandler()
+
+		if debug.Enabled() && packetCtx.KnownPacket() {
+			_, span := otel.Tracer("netmc").Start(c.ctx, "HandlePacket", trace.WithAttributes(
+				attribute.String("packet.type", fmt.Sprintf("%T", packetCtx.Packet)),
+				attribute.String("packet.dump", fmt.Sprintf("%+v", spew.Sdump(packetCtx.Packet))),
+				attribute.Stringer("packet.direction", c.direction),
+				attribute.Stringer("conn.state", c.state),
+				attribute.String("conn.sessionHandler", fmt.Sprintf("%T", sessionHandler)),
+			))
+			defer span.End()
+		}
+
 		// Handle packet by connection's session handler.
-		c.ActiveSessionHandler().HandlePacket(packetCtx)
+		sessionHandler.HandlePacket(packetCtx)
 		return true
 	}
 

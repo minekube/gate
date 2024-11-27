@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel"
 	"gopkg.in/yaml.v3"
 
 	"go.minekube.com/gate/pkg/bridge"
@@ -22,6 +23,7 @@ import (
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
+	"go.minekube.com/gate/pkg/internal/otelutil"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
@@ -138,7 +140,11 @@ func (g *Gate) Bedrock() *bproxy.Proxy {
 }
 
 // Start starts the Gate instance and all underlying proc.
-func (g *Gate) Start(ctx context.Context) error { return g.proc.Start(ctx) }
+func (g *Gate) Start(ctx context.Context) error {
+	ctx, span := otel.Tracer("gate").Start(ctx, "gate.Start")
+	defer span.End()
+	return g.proc.Start(ctx)
+}
 
 // Viper is the default viper instance used by Start to load in a config.Config.
 var Viper = viper.New()
@@ -239,6 +245,17 @@ func Start(ctx context.Context, opts ...StartOption) error {
 			}
 		}()
 	}
+
+	// Initialize OpenTelemetry
+	cleanOtel, err := otelutil.Init(ctx)
+	if err != nil {
+		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
+	}
+	defer func() {
+		if err := cleanOtel(); err != nil {
+			log.Error(err, "error stopping OpenTelemetry")
+		}
+	}()
 
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(

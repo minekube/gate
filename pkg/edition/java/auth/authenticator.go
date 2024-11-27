@@ -20,6 +20,10 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/version"
@@ -134,6 +138,7 @@ func New(options Options) (Authenticator, error) {
 			Timeout: time.Second * 10,
 		}
 	}
+	cli.Transport = otelhttp.NewTransport(cli.Transport)
 	cli.Transport = withHeader(cli.Transport, version.UserAgentHeader())
 
 	hasJoinedURLFn := options.HasJoinedURLFn
@@ -181,7 +186,16 @@ func (a *authenticator) DecryptSharedSecret(encrypted []byte) (decrypted []byte,
 	return rsa.DecryptPKCS1v15(rand.Reader, a.private, encrypted)
 }
 
+var tracer = otel.Tracer("java/auth")
+
 func (a *authenticator) AuthenticateJoin(ctx context.Context, serverID, username, ip string) (Response, error) {
+	ctx, span := tracer.Start(ctx, "AuthenticateJoin", trace.WithAttributes(
+		attribute.String("server.id", serverID),
+		attribute.String("user.name", username),
+		attribute.String("user.ip", ip),
+	))
+	defer span.End()
+
 	hasJoinedURL := a.hasJoinedURLFn(serverID, username, ip)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hasJoinedURL, nil)
 	if err != nil {
