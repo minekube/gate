@@ -177,6 +177,8 @@ github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e/go.mod h1:daVV7q
 github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/robinbraemer/event v0.0.1 h1:2499Bm1c13+//IZyAQpjoTg4vQ+dndE8trxo1aUxWdI=
 github.com/robinbraemer/event v0.0.1/go.mod h1:fKkjL2UbPajNcxc4oWYyRCcUalss0YtPxwMtZTuNo8o=
+github.com/robinbraemer/event v0.1.1 h1:1T7GturBzxsa8UUe/r3EmW9aHLErKBggfn43up5hOUA=
+github.com/robinbraemer/event v0.1.1/go.mod h1:fKkjL2UbPajNcxc4oWYyRCcUalss0YtPxwMtZTuNo8o=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rs/xid v1.5.0 h1:mKX4bl4iPYJtEIxp6CYiUuLQ/8DYMoz0PUdtGgMFRVc=
