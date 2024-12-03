@@ -31,59 +31,59 @@ import (
 
 // Forward forwards a client connection to a matching backend route.
 func Forward(
-	dialTimeout time.Duration,
-	routes []config.Route,
-	log logr.Logger,
-	client netmc.MinecraftConn,
-	handshake *packet.Handshake,
-	pc *proto.PacketContext,
+    dialTimeout time.Duration,
+    routes []config.Route,
+    log logr.Logger,
+    client netmc.MinecraftConn,
+    handshake *packet.Handshake,
+    pc *proto.PacketContext,
 ) {
-	defer func() { _ = client.Close() }()
+    defer func() { _ = client.Close() }()
 
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
-	if err != nil {
-		errs.V(log, err).Info("failed to find route", "error", err)
-		return
-	}
+    log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
+    if err != nil {
+        errs.V(log, err).Info("failed to find route", "error", err)
+        return
+    }
 
-	// Find a backend to dial successfully.
-	log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
-		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
-		return log, conn, err
-	})
-	if err != nil {
-		return
-	}
-	defer func() { _ = dst.Close() }()
+    // Find a backend to dial successfully.
+    log, dst, err := tryBackends(log, nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
+        conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
+        return log, conn, err
+    })
+    if err != nil {
+        return
+    }
+    defer func() { _ = dst.Close() }()
 
-	if err = emptyReadBuff(client, dst); err != nil {
-		errs.V(log, err).Info("failed to empty client buffer", "error", err)
-		return
-	}
+    if err = emptyReadBuff(client, dst); err != nil {
+        errs.V(log, err).Info("failed to empty client buffer", "error", err)
+        return
+    }
 
-	log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
-	pipe(log, src, dst)
+    log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
+    pipe(log, src, dst)
 }
 
 // errAllBackendsFailed is returned when all backends failed to dial.
 var errAllBackendsFailed = errors.New("all backends failed")
 
 // tryBackends tries backends until one succeeds or all fail.
-func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (logr.Logger, T, error) {
-	for {
-		backendAddr, log, ok := next()
-		if !ok {
-			var zero T
-			return log, zero, errAllBackendsFailed
-		}
+func tryBackends[T any](log logr.Logger, next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (logr.Logger, T, error) {
+    for {
+        backendAddr, ok := next()
+        if !ok {
+            var zero T
+            return log, zero, errAllBackendsFailed
+        }
 
-		log, t, err := try(log, backendAddr)
-		if err != nil {
-			errs.V(log, err).Info("failed to try backend", "error", err)
-			continue
-		}
-		return log, t, nil
-	}
+        log, t, err := try(log, backendAddr)
+        if err != nil {
+            errs.V(log, err).Info("failed to try backend", "error", err)
+            continue
+        }
+        return log, t, nil
+    }
 }
 
 func emptyReadBuff(src netmc.MinecraftConn, dst net.Conn) error {
@@ -121,7 +121,7 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	}
 }
 
-type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
+type nextBackendFunc func() (backendAddr string, ok bool)
 
 func findRoute(
 	routes []config.Route,
@@ -159,7 +159,7 @@ func findRoute(
 	}
 
 	tryBackends := route.Backend.Copy()
-	nextBackend = func() (string, logr.Logger, bool) {
+	nextBackend = func() (string, bool) {
 		switch route.Strategy {
 		case "random":
 			return randomNextBackend(tryBackends)()
@@ -237,7 +237,7 @@ func lowestLatencyNextBackend(tryBackends []string) nextBackendFunc {
 			latencyItem := latencyCache.Get(backend)
 			if latencyItem == nil {
 				latency := measureLatency(backend)
-				latencyCache.Set(backend, latency, ttlcache.TTL(time.Minute))
+				latencyCache.Set(backend, latency, time.Minute)
 				latencyItem = latencyCache.Get(backend)
 			}
 			if latencyItem != nil && (lowestLatency == 0 || latencyItem.Value() < lowestLatency) {
@@ -358,7 +358,7 @@ func ResolveStatusResponse(
 		return log, nil, err
 	}
 
-	log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
+	log, res, err := tryBackends(log, nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
 		return resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
 	})
 	if err != nil && route.Fallback != nil {
