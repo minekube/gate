@@ -165,9 +165,9 @@ func findRoute(
 			return randomNextBackend(tryBackends)()
 		case "round-robin":
 			return roundRobinNextBackend(host, tryBackends)()
-		case "least connections":
+		case "least-connections":
 			return leastConnectionsNextBackend(tryBackends)()
-		case "lowest latency":
+		case "lowest-latency":
 			return lowestLatencyNextBackend(tryBackends)()
 		default:
 			// Default to random strategy
