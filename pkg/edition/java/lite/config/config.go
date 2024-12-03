@@ -73,8 +73,8 @@ func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP
 var allowedStrategies = map[string]bool{
 	"random":          true,
 	"round-robin":     true,
-	"least connections": true,
-	"lowest latency":  true,
+	"least-connections": true,
+	"lowest-latency":  true,
 }
 
 func (c Config) Validate() (warns []error, errs []error) {
