@@ -28,7 +28,7 @@ type (
 	Route struct {
 		Host          configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
 		Backend       configutil.SingleOrMulti[string] `json:"backend,omitempty" yaml:"backend,omitempty"`
-		Strategy      string                          `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+		Strategy      string                           `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
@@ -71,10 +71,10 @@ func (r *Route) CachePingEnabled() bool { return r.GetCachePingTTL() > 0 }
 func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP }
 
 var allowedStrategies = map[string]bool{
-	"random":          true,
-	"round-robin":     true,
-	"least-connections": true,
-	"lowest-latency":  true,
+	"random":            true,
+	"round-robin":       true,
+	"least connections": true,
+	"lowest latency":    true,
 }
 
 func (c Config) Validate() (warns []error, errs []error) {
