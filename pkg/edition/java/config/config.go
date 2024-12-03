@@ -82,7 +82,7 @@ func defaultShutdownReason() *configutil.TextComponent {
 }
 
 // Config is the configuration of the proxy.
-type Config struct {
+type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go for generating output yaml and markdown for the docs
 	Bind string `yaml:"bind"` // The address to listen for connections.
 
 	OnlineMode                    bool `yaml:"onlineMode,omitempty" json:"onlineMode,omitempty"`                                       // Whether to enable online mode.
