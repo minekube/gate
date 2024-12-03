@@ -7,8 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"math/rand"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -157,27 +160,103 @@ func findRoute(
 
 	tryBackends := route.Backend.Copy()
 	nextBackend = func() (string, logr.Logger, bool) {
-		if len(tryBackends) == 0 {
-			return "", log, false
+		switch route.Strategy {
+		case "random":
+			return randomNextBackend(tryBackends)()
+		case "round-robin":
+			return roundRobinNextBackend(host, tryBackends)()
+		case "least connections":
+			return leastConnectionsNextBackend(tryBackends)()
+		case "lowest latency":
+			return lowestLatencyNextBackend(tryBackends)()
+		default:
+			// Default to random strategy
+			return randomNextBackend(tryBackends)()
 		}
-		// Pop first backend
-		backend := tryBackends[0]
-		tryBackends = tryBackends[1:]
-
-		dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
-		if err != nil {
-			log.Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
-			return "", log, false
-		}
-		backendAddr := dstAddr.String()
-		if _, port := netutil.HostPort(dstAddr); port == 0 {
-			backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
-		}
-
-		return backendAddr, log.WithValues("backendAddr", backendAddr), true
 	}
 
 	return log, src, route, nextBackend, nil
+}
+
+func randomNextBackend(tryBackends []string) nextBackendFunc {
+	return func() (string, bool) {
+		if len(tryBackends) == 0 {
+			return "", false
+		}
+		rand.Seed(time.Now().UnixNano())
+		randIndex := rand.Intn(len(tryBackends))
+		return tryBackends[randIndex], true
+	}
+}
+
+var roundRobinIndex = make(map[string]int)
+
+func roundRobinNextBackend(routeHost string, tryBackends []string) nextBackendFunc {
+	return func() (string, bool) {
+		if len(tryBackends) == 0 {
+			return "", false
+		}
+		index := roundRobinIndex[routeHost] % len(tryBackends)
+		backend := tryBackends[index]
+		roundRobinIndex[routeHost]++
+		return backend, true
+	}
+}
+
+var connectionCounts = make(map[string]int)
+var connectionCountsMutex sync.Mutex
+
+func leastConnectionsNextBackend(tryBackends []string) nextBackendFunc {
+	return func() (string, bool) {
+		if len(tryBackends) == 0 {
+			return "", false
+		}
+		connectionCountsMutex.Lock()
+		defer connectionCountsMutex.Unlock()
+		least := tryBackends[0]
+		for _, backend := range tryBackends {
+			if connectionCounts[backend] < connectionCounts[least] {
+				least = backend
+			}
+		}
+		connectionCounts[least]++
+		return least, true
+	}
+}
+
+var latencyCache = ttlcache.New[string, time.Duration]()
+
+func lowestLatencyNextBackend(tryBackends []string) nextBackendFunc {
+	return func() (string, bool) {
+		if len(tryBackends) == 0 {
+			return "", false
+		}
+		var lowestBackend string
+		var lowestLatency time.Duration
+		for _, backend := range tryBackends {
+			latencyItem := latencyCache.Get(backend)
+			if latencyItem == nil {
+				latency := measureLatency(backend)
+				latencyCache.Set(backend, latency, ttlcache.TTL(time.Minute))
+				latencyItem = latencyCache.Get(backend)
+			}
+			if latencyItem != nil && (lowestLatency == 0 || latencyItem.Value() < lowestLatency) {
+				lowestBackend = backend
+				lowestLatency = latencyItem.Value()
+			}
+		}
+		return lowestBackend, true
+	}
+}
+
+func measureLatency(backend string) time.Duration {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", backend, time.Second*5)
+	if err != nil {
+		return time.Duration(math.MaxInt64) // Return a very high latency if connection fails
+	}
+	conn.Close()
+	return time.Since(start)
 }
 
 func dialRoute(
