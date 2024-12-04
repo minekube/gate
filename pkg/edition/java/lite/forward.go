@@ -61,7 +61,15 @@ func Forward(
 		return
 	}
 
-	log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
+	// Extract the backendAddr with the port and the IP separately
+	backendAddrWithPort := dst.RemoteAddr().String()
+	backendIP, _, _ := net.SplitHostPort(backendAddrWithPort)
+
+	// Include the strategy name in the log
+	strategyName := route.Strategy
+
+	log.Info("forwarding connection", "clientAddr", netutil.Host(src.RemoteAddr()), "virtualHost", ClearVirtualHost(handshake.ServerAddress), "protocol", proto.Protocol(handshake.ProtocolVersion).String(), "route", route.Host, "backendAddr", backendAddrWithPort, "backendAddr", backendIP, "strategy", strategyName)
+
 	pipe(log, src, dst)
 }
 
