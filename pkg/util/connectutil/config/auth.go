@@ -12,8 +12,13 @@ import (
 
 const tokenFilename = "connect.json"
 
-// load auth token from file or generates it
+// load auth token from env, file or generates it
 func loadToken(filename string) (string, error) {
+	// env always takes precedence
+	if token := os.Getenv("CONNECT_TOKEN"); token != "" {
+		return token, nil
+	}
+
 	// If the file doesn't exist, create it, or append to the file
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
