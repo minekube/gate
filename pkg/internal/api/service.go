@@ -97,7 +97,7 @@ func (s *Service) UnregisterServer(ctx context.Context, c *connect.Request[pb.Un
 
 	found := s.p.Unregister(serverInfo)
 	if !found {
-		return nil, connect.NewError(connect.CodeNotFound, 
+		return nil, connect.NewError(connect.CodeNotFound,
 			fmt.Errorf("server not found with name %q and address %q", serverInfo.Name(), serverInfo.Addr()))
 	}
 
@@ -136,7 +136,7 @@ func (s *Service) DisconnectPlayer(ctx context.Context, c *connect.Request[pb.Di
 	} else {
 		player = s.p.PlayerByName(c.Msg.Player)
 	}
-	
+
 	if player == nil {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
 	}

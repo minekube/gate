@@ -2,10 +2,11 @@ package tablist
 
 import (
 	"fmt"
-	"go.minekube.com/common/minecraft/component"
 	"reflect"
 	"sync"
 	"time"
+
+	"go.minekube.com/common/minecraft/component"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
@@ -211,6 +212,9 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 	var actions []playerinfo.UpsertAction
 	playerInfoEntry := &playerinfo.Entry{
 		ProfileID: entry.Profile().ID,
+		GameMode:  entry.GameMode(),
+		Listed:    entry.Listed(),
+		ListOrder: entry.ListOrder(),
 	}
 
 	t.Lock()
@@ -238,6 +242,10 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		if previousEntry.Listed() != entry.Listed() {
 			actions = append(actions, playerinfo.UpdateListedAction)
 			playerInfoEntry.Listed = entry.Listed()
+		}
+		if previousEntry.ListOrder() != entry.ListOrder() && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_2) {
+			actions = append(actions, playerinfo.UpdateListOrderAction)
+			playerInfoEntry.ListOrder = entry.ListOrder()
 		}
 		if !reflect.DeepEqual(previousEntry.ChatSession(), entry.ChatSession()) {
 			if from := entry.ChatSession(); from != nil {
@@ -272,6 +280,10 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		}
 		playerInfoEntry.Latency = int(entry.Latency().Milliseconds())
 		playerInfoEntry.Listed = entry.Listed()
+		if entry.ListOrder() != 0 && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_2) {
+			actions = append(actions, playerinfo.UpdateListOrderAction)
+			playerInfoEntry.ListOrder = entry.ListOrder()
+		}
 	}
 
 	return &playerinfo.Upsert{
@@ -355,6 +367,11 @@ func (t *TabList) processUpdateForEntry(actions []playerinfo.UpsertAction, info 
 	if playerinfo.ContainsAction(actions, playerinfo.UpdateListedAction) {
 		doInternalEntity(currentEntry, func(e internalEntry) {
 			e.SetListedInternal(info.Listed)
+		})
+	}
+	if playerinfo.ContainsAction(actions, playerinfo.UpdateListOrderAction) {
+		doInternalEntity(currentEntry, func(e internalEntry) {
+			e.SetListOrderInternal(info.ListOrder)
 		})
 	}
 	return nil
