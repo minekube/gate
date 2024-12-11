@@ -33,7 +33,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.1
-	go.minekube.com/common v0.0.5
+	go.minekube.com/common v0.0.6
 	go.minekube.com/connect v0.6.2
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0
 	go.opentelemetry.io/otel v1.32.0
