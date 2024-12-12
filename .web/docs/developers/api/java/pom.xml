@@ -33,7 +33,7 @@
         <dependency>
             <groupId>build.buf.gen</groupId>
             <artifactId>minekube_gate_protocolbuffers_java</artifactId>
-            <version>28.3.0.2.20241118150055.50fffb007499</version>
+            <version>29.1.0.1.20241118150055.50fffb007499</version>
         </dependency>
         <dependency>
             <groupId>build.buf.gen</groupId>
@@ -44,23 +44,23 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.68.2</version>
+            <version>1.69.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.68.2</version>
+            <version>1.69.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>1.68.2</version>
+            <version>1.69.0</version>
         </dependency>
         <!-- Protobuf dependencies -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>4.29.0</version>
+            <version>4.29.1</version>
         </dependency>
     </dependencies>
 </project> 

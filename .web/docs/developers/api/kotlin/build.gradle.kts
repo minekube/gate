@@ -11,10 +11,10 @@ repositories {
     }
 }
 
-val grpcVersion = "1.68.2"
+val grpcVersion = "1.69.0"
 val grpcKotlinVersion = "1.4.1"
 val connectVersion = "0.7.1"
-val protobufVersion = "4.29.0"
+val protobufVersion = "4.29.1"
 
 dependencies {
     // Kotlin
