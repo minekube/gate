@@ -40,7 +40,7 @@ cargo add tonic --features tls-roots # Enable the features we need
 cargo add tokio --features macros,rt-multi-thread # Async runtime
 ```
 
-This is the sample `Cargo.toml` file from the [`docs/developers/api/rust`](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/rust) directory:
+This is the sample `Cargo.toml` file from the [`docs/developers/api/rust`](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/rust) directory:
 
 ```toml
 <!--@include: ./Cargo.toml -->
