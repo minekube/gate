@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.1
 	go.minekube.com/common v0.0.6
-	go.minekube.com/gate v0.43.0
+	go.minekube.com/gate v0.46.0
 )
 
 require (
