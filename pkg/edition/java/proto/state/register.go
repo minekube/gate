@@ -252,7 +252,6 @@ func init() {
 		m(0x28, version.Minecraft_1_20_3),
 		m(0x2B, version.Minecraft_1_20_5),
 		m(0x2D, version.Minecraft_1_21_2),
-		m(0x2F, version.Minecraft_1_21_4),
 	)
 	Play.ServerBound.Register(&config.FinishedUpdate{},
 		m(0x0B, version.Minecraft_1_20_2),

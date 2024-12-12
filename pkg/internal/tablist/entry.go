@@ -3,14 +3,11 @@ package tablist
 import (
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"sync"
 	"time"
 
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
-	"go.minekube.com/gate/pkg/edition/java/proto/version"
-
 	"go.minekube.com/common/minecraft/component"
-
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
 	"go.minekube.com/gate/pkg/edition/java/proxy/player"
@@ -24,7 +21,6 @@ type EntryAttributes struct {
 	Latency     time.Duration
 	GameMode    int
 	Listed      bool
-	ListOrder   int
 	ChatSession player.ChatSession
 }
 
@@ -44,7 +40,6 @@ type internalEntry interface {
 	SetGameModeInternal(gameMode int)
 	SetChatSessionInternal(chatSession player.ChatSession)
 	SetListedInternal(listed bool)
-	SetListOrderInternal(order int)
 }
 
 func doInternalEntity(e tablist.Entry, fn func(internalEntry)) {
@@ -169,33 +164,6 @@ func (e *Entry) SetListed(listed bool) error {
 	}
 	upsertEntry.Listed = listed
 	return e.OwningTabList.EmitActionRaw(playerinfo.UpdateListedAction, upsertEntry)
-}
-
-func (e *Entry) ListOrder() int {
-	e.RLock()
-	defer e.RUnlock()
-	return e.EntryAttributes.ListOrder
-}
-func (e *Entry) SetListOrderInternal(i int) {
-	e.Lock()
-	e.EntryAttributes.ListOrder = i
-	e.Unlock()
-}
-
-func (e *Entry) SetListOrder(i int) error {
-	e.Lock()
-	e.EntryAttributes.ListOrder = i
-	profileID := e.EntryAttributes.Profile.ID
-	e.Unlock()
-	if e.OwningTabList.GetViewer().Protocol().GreaterEqual(version.Minecraft_1_21_2) {
-		upsertEntry, err := rawEntry(profileID)
-		if err != nil {
-			return fmt.Errorf("error creating upsert entry: %w", err)
-		}
-		upsertEntry.ListOrder = i
-		return e.OwningTabList.EmitActionRaw(playerinfo.UpdateListOrderAction, upsertEntry)
-	}
-	return nil
 }
 
 func rawEntry(profileID uuid.UUID) (*playerinfo.Entry, error) {
