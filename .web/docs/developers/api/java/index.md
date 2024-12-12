@@ -102,7 +102,7 @@ Here's a basic example of using the Gate Java API to connect to Gate and list se
 ## Running the Example
 
 1. Run Gate with the API enabled
-2. Navigate to the [docs/developers/api/java](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/java) directory
+2. Navigate to the [docs/developers/api/java](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/java) directory
 3. Run the following commands:
 
 ```bash

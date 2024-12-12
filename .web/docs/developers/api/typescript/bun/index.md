@@ -50,7 +50,7 @@ To use the Gate API in the browser, check out the [Web](/developers/api/typescri
 
 ## Sample project
 
-This sample project is located in the [`docs/developers/api/typescript/bun`](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/typescript/bun) directory.
+This sample project is located in the [`docs/developers/api/typescript/bun`](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/typescript/bun) directory.
 
 To install dependencies:
 
