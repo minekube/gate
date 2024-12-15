@@ -28,14 +28,16 @@ type (
 	Route struct {
 		Host          configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
 		Backend       configutil.SingleOrMulti[string] `json:"backend,omitempty" yaml:"backend,omitempty"`
-		Strategy      string                           `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
 		// Deprecated: use TCPShieldRealIP instead.
-		RealIP            bool `json:"realIP,omitempty" yaml:"realIP,omitempty"`
-		TCPShieldRealIP   bool `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
-		ModifyVirtualHost bool `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		RealIP            bool   `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		TCPShieldRealIP   bool   `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
+		ModifyVirtualHost bool   `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		MaxConnections    int    `json:"max-connections,omitempty" yaml:"max-connections,omitempty"` // New field for max connections
+		Strategy          string `json:"strategy,omitempty" yaml:"strategy,omitempty"`               // New field for strategy
+		Blacklist        []string `json:"blacklist,omitempty" yaml:"blacklist,omitempty"`
 	}
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
@@ -46,7 +48,7 @@ type (
 )
 
 // Response returns the configured status response.
-func (s *Status) Response(proto.Protocol) (*ping.ServerPing, error) {
+func (s *Status) Response(protocol proto.Protocol, maxConnections int, onlinePlayers int) (*ping.ServerPing, error) {
 	return &ping.ServerPing{
 		Version:     s.Version,
 		Description: s.MOTD.T(),
@@ -70,13 +72,6 @@ func (r *Route) CachePingEnabled() bool { return r.GetCachePingTTL() > 0 }
 // GetTCPShieldRealIP returns the configured TCPShieldRealIP or deprecated RealIP value.
 func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP }
 
-var allowedStrategies = map[string]bool{
-	"random":            true,
-	"round-robin":       true,
-	"least-connections": true,
-	"lowest-latency":    true,
-}
-
 func (c Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
 
@@ -91,9 +86,6 @@ func (c Config) Validate() (warns []error, errs []error) {
 		}
 		if len(ep.Backend) == 0 {
 			e("Route %d: no backend configured", i)
-		}
-		if _, ok := allowedStrategies[ep.Strategy]; !ok && ep.Strategy != "" {
-			e("Route %d: invalid strategy '%s'", i, ep.Strategy)
 		}
 		for i, addr := range ep.Backend {
 			_, err := netutil.Parse(addr, "tcp")
@@ -118,3 +110,4 @@ func (r *Route) Equal(other *Route) bool {
 	}
 	return string(j) == string(o)
 }
+
