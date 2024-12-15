@@ -25,7 +25,11 @@ config:
       # Match the virtual host address to the backend server.
       - host: localhost
         # The backend server to connect to if matched.
+<<<<<<< HEAD
         backend: [213.133.0.0:25565]
+=======
+        backend: [213.133.109.143:25565]
+>>>>>>> 93576459dd353f97dfb2bed6a37e33e275a11530
         strategy: random
         max-connections: 1
         proxyProtocol: true # Use proxy protocol to connect to backend.
