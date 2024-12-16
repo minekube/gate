@@ -47,7 +47,7 @@ go run .
 }
 ```
 
-This example project is located in the [`docs/developers/api/go`](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/go) directory.
+This example project is located in the [`docs/developers/api/go`](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/go) directory.
 
 ::: info Learn More
 For more details on using ConnectRPC with Go, check out the [ConnectRPC Documentation](https://connectrpc.com/docs/go/getting-started#make-requests).

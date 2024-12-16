@@ -156,13 +156,15 @@ Here's a basic example of using the Gate Kotlin API to connect to Gate and list 
 ## Running the Example
 
 1. Run Gate with the API enabled
-2. Navigate to the [docs/developers/api/kotlin](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/kotlin) directory
+2. Navigate to the [docs/developers/api/kotlin](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/kotlin) directory
 3. Initialize the Gradle wrapper (only needed once):
+
 ```bash
 gradle wrapper
 ```
 
 4. Run one of the following commands:
+
 ```bash
 # For Connect example (recommended)
 ./gradlew runConnect
@@ -192,7 +194,6 @@ servers {
 ::: info Learn More
 For more details on using ConnectRPC with Kotlin, check out the [ConnectRPC Documentation](https://connectrpc.com/docs/kotlin/using-clients).
 :::
-
 
 <style>
 .tech-icon {

@@ -66,7 +66,7 @@ import { GateService } from '@buf/minekube_gate.connectrpc_es/minekube/gate/v1/g
 
 ## Sample project
 
-This sample project is located in the [`docs/developers/api/typescript/node`](https://github.com/minekube/gate/tree/main/.web/docs/developers/api/typescript/node) directory.
+This sample project is located in the [`docs/developers/api/typescript/node`](https://github.com/minekube/gate/tree/master/.web/docs/developers/api/typescript/node) directory.
 
 To install dependencies:
 
