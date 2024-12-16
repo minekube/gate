@@ -14,11 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
-	"go.minekube.com/gate/pkg/edition/java/lite/blacklist"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
@@ -30,135 +28,6 @@ import (
 	"go.minekube.com/gate/pkg/util/netutil"
 	"golang.org/x/sync/singleflight"
 )
-
-var (
-	globalBlacklist        *blacklist.Blacklist
-	routeBlacklist         *blacklist.RouteBlacklist
-	connectionCountManager *ConnectionCountManager
-	logger                 logr.Logger
-	watcher                *fsnotify.Watcher
-)
-
-// ConnectionCountManager manages connection counts for each route
-type ConnectionCountManager struct {
-	counts map[string]int
-	mu     sync.Mutex
-}
-
-// NewConnectionCountManager creates a new ConnectionCountManager
-func NewConnectionCountManager() *ConnectionCountManager {
-	return &ConnectionCountManager{
-		counts: make(map[string]int),
-	}
-}
-
-// Increment increases the connection count for a route
-func (cm *ConnectionCountManager) Increment(routeKey string) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	cm.counts[routeKey]++
-}
-
-// Decrement decreases the connection count for a route
-func (cm *ConnectionCountManager) Decrement(routeKey string) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	if cm.counts[routeKey] > 0 {
-		cm.counts[routeKey]--
-	}
-}
-
-// GetCount returns the current connection count for a route
-func (cm *ConnectionCountManager) GetCount(routeKey string) int {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	return cm.counts[routeKey]
-}
-
-// Add this helper function at the top level
-func isIPBlacklisted(ip string, route *config.Route) bool {
-	if globalBlacklist != nil && globalBlacklist.Contains(ip) {
-		return true
-	}
-	if routeBlacklist != nil && routeBlacklist.Contains(route.Host[0], ip) {
-		return true
-	}
-	for _, blacklistedIP := range route.Blacklist {
-		if ip == blacklistedIP {
-			return true
-		}
-	}
-	return false
-}
-
-// InitBlacklist initializes the global blacklist and sets up a file watcher
-func InitBlacklist(globalBlacklistPath, routeBlacklistPath string) error {
-	var err error
-	globalBlacklist, err = blacklist.NewBlacklist(globalBlacklistPath)
-	if err != nil {
-		return fmt.Errorf("failed to initialize global blacklist: %w", err)
-	}
-
-	routeBlacklist, err = blacklist.NewRouteBlacklist(routeBlacklistPath)
-	if err != nil {
-		return fmt.Errorf("failed to initialize route blacklist: %w", err)
-	}
-
-	watcher, err = fsnotify.NewWatcher()
-	if err != nil {
-		return fmt.Errorf("failed to create file watcher: %w", err)
-	}
-
-	err = watcher.Add(globalBlacklistPath)
-	if err != nil {
-		return fmt.Errorf("failed to add global blacklist file to watcher: %w", err)
-	}
-
-	err = watcher.Add(routeBlacklistPath)
-	if err != nil {
-		return fmt.Errorf("failed to add route blacklist file to watcher: %w", err)
-	}
-
-	go watchBlacklistFiles(globalBlacklistPath, routeBlacklistPath)
-
-	return nil
-}
-
-func watchBlacklistFiles(globalBlacklistPath, routeBlacklistPath string) {
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				return
-			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				switch event.Name {
-				case globalBlacklistPath:
-					logger.Info("Global blacklist file modified, reloading...")
-					err := globalBlacklist.Load()
-					if err != nil {
-						logger.Error(err, "Failed to reload global blacklist")
-					} else {
-						logger.Info("Global blacklist reloaded successfully")
-					}
-				case routeBlacklistPath:
-					logger.Info("Route blacklist file modified, reloading...")
-					err := routeBlacklist.Load()
-					if err != nil {
-						logger.Error(err, "Failed to reload route blacklist")
-					} else {
-						logger.Info("Route blacklist reloaded successfully")
-					}
-				}
-			}
-		case err, ok := <-watcher.Errors:
-			if !ok {
-				return
-			}
-			logger.Error(err, "Error watching blacklist files")
-		}
-	}
-}
 
 // Forward forwards a client connection to a matching backend route.
 func Forward(
@@ -177,50 +46,14 @@ func Forward(
 		return
 	}
 
-	// Get client IP
-	clientIP, _, err := net.SplitHostPort(src.RemoteAddr().String())
-	if err != nil {
-		log.Error(err, "failed to parse client IP address")
-		return
-	}
-
-	// Check if the IP is blacklisted
-	if isIPBlacklisted(clientIP, route) {
-		log.Info("connection denied due to blacklisted IP",
-			"clientIP", clientIP,
-			"route", route.Host[0])
-		return
-	}
-
-	// Check if the route has reached its max connections
-	routeKey := route.Host[0] // Use first host as the key
-	if route.MaxConnections > 0 {
-		currentCount := connectionCountManager.GetCount(routeKey)
-		if currentCount >= route.MaxConnections {
-			log.Info("connection denied due to max connections reached",
-				"route", routeKey,
-				"maxConnections", route.MaxConnections,
-				"currentConnections", currentCount)
-			return
-		}
-	}
-
 	// Find a backend to dial successfully.
 	log, dst, err := tryBackends(log, nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
 		return log, conn, err
 	})
 	if err != nil {
-		log.Error(err, "Failed to connect to any backend")
 		return
 	}
-
-	// Increment the connection count only after successful connection
-	if route.MaxConnections > 0 {
-		connectionCountManager.Increment(routeKey)
-		defer connectionCountManager.Decrement(routeKey)
-	}
-
 	defer func() { _ = dst.Close() }()
 
 	if err = emptyReadBuff(client, dst); err != nil {
@@ -235,15 +68,7 @@ func Forward(
 	// Include the strategy name in the log
 	strategyName := route.Strategy
 
-	log.Info("forwarding connection",
-		"clientAddr", netutil.Host(src.RemoteAddr()),
-		"virtualHost", ClearVirtualHost(handshake.ServerAddress),
-		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
-		"route", routeKey,
-		"backendAddr", backendAddrWithPort,
-		"backendIP", backendIP,
-		"strategy", strategyName,
-		"currentConnections", connectionCountManager.GetCount(routeKey))
+	log.Info("forwarding connection", "clientAddr", netutil.Host(src.RemoteAddr()), "virtualHost", ClearVirtualHost(handshake.ServerAddress), "protocol", proto.Protocol(handshake.ProtocolVersion).String(), "route", route.Host, "backendAddr", backendAddrWithPort, "backendAddr", backendIP, "strategy", strategyName)
 
 	pipe(log, src, dst)
 }
@@ -253,23 +78,19 @@ var errAllBackendsFailed = errors.New("all backends failed")
 
 // tryBackends tries backends until one succeeds or all fail.
 func tryBackends[T any](log logr.Logger, next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (logr.Logger, T, error) {
-	var lastErr error
 	for {
 		backendAddr, ok := next()
 		if !ok {
 			var zero T
-			if lastErr != nil {
-				return log, zero, fmt.Errorf("all backends failed, last error: %w", lastErr)
-			}
 			return log, zero, errAllBackendsFailed
 		}
 
 		log, t, err := try(log, backendAddr)
-		if err == nil {
-			return log, t, nil
+		if err != nil {
+			errs.V(log, err).Info("failed to try backend", "error", err)
+			continue
 		}
-		lastErr = err
-		log.V(1).Info("Backend connection attempt failed", "backendAddr", backendAddr, "error", err)
+		return log, t, nil
 	}
 }
 
@@ -352,9 +173,9 @@ func findRoute(
 			return randomNextBackend(tryBackends)()
 		case "round-robin":
 			return roundRobinNextBackend(host, tryBackends)()
-		case "least connections":
+		case "least-connections":
 			return leastConnectionsNextBackend(tryBackends)()
-		case "lowest latency":
+		case "lowest-latency":
 			return lowestLatencyNextBackend(tryBackends)()
 		default:
 			// Default to random strategy
@@ -390,23 +211,24 @@ func roundRobinNextBackend(routeHost string, tryBackends []string) nextBackendFu
 	}
 }
 
+var connectionCounts = make(map[string]int)
+var connectionCountsMutex sync.Mutex
 
 func leastConnectionsNextBackend(tryBackends []string) nextBackendFunc {
 	return func() (string, bool) {
 		if len(tryBackends) == 0 {
 			return "", false
 		}
-		minConnections := math.MaxInt32
-		var minBackend string
+		connectionCountsMutex.Lock()
+		defer connectionCountsMutex.Unlock()
+		least := tryBackends[0]
 		for _, backend := range tryBackends {
-			count := connectionCountManager.GetCount(backend)
-			if count < minConnections {
-				minConnections = count
-				minBackend = backend
+			if connectionCounts[backend] < connectionCounts[least] {
+				least = backend
 			}
 		}
-		connectionCountManager.Increment(minBackend)
-		return minBackend, true
+		connectionCounts[least]++
+		return least, true
 	}
 }
 
@@ -550,9 +372,8 @@ func ResolveStatusResponse(
 	if err != nil && route.Fallback != nil {
 		log.Info("failed to resolve status response, will use fallback status response", "error", err)
 
-		onlinePlayers := connectionCountManager.GetCount(route.Host[0])
 		// Fallback status response if configured
-		fallbackPong, err := route.Fallback.Response(handshakeCtx.Protocol, route.MaxConnections, onlinePlayers)
+		fallbackPong, err := route.Fallback.Response(handshakeCtx.Protocol)
 		if err != nil {
 			log.Info("failed to get fallback status response", "error", err)
 		}
@@ -582,16 +403,7 @@ func ResetPingCache() {
 }
 
 func init() {
-	// Initialize the connection count manager
-	connectionCountManager = NewConnectionCountManager()
-
 	go pingCache.Start() // start ttl eviction once
-
-	// Initialize the global and route blacklists
-	err := InitBlacklist("./ip_blacklist.json", "./route_blacklist.json")
-	if err != nil {
-		logger.Error(err, "Failed to initialize blacklists")
-	}
 }
 
 type pingKey struct {
@@ -713,9 +525,3 @@ func withLoader[K comparable, V any](group *singleflight.Group, ttl time.Duratio
 		ttlcache.NewSuppressedLoader[K, V](loader, group),
 	)
 }
-
-// Initialize logger
-func SetLogger(log logr.Logger) {
-	logger = log
-}
-
