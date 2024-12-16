@@ -23,7 +23,6 @@ type (
 		Latency           int // in milliseconds
 		GameMode          int
 		DisplayName       *chat.ComponentHolder // nil-able
-		ShowHat           bool
 		ListOrder         int
 		RemoteChatSession *chat.RemoteChatSession // nil-able
 	}
@@ -64,15 +63,14 @@ func ContainsAction(actions []UpsertAction, action UpsertAction) bool {
 }
 
 func (u *Upsert) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	z := len(UpsertActions) + 1
-	bytes := make([]byte, -mathutil.FloorDiv(-len(UpsertActions), z))
+	bytes := make([]byte, -mathutil.FloorDiv(-len(UpsertActions), 8))
 	if _, err = io.ReadFull(rd, bytes); err != nil {
 		return err
 	}
 
 	u.ActionSet = nil
 	for i, action := range UpsertActions {
-		if bytes[i/z]&(1<<uint(i%z)) != 0 {
+		if bytes[i/8]&(1<<uint(i%8)) != 0 {
 			u.ActionSet = append(u.ActionSet, action)
 		}
 	}
@@ -107,7 +105,6 @@ var (
 	UpdateLatencyAction     UpsertAction = &updateLatencyAction{}
 	UpdateDisplayNameAction UpsertAction = &updateDisplayNameAction{}
 	UpdateListOrderAction   UpsertAction = &updateListOrderAction{}
-	UpdateHatAction         UpsertAction = &updateHatAction{}
 
 	UpsertActions = []UpsertAction{
 		AddPlayerAction,
@@ -117,7 +114,6 @@ var (
 		UpdateLatencyAction,
 		UpdateDisplayNameAction,
 		UpdateListOrderAction,
-		UpdateHatAction,
 	}
 )
 
@@ -251,16 +247,5 @@ func (a *updateListOrderAction) Encode(c *proto.PacketContext, wr io.Writer, inf
 
 func (a *updateListOrderAction) Decode(c *proto.PacketContext, rd io.Reader, info *Entry) (err error) {
 	info.ListOrder, err = util.ReadVarInt(rd)
-	return err
-}
-
-type updateHatAction struct{}
-
-func (a *updateHatAction) Encode(c *proto.PacketContext, wr io.Writer, info *Entry) error {
-	return util.WriteBool(wr, info.ShowHat)
-}
-
-func (a *updateHatAction) Decode(c *proto.PacketContext, rd io.Reader, info *Entry) (err error) {
-	info.ShowHat, err = util.ReadBool(rd)
 	return err
 }

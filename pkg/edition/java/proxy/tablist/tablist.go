@@ -1,12 +1,10 @@
 package tablist
 
 import (
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"time"
 
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
-
 	"go.minekube.com/common/minecraft/component"
-
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -72,12 +70,6 @@ type Entry interface {
 	// SetListed sets whether the entry is listed.
 	// Only changeable in 1.19.3 and above!
 	SetListed(bool) error
-	// ListOrder returns the order/priority of the entry in the tab list.
-	// Since Minecraft 1.21.2.
-	ListOrder() int
-	// SetListOrder sets the order/priority of the entry in the tab list.
-	// Since Minecraft 1.21.2.
-	SetListOrder(int) error
 }
 
 // Viewer is a tab list viewer (player).

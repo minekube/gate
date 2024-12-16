@@ -26,6 +26,7 @@ config:
       - host: localhost
         # The backend server to connect to if matched.
         backend: localhost:25566
+        strategy: random # round-robin, random, lowest-latency, least-connections
         # The optional fallback status response when all backends of this route are offline.
         fallback:
           motd: |

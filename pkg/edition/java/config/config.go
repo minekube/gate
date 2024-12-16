@@ -76,6 +76,7 @@ var DefaultConfig = Config{
 func defaultMotd() *configutil.TextComponent {
 	return text("§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
 }
+
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 }
