@@ -274,7 +274,7 @@ func (e *PreLoginEvent) Username() string {
 // This value is nil on 1.19.2 and lower,
 // up to 1.20.1 it is optional and from 1.20.2 it will always be available.
 func (e *PreLoginEvent) ID() (uuid.UUID, bool) {
-	return e.id, e.id == uuid.Nil
+	return e.id, e.id != uuid.Nil
 }
 
 // Conn returns the inbound connection that is connecting to the proxy.
