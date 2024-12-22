@@ -33,7 +33,7 @@
         <dependency>
             <groupId>build.buf.gen</groupId>
             <artifactId>minekube_gate_protocolbuffers_java</artifactId>
-            <version>29.1.0.1.20241118150055.50fffb007499</version>
+            <version>29.2.0.1.20241118150055.50fffb007499</version>
         </dependency>
         <dependency>
             <groupId>build.buf.gen</groupId>
