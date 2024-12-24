@@ -8,6 +8,8 @@ buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241120101512-f1a10b5
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.35.2-20241120101512-f1a10b5029ce.1/go.mod h1:K6y2JBJAi5uHKdVriZl83y65fmpymf6utjiVR03NA2w=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.0-20241120101512-f1a10b5029ce.1 h1:Fqo+wb/x005129IkZ0a1fyXChp4fRt7YkdJp37b8+x8=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.0-20241120101512-f1a10b5029ce.1/go.mod h1:ojRIIrOj0EVWqMXAcwBfEjXHZJEvyx6GvSl6NSosPYs=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.1-20241120101512-f1a10b5029ce.1 h1:AXNZ93F09HEUZMDboy+2OnZS7MMFs+CPTytBY2RsRhw=
+buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.1-20241120101512-f1a10b5029ce.1/go.mod h1:zBG4xg8H5t1o5CCSlCcSPZ5xw7Wqz8zFIwwH3A0Lku0=
 connectrpc.com/connect v1.17.0 h1:W0ZqMhtVzn9Zhn2yATuUokDLO5N+gIuBWMOnsQrfmZk=
 connectrpc.com/connect v1.17.0/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
@@ -20,3 +22,5 @@ google.golang.org/protobuf v1.35.2 h1:8Ar7bF+apOIoThw1EdZl0p1oWvMqTHmpA2fRTyZO8i
 google.golang.org/protobuf v1.35.2/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
 google.golang.org/protobuf v1.36.0 h1:mjIs9gYtt56AzC4ZaffQuh88TZurBGhIJMBZGSxNerQ=
 google.golang.org/protobuf v1.36.0/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
+google.golang.org/protobuf v1.36.1 h1:yBPeRvTftaleIgM3PZ/WBIZ7XM/eEYAaEyCwvyjq/gk=
+google.golang.org/protobuf v1.36.1/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
