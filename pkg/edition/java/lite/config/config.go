@@ -37,17 +37,23 @@ type (
 		ModifyVirtualHost bool `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
 	}
 	Status struct {
-		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
-		Version ping.Version              `yaml:"version,omitempty" json:"version,omitempty"`
-		Favicon favicon.Favicon           `yaml:"favicon,omitempty" json:"favicon,omitempty"`
-		ModInfo modinfo.ModInfo           `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
+		MOTD           *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
+		Version        ping.Version              `yaml:"version,omitempty" json:"version,omitempty"`
+		PlayerCount    int                       `json:"playerCount,omitempty" yaml:"playerCount,omitempty"`
+		ShowMaxPlayers int                       `yaml:"showMaxPlayers,omitempty" json:"showMaxPlayers,omitempty"`
+		Favicon        favicon.Favicon           `yaml:"favicon,omitempty" json:"favicon,omitempty"`
+		ModInfo        modinfo.ModInfo           `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
 	}
 )
 
 // Response returns the configured status response.
 func (s *Status) Response(proto.Protocol) (*ping.ServerPing, error) {
 	return &ping.ServerPing{
-		Version:     s.Version,
+		Version: s.Version,
+		Players: &ping.Players{
+			Online: s.PlayerCount,
+			Max:    s.ShowMaxPlayers,
+		},
 		Description: s.MOTD.T(),
 		Favicon:     s.Favicon,
 		ModInfo:     &s.ModInfo,
