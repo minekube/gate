@@ -39,6 +39,7 @@ type (
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
 		Version ping.Version              `yaml:"version,omitempty" json:"version,omitempty"`
+		Players *ping.Players             `json:"players,omitempty" yaml:"players,omitempty"`
 		Favicon favicon.Favicon           `yaml:"favicon,omitempty" json:"favicon,omitempty"`
 		ModInfo modinfo.ModInfo           `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
 	}
@@ -48,6 +49,7 @@ type (
 func (s *Status) Response(proto.Protocol) (*ping.ServerPing, error) {
 	return &ping.ServerPing{
 		Version:     s.Version,
+		Players:     s.Players,
 		Description: s.MOTD.T(),
 		Favicon:     s.Favicon,
 		ModInfo:     &s.ModInfo,
