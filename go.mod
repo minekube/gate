@@ -5,7 +5,7 @@ go 1.23.2
 toolchain go1.23.4
 
 require (
-	connectrpc.com/connect v1.17.0
+	connectrpc.com/connect v1.18.1
 	github.com/Tnze/go-mc v1.20.2
 	github.com/agext/levenshtein v1.2.3
 	github.com/coder/websocket v1.8.12
