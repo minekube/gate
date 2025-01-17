@@ -2,7 +2,7 @@ module go.minekube.com/gate
 
 go 1.23.2
 
-toolchain go1.23.4
+toolchain go1.23.5
 
 require (
 	connectrpc.com/connect v1.18.1
