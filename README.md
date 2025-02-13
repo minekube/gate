@@ -40,6 +40,43 @@ players to backend servers based on the hostname/subdomain they join with.
 
 See the [Lite Mode](https://gate.minekube.com/guide/lite/) guide for more information.
 
+## Telemetry and Monitoring
+
+Gate supports OpenTelemetry for metrics and tracing, allowing you to monitor your proxy's performance and debug issues. Configure telemetry in your config.yml:
+
+```yaml
+config:
+  telemetry:
+    # Metrics configuration using OpenTelemetry
+    metrics:
+      enabled: true
+      endpoint: "0.0.0.0:8888"  # Endpoint for /metrics
+      anonymousMetrics: true    # Send anonymous usage metrics
+      exporter: prometheus      # Supported: prometheus, otlp
+      prometheus:
+        path: "/metrics"        # Path for Prometheus scraping
+    
+    # Distributed tracing configuration
+    tracing:
+      enabled: false           # Disabled by default
+      endpoint: "localhost:4317"  # OTLP collector endpoint
+      sampler: "parentbased_always_on"
+      exporter: stdout         # Supported: otlp, jaeger, stdout
+
+```
+
+Gate exposes metrics like:
+- Player counts and connection durations
+- Server performance metrics (TPS)
+- Network latency and throughput
+- Resource usage statistics
+
+You can visualize these metrics using tools like:
+- Grafana for dashboards
+- Prometheus for metrics collection
+- Jaeger or Tempo for distributed tracing
+- Or managed services like Honeycomb, New Relic
+
 ```mermaid
 graph LR
     A[Player Alice] -->|Join example.com| C(Gate Lite)

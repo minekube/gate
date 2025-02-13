@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 	"go.minekube.com/gate/pkg/gate"
+	"go.minekube.com/gate/pkg/telemetry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -96,6 +97,13 @@ Visit the website https://gate.minekube.com/ for more information.`
 
 		log.Info("logging verbosity", "verbosity", verbosity)
 		log.Info("using config file", "config", v.ConfigFileUsed())
+
+		// Initialize telemetry
+		otelShutdown, err := telemetry.Init(c.Context, cfg)
+		if err != nil {
+			return cli.Exit(fmt.Errorf("failed to initialize telemetry: %w", err), 1)
+		}
+		defer otelShutdown()
 
 		// Start Gate
 		if err = gate.Start(c.Context,

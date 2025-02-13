@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/lite"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"reflect"
 	"strings"
@@ -13,11 +11,19 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"go.minekube.com/gate/pkg/edition/java/lite"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
+
 	"github.com/go-logr/logr"
 	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"golang.org/x/sync/errgroup"
+
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -31,7 +37,6 @@ import (
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
-	"golang.org/x/sync/errgroup"
 )
 
 // Proxy is Gate's Java edition Minecraft proxy.
@@ -109,6 +114,10 @@ func New(options Options) (p *Proxy, err error) {
 	// Connection & login rate limiters
 	p.initQuota(&options.Config.Quota)
 
+	if err = p.initMeter(); err != nil {
+		return nil, fmt.Errorf("error initializing meter: %w", err)
+	}
+
 	return p, nil
 }
 
@@ -142,6 +151,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		p.closeMu.Unlock()
 		return ErrProxyAlreadyRun
 	}
+	ctx, span := tracer.Start(ctx, "Proxy.Start")
+	defer span.End()
+
 	p.started = true
 	now := time.Now()
 	p.startTime.Store(&now)
@@ -516,6 +528,21 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		return
 	}
 
+	// Create context for connection
+	ctx, ok := raw.(context.Context)
+	if !ok {
+		ctx = context.Background()
+	}
+	ctx = logr.NewContext(ctx, p.log)
+	ctx = trace.ContextWithSpan(ctx, trace.SpanFromContext(p.startCtx))
+
+	// OpenTelemetry span for connection
+	ctx, span := tracer.Start(ctx, "HandleConn", trace.WithAttributes(
+		attribute.String("remote.host", netutil.Host(raw.RemoteAddr())),
+		attribute.Stringer("local.addr", raw.LocalAddr()),
+	))
+	defer span.End()
+
 	// Fire connection event
 	if p.event.HasSubscriber((*ConnectionEvent)(nil)) {
 		conn := &connwrap.Conn{Conn: raw}
@@ -531,13 +558,6 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		}
 		raw = e.Connection()
 	}
-
-	// Create context for connection
-	ctx, ok := raw.(context.Context)
-	if !ok {
-		ctx = context.Background()
-	}
-	ctx = logr.NewContext(ctx, p.log)
 
 	// Create client connection
 	conn, readLoop := netmc.NewMinecraftConn(
