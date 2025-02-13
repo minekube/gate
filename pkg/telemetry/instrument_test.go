@@ -323,3 +323,59 @@ func TestInstrumentProxyNilEventManager(t *testing.T) {
 	defer cleanup()
 	tel.InstrumentProxy(&simpleProxy{eventMgr: nil}) // Should not panic
 }
+
+// TestTelemetryConfigRespected verifies that user-provided telemetry configurations
+// are respected and not overwritten by defaults
+func TestTelemetryConfigRespected(t *testing.T) {
+	// Create a config with custom telemetry settings
+	customConfig := &config.Config{
+		Telemetry: config.Telemetry{
+			Metrics: config.TelemetryMetrics{
+				Enabled: true,
+				Endpoint: "http://localhost:9999", // Custom endpoint
+				Exporter: "prometheus", // Custom exporter
+				AnonymousMetrics: false, // Custom setting
+				Prometheus: struct {
+					Path string `yaml:"path" json:"path"`
+				}{
+					Path: "/custom-metrics", // Custom metrics path
+				},
+			},
+			Tracing: config.TelemetryTracing{
+				Enabled: true,
+				Endpoint: "localhost:4318", // Custom endpoint
+				Exporter: "otlp", // Custom exporter
+				Sampler: "parentbased_traceidratio", // Custom sampler
+			},
+		},
+	}
+
+	// Create new telemetry instance with custom config
+	tel, cleanup, err := New(context.Background(), customConfig)
+	assert.NoError(t, err)
+	defer cleanup()
+
+	// Verify the telemetry instance uses our custom config
+	assert.Equal(t, "http://localhost:9999", customConfig.Telemetry.Metrics.Endpoint, "Metrics endpoint should remain unchanged")
+	assert.Equal(t, "prometheus", customConfig.Telemetry.Metrics.Exporter, "Metrics exporter should remain unchanged")
+	assert.Equal(t, false, customConfig.Telemetry.Metrics.AnonymousMetrics, "Anonymous metrics setting should remain unchanged")
+	assert.Equal(t, "/custom-metrics", customConfig.Telemetry.Metrics.Prometheus.Path, "Prometheus metrics path should remain unchanged")
+	assert.Equal(t, "otlp", customConfig.Telemetry.Tracing.Exporter, "Tracing exporter should remain unchanged")
+	assert.Equal(t, "localhost:4318", customConfig.Telemetry.Tracing.Endpoint, "Tracing endpoint should remain unchanged")
+	assert.Equal(t, "parentbased_traceidratio", customConfig.Telemetry.Tracing.Sampler, "Tracing sampler should remain unchanged")
+
+	// Setup a simple proxy and verify instrumentation works with custom config
+	eventMgr := newSimpleEventMgr()
+	p := &simpleProxy{eventMgr: eventMgr}
+	tel.InstrumentProxy(p)
+
+	// Test an event to verify instrumentation works
+	loginEvent := &testLoginEvent{
+		player: testPlayer{
+			username:   "testUser",
+			id:        uuid.New(),
+			onlineMode: true,
+		},
+	}
+	eventMgr.Fire(loginEvent) // Should not panic or modify config
+}

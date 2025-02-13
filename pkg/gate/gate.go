@@ -266,10 +266,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 		}()
 	}
 
-	// Apply default telemetry config first
-	c.conf = telemetry.WithDefaults(c.conf)
-
-	// Initialize OpenTelemetry with config (after config is finalized)
+	// Initialize OpenTelemetry with config
 	otelShutdown, err := telemetry.Init(ctx, c.conf)
 	if err != nil {
 		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
