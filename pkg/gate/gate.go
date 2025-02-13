@@ -397,7 +397,3 @@ func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
 	return v.ReadConfig(bytes.NewReader(b))
 }
 
-// Telemetry returns the telemetry instance for this Gate, or nil if telemetry is disabled.
-func (g *Gate) Telemetry() *telemetry.Telemetry {
-	return g.tel
-}

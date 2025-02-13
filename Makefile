@@ -1,13 +1,5 @@
 all: fmt vet mod lint
 
-# Get the current git tag for versioning
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS := -X go.minekube.com/gate/pkg/telemetry.Version=$(VERSION)
-
-# Build the binary with version information
-build:
-	go build -ldflags "$(LDFLAGS)" ./cmd/gate
-
 # Run tests
 test: fmt vet
 	go test ./...

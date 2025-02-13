@@ -11,10 +11,7 @@ import (
 
 // Init initializes OpenTelemetry with configuration from environment variables and config
 func Init(ctx context.Context, cfg *config.Config) (func(), error) {
-	// Apply default telemetry config first
-	cfg = telemetry.WithDefaults(cfg)
-
-	// Initialize using honeycomb's otelconfig
+	// Initialize using honeycomb's otelconfig (config validation will handle defaults)
 	shutdown, err := otelconfig.ConfigureOpenTelemetry(
 		otelconfig.WithServiceName("gate"),
 		otelconfig.WithServiceVersion(telemetry.Version),

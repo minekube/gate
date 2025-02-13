@@ -43,10 +43,24 @@ func TestTracedConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Initialize telemetry using default configuration and enable tracing
-	cfg := WithDefaults(&config.Config{})
-	cfg.Telemetry.Tracing.Enabled = true
-	cfg.Telemetry.Tracing.Exporter = "stdout"
+	// Initialize telemetry with explicit configuration
+	cfg := &config.Config{
+	    Telemetry: config.Telemetry{
+	        Metrics: config.TelemetryMetrics{
+	            Endpoint: "localhost:9464",
+	            Prometheus: struct {
+	                Path string `yaml:"path" json:"path"`
+	            }{
+	                Path: "/metrics",
+	            },
+	        },
+	        Tracing: config.TelemetryTracing{
+	            Enabled: true,
+	            Exporter: "stdout",
+	            Endpoint: "localhost:4317",
+	        },
+	    },
+	}
 	
 	// Create new telemetry instance
 	tel, cleanup, err := New(context.Background(), cfg)
@@ -83,7 +97,21 @@ func TestTracedConnection(t *testing.T) {
 }
 
 func TestTracedConnectionErrors(t *testing.T) {
-	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	tel, cleanup, err := New(context.Background(), &config.Config{
+	    Telemetry: config.Telemetry{
+	        Metrics: config.TelemetryMetrics{
+	            Endpoint: "localhost:9464",
+	            Prometheus: struct {
+	                Path string `yaml:"path" json:"path"`
+	            }{
+	                Path: "/metrics",
+	            },
+	        },
+	        Tracing: config.TelemetryTracing{
+	            Endpoint: "localhost:4317",
+	        },
+	    },
+	})
 	assert.NoError(t, err)
 	defer cleanup()
 
@@ -101,7 +129,21 @@ func TestConnectionTimeout(t *testing.T) {
 		t.Skip("Skipping timeout test in short mode")
 	}
 
-	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	tel, cleanup, err := New(context.Background(), &config.Config{
+	    Telemetry: config.Telemetry{
+	        Metrics: config.TelemetryMetrics{
+	            Endpoint: "localhost:9464",
+	            Prometheus: struct {
+	                Path string `yaml:"path" json:"path"`
+	            }{
+	                Path: "/metrics",
+	            },
+	        },
+	        Tracing: config.TelemetryTracing{
+	            Endpoint: "localhost:4317",
+	        },
+	    },
+	})
 	assert.NoError(t, err)
 	defer cleanup()
 

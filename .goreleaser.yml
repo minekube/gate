@@ -8,6 +8,8 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -X go.minekube.com/gate/pkg/telemetry.Version={{.Version}}
 archives:
   - format: binary
 checksum:
