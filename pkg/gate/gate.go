@@ -23,9 +23,9 @@ import (
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
-	"go.minekube.com/gate/pkg/internal/otelutil"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/runtime/process"
+	"go.minekube.com/gate/pkg/telemetry"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errorsutil "go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/interrupt"
@@ -118,6 +118,11 @@ func New(options Options) (gate *Gate, err error) {
 
 	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java())); err != nil {
 		return nil, err
+	}
+
+	// Instrument Java proxy with OpenTelemetry if enabled
+	if gate.Java() != nil {
+		telemetry.InstrumentProxy(gate.Java())
 	}
 
 	return gate, nil
@@ -246,8 +251,11 @@ func Start(ctx context.Context, opts ...StartOption) error {
 		}()
 	}
 
-	// Initialize OpenTelemetry
-	otelShutdown, err := otelutil.Init()
+	// Apply default telemetry config first
+	c.conf.Editions.Java.Config = *telemetry.WithDefaults(&c.conf.Editions.Java.Config)
+
+	// Initialize OpenTelemetry with config (after config is finalized)
+	otelShutdown, err := telemetry.Init(ctx, c.conf)
 	if err != nil {
 		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
 	}
