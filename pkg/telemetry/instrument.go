@@ -16,16 +16,16 @@ type ProxyServer interface {
 }
 
 // InstrumentProxy adds OpenTelemetry instrumentation to key proxy functions
-func InstrumentProxy(p ProxyServer) {
+func (t *Telemetry) InstrumentProxy(p ProxyServer) {
 	if p == nil {
 		return
 	}
 
 	// Subscribe to events
-	subscribeEvents(p)
+	t.subscribeEvents(p)
 }
 
-func subscribeEvents(p ProxyServer) {
+func (t *Telemetry) subscribeEvents(p ProxyServer) {
 	eventMgr := p.Event()
 	if eventMgr == nil {
 		return
@@ -34,7 +34,7 @@ func subscribeEvents(p ProxyServer) {
 	// Track player login
 	eventMgr.Subscribe(&proxy.LoginEvent{}, 0, event.HandlerFunc(func(e event.Event) {
 		loginEvent := e.(*proxy.LoginEvent)
-		_, span := tracer.Start(context.Background(), "player.Login",
+		_, span := t.tracer.Start(context.Background(), "player.Login",
 			trace.WithAttributes(
 				attribute.String("username", loginEvent.Player().Username()),
 				attribute.String("uuid", loginEvent.Player().ID().String()),
@@ -43,14 +43,14 @@ func subscribeEvents(p ProxyServer) {
 		defer span.End()
 
 		// Record metric
-		RecordPlayerConnection(context.Background(), loginEvent.Player().Username())
-		UpdatePlayerCount(context.Background(), 1)
+		t.RecordPlayerConnection(context.Background(), loginEvent.Player().Username())
+		t.UpdatePlayerCount(context.Background(), 1)
 	}))
 
 	// Track player disconnect
 	eventMgr.Subscribe(&proxy.DisconnectEvent{}, 0, event.HandlerFunc(func(e event.Event) {
 		disconnectEvent := e.(*proxy.DisconnectEvent)
-		_, span := tracer.Start(context.Background(), "player.Disconnect",
+		_, span := t.tracer.Start(context.Background(), "player.Disconnect",
 			trace.WithAttributes(
 				attribute.String("username", disconnectEvent.Player().Username()),
 				attribute.String("uuid", disconnectEvent.Player().ID().String()),
@@ -58,7 +58,7 @@ func subscribeEvents(p ProxyServer) {
 		defer span.End()
 
 		// Record metrics
-		UpdatePlayerCount(context.Background(), -1)
+		t.UpdatePlayerCount(context.Background(), -1)
 	}))
 
 	// Track server connections
@@ -67,7 +67,7 @@ func subscribeEvents(p ProxyServer) {
 		if serverEvent.Server() == nil {
 			return
 		}
-		_, span := tracer.Start(context.Background(), "player.ServerConnect",
+		_, span := t.tracer.Start(context.Background(), "player.ServerConnect",
 			trace.WithAttributes(
 				attribute.String("username", serverEvent.Player().Username()),
 				attribute.String("server", serverEvent.Server().ServerInfo().Name()),
@@ -78,7 +78,7 @@ func subscribeEvents(p ProxyServer) {
 	// Track command executions
 	eventMgr.Subscribe(&proxy.CommandExecuteEvent{}, 0, event.HandlerFunc(func(e event.Event) {
 		cmdEvent := e.(*proxy.CommandExecuteEvent)
-		_, span := tracer.Start(context.Background(), "command.Execute",
+		_, span := t.tracer.Start(context.Background(), "command.Execute",
 			trace.WithAttributes(
 				attribute.String("command", cmdEvent.Command()),
 				attribute.String("source", fmt.Sprintf("%T", cmdEvent.Source())),
@@ -89,7 +89,7 @@ func subscribeEvents(p ProxyServer) {
 	// Track plugin messages
 	eventMgr.Subscribe(&proxy.PluginMessageEvent{}, 0, event.HandlerFunc(func(e event.Event) {
 		pluginEvent := e.(*proxy.PluginMessageEvent)
-		_, span := tracer.Start(context.Background(), "plugin.Message",
+		_, span := t.tracer.Start(context.Background(), "plugin.Message",
 			trace.WithAttributes(
 				attribute.String("identifier", fmt.Sprintf("%v", pluginEvent.Identifier())),
 				attribute.Int("data_length", len(pluginEvent.Data())),

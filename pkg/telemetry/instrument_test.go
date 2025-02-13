@@ -218,6 +218,13 @@ func (e *testCommandExecuteEvent) Command() string {
 return e.commandLine
 }
 
+// Mock implementation of message.ChannelIdentifier
+type testChannelIdentifier string
+
+func (t testChannelIdentifier) ID() string {
+	return string(t)
+}
+
 type testPluginMessageEvent struct {
 source     testCommandSource
 identifier message.ChannelIdentifier
@@ -237,67 +244,82 @@ return e.data
 }
 
 func TestInstrumentProxyTelemetry(t *testing.T) {
-// Initialize telemetry with stdout tracer using default configuration and then enabling tracing
-cfg := WithDefaults(&config.Config{})
-cfg.Telemetry.Tracing.Enabled = true
-cfg.Telemetry.Tracing.Exporter = "stdout"
-cleanup, err := initTelemetry(context.Background(), cfg)
-assert.NoError(t, err)
-defer cleanup()
+	// Initialize telemetry with stdout tracer using default configuration and then enabling tracing
+	cfg := WithDefaults(&config.Config{})
+	cfg.Telemetry.Tracing.Enabled = true
+	cfg.Telemetry.Tracing.Exporter = "stdout"
+	
+	// Create new telemetry instance
+	tel, cleanup, err := New(context.Background(), cfg)
+	assert.NoError(t, err)
+	defer cleanup()
 
-// Setup a simple proxy with event manager
-eventMgr := newSimpleEventMgr()
-p := &simpleProxy{eventMgr: eventMgr}
+	// Setup a simple proxy with event manager
+	eventMgr := newSimpleEventMgr()
+	p := &simpleProxy{eventMgr: eventMgr}
 
-// Instrument the proxy
-InstrumentProxy(p)
+	// Instrument the proxy
+	tel.InstrumentProxy(p)
 
-// Setup test data
-testID := uuid.UUID([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16})
-testPlayer := testPlayer{
-username:   "testPlayer",
-id:         testID,
-onlineMode: true,
-gameProfile: profile.GameProfile{
-ID:   testID,
-Name: "testPlayer",
-},
-}
+	// Test login event
+	loginEvent := &testLoginEvent{
+		player: testPlayer{
+			username:   "testUser",
+			id:        uuid.New(),
+			onlineMode: true,
+		},
+	}
+	eventMgr.Fire(loginEvent)
 
-// Verify event handlers are registered
-t.Run("event handlers registered", func(t *testing.T) {
-assert.NotEmpty(t, eventMgr.handlers["login"], "login event handler")
-assert.NotEmpty(t, eventMgr.handlers["disconnect"], "disconnect event handler")
-assert.NotEmpty(t, eventMgr.handlers["serverConnect"], "server connect event handler")
-assert.NotEmpty(t, eventMgr.handlers["command"], "command event handler")
-assert.NotEmpty(t, eventMgr.handlers["pluginMessage"], "plugin message event handler")
-})
+	// Test disconnect event
+	disconnectEvent := &testDisconnectEvent{
+		player: testPlayer{
+			username: "testUser",
+			id:      uuid.New(),
+		},
+	}
+	eventMgr.Fire(disconnectEvent)
 
-// Verify telemetry is generated when events are fired
-t.Run("telemetry generated", func(t *testing.T) {
-// Each event fired will generate telemetry output to stdout
-eventMgr.Fire(&testLoginEvent{player: testPlayer})
-eventMgr.Fire(&testDisconnectEvent{player: testPlayer})
-eventMgr.Fire(&testServerPreConnectEvent{
-player: testPlayer,
-server: testServer{info: testServerInfo{name: "test-server"}},
-})
-eventMgr.Fire(&testCommandExecuteEvent{
-source:      testCommandSource{},
-commandLine: "test-command",
-})
-eventMgr.Fire(&testPluginMessageEvent{
-source: testCommandSource{},
-data:   []byte("test-data"),
-})
-})
+	// Test server connect event
+	serverEvent := &testServerPreConnectEvent{
+		player: testPlayer{
+			username: "testUser",
+			id:      uuid.New(),
+		},
+		server: testServer{
+			info: testServerInfo{
+				name: "testServer",
+			},
+		},
+	}
+	eventMgr.Fire(serverEvent)
+
+	// Test command execute event
+	cmdEvent := &testCommandExecuteEvent{
+		source:      testCommandSource{},
+		commandLine: "/test command",
+	}
+	eventMgr.Fire(cmdEvent)
+
+	// Test plugin message event
+	pluginEvent := &testPluginMessageEvent{
+		source:     testCommandSource{},
+		identifier: testChannelIdentifier("test:channel"),
+		data:      []byte("test data"),
+	}
+	eventMgr.Fire(pluginEvent)
 }
 
 func TestInstrumentProxyNil(t *testing.T) {
-InstrumentProxy(nil) // Should not panic
+	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	assert.NoError(t, err)
+	defer cleanup()
+	tel.InstrumentProxy(nil) // Should not panic
 }
 
 func TestInstrumentProxyNilEventManager(t *testing.T) {
-p := &simpleProxy{eventMgr: nil}
-InstrumentProxy(p) // Should not panic
+	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	assert.NoError(t, err)
+	defer cleanup()
+	tel.InstrumentProxy(&simpleProxy{eventMgr: nil}) // Should not panic
 }

@@ -47,12 +47,14 @@ func TestTracedConnection(t *testing.T) {
 	cfg := WithDefaults(&config.Config{})
 	cfg.Telemetry.Tracing.Enabled = true
 	cfg.Telemetry.Tracing.Exporter = "stdout"
-	cleanup, err := initTelemetry(context.Background(), cfg)
+	
+	// Create new telemetry instance
+	tel, cleanup, err := New(context.Background(), cfg)
 	assert.NoError(t, err)
 	defer cleanup()
 
 	// Wrap with tracing
-	tracedConn := WithConnectionTracing(conn, "test-connection")
+	tracedConn := tel.WithConnectionTracing(conn, "test-connection")
 
 	t.Run("read operation", func(t *testing.T) {
 		// Write some data
@@ -81,12 +83,16 @@ func TestTracedConnection(t *testing.T) {
 }
 
 func TestTracedConnectionErrors(t *testing.T) {
+	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	assert.NoError(t, err)
+	defer cleanup()
+
 	// Test with a closed connection
-	_, err := net.Dial("tcp", "localhost:0") // This should fail
+	_, err = net.Dial("tcp", "localhost:0") // This should fail
 	assert.Error(t, err)
 
 	// Still create a traced connection with nil
-	tracedConn := WithConnectionTracing(nil, "test-connection")
+	tracedConn := tel.WithConnectionTracing(nil, "test-connection")
 	assert.Nil(t, tracedConn)
 }
 
@@ -95,11 +101,15 @@ func TestConnectionTimeout(t *testing.T) {
 		t.Skip("Skipping timeout test in short mode")
 	}
 
+	tel, cleanup, err := New(context.Background(), WithDefaults(&config.Config{}))
+	assert.NoError(t, err)
+	defer cleanup()
+
 	// Create a connection that will timeout
-	_, err := net.DialTimeout("tcp", "192.0.2.1:12345", 1*time.Second) // Use an unroutable IP
+	_, err = net.DialTimeout("tcp", "192.0.2.1:12345", 1*time.Second) // Use an unroutable IP
 	assert.Error(t, err)
 
 	// Create traced connection with nil
-	tracedConn := WithConnectionTracing(nil, "test-connection")
+	tracedConn := tel.WithConnectionTracing(nil, "test-connection")
 	assert.Nil(t, tracedConn)
 }

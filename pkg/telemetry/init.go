@@ -2,63 +2,42 @@ package telemetry
 
 import (
 	"context"
-	"fmt"
 
-	gcfg "go.minekube.com/gate/pkg/gate/config"
+	"go.minekube.com/gate/pkg/gate/config"
 )
 
-// Init initializes OpenTelemetry with the configured exporters and providers
-func Init(ctx context.Context, cfg *gcfg.Config) (cleanup func(), err error) {
-	if cfg == nil {
-		return nil, fmt.Errorf("config is nil")
-	}
+// Init initializes OpenTelemetry with configuration from environment variables and config.
+// It returns a cleanup function and any error encountered.
+func Init(ctx context.Context, cfg *config.Config) (func(), error) {
+	// Apply default telemetry config first
+	cfg = WithDefaults(cfg)
 
-	// Initialize telemetry with config
-	if cfg.Telemetry.Metrics.Enabled || cfg.Telemetry.Tracing.Enabled {
-		cleanup, err = initTelemetry(ctx, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize telemetry: %w", err)
-		}
-		return cleanup, nil
+	// Create new telemetry instance
+	_, cleanup, err := New(ctx, cfg)
+	if err != nil {
+		return nil, err
 	}
-
-	return func() {}, nil // Return no-op cleanup if telemetry disabled
+	return cleanup, nil
 }
 
-// WithDefaults returns a config with telemetry enabled using reasonable defaults
-func WithDefaults(cfg *gcfg.Config) *gcfg.Config {
+// WithDefaults returns a copy of the config with default telemetry settings applied.
+func WithDefaults(cfg *config.Config) *config.Config {
 	if cfg == nil {
 		return nil
 	}
-
-	// Enable telemetry with default configuration if not explicitly configured
-	if cfg.Telemetry.Metrics.Enabled || cfg.Telemetry.Tracing.Enabled {
-		return cfg // User has explicitly configured telemetry
+	// Create a copy to not modify the original
+	c := *cfg
+	
+	// Set default telemetry settings if not configured
+	if c.Telemetry.Metrics.Endpoint == "" {
+		c.Telemetry.Metrics.Endpoint = "localhost:9464"
 	}
-
-	// Create a copy of the config to avoid modifying the original
-	newCfg := *cfg
-
-	// Set default telemetry configuration
-	newCfg.Telemetry = gcfg.Telemetry{
-		Metrics: gcfg.TelemetryMetrics{
-			Enabled:         true,
-			Endpoint:        "0.0.0.0:8888",
-			AnonymousMetrics: true,
-			Exporter:        "prometheus",
-			Prometheus: struct {
-				Path string `yaml:"path" json:"path"`
-			}{
-				Path: "/metrics",
-			},
-		},
-		Tracing: gcfg.TelemetryTracing{
-			Enabled:  false, // Tracing disabled by default
-			Endpoint: "localhost:4317",
-			Sampler:  "parentbased_always_on",
-			Exporter: "stdout",
-		},
+	if c.Telemetry.Metrics.Prometheus.Path == "" {
+		c.Telemetry.Metrics.Prometheus.Path = "/metrics"
 	}
-
-	return &newCfg
+	if c.Telemetry.Tracing.Endpoint == "" {
+		c.Telemetry.Tracing.Endpoint = "localhost:4317"
+	}
+	
+	return &c
 }

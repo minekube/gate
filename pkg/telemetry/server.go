@@ -18,14 +18,14 @@ type TracedServerConnection struct {
 }
 
 // WithServerConnectionTracing wraps server connection functions with tracing
-func WithServerConnectionTracing(s proxy.ServerConnection) proxy.ServerConnection {
+func (t *Telemetry) WithServerConnectionTracing(s proxy.ServerConnection) proxy.ServerConnection {
 	if s == nil {
 		return nil
 	}
 
 	ts := &TracedServerConnection{
 		ServerConnection: s,
-		tracer:          tracer,
+		tracer:          t.tracer,
 	}
 
 	// Start connection span
@@ -41,23 +41,25 @@ func WithServerConnectionTracing(s proxy.ServerConnection) proxy.ServerConnectio
 }
 
 // WithConnectionTracing wraps a net.Conn with OpenTelemetry tracing
-func WithConnectionTracing(conn net.Conn, name string) net.Conn {
+func (t *Telemetry) WithConnectionTracing(conn net.Conn, name string) net.Conn {
 	if conn == nil {
 		return nil
 	}
 	return &tracedConn{
-		Conn: conn,
-		name: name,
+		Conn:   conn,
+		name:   name,
+		tracer: t.tracer,
 	}
 }
 
 type tracedConn struct {
 	net.Conn
-	name string
+	name   string
+	tracer trace.Tracer
 }
 
 func (t *tracedConn) Read(b []byte) (n int, err error) {
-	_, span := tracer.Start(context.Background(), fmt.Sprintf("%s.read", t.name))
+	_, span := t.tracer.Start(context.Background(), fmt.Sprintf("%s.read", t.name))
 	defer span.End()
 
 	n, err = t.Conn.Read(b)
@@ -68,7 +70,7 @@ func (t *tracedConn) Read(b []byte) (n int, err error) {
 }
 
 func (t *tracedConn) Write(b []byte) (n int, err error) {
-	_, span := tracer.Start(context.Background(), fmt.Sprintf("%s.write", t.name))
+	_, span := t.tracer.Start(context.Background(), fmt.Sprintf("%s.write", t.name))
 	defer span.End()
 
 	n, err = t.Conn.Write(b)
@@ -79,7 +81,7 @@ func (t *tracedConn) Write(b []byte) (n int, err error) {
 }
 
 func (t *tracedConn) Close() error {
-	_, span := tracer.Start(context.Background(), fmt.Sprintf("%s.close", t.name))
+	_, span := t.tracer.Start(context.Background(), fmt.Sprintf("%s.close", t.name))
 	defer span.End()
 
 	return t.Conn.Close()

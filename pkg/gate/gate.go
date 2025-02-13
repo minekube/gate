@@ -73,6 +73,20 @@ func New(options Options) (gate *Gate, err error) {
 		bridge: &bridge.Bridge{},
 	}
 
+	// Initialize telemetry if enabled
+	if options.Config.Telemetry.Metrics.Enabled || options.Config.Telemetry.Tracing.Enabled {
+		tel, cleanup, err := telemetry.New(context.Background(), options.Config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize telemetry: %w", err)
+		}
+		gate.tel = tel
+		gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
+			<-ctx.Done()
+			cleanup()
+			return nil
+		}))
+	}
+
 	c := options.Config
 	if c.Editions.Java.Enabled {
 		gate.bridge.JavaProxy, err = jproxy.New(jproxy.Options{
@@ -121,8 +135,8 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	// Instrument Java proxy with OpenTelemetry if enabled
-	if gate.Java() != nil {
-		telemetry.InstrumentProxy(gate.Java())
+	if gate.Java() != nil && gate.tel != nil {
+		gate.tel.InstrumentProxy(gate.Java())
 	}
 
 	return gate, nil
@@ -132,6 +146,7 @@ func New(options Options) (gate *Gate, err error) {
 type Gate struct {
 	bridge *bridge.Bridge     // The proxies.
 	proc   process.Collection // Parallel running proc.
+	tel    *telemetry.Telemetry // Telemetry instance
 }
 
 // Java returns the Java edition proxy, or nil if none.
@@ -383,4 +398,9 @@ func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
 	}
 
 	return v.ReadConfig(bytes.NewReader(b))
+}
+
+// Telemetry returns the telemetry instance for this Gate, or nil if telemetry is disabled.
+func (g *Gate) Telemetry() *telemetry.Telemetry {
+	return g.tel
 }

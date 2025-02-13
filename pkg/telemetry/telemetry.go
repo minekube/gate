@@ -25,61 +25,66 @@ import (
 	gcfg "go.minekube.com/gate/pkg/gate/config"
 )
 
-const (
-	gateVersion = "1.0.0" // TODO: Replace with actual version from build system
-)
-
+// Version information set by build flags
 var (
-	tracer     trace.Tracer
-	meter      metric.Meter
-	tpsValue   float64 // Current TPS value
-	gatherer   metric.Float64ObservableUpDownCounter
-	playerGauge       metric.Int64UpDownCounter
-	connDuration      metric.Float64Histogram
-	playerConnections metric.Int64Counter
+	// Version is the current version of Gate.
+	// Set using -ldflags "-X go.minekube.com/gate/pkg/telemetry.Version=v1.2.3"
+	Version = "dev"
 )
 
-// initTelemetry sets up OpenTelemetry tracing and metrics
-func initTelemetry(ctx context.Context, cfg *gcfg.Config) (func(), error) {
+// Telemetry holds telemetry instruments for a Gate instance
+type Telemetry struct {
+	tracer           trace.Tracer
+	meter            metric.Meter
+	playerGauge      metric.Int64UpDownCounter
+	connDuration     metric.Float64Histogram
+	playerConnections metric.Int64Counter
+}
+
+// New creates a new Telemetry instance for a Gate instance
+func New(ctx context.Context, cfg *gcfg.Config) (*Telemetry, func(), error) {
 	// Create shared resource attributes
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName("gate"),
-			semconv.ServiceVersion(gateVersion),
+			semconv.ServiceVersion(Version),
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
+		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
 	var cleanupFuncs []func()
+	t := &Telemetry{}
 
 	// Initialize metrics if enabled
 	if cfg.Telemetry.Metrics.Enabled {
-		metricCleanup, err := initMetrics(ctx, res, cfg)
+		metricCleanup, err := t.initMetrics(ctx, res, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize metrics: %w", err)
+			return nil, nil, fmt.Errorf("failed to initialize metrics: %w", err)
 		}
 		cleanupFuncs = append(cleanupFuncs, metricCleanup)
 	}
 
 	// Initialize tracing if enabled
 	if cfg.Telemetry.Tracing.Enabled {
-		tracingCleanup, err := initTracing(ctx, res, cfg)
+		tracingCleanup, err := t.initTracing(ctx, res, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize tracing: %w", err)
+			return nil, nil, fmt.Errorf("failed to initialize tracing: %w", err)
 		}
 		cleanupFuncs = append(cleanupFuncs, tracingCleanup)
 	}
 
-	return func() {
+	cleanup := func() {
 		for _, cleanup := range cleanupFuncs {
 			cleanup()
 		}
-	}, nil
+	}
+
+	return t, cleanup, nil
 }
 
-func initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
+func (t *Telemetry) initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
 	switch cfg.Telemetry.Metrics.Exporter {
 	case "prometheus":
 		// Create Prometheus exporter
@@ -103,7 +108,7 @@ func initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) 
 			}
 		}()
 
-		return setupMetrics(ctx, provider)
+		return t.setupMetrics(ctx, provider)
 
 	case "otlp":
 		otlpExporter, err := otlpmetricgrpc.New(ctx,
@@ -121,7 +126,7 @@ func initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) 
 		)
 		otel.SetMeterProvider(provider)
 
-		return setupMetrics(ctx, provider)
+		return t.setupMetrics(ctx, provider)
 
 	case "stdout":
 		stdoutExporter, err := stdoutmetric.New()
@@ -136,45 +141,35 @@ func initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) 
 		)
 		otel.SetMeterProvider(provider)
 
-		return setupMetrics(ctx, provider)
+		return t.setupMetrics(ctx, provider)
 
 	default:
 		return nil, fmt.Errorf("unknown metrics exporter: %s", cfg.Telemetry.Metrics.Exporter)
 	}
 }
 
-func setupMetrics(ctx context.Context, provider *sdkmetric.MeterProvider) (func(), error) {
-	meter = provider.Meter("gate")
+func (t *Telemetry) setupMetrics(ctx context.Context, provider *sdkmetric.MeterProvider) (func(), error) {
+	t.meter = provider.Meter("gate")
 
 	// Create metrics
-	var err1, err2, err3, err4 error
+	var err1, err2, err3 error
 
-	// Register TPS callback
-	gatherer, err1 = meter.Float64ObservableUpDownCounter(
-		"gate.performance.tps",
-		metric.WithDescription("Current tick rate"),
-		metric.WithFloat64Callback(func(_ context.Context, o metric.Float64Observer) error {
-			o.Observe(tpsValue)
-			return nil
-		}),
-	)
-
-	playerGauge, err2 = meter.Int64UpDownCounter(
+	t.playerGauge, err1 = t.meter.Int64UpDownCounter(
 		"gate.players.current",
 		metric.WithDescription("Current number of connected players"),
 	)
 
-	playerConnections, err3 = meter.Int64Counter(
+	t.playerConnections, err2 = t.meter.Int64Counter(
 		"gate.players.total",
 		metric.WithDescription("Total number of player connections"),
 	)
 
-	connDuration, err4 = meter.Float64Histogram(
+	t.connDuration, err3 = t.meter.Float64Histogram(
 		"gate.connection.duration",
 		metric.WithDescription("Connection duration in seconds"),
 	)
 
-	for _, err := range []error{err1, err2, err3, err4} {
+	for _, err := range []error{err1, err2, err3} {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create metrics: %w", err)
 		}
@@ -187,7 +182,7 @@ func setupMetrics(ctx context.Context, provider *sdkmetric.MeterProvider) (func(
 	}, nil
 }
 
-func initTracing(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
+func (t *Telemetry) initTracing(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
 	var exporter sdktrace.SpanExporter
 	var err error
 
@@ -226,7 +221,7 @@ func initTracing(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) 
 		propagation.Baggage{},
 	))
 
-	tracer = tracerProvider.Tracer("gate")
+	t.tracer = tracerProvider.Tracer("gate")
 
 	return func() {
 		if err := tracerProvider.Shutdown(ctx); err != nil {
@@ -236,9 +231,9 @@ func initTracing(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) 
 }
 
 // RecordPlayerConnection records a new player connection metric
-func RecordPlayerConnection(ctx context.Context, username string) {
-	if playerConnections != nil {
-		playerConnections.Add(ctx, 1,
+func (t *Telemetry) RecordPlayerConnection(ctx context.Context, username string) {
+	if t.playerConnections != nil {
+		t.playerConnections.Add(ctx, 1,
 			metric.WithAttributes(
 				attribute.String("username", username),
 			),
@@ -247,9 +242,9 @@ func RecordPlayerConnection(ctx context.Context, username string) {
 }
 
 // RecordPlayerDisconnection updates metrics when a player disconnects
-func RecordPlayerDisconnection(ctx context.Context, username string, duration float64) {
-	if connDuration != nil {
-		connDuration.Record(ctx, duration,
+func (t *Telemetry) RecordPlayerDisconnection(ctx context.Context, username string, duration float64) {
+	if t.connDuration != nil {
+		t.connDuration.Record(ctx, duration,
 			metric.WithAttributes(
 				attribute.String("username", username),
 			),
@@ -257,14 +252,9 @@ func RecordPlayerDisconnection(ctx context.Context, username string, duration fl
 	}
 }
 
-// UpdateGathererMetrics updates observable metrics
-func UpdateGathererMetrics(_ context.Context, tps float64) {
-	tpsValue = tps // Update the TPS value that will be observed by the callback
-}
-
 // UpdatePlayerCount updates the current player count
-func UpdatePlayerCount(ctx context.Context, delta int64) {
-	if playerGauge != nil {
-		playerGauge.Add(ctx, delta)
+func (t *Telemetry) UpdatePlayerCount(ctx context.Context, delta int64) {
+	if t.playerGauge != nil {
+		t.playerGauge.Add(ctx, delta)
 	}
 }
