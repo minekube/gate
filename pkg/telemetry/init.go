@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"go.minekube.com/gate/pkg/edition/java/config"
 	gcfg "go.minekube.com/gate/pkg/gate/config"
 )
 
@@ -15,8 +14,8 @@ func Init(ctx context.Context, cfg *gcfg.Config) (cleanup func(), err error) {
 	}
 
 	// Initialize telemetry with config
-	if cfg.Editions.Java.Config.Telemetry.Metrics.Enabled || cfg.Editions.Java.Config.Telemetry.Tracing.Enabled {
-		cleanup, err = initTelemetry(ctx, cfg.Editions.Java.Config)
+	if cfg.Telemetry.Metrics.Enabled || cfg.Telemetry.Tracing.Enabled {
+		cleanup, err = initTelemetry(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize telemetry: %w", err)
 		}
@@ -27,7 +26,7 @@ func Init(ctx context.Context, cfg *gcfg.Config) (cleanup func(), err error) {
 }
 
 // WithDefaults returns a config with telemetry enabled using reasonable defaults
-func WithDefaults(cfg *config.Config) *config.Config {
+func WithDefaults(cfg *gcfg.Config) *gcfg.Config {
 	if cfg == nil {
 		return nil
 	}
@@ -37,9 +36,12 @@ func WithDefaults(cfg *config.Config) *config.Config {
 		return cfg // User has explicitly configured telemetry
 	}
 
+	// Create a copy of the config to avoid modifying the original
+	newCfg := *cfg
+
 	// Set default telemetry configuration
-	cfg.Telemetry = config.Telemetry{
-		Metrics: config.TelemetryMetrics{
+	newCfg.Telemetry = gcfg.Telemetry{
+		Metrics: gcfg.TelemetryMetrics{
 			Enabled:         true,
 			Endpoint:        "0.0.0.0:8888",
 			AnonymousMetrics: true,
@@ -50,7 +52,7 @@ func WithDefaults(cfg *config.Config) *config.Config {
 				Path: "/metrics",
 			},
 		},
-		Tracing: config.TelemetryTracing{
+		Tracing: gcfg.TelemetryTracing{
 			Enabled:  false, // Tracing disabled by default
 			Endpoint: "localhost:4317",
 			Sampler:  "parentbased_always_on",
@@ -58,5 +60,5 @@ func WithDefaults(cfg *config.Config) *config.Config {
 		},
 	}
 
-	return cfg
+	return &newCfg
 }

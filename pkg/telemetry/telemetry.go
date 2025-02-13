@@ -22,7 +22,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"go.minekube.com/gate/pkg/edition/java/config"
+	gcfg "go.minekube.com/gate/pkg/gate/config"
 )
 
 const (
@@ -40,7 +40,7 @@ var (
 )
 
 // initTelemetry sets up OpenTelemetry tracing and metrics
-func initTelemetry(ctx context.Context, cfg config.Config) (func(), error) {
+func initTelemetry(ctx context.Context, cfg *gcfg.Config) (func(), error) {
 	// Create shared resource attributes
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -79,7 +79,7 @@ func initTelemetry(ctx context.Context, cfg config.Config) (func(), error) {
 	}, nil
 }
 
-func initMetrics(ctx context.Context, res *resource.Resource, cfg config.Config) (func(), error) {
+func initMetrics(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
 	switch cfg.Telemetry.Metrics.Exporter {
 	case "prometheus":
 		// Create Prometheus exporter
@@ -187,7 +187,7 @@ func setupMetrics(ctx context.Context, provider *sdkmetric.MeterProvider) (func(
 	}, nil
 }
 
-func initTracing(ctx context.Context, res *resource.Resource, cfg config.Config) (func(), error) {
+func initTracing(ctx context.Context, res *resource.Resource, cfg *gcfg.Config) (func(), error) {
 	var exporter sdktrace.SpanExporter
 	var err error
 

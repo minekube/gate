@@ -70,25 +70,6 @@ var DefaultConfig = Config{
 	Debug:                               false,
 	ShutdownReason:                      defaultShutdownReason(),
 	ForceKeyAuthentication:              true,
-	Telemetry: Telemetry{
-		Metrics: TelemetryMetrics{
-			Enabled: false,
-			Endpoint: "0.0.0.0:8888",
-			AnonymousMetrics: true,
-			Exporter: "prometheus",
-			Prometheus: struct {
-				Path string `yaml:"path" json:"path"`
-			}{
-				Path: "/metrics",
-			},
-		},
-		Tracing: TelemetryTracing{
-			Enabled: false,
-			Endpoint: "localhost:4317",
-			Sampler: "parentbased_always_on",
-			Exporter: "stdout",
-		},
-	},
 	Lite:                                liteconfig.DefaultConfig,
 }
 
@@ -139,8 +120,6 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
 
-	Telemetry Telemetry `yaml:"telemetry,omitempty" json:"telemetry,omitempty"` // Telemetry settings
-
 	Lite liteconfig.Config `yaml:"lite,omitempty" json:"lite,omitempty"` // Lite mode settings
 }
 
@@ -183,31 +162,6 @@ type (
 		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
 		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
-	}
-
-	// Telemetry configuration for metrics and tracing
-	Telemetry struct {
-		Metrics TelemetryMetrics `yaml:"metrics,omitempty" json:"metrics,omitempty"`
-		Tracing TelemetryTracing `yaml:"tracing,omitempty" json:"tracing,omitempty"`
-	}
-
-	// TelemetryMetrics configures OpenTelemetry metrics collection
-	TelemetryMetrics struct {
-		Enabled bool `yaml:"enabled" json:"enabled"`
-		Endpoint string `yaml:"endpoint" json:"endpoint"`
-		AnonymousMetrics bool `yaml:"anonymousMetrics" json:"anonymousMetrics"`
-		Exporter string `yaml:"exporter" json:"exporter"` // prometheus or otlp
-		Prometheus struct {
-			Path string `yaml:"path" json:"path"`
-		} `yaml:"prometheus,omitempty" json:"prometheus,omitempty"`
-	}
-
-	// TelemetryTracing configures OpenTelemetry tracing collection
-	TelemetryTracing struct {
-		Enabled bool `yaml:"enabled" json:"enabled"`
-		Endpoint string `yaml:"endpoint" json:"endpoint"`
-		Sampler string `yaml:"sampler" json:"sampler"`
-		Exporter string `yaml:"exporter" json:"exporter"` // otlp, jaeger, or stdout
 	}
 )
 
@@ -262,28 +216,6 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	if !c.OnlineMode {
 		w("Proxy is running in offline mode!")
-	}
-
-	// Validate telemetry settings
-	if c.Telemetry.Metrics.Enabled {
-		if c.Telemetry.Metrics.Endpoint == "" {
-			e("Telemetry metrics endpoint cannot be empty when metrics are enabled")
-		}
-		if c.Telemetry.Metrics.Exporter != "prometheus" && c.Telemetry.Metrics.Exporter != "otlp" {
-			e("Invalid telemetry metrics exporter %q: must be one of prometheus,otlp", c.Telemetry.Metrics.Exporter)
-		}
-		if c.Telemetry.Metrics.Exporter == "prometheus" && c.Telemetry.Metrics.Prometheus.Path == "" {
-			e("Prometheus metrics path cannot be empty when prometheus exporter is enabled")
-		}
-	}
-
-	if c.Telemetry.Tracing.Enabled {
-		if c.Telemetry.Tracing.Endpoint == "" {
-			e("Telemetry tracing endpoint cannot be empty when tracing is enabled")
-		}
-		if c.Telemetry.Tracing.Exporter != "otlp" && c.Telemetry.Tracing.Exporter != "jaeger" && c.Telemetry.Tracing.Exporter != "stdout" {
-			e("Invalid telemetry tracing exporter %q: must be one of otlp,jaeger,stdout", c.Telemetry.Tracing.Exporter)
-		}
 	}
 
 	switch c.Forwarding.Mode {

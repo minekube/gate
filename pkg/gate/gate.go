@@ -252,7 +252,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	}
 
 	// Apply default telemetry config first
-	c.conf.Editions.Java.Config = *telemetry.WithDefaults(&c.conf.Editions.Java.Config)
+	c.conf = telemetry.WithDefaults(c.conf)
 
 	// Initialize OpenTelemetry with config (after config is finalized)
 	otelShutdown, err := telemetry.Init(ctx, c.conf)

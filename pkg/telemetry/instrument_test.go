@@ -10,7 +10,7 @@ import (
 "github.com/stretchr/testify/assert"
 "go.minekube.com/common/minecraft/component"
 "go.minekube.com/gate/pkg/command"
-"go.minekube.com/gate/pkg/edition/java/config"
+"go.minekube.com/gate/pkg/gate/config"
 "go.minekube.com/gate/pkg/edition/java/profile"
 "go.minekube.com/gate/pkg/edition/java/proxy"
 "go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -237,16 +237,10 @@ return e.data
 }
 
 func TestInstrumentProxyTelemetry(t *testing.T) {
-// Initialize telemetry with stdout tracer
-cfg := config.Config{
-Telemetry: config.Telemetry{
-Tracing: config.TelemetryTracing{
-Enabled:  true,
-Exporter: "stdout",
-},
-},
-}
-
+// Initialize telemetry with stdout tracer using default configuration and then enabling tracing
+cfg := WithDefaults(&config.Config{})
+cfg.Telemetry.Tracing.Enabled = true
+cfg.Telemetry.Tracing.Exporter = "stdout"
 cleanup, err := initTelemetry(context.Background(), cfg)
 assert.NoError(t, err)
 defer cleanup()

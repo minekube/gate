@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/gate/config"
 )
 
 func TestTracedConnection(t *testing.T) {
@@ -43,16 +43,10 @@ func TestTracedConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Initialize telemetry
-	cfg := config.Config{
-		Telemetry: config.Telemetry{
-			Tracing: config.TelemetryTracing{
-				Enabled:  true,
-				Exporter: "stdout",
-			},
-		},
-	}
-
+	// Initialize telemetry using default configuration and enable tracing
+	cfg := WithDefaults(&config.Config{})
+	cfg.Telemetry.Tracing.Enabled = true
+	cfg.Telemetry.Tracing.Exporter = "stdout"
 	cleanup, err := initTelemetry(context.Background(), cfg)
 	assert.NoError(t, err)
 	defer cleanup()
