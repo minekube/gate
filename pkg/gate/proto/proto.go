@@ -65,6 +65,9 @@ type PacketContext struct {
 	// It contains the actual received payload (maybe longer than what the Packet's Decode read).
 	// This can be used to skip encoding Packet.
 	Payload []byte // Empty when encoding.
+
+	// Size represents the total number of bytes before decompression
+	Size int // Total bytes before decompression
 }
 
 // KnownPacket indicated whether the PacketID is known in the connection's current state.ProtocolRegistry.

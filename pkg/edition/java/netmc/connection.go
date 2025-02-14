@@ -6,15 +6,21 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
-	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
 	"net"
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
+
 	"github.com/go-logr/logr"
-	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.uber.org/atomic"
+
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -128,39 +134,46 @@ type SessionHandler interface {
 
 // NewMinecraftConn returns a new MinecraftConn and the func to start the blocking read-loop.
 func NewMinecraftConn(
-	ctx context.Context,
-	base net.Conn,
-	direction proto.Direction,
-	readTimeout time.Duration,
-	writeTimeout time.Duration,
-	compressionLevel int,
+ctx context.Context,
+base net.Conn,
+direction proto.Direction,
+readTimeout time.Duration,
+writeTimeout time.Duration,
+compressionLevel int,
 ) (conn MinecraftConn, startReadLoop func()) {
-	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
-	out := proto.ClientBound // writes to client are client bound (proxy -> client)
-	logName := "client"
-	if direction == proto.ClientBound { // if is a backend server connection
-		in = proto.ClientBound  // reads from backend are client bound (proxy <- backend)
-		out = proto.ServerBound // writes to backend are server bound (proxy -> backend)
-		logName = "server"
-	}
+in := proto.ServerBound  // reads from client are server bound (proxy <- client)
+out := proto.ClientBound // writes to client are client bound (proxy -> client)
+logName := "client"
+if direction == proto.ClientBound { // if is a backend server connection
+in = proto.ClientBound  // reads from backend are client bound (proxy <- backend)
+out = proto.ServerBound // writes to backend are server bound (proxy -> backend)
+logName = "server"
+}
 
-	log := logr.FromContextOrDiscard(ctx).WithName(logName)
-	ctx = logr.NewContext(ctx, log)
+log := logr.FromContextOrDiscard(ctx).WithName(logName)
+ctx = logr.NewContext(ctx, log)
 
-	ctx, cancel := context.WithCancel(ctx)
-	c := &minecraftConn{
-		log:         log,
-		c:           base,
-		ctx:         ctx,
-		cancelCtx:   cancel,
-		rd:          NewReader(base, in, readTimeout, log),
-		wr:          NewWriter(base, out, writeTimeout, compressionLevel, log),
-		state:       state.Handshake,
-		protocol:    version.Minecraft_1_7_2.Protocol,
-		connType:    phase.Undetermined,
-		direction:   direction,
-		autoReading: newStateControl(true),
-	}
+ctx, cancel := context.WithCancel(ctx)
+
+// Create connection with atomic counter for bytes written
+var bytesWritten atomic.Int64
+c := &minecraftConn{
+log:         log,
+c:           base,
+ctx:         ctx,
+cancelCtx:   cancel,
+rd:          NewReader(base, in, readTimeout, log),
+wr:          NewWriter(base, out, writeTimeout, compressionLevel, log, func(n int) {
+bytesWritten.Add(int64(n))
+}),
+state:       state.Handshake,
+protocol:    version.Minecraft_1_7_2.Protocol,
+connType:    phase.Undetermined,
+direction:   direction,
+autoReading: newStateControl(true),
+bytesWritten: &bytesWritten,
+interceptor:  NewTelemetryInterceptor(log),
+}
 	c.sessionHandlerMu.sessionHandlers = make(map[*state.Registry]SessionHandler)
 	return c, c.startReadLoop
 }
@@ -168,64 +181,95 @@ func NewMinecraftConn(
 // minecraftConn is a Minecraft connection.
 // It may be the connection of client -> proxy or proxy -> backend server.
 type minecraftConn struct {
-	c         net.Conn    // underlying connection
-	log       logr.Logger // connections own logger
-	direction proto.Direction
+c         net.Conn    // underlying connection
+log       logr.Logger // connections own logger
+direction proto.Direction
 
-	rd Reader
-	wr Writer
+rd Reader
+wr Writer
 
-	autoReading *stateControl // Whether the connection should automatically read packets from the underlying connection.
+autoReading *stateControl // Whether the connection should automatically read packets from the underlying connection.
 
-	ctx             context.Context // is canceled when connection closed
-	cancelCtx       context.CancelFunc
-	closeOnce       sync.Once   // Makes sure the connection is closed once, while blocking proceeding calls.
-	knownDisconnect atomic.Bool // Silences disconnect (any error is known)
+ctx             context.Context // is canceled when connection closed
+cancelCtx       context.CancelFunc
+closeOnce       sync.Once   // Makes sure the connection is closed once, while blocking proceeding calls.
+knownDisconnect atomic.Bool // Silences disconnect (any error is known)
 
-	protocol proto.Protocol // Client's protocol version.
+protocol proto.Protocol // Client's protocol version.
 
-	mu              sync.RWMutex         // Protects following fields
-	state           *state.Registry      // Client state.
-	connType        phase.ConnectionType // Connection type
-	playPacketQueue *queue.PlayPacketQueue
+mu              sync.RWMutex         // Protects following fields
+state           *state.Registry      // Client state.
+connType        phase.ConnectionType // Connection type
+playPacketQueue *queue.PlayPacketQueue
 
-	sessionHandlerMu struct {
-		sync.RWMutex
-		activeSessionHandler SessionHandler                     // The current session handler.
-		sessionHandlers      map[*state.Registry]SessionHandler // Session handlers by state.
-	}
+sessionHandlerMu struct {
+sync.RWMutex
+activeSessionHandler SessionHandler                     // The current session handler.
+sessionHandlers      map[*state.Registry]SessionHandler // Session handlers by state.
+}
+
+bytesWritten *atomic.Int64 // Total bytes written by this connection
+interceptor  PacketInterceptor // Packet interceptor for telemetry
 }
 
 // StartReadLoop is the main goroutine of this connection and
 // reads packets to pass them further to the current SessionHandler.
 // Close will be called on method return.
 func (c *minecraftConn) startReadLoop() {
-	// Make sure to close connection on return, if not already closed
-	defer func() { _ = c.closeKnown(false) }()
+// Make sure to close connection on return, if not already closed
+defer func() { _ = c.closeKnown(false) }()
 
-	next := func() bool {
-		// Wait until auto reading is enabled, if not already
-		c.autoReading.Wait()
+// Start connection lifetime span
+ctx, span := otel.Tracer("netmc").Start(c.ctx, "MinecraftConnection",
+trace.WithAttributes(
+attribute.String("net.transport", "tcp"),
+attribute.String("net.peer.ip", c.RemoteAddr().String()),
+))
+defer span.End()
+c.ctx = ctx
 
-		// Read next packet from underlying connection.
-		packetCtx, err := c.rd.ReadPacket()
-		if err != nil {
-			if errors.Is(err, ErrReadPacketRetry) {
-				// Sleep briefly and try again
-				time.Sleep(time.Millisecond * 5)
-				return true
-			}
-			return false
-		}
+bytesRead := 0
 
-		// TODO wrap packetCtx into struct with source info
-		// (minecraftConn) and chain into packet interceptor to...
-		//  - packet interception
-		//  - statistics / count bytes
-		//  - in turn call session handler
+defer func() {
+// Record total I/O metrics at connection end
+span.SetAttributes(
+attribute.Int("net.bytes.read", bytesRead),
+attribute.Int64("net.bytes.written", c.bytesWritten.Load()),
+)
+}()
 
-		// Handle packet by connection's session handler.
-		c.ActiveSessionHandler().HandlePacket(packetCtx)
+next := func() bool {
+// Wait until auto reading is enabled, if not already
+c.autoReading.Wait()
+
+// Read next packet from underlying connection.
+packetCtx, err := c.rd.ReadPacket()
+if err != nil {
+if errors.Is(err, ErrReadPacketRetry) {
+// Sleep briefly and try again
+time.Sleep(time.Millisecond * 5)
+return true
+}
+return false
+}
+
+sessionHandler := c.ActiveSessionHandler()
+
+// Wrap packet context with tracing
+tracedCtx := &TracedPacketContext{
+PacketContext: packetCtx,
+Conn:         c,
+Interceptor:  c.interceptor,
+}
+
+// Run through interceptor
+if err := c.interceptor.InterceptPacket(c.ctx, packetCtx); err != nil {
+c.log.Error(err, "failed to intercept packet")
+return false
+}
+
+// Handle packet by connection's session handler using traced context
+sessionHandler.HandlePacket(tracedCtx.PacketContext)
 		return true
 	}
 

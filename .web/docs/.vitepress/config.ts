@@ -174,6 +174,20 @@ export default defineConfig({
               text: 'Rate Limiting',
               link: '/guide/rate-limiting',
             },
+            {
+              text: 'OpenTelemetry',
+              link: '/guide/otel/',
+              items: [
+                {
+                  text: 'Grafana Cloud',
+                  link: '/guide/otel/grafana-cloud/',
+                },
+                {
+                  text: 'Honeycomb',
+                  link: '/guide/otel/honeycomb/',
+                },
+              ],
+            },
           ],
         },
         {

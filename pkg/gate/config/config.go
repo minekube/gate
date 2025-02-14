@@ -32,6 +32,23 @@ var DefaultConfig = Config{
 		Enabled: false,
 		Config:  api.DefaultConfig,
 	},
+	Telemetry: Telemetry{
+		Metrics: TelemetryMetrics{
+			Enabled: true,
+			Endpoint: "http://localhost:4317",
+			AnonymousMetrics: true,
+			Exporter: "otlp",
+			Prometheus: struct {
+				Path string `yaml:"path" json:"path"`
+			}{Path: "/metrics"},
+		},
+		Tracing: TelemetryTracing{
+			Enabled: true,
+			Endpoint: "http://localhost:4317",
+			Sampler: "always",
+			Exporter: "otlp",
+		},
+	},
 }
 
 // Config is the root configuration of Gate.
@@ -47,6 +64,8 @@ type Config struct {
 	Connect connect.Config `json:"connect,omitempty" yaml:"connect,omitempty"`
 	// See API struct.
 	API API `json:"api,omitempty" yaml:"api,omitempty"`
+	// Telemetry configuration for metrics and tracing
+	Telemetry Telemetry `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 }
 
 // Editions provides Minecraft edition specific configs.
@@ -82,6 +101,31 @@ type API struct {
 	Config  api.Config `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
+// Telemetry configuration for metrics and tracing
+type Telemetry struct {
+	Metrics TelemetryMetrics `yaml:"metrics,omitempty" json:"metrics,omitempty"`
+	Tracing TelemetryTracing `yaml:"tracing,omitempty" json:"tracing,omitempty"`
+}
+
+// TelemetryMetrics configures OpenTelemetry metrics collection
+type TelemetryMetrics struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	Endpoint string `yaml:"endpoint" json:"endpoint"`
+	AnonymousMetrics bool `yaml:"anonymousMetrics" json:"anonymousMetrics"`
+	Exporter string `yaml:"exporter" json:"exporter"` // prometheus or otlp
+	Prometheus struct {
+		Path string `yaml:"path" json:"path"`
+	} `yaml:"prometheus,omitempty" json:"prometheus,omitempty"`
+}
+
+// TelemetryTracing configures OpenTelemetry tracing collection
+type TelemetryTracing struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	Endpoint string `yaml:"endpoint" json:"endpoint"`
+	Sampler string `yaml:"sampler" json:"sampler"`
+	Exporter string `yaml:"exporter" json:"exporter"` // otlp, jaeger, or stdout
+}
+
 // Validate validates a Config and all enabled edition configs (Java / Bedrock).
 func (c *Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
@@ -93,6 +137,28 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	if c.HealthService.Enabled {
 		if err := validation.ValidHostPort(c.HealthService.Bind); err != nil {
 			e("Invalid health probe bind address %q: %v", c.HealthService.Bind, err)
+		}
+	}
+
+	// Validate telemetry settings
+	if c.Telemetry.Metrics.Enabled {
+		if c.Telemetry.Metrics.Endpoint == "" {
+			e("Telemetry metrics endpoint cannot be empty when metrics are enabled")
+		}
+		if c.Telemetry.Metrics.Exporter != "prometheus" && c.Telemetry.Metrics.Exporter != "otlp" {
+			e("Invalid telemetry metrics exporter %q: must be one of prometheus,otlp", c.Telemetry.Metrics.Exporter)
+		}
+		if c.Telemetry.Metrics.Exporter == "prometheus" && c.Telemetry.Metrics.Prometheus.Path == "" {
+			e("Prometheus metrics path cannot be empty when prometheus exporter is enabled")
+		}
+	}
+
+	if c.Telemetry.Tracing.Enabled {
+		if c.Telemetry.Tracing.Endpoint == "" {
+			e("Telemetry tracing endpoint cannot be empty when tracing is enabled")
+		}
+		if c.Telemetry.Tracing.Exporter != "otlp" && c.Telemetry.Tracing.Exporter != "jaeger" && c.Telemetry.Tracing.Exporter != "stdout" {
+			e("Invalid telemetry tracing exporter %q: must be one of otlp,jaeger,stdout", c.Telemetry.Tracing.Exporter)
 		}
 	}
 
