@@ -5,12 +5,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/common/minecraft/key"
 	"io"
 	"math"
 	"strings"
 	"time"
 
+	"go.minekube.com/common/minecraft/key"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 )

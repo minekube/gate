@@ -5,6 +5,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/legacytablist"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/tablist/playerinfo"
@@ -60,6 +61,9 @@ func init() {
 	)
 	Config.ServerBound.Register(&config.KnownPacks{},
 		m(0x07, version.Minecraft_1_20_5),
+	)
+	Config.ServerBound.Register(&cookie.CookieResponse{},
+		m(0x01, version.Minecraft_1_20_5),
 	)
 
 	Config.ClientBound.Register(&plugin.Message{},
@@ -117,6 +121,12 @@ func init() {
 	Config.ClientBound.Register(&p.ServerLinks{},
 		m(0x10, version.Minecraft_1_21),
 	)
+	Config.ClientBound.Register(&cookie.CookieRequest{},
+		m(0x00, version.Minecraft_1_20_5),
+	)
+	Config.ClientBound.Register(&cookie.CookieStore{},
+		m(0x0A, version.Minecraft_1_20_5),
+	)
 
 	Login.ServerBound.Register(&p.ServerLogin{},
 		m(0x00, version.Minecraft_1_7_2))
@@ -126,6 +136,9 @@ func init() {
 		m(0x02, version.Minecraft_1_13))
 	Login.ServerBound.Register(&p.LoginAcknowledged{},
 		m(0x03, version.Minecraft_1_20_2))
+	Login.ServerBound.Register(&cookie.CookieResponse{},
+		m(0x04, version.Minecraft_1_20_5),
+	)
 
 	Login.ClientBound.Register(&p.Disconnect{},
 		m(0x00, version.Minecraft_1_7_2))
@@ -137,6 +150,8 @@ func init() {
 		m(0x03, version.Minecraft_1_8))
 	Login.ClientBound.Register(&p.LoginPluginMessage{},
 		m(0x04, version.Minecraft_1_13))
+	Login.ClientBound.Register(&cookie.CookieRequest{},
+		m(0x05, version.Minecraft_1_20_5))
 
 	Play.ServerBound.Fallback = false
 	Play.ClientBound.Fallback = false
@@ -258,6 +273,9 @@ func init() {
 		m(0x0B, version.Minecraft_1_20_2),
 		m(0x0C, version.Minecraft_1_20_5),
 		m(0x0E, version.Minecraft_1_21_2),
+	)
+	Play.ServerBound.Register(&cookie.CookieResponse{},
+		m(0x13, version.Minecraft_1_20_5),
 	)
 
 	Play.ClientBound.Register(&p.KeepAlive{},
@@ -569,5 +587,11 @@ func init() {
 	)
 	Play.ClientBound.Register(&p.ServerLinks{},
 		m(0x7B, version.Minecraft_1_21),
+	)
+	Play.ClientBound.Register(&cookie.CookieRequest{},
+		m(0x16, version.Minecraft_1_20_5),
+	)
+	Play.ClientBound.Register(&cookie.CookieStore{},
+		m(0x72, version.Minecraft_1_20_5),
 	)
 }

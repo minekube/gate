@@ -8,6 +8,7 @@ import (
 
 	"go.minekube.com/brigodier"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/common/minecraft/key"
 
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
@@ -1163,3 +1164,28 @@ func (r *ReadyEvent) Addr() string { return r.addr }
 // Subscribe to this event to gracefully stop any subtasks,
 // such as plugin dependencies.
 type ShutdownEvent struct{}
+
+// PlayerCookieResponseEvent is fired when a player sends the cookie requested from the server.
+type PlayerCookieResponseEvent struct {
+	player  Player
+	key     key.Key
+	payload []byte
+}
+
+func newPlayerCookieResponseEvent(player Player, key key.Key, payload []byte) *PlayerCookieResponseEvent {
+	return &PlayerCookieResponseEvent{
+		player:  player,
+		key:     key,
+		payload: payload,
+	}
+}
+
+// Player returns the player from whom the cookie has been received.
+func (c *PlayerCookieResponseEvent) Player() Player { return c.player }
+
+// Key returns the provider of the responded cookie.
+// For example: minecraft:cookie
+func (c *PlayerCookieResponseEvent) Key() key.Key { return c.key }
+
+// Payload returns the payload of the responded cookie.
+func (c *PlayerCookieResponseEvent) Payload() []byte { return c.payload }
