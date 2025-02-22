@@ -1,6 +1,9 @@
 package proxy
 
 import (
+	"fmt"
+	"sync/atomic"
+
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
@@ -8,12 +11,12 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"sync/atomic"
 )
 
 type authSessionHandler struct {
@@ -228,9 +231,11 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 func (a *authSessionHandler) Deactivated() {}
 
 func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
-	switch pc.Packet.(type) {
+	switch t := pc.Packet.(type) {
 	case *packet.LoginAcknowledged:
 		a.handleLoginAcknowledged()
+	case *cookie.CookieResponse:
+		a.handleCookieResponse(t)
 	default:
 		a.log.Info("unexpected packet during auth session",
 			"packet", pc.Packet,
@@ -264,4 +269,26 @@ func (a *authSessionHandler) handleLoginAcknowledged() bool {
 		})
 	}
 	return true
+}
+
+func (a *authSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
+	// The payload in the cookie response packet has two bytes before the actual payload, which show the length.
+	// So the packet should use the util.ReadBytesLen(rd, 5120) but unfortunately i couldn't get that to work, as it makes the payload empty.
+	// TODO: fix this instead of this shortcut
+	if len(p.Payload) > 2 {
+		p.Payload = p.Payload[2:]
+	}
+
+	tracker := a.connectedPlayer.CookieRequestTracker
+	requestID := fmt.Sprintf("%s:%s", a.connectedPlayer.ID(), p.Key)
+	tracker.mu.Lock()
+	responseChan, ok := tracker.pending[requestID]
+
+	// check if the player.RequestCookieWithResult() is waiting for this packet, otherwise fire the event.
+	if ok {
+		responseChan <- p.Payload
+	} else {
+		event.FireParallel(a.eventMgr, newPlayerCookieResponseEvent(a.connectedPlayer, p.Key, p.Payload))
+	}
+	tracker.mu.Unlock()
 }

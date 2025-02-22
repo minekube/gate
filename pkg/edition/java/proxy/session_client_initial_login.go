@@ -5,9 +5,10 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"regexp"
 	"time"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/color"
