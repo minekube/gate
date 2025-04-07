@@ -17,7 +17,7 @@ spec:
               name: minecraft
           volumeMounts:
             - name: config
-              mountPath: /gate/config.yml
+              mountPath: /config.yml
               subPath: config.yml
       volumes:
         - name: config
