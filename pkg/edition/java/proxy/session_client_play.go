@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/internal/future"
 
@@ -113,6 +114,8 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleFinishedUpdate(p)
 	case *chat.ChatAcknowledgement:
 		c.handleChatAcknowledgement(p)
+	case *cookie.CookieResponse:
+		c.handleCookieResponse(p)
 	default:
 		c.forwardToServer(pc)
 	}
@@ -825,6 +828,28 @@ func (c *clientPlaySessionHandler) handleChatAcknowledgement(p *chat.ChatAcknowl
 		return
 	}
 	c.player.chatQueue.HandleAcknowledgement(p.Offset)
+}
+
+func (c *clientPlaySessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
+	// The payload in the cookie response packet has two bytes before the actual payload, which show the length.
+	// So the packet should use the util.ReadBytesLen(rd, 5120) but unfortunately i couldn't get that to work, as it makes the payload empty.
+	// TODO: fix this instead of this shortcut
+	if len(p.Payload) > 2 {
+		p.Payload = p.Payload[2:]
+	}
+
+	tracker := c.player.CookieRequestTracker
+	requestID := fmt.Sprintf("%s:%s", c.player.ID(), p.Key)
+	tracker.mu.Lock()
+	responseChan, ok := tracker.pending[requestID]
+
+	// check if the player.RequestCookieWithResult() is waiting for this packet, otherwise fire the event.
+	if ok {
+		responseChan <- p.Payload
+	} else {
+		event.FireParallel(c.player.eventMgr, newPlayerCookieResponseEvent(c.player, p.Key, p.Payload))
+	}
+	tracker.mu.Unlock()
 }
 
 // doSwitch handles switching stages for swapping between servers.

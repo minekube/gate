@@ -13,6 +13,7 @@ import (
 	"github.com/robinbraemer/event"
 
 	cfgpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
@@ -23,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
+	"go.minekube.com/common/minecraft/key"
 	"go.uber.org/atomic"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -108,6 +110,15 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	//
 	// Deprecated: Use PendingResourcePacks instead.
 	PendingResourcePack() *ResourcePackInfo
+
+	StoreCookie(key key.Key, payload []byte) error
+
+	// Sends request for a cookie which the player will respond to in the PlayerCookieResponseEvent.
+	RequestCookie(key key.Key) error
+
+	// Sends request for a cookie which the player will respond to in this function.
+	// It times out after 5 seconds if the player doesn't send any packet back.
+	RequestCookieWithResult(key key.Key) ([]byte, error)
 }
 
 type connectedPlayer struct {
@@ -143,6 +154,8 @@ type connectedPlayer struct {
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
+
+	CookieRequestTracker *cookieRequestTracker
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -170,6 +183,9 @@ func newConnectedPlayer(
 		ping:        ping,
 		permFunc:    func(string) permission.TriState { return permission.Undefined },
 		playerKey:   playerKey,
+		CookieRequestTracker: &cookieRequestTracker{
+			pending: make(map[string]chan []byte),
+		},
 	}
 	p.resourcePackHandler = resourcepack.NewHandler(p, p.eventMgr)
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
@@ -734,4 +750,76 @@ func (p *connectedPlayer) BackendInFlight() proto.PacketWriter {
 		}
 	}
 	return nil
+}
+
+func (p *connectedPlayer) StoreCookie(key key.Key, payload []byte) error {
+	if strings.TrimSpace(key.String()) == "" {
+		return errors.New("empty key")
+	}
+
+	if len(payload) > 5*1024 {
+		return errors.New("payload size exceeds 5 kiB")
+	}
+
+	if p.Protocol().Lower(version.Minecraft_1_20_5) {
+		return fmt.Errorf("%w: but player is on %s", ErrTransferUnsupportedClientProtocol, p.Protocol())
+	}
+
+	if p.State() != state.Play && p.State() != state.Config {
+		return errors.New("CookieStore packet can only be send in the Play and Configuration State")
+	}
+
+	return p.WritePacket(&cookie.CookieStore{
+		Key:     key,
+		Payload: payload,
+	})
+}
+
+func (p *connectedPlayer) RequestCookie(key key.Key) error {
+	if strings.TrimSpace(key.String()) == "" {
+		return errors.New("empty key")
+	}
+
+	if p.Protocol().Lower(version.Minecraft_1_20_5) {
+		return fmt.Errorf("%w: but player is on %s", ErrTransferUnsupportedClientProtocol, p.Protocol())
+	}
+
+	return p.WritePacket(&cookie.CookieRequest{
+		Key: key,
+	})
+}
+
+type cookieRequestTracker struct {
+	mu      sync.Mutex
+	pending map[string]chan []byte
+}
+
+func (p *connectedPlayer) RequestCookieWithResult(key key.Key) ([]byte, error) {
+	if strings.TrimSpace(key.String()) == "" {
+		return nil, errors.New("empty key")
+	}
+
+	if p.Protocol().Lower(version.Minecraft_1_20_5) {
+		return nil, fmt.Errorf("%w: but player is on %s", ErrTransferUnsupportedClientProtocol, p.Protocol())
+	}
+
+	responseChan := make(chan []byte, 1)
+	requestID := fmt.Sprintf("%s:%s", p.ID(), key)
+
+	p.CookieRequestTracker.mu.Lock()
+	p.CookieRequestTracker.pending[requestID] = responseChan
+	defer delete(p.CookieRequestTracker.pending, requestID)
+	p.CookieRequestTracker.mu.Unlock()
+
+	err := p.WritePacket(&cookie.CookieRequest{Key: key})
+	if err != nil {
+		return nil, err
+	}
+
+	select {
+	case response := <-responseChan:
+		return response, nil
+	case <-time.After(5 * time.Second):
+		return nil, errors.New("timeout waiting for response")
+	}
 }
