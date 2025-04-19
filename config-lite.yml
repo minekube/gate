@@ -18,6 +18,14 @@ config:
     # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
     # Default: false
     enabled: true
+    # Maximum number of players to accept, 0 means unlimited.
+    # When this limit is reached, new connections will be rejected.
+    # Default: 0
+    maxPlayers: 0
+    # Custom message to show when the maximum player limit is reached.
+    # Default: §cThis Node is full.Please try another node.
+    maxPlayersMessage: "§cThis Node is full.Please try another node."
+    
     # The routes that the proxy redirects player connections to based on matching the virtual host address.
     # The routes are matched in order of appearance.
     # Examples:
