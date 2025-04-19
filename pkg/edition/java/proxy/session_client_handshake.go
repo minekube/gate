@@ -100,6 +100,8 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		h.conn.SetState(nextState)
 		dialTimeout := time.Duration(h.config().ConnectionTimeout)
 		if nextState == state.Login {
+			// Set the current lite mode config
+			lite.SetConfig(&h.config().Lite)
 			// Lite mode enabled, pipe the connection.
 			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc)
 			return
