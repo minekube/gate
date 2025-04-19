@@ -25,6 +25,7 @@ config:
     # Custom message to show when the maximum player limit is reached.
     # Default: §cThis Node is full.Please try another node.
     maxPlayersMessage: "§cThis Node is full.Please try another node."
+    
     # The routes that the proxy redirects player connections to based on matching the virtual host address.
     # The routes are matched in order of appearance.
     # Examples:
