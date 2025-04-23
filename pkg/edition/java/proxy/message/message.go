@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -29,21 +28,30 @@ type channelIdentifier struct {
 	namespace, name string
 }
 
-var ValidIdentifierRegex = regexp.MustCompile(`[a-z0-9\\-_]*`)
+var (
+	ErrNamespaceEmpty   = errors.New("namespace cannot be empty")
+	ErrNameEmpty        = errors.New("name cannot be empty")
+	ErrNamespaceInvalid = errors.New("invalid namespace")
+	ErrNameInvalid      = errors.New("invalid name")
+)
 
 // NewChannelIdentifier returns a new validated channel identifier.
 func NewChannelIdentifier(namespace, name string) (ChannelIdentifier, error) {
 	if len(namespace) == 0 {
-		return nil, errors.New("namespace cannot be empty")
+		return nil, ErrNamespaceEmpty
 	}
 	if len(name) == 0 {
-		return nil, errors.New("name cannot be empty")
+		return nil, ErrNameEmpty
 	}
-	if !ValidIdentifierRegex.MatchString(namespace) {
-		return nil, fmt.Errorf("namespace does not match regex %s", ValidIdentifierRegex.String())
+	for _, char := range namespace {
+		if !allowedInNamespace(char) {
+			return nil, fmt.Errorf("%w: namespace %s has invalid character %c", ErrNamespaceInvalid, namespace, char)
+		}
 	}
-	if !ValidIdentifierRegex.MatchString(name) {
-		return nil, fmt.Errorf("name does not match regex %s", ValidIdentifierRegex.String())
+	for _, char := range name {
+		if !allowedInValue(char) {
+			return nil, fmt.Errorf("%w: name %s has invalid character %c", ErrNameInvalid, name, char)
+		}
 	}
 	return &channelIdentifier{
 		namespace: namespace,
@@ -67,12 +75,11 @@ func (m *channelIdentifier) ID() string {
 	return fmt.Sprintf("%s:%s", m.namespace, m.name)
 }
 
-var _ ChannelIdentifier = (*channelIdentifier)(nil)
+func (m *channelIdentifier) String() string {
+	return m.ID()
+}
 
-var (
-	errIdentifierNoColon = errors.New("identifier does not contain a colon")
-	errIdentifierEmpty   = errors.New("identifier is empty")
-)
+var _ ChannelIdentifier = (*channelIdentifier)(nil)
 
 // ChannelIdentifierFrom creates a channel identifier from the specified Minecraft identifier string.
 func ChannelIdentifierFrom(identifier string) (ChannelIdentifier, error) {
@@ -85,4 +92,22 @@ func ChannelIdentifierFrom(identifier string) (ChannelIdentifier, error) {
 	namespace := identifier[:colonPos]
 	name := identifier[colonPos+1:]
 	return NewChannelIdentifier(namespace, name)
+}
+
+// allowedInNamespace checks if a character is allowed in a namespace identifier.
+// Valid characters are lowercase a-z, 0-9, underscore, hyphen, and period.
+func allowedInNamespace(character rune) bool {
+	return character == '_' || character == '-' ||
+		(character >= 'a' && character <= 'z') ||
+		(character >= '0' && character <= '9') ||
+		character == '.'
+}
+
+// allowedInValue checks if a character is allowed in a value identifier.
+// Valid characters are lowercase a-z, 0-9, underscore, hyphen, period, and forward slash.
+func allowedInValue(character rune) bool {
+	return character == '_' || character == '-' ||
+		(character >= 'a' && character <= 'z') ||
+		(character >= '0' && character <= '9') ||
+		character == '.' || character == '/'
 }
