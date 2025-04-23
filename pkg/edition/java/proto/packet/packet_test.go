@@ -273,7 +273,7 @@ var packets = []proto.Packet{
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {
-	pk, err := rsa.GenerateKey(rand.Reader, 512)
+	pk, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		panic(err)
 	}
