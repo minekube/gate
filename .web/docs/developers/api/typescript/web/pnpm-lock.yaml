@@ -10,84 +10,84 @@ importers:
     dependencies:
       '@buf/minekube_gate.connectrpc_es':
         specifier: ^1.6.1-20241118150055-50fffb007499.1
-        version: 1.6.1-20241118150055-50fffb007499.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
+        version: 1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))
       '@bufbuild/buf':
         specifier: ^1.47.2
-        version: 1.50.0
+        version: 1.53.0
       '@bufbuild/protobuf':
         specifier: ^1.0.0
-        version: 1.10.0
+        version: 1.10.1
       '@connectrpc/connect':
         specifier: ^1.0.0
-        version: 1.6.1(@bufbuild/protobuf@1.10.0)
+        version: 1.6.1(@bufbuild/protobuf@1.10.1)
       '@connectrpc/connect-web':
         specifier: ^1.6.1
-        version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
+        version: 1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))
       typescript:
         specifier: ^5.0.0
         version: 5.6.3
 
 packages:
 
-  '@buf/minekube_gate.bufbuild_es@1.10.0-20241118150055-50fffb007499.1':
-    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/minekube_gate.bufbuild_es/-/minekube_gate.bufbuild_es-1.10.0-20241118150055-50fffb007499.1.tgz}
+  '@buf/minekube_gate.bufbuild_es@1.10.0-20241120101512-f1a10b5029ce.1':
+    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/minekube_gate.bufbuild_es/-/minekube_gate.bufbuild_es-1.10.0-20241120101512-f1a10b5029ce.1.tgz}
     peerDependencies:
       '@bufbuild/protobuf': ^1.10.0
 
-  '@buf/minekube_gate.connectrpc_es@1.6.1-20241118150055-50fffb007499.1':
-    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/minekube_gate.connectrpc_es/-/minekube_gate.connectrpc_es-1.6.1-20241118150055-50fffb007499.1.tgz}
+  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2':
+    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/minekube_gate.connectrpc_es/-/minekube_gate.connectrpc_es-1.6.1-20241120101512-f1a10b5029ce.2.tgz}
     peerDependencies:
       '@connectrpc/connect': ^1.6.1
 
-  '@bufbuild/buf-darwin-arm64@1.50.0':
-    resolution: {integrity: sha512-ldj1s0hMhZlz0N4+fqs9jGqC7jKAcsfLNp8kM+G+6XTPh8GWA/U1sYRdHhAlv1+3STfWhGxAhrNGRRVvvimALQ==}
+  '@bufbuild/buf-darwin-arm64@1.53.0':
+    resolution: {integrity: sha512-UVhqDYu54ciiCMeG6RODlrX5XRvLN6PfsVDqMQG0JwmMKtUi326CbUqsqO7xsQbcEUso3FTBaURir4RixoM88w==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [darwin]
 
-  '@bufbuild/buf-darwin-x64@1.50.0':
-    resolution: {integrity: sha512-0ODFAnDVr0UOIUHGrI3vA3Cycec186BP5PFOuW6bALxBVN52Lqjjj+/+bVhvbBQlYo3rkxOtxEdoWGHZJrHhHA==}
+  '@bufbuild/buf-darwin-x64@1.53.0':
+    resolution: {integrity: sha512-03lKaenjf08HF6DlARPU2lEL2dRxNsU6rb9GbUu+YeLayWy7SUlfeDB8drAZ/GpfSc7SL8TKF7jqRkqxT4wFGA==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [darwin]
 
-  '@bufbuild/buf-linux-aarch64@1.50.0':
-    resolution: {integrity: sha512-Dp0YzLOW7O+C8bAm6/Q2HSrTYpDs2SxQXx+dBNxUotMpzx+uaUvqXb3EGr7s07ro+FsT0sFjzKTBcuCwkj+guQ==}
+  '@bufbuild/buf-linux-aarch64@1.53.0':
+    resolution: {integrity: sha512-FlxrB+rZJG5u7v2JovzXvSR/OdXjVXYHTTLnk6vN/73KPbpGPzZrW7mKxlYyn/Uar5tKDAYvmijjuItXZ6i31g==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [linux]
 
-  '@bufbuild/buf-linux-armv7@1.50.0':
-    resolution: {integrity: sha512-EMYRKSJ4kZo+OiHvMTYM+O27lf/okaf+bk1agRUTmBccp+qoGEC0R3DB/powFf/FURkUF7vKUS4T0GC/4n8OVA==}
+  '@bufbuild/buf-linux-armv7@1.53.0':
+    resolution: {integrity: sha512-e9ER+5Os1DPLhr2X1BRPrQpDZWpv5Mkk2PLnmmzh5RL4kOueJKQZj/m1qQr7SQkiPPhS0yMw7EEghsr521FFzQ==}
     engines: {node: '>=12'}
     cpu: [arm]
     os: [linux]
 
-  '@bufbuild/buf-linux-x64@1.50.0':
-    resolution: {integrity: sha512-1G6ZQLXYoCXl8ZmCivUuknc6BiMz2bMtfpzYurFhj9wCIQTZsgepTBoiXHTcEdu2fjYAFxRGo4o+ZALU1umY0g==}
+  '@bufbuild/buf-linux-x64@1.53.0':
+    resolution: {integrity: sha512-LehyZPbkRgCvIM56uUnCAUD1QSno2wkBZ5HOvjrjOd0GEjfKgw/fsEu13fJR13bGBNOeOUHbHrd59iUSyY6rGA==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [linux]
 
-  '@bufbuild/buf-win32-arm64@1.50.0':
-    resolution: {integrity: sha512-KpbI+f0TnGaa4KlPQXCLx8ZWKfO2pMD1kvVjAaktmm9OUoP9HrvZJ11tDEiFEFbrKbapCIhCCC3XWaldEDJWcA==}
+  '@bufbuild/buf-win32-arm64@1.53.0':
+    resolution: {integrity: sha512-QRNMHYW6v4keoelIwMNZGQw2R67fsS8lEDnYxrFmiRADwZ/ri/XKJjvQfpoE2Bq0xREB0zZ++RX+1DZOkTA/Iw==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [win32]
 
-  '@bufbuild/buf-win32-x64@1.50.0':
-    resolution: {integrity: sha512-gA9aVuZYfh3pmWNYxmnK6thlcqyu2ht8haFhdB0w14Rtj200FAsMmzF7CPWvXQrV5g0pqXPwoMjZigT4OJHOXg==}
+  '@bufbuild/buf-win32-x64@1.53.0':
+    resolution: {integrity: sha512-relZlT9gYrZGcEH4dcJhEWrjaHV9drG1PcgW6krqw1AzpQOPxR/loXJ7DycoCAnUhQ9TdsdTfUlVHqiJt98piQ==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
 
-  '@bufbuild/buf@1.50.0':
-    resolution: {integrity: sha512-XcdB5/Ls8k1eVcgNwUsRZEhCqiHgsnN+uEk/aDh0urGeiWc/dN6c89ZnAnI9/v0AZWzp6/rowoZhThlTl+D0bw==}
+  '@bufbuild/buf@1.53.0':
+    resolution: {integrity: sha512-GGAztQbbKSv+HaihdDIUpejUcxIx2Fse9SqHfMisJbL/hZ7aOH7BFeSH0q8/g2kSAsLABlenVKeEWKX1uZU3LQ==}
     engines: {node: '>=12'}
     hasBin: true
 
-  '@bufbuild/protobuf@1.10.0':
-    resolution: {integrity: sha512-QDdVFLoN93Zjg36NoQPZfsVH9tZew7wKDKyV5qRdj8ntT4wQCOradQjRaTdwMhWUYsgKsvCINKKm87FdEk96Ag==}
+  '@bufbuild/protobuf@1.10.1':
+    resolution: {integrity: sha512-wJ8ReQbHxsAfXhrf9ixl0aYbZorRuOWpBNzm8pL8ftmSxQx/wnJD5Eg861NwJU/czy2VXFIebCeZnZrI9rktIQ==}
 
   '@connectrpc/connect-web@1.6.1':
     resolution: {integrity: sha512-GVfxQOmt3TtgTaKeXLS/EA2IHa3nHxwe2BCHT7X0Q/0hohM+nP5DDnIItGEjGrGdt3LTTqWqE4s70N4h+qIMlQ==}
@@ -107,57 +107,57 @@ packages:
 
 snapshots:
 
-  '@buf/minekube_gate.bufbuild_es@1.10.0-20241118150055-50fffb007499.1(@bufbuild/protobuf@1.10.0)':
+  '@buf/minekube_gate.bufbuild_es@1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@1.10.1)':
     dependencies:
-      '@bufbuild/protobuf': 1.10.0
+      '@bufbuild/protobuf': 1.10.1
 
-  '@buf/minekube_gate.connectrpc_es@1.6.1-20241118150055-50fffb007499.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))':
+  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))':
     dependencies:
-      '@buf/minekube_gate.bufbuild_es': 1.10.0-20241118150055-50fffb007499.1(@bufbuild/protobuf@1.10.0)
-      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.0)
+      '@buf/minekube_gate.bufbuild_es': 1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@1.10.1)
+      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.1)
     transitivePeerDependencies:
       - '@bufbuild/protobuf'
 
-  '@bufbuild/buf-darwin-arm64@1.50.0':
+  '@bufbuild/buf-darwin-arm64@1.53.0':
     optional: true
 
-  '@bufbuild/buf-darwin-x64@1.50.0':
+  '@bufbuild/buf-darwin-x64@1.53.0':
     optional: true
 
-  '@bufbuild/buf-linux-aarch64@1.50.0':
+  '@bufbuild/buf-linux-aarch64@1.53.0':
     optional: true
 
-  '@bufbuild/buf-linux-armv7@1.50.0':
+  '@bufbuild/buf-linux-armv7@1.53.0':
     optional: true
 
-  '@bufbuild/buf-linux-x64@1.50.0':
+  '@bufbuild/buf-linux-x64@1.53.0':
     optional: true
 
-  '@bufbuild/buf-win32-arm64@1.50.0':
+  '@bufbuild/buf-win32-arm64@1.53.0':
     optional: true
 
-  '@bufbuild/buf-win32-x64@1.50.0':
+  '@bufbuild/buf-win32-x64@1.53.0':
     optional: true
 
-  '@bufbuild/buf@1.50.0':
+  '@bufbuild/buf@1.53.0':
     optionalDependencies:
-      '@bufbuild/buf-darwin-arm64': 1.50.0
-      '@bufbuild/buf-darwin-x64': 1.50.0
-      '@bufbuild/buf-linux-aarch64': 1.50.0
-      '@bufbuild/buf-linux-armv7': 1.50.0
-      '@bufbuild/buf-linux-x64': 1.50.0
-      '@bufbuild/buf-win32-arm64': 1.50.0
-      '@bufbuild/buf-win32-x64': 1.50.0
+      '@bufbuild/buf-darwin-arm64': 1.53.0
+      '@bufbuild/buf-darwin-x64': 1.53.0
+      '@bufbuild/buf-linux-aarch64': 1.53.0
+      '@bufbuild/buf-linux-armv7': 1.53.0
+      '@bufbuild/buf-linux-x64': 1.53.0
+      '@bufbuild/buf-win32-arm64': 1.53.0
+      '@bufbuild/buf-win32-x64': 1.53.0
 
-  '@bufbuild/protobuf@1.10.0': {}
+  '@bufbuild/protobuf@1.10.1': {}
 
-  '@connectrpc/connect-web@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))':
+  '@connectrpc/connect-web@1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))':
     dependencies:
-      '@bufbuild/protobuf': 1.10.0
-      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.0)
+      '@bufbuild/protobuf': 1.10.1
+      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.1)
 
-  '@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)':
+  '@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1)':
     dependencies:
-      '@bufbuild/protobuf': 1.10.0
+      '@bufbuild/protobuf': 1.10.1
 
   typescript@5.6.3: {}
