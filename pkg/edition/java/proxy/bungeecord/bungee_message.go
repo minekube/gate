@@ -155,6 +155,8 @@ func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
 		r.processKick(in)
 	case "KickPlayerRaw":
 		r.processKickRaw(in)
+	case "GetPlayerServer":
+		r.processGetPlayerServer(in)
 	default:
 		// Unknown sub-channel, do nothing
 	}
@@ -332,6 +334,7 @@ func (r *bungeeCordMessageResponder) processGetServers() {
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "GetServers")
 	_ = util.WriteUTF(b, list.String())
+	r.sendServerResponse(b.Bytes())
 }
 
 func (r *bungeeCordMessageResponder) processMessage0(in io.Reader, decoder codec.Unmarshaler) {
@@ -425,6 +428,20 @@ func (r *bungeeCordMessageResponder) processKickRaw(in io.Reader) {
 			kickReason = &component.Text{} // fallback to blank reason
 		}
 		player.Disconnect(kickReason)
+	})
+}
+
+func (r *bungeeCordMessageResponder) processGetPlayerServer(in io.Reader) {
+	r.readPlayer(in, func(player Player) {
+		s := r.ConnectedServer()
+		if s == nil {
+			return
+		}
+		b := new(bytes.Buffer)
+		_ = util.WriteUTF(b, "GetPlayerServer")
+		_ = util.WriteUTF(b, player.Username())
+		_ = util.WriteUTF(b, s.Name())
+		r.sendServerResponse(b.Bytes())
 	})
 }
 

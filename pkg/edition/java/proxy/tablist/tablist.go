@@ -59,7 +59,7 @@ type Entry interface {
 	//  150-300 will display 4 bars
 	//  300-600 will display 3 bars
 	//  600-1000 will display 2 bars
-	//  A latency move than 1 second will display 1 bar
+	//  A latency greater than 1 second will display 1 bar
 	Latency() time.Duration
 	// SetLatency sets the latency/ping for the entry.
 	// See Latency() for how it is displayed.
@@ -78,6 +78,12 @@ type Entry interface {
 	// SetListOrder sets the order/priority of the entry in the tab list.
 	// Since Minecraft 1.21.2.
 	SetListOrder(int) error
+	// ShowHat returns true if the entry shows the hat layer in the tab list.
+	// Since Minecraft 1.21.4.
+	ShowHat() bool
+	// SetShowHat sets whether the entry shows the hat layer in the tab list.
+	// Since Minecraft 1.21.4.
+	SetShowHat(bool) error
 }
 
 // Viewer is a tab list viewer (player).

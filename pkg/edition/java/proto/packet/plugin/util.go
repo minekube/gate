@@ -104,11 +104,28 @@ func ConstructChannelsPacket(protocol proto.Protocol, channels ...string) *Messa
 	} else {
 		channelName = RegisterChannelLegacy
 	}
-	data := strings.Join(channels, "\000")
+	data := joinChannels(channels)
 	return &Message{
 		Channel: channelName,
 		Data:    []byte(data),
 	}
+}
+
+// joinChannels joins a collection of channel identifiers into a null-terminated string.
+// channels must not be empty.
+func joinChannels(channels []string) string {
+	if len(channels) == 0 {
+		panic("no channels specified")
+	}
+
+	var sb strings.Builder
+	for i, channel := range channels {
+		sb.WriteString(channel)
+		if i < len(channels)-1 {
+			sb.WriteByte('\000')
+		}
+	}
+	return sb.String()
 }
 
 // RewriteMinecraftBrand rewrites the brand message to indicate the presence of the proxy.

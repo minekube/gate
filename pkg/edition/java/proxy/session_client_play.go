@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -113,6 +114,8 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		c.handleFinishedUpdate(p)
 	case *chat.ChatAcknowledgement:
 		c.handleChatAcknowledgement(p)
+	case *packet.JoinGame:
+		c.handleJoinGame(pc)
 	default:
 		c.forwardToServer(pc)
 	}
@@ -120,6 +123,7 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 
 func (c *clientPlaySessionHandler) Deactivated() {
 	c.mu.Lock()
+	c.player.discardChatQueue()
 	c.mu.loginPluginMessages.Clear()
 	c.mu.Unlock()
 }
@@ -259,14 +263,17 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		c.log.Info("A plugin message was received while the backend server was not ready. Packet discarded.",
 			"channel", packet.Channel)
 	} else if plugin.IsRegister(packet) {
+		channelsIDs, channels := c.getChannels(c.player.clientsideChannels.Len(), packet, c.player.Protocol())
+		c.player.clientsideChannels.Add(channels...)
 		if backendConn.WritePacket(packet) != nil {
-			channelsIDs, _ := c.parseChannels(packet)
 			c.proxy().event.Fire(&PlayerChannelRegisterEvent{
 				channels: channelsIDs,
 				player:   c.player,
 			})
 		}
 	} else if plugin.IsUnregister(packet) {
+		_, channels := c.getChannels(0, packet, c.player.Protocol())
+		c.player.clientsideChannels.Remove(channels...)
 		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
 		brand := plugin.ReadBrandMessage(packet.Data)
@@ -327,23 +334,63 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	}
 }
 
-func (c *clientPlaySessionHandler) parseChannels(packet *plugin.Message) ([]message.ChannelIdentifier, []string) {
-	var channels []string
-	var channelsIDs []message.ChannelIdentifier
-	channelIdentifiers := make(map[string]message.ChannelIdentifier)
-	for _, channel := range plugin.Channels(packet) {
-		id, err := message.ChannelIdentifierFrom(channel)
+/**
+   * Fetches all the channels in a register or unregister plugin message.
+   *
+   * @param existingChannels the number of channels already registered
+   * @param message the message to get the channels from
+   * @return the channels, as an immutable list
+   */
+func (c *clientPlaySessionHandler) getChannels(existingChannels int, msg *plugin.Message, ver proto.Protocol) ([]message.ChannelIdentifier, []string) {
+	if msg == nil {
+		return nil, nil
+	}
+	if !plugin.IsRegister(msg) && !plugin.IsUnregister(msg) {
+		c.log.V(1).Info("unknown channel type", "type", msg.Channel)
+		return nil, nil
+	}
+	
+	if len(msg.Data) == 0 {
+		// If we try to split this, we will get an one-element array with the empty string, which
+		// has caused issues with 1.13+ compatibility. Just return an empty list.
+		return []message.ChannelIdentifier{}, []string{}
+	}
+	
+	payload := string(msg.Data)
+	if len(payload) > math.MaxInt16 {
+		c.log.V(1).Info("payload is too long", "length", len(payload))
+		return nil, nil
+	}
+	
+	channels := strings.Split(payload, "\000")
+	if existingChannels+len(channels) > maxClientsidePluginChannels {
+		c.log.V(1).Info("too many channels", "existing", existingChannels, "new", len(channels), "total", existingChannels+len(channels))
+		return nil, nil
+	}
+	
+	var channelIdentifiers []message.ChannelIdentifier
+	var rawChannels []string
+	
+	for _, channel := range channels {
+		var id message.ChannelIdentifier
+		var err error
+		
+		if ver.GreaterEqual(version.Minecraft_1_13) {
+			id, err = message.ChannelIdentifierFrom(channel)
+		} else {
+			id, err = message.NewDefaultNamespace(channel)
+		}
+		
 		if err != nil {
-			c.log.V(1).Error(err, "got invalid channel in plugin message")
+			c.log.V(1).Info("skipping invalid channel", "channel", channel, "error", err)
 			continue
 		}
-		if _, ok := channelIdentifiers[id.ID()]; !ok { // deduplicate
-			channelsIDs = append(channelsIDs, id)
-			channels = append(channels, id.ID())
-			channelIdentifiers[id.ID()] = id
-		}
+		
+		channelIdentifiers = append(channelIdentifiers, id)
+		rawChannels = append(rawChannels, channel)
 	}
-	return channelsIDs, channels
+
+	return channelIdentifiers, rawChannels
 }
 
 // Handles the JoinGame packet and is responsible for handling the client-side
@@ -405,6 +452,13 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	channels := c.proxy().ChannelRegistrar().ChannelsForProtocol(serverVersion)
 	if len(channels) != 0 {
 		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, channels.UnsortedList()...)
+		if err = serverMc.BufferPacket(channelsPacket); err != nil {
+			return fmt.Errorf("error buffering %T for backend: %w", channelsPacket, err)
+		}
+	}
+    // Tell the server about this client's plugin message channels.
+	if c.player.clientsideChannels.Len() != 0 {
+		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, c.player.clientsideChannels.UnsortedList()...)
 		if err = serverMc.BufferPacket(channelsPacket); err != nil {
 			return fmt.Errorf("error buffering %T for backend: %w", channelsPacket, err)
 		}
@@ -797,6 +851,10 @@ func (c *clientPlaySessionHandler) updateTimeKeeper(t time.Time) bool {
 }
 
 func (c *clientPlaySessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
+	if !c.player.pendingConfigurationSwitch {
+		c.log.V(1).Info("not expecting reconfiguration")
+		return
+	}
 	// Complete client switch
 	if !c.player.MinecraftConn.SwitchSessionHandler(state.Config) {
 		panic("expected client to have config session handler")
@@ -854,4 +912,10 @@ func (c *clientPlaySessionHandler) doSwitch() *future.Future[any] {
 	c.player.switchToConfigState()
 
 	return &c.configSwitchFuture
+}
+
+func (c *clientPlaySessionHandler) handleJoinGame(pc *proto.PacketContext) {
+    // Forward the packet as normal, but discard any chat state we have queued - the client will do this too
+	c.player.discardChatQueue()
+	c.forwardToServer(pc)
 }

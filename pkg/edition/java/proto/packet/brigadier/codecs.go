@@ -139,6 +139,22 @@ var (
 			return &ResourceKeyArgumentType{Identifier: id}, nil
 		},
 	}
+	ResourceSelectorArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			i, ok := v.(*ResourceSelectorArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *ResourceSelectorArgumentType but got %T", v)
+			}
+			return util.WriteString(wr, i.Identifier)
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
+			id, err := util.ReadString(rd)
+			if err != nil {
+				return nil, err
+			}
+			return &ResourceSelectorArgumentType{Identifier: id}, nil
+		},
+	}
 	TimeArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
 		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
 			if protocol.GreaterEqual(version.Minecraft_1_19_4) {
