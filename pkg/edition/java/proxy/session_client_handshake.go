@@ -203,17 +203,16 @@ func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 
 type initialInbound struct {
 	netmc.MinecraftConn
-	virtualHost net.Addr
+	virtualHost     net.Addr
 	handshakeIntent packet.HandshakeIntent
 }
-
 
 var _ Inbound = (*initialInbound)(nil)
 
 func newInitialInbound(c netmc.MinecraftConn, virtualHost net.Addr, handshakeIntent packet.HandshakeIntent) *initialInbound {
 	return &initialInbound{
-		MinecraftConn: c,
-		virtualHost:   virtualHost,
+		MinecraftConn:   c,
+		virtualHost:     virtualHost,
 		handshakeIntent: handshakeIntent,
 	}
 }

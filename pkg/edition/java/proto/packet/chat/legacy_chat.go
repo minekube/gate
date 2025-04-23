@@ -41,7 +41,7 @@ func (ch *LegacyChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	} else if c.Protocol.GreaterEqual(version.Minecraft_1_11) {
 		max = 256
 	}
-	
+
 	ch.Message, err = util.ReadStringMax(rd, max)
 	if err != nil {
 		return err

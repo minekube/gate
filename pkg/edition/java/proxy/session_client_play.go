@@ -335,12 +335,12 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 }
 
 /**
-   * Fetches all the channels in a register or unregister plugin message.
-   *
-   * @param existingChannels the number of channels already registered
-   * @param message the message to get the channels from
-   * @return the channels, as an immutable list
-   */
+ * Fetches all the channels in a register or unregister plugin message.
+ *
+ * @param existingChannels the number of channels already registered
+ * @param message the message to get the channels from
+ * @return the channels, as an immutable list
+ */
 func (c *clientPlaySessionHandler) getChannels(existingChannels int, msg *plugin.Message, ver proto.Protocol) ([]message.ChannelIdentifier, []string) {
 	if msg == nil {
 		return nil, nil
@@ -349,43 +349,43 @@ func (c *clientPlaySessionHandler) getChannels(existingChannels int, msg *plugin
 		c.log.V(1).Info("unknown channel type", "type", msg.Channel)
 		return nil, nil
 	}
-	
+
 	if len(msg.Data) == 0 {
 		// If we try to split this, we will get an one-element array with the empty string, which
 		// has caused issues with 1.13+ compatibility. Just return an empty list.
 		return []message.ChannelIdentifier{}, []string{}
 	}
-	
+
 	payload := string(msg.Data)
 	if len(payload) > math.MaxInt16 {
 		c.log.V(1).Info("payload is too long", "length", len(payload))
 		return nil, nil
 	}
-	
+
 	channels := strings.Split(payload, "\000")
 	if existingChannels+len(channels) > maxClientsidePluginChannels {
 		c.log.V(1).Info("too many channels", "existing", existingChannels, "new", len(channels), "total", existingChannels+len(channels))
 		return nil, nil
 	}
-	
+
 	var channelIdentifiers []message.ChannelIdentifier
 	var rawChannels []string
-	
+
 	for _, channel := range channels {
 		var id message.ChannelIdentifier
 		var err error
-		
+
 		if ver.GreaterEqual(version.Minecraft_1_13) {
 			id, err = message.ChannelIdentifierFrom(channel)
 		} else {
 			id, err = message.NewDefaultNamespace(channel)
 		}
-		
+
 		if err != nil {
 			c.log.V(1).Info("skipping invalid channel", "channel", channel, "error", err)
 			continue
 		}
-		
+
 		channelIdentifiers = append(channelIdentifiers, id)
 		rawChannels = append(rawChannels, channel)
 	}
@@ -456,7 +456,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 			return fmt.Errorf("error buffering %T for backend: %w", channelsPacket, err)
 		}
 	}
-    // Tell the server about this client's plugin message channels.
+	// Tell the server about this client's plugin message channels.
 	if c.player.clientsideChannels.Len() != 0 {
 		channelsPacket := plugin.ConstructChannelsPacket(serverVersion, c.player.clientsideChannels.UnsortedList()...)
 		if err = serverMc.BufferPacket(channelsPacket); err != nil {
@@ -915,7 +915,7 @@ func (c *clientPlaySessionHandler) doSwitch() *future.Future[any] {
 }
 
 func (c *clientPlaySessionHandler) handleJoinGame(pc *proto.PacketContext) {
-    // Forward the packet as normal, but discard any chat state we have queued - the client will do this too
+	// Forward the packet as normal, but discard any chat state we have queued - the client will do this too
 	c.player.discardChatQueue()
 	c.forwardToServer(pc)
 }

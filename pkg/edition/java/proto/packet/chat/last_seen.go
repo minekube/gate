@@ -12,7 +12,7 @@ import (
 type LastSeenMessages struct {
 	Offset       int
 	Acknowledged mathutil.BitSet
-	Checksum byte
+	Checksum     byte
 }
 
 var _ proto.Packet = (*LastSeenMessages)(nil)
