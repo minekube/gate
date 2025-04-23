@@ -19,6 +19,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
 	"go.minekube.com/gate/pkg/util/netutil"
+	"go.minekube.com/gate/pkg/util/sets"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/component"
@@ -124,10 +125,12 @@ type connectedPlayer struct {
 	resourcePackHandler resourcepack.Handler
 	bundleHandler       *resourcepack.BundleDelimiterHandler
 	chatQueue           *chatQueue
-
+	handshakeIntent     packet.HandshakeIntent
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
 	disconnectDueToDuplicateConnection atomic.Bool
+	clientsideChannels                 *sets.CappedSet[string]
+	pendingConfigurationSwitch         bool
 
 	tabList internaltablist.InternalTabList // Player's tab list
 
@@ -147,10 +150,13 @@ type connectedPlayer struct {
 
 var _ Player = (*connectedPlayer)(nil)
 
+const maxClientsidePluginChannels = 1024
+
 func newConnectedPlayer(
 	conn netmc.MinecraftConn,
 	profile *profile.GameProfile,
 	virtualHost net.Addr,
+	handshakeIntent packet.HandshakeIntent,
 	onlineMode bool,
 	playerKey crypto.IdentifiedKey, // nil-able
 	sessionHandlerDeps *sessionHandlerDeps,
@@ -163,13 +169,15 @@ func newConnectedPlayer(
 		MinecraftConn:      conn,
 		log: logr.FromContextOrDiscard(conn.Context()).WithName("player").WithValues(
 			"name", profile.Name, "id", profile.ID),
-		profile:     profile,
-		virtualHost: virtualHost,
-		onlineMode:  onlineMode,
-		connPhase:   conn.Type().InitialClientPhase(),
-		ping:        ping,
-		permFunc:    func(string) permission.TriState { return permission.Undefined },
-		playerKey:   playerKey,
+		profile:            profile,
+		virtualHost:        virtualHost,
+		handshakeIntent:    handshakeIntent,
+		clientsideChannels: sets.NewCappedSet[string](maxClientsidePluginChannels),
+		onlineMode:         onlineMode,
+		connPhase:          conn.Type().InitialClientPhase(),
+		ping:               ping,
+		permFunc:           func(string) permission.TriState { return permission.Undefined },
+		playerKey:          playerKey,
 	}
 	p.resourcePackHandler = resourcepack.NewHandler(p, p.eventMgr)
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
@@ -649,6 +657,7 @@ func (p *connectedPlayer) switchToConfigState() {
 		p.log.Error(err, "error writing config packet")
 	}
 
+	p.pendingConfigurationSwitch = true
 	p.MinecraftConn.Writer().SetState(state.Config)
 	// Make sure we don't send any play packets to the player after update start
 	p.MinecraftConn.EnablePlayPacketQueue()
@@ -734,4 +743,17 @@ func (p *connectedPlayer) BackendInFlight() proto.PacketWriter {
 		}
 	}
 	return nil
+}
+
+// Discards any messages still being processed by the chat queue, and creates a fresh state for future packets.
+// This should be used on server switches, or whenever the client resets its own 'last seen' state.
+func (p *connectedPlayer) discardChatQueue() {
+	// No need for atomic swap, should only be called from read loop
+	oldChatQueue := p.chatQueue
+	p.chatQueue = newChatQueue(p)
+	oldChatQueue.close()
+}
+
+func (p *connectedPlayer) HandshakeIntent() packet.HandshakeIntent {
+	return p.handshakeIntent
 }

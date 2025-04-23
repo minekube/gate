@@ -32,10 +32,11 @@ type (
 
 // Inbound is an incoming connection to the proxy.
 type Inbound interface {
-	Protocol() proto.Protocol // The current protocol version the connection uses.
-	VirtualHost() net.Addr    // The hostname, the client sent us, to join the server, if applicable.
-	RemoteAddr() net.Addr     // The player's IP address.
-	Active() bool             // Whether the connection remains active.
+	Protocol() proto.Protocol                // The current protocol version the connection uses.
+	VirtualHost() net.Addr                   // The hostname, the client sent us, to join the server, if applicable.
+	HandshakeIntent() packet.HandshakeIntent // The intent of the handshake.
+	RemoteAddr() net.Addr                    // The player's IP address.
+	Active() bool                            // Whether the connection remains active.
 	// Context returns the connection's context that can be used to know when the connection was closed.
 	// (e.g. for canceling work in an event handler)
 	Context() context.Context
@@ -64,6 +65,8 @@ var _ LoginPhaseConnection = (*loginInboundConn)(nil)
 func (l *loginInboundConn) Protocol() proto.Protocol { return l.delegate.Protocol() }
 
 func (l *loginInboundConn) VirtualHost() net.Addr { return l.delegate.VirtualHost() }
+
+func (l *loginInboundConn) HandshakeIntent() packet.HandshakeIntent { return l.delegate.HandshakeIntent() }
 
 func (l *loginInboundConn) RemoteAddr() net.Addr { return l.delegate.RemoteAddr() }
 

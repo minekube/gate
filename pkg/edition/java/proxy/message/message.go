@@ -78,10 +78,9 @@ var (
 func ChannelIdentifierFrom(identifier string) (ChannelIdentifier, error) {
 	colonPos := strings.Index(identifier, ":")
 	if colonPos == -1 {
-		return nil, errIdentifierNoColon
-	}
-	if colonPos+1 == len(identifier) {
-		return nil, errIdentifierEmpty
+		return NewChannelIdentifier(DefaultNamespace, identifier)
+	} else if colonPos == 0 {
+		return NewChannelIdentifier(DefaultNamespace, identifier[1:])
 	}
 	namespace := identifier[:colonPos]
 	name := identifier[colonPos+1:]

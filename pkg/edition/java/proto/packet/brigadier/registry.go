@@ -225,14 +225,15 @@ func init() {
 	register(id("minecraft:resource_or_tag_key", mapSet(Minecraft_1_20_5, 44), mapSet(Minecraft_1_20_3, 43), mapSet(Minecraft_1_19_3, 42)), ResourceOrTagKeyArgument, ResourceOrTagKeyArgumentPropertyCodec)
 	register(id("minecraft:resource", mapSet(Minecraft_1_20_5, 45), mapSet(Minecraft_1_20_3, 44), mapSet(Minecraft_1_19_3, 43), mapSet(Minecraft_1_19, 44)), RegistryKeyArgument, RegistryKeyArgumentPropertyCodec)
 	register(id("minecraft:resource_key", mapSet(Minecraft_1_20_5, 46), mapSet(Minecraft_1_20_3, 45), mapSet(Minecraft_1_19_3, 44)), ResourceKeyArgument, ResourceKeyArgumentPropertyCodec)
-	empty(id("minecraft:template_mirror", mapSet(Minecraft_1_20_5, 47), mapSet(Minecraft_1_20_3, 46), mapSet(Minecraft_1_19, 45)))
-	empty(id("minecraft:template_rotation", mapSet(Minecraft_1_20_5, 48), mapSet(Minecraft_1_20_3, 47), mapSet(Minecraft_1_19, 46)))
-	empty(id("minecraft:heightmap", mapSet(Minecraft_1_20_5, 49), mapSet(Minecraft_1_20_3, 49), mapSet(Minecraft_1_19_4, 47)))
-	empty(id("minecraft:uuid", mapSet(Minecraft_1_20_5, 53), mapSet(Minecraft_1_20_3, 48), mapSet(Minecraft_1_19_4, 48), mapSet(Minecraft_1_19, 47)))
+	register(id("minecraft:resource_selector", mapSet(Minecraft_1_21_5, 47)), ResourceSelectorArgument, ResourceSelectorArgumentPropertyCodec)
+	empty(id("minecraft:template_mirror", mapSet(Minecraft_1_21_5, 48), mapSet(Minecraft_1_20_5, 47), mapSet(Minecraft_1_20_3, 46), mapSet(Minecraft_1_19, 45)))
+	empty(id("minecraft:template_rotation", mapSet(Minecraft_1_21_5, 49), mapSet(Minecraft_1_20_5, 48), mapSet(Minecraft_1_20_3, 47), mapSet(Minecraft_1_19, 46)))
+	empty(id("minecraft:heightmap", mapSet(Minecraft_1_21_5, 50), mapSet(Minecraft_1_20_5, 49), mapSet(Minecraft_1_20_3, 49), mapSet(Minecraft_1_19_4, 47)))
+	empty(id("minecraft:uuid", mapSet(Minecraft_1_21_5, 54), mapSet(Minecraft_1_20_5, 53), mapSet(Minecraft_1_20_3, 48), mapSet(Minecraft_1_19_4, 48), mapSet(Minecraft_1_19, 47)))
 
-	empty(id("minecraft:loot_table", mapSet(Minecraft_1_20_5, 50)))
-	empty(id("minecraft:loot_predicate", mapSet(Minecraft_1_20_5, 51)))
-	empty(id("minecraft:loot_modifier", mapSet(Minecraft_1_20_5, 52)))
+	empty(id("minecraft:loot_table", mapSet(Minecraft_1_21_5, 51), mapSet(Minecraft_1_20_5, 50)))
+	empty(id("minecraft:loot_predicate", mapSet(Minecraft_1_21_5, 52), mapSet(Minecraft_1_20_5, 51)))
+	empty(id("minecraft:loot_modifier", mapSet(Minecraft_1_21_5, 53), mapSet(Minecraft_1_20_5, 52)))
 
 	// Crossstitch support
 	register(id("crossstitch:mod_argument", mapSet(Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)

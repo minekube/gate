@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -9,6 +10,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
@@ -123,11 +125,38 @@ func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
 		})
 		// Client sends `minecraft:brand` packet immediately after Login,
 		// but at this time the backend server may not be ready
+	} else if bungeecord.IsBungeeCordMessage(p) {
+		return
 	} else {
-		smc, ok := serverConn.ensureConnected()
-		if ok {
-			_ = smc.WritePacket(p)
+		id, ok := h.player.proxy.ChannelRegistrar().FromID(p.Channel)
+		if !ok {
+			smc, ok := serverConn.ensureConnected()
+			if ok {
+				_ = smc.WritePacket(p)
+			}
+			return
 		}
+
+		// Handling this stuff async means that we should probably pause
+		// the connection while we toss this off into another pool
+		serverConn.player.SetAutoReading(false)
+		event.FireParallel(h.event(), &PluginMessageEvent{
+			source:     serverConn,
+			target:     h.player,
+			identifier: id,
+			data:       p.Data,
+		}, func(pme *PluginMessageEvent) {
+			if pme.Allowed() && serverConn.active() {
+				smc, ok := serverConn.ensureConnected()
+				if ok {
+					_ = smc.WritePacket(&plugin.Message{
+						Channel: p.Channel,
+						Data:    pme.data,
+					})
+				}
+			}
+			serverConn.player.SetAutoReading(true)
+		})
 	}
 }
 

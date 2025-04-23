@@ -35,7 +35,14 @@ func (ch *LegacyChat) Encode(c *proto.PacketContext, wr io.Writer) error {
 }
 
 func (ch *LegacyChat) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	ch.Message, err = util.ReadString(rd)
+	max := 100
+	if c.Direction == proto.ClientBound {
+		max = 262144
+	} else if c.Protocol.GreaterEqual(version.Minecraft_1_11) {
+		max = 256
+	}
+	
+	ch.Message, err = util.ReadStringMax(rd, max)
 	if err != nil {
 		return err
 	}
