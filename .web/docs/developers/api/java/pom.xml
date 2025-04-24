@@ -44,17 +44,17 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.70.0</version>
+            <version>1.72.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.70.0</version>
+            <version>1.72.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>1.70.0</version>
+            <version>1.72.0</version>
         </dependency>
         <!-- Protobuf dependencies -->
         <dependency>
