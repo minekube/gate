@@ -61,7 +61,7 @@ func (r *argPropReg) Encode(wr io.Writer, argType brigodier.ArgumentType, protoc
 		if err != nil {
 			return err
 		}
-		return util.WriteBytes(wr, property.Data)
+		return util.WriteRawBytes(wr, property.Data)
 	default:
 		codec, ok := r.byType[argType.String()]
 		id, ok2 := r.typeToID[argType.String()]
