@@ -18,6 +18,7 @@ type Cookie interface {
 	SetPayload([]byte)
 }
 
+// Creates a new cookie, that can be stored
 func New(
 	key key.Key,
 	payload []byte,
@@ -28,11 +29,12 @@ func New(
 	}
 }
 
-// Sends a request packet to the player. In return, the player will send the stored cookie, which can be listened to in the CookieResponseEvent event.
+// Sends a request packet to the player. In return, the player will send the stored cookie, which can be listened to in the CookieResponseEvent.
 func Request(p proxy.Player, key key.Key) error {
 	return request(p, key)
 }
 
-func RequestWithResult(p proxy.Player, key key.Key, ctx context.Context) ([]byte, error) {
+// Sends a request packet to the player. Instead of listening for the stored cookie in the CookieResponseEvent, it will listen in this function.
+func RequestWithResult(p proxy.Player, key key.Key, ctx context.Context) (Cookie, error) {
 	return requestWithResult(p, key, ctx)
 }

@@ -59,7 +59,7 @@ func request(p proxy.Player, key key.Key) error {
 	})
 }
 
-func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) ([]byte, error) {
+func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) (Cookie, error) {
 	if strings.TrimSpace(key.String()) == "" {
 		return nil, errors.New("empty key")
 	}
@@ -73,7 +73,7 @@ func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) ([]byte
 	defer close(responseChan)
 	defer close(errorChan)
 
-	r := proxy.RequestListenerPerPlayer[p]
+	r := proxy.CookieRequestListenerPlayerMap[p]
 	r.Mu.Lock()
 	r.Pending[key.String()] = responseChan
 	defer delete(r.Pending, key.String())
@@ -93,7 +93,8 @@ func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) ([]byte
 	case err := <-errorChan:
 		return nil, err
 	case response := <-responseChan:
-		return response, nil
+		c := New(key, response)
+		return c, nil
 	case <-p.Context().Done():
 		return nil, errors.New("player disconnected")
 	}
