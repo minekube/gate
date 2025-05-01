@@ -1165,15 +1165,15 @@ func (r *ReadyEvent) Addr() string { return r.addr }
 // such as plugin dependencies.
 type ShutdownEvent struct{}
 
-// PlayerCookieResponseEvent is fired when a player sends the cookie requested from the server.
-type PlayerCookieResponseEvent struct {
+// CookieResponseEvent is fired when a player sends the cookie requested from the server.
+type CookieResponseEvent struct {
 	player  Player
 	key     key.Key
 	payload []byte
 }
 
-func newPlayerCookieResponseEvent(player Player, key key.Key, payload []byte) *PlayerCookieResponseEvent {
-	return &PlayerCookieResponseEvent{
+func newCookieResponseEvent(player Player, key key.Key, payload []byte) *CookieResponseEvent {
+	return &CookieResponseEvent{
 		player:  player,
 		key:     key,
 		payload: payload,
@@ -1181,11 +1181,11 @@ func newPlayerCookieResponseEvent(player Player, key key.Key, payload []byte) *P
 }
 
 // Player returns the player from whom the cookie has been received.
-func (c *PlayerCookieResponseEvent) Player() Player { return c.player }
+func (c *CookieResponseEvent) Player() Player { return c.player }
 
 // Key returns the provider of the responded cookie.
 // For example: minecraft:cookie
-func (c *PlayerCookieResponseEvent) Key() key.Key { return c.key }
+func (c *CookieResponseEvent) Key() key.Key { return c.key }
 
 // Payload returns the payload of the responded cookie.
-func (c *PlayerCookieResponseEvent) Payload() []byte { return c.payload }
+func (c *CookieResponseEvent) Payload() []byte { return c.payload }

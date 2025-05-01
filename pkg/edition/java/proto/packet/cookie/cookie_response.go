@@ -18,6 +18,10 @@ func (c *CookieResponse) Encode(ctx *proto.PacketContext, wr io.Writer) error {
 		return err
 	}
 
+	if err := util.WriteVarInt(wr, len(c.Payload)); err != nil {
+		return err
+	}
+
 	return util.WriteBytes(wr, c.Payload)
 }
 
@@ -27,6 +31,15 @@ func (c *CookieResponse) Decode(ctx *proto.PacketContext, rd io.Reader) (err err
 		return err
 	}
 
-	c.Payload, err = util.ReadRawBytes(rd)
-	return err
+	_, err = util.ReadVarInt(rd)
+	if err != nil {
+		return err
+	}
+
+	c.Payload, err = util.ReadBytesLen(rd, 5120)
+	if err != nil && err != io.EOF { // EOF = End Of File is not a problem
+		return err
+	}
+
+	return nil
 }

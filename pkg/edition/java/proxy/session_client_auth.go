@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -272,23 +271,5 @@ func (a *authSessionHandler) handleLoginAcknowledged() bool {
 }
 
 func (a *authSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
-	// The payload in the cookie response packet has two bytes before the actual payload, which show the length.
-	// So the packet should use the util.ReadBytesLen(rd, 5120) but unfortunately i couldn't get that to work, as it makes the payload empty.
-	// TODO: fix this instead of this shortcut
-	if len(p.Payload) > 2 {
-		p.Payload = p.Payload[2:]
-	}
-
-	tracker := a.connectedPlayer.CookieRequestTracker
-	requestID := fmt.Sprintf("%s:%s", a.connectedPlayer.ID(), p.Key)
-	tracker.mu.Lock()
-	responseChan, ok := tracker.pending[requestID]
-
-	// check if the player.RequestCookieWithResult() is waiting for this packet, otherwise fire the event.
-	if ok {
-		responseChan <- p.Payload
-	} else {
-		event.FireParallel(a.eventMgr, newPlayerCookieResponseEvent(a.connectedPlayer, p.Key, p.Payload))
-	}
-	tracker.mu.Unlock()
+	handleCookieResponse(p, a.connectedPlayer, a.eventMgr)
 }

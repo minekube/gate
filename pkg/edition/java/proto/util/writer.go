@@ -3,13 +3,14 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"math"
+	"strings"
+
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"io"
-	"math"
-	"strings"
 )
 
 func WriteString(writer io.Writer, val string) (err error) {

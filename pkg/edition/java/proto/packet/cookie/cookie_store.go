@@ -17,13 +17,11 @@ func (c *CookieStore) Encode(ctx *proto.PacketContext, wr io.Writer) error {
 	if err := util.WriteKey(wr, c.Key); err != nil {
 		return err
 	}
-
 	return util.WriteBytes(wr, c.Payload)
 }
 
 func (c *CookieStore) Decode(ctx *proto.PacketContext, rd io.Reader) (err error) {
-	c.Key, err = util.ReadKey(rd)
-	if err != nil {
+	if c.Key, err = util.ReadKey(rd); err != nil {
 		return err
 	}
 
