@@ -87,6 +87,7 @@ func (a *authSessionHandler) Activated() {
 		conn,
 		&gameProfile,
 		a.inbound.VirtualHost(),
+		a.inbound.HandshakeIntent(),
 		a.onlineMode,
 		a.inbound.IdentifiedKey(),
 		a.sessionHandlerDeps,

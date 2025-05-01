@@ -73,8 +73,11 @@ func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 	if err != nil {
 		return nil, err
 	}
+	if modCount > 1024 {
+		return nil, errors.New("mod count is too large")
+	}
 	mods := make([]modinfo.Mod, 0, modCount)
-	for i := 0; i < modCount; i++ {
+	for range modCount {
 		id, err := util.ReadString(buf)
 		if err != nil {
 			return nil, err
@@ -83,10 +86,14 @@ func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 		if err != nil {
 			return nil, err
 		}
-		mods = append(mods, modinfo.Mod{
+		mod := modinfo.Mod{
 			ID:      id,
 			Version: version,
-		})
+		}
+		if err := mod.Validate(); err != nil {
+			return nil, err
+		}
+		mods = append(mods, mod)
 	}
 	message.Data = buf.Bytes() // left data bytes
 	return mods, nil

@@ -3,7 +3,10 @@ package proxy
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
+	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
@@ -13,7 +16,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"time"
 )
 
 // backendConfigSessionHandler is a special session handler that catches "last minute" disconnects.
@@ -207,7 +209,30 @@ func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContex
 		_ = b.serverConn.player.WritePacket(plugin.RewriteMinecraftBrand(p,
 			b.serverConn.player.Protocol()))
 	} else {
-		b.forwardToPlayer(pc, nil)
+		bytes := pc.Payload
+		id, ok := b.proxy().ChannelRegistrar().FromID(p.Channel)
+		if !ok {
+			b.forwardToPlayer(pc, nil)
+			return
+		}
+
+		// Handling this stuff async means that we should probably pause
+		// the connection while we toss this off into another pool
+		b.serverConn.connection.SetAutoReading(false)
+		event.FireParallel(b.proxy().Event(), &PluginMessageEvent{
+			source:     b.serverConn,
+			target:     b.serverConn.player,
+			identifier: id,
+			data:       bytes,
+		}, func(pme *PluginMessageEvent) {
+			if pme.Allowed() && b.serverConn.active() {
+				b.forwardToPlayer(pc, &plugin.Message{
+					Channel: p.Channel,
+					Data:    pme.Data(),
+				})
+			}
+			b.serverConn.connection.SetAutoReading(true)
+		})
 	}
 }
 

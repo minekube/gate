@@ -114,9 +114,10 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
 	)
-	inbound := newInitialInbound(h.conn, vHost)
+	handshakeIntent := handshake.Intent()
+	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
-	if handshake.Intent() == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
+	if handshakeIntent == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
 		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
 		return
 	}
@@ -202,20 +203,26 @@ func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 
 type initialInbound struct {
 	netmc.MinecraftConn
-	virtualHost net.Addr
+	virtualHost     net.Addr
+	handshakeIntent packet.HandshakeIntent
 }
 
 var _ Inbound = (*initialInbound)(nil)
 
-func newInitialInbound(c netmc.MinecraftConn, virtualHost net.Addr) *initialInbound {
+func newInitialInbound(c netmc.MinecraftConn, virtualHost net.Addr, handshakeIntent packet.HandshakeIntent) *initialInbound {
 	return &initialInbound{
-		MinecraftConn: c,
-		virtualHost:   virtualHost,
+		MinecraftConn:   c,
+		virtualHost:     virtualHost,
+		handshakeIntent: handshakeIntent,
 	}
 }
 
 func (i *initialInbound) VirtualHost() net.Addr {
 	return i.virtualHost
+}
+
+func (i *initialInbound) HandshakeIntent() packet.HandshakeIntent {
+	return i.handshakeIntent
 }
 
 func (i *initialInbound) Active() bool {

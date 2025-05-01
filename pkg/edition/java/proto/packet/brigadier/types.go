@@ -45,3 +45,13 @@ func (r *ResourceKeyArgumentType) Parse(rd *brigodier.StringReader) (any, error)
 }
 
 func (r *ResourceKeyArgumentType) String() string { return "resource_key_argument" }
+
+var ResourceSelectorArgument brigodier.ArgumentType = &ResourceSelectorArgumentType{}
+
+type ResourceSelectorArgumentType RegistryKeyArgumentType
+
+func (r *ResourceSelectorArgumentType) Parse(rd *brigodier.StringReader) (any, error) {
+	return rd.ReadString()
+}
+
+func (r *ResourceSelectorArgumentType) String() string { return "resource_selector_argument" }

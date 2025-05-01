@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/mathutil"
 )
@@ -11,6 +12,7 @@ import (
 type LastSeenMessages struct {
 	Offset       int
 	Acknowledged mathutil.BitSet
+	Checksum     byte
 }
 
 var _ proto.Packet = (*LastSeenMessages)(nil)
@@ -21,6 +23,11 @@ func (l *LastSeenMessages) Encode(c *proto.PacketContext, wr io.Writer) error {
 	}
 	if _, err := wr.Write(copyOf(l.Acknowledged)); err != nil {
 		return err
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_5) {
+		if err := util.WriteByte(wr, l.Checksum); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -35,6 +42,11 @@ func (l *LastSeenMessages) Decode(c *proto.PacketContext, rd io.Reader) (err err
 		return err
 	}
 	l.Acknowledged = mathutil.BitSet{Bytes: acknowledged}
+	if c.Protocol.GreaterEqual(version.Minecraft_1_21_5) {
+		if l.Checksum, err = util.ReadByte(rd); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

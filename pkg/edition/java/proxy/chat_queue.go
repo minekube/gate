@@ -17,6 +17,7 @@ type chatQueue struct {
 	player       *connectedPlayer
 	chatState    *ChatState
 	head         *future.Future[any]
+	closed       atomic.Bool
 }
 
 // NewChatQueue instantiates a chatQueue for a specific player.
@@ -29,6 +30,10 @@ func newChatQueue(player *connectedPlayer) *chatQueue {
 }
 
 func (cq *chatQueue) queueTask(task func(*ChatState, netmc.MinecraftConn) *future.Future[any]) {
+	if cq.closed.Load() {
+		return
+	}
+
 	cq.internalLock.Lock()
 	defer cq.internalLock.Unlock()
 
@@ -37,6 +42,9 @@ func (cq *chatQueue) queueTask(task func(*ChatState, netmc.MinecraftConn) *futur
 		return
 	}
 	cq.head = future.ThenCompose(cq.head, func(a any) *future.Future[any] {
+		if cq.closed.Load() {
+			return future.New[any]().Complete(nil)
+		}
 		return task(cq.chatState, smc)
 	})
 }
@@ -51,7 +59,7 @@ func (cq *chatQueue) QueuePacket(nextPacket func(*chat.LastSeenMessages) *future
 	cq.queueTask(func(chatState *ChatState, smc netmc.MinecraftConn) *future.Future[any] {
 		newLastSeenMessages := chatState.UpdateFromMessage(&timestamp, lastSeenMessages)
 		return future.ThenCompose(nextPacket(newLastSeenMessages), func(p proto.Packet) *future.Future[any] {
-			return writePacket(p, smc)
+			return cq.writePacket(p, smc)
 		})
 	})
 }
@@ -60,7 +68,7 @@ func (cq *chatQueue) QueuePacket(nextPacket func(*chat.LastSeenMessages) *future
 func (cq *chatQueue) QueuePacketWithFunction(packetFunction func(*ChatState) proto.Packet) {
 	cq.queueTask(func(chatState *ChatState, smc netmc.MinecraftConn) *future.Future[any] {
 		packet := packetFunction(chatState)
-		return writePacket(packet, smc)
+		return cq.writePacket(packet, smc)
 	})
 }
 
@@ -69,15 +77,15 @@ func (cq *chatQueue) HandleAcknowledgement(offset int) {
 	cq.queueTask(func(chatState *ChatState, smc netmc.MinecraftConn) *future.Future[any] {
 		ackCountToForward := chatState.AccumulateAckCount(offset)
 		if ackCountToForward > 0 {
-			return writePacket(&chat.ChatAcknowledgement{Offset: ackCountToForward}, smc)
+			return cq.writePacket(&chat.ChatAcknowledgement{Offset: ackCountToForward}, smc)
 		}
 		return future.New[any]().Complete(nil)
 	})
 }
 
-func writePacket(packet proto.Packet, smc proto.PacketWriter) *future.Future[any] {
+func (cq *chatQueue) writePacket(packet proto.Packet, smc proto.PacketWriter) *future.Future[any] {
 	f := future.New[any]()
-	if packet == nil {
+	if packet == nil || cq.closed.Load() {
 		f.Complete(nil)
 		return f
 	}
@@ -86,6 +94,10 @@ func writePacket(packet proto.Packet, smc proto.PacketWriter) *future.Future[any
 		f.Complete(nil)
 	}()
 	return f
+}
+
+func (cq *chatQueue) close() {
+	cq.closed.Store(true)
 }
 
 // ChatState tracks the last Secure Chat state that we received from the client. This is important to always have a valid 'last seen' state that is consistent with future and past updates from the client (which may be signed). This state is used to construct 'spoofed' command packets from the proxy to the server.

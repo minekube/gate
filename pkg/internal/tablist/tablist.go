@@ -215,6 +215,7 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		GameMode:  entry.GameMode(),
 		Listed:    entry.Listed(),
 		ListOrder: entry.ListOrder(),
+		ShowHat:   entry.ShowHat(),
 	}
 
 	t.Lock()
@@ -246,6 +247,10 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		if previousEntry.ListOrder() != entry.ListOrder() && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_2) {
 			actions = append(actions, playerinfo.UpdateListOrderAction)
 			playerInfoEntry.ListOrder = entry.ListOrder()
+		}
+		if previousEntry.ShowHat() != entry.ShowHat() && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_4) {
+			actions = append(actions, playerinfo.UpdateHatAction)
+			playerInfoEntry.ShowHat = entry.ShowHat()
 		}
 		if !reflect.DeepEqual(previousEntry.ChatSession(), entry.ChatSession()) {
 			if from := entry.ChatSession(); from != nil {
@@ -283,6 +288,10 @@ func (t *TabList) add(entry tablist.Entry) (*playerinfo.Upsert, error) {
 		if entry.ListOrder() != 0 && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_2) {
 			actions = append(actions, playerinfo.UpdateListOrderAction)
 			playerInfoEntry.ListOrder = entry.ListOrder()
+		}
+		if entry.ShowHat() && t.Viewer.Protocol().GreaterEqual(version.Minecraft_1_21_4) {
+			actions = append(actions, playerinfo.UpdateHatAction)
+			playerInfoEntry.ShowHat = entry.ShowHat()
 		}
 	}
 
@@ -336,6 +345,7 @@ func (t *TabList) processUpdateForEntry(actions []playerinfo.UpsertAction, info 
 				EntryAttributes: EntryAttributes{
 					Profile:  info.Profile,
 					GameMode: -1,
+					ShowsHat: true,
 				},
 			}
 			t.EntriesByID[profileID] = currentEntry

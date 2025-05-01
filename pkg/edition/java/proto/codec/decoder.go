@@ -136,6 +136,10 @@ func (d *Decoder) readPayload() (payload []byte, err error) {
 			return nil, fmt.Errorf("error reading claimed uncompressed size varint: %w", err)
 		}
 		if claimedUncompressedSize <= 0 {
+			if actualUncompressedSize := buf.Len(); actualUncompressedSize > d.compressionThreshold {
+				return nil, fmt.Errorf("actual uncompressed size %d is greater than threshold %d",
+					actualUncompressedSize, d.compressionThreshold)
+			}
 			// This message is not compressed
 			return buf.Bytes(), nil
 		}

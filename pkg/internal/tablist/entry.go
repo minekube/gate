@@ -26,6 +26,7 @@ type EntryAttributes struct {
 	Listed      bool
 	ListOrder   int
 	ChatSession player.ChatSession
+	ShowsHat    bool
 }
 
 type Entry struct {
@@ -45,6 +46,7 @@ type internalEntry interface {
 	SetChatSessionInternal(chatSession player.ChatSession)
 	SetListedInternal(listed bool)
 	SetListOrderInternal(order int)
+	SetShowHatInternal(showHat bool)
 }
 
 func doInternalEntity(e tablist.Entry, fn func(internalEntry)) {
@@ -196,6 +198,33 @@ func (e *Entry) SetListOrder(i int) error {
 		return e.OwningTabList.EmitActionRaw(playerinfo.UpdateListOrderAction, upsertEntry)
 	}
 	return nil
+}
+
+func (e *Entry) SetShowHatInternal(showHat bool) {
+	e.Lock()
+	e.EntryAttributes.ShowsHat = showHat
+	e.Unlock()
+}
+
+func (e *Entry) SetShowHat(showHat bool) error {
+	e.Lock()
+	e.EntryAttributes.ShowsHat = showHat
+	e.Unlock()
+	if e.OwningTabList.GetViewer().Protocol().GreaterEqual(version.Minecraft_1_21_4) {
+		upsertEntry, err := rawEntry(e.EntryAttributes.Profile.ID)
+		if err != nil {
+			return fmt.Errorf("error creating upsert entry: %w", err)
+		}
+		upsertEntry.ShowHat = showHat
+		return e.OwningTabList.EmitActionRaw(playerinfo.UpdateHatAction, upsertEntry)
+	}
+	return nil
+}
+
+func (e *Entry) ShowHat() bool {
+	e.RLock()
+	defer e.RUnlock()
+	return e.EntryAttributes.ShowsHat
 }
 
 func rawEntry(profileID uuid.UUID) (*playerinfo.Entry, error) {
