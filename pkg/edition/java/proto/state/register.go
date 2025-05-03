@@ -612,8 +612,10 @@ func init() {
 	)
 	Play.ClientBound.Register(&cookie.CookieRequest{},
 		m(0x16, version.Minecraft_1_20_5),
+		m(0x15, version.Minecraft_1_21_5),
 	)
 	Play.ClientBound.Register(&cookie.CookieStore{},
 		m(0x72, version.Minecraft_1_20_5),
+		m(0x71, version.Minecraft_1_21_5),
 	)
 }

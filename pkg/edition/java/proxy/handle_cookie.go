@@ -7,36 +7,29 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 )
 
-type cookieRequestListener struct {
-	Mu      sync.Mutex
-	Pending map[string]chan []byte
-}
-
-var CookieRequestListenerPlayerMap map[Player]*cookieRequestListener
+var CookieRequestListenerPlayerMap map[Player]*sync.Map
 
 func handleCookieResponse(cr *cookie.CookieResponse, p Player, eventMgr event.Manager) {
 	// ensure map exists
 	if CookieRequestListenerPlayerMap == nil {
-		CookieRequestListenerPlayerMap = make(map[Player]*cookieRequestListener)
+		CookieRequestListenerPlayerMap = make(map[Player]*sync.Map)
 	}
 
 	// create a cookieRequestListener if player doesn't have one
 	r, ok := CookieRequestListenerPlayerMap[p]
 	if !ok {
-		r = &cookieRequestListener{
-			Pending: make(map[string]chan []byte),
-		}
+		r = &sync.Map{}
 		CookieRequestListenerPlayerMap[p] = r
 	}
 
-	r.Mu.Lock()
-	responseChan, ok := r.Pending[cr.Key.String()]
-	r.Mu.Unlock()
-
 	// Check if the cookie.RequestWithResult is waiting for this packet, otherwise fire the event.
-	if ok {
-		responseChan <- cr.Payload
-	} else {
+	value, ok := r.Load(cr.Key.String())
+	if !ok {
 		event.FireParallel(eventMgr, newCookieResponseEvent(p, cr.Key, cr.Payload))
+	}
+
+	responseChan, isChan := value.(chan []byte)
+	if isChan {
+		responseChan <- cr.Payload
 	}
 }

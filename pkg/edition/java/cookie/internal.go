@@ -73,11 +73,20 @@ func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) (Cookie
 	defer close(responseChan)
 	defer close(errorChan)
 
-	r := proxy.CookieRequestListenerPlayerMap[p]
-	r.Mu.Lock()
-	r.Pending[key.String()] = responseChan
-	defer delete(r.Pending, key.String())
-	r.Mu.Unlock()
+	// ensure map exists
+	if proxy.CookieRequestListenerPlayerMap == nil {
+		proxy.CookieRequestListenerPlayerMap = make(map[proxy.Player]*sync.Map)
+	}
+
+	// create a cookieRequestListener if player doesn't have one
+	r, ok := proxy.CookieRequestListenerPlayerMap[p]
+	if !ok {
+		r = &sync.Map{}
+		proxy.CookieRequestListenerPlayerMap[p] = r
+	}
+
+	r.Store(key.String(), responseChan)
+	defer r.Delete(key.String())
 
 	err := p.WritePacket(&cpacket.CookieRequest{
 		Key: key,
