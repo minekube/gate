@@ -124,6 +124,7 @@ func FuzzReadVarInt(f *testing.F) {
 			if !errors.Is(err, io.EOF) && err.Error() != "decode: VarInt is too big" {
 				// If it's another type of error, we might want to investigate.
 				// For now, we just ensure it doesn't panic.
+				t.Fatalf("ReadVarInt returned an unexpected error: %v for input %x", err, data)
 			}
 			return // Error is expected in some cases
 		}
@@ -139,6 +140,7 @@ func FuzzReadVarInt(f *testing.F) {
 			// Let's verify this behavior or decide if ReadVarInt should error.
 			// The current implementation of ReadVarInt casts to int(result) where result is int32.
 			// If the 5th byte makes the int32 value negative, it will be negative.
+			t.Logf("ReadVarInt returned a negative value: %d for input %x. This may be expected due to int(int32) conversion for certain 5-byte sequences.", val, data)
 		}
 
 		// Check remaining bytes if any
