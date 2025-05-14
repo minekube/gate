@@ -203,10 +203,21 @@ type minecraftConn struct {
 	}
 }
 
+var tracer = otel.Tracer("netmc")
+
 // StartReadLoop is the main goroutine of this connection and
 // reads packets to pass them further to the current SessionHandler.
 // Close will be called on method return.
 func (c *minecraftConn) startReadLoop() {
+	ctx, span := tracer.Start(c.ctx, "startReadLoop", trace.WithAttributes(
+		attribute.String("net.peer.ip", c.RemoteAddr().String()),
+		attribute.String("net.transport", c.c.RemoteAddr().Network()),
+	))
+	defer span.End()
+
+	bytesRead := int64(0)
+	defer func() { span.SetAttributes(attribute.Int64("net.bytes_read", bytesRead)) }()
+
 	// Make sure to close connection on return, if not already closed
 	defer func() { _ = c.closeKnown(false) }()
 
@@ -226,6 +237,7 @@ func (c *minecraftConn) startReadLoop() {
 			}
 			return false
 		}
+		bytesRead += int64(packetCtx.BytesRead)
 
 		// TODO wrap packetCtx into struct with source info
 		// (minecraftConn) and chain into packet interceptor to...
@@ -236,7 +248,7 @@ func (c *minecraftConn) startReadLoop() {
 		sessionHandler := c.ActiveSessionHandler()
 
 		if debug.Enabled() && packetCtx.KnownPacket() {
-			_, span := otel.Tracer("netmc").Start(c.ctx, "HandlePacket", trace.WithAttributes(
+			_, span := tracer.Start(ctx, "HandlePacket", trace.WithAttributes(
 				attribute.String("packet.type", fmt.Sprintf("%T", packetCtx.Packet)),
 				attribute.String("packet.dump", fmt.Sprintf("%+v", spew.Sdump(packetCtx.Packet))),
 				attribute.Stringer("packet.direction", c.direction),
