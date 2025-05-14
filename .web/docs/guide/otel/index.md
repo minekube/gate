@@ -2,6 +2,10 @@
 
 Gate uses OpenTelemetry for observability, leveraging the [otel-config-go](https://github.com/honeycombio/otel-config-go) library for configuration. This provides a simple way to configure tracing and metrics collection through environment variables.
 
+# Start Generation Here
+
+![OpenTelemetry Architecture](https://mermaid.ink/svg/pako:eNp9kl1vgjAUhv9Kc65cgoYvGXCxRNF4o9FNsouJFx1UbEZbUiCZGv_7CrhJ1KxX7XPe856e9pwgFgkBH1KJ8z2av0UcqVVUny2IYJTnGY1xSQWPoI3Wa7SZ4ZJsW0B4EvG7zJBkhJFSHlAgsozEtxbjzTIn_E4l5L-uC8Gp0lCeojGOv5So6JoGmwhmEu8wx2hBGZWot1DuNC6eIthedZOOLiQsF6gXShyTjuxx_XdaVDijx7sXmXYcl-v1I5sR6vfRMpyv0LXrfv8FjdvwuA5fbtvwoMPb2zV40uKgxisp2Ou8wdMWT27UU9CAEckwTdQ_n2pRBOVelY_AV9uMpvuybuSshLgqxfrAY_BLWRENpKjSPfg7nBXqVOWJ-vQJxeox2B_NMf8Qgv2mpLIudElXzRMZiIqX4FtOowX_BN_ge87AdoaGZViOZ1qO_azBAXzbGHiOaerPumXZpqsbw7MGx8ZdH7i6Z1i27jiGbruupwFJ6lFYtBPcDPL5B1Gd2L4)
+
 ## Configuration
 
 Gate's OpenTelemetry implementation can be configured using the following environment variables:

@@ -186,6 +186,10 @@ export default defineConfig({
                   text: 'Honeycomb',
                   link: '/guide/otel/honeycomb/',
                 },
+                {
+                  text: 'FAQ',
+                  link: '/guide/otel/faq/',
+                },
               ],
             },
           ],
