@@ -9,39 +9,49 @@ We will cover two common scenarios:
 
 ## Scenario 1: Grafana, Prometheus & Tempo
 
+> **Quick Start: Get the Configs**
+>
+> To get the configuration files for this scenario:
+>
+> 1. Clone the repository (if you haven't already):
+>    ```bash
+>    git clone https://github.com/minekube/gate.git
+>    ```
+> 2. Navigate to the directory for this scenario:
+>    ```bash
+>    cd gate/.web/docs/guide/otel/self-hosted/otel-stack-configs
+>    ```
+>    _(Adjust the `cd` path if you cloned into a different parent directory or are already inside the `gate` repo directory, e.g., `cd .web/docs/guide/otel/self-hosted/otel-stack-configs`)_
+>
+> Or, [view the files directly on GitHub](https://github.com/minekube/gate/tree/master/.web/docs/guide/otel/self-hosted/otel-stack-configs/).
+
 This setup uses Grafana Tempo for traces, Prometheus for metrics, and Grafana for visualizing both. Gate will send traces directly to Tempo via OTLP and expose a Prometheus-compatible scrape endpoint for metrics.
 
-### 1. Docker Compose Configuration
+### 1. Configuration Files
 
-Create a `docker-compose.yml` file with the following content. You can place this in `otel-stack-configs/docker-compose.yml` relative to this document, and then the other config files (`prometheus.yml`, etc.) should be in the same `otel-stack-configs` directory when you run `docker compose -f otel-stack-configs/docker-compose.yml up -d` from the directory containing `otel-stack-configs`.
+You'll need the following configuration files. The `docker-compose.yml` below assumes `prometheus.yml`, `tempo.yaml`, and `grafana-datasources.yml` are in the same directory (e.g., `otel-stack-configs/`) when you run `docker compose -f otel-stack-configs/docker-compose.yml up -d` from the directory containing `otel-stack-configs`.
 
-```yaml
+::: code-group
+
+```yaml [docker-compose.yml]
 <!--@include: ./otel-stack-configs/docker-compose.yml -->
 ```
 
-### 2. Configuration Files
-
-You'll need the following configuration files in the same directory as your `docker-compose.yml`:
-
-**`prometheus.yml`:**
-
-```yaml
+```yaml [prometheus.yml]
 <!--@include: ./otel-stack-configs/prometheus.yml -->
 ```
 
-**`tempo.yaml`:**
-
-```yaml
+```yaml [tempo.yaml]
 <!--@include: ./otel-stack-configs/tempo.yaml -->
 ```
 
-**`grafana-datasources.yml`:**
-
-```yaml
+```yaml [grafana-datasources.yml]
 <!--@include: ./otel-stack-configs/grafana-datasources.yml -->
 ```
 
-### 3. Configure Gate Environment Variables
+:::
+
+### 2. Configure Gate Environment Variables
 
 To send telemetry data from Gate to this self-hosted stack:
 
@@ -72,7 +82,7 @@ export OTEL_METRICS_SERVER_PATH="/metrics" # Default
 
 Update the `prometheus.yml` file (specifically the `gate` job's `targets`) to point to the address where Gate's metrics endpoint is exposed. If Docker is running on Linux, `host.docker.internal` might not resolve, and you may need to use the host's actual IP address on the Docker bridge network (e.g., `172.17.0.1`) or the machine's network IP if Gate is not containerized.
 
-### 4. Running the Stack
+### 3. Running the Stack
 
 1.  Save the `docker-compose.yml` and the configuration files (`prometheus.yml`, `tempo.yaml`, `grafana-datasources.yml`) in the same directory.
 2.  Open a terminal in that directory and run:
@@ -84,7 +94,7 @@ Update the `prometheus.yml` file (specifically the `gate` job's `targets`) to po
     - Prometheus: `http://localhost:9090`
     - Tempo: `http://localhost:3200` (for Tempo's own UI, though Grafana is primary)
 
-### 5. Viewing Data in Grafana
+### 4. Viewing Data in Grafana
 
 - **Prometheus**:
   - The Prometheus data source should be automatically provisioned.
@@ -94,9 +104,59 @@ Update the `prometheus.yml` file (specifically the `gate` job's `targets`) to po
   - Go to "Explore", select "Tempo". You can search for traces by Service Name (e.g., your `OTEL_SERVICE_NAME` for Gate), or look at the Service Graph (if `metrics_generator` in Tempo is working correctly and sending data to Prometheus).
   - If you have metrics that can be correlated with traces (like exemplars), you might be able to jump from metrics in Prometheus to traces in Tempo.
 
+### 5. Sample Gate Dashboard
+
+We provide a sample Grafana dashboard to help you get started with visualizing Gate's metrics.
+
+**Dashboard Features:**
+
+- Total Player Count (`proxy_player_count`)
+- Gate Instance Status (`up`)
+- Go Goroutines (`go_goroutines`)
+- Go Memory Usage (`go_memstats_alloc_bytes`)
+
+**Get the Dashboard JSON:**
+
+- **Download Raw JSON:** [https://raw.githubusercontent.com/minekube/gate/master/.web/docs/guide/otel/self-hosted/grafana-dashboards/gate-overview-dashboard.json](https://raw.githubusercontent.com/minekube/gate/master/.web/docs/guide/otel/self-hosted/grafana-dashboards/gate-overview-dashboard.json)
+  _(You can use `curl -o gate-overview-dashboard.json <URL>` or right-click and "Save Link As...")_
+- **View on GitHub:** [https://github.com/minekube/gate/blob/master/.web/docs/guide/otel/self-hosted/grafana-dashboards/gate-overview-dashboard.json](https://github.com/minekube/gate/blob/master/.web/docs/guide/otel/self-hosted/grafana-dashboards/gate-overview-dashboard.json)
+
+If you have cloned the repository, you can also find the dashboard at `.web/docs/guide/otel/self-hosted/grafana-dashboards/gate-overview-dashboard.json` within your local copy.
+
+**Importing the Dashboard:**
+
+1.  Navigate to your Grafana instance (usually `http://localhost:3000`).
+2.  Log in (default: admin/admin, then change the password).
+3.  On the left-hand menu, go to **Dashboards**.
+    ![Grafana Menu Dashboards](https://grafana.com/static/assets/img/docs/navigation/navbar-dashboards.png)
+4.  On the Dashboards page, click the **"New"** button in the top right and select **"Import"**.
+    ![Grafana Dashboards New Import](https://grafana.com/static/assets/img/docs/manage-dashboards/dashboard-management-new-import.png)
+5.  Click the **"Upload JSON file"** button and select the `gate-overview-dashboard.json` file you downloaded, or paste the JSON content directly into the text area.
+6.  On the next screen, you can change the dashboard name if desired.
+7.  **Important:** Select your Prometheus data source from the dropdown (usually named "Prometheus").
+8.  Click **"Import"**.
+
+You should now see the "Gate Overview" dashboard with panels visualizing metrics from your Gate instance(s).
+
 ---
 
 ## Scenario 2: All-in-one Jaeger
+
+> **Quick Start: Get the Configs**
+>
+> To get the configuration file for this scenario:
+>
+> 1. Clone the repository (if you haven't already):
+>    ```bash
+>    git clone https://github.com/minekube/gate.git
+>    ```
+> 2. Navigate to the directory for this scenario:
+>    ```bash
+>    cd gate/.web/docs/guide/otel/self-hosted/jaeger-config
+>    ```
+>    _(Adjust the `cd` path if you cloned into a different parent directory or are already inside the `gate` repo directory, e.g., `cd .web/docs/guide/otel/self-hosted/jaeger-config`)_
+>
+> Or, [view the file directly on GitHub](https://github.com/minekube/gate/tree/master/.web/docs/guide/otel/self-hosted/jaeger-config/).
 
 Jaeger is a popular open-source, end-to-end distributed tracing system. The `all-in-one` image is a quick way to get started with Jaeger for development and testing. It includes the Jaeger Collector (which can receive OTLP), Agent, Query service, and UI in a single container.
 
@@ -106,9 +166,13 @@ Gate can send traces directly to Jaeger using the OTLP exporter.
 
 Create a `docker-compose-jaeger.yml` file (or add to an existing one). You can place the following content into a file, for example, at `otel-jaeger-config/docker-compose.yml` relative to this document, and run `docker compose -f otel-jaeger-config/docker-compose.yml up -d`:
 
-```yaml
+::: code-group
+
+```yaml [docker-compose.yml]
 <!--@include: ./jaeger-config/docker-compose.yml -->
 ```
+
+:::
 
 ### 2. Configure Gate Environment Variables
 
@@ -149,6 +213,22 @@ Note: For this Jaeger setup, metrics collection with Prometheus is not included.
 
 ## Scenario 3: Kubernetes with kube-prometheus-stack
 
+> **Quick Start: Get the Configs**
+>
+> To get the Kubernetes manifest examples for this scenario:
+>
+> 1. Clone the repository (if you haven't already):
+>    ```bash
+>    git clone https://github.com/minekube/gate.git
+>    ```
+> 2. Navigate to the directory for this scenario:
+>    ```bash
+>    cd gate/.web/docs/guide/otel/self-hosted/k8s-configs
+>    ```
+>    _(Adjust the `cd` path if you cloned into a different parent directory or are already inside the `gate` repo directory, e.g., `cd .web/docs/guide/otel/self-hosted/k8s-configs`)_
+>
+> Or, [view the files directly on GitHub](https://github.com/minekube/gate/tree/master/.web/docs/guide/otel/self-hosted/k8s-configs/).
+
 The `kube-prometheus-stack` Helm chart by the Prometheus Community is a powerful and widely adopted solution for monitoring Kubernetes clusters. It bundles Prometheus, Grafana, Alertmanager, and various exporters to provide a full-fledged monitoring experience out of the box. You can find more about it on [Artifact Hub](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack) and the [Prometheus Community GitHub](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack).
 
 When Gate is deployed in such a Kubernetes cluster, you'll want Prometheus to scrape Gate's metrics and potentially send Gate's traces to a tracing backend that might be part of or integrated with this stack (like Jaeger or Grafana Tempo, which can also be deployed alongside or as part of `kube-prometheus-stack`'s capabilities).
@@ -175,9 +255,13 @@ First, make sure your Gate Kubernetes Deployment and Service are configured to e
 
 Your Gate `Service` definition might look something like this:
 
-```yaml
+::: code-group
+
+```yaml [gate-service.yml]
 <!--@include: ./k8s-configs/gate-service.yml -->
 ```
+
+:::
 
 **b. Create a `ServiceMonitor` for Gate:**
 
@@ -192,9 +276,13 @@ It's important to understand that the `ServiceMonitor` doesn't mean Prometheus s
 
 Create a `ServiceMonitor` custom resource like this:
 
-```yaml
+::: code-group
+
+```yaml [gate-servicemonitor.yml]
 <!--@include: ./k8s-configs/gate-servicemonitor.yml -->
 ```
+
+:::
 
 Apply this YAML to your cluster (`kubectl apply -f gate-servicemonitor.yaml`). Prometheus should then automatically discover and start scraping metrics from your individual Gate pods.
 
@@ -202,9 +290,13 @@ Apply this YAML to your cluster (`kubectl apply -f gate-servicemonitor.yaml`). P
 
 If you prefer to discover pods directly by their labels without an intermediary `Service` definition, or if your Gate metrics endpoint isn't part of a regular Kubernetes `Service`, you can use a `PodMonitor`.
 
-```yaml
+::: code-group
+
+```yaml [gate-podmonitor.yml]
 <!--@include: ./k8s-configs/gate-podmonitor.yml -->
 ```
+
+:::
 
 While `ServiceMonitor` is very common, `PodMonitor` offers a more direct path if needed.
 
@@ -212,9 +304,13 @@ While `ServiceMonitor` is very common, `PodMonitor` offers a more direct path if
 
 If `ServiceMonitor` or `PodMonitor` are not an option, or for simpler setups, Prometheus can also be configured to scrape pods based on annotations. You would add these annotations to your Gate Pod specification (e.g., in your Deployment template):
 
-```yaml
+::: code-group
+
+```yaml [gate-pod-annotations-example.yml]
 <!--@include: ./k8s-configs/gate-pod-annotations-example.yml -->
 ```
+
+:::
 
 However, `kube-prometheus-stack` is often configured _not_ to discover based on annotations by default to favor `ServiceMonitor`/`PodMonitor`. You might need to adjust the Prometheus configuration within the Helm chart's values if you want to rely solely on annotations.
 

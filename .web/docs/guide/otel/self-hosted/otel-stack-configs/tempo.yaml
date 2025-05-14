@@ -2,13 +2,13 @@ server:
   http_listen_port: 3200
 
 distributor:
-  receivers: # بخش receivers در توزیع کننده
-    otlp: # تعریف یک دریافت کننده OTLP
-      protocols: # پروتکل های پشتیبانی شده
-        grpc: # پروتکل gRPC
-          endpoint: 0.0.0.0:4317 # نقطه پایانی برای gRPC
-        http: # پروتکل HTTP
-          endpoint: 0.0.0.0:4318 # نقطه پایانی برای HTTP
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
     zipkin: {}
     jaeger:
       protocols:
@@ -33,8 +33,40 @@ metrics_generator:
 
 compactor:
   compaction:
-    compaction_window: 1h # Compact data older than this period
-    block_retention: 1h # Override the default block retention
+    compaction_window: 1h # Compact data older than this
+    block_retention: 1h # Overall retention for blocks
+
+# This is an optional section, if you want Tempo to also expose its own metrics
+# to be scraped by Prometheus. This is separate from the metrics_generator above.
+# self_monitor:
+#   tempo_service_name: tempo
+#   prometheus_http_path: /metrics
+#   prometheus_http_port: 3200 # Can be the same as server.http_listen_port
+
+# Traces can also be received directly by the ingester if needed, but distributor is common.
+# ingester:
+#   lifecycler:
+#     ring:
+#       kvstore:
+#         store: memberlist
+#       replication_factor: 1
+#     final_sleep: 0s
+#   max_block_bytes: 1_000_000
+#   max_block_duration: 5m
+
+# Search configuration (optional, defaults are usually fine for local)
+# search:
+#   backend: lucene
+#   lucene:
+#     path: /tmp/tempo/search
+#     mem_gb: 1
+
+# Overrides default configuration for some aspects
+# overrides:
+#   defaults:
+#     metrics_generator_processors:
+#     - service-graphs
+#     - span-metrics
 
 # This is an example configuration, refer to Tempo documentation for more options
 # https://grafana.com/docs/tempo/latest/configuration/
