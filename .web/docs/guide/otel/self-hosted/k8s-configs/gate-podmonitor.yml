@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: gate-podmonitor
+  namespace: monitoring # Or the namespace where kube-prometheus-stack is installed
+  labels:
+    release: prometheus # Or your Prometheus Operator discovery label
+spec:
+  selector:
+    matchLabels:
+      app: gate # This must match the labels on your Gate Pods
+  namespaceSelector:
+    matchNames:
+      - default # Or the namespace where your Gate pods are running
+  podMetricsEndpoints:
+    - port: metrics # This must match the containerPort name or number for metrics in your Gate Pod spec
+      interval: 15s
+      path: /metrics

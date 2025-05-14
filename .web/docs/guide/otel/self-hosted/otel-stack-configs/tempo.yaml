@@ -1,0 +1,40 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers: # بخش receivers در توزیع کننده
+    otlp: # تعریف یک دریافت کننده OTLP
+      protocols: # پروتکل های پشتیبانی شده
+        grpc: # پروتکل gRPC
+          endpoint: 0.0.0.0:4317 # نقطه پایانی برای gRPC
+        http: # پروتکل HTTP
+          endpoint: 0.0.0.0:4318 # نقطه پایانی برای HTTP
+    zipkin: {}
+    jaeger:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14268
+
+ingester:
+  trace_idle_period: 10s # How long to wait for more spans in a trace
+
+storage:
+  trace:
+    backend: local # Use local filesystem for storage
+    local:
+      path: /tmp/tempo/blocks
+
+metrics_generator:
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+compactor:
+  compaction:
+    compaction_window: 1h # Compact data older than this period
+    block_retention: 1h # Override the default block retention
+
+# This is an example configuration, refer to Tempo documentation for more options
+# https://grafana.com/docs/tempo/latest/configuration/

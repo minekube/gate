@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'gate'
+    # Replace 'gate-host-ip' with the actual IP address of the machine running Gate,
+    # or use 'host.docker.internal' if Gate is running on the same host as Docker.
+    # Gate's Prometheus endpoint must be enabled and accessible.
+    static_configs:
+      - targets: ['host.docker.internal:9464'] # Default Gate metrics address
+    # Example if Gate is on a different machine on the same network:
+    # - targets: ['192.168.1.100:9464']
+
+  - job_name: 'tempo' # Tempo can expose metrics as well
+    static_configs:
+      - targets: ['tempo:3200']

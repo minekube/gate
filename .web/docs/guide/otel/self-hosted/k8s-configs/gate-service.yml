@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gate-service
+  labels:
+    app: gate
+spec:
+  selector:
+    app: gate
+  ports:
+    - name: http # Or your main application port
+      port: 80
+      targetPort: 8080
+    - name: metrics
+      port: 9464
+      targetPort: 9464 # This should match Gate's OTEL_METRICS_SERVER_ADDR
+      protocol: TCP

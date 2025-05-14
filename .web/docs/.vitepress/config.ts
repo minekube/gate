@@ -187,6 +187,10 @@ export default defineConfig({
                   link: '/guide/otel/honeycomb/',
                 },
                 {
+                  text: 'Self-hosted',
+                  link: '/guide/otel/self-hosted/',
+                },
+                {
                   text: 'FAQ',
                   link: '/guide/otel/faq/',
                 },

@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.3.1
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-lifecycle' # Allows hot-reloading of the config
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    networks:
+      - otel-stack
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: tempo
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/tmp/tempo
+    ports:
+      - '3200:3200' # Tempo UI
+      - '4317:4317' # OTLP gRPC
+      - '4318:4318' # OTLP HTTP
+      - '9411:9411' # Zipkin
+      - '14268:14268' # Jaeger gRPC
+    depends_on:
+      - prometheus
+    networks:
+      - otel-stack
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: grafana
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - otel-stack
+
+networks:
+  otel-stack:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  tempo_data:
+  grafana_data:

@@ -1,0 +1,7 @@
+template:
+  metadata:
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/metrics' # Or your Gate's OTEL_METRICS_SERVER_PATH
+      prometheus.io/port: '9464' # Or your Gate's OTEL_METRICS_SERVER_ADDR port
+# ... rest of your pod spec
