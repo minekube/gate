@@ -97,56 +97,47 @@ func ReadStringWithoutLen(rd io.Reader) (string, error) {
 	return string(b), err
 }
 
-func ReadVarInt(r io.Reader) (int, error) {
+func ReadVarInt(r io.Reader) (result int, err error) {
 	if br, ok := r.(io.ByteReader); ok {
-		var (
-			result  int32
-			numRead int
-		)
-		for {
-			b, err := br.ReadByte()
+		var n uint32
+		for i := 0; ; i++ {
+			sec, err := br.ReadByte()
 			if err != nil {
 				return 0, err
 			}
 
-			result |= int32(b&0x7F) << (7 * numRead)
+			n |= uint32(sec&0x7F) << uint32(7*i)
 
-			numRead++
-			if numRead > 5 {
+			if i >= 5 {
 				return 0, errors.New("decode: VarInt is too big")
-			}
-
-			// MSB clear → last byte
-			if (b & 0x80) == 0 {
+			} else if sec&0x80 == 0 {
 				break
 			}
 		}
-		return int(result), nil
+		return int(n), nil
 	}
 
-	const maxBytes = 5
-	var (
-		result  int32
-		numRead int
-		buf     [1]byte
-	)
+	var bytes byte = 0
+	var b byte
+	var uresult uint32 = 0
 	for {
-		if _, err := io.ReadFull(r, buf[:]); err != nil {
-			return 0, err
+		b, err = ReadUint8(r)
+		if err != nil {
+			return
 		}
-		b := buf[0]
-
-		result |= int32(b&0x7F) << (7 * numRead)
-
-		numRead++
-		if numRead > maxBytes {
-			return 0, errors.New("decode: VarInt is too big")
+		uresult |= uint32(b&0x7F) << uint32(bytes*7)
+		bytes++
+		if bytes > 5 {
+			err = errors.New("decode: VarInt is too big")
+			return
 		}
-		if (b & 0x80) == 0 {
-			break
+		if (b & 0x80) == 0x80 {
+			continue
 		}
+		break
 	}
-	return int(result), nil
+	result = int(int32(uresult))
+	return
 }
 
 // ReadVarIntArray reads a VarInt array from the reader.
