@@ -23,8 +23,5 @@ func (p *Proxy) initMeter() error {
 		metric.WithDescription("The current total player count on the proxy"),
 		metric.WithUnit("1"),
 	)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

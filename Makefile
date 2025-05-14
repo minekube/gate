@@ -22,7 +22,7 @@ lint:
 
 # Serve the docs website locally and auto on changes
 dev-docs:
-	cd .web && yarn install && yarn dev
+	(cd .web && yarn install && yarn dev)
 
 # Install gops & dependencies
 pprof-gops-install:

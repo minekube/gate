@@ -247,7 +247,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	}
 
 	// Initialize OpenTelemetry
-	otelShutdown, err := otelutil.Init()
+	otelShutdown, err := otelutil.Init(ctx)
 	if err != nil {
 		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
 	}

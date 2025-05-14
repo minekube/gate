@@ -10,15 +10,18 @@ Gate uses OpenTelemetry for observability, leveraging the [otel-config-go](https
 
 Gate's OpenTelemetry implementation can be configured using the following environment variables:
 
-| Environment Variable        | Required | Default                | Description               |
-| --------------------------- | -------- | ---------------------- | ------------------------- |
-| OTEL_SERVICE_NAME           | No       | `gate`                 | Name of your service      |
-| OTEL_SERVICE_VERSION        | No       | -                      | Version of your service   |
-| OTEL_EXPORTER_OTLP_ENDPOINT | No       | `localhost:4317`       | Endpoint for OTLP export  |
-| OTEL_LOG_LEVEL              | No       | `info`                 | Logging level             |
-| OTEL_PROPAGATORS            | No       | `tracecontext,baggage` | Configured propagators    |
-| OTEL_METRICS_ENABLED        | No       | `true`                 | Enable metrics collection |
-| OTEL_TRACES_ENABLED         | No       | `true`                 | Enable trace collection   |
+| Environment Variable        | Required | Default                | Description                           |
+| --------------------------- | -------- | ---------------------- | ------------------------------------- |
+| OTEL_SERVICE_NAME           | No       | `gate`                 | Name of your service                  |
+| OTEL_SERVICE_VERSION        | No       | -                      | Version of your service               |
+| OTEL_EXPORTER_OTLP_ENDPOINT | No       | `localhost:4317`       | Endpoint for OTLP export              |
+| OTEL_LOG_LEVEL              | No       | `info`                 | Logging level                         |
+| OTEL_PROPAGATORS            | No       | `tracecontext,baggage` | Configured propagators                |
+| OTEL_METRICS_ENABLED        | No       | `true`                 | Enable metrics collection             |
+| OTEL_TRACES_ENABLED         | No       | `true`                 | Enable trace collection               |
+| OTEL_METRICS_SERVER_ENABLED | No       | `false`                | Enable Prometheus metrics server      |
+| OTEL_METRICS_SERVER_PATH    | No       | `/metrics`             | Path for Prometheus metrics endpoint  |
+| OTEL_METRICS_SERVER_ADDR    | No       | `:9464`                | Address for Prometheus metrics server |
 
 Additional environment variables for exporters:
 
