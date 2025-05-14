@@ -142,7 +142,7 @@ func (d *Decoder) readPayload() (payload []byte, n int, err error) {
 		}
 		if claimedUncompressedSize <= 0 {
 			if actualUncompressedSize := buf.Len(); actualUncompressedSize > d.compressionThreshold {
-				return nil, fmt.Errorf("actual uncompressed size %d is greater than threshold %d",
+				return nil, n, fmt.Errorf("actual uncompressed size %d is greater than threshold %d",
 					actualUncompressedSize, d.compressionThreshold)
 			}
 			// This message is not compressed
