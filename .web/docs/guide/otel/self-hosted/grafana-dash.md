@@ -1,4 +1,3 @@
-
 We provide a sample Grafana dashboard to help you get started with visualizing Gate's metrics.
 
 ::: info <VPBadge>You are expected to make your own dashboard, this is just a starting point.</VPBadge>

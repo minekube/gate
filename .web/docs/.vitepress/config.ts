@@ -51,6 +51,8 @@ export default defineConfig({
     // reactivityTransform: true, // This option is deprecated
   },
 
+  ignoreDeadLinks: 'localhostLinks',
+
   themeConfig: {
     logo: '/minekube-logo.png',
 
