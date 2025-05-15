@@ -1,6 +1,10 @@
 # OpenTelemetry
 
-Gate uses OpenTelemetry for observability, leveraging the [otel-config-go](https://github.com/honeycombio/otel-config-go) library for configuration. This provides a simple way to configure tracing and metrics collection through environment variables.
+OpenTelemetry is an observability framework and toolkit designed to facilitate the generation, export, and collection of telemetry data such as traces, metrics, and logs. It is an open-source and vendor-agnostic project, meaning it can be used with a broad variety of observability backends, including open-source tools like Jaeger and Prometheus, as well as commercial offerings. A major goal of OpenTelemetry is to enable easy instrumentation of applications and systems, regardless of the programming language, infrastructure, and runtime environments used. OpenTelemetry itself is not an observability backend; the storage and visualization of telemetry data are intentionally left to other tools. ([Source](https://opentelemetry.io/docs/what-is-opentelemetry/))
+
+::: info
+Gate utilizes OpenTelemetry for its observability capabilities. For configuration, Gate leverages the [otel-config-go](https://github.com/honeycombio/otel-config-go) library, which offers a straightforward method to set up tracing and metrics collection via [environment variables](#configuration).
+:::
 
 # Start Generation Here
 
@@ -8,20 +12,17 @@ Gate uses OpenTelemetry for observability, leveraging the [otel-config-go](https
 
 ## Configuration
 
-Gate's OpenTelemetry implementation can be configured using the following environment variables:
+Gate's OpenTelemetry implementation can be configured using the following [environment variables](https://github.com/honeycombio/otel-config-go/blob/127951890a85db4effad9fbc961d0f09ddd8a818/otelconfig/otelconfig.go#L304):
 
-| Environment Variable        | Required | Default                | Description                           |
-| --------------------------- | -------- | ---------------------- | ------------------------------------- |
-| OTEL_SERVICE_NAME           | No       | `gate`                 | Name of your service                  |
-| OTEL_SERVICE_VERSION        | No       | -                      | Version of your service               |
-| OTEL_EXPORTER_OTLP_ENDPOINT | No       | `localhost:4317`       | Endpoint for OTLP export              |
-| OTEL_LOG_LEVEL              | No       | `info`                 | Logging level                         |
-| OTEL_PROPAGATORS            | No       | `tracecontext,baggage` | Configured propagators                |
-| OTEL_METRICS_ENABLED        | No       | `true`                 | Enable metrics collection             |
-| OTEL_TRACES_ENABLED         | No       | `true`                 | Enable trace collection               |
-| OTEL_METRICS_SERVER_ENABLED | No       | `false`                | Enable Prometheus metrics server      |
-| OTEL_METRICS_SERVER_PATH    | No       | `/metrics`             | Path for Prometheus metrics endpoint  |
-| OTEL_METRICS_SERVER_ADDR    | No       | `:9464`                | Address for Prometheus metrics server |
+| Environment Variable        | Required | Default                | Description               |
+| --------------------------- | -------- | ---------------------- | ------------------------- |
+| OTEL_SERVICE_NAME           | No       | `gate`                 | Name of your service      |
+| OTEL_SERVICE_VERSION        | No       | -                      | Version of your service   |
+| OTEL_EXPORTER_OTLP_ENDPOINT | No       | `localhost:4317`       | Endpoint for OTLP export  |
+| OTEL_LOG_LEVEL              | No       | `info`                 | Logging level             |
+| OTEL_PROPAGATORS            | No       | `tracecontext,baggage` | Configured propagators    |
+| OTEL_METRICS_ENABLED        | No       | `true`                 | Enable metrics collection |
+| OTEL_TRACES_ENABLED         | No       | `true`                 | Enable trace collection   |
 
 Additional environment variables for exporters:
 
@@ -30,12 +31,12 @@ Additional environment variables for exporters:
 | OTEL_EXPORTER_OTLP_HEADERS          | No       | `{}`             | Global headers for OTLP exporter     |
 | OTEL_EXPORTER_OTLP_TRACES_HEADERS   | No       | `{}`             | Headers specific to trace exporter   |
 | OTEL_EXPORTER_OTLP_METRICS_HEADERS  | No       | `{}`             | Headers specific to metrics exporter |
-| OTEL_EXPORTER_OTLP_PROTOCOL         | No       | `grpc`           | Protocol for OTLP export (grpc/http) |
 | OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  | No       | `localhost:4317` | Endpoint for trace export            |
 | OTEL_EXPORTER_OTLP_TRACES_INSECURE  | No       | `false`          | Allow insecure trace connections     |
 | OTEL_EXPORTER_OTLP_METRICS_ENDPOINT | No       | `localhost:4317` | Endpoint for metrics export          |
 | OTEL_EXPORTER_OTLP_METRICS_INSECURE | No       | `false`          | Allow insecure metrics connections   |
 | OTEL_EXPORTER_OTLP_METRICS_PERIOD   | No       | `30s`            | Metrics reporting interval           |
+| OTEL_EXPORTER_OTLP_PROTOCOL         | No       | `grpc`           | Protocol for OTLP export             |
 | OTEL_RESOURCE_ATTRIBUTES            | No       | -                | Additional resource attributes       |
 
 ## Example Configuration
@@ -53,15 +54,19 @@ OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production"
 
 You can use various solutions to collect and visualize OpenTelemetry data. Here are some popular options:
 
-### Cloud Solutions
+### Detailed Setup Guides
 
-::: info <VPBadge>Our recommendations</VPBadge>
+::: info <VPBadge>We provide detailed guides for these three solutions</VPBadge>
 
 - [Grafana Cloud](/guide/otel/grafana-cloud/) - Fully managed observability platform with support for metrics, logs, and traces
 - [Honeycomb](/guide/otel/honeycomb/) - Observability platform designed for debugging complex systems
+- [Self-hosted](/guide/otel/self-hosted/) - Run your own OpenTelemetry collector and visualize data with Grafana
 
 :::
 
+### Other Cloud Solutions
+
+- [Signoz](https://signoz.io/) - Open source observability platform with support for metrics, logs, and traces
 - [New Relic](https://newrelic.com/) - Full-stack observability platform with APM capabilities
 - [Datadog](https://www.datadog.com/) - Cloud monitoring and analytics platform
 - [Azure Monitor](https://azure.microsoft.com/services/monitor/) - Microsoft's cloud-native monitoring solution
@@ -129,9 +134,6 @@ You can use various solutions to collect and visualize OpenTelemetry data. Here 
    # Secure endpoint configuration
    OTEL_EXPORTER_OTLP_ENDPOINT="https://otel-collector.example.com:4317"
    OTEL_EXPORTER_OTLP_HEADERS="api-key=secret123,tenant=team-a"
-
-   # Ensure TLS is enabled
-   OTEL_EXPORTER_OTLP_INSECURE=false
    ```
 
 ## Further Reading

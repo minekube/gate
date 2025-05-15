@@ -48,7 +48,7 @@ export default defineConfig({
   ],
 
   vue: {
-    reactivityTransform: true,
+    // reactivityTransform: true, // This option is deprecated
   },
 
   themeConfig: {
@@ -189,6 +189,10 @@ export default defineConfig({
                 {
                   text: 'Self-hosted',
                   link: '/guide/otel/self-hosted/',
+                },
+                {
+                  text: 'Dashboards',
+                  link: '/guide/otel/self-hosted/dashboard',
                 },
                 {
                   text: 'FAQ',

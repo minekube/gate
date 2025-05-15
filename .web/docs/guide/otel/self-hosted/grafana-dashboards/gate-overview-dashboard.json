@@ -99,7 +99,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(proxy_player_count{job=\"gate\"}) by (job)",
+          "expr": "sum(otel_gate_player_count_ratio{job=\"otel-collector\", service_name=~\"$service_name_filter\"})",
           "legendFormat": "Total Players",
           "refId": "A"
         }
@@ -117,23 +117,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "Down"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "Up"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -155,15 +139,13 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": ["lastNotNull"],
-          "fields": "/^up$/",
+          "fields": "",
           "values": false
         },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
         "textMode": "auto"
       },
       "pluginVersion": "10.2.2",
@@ -173,12 +155,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "up{job=\"gate\"}",
-          "legendFormat": "{{instance}}",
+          "expr": "sum(otel_gate_registered_servers_ratio{job=\"otel-collector\", service_name=~\"$service_name_filter\"})",
+          "legendFormat": "Registered Servers",
           "refId": "A"
         }
       ],
-      "title": "Gate Instance Status (up)",
+      "title": "Registered Servers",
       "type": "stat"
     },
     {
@@ -264,8 +246,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(go_goroutines{job=\"gate\"}) by (instance)",
-          "legendFormat": "{{instance}}",
+          "expr": "sum(otel_process_runtime_go_goroutines{job=\"otel-collector\", service_name=~\"$service_name_filter\"}) by (service_name, instance, exported_job)",
+          "legendFormat": "{{service_name}} {{exported_job}} {{instance}}",
           "refId": "A"
         }
       ],
@@ -355,8 +337,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(go_memstats_alloc_bytes{job=\"gate\"}) by (instance)",
-          "legendFormat": "{{instance}}",
+          "expr": "sum(otel_process_runtime_go_mem_heap_alloc_bytes{job=\"otel-collector\", service_name=~\"$service_name_filter\"}) by (service_name, instance, exported_job)",
+          "legendFormat": "{{service_name}} {{exported_job}} {{instance}}",
           "refId": "A"
         }
       ],
@@ -394,16 +376,16 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(up{job=\"gate\"}, job)",
+        "definition": "label_values(otel_process_runtime_go_goroutines{job=\"otel-collector\"}, service_name)",
         "hide": 0,
         "includeAll": true,
-        "label": "Job",
+        "label": "Service Name",
         "multi": true,
-        "name": "job",
+        "name": "service_name_filter",
         "options": [],
         "query": {
-          "query": "label_values(up{job=\"gate\"}, job)",
-          "refId": "StandardVariableQuery"
+          "query": "label_values(otel_process_runtime_go_goroutines{job=\"otel-collector\"}, service_name)",
+          "refId": "StandardVariableQuery_ServiceName"
         },
         "refresh": 1,
         "regex": "",

@@ -1,6 +1,36 @@
 version: '3.8'
 
 services:
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  init-tempo:
+    image: &tempoImage grafana/tempo:latest
+    user: root
+    entrypoint:
+      - 'chown'
+      - '-R' # Ensure recursive
+      - '10001:10001'
+      - '/var/tempo'
+    volumes:
+      - tempo_data:/var/tempo
+
+  # OpenTelemetry Collector to receive traces and metrics
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ['--config=/etc/otel-collector-config.yaml']
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - '4317:4317' # OTLP gRPC
+      - '4318:4318' # OTLP HTTP
+      - '8889:8889' # Prometheus metrics exporter
+    networks:
+      - otel-stack
+    depends_on:
+      - tempo
+      - prometheus
+
   prometheus:
     image: prom/prometheus:v3.3.1
     container_name: prometheus
@@ -16,26 +46,32 @@ services:
       - otel-stack
 
   tempo:
-    image: grafana/tempo:2.7.2
+    image: *tempoImage
     container_name: tempo
     command: ['-config.file=/etc/tempo.yaml']
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml:ro
-      - tempo_data:/tmp/tempo
+      - tempo_data:/var/tempo # Use named volume, initialized by init-tempo
     ports:
       - '3200:3200' # Tempo UI
-      - '4317:4317' # OTLP gRPC
-      - '4318:4318' # OTLP HTTP
-      - '9411:9411' # Zipkin
-      - '14268:14268' # Jaeger gRPC
+      - '9095:9095' # Tempo gRPC internal
     depends_on:
-      - prometheus
+      init-tempo: # Depends on the init container
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
     networks:
       - otel-stack
 
   grafana:
     image: grafana/grafana:12.0.0
     container_name: grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor metricsSummary
+      - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
     volumes:
       - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
       - grafana_data:/var/lib/grafana
