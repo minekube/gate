@@ -164,14 +164,12 @@ Create a `docker-compose-jaeger.yml` file (or add to an existing one). You can p
 To send traces from Gate to Jaeger:
 
 ```bash
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317" # Or IP of Docker host if Gate is external
-export OTEL_EXPORTER_OTLP_PROTOCOL="grpc" # or "http/protobuf" for HTTP OTLP
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318" # Or IP of Docker host if Gate is external
+export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
 export OTEL_TRACES_ENABLED="true"
-export OTEL_METRICS_ENABLED="true" # Ensure metrics are enabled to be sent via OTLP
+export OTEL_METRICS_ENABLED="false" # Jaeger does not support metrics
 # The following INSECURE flag is necessary when using an http:// endpoint for traces:
 export OTEL_EXPORTER_OTLP_TRACES_INSECURE="true"
-# If sending OTLP metrics to a Jaeger setup that also ingests them (or to a separate collector via HTTP):
-# export OTEL_EXPORTER_OTLP_METRICS_INSECURE="true"
 # OTEL_SERVICE_NAME is highly recommended, e.g., "gate-proxy-dev"
 export OTEL_SERVICE_NAME="gate-jaeger-example"
 ```
