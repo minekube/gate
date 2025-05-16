@@ -75,4 +75,3 @@ func Request(ctx context.Context, c Client, key key.Key, eventMgr event.Manager)
 func RequestAndForget(c Client, key key.Key) error {
 	return requestAndForget(c, key)
 }
-

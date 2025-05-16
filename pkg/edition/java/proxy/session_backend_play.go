@@ -498,7 +498,6 @@ func (b *backendPlaySessionHandler) handleCookieRequest(p *cookie.CookieRequest)
 	forwardCookieRequest(e, b.serverConn.player)
 }
 
-
 // prefer PacketContext over Packet
 //
 // since we already have the packet's payload we can simply forward it on,

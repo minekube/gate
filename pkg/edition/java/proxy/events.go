@@ -1286,16 +1286,16 @@ func (e *CookieStoreEvent) SetAllowed(allowed bool) { e.denied = !allowed }
 // by a backend server. Gate will wait on this event to finish firing before discarding the
 // cookie request (if handled) or forwarding it to the client.
 type CookieRequestEvent struct {
-	player          Player
-	key             key.Key
+	player      Player
+	key         key.Key
 	originalKey key.Key
 	denied      bool
 }
 
 func newCookieRequestEvent(player Player, key key.Key) *CookieRequestEvent {
 	return &CookieRequestEvent{
-		player:  player,
-		key:     key,
+		player:      player,
+		key:         key,
 		originalKey: key,
 		denied:      false,
 	}
