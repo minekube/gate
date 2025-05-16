@@ -124,6 +124,7 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/bossbar
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/title
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/cookie
+	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/proxy/tablist
 }
 
 type connectedPlayer struct {
