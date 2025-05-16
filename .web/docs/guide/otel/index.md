@@ -74,7 +74,7 @@ You can use various solutions to collect and visualize OpenTelemetry data. Here 
 - [Datadog](https://www.datadog.com/) - Cloud monitoring and analytics platform
 - [Azure Monitor](https://azure.microsoft.com/services/monitor/) - Microsoft's cloud-native monitoring solution
 - [AWS X-Ray](https://aws.amazon.com/xray/) - Distributed tracing system for AWS applications
-- [Google Cloud Operations Suite](https://cloud.google.com/operations) - Formerly Stackdriver, for monitoring, logging, and diagnostics
+- [Google Cloud Observability](https://cloud.google.com/products/observability) - Formerly Stackdriver, for monitoring, logging, and diagnostics
 
 ### Self-Hosted Solutions
 
