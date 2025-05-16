@@ -1,12 +1,14 @@
-# OpenTelemetry
+# OpenTelemetry with Gate Overview
+
+_We explain how to enable Gate's OpenTelemetry support and how to setup the various observability solutions._
+
+---
 
 OpenTelemetry is an observability framework and toolkit designed to facilitate the generation, export, and collection of telemetry data such as traces, metrics, and logs. It is an open-source and vendor-agnostic project, meaning it can be used with a broad variety of observability backends, including open-source tools like Jaeger and Prometheus, as well as commercial offerings. A major goal of OpenTelemetry is to enable easy instrumentation of applications and systems, regardless of the programming language, infrastructure, and runtime environments used. OpenTelemetry itself is not an observability backend; the storage and visualization of telemetry data are intentionally left to other tools. ([Source](https://opentelemetry.io/docs/what-is-opentelemetry/))
 
 ::: info
 Gate utilizes OpenTelemetry for its observability capabilities. For configuration, Gate leverages the [otel-config-go](https://github.com/honeycombio/otel-config-go) library, which offers a straightforward method to set up tracing and metrics collection via [environment variables](#configuration).
 :::
-
-# Start Generation Here
 
 ![OpenTelemetry Architecture](https://mermaid.ink/svg/pako:eNp9kl1vgjAUhv9Kc65cgoYvGXCxRNF4o9FNsouJFx1UbEZbUiCZGv_7CrhJ1KxX7XPe856e9pwgFgkBH1KJ8z2av0UcqVVUny2IYJTnGY1xSQWPoI3Wa7SZ4ZJsW0B4EvG7zJBkhJFSHlAgsozEtxbjzTIn_E4l5L-uC8Gp0lCeojGOv5So6JoGmwhmEu8wx2hBGZWot1DuNC6eIthedZOOLiQsF6gXShyTjuxx_XdaVDijx7sXmXYcl-v1I5sR6vfRMpyv0LXrfv8FjdvwuA5fbtvwoMPb2zV40uKgxisp2Ou8wdMWT27UU9CAEckwTdQ_n2pRBOVelY_AV9uMpvuybuSshLgqxfrAY_BLWRENpKjSPfg7nBXqVOWJ-vQJxeox2B_NMf8Qgv2mpLIudElXzRMZiIqX4FtOowX_BN_ge87AdoaGZViOZ1qO_azBAXzbGHiOaerPumXZpqsbw7MGx8ZdH7i6Z1i27jiGbruupwFJ6lFYtBPcDPL5B1Gd2L4)
 
@@ -60,7 +62,8 @@ You can use various solutions to collect and visualize OpenTelemetry data. Here 
 
 - [Grafana Cloud](/guide/otel/grafana-cloud/) - Fully managed observability platform with support for metrics, logs, and traces
 - [Honeycomb](/guide/otel/honeycomb/) - Observability platform designed for debugging complex systems
-- [Self-hosted](/guide/otel/self-hosted/) - Run your own OpenTelemetry collector and visualize data with Grafana
+- [Self-hosted Grafana Stack](/guide/otel/self-hosted/grafana-stack/) - Run your own OpenTelemetry collector and visualize data with Grafana
+- [Self-hosted Jaeger](/guide/otel/self-hosted/jaeger/) - Run your own Jaeger for tracing
 
 :::
 

@@ -176,31 +176,43 @@ export default defineConfig({
               text: 'Rate Limiting',
               link: '/guide/rate-limiting',
             },
+          ],
+        },
+        {
+          text: 'OpenTelemetry',
+          items: [
             {
-              text: 'OpenTelemetry',
+              text: 'Overview',
               link: '/guide/otel/',
+            },
+            {
+              text: 'Grafana',
               items: [
                 {
                   text: 'Grafana Cloud',
                   link: '/guide/otel/grafana-cloud/',
                 },
                 {
-                  text: 'Honeycomb',
-                  link: '/guide/otel/honeycomb/',
-                },
-                {
-                  text: 'Self-hosted',
+                  text: 'Self-hosted Grafana Stack',
                   link: '/guide/otel/self-hosted/',
                 },
                 {
-                  text: 'Dashboards',
+                  text: 'Grafana Dashboards',
                   link: '/guide/otel/self-hosted/dashboard',
                 },
-                {
-                  text: 'FAQ',
-                  link: '/guide/otel/faq/',
-                },
               ],
+            },
+            {
+              text: 'Honeycomb',
+              link: '/guide/otel/honeycomb/',
+            },
+            {
+              text: 'Self-hosted Jaeger',
+              link: '/guide/otel/self-hosted/jaeger',
+            },
+            {
+              text: 'FAQ',
+              link: '/guide/otel/faq/',
             },
           ],
         },
