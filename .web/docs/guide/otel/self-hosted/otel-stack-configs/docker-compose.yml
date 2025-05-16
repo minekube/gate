@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  init-tempo:
+    image: &tempoImage grafana/tempo:latest
+    user: root
+    entrypoint:
+      - 'chown'
+      - '-R' # Ensure recursive
+      - '10001:10001'
+      - '/var/tempo'
+    volumes:
+      - tempo_data:/var/tempo
+
+  # OpenTelemetry Collector to receive traces and metrics
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    # Default command uses the 'push' configuration (collector pushes to Prometheus remote_write)
+    command: ['--config=/etc/otel-collector-config-push.yaml']
+    # To use 'pull' configuration (Prometheus scrapes collector):
+    # command: ['--config=/etc/otel-collector-config-pull.yaml']
+    volumes:
+      # Mount both configurations, default command points to the 'push' version.
+      - ./otel-collector-config-pull.yaml:/etc/otel-collector-config-pull.yaml
+      - ./otel-collector-config-push.yaml:/etc/otel-collector-config-push.yaml
+      # Ensure the mounted config in 'command' matches one of the above.
+    ports:
+      - '4317:4317' # OTLP gRPC
+      - '4318:4318' # OTLP HTTP
+      - '8889:8889' # Prometheus metrics exporter
+    networks:
+      - otel-stack
+    depends_on:
+      - tempo
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:v3.3.1
+    container_name: prometheus
+    command:
+      # Default uses 'push' config (collector pushes to Prometheus remote_write)
+      - '--config.file=/etc/prometheus/prometheus-config-push.yml'
+      - '--web.enable-lifecycle' # Allows hot-reloading of the config
+      - '--web.enable-remote-write-receiver' # Required for 'push' model
+      # For 'pull' config (Prometheus scrapes collector):
+      # - '--config.file=/etc/prometheus/prometheus-config-pull.yml'
+      # (and remove '--web.enable-remote-write-receiver' if not needed otherwise)
+    volumes:
+      # Mount both configurations, default command points to the 'push' version.
+      - ./prometheus-config-pull.yml:/etc/prometheus/prometheus-config-pull.yml:ro
+      - ./prometheus-config-push.yml:/etc/prometheus/prometheus-config-push.yml:ro
+      # Ensure the mounted config in 'command' (--config.file=) matches one of the above.
+      - prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    networks:
+      - otel-stack
+
+  tempo:
+    image: *tempoImage
+    container_name: tempo
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo # Use named volume, initialized by init-tempo
+    ports:
+      - '3200:3200' # Tempo UI
+      - '9095:9095' # Tempo gRPC internal
+    depends_on:
+      init-tempo: # Depends on the init container
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
+    networks:
+      - otel-stack
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor metricsSummary
+      - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - otel-stack
+
+networks:
+  otel-stack:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  tempo_data:
+  grafana_data:

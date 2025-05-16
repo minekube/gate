@@ -48,8 +48,10 @@ export default defineConfig({
   ],
 
   vue: {
-    reactivityTransform: true,
+    // reactivityTransform: true, // This option is deprecated
   },
+
+  ignoreDeadLinks: 'localhostLinks',
 
   themeConfig: {
     logo: '/minekube-logo.png',
@@ -173,6 +175,44 @@ export default defineConfig({
             {
               text: 'Rate Limiting',
               link: '/guide/rate-limiting',
+            },
+          ],
+        },
+        {
+          text: 'OpenTelemetry',
+          items: [
+            {
+              text: 'Overview',
+              link: '/guide/otel/',
+            },
+            {
+              text: 'Grafana',
+              items: [
+                {
+                  text: 'Grafana Cloud',
+                  link: '/guide/otel/grafana-cloud/',
+                },
+                {
+                  text: 'Self-hosted Grafana Stack',
+                  link: '/guide/otel/self-hosted/grafana-stack.md',
+                },
+                {
+                  text: 'Grafana Dashboards',
+                  link: '/guide/otel/self-hosted/dashboard',
+                },
+              ],
+            },
+            {
+              text: 'Honeycomb',
+              link: '/guide/otel/honeycomb/',
+            },
+            {
+              text: 'Self-hosted Jaeger',
+              link: '/guide/otel/self-hosted/jaeger',
+            },
+            {
+              text: 'FAQ',
+              link: '/guide/otel/faq/',
             },
           ],
         },

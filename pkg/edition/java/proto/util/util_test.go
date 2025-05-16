@@ -164,3 +164,85 @@ func BenchmarkReadVarInt(b *testing.B) {
 		}
 	}
 }
+
+func TestReadVarIntReturnN(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       []byte
+		expectedVal int
+		expectedN   int
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:        "single byte varint",
+			input:       []byte{0x01},
+			expectedVal: 1,
+			expectedN:   1,
+			expectError: false,
+		},
+		{
+			name:        "multi-byte varint (150)",
+			input:       []byte{0x96, 0x01},
+			expectedVal: 150,
+			expectedN:   2,
+			expectError: false,
+		},
+		{
+			name:        "max varint value (2147483647)",
+			input:       []byte{0xff, 0xff, 0xff, 0xff, 0x07},
+			expectedVal: 2147483647,
+			expectedN:   5,
+			expectError: false,
+		},
+		{
+			name:        "varint too large",
+			input:       []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x01}, // 6 bytes, too large
+			expectedVal: 0,
+			expectedN:   5, // Should read up to 5 bytes before determining it's too large
+			expectError: true,
+			errorMsg:    "decode: VarInt is too big",
+		},
+		{
+			name:        "incomplete varint - EOF after 1 byte of 2-byte varint",
+			input:       []byte{0x96}, // Represents 150, but is incomplete
+			expectedVal: 0,
+			expectedN:   1, // Read 1 byte before EOF
+			expectError: true,
+			errorMsg:    "EOF",
+		},
+		{
+			name:        "incomplete varint - EOF after 2 bytes of 5-byte varint",
+			input:       []byte{0xff, 0xff}, // Incomplete
+			expectedVal: 0,
+			expectedN:   2, // Read 2 bytes before EOF
+			expectError: true,
+			errorMsg:    "EOF",
+		},
+		{
+			name:        "zero value",
+			input:       []byte{0x00},
+			expectedVal: 0,
+			expectedN:   1,
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := bytes.NewBuffer(tt.input)
+			val, n, err := ReadVarIntReturnN(buf)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorMsg != "" {
+					require.Contains(t, err.Error(), tt.errorMsg)
+				}
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedVal, val)
+			}
+			require.Equal(t, tt.expectedN, n)
+		})
+	}
+}

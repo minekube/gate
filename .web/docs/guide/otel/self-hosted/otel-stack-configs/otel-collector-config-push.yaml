@@ -1,0 +1,37 @@
+receivers:
+  otlp: # Receives OTLP data (traces and metrics) from Gate
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    send_batch_size: 10000
+    timeout: 10s
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+    spike_limit_mib: 200
+
+exporters:
+  otlp: # For traces to Tempo
+    endpoint: tempo:4317 # Tempo's OTLP gRPC endpoint
+    tls:
+      insecure: true
+  prometheusremotewrite:
+    endpoint: 'http://prometheus:9090/api/v1/write' # Prometheus remote_write endpoint
+    tls:
+      insecure: true # Assuming HTTP for local setup
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheusremotewrite]

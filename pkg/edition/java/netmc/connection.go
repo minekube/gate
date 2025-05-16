@@ -6,15 +6,22 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
-	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	"go.minekube.com/gate/pkg/edition/java/proto/util/queue"
+
 	"github.com/go-logr/logr"
-	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.uber.org/atomic"
+
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -196,12 +203,25 @@ type minecraftConn struct {
 	}
 }
 
+var tracer = otel.Tracer("netmc")
+
 // StartReadLoop is the main goroutine of this connection and
 // reads packets to pass them further to the current SessionHandler.
 // Close will be called on method return.
 func (c *minecraftConn) startReadLoop() {
+	ctx, span := tracer.Start(c.ctx, "startReadLoop", trace.WithAttributes(
+		attribute.String("net.peer.ip", c.RemoteAddr().String()),
+		attribute.String("net.transport", c.c.RemoteAddr().Network()),
+	))
+	defer span.End()
+
+	bytesRead := int64(0)
+	defer func() { span.SetAttributes(attribute.Int64("net.bytes_read", bytesRead)) }()
+
 	// Make sure to close connection on return, if not already closed
 	defer func() { _ = c.closeKnown(false) }()
+
+	debug := c.log.V(1)
 
 	next := func() bool {
 		// Wait until auto reading is enabled, if not already
@@ -217,6 +237,7 @@ func (c *minecraftConn) startReadLoop() {
 			}
 			return false
 		}
+		bytesRead += int64(packetCtx.BytesRead)
 
 		// TODO wrap packetCtx into struct with source info
 		// (minecraftConn) and chain into packet interceptor to...
@@ -224,8 +245,21 @@ func (c *minecraftConn) startReadLoop() {
 		//  - statistics / count bytes
 		//  - in turn call session handler
 
+		sessionHandler := c.ActiveSessionHandler()
+
+		if debug.Enabled() && packetCtx.KnownPacket() {
+			_, span := tracer.Start(ctx, "HandlePacket", trace.WithAttributes(
+				attribute.String("packet.type", fmt.Sprintf("%T", packetCtx.Packet)),
+				attribute.String("packet.dump", fmt.Sprintf("%+v", spew.Sdump(packetCtx.Packet))),
+				attribute.Stringer("packet.direction", c.direction),
+				attribute.Stringer("conn.state", c.state),
+				attribute.String("conn.sessionHandler", fmt.Sprintf("%T", sessionHandler)),
+			))
+			defer span.End()
+		}
+
 		// Handle packet by connection's session handler.
-		c.ActiveSessionHandler().HandlePacket(packetCtx)
+		sessionHandler.HandlePacket(packetCtx)
 		return true
 	}
 

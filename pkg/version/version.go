@@ -5,8 +5,10 @@ import (
 	"strings"
 )
 
-// TODO injected at build time
-var version string
+// Version information set by build flags
+// Version is the current version of Gate.
+// Set using -ldflags "-X go.minekube.com/gate/pkg/version.Version=v1.2.3"
+var version string = "unknown"
 
 func String() string {
 	return version
