@@ -1219,3 +1219,103 @@ func (c *CookieReceiveEvent) Allowed() bool { return !c.denied }
 
 // SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
 func (c *CookieReceiveEvent) SetAllowed(allowed bool) { c.denied = !allowed }
+
+//
+//
+//
+//
+
+// CookieStoreEvent is fired when a cookie should be stored on a player's client. This process can be
+// initiated either by a proxy plugin or by a backend server. Gate will wait on this event
+// to finish firing before discarding the cookie (if handled) or forwarding it to the client so
+// that it can store the cookie.
+type CookieStoreEvent struct {
+	player          Player
+	key             key.Key
+	payload         []byte
+	originalKey     key.Key
+	originalPayload []byte
+	denied          bool
+}
+
+func newCookieStoreEvent(player Player, key key.Key, payload []byte) *CookieStoreEvent {
+	return &CookieStoreEvent{
+		player:          player,
+		key:             key,
+		payload:         payload,
+		originalKey:     key,
+		originalPayload: payload,
+		denied:          false,
+	}
+}
+
+// Player returns the player from whom the cookie has been received.
+func (e *CookieStoreEvent) Player() Player { return e.player }
+
+// Key returns the provider of the responded cookie.
+// For example: minecraft:cookie
+func (e *CookieStoreEvent) Key() key.Key { return e.key }
+
+// SetKey sets the provider of the responded cookie.
+func (e *CookieStoreEvent) SetKey(key key.Key) { e.key = key }
+
+// Payload returns the payload of the responded cookie.
+func (e *CookieStoreEvent) Payload() []byte { return e.payload }
+
+// SetPayload sets the payload of the responded cookie.
+func (e *CookieStoreEvent) SetPayload(payload []byte) { e.payload = payload }
+
+// OriginalKey returns the original key of the cookie request.
+func (e *CookieStoreEvent) OriginalKey() key.Key { return e.originalKey }
+
+// OriginalPayload returns the original payload of the cookie request.
+func (e *CookieStoreEvent) OriginalPayload() []byte { return e.originalPayload }
+
+// Allowed returns whether the cookie request is allowed to be forwarded to the client.
+func (e *CookieStoreEvent) Allowed() bool { return !e.denied }
+
+// SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
+func (e *CookieStoreEvent) SetAllowed(allowed bool) { e.denied = !allowed }
+
+//
+//
+//
+//
+
+// CookieRequestEvent is fired when a cookie from a client is requested either by a proxy plugin or
+// by a backend server. Gate will wait on this event to finish firing before discarding the
+// cookie request (if handled) or forwarding it to the client.
+type CookieRequestEvent struct {
+	player          Player
+	key             key.Key
+	originalKey key.Key
+	denied      bool
+}
+
+func newCookieRequestEvent(player Player, key key.Key) *CookieRequestEvent {
+	return &CookieRequestEvent{
+		player:  player,
+		key:     key,
+		originalKey: key,
+		denied:      false,
+	}
+}
+
+// Player returns the player from whom the cookie has been requested.
+func (e *CookieRequestEvent) Player() Player { return e.player }
+
+// Key returns the provider of the requested cookie.
+// For example: minecraft:cookie
+func (e *CookieRequestEvent) Key() key.Key { return e.key }
+
+// SetKey sets the provider of the requested cookie.
+func (e *CookieRequestEvent) SetKey(key key.Key) { e.key = key }
+
+// OriginalKey returns the original key of the cookie request.
+func (e *CookieRequestEvent) OriginalKey() key.Key { return e.originalKey }
+
+// Allowed returns whether the cookie request is allowed to be forwarded to the client.
+func (e *CookieRequestEvent) Allowed() bool { return !e.denied }
+
+// SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
+func (e *CookieRequestEvent) SetAllowed(allowed bool) { e.denied = !allowed }

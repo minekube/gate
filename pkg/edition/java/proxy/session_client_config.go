@@ -185,10 +185,10 @@ func (h *clientConfigSessionHandler) handleCookieResponse(p *cookie.CookieRespon
 	if !ok {
 		return
 	}
-	forwardCookieResponse(e, smc)
+	forwardCookieReceive(e, smc)
 }
 
-func forwardCookieResponse(e *CookieReceiveEvent, smc netmc.MinecraftConn) {
+func forwardCookieReceive(e *CookieReceiveEvent, conn netmc.MinecraftConn) {
 	key := e.Key()
 	if key == nil {
 		key = e.OriginalKey()
@@ -197,7 +197,7 @@ func forwardCookieResponse(e *CookieReceiveEvent, smc netmc.MinecraftConn) {
 	if payload == nil {
 		payload = e.OriginalPayload()
 	}
-	_ = smc.WritePacket(&cookie.CookieResponse{
+	_ = conn.WritePacket(&cookie.CookieResponse{
 		Key:     key,
 		Payload: payload,
 	})

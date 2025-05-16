@@ -3,16 +3,18 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"reflect"
-	"time"
 
 	"github.com/robinbraemer/event"
 	"go.minekube.com/brigodier"
@@ -98,6 +100,10 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.forwardToPlayer(pc, nil)
 	case *packet.Transfer:
 		b.handleTransfer(p)
+	case *cookie.CookieStore:
+		b.handleCookieStore(p)
+	case *cookie.CookieRequest:
+		b.handleCookieRequest(p)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -473,6 +479,25 @@ func filterNode(src brigodier.CommandNode, cmdSrc command.Source) brigodier.Comm
 
 	return dest
 }
+
+func (b *backendPlaySessionHandler) handleCookieStore(p *cookie.CookieStore) {
+	e := newCookieStoreEvent(b.serverConn.player, p.Key, p.Payload)
+	b.proxy().event.Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	forwardCookieStore(e, b.serverConn.player)
+}
+
+func (b *backendPlaySessionHandler) handleCookieRequest(p *cookie.CookieRequest) {
+	e := newCookieRequestEvent(b.serverConn.player, p.Key)
+	b.proxy().event.Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	forwardCookieRequest(e, b.serverConn.player)
+}
+
 
 // prefer PacketContext over Packet
 //

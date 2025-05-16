@@ -898,7 +898,7 @@ func (c *clientPlaySessionHandler) handleCookieResponse(p *cpacket.CookieRespons
 	if !ok {
 		return
 	}
-	forwardCookieResponse(e, smc)
+	forwardCookieReceive(e, smc)
 }
 
 // doSwitch handles switching stages for swapping between servers.

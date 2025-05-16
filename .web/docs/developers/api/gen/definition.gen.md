@@ -17,7 +17,11 @@
     - [Player](#minekube-gate-v1-Player)
     - [RegisterServerRequest](#minekube-gate-v1-RegisterServerRequest)
     - [RegisterServerResponse](#minekube-gate-v1-RegisterServerResponse)
+    - [RequestCookieRequest](#minekube-gate-v1-RequestCookieRequest)
+    - [RequestCookieResponse](#minekube-gate-v1-RequestCookieResponse)
     - [Server](#minekube-gate-v1-Server)
+    - [StoreCookieRequest](#minekube-gate-v1-StoreCookieRequest)
+    - [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse)
     - [UnregisterServerRequest](#minekube-gate-v1-UnregisterServerRequest)
     - [UnregisterServerResponse](#minekube-gate-v1-UnregisterServerResponse)
   
@@ -222,6 +226,37 @@ RegisterServerResponse is the response for RegisterServer method.
 
 
 
+<a name="minekube-gate-v1-RequestCookieRequest"></a>
+
+### RequestCookieRequest
+RequestCookieRequest is the request for RequestCookie method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| player | [string](#string) |  | The player&#39;s username or ID |
+| key | [string](#string) |  | The key of the cookie in format `namespace:key` |
+
+
+
+
+
+
+<a name="minekube-gate-v1-RequestCookieResponse"></a>
+
+### RequestCookieResponse
+RequestCookieResponse is the response for RequestCookie method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| payload | [bytes](#bytes) |  | The payload of the cookie. May be empty if the cookie is not found. |
+
+
+
+
+
+
 <a name="minekube-gate-v1-Server"></a>
 
 ### Server
@@ -233,6 +268,33 @@ Server represents a backend server where Gate can connect players to.
 | name | [string](#string) |  | The unique name of the server. |
 | address | [string](#string) |  | The network address of the server. |
 | players | [int32](#int32) |  | The number of players currently on the server. |
+
+
+
+
+
+
+<a name="minekube-gate-v1-StoreCookieRequest"></a>
+
+### StoreCookieRequest
+StoreCookieRequest is the request for StoreCookie method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| player | [string](#string) |  | The player&#39;s username or ID |
+| key | [string](#string) |  | The key of the cookie in format `namespace:key` |
+| payload | [bytes](#bytes) |  | The payload to store. Passing an empty payload will remove the cookie. |
+
+
+
+
+
+
+<a name="minekube-gate-v1-StoreCookieResponse"></a>
+
+### StoreCookieResponse
+StoreCookieResponse is the response for StoreCookie method.
 
 
 
@@ -287,6 +349,8 @@ All methods follow standard gRPC error codes and include detailed error messages
 | UnregisterServer | [UnregisterServerRequest](#minekube-gate-v1-UnregisterServerRequest) | [UnregisterServerResponse](#minekube-gate-v1-UnregisterServerResponse) | UnregisterServer removes a server from the proxy. Returns NOT_FOUND if no matching server is found. Returns INVALID_ARGUMENT if neither name nor address is provided. |
 | ConnectPlayer | [ConnectPlayerRequest](#minekube-gate-v1-ConnectPlayerRequest) | [ConnectPlayerResponse](#minekube-gate-v1-ConnectPlayerResponse) | ConnectPlayer connects a player to a specified server. Returns NOT_FOUND if either the player or target server doesn&#39;t exist. Returns FAILED_PRECONDITION if the connection attempt fails. |
 | DisconnectPlayer | [DisconnectPlayerRequest](#minekube-gate-v1-DisconnectPlayerRequest) | [DisconnectPlayerResponse](#minekube-gate-v1-DisconnectPlayerResponse) | DisconnectPlayer disconnects a player from the proxy. Returns NOT_FOUND if the player doesn&#39;t exist. Returns INVALID_ARGUMENT if the reason text is malformed. |
+| StoreCookie | [StoreCookieRequest](#minekube-gate-v1-StoreCookieRequest) | [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse) | StoreCookie stores a cookie on a player&#39;s client. Returns NOT_FOUND if the player doesn&#39;t exist. Passing an empty payload will remove the cookie. |
+| RequestCookie | [RequestCookieRequest](#minekube-gate-v1-RequestCookieRequest) | [RequestCookieResponse](#minekube-gate-v1-RequestCookieResponse) | RequestCookie requests a cookie from a player&#39;s client. The payload in RequestCookieResponse may be empty if the cookie is not found. |
 
  
 

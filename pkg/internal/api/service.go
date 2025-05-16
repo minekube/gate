@@ -7,7 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/common/minecraft/key"
 
+	"go.minekube.com/gate/pkg/edition/java/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
@@ -185,4 +187,57 @@ func (s *Service) GetPlayer(ctx context.Context, c *connect.Request[pb.GetPlayer
 	return connect.NewResponse(&pb.GetPlayerResponse{
 		Player: PlayerToProto(player),
 	}), nil
+}
+
+func (s *Service) RequestCookie(ctx context.Context, c *connect.Request[pb.RequestCookieRequest]) (*connect.Response[pb.RequestCookieResponse], error) {
+	var player proxy.Player
+	if id, err := uuid.Parse(c.Msg.Player); err == nil {
+		player = s.p.Player(id)
+	} else {
+		player = s.p.PlayerByName(c.Msg.Player)
+	}
+	if player == nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
+	}
+
+	key, err := key.Parse(c.Msg.Key)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid key: %v", err))
+	}
+
+	cookie, err := cookie.Request(ctx, player, key, s.p.Event())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+
+	return connect.NewResponse(&pb.RequestCookieResponse{
+		Payload: cookie.Payload,
+	}), nil
+}
+
+func (s *Service) StoreCookie(ctx context.Context, c *connect.Request[pb.StoreCookieRequest]) (*connect.Response[pb.StoreCookieResponse], error) {
+	var player proxy.Player
+	if id, err := uuid.Parse(c.Msg.Player); err == nil {
+		player = s.p.Player(id)
+	} else {
+		player = s.p.PlayerByName(c.Msg.Player)
+	}
+	if player == nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("player not found"))
+	}
+
+	key, err := key.Parse(c.Msg.Key)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid key: %v", err))
+	}
+
+	err = cookie.Store(player, &cookie.Cookie{
+		Key:     key,
+		Payload: c.Msg.Payload,
+	})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+
+	return connect.NewResponse(&pb.StoreCookieResponse{}), nil
 }

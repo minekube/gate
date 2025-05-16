@@ -97,6 +97,12 @@ func request(ctx context.Context, cli Client, key key.Key, eventMgr event.Manage
 	unsub := event.Subscribe(eventMgr, 0, func(e *proxy.CookieReceiveEvent) {
 		if e.Key().String() == key.String() {
 			once.Do(func() {
+				// don't forward this cookie to the server,
+				// since we request the cookie proxy side and the backend
+				// is not expecting to receive it and would kick the player
+				// with reason: {multiplayer.disconnect.unexpected_query_response}
+				e.SetAllowed(false)
+
 				responseChan <- &Cookie{
 					Key:     e.Key(),
 					Payload: e.Payload(),

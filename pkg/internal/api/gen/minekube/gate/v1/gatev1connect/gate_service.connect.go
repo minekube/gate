@@ -51,18 +51,11 @@ const (
 	// GateServiceDisconnectPlayerProcedure is the fully-qualified name of the GateService's
 	// DisconnectPlayer RPC.
 	GateServiceDisconnectPlayerProcedure = "/minekube.gate.v1.GateService/DisconnectPlayer"
-)
-
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	gateServiceServiceDescriptor                = v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService")
-	gateServiceGetPlayerMethodDescriptor        = gateServiceServiceDescriptor.Methods().ByName("GetPlayer")
-	gateServiceListPlayersMethodDescriptor      = gateServiceServiceDescriptor.Methods().ByName("ListPlayers")
-	gateServiceListServersMethodDescriptor      = gateServiceServiceDescriptor.Methods().ByName("ListServers")
-	gateServiceRegisterServerMethodDescriptor   = gateServiceServiceDescriptor.Methods().ByName("RegisterServer")
-	gateServiceUnregisterServerMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("UnregisterServer")
-	gateServiceConnectPlayerMethodDescriptor    = gateServiceServiceDescriptor.Methods().ByName("ConnectPlayer")
-	gateServiceDisconnectPlayerMethodDescriptor = gateServiceServiceDescriptor.Methods().ByName("DisconnectPlayer")
+	// GateServiceStoreCookieProcedure is the fully-qualified name of the GateService's StoreCookie RPC.
+	GateServiceStoreCookieProcedure = "/minekube.gate.v1.GateService/StoreCookie"
+	// GateServiceRequestCookieProcedure is the fully-qualified name of the GateService's RequestCookie
+	// RPC.
+	GateServiceRequestCookieProcedure = "/minekube.gate.v1.GateService/RequestCookie"
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -92,6 +85,13 @@ type GateServiceClient interface {
 	// Returns NOT_FOUND if the player doesn't exist.
 	// Returns INVALID_ARGUMENT if the reason text is malformed.
 	DisconnectPlayer(context.Context, *connect.Request[v1.DisconnectPlayerRequest]) (*connect.Response[v1.DisconnectPlayerResponse], error)
+	// StoreCookie stores a cookie on a player's client.
+	// Returns NOT_FOUND if the player doesn't exist.
+	// Passing an empty payload will remove the cookie.
+	StoreCookie(context.Context, *connect.Request[v1.StoreCookieRequest]) (*connect.Response[v1.StoreCookieResponse], error)
+	// RequestCookie requests a cookie from a player's client.
+	// The payload in RequestCookieResponse may be empty if the cookie is not found.
+	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -103,47 +103,60 @@ type GateServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) GateServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	gateServiceMethods := v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService").Methods()
 	return &gateServiceClient{
 		getPlayer: connect.NewClient[v1.GetPlayerRequest, v1.GetPlayerResponse](
 			httpClient,
 			baseURL+GateServiceGetPlayerProcedure,
-			connect.WithSchema(gateServiceGetPlayerMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("GetPlayer")),
 			connect.WithClientOptions(opts...),
 		),
 		listPlayers: connect.NewClient[v1.ListPlayersRequest, v1.ListPlayersResponse](
 			httpClient,
 			baseURL+GateServiceListPlayersProcedure,
-			connect.WithSchema(gateServiceListPlayersMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("ListPlayers")),
 			connect.WithClientOptions(opts...),
 		),
 		listServers: connect.NewClient[v1.ListServersRequest, v1.ListServersResponse](
 			httpClient,
 			baseURL+GateServiceListServersProcedure,
-			connect.WithSchema(gateServiceListServersMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("ListServers")),
 			connect.WithClientOptions(opts...),
 		),
 		registerServer: connect.NewClient[v1.RegisterServerRequest, v1.RegisterServerResponse](
 			httpClient,
 			baseURL+GateServiceRegisterServerProcedure,
-			connect.WithSchema(gateServiceRegisterServerMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("RegisterServer")),
 			connect.WithClientOptions(opts...),
 		),
 		unregisterServer: connect.NewClient[v1.UnregisterServerRequest, v1.UnregisterServerResponse](
 			httpClient,
 			baseURL+GateServiceUnregisterServerProcedure,
-			connect.WithSchema(gateServiceUnregisterServerMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("UnregisterServer")),
 			connect.WithClientOptions(opts...),
 		),
 		connectPlayer: connect.NewClient[v1.ConnectPlayerRequest, v1.ConnectPlayerResponse](
 			httpClient,
 			baseURL+GateServiceConnectPlayerProcedure,
-			connect.WithSchema(gateServiceConnectPlayerMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("ConnectPlayer")),
 			connect.WithClientOptions(opts...),
 		),
 		disconnectPlayer: connect.NewClient[v1.DisconnectPlayerRequest, v1.DisconnectPlayerResponse](
 			httpClient,
 			baseURL+GateServiceDisconnectPlayerProcedure,
-			connect.WithSchema(gateServiceDisconnectPlayerMethodDescriptor),
+			connect.WithSchema(gateServiceMethods.ByName("DisconnectPlayer")),
+			connect.WithClientOptions(opts...),
+		),
+		storeCookie: connect.NewClient[v1.StoreCookieRequest, v1.StoreCookieResponse](
+			httpClient,
+			baseURL+GateServiceStoreCookieProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("StoreCookie")),
+			connect.WithClientOptions(opts...),
+		),
+		requestCookie: connect.NewClient[v1.RequestCookieRequest, v1.RequestCookieResponse](
+			httpClient,
+			baseURL+GateServiceRequestCookieProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -158,6 +171,8 @@ type gateServiceClient struct {
 	unregisterServer *connect.Client[v1.UnregisterServerRequest, v1.UnregisterServerResponse]
 	connectPlayer    *connect.Client[v1.ConnectPlayerRequest, v1.ConnectPlayerResponse]
 	disconnectPlayer *connect.Client[v1.DisconnectPlayerRequest, v1.DisconnectPlayerResponse]
+	storeCookie      *connect.Client[v1.StoreCookieRequest, v1.StoreCookieResponse]
+	requestCookie    *connect.Client[v1.RequestCookieRequest, v1.RequestCookieResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -195,6 +210,16 @@ func (c *gateServiceClient) DisconnectPlayer(ctx context.Context, req *connect.R
 	return c.disconnectPlayer.CallUnary(ctx, req)
 }
 
+// StoreCookie calls minekube.gate.v1.GateService.StoreCookie.
+func (c *gateServiceClient) StoreCookie(ctx context.Context, req *connect.Request[v1.StoreCookieRequest]) (*connect.Response[v1.StoreCookieResponse], error) {
+	return c.storeCookie.CallUnary(ctx, req)
+}
+
+// RequestCookie calls minekube.gate.v1.GateService.RequestCookie.
+func (c *gateServiceClient) RequestCookie(ctx context.Context, req *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error) {
+	return c.requestCookie.CallUnary(ctx, req)
+}
+
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
@@ -222,6 +247,13 @@ type GateServiceHandler interface {
 	// Returns NOT_FOUND if the player doesn't exist.
 	// Returns INVALID_ARGUMENT if the reason text is malformed.
 	DisconnectPlayer(context.Context, *connect.Request[v1.DisconnectPlayerRequest]) (*connect.Response[v1.DisconnectPlayerResponse], error)
+	// StoreCookie stores a cookie on a player's client.
+	// Returns NOT_FOUND if the player doesn't exist.
+	// Passing an empty payload will remove the cookie.
+	StoreCookie(context.Context, *connect.Request[v1.StoreCookieRequest]) (*connect.Response[v1.StoreCookieResponse], error)
+	// RequestCookie requests a cookie from a player's client.
+	// The payload in RequestCookieResponse may be empty if the cookie is not found.
+	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -230,46 +262,59 @@ type GateServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	gateServiceMethods := v1.File_minekube_gate_v1_gate_service_proto.Services().ByName("GateService").Methods()
 	gateServiceGetPlayerHandler := connect.NewUnaryHandler(
 		GateServiceGetPlayerProcedure,
 		svc.GetPlayer,
-		connect.WithSchema(gateServiceGetPlayerMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("GetPlayer")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceListPlayersHandler := connect.NewUnaryHandler(
 		GateServiceListPlayersProcedure,
 		svc.ListPlayers,
-		connect.WithSchema(gateServiceListPlayersMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("ListPlayers")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceListServersHandler := connect.NewUnaryHandler(
 		GateServiceListServersProcedure,
 		svc.ListServers,
-		connect.WithSchema(gateServiceListServersMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("ListServers")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceRegisterServerHandler := connect.NewUnaryHandler(
 		GateServiceRegisterServerProcedure,
 		svc.RegisterServer,
-		connect.WithSchema(gateServiceRegisterServerMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("RegisterServer")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceUnregisterServerHandler := connect.NewUnaryHandler(
 		GateServiceUnregisterServerProcedure,
 		svc.UnregisterServer,
-		connect.WithSchema(gateServiceUnregisterServerMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("UnregisterServer")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceConnectPlayerHandler := connect.NewUnaryHandler(
 		GateServiceConnectPlayerProcedure,
 		svc.ConnectPlayer,
-		connect.WithSchema(gateServiceConnectPlayerMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("ConnectPlayer")),
 		connect.WithHandlerOptions(opts...),
 	)
 	gateServiceDisconnectPlayerHandler := connect.NewUnaryHandler(
 		GateServiceDisconnectPlayerProcedure,
 		svc.DisconnectPlayer,
-		connect.WithSchema(gateServiceDisconnectPlayerMethodDescriptor),
+		connect.WithSchema(gateServiceMethods.ByName("DisconnectPlayer")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceStoreCookieHandler := connect.NewUnaryHandler(
+		GateServiceStoreCookieProcedure,
+		svc.StoreCookie,
+		connect.WithSchema(gateServiceMethods.ByName("StoreCookie")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceRequestCookieHandler := connect.NewUnaryHandler(
+		GateServiceRequestCookieProcedure,
+		svc.RequestCookie,
+		connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -288,6 +333,10 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 			gateServiceConnectPlayerHandler.ServeHTTP(w, r)
 		case GateServiceDisconnectPlayerProcedure:
 			gateServiceDisconnectPlayerHandler.ServeHTTP(w, r)
+		case GateServiceStoreCookieProcedure:
+			gateServiceStoreCookieHandler.ServeHTTP(w, r)
+		case GateServiceRequestCookieProcedure:
+			gateServiceRequestCookieHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -323,4 +372,12 @@ func (UnimplementedGateServiceHandler) ConnectPlayer(context.Context, *connect.R
 
 func (UnimplementedGateServiceHandler) DisconnectPlayer(context.Context, *connect.Request[v1.DisconnectPlayerRequest]) (*connect.Response[v1.DisconnectPlayerResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.DisconnectPlayer is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) StoreCookie(context.Context, *connect.Request[v1.StoreCookieRequest]) (*connect.Response[v1.StoreCookieResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.StoreCookie is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.RequestCookie is not implemented"))
 }

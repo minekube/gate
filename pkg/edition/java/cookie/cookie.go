@@ -41,10 +41,20 @@ type Client interface {
 }
 
 // Store stores a cookie on the player's client.
+//
 // If the player's protocol is below 1.20.5, ErrUnsupportedClientProtocol is returned.
 // If the player's state is not states.ConfigState or states.PlayState, ErrUnsupportedState is returned.
 func Store(c Client, cookie *Cookie) error {
 	return store(c, cookie)
+}
+
+// Clear clears a stored cookie from the player's client.
+// This is a helper function that stores a cookie with an empty payload.
+//
+// If the player's protocol is below 1.20.5, ErrUnsupportedClientProtocol is returned.
+// If the player's state is not states.ConfigState or states.PlayState, ErrUnsupportedState is returned.
+func Clear(c Client, key key.Key) error {
+	return store(c, &Cookie{Key: key, Payload: nil})
 }
 
 // Request requests a stored cookie from the player's client by a given key.
@@ -65,3 +75,4 @@ func Request(ctx context.Context, c Client, key key.Key, eventMgr event.Manager)
 func RequestAndForget(c Client, key key.Key) error {
 	return requestAndForget(c, key)
 }
+

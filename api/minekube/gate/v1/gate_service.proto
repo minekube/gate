@@ -37,7 +37,46 @@ service GateService {
   // Returns NOT_FOUND if the player doesn't exist.
   // Returns INVALID_ARGUMENT if the reason text is malformed.
   rpc DisconnectPlayer(DisconnectPlayerRequest) returns (DisconnectPlayerResponse);
+
+  // StoreCookie stores a cookie on a player's client.
+  // Returns NOT_FOUND if the player doesn't exist.
+  // Passing an empty payload will remove the cookie.
+  rpc StoreCookie(StoreCookieRequest) returns (StoreCookieResponse);
+
+  // RequestCookie requests a cookie from a player's client.
+  // The payload in RequestCookieResponse may be empty if the cookie is not found.
+  rpc RequestCookie(RequestCookieRequest) returns (RequestCookieResponse);
 }
+
+// StoreCookieRequest is the request for StoreCookie method.
+message StoreCookieRequest {
+  // The player's username or ID
+  string player = 1;
+  // The key of the cookie in format `namespace:key`
+  string key = 2;
+  // The payload to store.
+  // Passing an empty payload will remove the cookie.
+  bytes payload = 3;
+}
+
+// StoreCookieResponse is the response for StoreCookie method.
+message StoreCookieResponse {}
+
+// RequestCookieRequest is the request for RequestCookie method.
+message RequestCookieRequest {
+  // The player's username or ID
+  string player = 1;
+  // The key of the cookie in format `namespace:key`
+  string key = 2;
+}
+
+// RequestCookieResponse is the response for RequestCookie method.
+message RequestCookieResponse {
+  // The payload of the cookie.
+  // May be empty if the cookie is not found.
+  bytes payload = 1;
+}
+
 
 // DisconnectPlayerRequest is the request for DisconnectPlayer method.
 message DisconnectPlayerRequest {
