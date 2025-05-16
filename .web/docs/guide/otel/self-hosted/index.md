@@ -29,7 +29,7 @@ This setup uses Grafana Tempo for traces, Prometheus for metrics, and Grafana fo
 
 ### 1. Configuration Files
 
-You'll need the following configuration files. The `docker-compose.yml` below assumes `prometheus.yml`, `tempo.yaml`, and `grafana-datasources.yml` are in the same directory (e.g., `otel-stack-configs/`) when you run `docker compose -f otel-stack-configs/docker-compose.yml up -d` from the directory containing `otel-stack-configs`.
+You'll need the following configuration files. The `docker-compose.yml` below assumes these configuration files are in the same directory when you run `docker compose up -d` from within the `otel-stack-configs` directory (after navigating into it as shown in the Quick Start). The default setup uses a "push" model where the OpenTelemetry Collector sends metrics to Prometheus.
 
 ::: code-group
 
@@ -37,8 +37,12 @@ You'll need the following configuration files. The `docker-compose.yml` below as
 <!--@include: ./otel-stack-configs/docker-compose.yml -->
 ```
 
-```yaml [prometheus.yml]
-<!--@include: ./otel-stack-configs/prometheus.yml -->
+```yaml [otel-collector-config-push.yaml]
+<!--@include: ./otel-stack-configs/otel-collector-config-push.yaml -->
+```
+
+```yaml [prometheus-config-push.yml]
+<!--@include: ./otel-stack-configs/prometheus-config-push.yml -->
 ```
 
 ```yaml [tempo.yaml]
@@ -47,6 +51,48 @@ You'll need the following configuration files. The `docker-compose.yml` below as
 
 ```yaml [grafana-datasources.yml]
 <!--@include: ./otel-stack-configs/grafana-datasources.yml -->
+```
+
+:::
+
+The OpenTelemetry Collector first receives telemetry data (traces and metrics) from Gate via OTLP. Its configuration for handling and forwarding this data, particularly metrics to Prometheus, is detailed below. The default "push" vs. alternative "pull" options refer to how metrics are sent from the Collector to Prometheus.
+Refer to the comments within the main `docker-compose.yml` (included above) for instructions on how to set up the `otel-collector` and `prometheus` services for each approach.
+
+::: code-group
+
+```yaml [1. Push to Prometheus (otel-collector-config-push.yaml)]
+# Collector receives from Gate (via OTLP receiver, see config) and then pushes metrics to Prometheus's remote_write endpoint.
+# (This is the default setup shown in the main docker-compose.yml)
+# otel-collector service in docker-compose.yml should use:
+# command: ['--config=/etc/otel-collector-config-push.yaml']
+# Prometheus service in docker-compose.yml should mount:
+# - ./otel-stack-configs/prometheus-config-push.yml:/etc/prometheus/prometheus.yml
+# And Prometheus service command in docker-compose.yml should include:
+# - '--web.enable-remote-write-receiver'
+<!--@include: ./otel-stack-configs/otel-collector-config-push.yaml -->
+```
+
+```yaml [prometheus-config-push.yml]
+# Corresponding Prometheus config (enables remote_write receiver)
+# Ensure Prometheus service in docker-compose.yml has the flag:
+# command:
+#   - '--config.file=/etc/prometheus/prometheus-config-push.yml'
+#   - '--web.enable-lifecycle'
+#   - '--web.enable-remote-write-receiver' # <--- This flag is active by default
+<!--@include: ./otel-stack-configs/prometheus-config-push.yml -->
+```
+
+```yaml [2. Pull by Prometheus (otel-collector-config-pull.yaml)]
+# ALTERNATIVE: Collector receives from Gate (via OTLP receiver, see config) and exposes metrics on :8889. Prometheus then scrapes (pulls) from the collector.
+# To use this, modify docker-compose.yml:
+# otel-collector service command: ['--config=/etc/otel-collector-config-pull.yaml']
+# Prometheus service command: use '--config.file=/etc/prometheus/prometheus-config-pull.yml' (and consider removing --web.enable-remote-write-receiver if not needed for other purposes)
+<!--@include: ./otel-stack-configs/otel-collector-config-pull.yaml -->
+```
+
+```yaml [prometheus-config-pull.yml]
+# Corresponding Prometheus config for pull (scrapes otel-collector:8889)
+<!--@include: ./otel-stack-configs/prometheus-config-pull.yml -->
 ```
 
 :::
@@ -76,15 +122,21 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4318"
 
 ### 3. Running the Stack
 
-1.  Save all the configuration files (`docker-compose.yml`, `prometheus.yml`, `tempo.yaml`, `grafana-datasources.yml`, and `otel-collector-config.yaml`) in the same directory.
-2.  Open a terminal in that directory and run:
+1.  Save all the configuration files (`docker-compose.yml`, `prometheus-config-push.yml`, `tempo.yaml`, `grafana-datasources.yml`, and `otel-collector-config-push.yaml`) in the `otel-stack-configs` directory (if you haven't already from the Quick Start steps).
+2.  Open a terminal, navigate into the `otel-stack-configs` directory, and run:
     ```bash
-    docker compose -f otel-stack-configs/docker-compose.yml up -d
+    docker compose up -d
     ```
 3.  **Access Services:**
-    - Grafana: http://localhost:3000 (admin/admin, then change password)
-    - Prometheus: http://localhost:9090
-    - Tempo: http://localhost:3200 (for Tempo's own UI, though Grafana is primary)
+    Once the stack is running, you can access the UIs for the different services:
+
+    | Service    | URL                   | Default Credentials             |
+    | ---------- | --------------------- | ------------------------------- |
+    | Grafana    | http://localhost:3000 | `admin` / `admin`               |
+    | Prometheus | http://localhost:9090 | N/A                             |
+    | Tempo      | http://localhost:3200 | N/A (UI via Grafana is primary) |
+
+    For Grafana, you will be prompted to change the password after the first login.
 
 ### 4. Understanding the Stack Architecture
 
@@ -149,7 +201,7 @@ Gate can send traces directly to Jaeger using the OTLP exporter.
 
 ### 1. Docker Compose Configuration
 
-Create a `docker-compose-jaeger.yml` file (or add to an existing one). You can place the following content into a file, for example, at `otel-jaeger-config/docker-compose.yml` relative to this document, and run `docker compose -f otel-jaeger-config/docker-compose.yml up -d`:
+Create a `docker-compose.yml` file (e.g., within the `jaeger-config` directory mentioned in the Quick Start). You can place the following content into this file and, after navigating into that directory, run `docker compose up -d`:
 
 ::: code-group
 
@@ -170,7 +222,7 @@ export OTEL_TRACES_ENABLED="true"
 export OTEL_METRICS_ENABLED="false" # Jaeger does not support metrics
 # The following INSECURE flag is necessary when using an http:// endpoint for traces:
 export OTEL_EXPORTER_OTLP_TRACES_INSECURE="true"
-# OTEL_SERVICE_NAME is highly recommended, e.g., "gate-proxy-dev"
+# OTEL_SERVICE_NAME is highly recommended, e.g., "gate-dev"
 export OTEL_SERVICE_NAME="gate-jaeger-example"
 ```
 
@@ -187,10 +239,10 @@ Note: For this Jaeger setup, metrics collection with Prometheus is not included.
 
 ### 3. Running Jaeger
 
-1.  Save the `docker-compose-jaeger.yml` file.
-2.  Open a terminal in that directory and run:
+1.  Save the `docker-compose.yml` file (e.g. as `docker-compose.yml` inside your `jaeger-config` directory).
+2.  Open a terminal in that directory (e.g., `jaeger-config`) and run:
     ```bash
-    docker compose -f docker-compose-jaeger.yml up -d
+    docker compose up -d
     ```
 3.  **Access Jaeger UI:**
     - Open your browser and navigate to http://localhost:16686

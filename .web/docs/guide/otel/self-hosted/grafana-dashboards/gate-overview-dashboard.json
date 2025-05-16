@@ -99,7 +99,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(otel_gate_player_count_ratio{job=\"otel-collector\", service_name=~\"$service_name_filter\"})",
+          "expr": "sum(gate_player_count_ratio{job=~\"$service_name_filter\"})",
           "legendFormat": "Total Players",
           "refId": "A"
         }
@@ -155,7 +155,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(otel_gate_registered_servers_ratio{job=\"otel-collector\", service_name=~\"$service_name_filter\"})",
+          "expr": "sum(gate_registered_servers_ratio{job=~\"$service_name_filter\"})",
           "legendFormat": "Registered Servers",
           "refId": "A"
         }
@@ -246,8 +246,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(otel_process_runtime_go_goroutines{job=\"otel-collector\", service_name=~\"$service_name_filter\"}) by (service_name, instance, exported_job)",
-          "legendFormat": "{{service_name}} {{exported_job}} {{instance}}",
+          "expr": "sum(process_runtime_go_goroutines{job=~\"$service_name_filter\"}) by (job, instance)",
+          "legendFormat": "{{job}} {{instance}}",
           "refId": "A"
         }
       ],
@@ -337,8 +337,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(otel_process_runtime_go_mem_heap_alloc_bytes{job=\"otel-collector\", service_name=~\"$service_name_filter\"}) by (service_name, instance, exported_job)",
-          "legendFormat": "{{service_name}} {{exported_job}} {{instance}}",
+          "expr": "sum(process_runtime_go_mem_heap_alloc_bytes{job=~\"$service_name_filter\"}) by (job, instance)",
+          "legendFormat": "{{job}} {{instance}}",
           "refId": "A"
         }
       ],
@@ -376,15 +376,15 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(otel_process_runtime_go_goroutines{job=\"otel-collector\"}, service_name)",
+        "definition": "label_values(process_runtime_go_goroutines, job)",
         "hide": 0,
         "includeAll": true,
-        "label": "Service Name",
+        "label": "Job (Service Name)",
         "multi": true,
         "name": "service_name_filter",
         "options": [],
         "query": {
-          "query": "label_values(otel_process_runtime_go_goroutines{job=\"otel-collector\"}, service_name)",
+          "query": "label_values(process_runtime_go_goroutines, job)",
           "refId": "StandardVariableQuery_ServiceName"
         },
         "refresh": 1,

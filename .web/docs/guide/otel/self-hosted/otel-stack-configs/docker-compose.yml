@@ -18,9 +18,15 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
-    command: ['--config=/etc/otel-collector-config.yaml']
+    # Default command uses the 'push' configuration (collector pushes to Prometheus remote_write)
+    command: ['--config=/etc/otel-collector-config-push.yaml']
+    # To use 'pull' configuration (Prometheus scrapes collector):
+    # command: ['--config=/etc/otel-collector-config-pull.yaml']
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      # Mount both configurations, default command points to the 'push' version.
+      - ./otel-collector-config-pull.yaml:/etc/otel-collector-config-pull.yaml
+      - ./otel-collector-config-push.yaml:/etc/otel-collector-config-push.yaml
+      # Ensure the mounted config in 'command' matches one of the above.
     ports:
       - '4317:4317' # OTLP gRPC
       - '4318:4318' # OTLP HTTP
@@ -35,10 +41,18 @@ services:
     image: prom/prometheus:v3.3.1
     container_name: prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      # Default uses 'push' config (collector pushes to Prometheus remote_write)
+      - '--config.file=/etc/prometheus/prometheus-config-push.yml'
       - '--web.enable-lifecycle' # Allows hot-reloading of the config
+      - '--web.enable-remote-write-receiver' # Required for 'push' model
+      # For 'pull' config (Prometheus scrapes collector):
+      # - '--config.file=/etc/prometheus/prometheus-config-pull.yml'
+      # (and remove '--web.enable-remote-write-receiver' if not needed otherwise)
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Mount both configurations, default command points to the 'push' version.
+      - ./prometheus-config-pull.yml:/etc/prometheus/prometheus-config-pull.yml:ro
+      - ./prometheus-config-push.yml:/etc/prometheus/prometheus-config-push.yml:ro
+      # Ensure the mounted config in 'command' (--config.file=) matches one of the above.
       - prometheus_data:/prometheus
     ports:
       - '9090:9090'

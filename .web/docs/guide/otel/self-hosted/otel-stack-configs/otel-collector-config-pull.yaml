@@ -1,5 +1,5 @@
 receivers:
-  otlp:
+  otlp: # Receives OTLP data (traces and metrics) from Gate
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
@@ -18,12 +18,11 @@ processors:
 
 exporters:
   otlp:
-    endpoint: tempo:9095
+    endpoint: tempo:4317
     tls:
       insecure: true
   prometheus:
     endpoint: 0.0.0.0:8889
-    namespace: otel
     send_timestamps: true
     metric_expiration: 180m
     resource_to_telemetry_conversion:

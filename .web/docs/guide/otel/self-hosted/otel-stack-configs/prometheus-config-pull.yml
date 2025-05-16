@@ -9,7 +9,7 @@ scrape_configs:
   - job_name: 'otel-collector'
     scrape_interval: 10s
     static_configs:
-      - targets: ['otel-collector:8889']
+      - targets: ['otel-collector:8889'] # This is scraped by Prometheus
     metric_relabel_configs:
       # Convert duration_seconds to latency for Tempo compatibility
       - source_labels: [__name__]

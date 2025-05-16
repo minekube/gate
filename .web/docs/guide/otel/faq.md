@@ -40,3 +40,17 @@ For these reasons, even if direct sending is possible, using the OTel Collector 
 
 - **Grafana Mimir**: Serves as a highly scalable, long-term storage solution for Prometheus metrics. It addresses potential scaling limitations of a single Prometheus instance for large data volumes and long retention periods. It remains compatible with PromQL for querying.
 - **Grafana Tempo**: Is a highly scalable, easy-to-operate distributed tracing backend. It's optimized for ingesting and retrieving traces by ID and integrates well with Grafana for visualization and correlation with metrics and logs.
+
+## Why does my OpenTelemetry `service.name` appear as the `job` label in Prometheus?
+
+When you send telemetry from an application (like Gate) instrumented with OpenTelemetry to an OpenTelemetry Collector, and then the Collector forwards this data to Prometheus (typically using the `prometheusremotewrite` exporter), a common and intentional translation occurs:
+
+1.  **OTLP Transmits Resource Attributes**: Your application sends `service.name` (along with other details like `service.version`, `host.name`, etc.) as "resource attributes" within the OTLP (OpenTelemetry Protocol) data. These attributes describe the entity generating the telemetry.
+
+2.  **Collector's Role (`prometheusremotewrite` Exporter)**: The OpenTelemetry Collector receives this OTLP data. When configured to send metrics to Prometheus, its `prometheusremotewrite` exporter takes on the task of converting the OpenTelemetry data model into the format Prometheus understands.
+
+3.  **Default Convention: `service.name` to `job`**: By default, and in line with common Prometheus conventions, this exporter maps the OpenTelemetry `service.name` resource attribute to the `job` label in Prometheus. Similarly, `service.instance.id` is often mapped to the `instance` label.
+
+**In essence, if you see `job="your-service-name"` in Prometheus, this _is_ your OpenTelemetry `service.name` attribute.** It has been translated to the standard Prometheus `job` label, which is the conventional way to identify a service or application in Prometheus.
+
+You generally do **not** need to add special processing in the Collector (e.g., using an `attributes` processor) to achieve this mapping; it's a standard behavior of the `prometheusremotewrite` exporter. This design choice simplifies integration and aligns with how Prometheus users typically organize and query their metrics.
