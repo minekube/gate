@@ -174,3 +174,11 @@ func PReadBytesVal(rd io.Reader) []byte {
 	}
 	return v
 }
+
+func PReadBoolVal(rd io.Reader) bool {
+	v, err := ReadBool(rd)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}

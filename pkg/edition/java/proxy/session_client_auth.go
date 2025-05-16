@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"sync/atomic"
+
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
@@ -8,12 +10,12 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
-	"sync/atomic"
 )
 
 type authSessionHandler struct {
@@ -229,9 +231,11 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 func (a *authSessionHandler) Deactivated() {}
 
 func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
-	switch pc.Packet.(type) {
+	switch t := pc.Packet.(type) {
 	case *packet.LoginAcknowledged:
 		a.handleLoginAcknowledged()
+	case *cookie.CookieResponse:
+		a.handleCookieResponse(t)
 	default:
 		a.log.Info("unexpected packet during auth session",
 			"packet", pc.Packet,
@@ -265,4 +269,16 @@ func (a *authSessionHandler) handleLoginAcknowledged() bool {
 		})
 	}
 	return true
+}
+
+func (a *authSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
+	e := newCookieReceiveEvent(a.connectedPlayer, p.Key, p.Payload)
+	a.eventMgr.Fire(e)
+	if e.Allowed() {
+		// The received cookie must have been requested by a proxy plugin in login phase,
+		// because if a backend server requests a cookie in login phase, the client is already
+		// in config phase. Therefore, the only way, we receive a CookieResponsePacket from a
+		// client in login phase is when a proxy plugin requested a cookie in login phase.
+		a.log.Info("a cookie was requested by a proxy plugin in login phase but the response wasn't handled")
+	}
 }

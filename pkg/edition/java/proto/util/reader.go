@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go.minekube.com/common/minecraft/key"
-
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/util/uuid"
 )

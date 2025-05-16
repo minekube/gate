@@ -2,11 +2,12 @@
 package title
 
 import (
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"time"
 
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
+	"go.minekube.com/gate/pkg/edition/java/internal/methods"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/title"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -150,6 +151,6 @@ func ShowTitle(viewer Viewer, opts *Options) error {
 var empty = &component.Text{}
 
 func isProtocolSupported(viewer Viewer) (proto.Protocol, bool) {
-	protocol, _ := protoutil.Protocol(viewer)
+	protocol, _ := methods.Protocol(viewer)
 	return protocol, protocol.GreaterEqual(version.Minecraft_1_8)
 }

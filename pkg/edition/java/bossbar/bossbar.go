@@ -2,6 +2,8 @@
 package bossbar
 
 import (
+	"context"
+
 	"go.minekube.com/common/minecraft/component"
 	packet "go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -79,6 +81,7 @@ func RemoveAllViewers(b BossBar) {
 // Viewer is the interface for a boss bar viewer (e.g. a player).
 type Viewer interface {
 	ID() uuid.UUID
+	Context() context.Context
 	proto.PacketWriter
 }
 

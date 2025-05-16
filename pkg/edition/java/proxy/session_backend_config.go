@@ -10,6 +10,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -90,6 +91,10 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.requestCtx.result(result, nil)
 	case *packet.Transfer:
 		b.handleTransfer(p)
+	case *cookie.CookieStore:
+		b.handleCookieStore(p)
+	case *cookie.CookieRequest:
+		b.handleCookieRequest(p)
 	default:
 		b.forwardToPlayer(pc, nil)
 	}
@@ -239,6 +244,49 @@ func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContex
 func (b *backendConfigSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
 	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
 	_ = b.serverConn.player.WritePacket(p)
+}
+
+func (b *backendConfigSessionHandler) handleCookieRequest(p *cookie.CookieRequest) {
+	e := newCookieRequestEvent(b.serverConn.player, p.Key)
+	b.proxy().event.Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	forwardCookieRequest(e, b.serverConn.player)
+}
+
+func forwardCookieRequest(e *CookieRequestEvent, conn netmc.MinecraftConn) {
+	key := e.Key()
+	if key == nil {
+		key = e.OriginalKey()
+	}
+	_ = conn.WritePacket(&cookie.CookieRequest{
+		Key: key,
+	})
+}
+
+func (b *backendConfigSessionHandler) handleCookieStore(p *cookie.CookieStore) {
+	e := newCookieStoreEvent(b.serverConn.player, p.Key, p.Payload)
+	b.proxy().event.Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	forwardCookieStore(e, b.serverConn.player)
+}
+
+func forwardCookieStore(e *CookieStoreEvent, conn netmc.MinecraftConn) {
+	key := e.Key()
+	if key == nil {
+		key = e.OriginalKey()
+	}
+	payload := e.Payload()
+	if payload == nil {
+		payload = e.OriginalPayload()
+	}
+	_ = conn.WritePacket(&cookie.CookieStore{
+		Key:     key,
+		Payload: payload,
+	})
 }
 
 // forwardToPlayer forwards packets to the player. It prefers PacketContext over Packet.

@@ -5,8 +5,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -69,6 +71,8 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		}
 	case *config.KnownPacks:
 		h.handleKnownPacks(p, pc)
+	case *cookie.CookieResponse:
+		h.handleCookieResponse(p)
 	default:
 		forwardToServer(pc, h.player)
 	}
@@ -169,4 +173,32 @@ func (h *clientConfigSessionHandler) handleKnownPacks(p *config.KnownPacks, pc *
 
 func (h *clientConfigSessionHandler) event() event.Manager {
 	return h.player.proxy.Event()
+}
+
+func (h *clientConfigSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
+	e := newCookieReceiveEvent(h.player, p.Key, p.Payload)
+	h.event().Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	smc, ok := h.player.connectionInFlightOrConnectedServer().ensureConnected()
+	if !ok {
+		return
+	}
+	forwardCookieReceive(e, smc)
+}
+
+func forwardCookieReceive(e *CookieReceiveEvent, conn netmc.MinecraftConn) {
+	key := e.Key()
+	if key == nil {
+		key = e.OriginalKey()
+	}
+	payload := e.Payload()
+	if payload == nil {
+		payload = e.OriginalPayload()
+	}
+	_ = conn.WritePacket(&cookie.CookieResponse{
+		Key:     key,
+		Payload: payload,
+	})
 }

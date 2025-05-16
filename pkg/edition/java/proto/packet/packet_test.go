@@ -10,14 +10,16 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"go.minekube.com/common/minecraft/key"
-	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"io"
 	"reflect"
 	"testing"
 	"time"
+
+	"go.minekube.com/common/minecraft/key"
+	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
@@ -270,6 +272,9 @@ var packets = []proto.Packet{
 	&config.TagsUpdate{},
 	&RemoveResourcePack{},
 	&LoginAcknowledged{},
+	&cookie.CookieRequest{Key: key.New("minecraft", "test")},
+	&cookie.CookieResponse{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
+	&cookie.CookieStore{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {

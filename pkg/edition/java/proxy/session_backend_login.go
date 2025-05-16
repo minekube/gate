@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"errors"
+	"reflect"
+
 	"go.minekube.com/gate/pkg/edition/java/internal/velocity"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
-	"reflect"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -90,6 +92,8 @@ func (b *backendLoginSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handleSetCompression(p)
 	case *packet.ServerLoginSuccess:
 		b.handleServerLoginSuccess()
+	case *cookie.CookieStore:
+		b.log.Info("can only store cookie in CONFIGURATION or PLAY protocol")
 	default:
 		b.log.V(1).Info("Received unexpected packet from backend server while logging in",
 			"packetType", reflect.TypeOf(p))
