@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
@@ -175,5 +176,29 @@ func (h *clientConfigSessionHandler) event() event.Manager {
 }
 
 func (h *clientConfigSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
-	handleCookieResponse(p, h.player, h.event())
+	e := newCookieReceiveEvent(h.player, p.Key, p.Payload)
+	h.event().Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	smc, ok := h.player.connectionInFlightOrConnectedServer().ensureConnected()
+	if !ok {
+		return
+	}
+	forwardCookieResponse(e, smc)
+}
+
+func forwardCookieResponse(e *CookieReceiveEvent, smc netmc.MinecraftConn) {
+	key := e.Key()
+	if key == nil {
+		key = e.OriginalKey()
+	}
+	payload := e.Payload()
+	if payload == nil {
+		payload = e.OriginalPayload()
+	}
+	_ = smc.WritePacket(&cookie.CookieResponse{
+		Key:     key,
+		Payload: payload,
+	})
 }

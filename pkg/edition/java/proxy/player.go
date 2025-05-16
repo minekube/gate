@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -97,7 +98,6 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	// The host should be in the format of "host:port" or just "host" in which case the port defaults to 25565.
 	// If the player is from a version lower than 1.20.5, this method will return ErrTransferUnsupportedClientProtocol.
 	TransferToHost(addr string) error
-	// Looking for title or bossbar methods? See the title and bossbar packages.
 
 	// AppliedResourcePack returns the resource pack that was applied to the player.
 	// Returns nil if no resource pack was applied.
@@ -110,8 +110,19 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	// Deprecated: Use PendingResourcePacks instead.
 	PendingResourcePack() *ResourcePackInfo
 
-	// Get the state of the player. Example: Login, Play etc.
-	State() *state.Registry
+	// Context retrieves the player's context.
+	// This context is invalidated when the player's connection is closed.
+	//
+	// It is beneficial for managing timeouts, cancellations, and other
+	// operations that depend on the player, allowing them to run in the
+	// background only while the player connection remains active.
+	Context() context.Context
+
+	// Looking for more methods?
+	//
+	// Use the dedicated packages:
+	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/bossbar
+	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/title
 }
 
 type connectedPlayer struct {

@@ -275,7 +275,8 @@ func init() {
 		m(0x0E, version.Minecraft_1_21_2),
 	)
 	Play.ServerBound.Register(&cookie.CookieResponse{},
-		m(0x13, version.Minecraft_1_20_5),
+		m(0x11, version.Minecraft_1_20_5),
+		m(0x13, version.Minecraft_1_21_2),
 	)
 
 	Play.ClientBound.Register(&p.KeepAlive{},
@@ -615,7 +616,8 @@ func init() {
 		m(0x15, version.Minecraft_1_21_5),
 	)
 	Play.ClientBound.Register(&cookie.CookieStore{},
-		m(0x72, version.Minecraft_1_20_5),
+		m(0x6B, version.Minecraft_1_20_5),
+		m(0x72, version.Minecraft_1_21_2),
 		m(0x71, version.Minecraft_1_21_5),
 	)
 }

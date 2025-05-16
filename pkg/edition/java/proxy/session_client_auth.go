@@ -272,5 +272,13 @@ func (a *authSessionHandler) handleLoginAcknowledged() bool {
 }
 
 func (a *authSessionHandler) handleCookieResponse(p *cookie.CookieResponse) {
-	handleCookieResponse(p, a.connectedPlayer, a.eventMgr)
+	e := newCookieReceiveEvent(a.connectedPlayer, p.Key, p.Payload)
+	a.eventMgr.Fire(e)
+	if e.Allowed() {
+		// The received cookie must have been requested by a proxy plugin in login phase,
+		// because if a backend server requests a cookie in login phase, the client is already
+		// in config phase. Therefore, the only way, we receive a CookieResponsePacket from a
+		// client in login phase is when a proxy plugin requested a cookie in login phase.
+		a.log.Info("a cookie was requested by a proxy plugin in login phase but the response wasn't handled")
+	}
 }

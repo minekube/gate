@@ -2,10 +2,11 @@ package protoutil
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/require"
-	"go.minekube.com/connect"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"go.minekube.com/connect"
 )
 
 func TestProxyHeader(t *testing.T) {

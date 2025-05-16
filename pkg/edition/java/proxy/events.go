@@ -1165,27 +1165,57 @@ func (r *ReadyEvent) Addr() string { return r.addr }
 // such as plugin dependencies.
 type ShutdownEvent struct{}
 
-// CookieResponseEvent is fired when a player sends the cookie requested from the server.
-type CookieResponseEvent struct {
-	player  Player
-	key     key.Key
-	payload []byte
+//
+//
+//
+//
+
+// CookieReceiveEvent is fired when a cookie from a client is requested either by a proxy plugin or
+// by a backend server. Gate will wait on this event to finish firing before discarding the
+// cookie request (if handled) or forwarding it to the client.
+type CookieReceiveEvent struct {
+	player          Player
+	key             key.Key
+	originalKey     key.Key
+	payload         []byte
+	originalPayload []byte
+	denied          bool
 }
 
-func newCookieResponseEvent(player Player, key key.Key, payload []byte) *CookieResponseEvent {
-	return &CookieResponseEvent{
-		player:  player,
-		key:     key,
-		payload: payload,
+func newCookieReceiveEvent(player Player, key key.Key, payload []byte) *CookieReceiveEvent {
+	return &CookieReceiveEvent{
+		player:          player,
+		key:             key,
+		payload:         payload,
+		originalKey:     key,
+		originalPayload: payload,
+		denied:          false,
 	}
 }
 
 // Player returns the player from whom the cookie has been received.
-func (c *CookieResponseEvent) Player() Player { return c.player }
+func (c *CookieReceiveEvent) Player() Player { return c.player }
 
 // Key returns the provider of the responded cookie.
 // For example: minecraft:cookie
-func (c *CookieResponseEvent) Key() key.Key { return c.key }
+func (c *CookieReceiveEvent) Key() key.Key { return c.key }
+
+func (c *CookieReceiveEvent) SetKey(key key.Key) { c.key = key }
+
+// OriginalKey returns the original key of the cookie request.
+func (c *CookieReceiveEvent) OriginalKey() key.Key { return c.originalKey }
 
 // Payload returns the payload of the responded cookie.
-func (c *CookieResponseEvent) Payload() []byte { return c.payload }
+func (c *CookieReceiveEvent) Payload() []byte { return c.payload }
+
+// SetPayload sets the payload of the responded cookie.
+func (c *CookieReceiveEvent) SetPayload(payload []byte) { c.payload = payload }
+
+// OriginalPayload returns the original payload of the cookie request.
+func (c *CookieReceiveEvent) OriginalPayload() []byte { return c.originalPayload }
+
+// Allowed returns whether the cookie request is allowed to be forwarded to the client.
+func (c *CookieReceiveEvent) Allowed() bool { return !c.denied }
+
+// SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
+func (c *CookieReceiveEvent) SetAllowed(allowed bool) { c.denied = !allowed }

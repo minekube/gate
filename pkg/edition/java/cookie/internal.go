@@ -1,142 +1,142 @@
 package cookie
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/key"
-	cpacket "go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/internal/methods"
+	pkt "go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 )
 
-type cookie struct {
-	mu      sync.RWMutex
-	key     key.Key
-	payload []byte
+func validate(c *Cookie, cli Client) error {
+	if err := validateCookie(c); err != nil {
+		return err
+	}
+	return isProtocolSupported(cli, true)
 }
 
-func (c *cookie) Store(p proxy.Player) error {
-	if strings.TrimSpace(c.key.String()) == "" {
-		return errors.New("empty key")
+func validateKey(key key.Key) error {
+	if key == nil {
+		return errors.New("key is nil")
 	}
-
-	if len(c.payload) > 5*1024 {
-		return errors.New("payload size exceeds 5 kiB")
-	}
-
-	if p.Protocol().Lower(version.Minecraft_1_20_5) {
-		return fmt.Errorf("%w: but player is on %s", proxy.ErrTransferUnsupportedClientProtocol, p.Protocol())
-	}
-
-	if p.State() != state.Play && p.State() != state.Config {
-		return errors.New("CookieStore packet can only be send in the Play and Configuration State")
-	}
-
-	return p.WritePacket(&cpacket.CookieStore{
-		Key:     c.key,
-		Payload: c.payload,
-	})
-}
-
-func request(p proxy.Player, key key.Key) error {
 	if strings.TrimSpace(key.String()) == "" {
 		return errors.New("empty key")
 	}
-
-	if p.Protocol().Lower(version.Minecraft_1_20_5) {
-		return fmt.Errorf("%w: but player is on %s", proxy.ErrTransferUnsupportedClientProtocol, p.Protocol())
-	}
-
-	return p.WritePacket(&cpacket.CookieRequest{
-		Key: key,
-	})
+	return nil
 }
 
-func requestWithResult(p proxy.Player, key key.Key, ctx context.Context) (Cookie, error) {
-	if strings.TrimSpace(key.String()) == "" {
-		return nil, errors.New("empty key")
+func validateCookie(c *Cookie) error {
+	if c == nil {
+		return errors.New("cookie is nil")
 	}
-
-	if p.Protocol().Lower(version.Minecraft_1_20_5) {
-		return nil, fmt.Errorf("%w: but player is on %s", proxy.ErrTransferUnsupportedClientProtocol, p.Protocol())
+	if err := validateKey(c.Key); err != nil {
+		return err
 	}
-
-	responseChan := make(chan []byte, 1)
-	errorChan := make(chan error, 1)
-	defer close(responseChan)
-	defer close(errorChan)
-
-	// ensure map exists
-	if proxy.CookieRequestListenerPlayerMap == nil {
-		proxy.CookieRequestListenerPlayerMap = make(map[proxy.Player]*sync.Map)
+	if len(c.Payload) > MaxPayloadSize {
+		return errors.New("cookie payload size exceeds 5 kiB")
 	}
+	return nil
+}
 
-	// create a cookieRequestListener if player doesn't have one
-	r, ok := proxy.CookieRequestListenerPlayerMap[p]
+func isProtocolSupported(c Client, checkState bool) error {
+	p, ok := methods.Protocol(c)
 	if !ok {
-		r = &sync.Map{}
-		proxy.CookieRequestListenerPlayerMap[p] = r
+		return fmt.Errorf("%w: %T does not implement Client", ErrUnsupportedClientProtocol, c)
+	}
+	if p.Lower(version.Minecraft_1_20_5) {
+		return fmt.Errorf("%w: client is on %s", ErrUnsupportedClientProtocol, p)
+	}
+	if checkState {
+		s, ok := methods.State(c)
+		if !ok {
+			return fmt.Errorf("%w: %T does not implement Client", ErrUnsupportedState, c)
+		}
+		if s != states.ConfigState && s != states.PlayState {
+			return fmt.Errorf("%w: client is on %s", ErrUnsupportedState, s)
+		}
+	}
+	return nil
+}
+
+func store(cli Client, c *Cookie) error {
+	if err := validate(c, cli); err != nil {
+		return err
 	}
 
-	r.Store(key.String(), responseChan)
-	defer r.Delete(key.String())
+	// TODO fire cookie store event
 
-	err := p.WritePacket(&cpacket.CookieRequest{
+	return cli.WritePacket(&pkt.CookieStore{
+		Key:     c.Key,
+		Payload: c.Payload,
+	})
+}
+
+func request(ctx context.Context, cli Client, key key.Key, eventMgr event.Manager) (*Cookie, error) {
+	if err := validateKey(key); err != nil {
+		return nil, err
+	}
+	if err := isProtocolSupported(cli, false); err != nil {
+		return nil, err
+	}
+
+	// TODO fire cookie request event
+
+	responseChan := make(chan *Cookie, 1)
+	defer close(responseChan)
+
+	var once sync.Once
+	unsub := event.Subscribe(eventMgr, 0, func(e *proxy.CookieReceiveEvent) {
+		if e.Key().String() == key.String() {
+			once.Do(func() {
+				responseChan <- &Cookie{
+					Key:     e.Key(),
+					Payload: e.Payload(),
+				}
+			})
+		}
+	})
+	defer unsub()
+
+	err := cli.WritePacket(&pkt.CookieRequest{
 		Key: key,
 	})
-
 	if err != nil {
-		errorChan <- err
+		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, DefaultRequestTimeout)
+	defer cancel()
 
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case err := <-errorChan:
-		return nil, err
-	case response := <-responseChan:
-		c := New(key, response)
+	case <-cli.Context().Done():
+		return nil, fmt.Errorf("player disconnected: %w", cli.Context().Err())
+	case c := <-responseChan:
 		return c, nil
-	case <-p.Context().Done():
-		return nil, errors.New("player disconnected")
 	}
 }
 
-func (c *cookie) Key() key.Key {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.key
-}
-
-func (c *cookie) SetKey(key key.Key) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.key == key {
-		return
+func requestAndForget(cli Client, key key.Key) error {
+	if err := validateKey(key); err != nil {
+		return err
+	}
+	if err := isProtocolSupported(cli, false); err != nil {
+		return err
 	}
 
-	c.key = key
-}
+	// TODO fire cookie request event
 
-func (c *cookie) Payload() []byte {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.payload
-}
-
-func (c *cookie) SetPayload(payload []byte) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if bytes.Equal(c.payload, payload) {
-		return
-	}
-
-	c.payload = payload
+	return cli.WritePacket(&pkt.CookieRequest{
+		Key: key,
+	})
 }

@@ -24,7 +24,6 @@ func (c *CookieStore) Decode(ctx *proto.PacketContext, rd io.Reader) (err error)
 	if c.Key, err = util.ReadKey(rd); err != nil {
 		return err
 	}
-
-	c.Payload, err = util.ReadBytes(rd)
+	c.Payload, err = util.ReadBytesLen(rd, MaxPayloadSize)
 	return err
 }

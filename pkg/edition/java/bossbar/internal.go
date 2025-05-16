@@ -2,11 +2,12 @@ package bossbar
 
 import (
 	"context"
-	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"sync"
 
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
+
 	"go.minekube.com/common/minecraft/component"
-	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
+	"go.minekube.com/gate/pkg/edition/java/internal/methods"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/bossbar"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -78,17 +79,14 @@ func (b *bossBar) AddViewer(viewer Viewer) error {
 
 func newBarViewer(viewer Viewer, bar *bossBar) *barViewer {
 	removedCtx, cancel := context.WithCancel(context.Background())
-	if c, ok := viewer.(interface{ Context() context.Context }); ok {
-		viewerCtx := c.Context()
-		go func() {
-			defer cancel()
-			select {
-			case <-viewerCtx.Done():
-				_ = bar.RemoveViewer(viewer)
-			case <-removedCtx.Done(): // viewer removed by RemoveViewer method
-			}
-		}()
-	}
+	go func() {
+		defer cancel()
+		select {
+		case <-viewer.Context().Done():
+			_ = bar.RemoveViewer(viewer)
+		case <-removedCtx.Done(): // viewer removed by RemoveViewer method
+		}
+	}()
 	return &barViewer{
 		Viewer:  viewer,
 		ctx:     removedCtx,
@@ -252,7 +250,7 @@ func toSlice(m map[uuid.UUID]*barViewer) []Viewer {
 // isProtocolSupported returns true the viewer's protocol supports boss bar.
 func isProtocolSupported(viewer Viewer) bool {
 	// below 1.9 doesn't support boss bars
-	p, ok := protoutil.Protocol(viewer)
+	p, ok := methods.Protocol(viewer)
 	if !ok {
 		// assume supported
 		return true

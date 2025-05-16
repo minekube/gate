@@ -889,7 +889,16 @@ func (c *clientPlaySessionHandler) handleChatAcknowledgement(p *chat.ChatAcknowl
 }
 
 func (c *clientPlaySessionHandler) handleCookieResponse(p *cpacket.CookieResponse) {
-	handleCookieResponse(p, c.player, c.player.eventMgr)
+	e := newCookieReceiveEvent(c.player, p.Key, p.Payload)
+	c.proxy().event.Fire(e)
+	if !e.Allowed() {
+		return
+	}
+	smc, ok := c.player.connectedServer().ensureConnected()
+	if !ok {
+		return
+	}
+	forwardCookieResponse(e, smc)
 }
 
 // doSwitch handles switching stages for swapping between servers.

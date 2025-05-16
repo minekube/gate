@@ -8,6 +8,8 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
+const MaxPayloadSize = 5 * 1024 // 5 kiB
+
 type CookieResponse struct {
 	Key     key.Key
 	Payload []byte
@@ -17,12 +19,12 @@ func (c *CookieResponse) Encode(ctx *proto.PacketContext, wr io.Writer) error {
 	if err := util.WriteKey(wr, c.Key); err != nil {
 		return err
 	}
-
-	if err := util.WriteVarInt(wr, len(c.Payload)); err != nil {
-		return err
+	hasPayload := len(c.Payload) > 0
+	util.PWriteBool(wr, hasPayload)
+	if hasPayload {
+		return util.WriteBytes(wr, c.Payload)
 	}
-
-	return util.WriteBytes(wr, c.Payload)
+	return nil
 }
 
 func (c *CookieResponse) Decode(ctx *proto.PacketContext, rd io.Reader) (err error) {
@@ -30,16 +32,11 @@ func (c *CookieResponse) Decode(ctx *proto.PacketContext, rd io.Reader) (err err
 	if err != nil {
 		return err
 	}
-
-	_, err = util.ReadVarInt(rd)
-	if err != nil {
-		return err
+	if util.PReadBoolVal(rd) {
+		c.Payload, err = util.ReadBytesLen(rd, MaxPayloadSize)
+		if err != nil {
+			return err
+		}
 	}
-
-	c.Payload, err = util.ReadBytesLen(rd, 5120)
-	if err != nil && err != io.EOF { // EOF = End Of File is not a problem
-		return err
-	}
-
 	return nil
 }
