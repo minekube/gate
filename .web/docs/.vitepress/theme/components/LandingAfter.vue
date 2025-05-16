@@ -751,7 +751,7 @@ try:
             <div
               class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
             >
-              650+
+              800+
             </div>
             <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
               Discord Members
@@ -762,7 +762,7 @@ try:
             <div
               class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
             >
-              650+
+              750+
             </div>
             <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
               GitHub Stars
