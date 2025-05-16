@@ -194,7 +194,7 @@ export default defineConfig({
                 },
                 {
                   text: 'Self-hosted Grafana Stack',
-                  link: '/guide/otel/self-hosted/',
+                  link: '/guide/otel/self-hosted/grafana-stack.md',
                 },
                 {
                   text: 'Grafana Dashboards',

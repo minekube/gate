@@ -62,8 +62,8 @@ You can use various solutions to collect and visualize OpenTelemetry data. Here 
 
 - [Grafana Cloud](/guide/otel/grafana-cloud/) - Fully managed observability platform with support for metrics, logs, and traces
 - [Honeycomb](/guide/otel/honeycomb/) - Observability platform designed for debugging complex systems
-- [Self-hosted Grafana Stack](/guide/otel/self-hosted/grafana-stack/) - Run your own OpenTelemetry collector and visualize data with Grafana
-- [Self-hosted Jaeger](/guide/otel/self-hosted/jaeger/) - Run your own Jaeger for tracing
+- [Self-hosted Grafana Stack](/guide/otel/self-hosted/grafana-stack.md) - Run your own OpenTelemetry collector and visualize data with Grafana
+- [Self-hosted Jaeger](/guide/otel/self-hosted/jaeger.md) - Run your own Jaeger for tracing
 
 :::
 
