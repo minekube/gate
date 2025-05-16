@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
+	"connectrpc.com/otelconnect"
 	"github.com/go-logr/logr"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -31,8 +33,13 @@ func (s *Server) Start(ctx context.Context) error {
 	log := logr.FromContextOrDiscard(ctx)
 	log.Info("starting api service", "bind", s.cfg.Bind)
 
+	otelInterceptor, err := otelconnect.NewInterceptor()
+	if err != nil {
+		return err
+	}
+
 	mux := http.NewServeMux()
-	mux.Handle(gatev1connect.NewGateServiceHandler(s.h))
+	mux.Handle(gatev1connect.NewGateServiceHandler(s.h, connect.WithInterceptors(otelInterceptor)))
 
 	hs := &http.Server{
 		Addr: s.cfg.Bind,

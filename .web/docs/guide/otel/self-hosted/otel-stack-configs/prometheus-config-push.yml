@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+# The remote write receiver is enabled via the --web.enable-remote-write-receiver command-line flag.
+# No specific configuration for it is needed in this file if only that flag is used.
+
+scrape_configs:
+  - job_name: 'prometheus' # Scrapes Prometheus itself
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # No need to scrape otel-collector directly for metrics pushed to remote_write
+  # However, you might keep other scrape jobs or a job for the collector's own metrics if needed.
+  # For this example, we focus on metrics coming via remote_write.
+  # If the collector also exposes its internal metrics (e.g. on :8888/metrics by default),
+  # you could add a job for that:
+  # - job_name: 'otel-collector-internal'
+  #   static_configs:
+  #     - targets: ['otel-collector:8888'] # Default port for collector's own metrics

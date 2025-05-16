@@ -104,7 +104,7 @@ func (d *Decoder) readPacket() (ctx *proto.PacketContext, err error) {
 
 	var retries int
 retry:
-	payload, err := d.readPayload()
+	payload, n, err := d.readPayload()
 	if err != nil {
 		return nil, &errs.SilentError{Err: err}
 	}
@@ -116,14 +116,19 @@ retry:
 		// Got an empty packet, skipping it
 		goto retry
 	}
-	return d.decodePayload(payload)
+	ctx, err = d.decodePayload(payload)
+	if err != nil {
+		return nil, err
+	}
+	ctx.BytesRead = n
+	return ctx, nil
 }
 
 // can eventually receive an empty payload which packet should be skipped
-func (d *Decoder) readPayload() (payload []byte, err error) {
-	payload, err = readVarIntFrame(d.rd)
+func (d *Decoder) readPayload() (payload []byte, n int, err error) {
+	payload, n, err = readVarIntFrame(d.rd)
 	if err != nil {
-		return nil, fmt.Errorf("error reading packet frame: %w", err)
+		return nil, n, fmt.Errorf("error reading packet frame: %w", err)
 	}
 	if len(payload) == 0 {
 		return
@@ -131,41 +136,42 @@ func (d *Decoder) readPayload() (payload []byte, err error) {
 	if d.compression { // Decoder expects compressed payload
 		// buf contains: claimedUncompressedSize + (compressed packet id & data)
 		buf := bytes.NewBuffer(payload)
-		claimedUncompressedSize, err := util.ReadVarInt(buf)
+		claimedUncompressedSize, n, err := util.ReadVarIntReturnN(buf)
 		if err != nil {
-			return nil, fmt.Errorf("error reading claimed uncompressed size varint: %w", err)
+			return nil, n, fmt.Errorf("error reading claimed uncompressed size varint: %w", err)
 		}
 		if claimedUncompressedSize <= 0 {
 			if actualUncompressedSize := buf.Len(); actualUncompressedSize > d.compressionThreshold {
-				return nil, fmt.Errorf("actual uncompressed size %d is greater than threshold %d",
+				return nil, n, fmt.Errorf("actual uncompressed size %d is greater than threshold %d",
 					actualUncompressedSize, d.compressionThreshold)
 			}
 			// This message is not compressed
-			return buf.Bytes(), nil
+			return buf.Bytes(), n, nil
 		}
-		return d.decompress(claimedUncompressedSize, buf)
+		decompressed, err := d.decompress(claimedUncompressedSize, buf)
+		return decompressed, n, err
 	}
-	return
+	return payload, n, nil
 }
 
-func readVarIntFrame(rd io.Reader) (payload []byte, err error) {
-	length, err := util.ReadVarInt(rd)
+func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
+	length, n, err := util.ReadVarIntReturnN(rd)
 	if err != nil {
-		return nil, fmt.Errorf("error reading varint: %w", err)
+		return nil, n, fmt.Errorf("error reading varint: %w", err)
 	}
 	if length == 0 {
 		return // function caller should skip over empty packet
 	}
 	if length < 0 || length > 1048576 { // 2^(21-1)
-		return nil, fmt.Errorf("received invalid packet length %d", length)
+		return nil, n, fmt.Errorf("received invalid packet length %d", length)
 	}
 
 	payload = make([]byte, length)
-	_, err = rd.Read(payload)
+	m, err := rd.Read(payload)
 	if err != nil {
-		return nil, fmt.Errorf("error reading payload: %w", err)
+		return nil, n, fmt.Errorf("error reading payload: %w", err)
 	}
-	return payload, nil
+	return payload, n + m, nil
 }
 
 func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompressed []byte, err error) {
