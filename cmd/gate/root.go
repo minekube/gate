@@ -18,7 +18,7 @@ import (
 
 var logger *logr.Logger
 
-// Sets the logger for gate
+// Sets the logger for gate (must be called before Execute())
 func SetLogger(l logr.Logger) {
 	logger = &l
 }
