@@ -16,6 +16,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var logger *logr.Logger
+
+// Sets the logger for gate
+func SetLogger(l logr.Logger) {
+	logger = &l
+}
+
 // Execute runs App() and calls os.Exit when finished.
 func Execute() {
 	if err := App().Run(os.Args); err != nil {
@@ -88,7 +95,7 @@ Visit the website https://gate.minekube.com/ for more information.`
 		}
 
 		// Create logger
-		log, err := newLogger(debug, verbosity)
+		log, err := getLogger(debug, verbosity)
 		if err != nil {
 			return cli.Exit(fmt.Errorf("error creating zap logger: %w", err), 1)
 		}
@@ -124,6 +131,14 @@ func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
 	return v, nil
 }
 
+func getLogger(debug bool, v int) (l logr.Logger, err error) {
+	if logger != nil {
+		return *logger, nil
+	}
+
+	return newLogger(debug, v)
+}
+
 // newLogger returns a new zap logger with a modified production
 // or development default config to ensure human readability.
 func newLogger(debug bool, v int) (l logr.Logger, err error) {
@@ -143,5 +158,9 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 	if err != nil {
 		return logr.Discard(), err
 	}
-	return zapr.NewLogger(zl), nil
+
+	nL := zapr.NewLogger(zl)
+	logger = &nL
+
+	return nL, nil
 }
