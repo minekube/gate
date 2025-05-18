@@ -1,6 +1,7 @@
 package gate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -16,12 +17,23 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Execute runs App() with the provided context and calls os.Exit when finished.
+func ExecuteContext(ctx context.Context) {
+	if err := App().RunContext(ctx, os.Args); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+}
+
 // Execute runs App() and calls os.Exit when finished.
 func Execute() {
 	if err := App().Run(os.Args); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+
 	os.Exit(0)
 }
 
@@ -87,12 +99,18 @@ Visit the website https://gate.minekube.com/ for more information.`
 			verbosity = math.MaxInt8
 		}
 
-		// Create logger
-		log, err := newLogger(debug, verbosity)
-		if err != nil {
-			return cli.Exit(fmt.Errorf("error creating zap logger: %w", err), 1)
+		// Create or get logger
+
+		var log logr.Logger
+		if log, err = logr.FromContext(c.Context); err != nil {
+			log, err = newLogger(debug, verbosity)
+
+			if err != nil {
+				return cli.Exit(fmt.Errorf("error creating zap logger: %w", err), 1)
+			}
+
+			c.Context = logr.NewContext(c.Context, log)
 		}
-		c.Context = logr.NewContext(c.Context, log)
 
 		log.Info("logging verbosity", "verbosity", verbosity)
 		log.Info("using config file", "config", v.ConfigFileUsed())
@@ -143,5 +161,6 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 	if err != nil {
 		return logr.Discard(), err
 	}
+
 	return zapr.NewLogger(zl), nil
 }
