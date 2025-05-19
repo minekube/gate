@@ -1,10 +1,12 @@
 package packet
 
 import (
+	"fmt"
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	protoutil "go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type ServerLinks struct {
@@ -27,15 +29,24 @@ func (p *ServerLinks) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	r := protoutil.PanicReader(rd)
 	var serverLinksCount int
 	r.VarInt(&serverLinksCount)
+
+	if serverLinksCount < 0 {
+		return fmt.Errorf("server links count %d cannot be negative", serverLinksCount)
+	}
+	const maxServerLinks = 128
+	if serverLinksCount > maxServerLinks {
+		return fmt.Errorf("too many server links (attempted %d, max %d)", serverLinksCount, maxServerLinks)
+	}
+
 	p.ServerLinks = make([]*ServerLink, serverLinksCount)
 	for i := 0; i < serverLinksCount; i++ {
-		p.ServerLinks[i] = new(ServerLink)
-		err = p.ServerLinks[i].Decode(c, rd)
-		if err != nil {
-			return err
+		link := new(ServerLink)
+		if err = link.Decode(c, rd); err != nil {
+			return fmt.Errorf("error decoding server link index %d: %w", i, err)
 		}
+		p.ServerLinks[i] = link
 	}
-	return
+	return nil
 }
 
 type ServerLink struct {
