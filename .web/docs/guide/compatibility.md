@@ -4,7 +4,7 @@ Gate is compatible with many Minecraft server implementations.
 The expectation is that if the server acts like vanilla, Gate will work,
 and we make special provisions for modded setups where we can.
 
-Gate is compatible with Minecraft 1.7.2 through the latest version
+Gate is compatible with Minecraft 1.8 through the latest version
 and we maintainers update Gate as soon as a new Minecraft version is released.
 
 ## Paper <VPBadge>Recommended</VPBadge>
