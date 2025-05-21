@@ -41,6 +41,31 @@ config:
         backend: [ 10.0.0.2:25566 ]
 ```
 
+## Maximum Players Limit
+
+You can limit the total number of players that can connect to your Gate Lite instance by setting the `maxPlayers` option:
+
+```yaml
+config:
+  lite:
+    enabled: true
+    maxPlayers: 100 # Limit to 100 concurrent players // [!code ++]
+    maxPlayersMessage: "§cThis Node is full.Please try another node." # Custom rejection message // [!code ++]
+    routes:
+      - host: abc.example.com
+        backend: 10.0.0.3:25568
+```
+
+When the maximum player limit is reached, any new connection attempts will be rejected with a custom message indicating that the server is full. For example:
+
+```
+§cThis Node is full.Please try another node.
+```
+
+You can customize this message by setting the `maxPlayersMessage` configuration option. The default message is in Chinese and translates to "This node has too many players, please use another node".
+
+Setting `maxPlayers` to `0` (the default) means there is no limit on the number of concurrent players.
+
 ## Ping Response Caching
 
 Players send server list ping requests to Gate Lite to display the motd (message of the day).
