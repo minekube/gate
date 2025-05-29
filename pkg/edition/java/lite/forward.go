@@ -10,11 +10,10 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"time"
-
-	"slices"
 
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
@@ -196,14 +195,15 @@ func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
 			return "", log, false
 		}
 
-		for len(tryBackends) > 0 {
-			randIndex := r.Intn(len(tryBackends))
-			backend := tryBackends[randIndex]
+		backends := slices.Clone(tryBackends)
+		for len(backends) > 0 {
+			randIndex := r.Intn(len(backends))
+			backend := backends[randIndex]
 			if checkBackend(backend) {
 				return backend, log, true
 			}
 
-			tryBackends = slices.Delete(tryBackends, randIndex, randIndex+1)
+			backends = slices.Delete(backends, randIndex, randIndex+1)
 		}
 
 		// no working backend found
