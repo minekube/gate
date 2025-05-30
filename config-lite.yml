@@ -45,9 +45,13 @@ config:
         backend: 172.16.0.12:25566
         proxyProtocol: true # Use proxy protocol to connect to backend.
         tcpShieldRealIP: true # Optionally you can also use TCPShield's RealIP protocol.
-      # You can also match to multiple hosts to one or multiple random backends.
+      # You can also match to multiple hosts to one or multiple backends.
       - host: [ 127.0.0.1, localhost ]
         backend: [ 172.16.0.12:25566, backend.example.com:25566 ]
+        # You can change the strategy of connecting if multiple backends are available.
+        # Strategies: random, round-robin, least-connections, lowest-latency.
+        # Default: random
+        strategy: random
         # Ping responses are cached per backend address by default.
         # To disable motd caching set it to -1.
         # Default: 10s
