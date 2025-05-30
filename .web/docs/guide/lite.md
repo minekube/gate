@@ -66,7 +66,10 @@ There are four strategy types:
       routes:
         - host: abc.example.com
           backend: [10.0.0.1:25566, 10.0.0.1:25567, 10.0.0.1:25568]
-          strategy: 
+          # You can change the strategy of connecting if multiple backends are available.
+          # Strategies: random, round-robin, least-connections, lowest-latency.
+          # Default: random
+          strategy: random
 ```
 
 ## Ping Response Caching
