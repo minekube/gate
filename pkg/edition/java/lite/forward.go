@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -62,13 +63,11 @@ func Forward(
 		return
 	}
 
-	// add connection to the connection counter
+	// add connection to the connection counter if the strategy is least-connections
 	if route.Strategy == config.StrategyLeastConnections {
-		if c, ok := leastConnectionCounter.Load(backendAddr); ok {
-			if connections, ok := c.(int); ok {
-				leastConnectionCounter.Store(backendAddr, connections+1)
-			}
-		}
+		counter := leastConnectionCounterMap[backendAddr]
+		counter.Add(1)
+		defer counter.Add(^uint32(0)) // removes count after connection loses connection
 	}
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
@@ -188,8 +187,9 @@ func findRoute(
 	return log, src, route, nextBackend, nil
 }
 
+var leastConnectionsRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return func() (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
@@ -197,7 +197,7 @@ func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
 
 		backends := slices.Clone(tryBackends)
 		for len(backends) > 0 {
-			randIndex := r.Intn(len(backends))
+			randIndex := leastConnectionsRand.Intn(len(backends))
 			backend := backends[randIndex]
 			if checkBackend(backend) {
 				return backend, log, true
@@ -236,7 +236,7 @@ func roundRobinNextBackend(log logr.Logger, routeHost string, tryBackends []stri
 	}
 }
 
-var leastConnectionCounter sync.Map
+var leastConnectionCounterMap map[string]*atomic.Uint32
 
 func leastConnectionsNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
 	return func() (string, logr.Logger, bool) {
@@ -245,17 +245,27 @@ func leastConnectionsNextBackend(log logr.Logger, tryBackends []string) nextBack
 		}
 
 		var leastBackend string
-		var leastCount int = math.MaxInt32
+		var leastCount uint32 = math.MaxUint32
 
 		for _, backend := range tryBackends {
 			if !checkBackend(backend) {
 				continue
 			}
 
-			count, _ := leastConnectionCounter.LoadOrStore(backend, 0)
-			if count.(int) < leastCount {
+			if leastConnectionCounterMap == nil {
+				leastConnectionCounterMap = make(map[string]*atomic.Uint32)
+			}
+
+			counter := leastConnectionCounterMap[backend]
+			if counter == nil {
+				counter = &atomic.Uint32{}
+				leastConnectionCounterMap[backend] = counter
+			}
+
+			count := counter.Load()
+			if count < leastCount {
 				leastBackend = backend
-				leastCount = count.(int)
+				leastCount = count
 			}
 		}
 

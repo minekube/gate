@@ -102,7 +102,7 @@ func (c Config) Validate() (warns []error, errs []error) {
 		if len(ep.Backend) == 0 {
 			e("Route %d: no backend configured", i)
 		}
-		if ok := slices.Contains(allowedStrategies, ep.Strategy); !ok && ep.Strategy != "" {
+		if !slices.Contains(allowedStrategies, ep.Strategy) && ep.Strategy != "" {
 			e("Route %d: invalid strategy '%s'", i, ep.Strategy)
 		}
 		for i, addr := range ep.Backend {
