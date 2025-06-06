@@ -65,6 +65,8 @@ type Proxy struct {
 
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
+
+	id string // id of the proxy
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -111,6 +113,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
+		id:			      uuid.New().String(), // generate a random id for the proxy
 	}
 
 	// Connection & login rate limiters
@@ -781,3 +784,7 @@ type (
 		config() *config.Config
 	}
 )
+
+func (p *Proxy) getId() string {
+	return p.id
+}

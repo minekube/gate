@@ -39,6 +39,7 @@ func Forward(
 	client netmc.MinecraftConn,
 	handshake *packet.Handshake,
 	pc *proto.PacketContext,
+	proxyId string,
 ) {
 	defer func() { _ = client.Close() }()
 
@@ -49,7 +50,7 @@ func Forward(
 	}
 
 	// Find a backend to dial successfully.
-	backendAddr, log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
+	backendAddr, log, dst, err := tryBackends(nextBackend, proxyId, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
 		return log, conn, err
 	})
@@ -78,9 +79,9 @@ func Forward(
 var errAllBackendsFailed = errors.New("all backends failed")
 
 // tryBackends tries backends until one succeeds or all fail.
-func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (string, logr.Logger, T, error) {
+func tryBackends[T any](next nextBackendFunc, proxyId string, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (string, logr.Logger, T, error) {
 	for {
-		backendAddr, log, ok := next()
+		backendAddr, log, ok := next(proxyId)
 		if !ok {
 			var zero T
 			return backendAddr, log, zero, errAllBackendsFailed
@@ -130,7 +131,7 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	}
 }
 
-type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
+type nextBackendFunc func(proxyId string) (backendAddr string, log logr.Logger, ok bool)
 
 func findRoute(
 	routes []config.Route,
@@ -168,19 +169,19 @@ func findRoute(
 	}
 
 	tryBackends := route.Backend.Copy()
-	nextBackend = func() (string, logr.Logger, bool) {
+	nextBackend = func(proxyId string) (string, logr.Logger, bool) {
 		switch route.Strategy {
 		case config.StrategyRandom:
-			return randomNextBackend(log, tryBackends)()
+			return randomNextBackend(log, tryBackends)(proxyId)
 		case config.StrategyRoundRobin:
-			return roundRobinNextBackend(log, host, tryBackends)()
+			return roundRobinNextBackend(log, host, tryBackends)(proxyId)
 		case config.StrategyLeastConnections:
-			return leastConnectionsNextBackend(log, tryBackends)()
+			return leastConnectionsNextBackend(log, tryBackends)(proxyId)
 		case config.StrategyLowestLatency:
-			return lowestLatencyNextBackend(log, tryBackends)()
+			return lowestLatencyNextBackend(log, tryBackends)(proxyId)
 		default:
 			// Default to random strategy
-			return randomNextBackend(log, tryBackends)()
+			return randomNextBackend(log, tryBackends)(proxyId)
 		}
 	}
 
@@ -190,7 +191,7 @@ func findRoute(
 var leastConnectionsRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func() (string, logr.Logger, bool) {
+	return func(proxyId string) (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
@@ -211,20 +212,30 @@ func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
 	}
 }
 
-var roundRobinIndex sync.Map
+var roundRobinIndexPerGate map[string]*sync.Map
 
 func roundRobinNextBackend(log logr.Logger, routeHost string, tryBackends []string) nextBackendFunc {
-	return func() (string, logr.Logger, bool) {
+	return func(proxyId string) (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
 
+		if roundRobinIndexPerGate == nil {
+			roundRobinIndexPerGate = make(map[string]*sync.Map)
+		}
+
 		for range tryBackends {
-			value, _ := roundRobinIndex.LoadOrStore(routeHost, 0)
+			roundRobinMap := roundRobinIndexPerGate[proxyId]
+			if roundRobinMap == nil {
+				roundRobinMap = &sync.Map{}
+				roundRobinIndexPerGate[proxyId] = roundRobinMap
+			}
+
+			value, _ := roundRobinMap.LoadOrStore(routeHost, 0)
 			index := value.(int)
 
 			backend := tryBackends[index%len(tryBackends)]
-			roundRobinIndex.Store(routeHost, index+1)
+			roundRobinMap.Store(routeHost, index+1)
 
 			if checkBackend(backend) {
 				return backend, log, true
@@ -239,7 +250,7 @@ func roundRobinNextBackend(log logr.Logger, routeHost string, tryBackends []stri
 var leastConnectionCounterMap map[string]*atomic.Uint32
 
 func leastConnectionsNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func() (string, logr.Logger, bool) {
+	return func(proxyId string) (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
@@ -281,7 +292,7 @@ func leastConnectionsNextBackend(log logr.Logger, tryBackends []string) nextBack
 var latencyCache = ttlcache.New[string, time.Duration]()
 
 func lowestLatencyNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func() (string, logr.Logger, bool) {
+	return func(proxyId string) (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
@@ -424,13 +435,14 @@ func ResolveStatusResponse(
 	handshake *packet.Handshake,
 	handshakeCtx *proto.PacketContext,
 	statusRequestCtx *proto.PacketContext,
+	proxyId string,
 ) (logr.Logger, *packet.StatusResponse, error) {
 	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
 	if err != nil {
 		return log, nil, err
 	}
 
-	_, log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
+	_, log, res, err := tryBackends(nextBackend, proxyId, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
 		return resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
 	})
 	if err != nil && route.Fallback != nil {
