@@ -305,8 +305,8 @@ func lowestLatencyNextBackend(log logr.Logger, tryBackends []string) nextBackend
 
 			latencyItem := latencyCache.Get(backend)
 			if latencyItem == nil {
-				latency := time.Nanosecond * 1
-				latencyCache.Set(backend, latency, time.Minute)
+				latency := time.Nanosecond
+				latencyCache.Set(backend, latency, time.Minute*3)
 				latencyItem = latencyCache.Get(backend)
 			}
 			if latencyItem != nil && (lowestLatency == 0 || latencyItem.Value() < lowestLatency) {
@@ -358,7 +358,7 @@ func dialRoute(
 			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
 		}
 	}
-	latencyCache.Set(backendAddr, time.Since(now), time.Minute)
+	latencyCache.Set(backendAddr, time.Since(now), time.Minute*3)
 	dstConn := dst
 	defer func() {
 		if err != nil {
@@ -524,7 +524,7 @@ func resolveStatusResponse(
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial route: %w", err)
 		}
-		latencyCache.Set(backendAddr, time.Since(now), time.Minute)
+		latencyCache.Set(backendAddr, time.Since(now), time.Minute*3)
 		defer func() { _ = dst.Close() }()
 
 		log = log.WithValues("backendAddr", netutil.Host(dst.RemoteAddr()))
