@@ -305,7 +305,7 @@ func lowestLatencyNextBackend(log logr.Logger, tryBackends []string) nextBackend
 
 			latencyItem := latencyCache.Get(backend)
 			if latencyItem == nil {
-				latency := measureLatency(backend)
+				latency := time.Nanosecond * 1
 				latencyCache.Set(backend, latency, time.Minute)
 				latencyItem = latencyCache.Get(backend)
 			}
@@ -322,16 +322,6 @@ func lowestLatencyNextBackend(log logr.Logger, tryBackends []string) nextBackend
 
 		return lowestBackend, log, true
 	}
-}
-
-func measureLatency(backend string) time.Duration {
-	start := time.Now()
-	conn, err := net.DialTimeout("tcp", backend, time.Second*5)
-	if err != nil {
-		return time.Duration(math.MaxInt64) // Return a very high latency if connection fails
-	}
-	conn.Close()
-	return time.Since(start)
 }
 
 func checkBackend(backend string) bool {
@@ -356,6 +346,7 @@ func dialRoute(
 	defer cancel()
 
 	var dialer net.Dialer
+	now := time.Now()
 	dst, err = dialer.DialContext(dialCtx, "tcp", backendAddr)
 	if err != nil {
 		v := 0
@@ -367,6 +358,7 @@ func dialRoute(
 			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
 		}
 	}
+	latencyCache.Set(backendAddr, time.Since(now), time.Minute)
 	dstConn := dst
 	defer func() {
 		if err != nil {
@@ -527,10 +519,12 @@ func resolveStatusResponse(
 		log.V(1).Info("resolving status")
 
 		ctx = logr.NewContext(ctx, log)
+		now := time.Now()
 		dst, err := dialRoute(ctx, dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, handshakeCtx, route.CachePingEnabled())
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial route: %w", err)
 		}
+		latencyCache.Set(backendAddr, time.Since(now), time.Minute)
 		defer func() { _ = dst.Close() }()
 
 		log = log.WithValues("backendAddr", netutil.Host(dst.RemoteAddr()))

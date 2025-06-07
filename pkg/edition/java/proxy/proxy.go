@@ -113,7 +113,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		id:			      uuid.New().String(), // generate a random id for the proxy
+		id:               "proxy_" + uuid.New().String(), // generate a random id for the proxy
 	}
 
 	// Connection & login rate limiters
