@@ -308,6 +308,7 @@ func (p *connectedPlayer) handleDisconnectWithReason(server RegisteredServer, re
 	connected := p.connectedServer()
 	if connected != nil && ServerInfoEqual(connected.server.ServerInfo(), server.ServerInfo()) {
 		log.Info("player was kicked from server")
+		p.previousConnectedServer_ = connected
 		p.handleConnectionErr2(server, reason, &Text{
 			Content: movedToNewServer.Content,
 			S:       movedToNewServer.S,
