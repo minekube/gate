@@ -150,13 +150,14 @@ type connectedPlayer struct {
 
 	tabList internaltablist.InternalTabList // Player's tab list
 
-	mu                   sync.RWMutex // Protects following fields
-	connectedServer_     *serverConnection
-	connInFlight         *serverConnection
-	settings             player.Settings
-	clientSettingsPacket *packet.ClientSettings
-	modInfo              *modinfo.ModInfo
-	connPhase            phase.ClientConnectionPhase
+	mu                       sync.RWMutex // Protects following fields
+	connectedServer_         *serverConnection
+	previousConnectedServer_ *serverConnection
+	connInFlight             *serverConnection
+	settings                 player.Settings
+	clientSettingsPacket     *packet.ClientSettings
+	modInfo                  *modinfo.ModInfo
+	connPhase                phase.ClientConnectionPhase
 
 	clientBrand string // may be empty
 
@@ -623,6 +624,7 @@ func (p *connectedPlayer) SetModInfo(info *modinfo.ModInfo) {
 
 func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.mu.Lock()
+	p.previousConnectedServer_ = p.connectedServer_
 	p.connectedServer_ = conn
 	p.tryIndex = 0 // reset since we got connected to a server
 	if conn == p.connInFlight {

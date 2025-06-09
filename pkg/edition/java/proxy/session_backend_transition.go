@@ -3,6 +3,9 @@ package proxy
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -14,8 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"reflect"
-	"time"
 )
 
 type backendTransitionSessionHandler struct {
@@ -172,7 +173,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 
 	b.serverConn.player.mu.Lock()
-	existingConn := b.serverConn.player.connectedServer_
+	existingConn := b.serverConn.player.previousConnectedServer_
 	var previousServer RegisteredServer
 	if existingConn != nil {
 		previousServer = existingConn.server
