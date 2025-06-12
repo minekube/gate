@@ -163,6 +163,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	if !ok {
 		return
 	}
+	previousServer := b.serverConn.previousServer
 
 	failResult := func(format string, a ...any) {
 		err := fmt.Errorf(format, a...)
@@ -173,9 +174,7 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 
 	b.serverConn.player.mu.Lock()
 	existingConn := b.serverConn.player.connectedServer_
-	var previousServer RegisteredServer
 	if existingConn != nil {
-		previousServer = existingConn.server
 		// Shut down the existing server connection.
 		b.serverConn.player.connectedServer_ = nil
 		b.serverConn.player.mu.Unlock()

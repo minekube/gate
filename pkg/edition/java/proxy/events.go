@@ -442,17 +442,18 @@ func (e *PlayerChooseInitialServerEvent) SetInitialServer(server RegisteredServe
 
 // ServerPreConnectEvent is fired before the player connects to a server.
 type ServerPreConnectEvent struct {
-	player   Player
-	original RegisteredServer
-
-	server RegisteredServer
+	player         Player
+	original       RegisteredServer
+	server         RegisteredServer
+	previousServer RegisteredServer // nil-able
 }
 
-func newServerPreConnectEvent(player Player, server RegisteredServer) *ServerPreConnectEvent {
+func newServerPreConnectEvent(player Player, server RegisteredServer, previousServer RegisteredServer) *ServerPreConnectEvent {
 	return &ServerPreConnectEvent{
-		player:   player,
-		original: server,
-		server:   server,
+		player:         player,
+		original:       server,
+		server:         server,
+		previousServer: previousServer,
 	}
 }
 
@@ -487,6 +488,12 @@ func (e *ServerPreConnectEvent) Allowed() bool {
 // nil if Allowed() returns false.
 func (e *ServerPreConnectEvent) Server() RegisteredServer {
 	return e.server
+}
+
+// PreviousServer returns the server the player was previously connected to.
+// May return nil if there was none!
+func (e *ServerPreConnectEvent) PreviousServer() RegisteredServer {
+	return e.previousServer
 }
 
 //

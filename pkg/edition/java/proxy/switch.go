@@ -97,12 +97,20 @@ func (p *connectedPlayer) CreateConnectionRequest(server RegisteredServer) Conne
 }
 
 func (p *connectedPlayer) createConnectionRequest(server RegisteredServer) *connectionRequest {
-	return &connectionRequest{server: server, player: p}
+	return p.createConnectionRequestWith(server, p.connectedServer())
+}
+func (p *connectedPlayer) createConnectionRequestWith(server RegisteredServer, previousConn *serverConnection) *connectionRequest {
+	var previousServer *registeredServer
+	if previousConn != nil {
+		previousServer = previousConn.server
+	}
+	return &connectionRequest{server: server, player: p, previousServer: previousServer}
 }
 
 type connectionRequest struct {
-	server RegisteredServer // the target server to connect to
-	player *connectedPlayer // the player to connect to the server
+	server         RegisteredServer  // the target server to connect to
+	player         *connectedPlayer  // the player to connect to the server
+	previousServer *registeredServer // nil-able
 }
 
 func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, error) {
@@ -225,7 +233,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 
 	// Make sure we clear the current connected server as the connection is invalid.
 	p.mu.Lock()
-	previouslyConnected := p.connectedServer_ != nil
+	previousConnection := p.connectedServer_
 	if kickedFromCurrent {
 		p.connectedServer_ = nil
 	}
@@ -242,7 +250,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *RedirectPlayerKickResult:
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
 		defer cancel()
-		redirect, err := p.createConnectionRequest(result.Server).connect(ctx)
+		redirect, err := p.createConnectionRequestWith(result.Server, previousConnection).connect(ctx)
 		if err != nil {
 			p.handleConnectionErr(result.Server, err, true)
 			return
@@ -275,7 +283,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 			_ = p.SendMessage(requestedMessage)
 		}
 	case *NotifyKickResult:
-		if e.KickedDuringServerConnect() && previouslyConnected {
+		if e.KickedDuringServerConnect() && previousConnection != nil {
 			_ = p.SendMessage(result.Message)
 		} else {
 			p.Disconnect(result.Message)
@@ -367,7 +375,7 @@ func (c *connectionRequest) internalConnect(ctx context.Context) (result *connec
 		return plainConnectionResult(status, c.server), nil
 	}
 
-	connectEvent := newServerPreConnectEvent(c.player, c.server)
+	connectEvent := newServerPreConnectEvent(c.player, c.server, c.previousServer)
 	c.event().Fire(connectEvent)
 	if !connectEvent.Allowed() {
 		return plainConnectionResult(CanceledConnectionStatus, c.server), nil
@@ -387,7 +395,7 @@ func (c *connectionRequest) internalConnect(ctx context.Context) (result *connec
 		return plainConnectionResult(CanceledConnectionStatus, newDest), nil
 	}
 
-	conn := newServerConnection(server, c.player)
+	conn := newServerConnection(server, c.previousServer, c.player)
 	c.player.setInFlightConnection(conn)
 	defer c.resetIfInFlightIs(conn)
 	return conn.connect(ctx)
