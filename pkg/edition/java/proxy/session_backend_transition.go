@@ -201,8 +201,13 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	connectedEvent := &ServerConnectedEvent{
 		player:         b.serverConn.player,
 		server:         b.serverConn.server,
-		previousServer: previousServer, // nil-able
 		entityID:       p.EntityID,
+	}
+	// Assign previousServer only if non-nil to prevent storing a typed nil pointer,
+	// which would incorrectly make connectedEvent.previousServer not equal to nil,
+	// as the previousServer field in ServerConnectedEvent is an interface type.
+	if previousServer != nil {
+		connectedEvent.previousServer = previousServer
 	}
 	// Fire event in same goroutine as we don't want to read
 	// more incoming packets while we process the JoinGame!
@@ -293,7 +298,13 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	}
 
 	// We're done!
-	postConnectEvent := newServerPostConnectEvent(b.serverConn.player, previousServer)
+	postConnectEvent := newServerPostConnectEvent(b.serverConn.player, nil)
+	// Assign previousServer only if non-nil to prevent storing a typed nil pointer,
+	// which would incorrectly make postConnectEvent.previousServer not equal to nil,
+	// as the previousServer field in ServerPostConnectEvent is an interface type.
+	if previousServer != nil {
+		postConnectEvent.previousServer = previousServer
+	}
 	b.eventMgr.Fire(postConnectEvent)
 	b.requestCtx.result(plainConnectionResult(SuccessConnectionStatus, b.serverConn.server), nil)
 }
