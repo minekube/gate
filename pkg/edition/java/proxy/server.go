@@ -219,6 +219,8 @@ type serverConnection struct {
 	player *connectedPlayer
 	log    logr.Logger
 
+	previousServer *registeredServer // nil-able
+
 	completedJoin      atomic.Bool
 	gracefulDisconnect atomic.Bool
 	pendingPings       *lru.SyncCache[int64, time.Time]
@@ -228,11 +230,12 @@ type serverConnection struct {
 	connPhase  phase.BackendConnectionPhase
 }
 
-func newServerConnection(server *registeredServer, player *connectedPlayer) *serverConnection {
+func newServerConnection(server *registeredServer, previousServer *registeredServer, player *connectedPlayer) *serverConnection {
 	return &serverConnection{
-		server:       server,
-		player:       player,
-		pendingPings: lru.NewSync[int64, time.Time](lru.WithCapacity(5)),
+		server:         server,
+		player:         player,
+		previousServer: previousServer,
+		pendingPings:   lru.NewSync[int64, time.Time](lru.WithCapacity(5)),
 		log: player.log.WithName("serverConn").WithValues(
 			"serverName", server.info.Name(),
 			"serverAddr", server.info.Addr()),
