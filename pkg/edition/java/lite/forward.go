@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
+	"go.minekube.com/common/minecraft/color"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/internal/protoutil"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
@@ -43,6 +45,35 @@ func Forward(
 		return
 	}
 
+	// Check maximum connections limit if it's set (>0)
+	cfg := getConfig()
+	if cfg != nil && cfg.MaxPlayers > 0 {
+		currentCount := ConnectionCounter.Count()
+		if int(currentCount) >= cfg.MaxPlayers {
+			log.Info("connection rejected due to maximum player limit", 
+				"current", currentCount, 
+				"max", cfg.MaxPlayers)
+			
+			// Use the configured message
+			message := cfg.MaxPlayersMessage
+			if message == "" {
+				message = "§cThis Node is full.Please try another node."
+			}
+			
+			// Disconnect and display custom message
+			reason := &component.Text{
+				Content: message,
+				S:       component.Style{Color: color.Red},
+			}
+			_ = netmc.CloseWith(client, packet.NewDisconnect(reason, client.Protocol(), client.State().State))
+			return
+		}
+	}
+
+	// Increment connection counter
+	ConnectionCounter.Increment()
+	defer ConnectionCounter.Decrement()
+
 	// Find a backend to dial successfully.
 	log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
@@ -60,6 +91,19 @@ func Forward(
 
 	log.Info("forwarding connection", "backendAddr", netutil.Host(dst.RemoteAddr()))
 	pipe(log, src, dst)
+}
+
+// reference to the current lite mode config
+var currentConfig *config.Config
+
+// SetConfig sets the current lite mode config
+func SetConfig(cfg *config.Config) {
+	currentConfig = cfg
+}
+
+// getConfig returns the current lite mode config
+func getConfig() *config.Config {
+	return currentConfig
 }
 
 // errAllBackendsFailed is returned when all backends failed to dial.
