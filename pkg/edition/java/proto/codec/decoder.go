@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -130,6 +129,7 @@ func (d *Decoder) readPayload() (payload []byte, n int, err error) {
 	if err != nil {
 		return nil, n, fmt.Errorf("error reading packet frame: %w", err)
 	}
+
 	if len(payload) == 0 {
 		return
 	}
@@ -154,27 +154,34 @@ func (d *Decoder) readPayload() (payload []byte, n int, err error) {
 	return payload, n, nil
 }
 
-func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
-	length, n, err := util.ReadVarIntReturnN(rd)
+func readVarIntFrame(rd io.Reader) (payload []byte, totalBytes int, err error) {
+	// 1) Read the length VarInt and count its bytes
+	length, headerBytes, err := util.ReadVarIntReturnN(rd)
 	if err != nil {
-		return nil, n, fmt.Errorf("error reading varint: %w", err)
+		return nil, headerBytes, fmt.Errorf("error reading varint: %w", err)
 	}
+	totalBytes = headerBytes
+
+	// 2) Handle empty packets
 	if length == 0 {
-		return // function caller should skip over empty packet
+		return nil, totalBytes, nil
 	}
-	if length < 0 || length > 1048576 { // 2^(21-1)
-		return nil, n, fmt.Errorf("received invalid packet length %d", length)
+	if length < 0 || length > 1<<20 {
+		return nil, totalBytes, fmt.Errorf("received invalid packet length %d", length)
 	}
 
+	// 3) Now read exactly `length` bytes
 	payload = make([]byte, length)
-	m, err := rd.Read(payload)
+	n, err := io.ReadFull(rd, payload)
+	totalBytes += n
 	if err != nil {
-		return nil, n, fmt.Errorf("error reading payload: %w", err)
+		return nil, totalBytes, fmt.Errorf("error reading payload (%d/%d): %w", n, length, err)
 	}
-	return payload, n + m, nil
+
+	return payload, totalBytes, nil
 }
 
-func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompressed []byte, err error) {
+func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) ([]byte, error) {
 	if claimedUncompressedSize < d.compressionThreshold {
 		return nil, errs.NewSilentErr("uncompressed size %d is less than set threshold %d",
 			claimedUncompressedSize, d.compressionThreshold)
@@ -184,25 +191,19 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 			claimedUncompressedSize, UncompressedCap)
 	}
 
-	if d.zrd == nil {
-		d.zrd, err = zlib.NewReader(rd)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// Reuse already allocated zlib reader
-		if err = d.zrd.(zlib.Resetter).Reset(rd, nil); err != nil {
-			return nil, fmt.Errorf("error reseting zlib reader: %w", err)
-		}
+	// always create a fresh reader for each packet
+	zr, err := zlib.NewReader(rd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zlib reader: %w", err)
 	}
+	defer zr.Close()
 
-	// decompress payload
-	decompressed = make([]byte, claimedUncompressedSize)
-	_, err = io.ReadFull(d.zrd, decompressed)
+	bufOut := make([]byte, claimedUncompressedSize)
+	_, err = io.ReadFull(zr, bufOut)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing payload: %w", err)
 	}
-	return decompressed, d.zrd.Close()
+	return bufOut, nil
 }
 
 // DecodePayload takes p as the packet's payload that contains the packet id + data

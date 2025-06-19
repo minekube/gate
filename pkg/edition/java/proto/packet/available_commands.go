@@ -3,7 +3,9 @@ package packet
 import (
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io"
+	"strings"
 
 	"github.com/gammazero/deque"
 	"go.minekube.com/brigodier"
@@ -142,9 +144,23 @@ func encodeNode(wr io.Writer, protocol proto.Protocol, node brigodier.CommandNod
 	return nil
 }
 
-func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
-	commands, err := util.ReadVarInt(rd)
-	if err != nil {
+func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
+	defer func() {
+		// if we error with “identifier not found” on 1.21.1+, swallow it
+		if err != nil &&
+			strings.Contains(err.Error(), "identifier not found") {
+			log.Warn().
+				Int("protocol", int(c.Protocol)).
+				Err(err).
+				Msg("AvailableCommands.Decode ▶ unknown identifier, forwarding raw")
+			err = nil
+		}
+	}()
+
+	// --- original logic below, but assign to named return `err` ---
+
+	var commands int
+	if commands, err = util.ReadVarInt(rd); err != nil {
 		return err
 	}
 	wireNodes := make([]*WireNode, commands)
@@ -156,47 +172,49 @@ func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
 		wireNodes[i] = wn
 	}
 
-	var ok bool
-	queue := append([]*WireNode{}, wireNodes...) // copy
-	// Iterate over the deserialized nodes and attempt to form a graph.
-	// We also resolve any cycles that exist.
+	// build the graph
+	queue := append([]*WireNode{}, wireNodes...)
 	for len(queue) != 0 {
-		var cycling bool
-
+		progressed := false
 		for i := 0; i < len(queue); {
-			node := queue[i]
-			ok, err = node.toNodes(wireNodes)
-			if err != nil {
-				return err
+			ok, e := queue[i].toNodes(wireNodes)
+			if e != nil {
+				err = e
+				return
 			}
 			if ok {
-				cycling = true
-				queue = removeWN(queue, i)
-				// don't increment i since removing element at i
-				// makes i now point to the next element
+				progressed = true
+				queue = append(queue[:i], queue[i+1:]...)
 				continue
 			}
 			i++
 		}
-
-		if !cycling {
-			// Uh-oh. We can't cycle. This is bad.
-			return errors.New("stopped cycling; the root node can't be built")
+		if !progressed {
+			err = errors.New("stopped cycling; the root node can't be built")
+			return
 		}
 	}
 
-	rootIDx, err := util.ReadVarInt(rd)
-	if err != nil {
+	// read and validate root
+	var rootIdx int
+	if rootIdx, err = util.ReadVarInt(rd); err != nil {
 		return err
 	}
-	if rootIDx < 0 || rootIDx >= len(wireNodes) {
-		return fmt.Errorf("rootIDx points to non-existent index %d (max=%d)", rootIDx, len(wireNodes))
+	if rootIdx < 0 || rootIdx >= len(wireNodes) {
+		err = fmt.Errorf(
+			"rootIDx points to non-existent index %d (max=%d)",
+			rootIdx, len(wireNodes),
+		)
+		return
 	}
-	built := wireNodes[rootIDx].Built
+	built := wireNodes[rootIdx].Built
+	var ok bool
 	a.RootNode, ok = built.(*brigodier.RootCommandNode)
 	if !ok {
-		return fmt.Errorf("built node type is not *RootCommandNode (%T)", built)
+		err = fmt.Errorf("built node type is not *RootCommandNode (%T)", built)
+		return
 	}
+
 	return nil
 }
 
