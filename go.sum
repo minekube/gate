@@ -220,7 +220,6 @@ github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSS
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
 github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
@@ -248,8 +247,6 @@ github.com/zyedidia/generic v1.2.1 h1:Zv5KS/N2m0XZZiuLS82qheRG4X1o5gsWreGb0hR7XD
 github.com/zyedidia/generic v1.2.1/go.mod h1:ly2RBz4mnz1yeuVbQA/VFwGjK3mnHGRj1JuoG336Bis=
 go.minekube.com/brigodier v0.0.1 h1:v5x+fZNefM24JIi+fYQjQcjZ8rwJbfRSpnnpw4b/x6k=
 go.minekube.com/brigodier v0.0.1/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
-go.minekube.com/common v0.0.6 h1:XA4mcgDG13hQEBcY2JdmK0Ca2mx2jOZ9M8pflZ85dkE=
-go.minekube.com/common v0.0.6/go.mod h1:RTT2cwrMS+hwGAjJOt06bWtbKx04MuiF0tScyvGeAZo=
 go.minekube.com/common v0.1.0 h1:5pjKxBXVvsrZ7s4ORLA1RHqZ1jEcSW5U7W9/pA9DdN4=
 go.minekube.com/common v0.1.0/go.mod h1:CKCUOhcDjVWRfn77u3Tp/ECV6l1OQ5WUW5M159pu38M=
 go.minekube.com/connect v0.6.2 h1:RajPc7YgqygcOviV2g4xetL3J0Wzi8b/lsYXUzIltxE=

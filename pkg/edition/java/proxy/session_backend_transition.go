@@ -199,9 +199,9 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	// Let's transition completely to the new state.
 	smc.SetAutoReading(false)
 	connectedEvent := &ServerConnectedEvent{
-		player:         b.serverConn.player,
-		server:         b.serverConn.server,
-		entityID:       p.EntityID,
+		player:   b.serverConn.player,
+		server:   b.serverConn.server,
+		entityID: p.EntityID,
 	}
 	// Assign previousServer only if non-nil to prevent storing a typed nil pointer,
 	// which would incorrectly make connectedEvent.previousServer not equal to nil,

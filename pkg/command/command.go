@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"errors"
-	"slices"
 	"strings"
 
 	"go.minekube.com/brigodier"
@@ -149,7 +148,6 @@ func (m *Manager) OfferBrigodierSuggestions(ctx context.Context, source Source, 
 type sourceCtx struct{}
 
 var sourceCtxKey = &sourceCtx{}
-
 
 // normalizeInput normalizes the given command input.
 // input: the raw command input, without the leading slash ('/')
