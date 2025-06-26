@@ -22,7 +22,7 @@ func (p *KnownPacks) Decode(c *proto.PacketContext, rd io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if packCount > MaxLengthPacks {
+	if c.Direction == proto.ServerBound && packCount > MaxLengthPacks {
 		return fmt.Errorf("%w: %d", ErrTooManyPacks, packCount)
 	}
 	packs := make([]KnownPack, packCount)
