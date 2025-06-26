@@ -124,17 +124,44 @@ func (m *Manager) CompletionSuggestions(parse *ParseResults) (*brigodier.Suggest
 
 // OfferSuggestions returns completion suggestions.
 func (m *Manager) OfferSuggestions(ctx context.Context, source Source, cmdline string) ([]string, error) {
-	suggestions, err := m.CompletionSuggestions(m.Parse(ctx, source, cmdline))
+	suggestions, err := m.OfferBrigodierSuggestions(ctx, source, cmdline)
 	if err != nil {
 		return nil, err
 	}
-	s := make([]string, 0, len(suggestions.Suggestions))
-	for _, suggestion := range suggestions.Suggestions {
-		s = append(s, suggestion.Text)
+	result := make([]string, len(suggestions.Suggestions))
+	for i, s := range suggestions.Suggestions {
+		result[i] = s.Text
 	}
-	return s, nil
+	return result, nil
+}
+
+// OfferBrigodierSuggestions returns brigodier Suggestions for the given command line.
+func (m *Manager) OfferBrigodierSuggestions(ctx context.Context, source Source, cmdline string) (*brigodier.Suggestions, error) {
+	cmdLine := normalizeInput(cmdline, false)
+	suggestions, err := m.CompletionSuggestions(m.Parse(ctx, source, cmdLine))
+	if err != nil {
+		return nil, err
+	}
+	return suggestions, nil
 }
 
 type sourceCtx struct{}
 
 var sourceCtxKey = &sourceCtx{}
+
+// normalizeInput normalizes the given command input.
+// input: the raw command input, without the leading slash ('/')
+// trim: whether to remove leading and trailing whitespace from the input
+// returns the normalized command input
+func normalizeInput(input string, trim bool) string {
+	command := input
+	if trim {
+		command = strings.TrimSpace(input)
+	}
+	firstSep := strings.IndexRune(command, brigodier.ArgumentSeparator)
+	if firstSep != -1 {
+		// Aliases are case-insensitive, arguments are not
+		return strings.ToLower(command[:firstSep]) + command[firstSep:]
+	}
+	return strings.ToLower(command)
+}

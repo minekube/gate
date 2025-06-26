@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -22,9 +23,13 @@ const (
 	FlagExecutable     byte = 0x04
 	FlagIsRedirect     byte = 0x08
 	FlagHasSuggestions byte = 0x10
+	FlagIsRestricted   byte = 0x20
 )
 
 var PlaceholderCommand = brigodier.CommandFunc(func(c *brigodier.CommandContext) error { return nil })
+
+// placeholderRequirement is a placeholder requirement function for restricted commands
+var placeholderRequirement = brigodier.RequireFn(func(context.Context) bool { return true })
 
 type AvailableCommands struct {
 	RootNode *brigodier.RootCommandNode
@@ -74,6 +79,9 @@ func encodeNode(wr io.Writer, protocol proto.Protocol, node brigodier.CommandNod
 	}
 	if node.Command() != nil {
 		flags |= FlagExecutable
+	}
+	if node.Requirement() != nil {
+		flags |= FlagIsRestricted
 	}
 
 	switch n := node.(type) {
@@ -296,6 +304,13 @@ func (w *WireNode) toNodes(wireNodes []*WireNode) (bool, error) {
 			// If executable, add an empty command
 			if w.Flags&FlagExecutable != 0 {
 				w.Args.Executes(PlaceholderCommand)
+			}
+
+			// If restricted, handle the restriction flag
+			// Note: The Go brigodier library may not have a requirement system,
+			// so this is a placeholder for future implementation
+			if w.Flags&FlagIsRestricted != 0 {
+				w.Args.Requires(placeholderRequirement)
 			}
 
 			w.Built = w.Args.Build()

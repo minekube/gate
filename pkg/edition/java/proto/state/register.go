@@ -173,6 +173,7 @@ func init() {
 		m(0x15, version.Minecraft_1_20_3),
 		m(0x18, version.Minecraft_1_20_5),
 		m(0x1A, version.Minecraft_1_21_2),
+		m(0x1B, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&plugin.Message{},
 		m(0x17, version.Minecraft_1_7_2),
@@ -190,6 +191,7 @@ func init() {
 		m(0x10, version.Minecraft_1_20_3),
 		m(0x12, version.Minecraft_1_20_5),
 		m(0x14, version.Minecraft_1_21_2),
+		m(0x15, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&p.ClientSettings{},
 		m(0x15, version.Minecraft_1_7_2),
@@ -204,6 +206,7 @@ func init() {
 		m(0x09, version.Minecraft_1_20_2),
 		m(0x0A, version.Minecraft_1_20_5),
 		m(0x0C, version.Minecraft_1_21_2),
+		m(0x0D, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&chat.LegacyChat{},
 		m(0x01, version.Minecraft_1_7_2),
@@ -215,6 +218,7 @@ func init() {
 	Play.ServerBound.Register(&chat.ChatAcknowledgement{},
 		m(0x03, version.Minecraft_1_19_3),
 		m(0x04, version.Minecraft_1_21_2),
+		m(0x05, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&chat.KeyedPlayerCommand{},
 		m(0x03, version.Minecraft_1_19),
@@ -228,15 +232,18 @@ func init() {
 		m(0x04, version.Minecraft_1_19_3),
 		m(0x05, version.Minecraft_1_20_5),
 		m(0x06, version.Minecraft_1_21_2),
+		m(0x07, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&chat.UnsignedPlayerCommand{},
 		m(0x04, version.Minecraft_1_20_5),
 		m(0x05, version.Minecraft_1_21_2),
+		m(0x06, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&chat.SessionPlayerChat{},
 		m(0x05, version.Minecraft_1_19_3),
 		m(0x06, version.Minecraft_1_20_5),
 		m(0x07, version.Minecraft_1_21_2),
+		m(0x08, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&p.TabCompleteRequest{},
 		m(0x14, version.Minecraft_1_7_2),
@@ -252,6 +259,7 @@ func init() {
 		m(0x0A, version.Minecraft_1_20_2),
 		m(0x0B, version.Minecraft_1_20_5),
 		m(0x0D, version.Minecraft_1_21_2),
+		m(0x0E, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&p.ResourcePackResponse{},
 		m(0x19, version.Minecraft_1_8),
@@ -268,15 +276,18 @@ func init() {
 		m(0x2B, version.Minecraft_1_20_5),
 		m(0x2D, version.Minecraft_1_21_2),
 		m(0x2F, version.Minecraft_1_21_4),
+		m(0x30, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&config.FinishedUpdate{},
 		m(0x0B, version.Minecraft_1_20_2),
 		m(0x0C, version.Minecraft_1_20_5),
 		m(0x0E, version.Minecraft_1_21_2),
+		m(0x0F, version.Minecraft_1_21_6),
 	)
 	Play.ServerBound.Register(&cookie.CookieResponse{},
 		m(0x11, version.Minecraft_1_20_5),
 		m(0x13, version.Minecraft_1_21_2),
+		m(0x14, version.Minecraft_1_21_6),
 	)
 
 	Play.ClientBound.Register(&p.KeepAlive{},
