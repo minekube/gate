@@ -49,7 +49,7 @@ func setupAPI(cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.P
 
 			if c.Config.API.Enabled {
 				svc := api.NewService(initialEnable)
-				srv := api.NewServer(c.Config.API.Config, svc)
+				srv := api.NewServer(c.Config.API.Bind, svc)
 
 				var runCtx context.Context
 				runCtx, stop = context.WithCancel(ctx)

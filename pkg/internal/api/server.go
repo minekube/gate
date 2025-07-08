@@ -17,21 +17,21 @@ import (
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
 )
 
-func NewServer(cfg Config, h Handler) *Server {
+func NewServer(bind string, h Handler) *Server {
 	return &Server{
-		cfg: cfg,
-		h:   h,
+		bind: bind,
+		h:    h,
 	}
 }
 
 type Server struct {
-	cfg Config
-	h   Handler
+	bind string
+	h    Handler
 }
 
 func (s *Server) Start(ctx context.Context) error {
 	log := logr.FromContextOrDiscard(ctx)
-	log.Info("starting api service", "bind", s.cfg.Bind)
+	log.Info("starting api service", "bind", s.bind)
 
 	otelInterceptor, err := otelconnect.NewInterceptor()
 	if err != nil {
@@ -42,7 +42,7 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.Handle(gatev1connect.NewGateServiceHandler(s.h, connect.WithInterceptors(otelInterceptor)))
 
 	hs := &http.Server{
-		Addr: s.cfg.Bind,
+		Addr: s.bind,
 		Handler: h2c.NewHandler(mux, &http2.Server{
 			IdleTimeout: time.Second * 30,
 		}),

@@ -5,7 +5,6 @@ import (
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/internal/api"
 	connect "go.minekube.com/gate/pkg/util/connectutil/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
@@ -30,7 +29,7 @@ var DefaultConfig = Config{
 	Connect: connect.DefaultConfig,
 	API: API{
 		Enabled: false,
-		Config:  api.DefaultConfig,
+		Bind:    "0.0.0.0:8080",
 	},
 }
 
@@ -78,8 +77,8 @@ type HealthService struct {
 
 // API is the configuration for the Gate API.
 type API struct {
-	Enabled bool       `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Config  api.Config `json:"config,omitempty" yaml:"config,omitempty"`
+	Enabled bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Bind    string `json:"bind,omitempty" yaml:"bind,omitempty"`
 }
 
 // Validate validates a Config and all enabled edition configs (Java / Bedrock).
@@ -115,9 +114,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	//	errs = append(errs, prefix("bedrock", errs2)...)
 	//}
 	if c.API.Enabled {
-		warns2, errs2 := c.API.Config.Validate()
-		warns = append(warns, prefix("api", warns2)...)
-		errs = append(errs, prefix("api", errs2)...)
+		if err := validation.ValidHostPort(c.API.Bind); err != nil {
+			e("api.bind: invalid host:port %q: %v", c.API.Bind, err)
+		}
 	}
 	return
 }
