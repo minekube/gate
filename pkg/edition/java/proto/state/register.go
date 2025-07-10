@@ -621,6 +621,7 @@ func init() {
 	)
 	Play.ClientBound.Register(&p.ServerLinks{},
 		m(0x7B, version.Minecraft_1_21),
+		m(0x82, version.Minecraft_1_21_2),
 	)
 	Play.ClientBound.Register(&cookie.CookieRequest{},
 		m(0x16, version.Minecraft_1_20_5),
