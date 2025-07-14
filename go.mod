@@ -25,6 +25,7 @@ require (
 	github.com/pires/go-proxyproto v0.8.0
 	github.com/robinbraemer/event v0.1.1
 	github.com/rs/xid v1.6.0
+	github.com/rs/zerolog v1.34.0
 	github.com/sandertv/go-raknet v1.13.0
 	github.com/sandertv/gophertunnel v1.37.0
 	github.com/spf13/viper v1.20.1
@@ -67,6 +68,8 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
