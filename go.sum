@@ -247,8 +247,8 @@ github.com/zyedidia/generic v1.2.1 h1:Zv5KS/N2m0XZZiuLS82qheRG4X1o5gsWreGb0hR7XD
 github.com/zyedidia/generic v1.2.1/go.mod h1:ly2RBz4mnz1yeuVbQA/VFwGjK3mnHGRj1JuoG336Bis=
 go.minekube.com/brigodier v0.0.1 h1:v5x+fZNefM24JIi+fYQjQcjZ8rwJbfRSpnnpw4b/x6k=
 go.minekube.com/brigodier v0.0.1/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
-go.minekube.com/common v0.1.0 h1:5pjKxBXVvsrZ7s4ORLA1RHqZ1jEcSW5U7W9/pA9DdN4=
-go.minekube.com/common v0.1.0/go.mod h1:CKCUOhcDjVWRfn77u3Tp/ECV6l1OQ5WUW5M159pu38M=
+go.minekube.com/common v0.2.0 h1:b/4Scd2zXv1VIsbnTLKbTIipyVjmHHG/etMuJkrlJr4=
+go.minekube.com/common v0.2.0/go.mod h1:CKCUOhcDjVWRfn77u3Tp/ECV6l1OQ5WUW5M159pu38M=
 go.minekube.com/connect v0.6.2 h1:RajPc7YgqygcOviV2g4xetL3J0Wzi8b/lsYXUzIltxE=
 go.minekube.com/connect v0.6.2/go.mod h1:28k11I4RyzUfAL3AkOXt3atzjeOFAC8eqbCMwsYKAb0=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
