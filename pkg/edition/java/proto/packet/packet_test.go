@@ -275,6 +275,8 @@ var packets = []proto.Packet{
 	&cookie.CookieRequest{Key: key.New("minecraft", "test")},
 	&cookie.CookieResponse{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
 	&cookie.CookieStore{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
+	&DialogClear{},
+	&DialogShow{},
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {
