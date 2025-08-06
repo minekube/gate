@@ -41,6 +41,33 @@ config:
         backend: [ 10.0.0.2:25566 ]
 ```
 
+## Strategy
+
+When multiple backends are set, the strategy changes which one of the backends is used.
+
+There are four strategy types:
+  1. Random (default)
+    The backend will be randomly chosen.
+  2. Round-Robin
+    Each new connection is forwarded to the next backend in the list, cycling through all available backends in order.
+  3. Least-Connections
+    The backend with the lowest connections count, which gets added whenever a player joins one of the backends, is used.
+  4. Lowest-Latency
+    The backend with the lowest latency will be used.
+
+```yaml
+  config:
+    lite:
+      enabled: true
+      routes:
+        - host: abc.example.com
+          backend: [10.0.0.1:25566, 10.0.0.1:25567, 10.0.0.1:25568]
+          # You can change the strategy of connecting if multiple backends are available.
+          # Strategies: random, round-robin, least-connections, lowest-latency.
+          # Default: random
+          strategy: random
+```
+
 ## Ping Response Caching
 
 Players send server list ping requests to Gate Lite to display the motd (message of the day).
