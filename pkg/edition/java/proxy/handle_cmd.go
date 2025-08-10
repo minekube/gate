@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"go.minekube.com/gate/pkg/internal/future"
@@ -39,16 +40,15 @@ func (c *chatHandler) handleCommand(packet proto.Packet) error {
 }
 
 func (c *chatHandler) queueCommandResult(
-	message string,
+	command string,
 	timestamp time.Time,
 	lastSeenMessages *chat.LastSeenMessages,
 	packetCreator func(event *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet,
 ) {
-	cmd := message
 	e := &CommandExecuteEvent{
 		source:          c.player,
-		commandline:     cmd,
-		originalCommand: cmd,
+		commandline:     command,
+		originalCommand: command,
 	}
 	c.eventMgr.Fire(e)
 
@@ -64,7 +64,10 @@ func (c *chatHandler) queueCommandResult(
 }
 
 func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
-	c.queueCommandResult(packet.Message, time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
+	if !strings.HasPrefix(packet.Message, "/") {
+		return nil
+	}
+	c.queueCommandResult(packet.Message[1:], time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
 		if !e.Allowed() {
 			return nil
 		}
