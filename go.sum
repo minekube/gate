@@ -168,8 +168,12 @@ github.com/sagikazarmark/locafero v0.9.0 h1:GbgQGNtTrEmddYDSAH9QLRyfAHY12md+8YFT
 github.com/sagikazarmark/locafero v0.9.0/go.mod h1:UBUyz37V+EdMS3hDF3QWIiVr/2dPrx49OMO0Bn0hJqk=
 github.com/sandertv/go-raknet v1.13.0 h1:Jkovqz4FrBP7PCIBBirBRoWm7mQKNP/UTYbOOyBK1TY=
 github.com/sandertv/go-raknet v1.13.0/go.mod h1:E/DgMFQUMvWOvXwQRLEsTNOoYqzNubfcgzqL0nMoPso=
+github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6 h1:ZfK7NCzIDE+dzp5x6NIO4JDLsjsOxi762CNR1Obds2Q=
+github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6/go.mod h1:/yysjwfCXm2+2OY8mBazLzcxJ3irnylKCyG3FLgUPVU=
 github.com/sandertv/gophertunnel v1.37.0 h1:yPzOp4W1GahLjtxldXa5K25saJK/XG7SiyEt6oMjm0I=
 github.com/sandertv/gophertunnel v1.37.0/go.mod h1:4El8ZfEpUmOMIJhPt5SCc1PyLNiuQ2+grWczrBvSGVs=
+github.com/sandertv/gophertunnel v1.49.0 h1:9FIl4GGYMrFTmBPgkOTUskGWRQHIg4NMpY8JdM6SrCg=
+github.com/sandertv/gophertunnel v1.49.0/go.mod h1:lmRarAmn25V/+QeiUbUDXeA26bEaNlX1wGEM/rj39ew=
 github.com/segmentio/fasthash v1.0.3 h1:EI9+KE1EwvMLBWwjpRDc+fEM+prwxDYbslddQGtrmhM=
 github.com/segmentio/fasthash v1.0.3/go.mod h1:waKX8l2N8yckOgmSsXJi7x1ZfdKZ4x7KRMzBtS3oedY=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
@@ -307,6 +311,8 @@ golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f/go.mod h1:D5SMRVC3C2/4+F/DB1
 golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.18.0 h1:jGzIakQa/ZXI1I0Fxvaa9W7yP25TqT6cHIHn+6CqvSQ=
 golang.org/x/image v0.18.0/go.mod h1:4yyo5vMFQjVjUcVk4jEQcU9MGy/rulF5WvUILseCM2E=
+golang.org/x/image v0.21.0 h1:c5qV36ajHpdj4Qi0GnE0jUc/yuo33OLFaa0d+crTD5s=
+golang.org/x/image v0.21.0/go.mod h1:vUbsLavqK/W303ZroQQVKQ+Af3Yl6Uz1Ppu5J/cLz78=
 golang.org/x/lint v0.0.0-20180702182130-06c8688daad7/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=

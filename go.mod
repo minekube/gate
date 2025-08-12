@@ -25,8 +25,8 @@ require (
 	github.com/pires/go-proxyproto v0.8.0
 	github.com/robinbraemer/event v0.1.1
 	github.com/rs/xid v1.6.0
-	github.com/sandertv/go-raknet v1.13.0
-	github.com/sandertv/gophertunnel v1.37.0
+	github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6
+	github.com/sandertv/gophertunnel v1.49.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
@@ -100,7 +100,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
