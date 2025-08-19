@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-const MaxLengthPacks = 64
+const MaxLengthPacks = 264
 
 // ErrTooManyPacks is returned when sends too many packs.
 var ErrTooManyPacks = errs.NewSilentErr("too many packs")
