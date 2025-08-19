@@ -15,15 +15,19 @@ import (
 
 // DefaultConfig is the default configuration for Lite mode.
 var DefaultConfig = Config{
-	Enabled: false,
-	Routes:  []Route{},
+	Enabled:    false,
+	Routes:     []Route{},
+	MaxPlayers: 0, // 0 means unlimited
+	MaxPlayersMessage: "§cThis Node is full.Please try another node.",
 }
 
 type (
 	// Config is the configuration for Lite mode.
 	Config struct {
-		Enabled bool    `yaml:"enabled,omitempty" json:"enabled,omitempty"`
-		Routes  []Route `yaml:"routes,omitempty" json:"routes,omitempty"`
+		Enabled          bool    `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		Routes           []Route `yaml:"routes,omitempty" json:"routes,omitempty"`
+		MaxPlayers       int     `yaml:"maxPlayers,omitempty" json:"maxPlayers,omitempty"` // Maximum number of players to accept, 0 means unlimited
+		MaxPlayersMessage string  `yaml:"maxPlayersMessage,omitempty" json:"maxPlayersMessage,omitempty"` // Message to show when reaching max players limit
 	}
 	Route struct {
 		Host          configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
