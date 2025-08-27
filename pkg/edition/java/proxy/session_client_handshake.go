@@ -110,8 +110,15 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		}
 	}
 
+	// Optionally strip Floodgate payload from hostname for trusted mode
+	serverAddress := handshake.ServerAddress
+	if h.config().Floodgate.Enabled {
+		if res, err := detectFloodgate(serverAddress, h.config()); err == nil && res.Verified && res.CleanVHost != "" {
+			serverAddress = res.CleanVHost
+		}
+	}
 	vHost := netutil.NewAddr(
-		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
+		fmt.Sprintf("%s:%d", serverAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
 	)
 	handshakeIntent := handshake.Intent()

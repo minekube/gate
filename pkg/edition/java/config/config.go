@@ -23,6 +23,13 @@ var DefaultConfig = Config{
 		Mode:           LegacyForwardingMode,
 		VelocitySecret: "",
 	},
+	Floodgate: Floodgate{
+		Enabled:        false,
+		KeyFile:        "",
+		UsernamePrefix: ".",
+		ReplaceSpaces:  true,
+		ForceOffline:   true,
+	},
 	Status: Status{
 		ShowMaxPlayers: 1000,
 		Motd:           defaultMotd(),
@@ -91,6 +98,7 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
 	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
+	Floodgate  Floodgate  `yaml:"floodgate,omitempty" json:"floodgate,omitempty"`   // Trusted Floodgate integration.
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
@@ -162,6 +170,20 @@ type (
 		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
 		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
+	}
+	// Floodgate config for trusting Bedrock auth from Geyser/Floodgate.
+	Floodgate struct {
+		// Enabled enables trusted Floodgate mode. When true, Gate will try to detect and
+		// verify Floodgate handshake payloads from Geyser and force offline mode for those sessions.
+		Enabled bool `yaml:"enabled" json:"enabled"`
+		// KeyFile is the path to Floodgate's AES key file (key.pem). The file contents are raw AES key bytes.
+		KeyFile string `yaml:"keyFile" json:"keyFile"`
+		// UsernamePrefix is prefixed to Bedrock usernames when constructing a Java username (max 16 chars).
+		UsernamePrefix string `yaml:"usernamePrefix" json:"usernamePrefix"`
+		// ReplaceSpaces controls whether spaces in Bedrock usernames are replaced with underscores.
+		ReplaceSpaces bool `yaml:"replaceSpaces" json:"replaceSpaces"`
+		// ForceOffline forces the PreLogin to offline mode for verified Floodgate sessions (skips Mojang auth).
+		ForceOffline bool `yaml:"forceOffline" json:"forceOffline"`
 	}
 )
 
