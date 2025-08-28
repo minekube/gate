@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"strings"
 	"regexp"
 	"time"
 
@@ -142,19 +141,11 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	l.login = login
 
 	e := newPreLoginEvent(l.inbound, l.login.Username, l.login.HolderID)
-	// Floodgate trusted Bedrock: detect and force offline to skip Mojang auth
-	if l.config().Floodgate.Enabled {
-		if vhost := l.inbound.VirtualHost(); vhost != nil {
-			host := vhost.String()
-			if i := strings.LastIndexByte(host, ':'); i > 0 {
-				host = host[:i]
-			}
-			if res, err := detectFloodgate(host, l.config()); err == nil && res.Verified && l.config().Floodgate.ForceOffline {
-				e.ForceOfflineMode()
-				if res.JavaName != "" {
-					l.login.Username = res.JavaName
-				}
-			}
+	// Floodgate trusted Bedrock: force offline (flag carried from handshake)
+	if l.config().Floodgate.Enabled && l.inbound.floodgateTrusted && l.config().Floodgate.ForceOffline {
+		e.ForceOfflineMode()
+		if l.inbound.floodgateJavaName != "" {
+			l.login.Username = l.inbound.floodgateJavaName
 		}
 	}
 	l.eventMgr.Fire(e)
