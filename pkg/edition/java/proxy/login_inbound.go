@@ -51,12 +51,18 @@ type loginInboundConn struct {
 	onAllMessagesHandled func() error
 
 	playerKey crypto.IdentifiedKey
+
+	// Floodgate trust flags copied from initial inbound
+	floodgateTrusted  bool
+	floodgateJavaName string
 }
 
 func newLoginInboundConn(delegate *initialInbound) *loginInboundConn {
 	return &loginInboundConn{
 		delegate:             delegate,
 		outstandingResponses: map[int]MessageConsumer{},
+		floodgateTrusted:     delegate.floodgateTrusted,
+		floodgateJavaName:    delegate.floodgateJavaName,
 	}
 }
 

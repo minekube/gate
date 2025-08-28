@@ -112,9 +112,13 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 
 	// Optionally strip Floodgate payload from hostname for trusted mode
 	serverAddress := handshake.ServerAddress
+	var fgRes floodgateTrustResult
 	if h.config().Floodgate.Enabled {
-		if res, err := detectFloodgate(serverAddress, h.config()); err == nil && res.Verified && res.CleanVHost != "" {
-			serverAddress = res.CleanVHost
+		if res, err := detectFloodgate(serverAddress, h.config()); err == nil && res.Verified {
+			fgRes = res
+			if res.CleanVHost != "" {
+				serverAddress = res.CleanVHost
+			}
 		}
 	}
 	vHost := netutil.NewAddr(
@@ -123,6 +127,11 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	)
 	handshakeIntent := handshake.Intent()
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
+	// Persist Floodgate trust result for login phase
+	if fgRes.Verified {
+		inbound.floodgateTrusted = true
+		inbound.floodgateJavaName = fgRes.JavaName
+	}
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
 		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
@@ -212,6 +221,8 @@ type initialInbound struct {
 	netmc.MinecraftConn
 	virtualHost     net.Addr
 	handshakeIntent packet.HandshakeIntent
+	floodgateTrusted bool
+	floodgateJavaName string
 }
 
 var _ Inbound = (*initialInbound)(nil)
@@ -221,6 +232,8 @@ func newInitialInbound(c netmc.MinecraftConn, virtualHost net.Addr, handshakeInt
 		MinecraftConn:   c,
 		virtualHost:     virtualHost,
 		handshakeIntent: handshakeIntent,
+		floodgateTrusted: false,
+		floodgateJavaName: "",
 	}
 }
 
