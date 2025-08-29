@@ -110,28 +110,12 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		}
 	}
 
-	// Optionally strip Floodgate payload from hostname for trusted mode
-	serverAddress := handshake.ServerAddress
-	var fgRes floodgateTrustResult
-	if h.config().Floodgate.Enabled {
-		if res, err := detectFloodgate(serverAddress, h.config()); err == nil && res.Verified {
-			fgRes = res
-			if res.CleanVHost != "" {
-				serverAddress = res.CleanVHost
-			}
-		}
-	}
 	vHost := netutil.NewAddr(
-		fmt.Sprintf("%s:%d", serverAddress, handshake.Port),
+		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
 	)
 	handshakeIntent := handshake.Intent()
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
-	// Persist Floodgate trust result for login phase
-	if fgRes.Verified {
-		inbound.floodgateTrusted = true
-		inbound.floodgateJavaName = fgRes.JavaName
-	}
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
 		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
