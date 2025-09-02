@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
-	"io"
 )
 
 const MaxLengthPacks = 64
