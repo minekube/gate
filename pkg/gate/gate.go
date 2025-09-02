@@ -106,6 +106,9 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	if c.Editions.Bedrock.Enabled && c.Editions.Java.Enabled {
+		// Set up integration between Java and Bedrock proxies
+		gate.bridge.BedrockProxy.SetJavaProxy(gate.bridge.JavaProxy)
+
 		// More than one edition was enabled, setup bridge between them
 		if err = gate.bridge.Setup(); err != nil {
 			return nil, fmt.Errorf("error setting up bridge between proxy editions: %w", err)

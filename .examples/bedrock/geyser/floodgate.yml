@@ -1,0 +1,30 @@
+# Floodgate configuration for backend servers
+
+# Player linking settings
+player-link:
+  # Allow linking Bedrock accounts to Java accounts
+  enabled: true
+  # Require linking for certain features
+  require-link: false
+  # Link type: global or per-server
+  type: global
+
+# Username settings
+username-prefix: "."
+replace-spaces: true
+
+# Authentication settings
+auth:
+  # Use the same key as Geyser
+  key-file-name: "key.pem"
+
+# Metrics
+metrics:
+  enabled: false
+  uuid: "generate-new-uuid"
+
+# Debug settings
+debug: false
+
+# Configuration version
+config-version: 2

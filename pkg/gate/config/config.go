@@ -109,11 +109,11 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		warns = append(warns, prefix("java", warns2)...)
 		errs = append(errs, prefix("java", errs2)...)
 	}
-	//if c.Editions.Bedrock.Enabled {
-	//	warns2, errs2 := c.Editions.Bedrock.Config.Validate()
-	//	warns = append(warns, prefix("bedrock", warns2)...)
-	//	errs = append(errs, prefix("bedrock", errs2)...)
-	//}
+	if c.Editions.Bedrock.Enabled {
+		warns2, errs2 := c.Editions.Bedrock.Config.Validate()
+		warns = append(warns, prefix("bedrock", warns2)...)
+		errs = append(errs, prefix("bedrock", errs2)...)
+	}
 	if c.API.Enabled {
 		warns2, errs2 := c.API.Config.Validate()
 		warns = append(warns, prefix("api", warns2)...)

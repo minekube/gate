@@ -12,6 +12,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
+	"go.minekube.com/gate/pkg/edition/bedrock/geyser"
+	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 
@@ -64,12 +66,40 @@ type Proxy struct {
 	closeListener chan struct{}
 	started       bool
 
-	listenerKey *ecdsa.PrivateKey
+	listenerKey       *ecdsa.PrivateKey
+	geyserIntegration *geyser.Integration
+	javaProxy         interface{} // Reference to Java proxy for integration
+}
+
+// SetJavaProxy sets the Java proxy reference for integration.
+func (p *Proxy) SetJavaProxy(javaProxy interface{}) {
+	p.javaProxy = javaProxy
 }
 
 func (p *Proxy) Start(ctx context.Context) error {
-	<-ctx.Done()
 	p.log = logr.FromContextOrDiscard(ctx)
-	// TODO
+
+	// Initialize Geyser integration if Java proxy is available
+	if p.javaProxy != nil {
+		if javaProxy, ok := p.javaProxy.(*jproxy.Proxy); ok {
+			integration, err := geyser.NewIntegration(ctx, javaProxy, p.config)
+			if err != nil {
+				p.log.Error(err, "failed to initialize geyser integration")
+				return err
+			}
+
+			p.geyserIntegration = integration
+
+			if err := integration.Start(); err != nil {
+				p.log.Error(err, "failed to start geyser integration")
+				return err
+			}
+		}
+	}
+
+	p.log.Info("bedrock proxy started with geyser integration")
+
+	// Wait for context cancellation
+	<-ctx.Done()
 	return nil
 }

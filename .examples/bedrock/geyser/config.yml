@@ -1,0 +1,59 @@
+bedrock:
+  port: 19132
+  motd1: "Gate + Geyser"
+  motd2: "Cross-Play Server"
+  server-name: "Gate Bedrock"
+  compression-level: 6
+
+remote:
+  # Connect to Gate's Bedrock listener
+  address: gate
+  port: 25567
+  auth-type: floodgate
+  use-proxy-protocol: true
+  forward-hostname: false
+
+# Point to the shared Floodgate key
+floodgate-key-file: key.pem
+
+# Enable passthrough for better integration
+passthrough-motd: true
+passthrough-player-counts: true
+legacy-ping-passthrough: false
+ping-passthrough-interval: 3
+
+# Performance settings
+forward-player-ping: true
+max-players: 100
+debug-mode: false
+
+# Bedrock-specific settings
+show-cooldown: title
+show-coordinates: true
+disable-bedrock-scaffolding: false
+emote-offhand-workaround: "disabled"
+
+# Custom skulls and items
+allow-custom-skulls: true
+max-visible-custom-skulls: 128
+custom-skull-render-distance: 32
+add-non-bedrock-items: true
+
+# Resource packs
+force-resource-packs: true
+
+# Xbox features
+xbox-achievements-enabled: false
+
+# Logging
+log-player-ip-addresses: true
+notify-on-new-bedrock-update: true
+
+# Advanced settings
+scoreboard-packet-threshold: 20
+enable-proxy-connections: false
+mtu: 1400
+use-direct-connection: true
+disable-compression: true
+
+config-version: 4

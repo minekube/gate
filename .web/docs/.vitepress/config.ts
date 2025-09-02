@@ -88,6 +88,7 @@ export default defineConfig({
       { text: 'Developers', link: '/developers/' },
       { text: 'API', link: '/developers/api/' },
       { text: 'Config', link: '/guide/config/' },
+      { text: 'Bedrock', link: '/guide/bedrock' },
       { text: 'Downloads', link: '/guide/install/' },
       { text: 'Extensions', link: '/extensions' },
       {
@@ -154,6 +155,10 @@ export default defineConfig({
             {
               text: 'Modded Servers',
               link: '/guide/modded-servers',
+            },
+            {
+              text: 'Bedrock Support',
+              link: '/guide/bedrock',
             },
           ],
         },
