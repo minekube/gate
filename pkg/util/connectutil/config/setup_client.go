@@ -24,6 +24,8 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
+const mdOfflineMode = connect.MDEndpoint + "-offline-mode"
+
 // connectClient registers the endpoint and starts watching
 // for session proposals from the WatchService to create tunnel connections
 // and passing them to connHandler in parallel.
@@ -58,6 +60,9 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 				connect.MDEndpoint, c.Name,
 				connect.MDPrefix+"connector", "gate",
 			)
+			if c.AllowOfflineModePlayers {
+				dialCtx = metadata.AppendToOutgoingContext(dialCtx, mdOfflineMode, "true")
+			}
 
 			log := logr.FromContextOrDiscard(ctx)
 

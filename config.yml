@@ -208,6 +208,9 @@ connect:
   # It is supported to run multiple Gates on the same endpoint name for load balancing
   # (use the same connect.json token file from first Gate instance).
   #name: your-endpoint-name
+  # Whether to allow offline mode players to join.
+  # Default: false
+  allowOfflineModePlayers: true
 
 # Gate HTTP API configuration.
 # See https://gate.minekube.com/guide/api for more information.
