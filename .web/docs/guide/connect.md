@@ -117,6 +117,8 @@ enforce-secure-profile=false
 
 ::: details Authentication/Connection Errors
 
+![Connect authentication error](/images/connect-offline-kicked-profile-key.png)
+
 **Symptoms**:
 
 - "Invalid signature for profile public key"
@@ -132,6 +134,8 @@ enforce-secure-profile=false
 :::
 
 ::: details Chat/Communication Issues
+
+![Chat disabled due to missing profile public key](/images/connect-offline-chat-disabled.png)
 
 **Symptom**: Players can join but cannot send chat messages ("Chat disabled due to missing profile public key")
 
