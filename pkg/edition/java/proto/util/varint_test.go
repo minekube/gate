@@ -66,7 +66,10 @@ func TestCrossStitchCompatibility(t *testing.T) {
 
 	// Verify the bytes match expected encoding
 	buf.Reset()
-	WriteVarInt(&buf, crossStitchId)
+	err = WriteVarInt(&buf, crossStitchId)
+	if err != nil {
+		t.Fatalf("Failed to write CrossStitch mod argument ID for byte verification: %v", err)
+	}
 	actualBytes := buf.Bytes()
 	expected := []byte{128, 254, 255, 255, 15} // Expected encoding for -256
 
