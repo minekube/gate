@@ -39,7 +39,7 @@ connect:
   name: my-server-name // [!code ++]
 ```
 
-Then you neeed to set the `CONNECT_TOKEN` environment variable or create a `connect.json` next to your config with the following format:
+Then you need to set the `CONNECT_TOKEN` environment variable or create a `connect.json` next to your config with the following format:
 
 ```json
 {"token":"YOUR-TOKEN"}

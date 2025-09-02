@@ -151,6 +151,10 @@ export default defineConfig({
               text: 'Compatibility',
               link: '/guide/compatibility',
             },
+            {
+              text: 'Modded Servers',
+              link: '/guide/modded-servers',
+            },
           ],
         },
         {
@@ -175,6 +179,10 @@ export default defineConfig({
             {
               text: 'Rate Limiting',
               link: '/guide/rate-limiting',
+            },
+            {
+              text: 'Modded Servers Config',
+              link: '/guide/config/modded-servers',
             },
           ],
         },

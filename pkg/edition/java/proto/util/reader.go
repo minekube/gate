@@ -122,7 +122,7 @@ func ReadVarIntReturnN(r io.Reader) (result int, n int, err error) {
 				break
 			}
 		}
-		return int(val), n, nil
+		return int(int32(val)), n, nil
 	}
 
 	var bytesRead byte = 0
