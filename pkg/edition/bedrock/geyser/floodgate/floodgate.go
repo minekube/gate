@@ -20,18 +20,18 @@ type Floodgate struct {
 // BedrockData contains comprehensive information about a Bedrock player.
 // This matches the Floodgate protocol specification.
 type BedrockData struct {
-	Version      string // Floodgate version
-	Username     string // Bedrock username
-	Xuid         int64  // Xbox User ID
+	Version      string   // Floodgate version
+	Username     string   // Bedrock username
+	Xuid         int64    // Xbox User ID
 	DeviceOS     DeviceOS // Device operating system
-	Language     string // Client language
-	UIProfile    int    // UI profile (classic/pocket)
-	InputMode    int    // Input method (touch/keyboard/controller)
-	IP           string // Player IP address
-	LinkedPlayer string // Linked Java account (if any)
-	Proxy        bool   // Whether player is behind a proxy
-	SubscribeID  string // Subscribe ID for linking
-	VerifyCode   string // Verification code for linking
+	Language     string   // Client language
+	UIProfile    int      // UI profile (classic/pocket)
+	InputMode    int      // Input method (touch/keyboard/controller)
+	IP           string   // Player IP address
+	LinkedPlayer string   // Linked Java account (if any)
+	Proxy        bool     // Whether player is behind a proxy
+	SubscribeID  string   // Subscribe ID for linking
+	VerifyCode   string   // Verification code for linking
 }
 
 // DeviceOS represents the operating system of a device.
@@ -48,22 +48,22 @@ func (d DeviceOS) String() string {
 // DeviceOS constants
 // See https://github.com/GeyserMC/Geyser/blob/master/common/src/main/java/org/geysermc/floodgate/util/DeviceOs.java#L35
 var (
-	DeviceOSUnknown         = DeviceOS{ID: 0, Name: "Unknown"}
-	DeviceOSAndroid         = DeviceOS{ID: 1, Name: "Android"}
-	DeviceOSIOS             = DeviceOS{ID: 2, Name: "iOS"}
-	DeviceOSMacOS           = DeviceOS{ID: 3, Name: "macOS"}
-	DeviceOSAmazon          = DeviceOS{ID: 4, Name: "Amazon"}
-	DeviceOSGearVR          = DeviceOS{ID: 5, Name: "Gear VR"}
-	DeviceOSHololens        = DeviceOS{ID: 6, Name: "Hololens"} // Deprecated
-	DeviceOSWindowsUWP      = DeviceOS{ID: 7, Name: "Windows"}
-	DeviceOSWindowsX86      = DeviceOS{ID: 8, Name: "Windows x86"}
-	DeviceOSDedicated       = DeviceOS{ID: 9, Name: "Dedicated"}
-	DeviceOSAppleTV         = DeviceOS{ID: 10, Name: "Apple TV"}    // Deprecated
-	DeviceOSPlayStation     = DeviceOS{ID: 11, Name: "PlayStation"} // All PlayStation platforms
-	DeviceOSSwitch          = DeviceOS{ID: 12, Name: "Switch"}
-	DeviceOSXbox            = DeviceOS{ID: 13, Name: "Xbox"}
-	DeviceOSWindowsPhone    = DeviceOS{ID: 14, Name: "Windows Phone"} // Deprecated
-	DeviceOSLinux           = DeviceOS{ID: 15, Name: "Linux"}
+	DeviceOSUnknown      = DeviceOS{ID: 0, Name: "Unknown"}
+	DeviceOSAndroid      = DeviceOS{ID: 1, Name: "Android"}
+	DeviceOSIOS          = DeviceOS{ID: 2, Name: "iOS"}
+	DeviceOSMacOS        = DeviceOS{ID: 3, Name: "macOS"}
+	DeviceOSAmazon       = DeviceOS{ID: 4, Name: "Amazon"}
+	DeviceOSGearVR       = DeviceOS{ID: 5, Name: "Gear VR"}
+	DeviceOSHololens     = DeviceOS{ID: 6, Name: "Hololens"} // Deprecated
+	DeviceOSWindowsUWP   = DeviceOS{ID: 7, Name: "Windows"}
+	DeviceOSWindowsX86   = DeviceOS{ID: 8, Name: "Windows x86"}
+	DeviceOSDedicated    = DeviceOS{ID: 9, Name: "Dedicated"}
+	DeviceOSAppleTV      = DeviceOS{ID: 10, Name: "Apple TV"}    // Deprecated
+	DeviceOSPlayStation  = DeviceOS{ID: 11, Name: "PlayStation"} // All PlayStation platforms
+	DeviceOSSwitch       = DeviceOS{ID: 12, Name: "Switch"}
+	DeviceOSXbox         = DeviceOS{ID: 13, Name: "Xbox"}
+	DeviceOSWindowsPhone = DeviceOS{ID: 14, Name: "Windows Phone"} // Deprecated
+	DeviceOSLinux        = DeviceOS{ID: 15, Name: "Linux"}
 )
 
 // DeviceOSes is a list of all DeviceOSes.
