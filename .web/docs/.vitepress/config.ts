@@ -145,7 +145,7 @@ export default defineConfig({
               link: '/developers/',
             },
             {
-              text: 'HTTP API',
+              text: 'API & SDKs',
               link: '/developers/api/',
             },
             {
