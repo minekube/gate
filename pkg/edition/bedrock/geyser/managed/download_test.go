@@ -192,11 +192,12 @@ func TestDownloadIfNewer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	tempDir := t.TempDir()
-	testJarPath := filepath.Join(tempDir, "test-geyser.jar")
 	geyserURL := "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
 
 	t.Run("download new file", func(t *testing.T) {
+		// Each subtest gets its own temp directory and file to avoid conflicts on Windows
+		tempDir := t.TempDir()
+		testJarPath := filepath.Join(tempDir, "test-geyser.jar")
 		// File doesn't exist, should download
 		updated, err := downloadIfNewer(ctx, geyserURL, testJarPath)
 		if err != nil {
@@ -227,7 +228,17 @@ func TestDownloadIfNewer(t *testing.T) {
 	})
 
 	t.Run("check for updates when file exists", func(t *testing.T) {
-		// File exists from previous test, should check for updates
+		// Create our own test file to avoid Windows file conflicts
+		tempDir := t.TempDir()
+		testJarPath := filepath.Join(tempDir, "test-geyser.jar")
+		
+		// First download the file
+		_, err := downloadIfNewer(ctx, geyserURL, testJarPath)
+		if err != nil {
+			t.Fatalf("Initial download failed: %v", err)
+		}
+		
+		// File exists now, should check for updates
 		originalInfo, err := os.Stat(testJarPath)
 		if err != nil {
 			t.Fatalf("Failed to stat existing file: %v", err)
@@ -262,6 +273,16 @@ func TestDownloadIfNewer(t *testing.T) {
 	})
 
 	t.Run("immediate second check should not update", func(t *testing.T) {
+		// Create our own test file to avoid Windows file conflicts
+		tempDir := t.TempDir()
+		testJarPath := filepath.Join(tempDir, "test-geyser.jar")
+		
+		// First download the file
+		_, err := downloadIfNewer(ctx, geyserURL, testJarPath)
+		if err != nil {
+			t.Fatalf("Initial download failed: %v", err)
+		}
+		
 		// Immediately check again - should definitely not update
 		updated, err := downloadIfNewer(ctx, geyserURL, testJarPath)
 		if err != nil {
