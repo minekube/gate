@@ -3,6 +3,7 @@ package geyser
 import (
 	"context"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"sync"
@@ -102,8 +103,10 @@ func (i *Integration) Start() error {
 	eventMgr := i.proxy.Event()
 
 	// Subscribe to proxy events
-	unsubPre := event.Subscribe(eventMgr, 0, i.onPreLogin)
-	unsubProf := event.Subscribe(eventMgr, 0, i.onGameProfile)
+	// High priority to ensure that we handle Bedrock players before other handlers.
+	const priority = math.MaxInt-100 
+	unsubPre := event.Subscribe(eventMgr, priority, i.onPreLogin)
+	unsubProf := event.Subscribe(eventMgr, priority, i.onGameProfile)
 	i.unsubs = append(i.unsubs, unsubPre, unsubProf)
 
 	// If managed mode enabled, ensure and start Geyser Standalone
