@@ -15,14 +15,11 @@ config:
 
   # Enable Bedrock edition support (Geyser + Floodgate)
   bedrock:
-    enabled: true
-    config:
-      # Gate ↔ Geyser connection
-      geyserListenAddr: 'gate:25567'
-      # Bedrock player settings
-      usernameFormat: '.%s'
-      # Floodgate authentication key
-      floodgateKeyPath: '/gate/floodgate.pem'
-      # Managed Geyser (Gate handles Geyser process automatically)
-      managed:
-        enabled: true
+    # Shorthand: managed: true implies both enabled: true and managed.enabled: true
+    managed: true
+    # Gate ↔ Geyser connection
+    geyserListenAddr: 'gate:25567'
+    # Bedrock player settings
+    usernameFormat: '.%s'
+    # Floodgate authentication key
+    floodgateKeyPath: '/gate/floodgate.pem'

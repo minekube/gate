@@ -25,7 +25,7 @@ INFO	java	proxy/proxy.go:472	listening for connections	{"addr": "0.0.0.0:25565"}
 Gate supports:
 
 - **[Lite mode](lite)** - Lightweight reverse proxy for simple setups
-- **[Bedrock support](bedrock)** - Cross-play with mobile, console, and Windows 10 players
+- **[Bedrock support](bedrock)** - Cross-play with mobile, console, and Windows players
 
 :::
 

@@ -76,7 +76,8 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	// Validate Bedrock config if enabled
 	if c.Config.Bedrock.Enabled {
-		warns2, errs2 := c.Config.Bedrock.Config.Validate()
+		bedrockConfig := c.Config.Bedrock.ToConfig()
+		warns2, errs2 := bedrockConfig.Validate()
 		warns = append(warns, prefix("bedrock", warns2)...)
 		errs = append(errs, prefix("bedrock", errs2)...)
 	}

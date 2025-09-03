@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"go.minekube.com/gate/pkg/edition"
+	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
@@ -63,6 +64,14 @@ func New(options Options) (gate *Gate, err error) {
 	reload.Map(eventMgr, func(c *config.Config) *connectcfg.Config {
 		return &c.Connect
 	})
+	// Map Bedrock config reload events
+	reload.Map(eventMgr, func(c *config.Config) *bconfig.Config {
+		if c.Config.Bedrock.Enabled {
+			bedrockConfig := c.Config.Bedrock.ToConfig()
+			return &bedrockConfig
+		}
+		return nil
+	})
 
 	gate = &Gate{
 		proc: process.New(process.Options{AllOrNothing: true}),
@@ -85,9 +94,10 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	if c.Config.Bedrock.Enabled {
-		// Use the bedrock config directly (no conversion needed)
+		// Convert flattened bedrock config to the original structure
+		bedrockConfig := c.Config.Bedrock.ToConfig()
 		gate.bedrockProxy, err = bproxy.New(bproxy.Options{
-			Config:    &c.Config.Bedrock.Config,
+			Config:    &bedrockConfig,
 			JavaProxy: gate.javaProxy,
 			EventMgr:  eventMgr,
 		})

@@ -35,7 +35,7 @@ Follow our [quick start guide](https://gate.minekube.com/guide/quick-start/) on 
 ## Bedrock Cross-Play Support
 
 Gate includes built-in **Bedrock Edition support** enabling cross-play between
-Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows 10) players
+Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows) players
 through integrated Geyser & Floodgate technology - **zero plugins required**!
 
 See the [Bedrock Guide](https://gate.minekube.com/guide/bedrock/) for setup instructions.
@@ -43,7 +43,7 @@ See the [Bedrock Guide](https://gate.minekube.com/guide/bedrock/) for setup inst
 ```mermaid
 graph LR
     A[Java Players<br/>PC] -->|25565| D(Gate Proxy)
-    B[Bedrock Players<br/>Mobile/Console/Win10] -->|19132| C(Geyser)
+    B[Bedrock Players<br/>Mobile/Console/Win] -->|19132| C(Geyser)
     C -->|25567| D
     D -->|Java Protocol| E[Backend Server<br/>Paper/Spigot/Vanilla]
 

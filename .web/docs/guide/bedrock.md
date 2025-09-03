@@ -44,20 +44,7 @@ Gate automatically generates encryption keys, downloads Geyser, creates optimize
 
 Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with built-in Floodgate protocol support:
 
-```mermaid
-graph TD
-    A["📱 Bedrock Players<br/>(Mobile, Console, Win10)"] --> B["🔄 Geyser Standalone<br/>(Protocol Translation)"]
-    B --> C["🌉 Gate Proxy<br/>(Built-in Floodgate)"]
-    C --> D["🖥️ Backend Servers<br/>(No plugins needed)"]
-
-    E["☕ Java Players<br/>(PC Java Edition)"] --> C
-
-    style A fill:#0d7377
-    style B fill:#14a085
-    style C fill:#f39c12
-    style D fill:#8e44ad
-    style E fill:#3498db
-```
+[![](https://mermaid.ink/img/pako:eNpVks-O0zAQxl_FMheQ0hI3btJEaKVNWlZCLKooEhKEgxtPU2tdu3Kc1War3rggIXHgj7hx4gG48Ty8ADwCbpIuxSfb3_y-GY9nhwvNASe4NGy7Rk-f5wq5df46x3--ffyBUuBGF1doLlkDpnq0NA_P7l_qpZDgoUyrSh82L4Ui_oMcv0GDwRlKW_jTW3QBTQUGLSxTnEmtoMPnRltdaIleGKYqyazQ6gB3qdPWI2s93r9DF8wCcsRN08FpLaQdCIUeS6156dR_aNai0xb98v33zw8oZcUVKI4WYK7vyn-m0VbWpVAVUgAceOfQecwc_evrZ_SEXbP_Xz3PussZF8eKu1KPaGUbCegcrYSUyT2fR0EUnSpprxDK_Mn4VMl6ZRXEBRmdKtNemQCljJ8qs14JaDzhS-zhDZgNE9z95e4Ql2O7hg3kOHFbKcq1zXGu9i6Q1VYvGlXgxJoaPGx0Xa5xsmKycqd6y11Tp4K5idjc3W6ZeqX15oiU5pCox12DwWS6VhYnJA7aYJzs8A1ORsGQhDSMRjQgMY1pFHm4cVEkGvpjOvbJOAhHkR_SvYdvW39_OBmFk3EYxSSOAkKoh8E1XJvLbk7bcd3_Bcao3Os?type=png)](https://mermaid.live/edit#pako:eNpVks-O0zAQxl_FMheQ0hI3btJEaKVNWlZCLKooEhKEgxtPU2tdu3Kc1War3rggIXHgj7hx4gG48Ty8ADwCbpIuxSfb3_y-GY9nhwvNASe4NGy7Rk-f5wq5df46x3--ffyBUuBGF1doLlkDpnq0NA_P7l_qpZDgoUyrSh82L4Ui_oMcv0GDwRlKW_jTW3QBTQUGLSxTnEmtoMPnRltdaIleGKYqyazQ6gB3qdPWI2s93r9DF8wCcsRN08FpLaQdCIUeS6156dR_aNai0xb98v33zw8oZcUVKI4WYK7vyn-m0VbWpVAVUgAceOfQecwc_evrZ_SEXbP_Xz3PussZF8eKu1KPaGUbCegcrYSUyT2fR0EUnSpprxDK_Mn4VMl6ZRXEBRmdKtNemQCljJ8qs14JaDzhS-zhDZgNE9z95e4Ql2O7hg3kOHFbKcq1zXGu9i6Q1VYvGlXgxJoaPGx0Xa5xsmKycqd6y11Tp4K5idjc3W6ZeqX15oiU5pCox12DwWS6VhYnJA7aYJzs8A1ORsGQhDSMRjQgMY1pFHm4cVEkGvpjOvbJOAhHkR_SvYdvW39_OBmFk3EYxSSOAkKoh8E1XJvLbk7bcd3_Bcao3Os)
 
 ### The Flow
 
@@ -70,7 +57,7 @@ graph TD
 
 - ✅ **No backend plugins** - Gate handles all Bedrock logic internally
 - ✅ **Zero configuration** - Managed mode handles everything automatically
-- ✅ **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows 10)
+- ✅ **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows)
 - ✅ **Secure** - Uses AES-128 encryption for player authentication
 
 ---
@@ -93,8 +80,8 @@ bedrock:
   # Custom username format to avoid conflicts
   usernameFormat: '.%s' # .Steve instead of Steve
 
-  # Custom listen address for Geyser connections
-  geyserListenAddr: '0.0.0.0:25567'
+  # Custom listen address for Geyser connections (localhost for security)
+  geyserListenAddr: 'localhost:25567'
 
   # Custom key path (optional - auto-generated if not specified)
   floodgateKeyPath: '/path/to/key.pem'
@@ -108,7 +95,7 @@ bedrock:
 bedrock:
   managed: true # Implies both enabled: true and managed.enabled: true
   usernameFormat: '.%s'
-  geyserListenAddr: '0.0.0.0:25567'
+  geyserListenAddr: 'localhost:25567'
 ```
 
 ::::
@@ -118,8 +105,22 @@ bedrock:
 | Option             | Description                                                 | Default              |
 | ------------------ | ----------------------------------------------------------- | -------------------- |
 | `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `""` (no formatting) |
-| `geyserListenAddr` | Address where Gate listens for Geyser connections           | `0.0.0.0:25567`      |
+| `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
+
+::: tip geyserListenAddr Network Configuration
+
+**Default `localhost:25567`** works for most setups where Geyser runs on the same machine.
+
+**Use `0.0.0.0:25567` for:**
+
+- 🐳 Docker Compose with separate containers
+- 🌐 Remote Geyser on different server
+- ☁️ Kubernetes pod-to-pod communication
+
+Note: All connections are authenticated via Floodgate keys regardless of the binding address.
+
+:::
 
 ### Managed Mode Options
 
@@ -266,8 +267,8 @@ For users who want to manage their own Geyser installation:
 ```yaml [Gate Configuration]
 bedrock:
   enabled: true
-  # Geyser will connect to this address
-  geyserListenAddr: '0.0.0.0:25567'
+  # Geyser will connect to this address (localhost for same-machine, 0.0.0.0 for Docker/remote)
+  geyserListenAddr: 'localhost:25567'
   # Username format for Bedrock players
   usernameFormat: '.%s'
   # Path to shared Floodgate key
@@ -379,6 +380,26 @@ git clone https://github.com/minekube/gate.git
 cd gate/.examples/bedrock
 docker compose up -d
 ```
+
+::: tip Network Address Considerations
+
+**Default: `localhost:25567`** (recommended for same-machine setups)
+
+- ✅ **Local installations** - Gate and Geyser on same server
+- ✅ **Managed mode** - Gate automatically runs Geyser locally
+- ✅ **Simplicity** - No network configuration needed
+
+**Use `0.0.0.0:25567` for:**
+
+- 🐳 **Docker Compose** - Gate and Geyser in separate containers
+- 🌐 **Remote Geyser** - Geyser runs on a different machine
+- ☁️ **Kubernetes** - Pods communicate across network
+
+The Docker example above uses `gate:25567` (service name) which is correct for container networks.
+
+All connections require valid Floodgate keys for authentication.
+
+:::
 
 ---
 
@@ -586,7 +607,7 @@ The system also handles edge cases like players switching between devices, platf
    ```yaml
    # Gate config - geyserListenAddr
    bedrock:
-     geyserListenAddr: '0.0.0.0:25567'
+     geyserListenAddr: 'localhost:25567'
 
    # Geyser config - remote.port must match
    remote:

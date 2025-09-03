@@ -19,8 +19,8 @@ remote:
 debug-mode: false
 max-players: 100`
 
-	overrides := map[string]interface{}{
-		"bedrock": map[string]interface{}{
+	overrides := map[string]any{
+		"bedrock": map[string]any{
 			"motd1":             "Custom MOTD",
 			"compression-level": 8,
 		},
@@ -35,13 +35,13 @@ max-players: 100`
 	}
 
 	// Parse result to verify overrides were applied
-	var resultMap map[string]interface{}
+	var resultMap map[string]any
 	if err := yaml.Unmarshal([]byte(result), &resultMap); err != nil {
 		t.Fatalf("failed to parse result: %v", err)
 	}
 
 	// Check that nested override worked
-	bedrock := resultMap["bedrock"].(map[string]interface{})
+	bedrock := resultMap["bedrock"].(map[string]any)
 	if bedrock["motd1"] != "Custom MOTD" {
 		t.Errorf("expected bedrock.motd1 = 'Custom MOTD', got %v", bedrock["motd1"])
 	}
@@ -67,16 +67,16 @@ max-players: 100`
 	}
 
 	// Check that non-overridden values remain
-	remote := resultMap["remote"].(map[string]interface{})
+	remote := resultMap["remote"].(map[string]any)
 	if remote["address"] != "localhost" {
 		t.Errorf("expected remote.address = 'localhost', got %v", remote["address"])
 	}
 }
 
 func TestMergeConfigMaps(t *testing.T) {
-	base := map[string]interface{}{
-		"level1": map[string]interface{}{
-			"level2": map[string]interface{}{
+	base := map[string]any{
+		"level1": map[string]any{
+			"level2": map[string]any{
 				"keep":     "original",
 				"override": "old",
 			},
@@ -85,9 +85,9 @@ func TestMergeConfigMaps(t *testing.T) {
 		"keep": "original",
 	}
 
-	override := map[string]interface{}{
-		"level1": map[string]interface{}{
-			"level2": map[string]interface{}{
+	override := map[string]any{
+		"level1": map[string]any{
+			"level2": map[string]any{
 				"override": "new",
 				"add":      "added",
 			},
@@ -98,8 +98,8 @@ func TestMergeConfigMaps(t *testing.T) {
 	mergeConfigMaps(base, override)
 
 	// Check deep merge worked
-	level1 := base["level1"].(map[string]interface{})
-	level2 := level1["level2"].(map[string]interface{})
+	level1 := base["level1"].(map[string]any)
+	level2 := level1["level2"].(map[string]any)
 
 	if level2["keep"] != "original" {
 		t.Errorf("expected level2.keep = 'original', got %v", level2["keep"])

@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -89,15 +90,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		curr := e.Config
 		// Replace config for future use
 		*p.config = *curr
-		// Determine if restart is required
-		prevManaged := prev.GetManaged()
-		currManaged := curr.GetManaged()
-		if prev.GeyserListenAddr != curr.GeyserListenAddr ||
-			prev.UsernameFormat != curr.UsernameFormat ||
-			prev.FloodgateKeyPath != curr.FloodgateKeyPath ||
-			prevManaged.Enabled != currManaged.Enabled ||
-			prevManaged.JarURL != currManaged.JarURL ||
-			prevManaged.BedrockPort != currManaged.BedrockPort {
+
+		// Check if restart is required
+		if requiresRestart(prev, curr) {
 			p.log.Info("restarting geyser integration due to bedrock config change")
 			if p.geyserIntegration != nil {
 				p.geyserIntegration.Stop()
@@ -131,6 +126,34 @@ func (p *Proxy) Start(ctx context.Context) error {
 
 	p.log.Info("bedrock proxy stopped")
 	return nil
+}
+
+// requiresRestart determines if a Geyser integration restart is needed based on config changes.
+// Returns true if any critical configuration has changed that requires restarting Geyser.
+func requiresRestart(prev, curr *config.Config) bool {
+	// Check basic connection and authentication settings
+	if prev.GeyserListenAddr != curr.GeyserListenAddr ||
+		prev.UsernameFormat != curr.UsernameFormat ||
+		prev.FloodgateKeyPath != curr.FloodgateKeyPath {
+		return true
+	}
+
+	// Check managed Geyser settings
+	prevManaged := prev.GetManaged()
+	currManaged := curr.GetManaged()
+
+	if prevManaged.Enabled != currManaged.Enabled ||
+		prevManaged.JarURL != currManaged.JarURL {
+		return true
+	}
+
+	// Check for any changes in config overrides (including bedrock port, debug settings, etc.)
+	if !reflect.DeepEqual(prevManaged.ConfigOverrides, currManaged.ConfigOverrides) {
+		return true
+	}
+
+	// No critical changes detected
+	return false
 }
 
 type bedrockConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]

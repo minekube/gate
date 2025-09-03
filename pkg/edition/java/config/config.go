@@ -72,10 +72,7 @@ var DefaultConfig = Config{
 	ShutdownReason:                      defaultShutdownReason(),
 	ForceKeyAuthentication:              true,
 	Lite:                                liteconfig.DefaultConfig,
-	Bedrock: BedrockConfig{
-		Enabled: false,
-		Config:  bconfig.DefaultConfig,
-	},
+	Bedrock:                             bconfig.DefaultBedrockConfig,
 }
 
 func defaultMotd() *configutil.TextComponent {
@@ -128,13 +125,7 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Lite liteconfig.Config `yaml:"lite,omitempty" json:"lite,omitempty"` // Lite mode settings
 
 	// Bedrock edition configuration
-	Bedrock BedrockConfig `yaml:"bedrock,omitempty" json:"bedrock,omitempty"`
-}
-
-// BedrockConfig is embedded Bedrock configuration under config.bedrock
-type BedrockConfig struct {
-	Enabled bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Config  bconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
+	Bedrock bconfig.BedrockConfig `yaml:"bedrock,omitempty" json:"bedrock,omitempty"`
 }
 
 type (

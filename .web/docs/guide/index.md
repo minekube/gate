@@ -67,7 +67,7 @@ Ready to jump in? Choose your path:
       <h3>📱 Cross-Platform Support</h3>
       <ul>
         <li>Java Edition (PC) players</li>
-        <li>Bedrock Edition (Mobile, Console, Win10)</li>
+        <li>Bedrock Edition (Mobile, Console, Win)</li>
         <li>Built-in Geyser & Floodgate integration</li>
         <li>Zero backend plugins required</li>
       </ul>

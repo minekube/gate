@@ -44,9 +44,6 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		if managed.JavaPath == "" {
 			w("managed mode enabled but javaPath is empty; using 'java' on PATH")
 		}
-		if managed.BedrockPort <= 0 || managed.BedrockPort > 65535 {
-			e("invalid managed.bedrockPort %d: must be 1..65535", managed.BedrockPort)
-		}
 		if managed.DataDir == "" {
 			w("managed mode enabled but dataDir is empty; using working directory")
 		}

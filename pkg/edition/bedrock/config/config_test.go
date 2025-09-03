@@ -14,12 +14,11 @@ func TestGetManaged(t *testing.T) {
 			name:   "nil managed returns defaults",
 			config: Config{Managed: nil},
 			expected: ManagedGeyser{
-				Enabled:     false,
-				JarURL:      "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
-				DataDir:     ".geyser",
-				JavaPath:    "java",
-				BedrockPort: 19132,
-				AutoUpdate:  true,
+				Enabled:    false,
+				JarURL:     "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
+				DataDir:    ".geyser",
+				JavaPath:   "java",
+				AutoUpdate: true,
 			},
 		},
 		{
@@ -28,32 +27,29 @@ func TestGetManaged(t *testing.T) {
 				Managed: &ManagedGeyser{},
 			},
 			expected: ManagedGeyser{
-				Enabled:     false, // User's value (zero)
-				JarURL:      "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
-				DataDir:     ".geyser",
-				JavaPath:    "java",
-				BedrockPort: 19132,
-				AutoUpdate:  true, // Default because no other fields set
+				Enabled:    false, // User's value (zero)
+				JarURL:     "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
+				DataDir:    ".geyser",
+				JavaPath:   "java",
+				AutoUpdate: true, // Default because no other fields set
 			},
 		},
 		{
 			name: "enabled managed with custom values",
 			config: Config{
 				Managed: &ManagedGeyser{
-					Enabled:     true,
-					JarURL:      "https://custom.example.com/geyser.jar",
-					DataDir:     "/custom/geyser",
-					JavaPath:    "/usr/bin/java",
-					BedrockPort: 19133,
+					Enabled:  true,
+					JarURL:   "https://custom.example.com/geyser.jar",
+					DataDir:  "/custom/geyser",
+					JavaPath: "/usr/bin/java",
 				},
 			},
 			expected: ManagedGeyser{
-				Enabled:     true,
-				JarURL:      "https://custom.example.com/geyser.jar",
-				DataDir:     "/custom/geyser",
-				JavaPath:    "/usr/bin/java",
-				BedrockPort: 19133,
-				AutoUpdate:  false, // User set other fields, so use their AutoUpdate (zero = false)
+				Enabled:    true,
+				JarURL:     "https://custom.example.com/geyser.jar",
+				DataDir:    "/custom/geyser",
+				JavaPath:   "/usr/bin/java",
+				AutoUpdate: false, // User set other fields, so use their AutoUpdate (zero = false)
 			},
 		},
 		{
@@ -72,12 +68,12 @@ func TestGetManaged(t *testing.T) {
 				},
 			},
 			expected: ManagedGeyser{
-				Enabled:     true,
-				JarURL:      "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
-				DataDir:     ".geyser",
-				JavaPath:    "java",
-				BedrockPort: 19132,
-				AutoUpdate:  true, // Default because only ConfigOverrides set
+				Enabled:  true,
+				JarURL:   "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
+				DataDir:  ".geyser",
+				JavaPath: "java",
+
+				AutoUpdate: true, // Default because only ConfigOverrides set
 				ConfigOverrides: map[string]any{
 					"debug-mode":  true,
 					"max-players": 100,
@@ -98,13 +94,13 @@ func TestGetManaged(t *testing.T) {
 				},
 			},
 			expected: ManagedGeyser{
-				Enabled:     true,
-				JarURL:      "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
-				DataDir:     ".geyser",
-				JavaPath:    "java",
-				BedrockPort: 19132,
-				AutoUpdate:  false, // User explicitly set this
-				ExtraArgs:   []string{"-Xmx2G"},
+				Enabled:  true,
+				JarURL:   "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
+				DataDir:  ".geyser",
+				JavaPath: "java",
+
+				AutoUpdate: false, // User explicitly set this
+				ExtraArgs:  []string{"-Xmx2G"},
 			},
 		},
 		{
@@ -129,12 +125,12 @@ func TestGetManaged(t *testing.T) {
 				},
 			},
 			expected: ManagedGeyser{
-				Enabled:     true,
-				JarURL:      "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
-				DataDir:     ".geyser",
-				JavaPath:    "java",
-				BedrockPort: 19132,
-				AutoUpdate:  true, // Default because only ConfigOverrides set
+				Enabled:  true,
+				JarURL:   "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
+				DataDir:  ".geyser",
+				JavaPath: "java",
+
+				AutoUpdate: true, // Default because only ConfigOverrides set
 				ConfigOverrides: map[string]any{
 					"bedrock": map[string]any{
 						"port":              19133,
@@ -170,9 +166,7 @@ func TestGetManaged(t *testing.T) {
 			if result.JavaPath != tt.expected.JavaPath {
 				t.Errorf("JavaPath: got %v, want %v", result.JavaPath, tt.expected.JavaPath)
 			}
-			if result.BedrockPort != tt.expected.BedrockPort {
-				t.Errorf("BedrockPort: got %v, want %v", result.BedrockPort, tt.expected.BedrockPort)
-			}
+			// BedrockPort removed - now configured via configOverrides.bedrock.port
 			if result.AutoUpdate != tt.expected.AutoUpdate {
 				t.Errorf("AutoUpdate: got %v, want %v", result.AutoUpdate, tt.expected.AutoUpdate)
 			}
@@ -231,7 +225,7 @@ func compareConfigOverrides(a, b map[string]any) bool {
 func TestConfigOverridesIntegration(t *testing.T) {
 	// Test that config overrides work end-to-end with the GetManaged method
 	config := Config{
-		GeyserListenAddr: "0.0.0.0:25567",
+		GeyserListenAddr: "localhost:25567",
 		UsernameFormat:   ".%s",
 		FloodgateKeyPath: "test.pem",
 		Managed: &ManagedGeyser{
@@ -294,7 +288,7 @@ func TestConfigOverridesIntegration(t *testing.T) {
 func TestConfigOverridesYAMLIntegration(t *testing.T) {
 	// Test that config overrides work correctly when loaded from YAML
 	yamlConfig := `
-geyserListenAddr: "0.0.0.0:25567"
+geyserListenAddr: "localhost:25567"
 usernameFormat: ".%s"
 floodgateKeyPath: "test.pem"
 managed:
@@ -315,18 +309,19 @@ managed:
 	// This test verifies that the config structure supports the expected YAML format
 	// The actual YAML parsing would be handled by the main config system
 	config := Config{
-		GeyserListenAddr: "0.0.0.0:25567",
+		GeyserListenAddr: "localhost:25567",
 		UsernameFormat:   ".%s",
 		FloodgateKeyPath: "test.pem",
 		Managed: &ManagedGeyser{
-			Enabled:     true,
-			BedrockPort: 19133,
+			Enabled: true,
+
 			ConfigOverrides: map[string]any{
 				"debug-mode":  true,
 				"max-players": 150,
 				"bedrock": map[string]any{
 					"compression-level": 9,
 					"motd1":             "Custom Bedrock Server",
+					"port":              19133, // Test that bedrock port can be configured via overrides
 				},
 				"remote": map[string]any{
 					"address": "custom.backend.com",
@@ -343,8 +338,21 @@ managed:
 	if !managed.Enabled {
 		t.Error("Expected managed to be enabled")
 	}
-	if managed.BedrockPort != 19133 {
-		t.Errorf("Expected BedrockPort 19133, got %d", managed.BedrockPort)
+	// BedrockPort is now configured via configOverrides.bedrock.port
+	// Check that the port can be retrieved from config overrides
+	if managed.ConfigOverrides != nil {
+		if bedrockConfig, ok := managed.ConfigOverrides["bedrock"].(map[string]any); ok {
+			if compressionLevel, ok := bedrockConfig["compression-level"].(int); !ok || compressionLevel != 9 {
+				t.Error("Expected bedrock.compression-level to be 9 in config overrides")
+			}
+			if port, ok := bedrockConfig["port"].(int); !ok || port != 19133 {
+				t.Error("Expected bedrock.port to be 19133 in config overrides")
+			}
+		} else {
+			t.Error("Expected bedrock config in ConfigOverrides")
+		}
+	} else {
+		t.Error("Expected ConfigOverrides to be set")
 	}
 
 	// Verify config overrides are preserved correctly
@@ -454,5 +462,22 @@ func TestAutoUpdateLogic(t *testing.T) {
 				t.Errorf("AutoUpdate: got %v, want %v. %s", result.AutoUpdate, tt.expectedUpdate, tt.description)
 			}
 		})
+	}
+}
+
+func TestDefaultConfiguration_NetworkBinding(t *testing.T) {
+	// Test that default configuration uses localhost (recommended for same-machine setups)
+	if DefaultConfig.GeyserListenAddr != "localhost:25567" {
+		t.Errorf("Expected localhost default for same-machine setups, got %s", DefaultConfig.GeyserListenAddr)
+	}
+
+	// Test that default bedrock config matches
+	if DefaultBedrockConfig.GeyserListenAddr != DefaultConfig.GeyserListenAddr {
+		t.Errorf("Expected DefaultBedrockConfig to match DefaultConfig address, got %s", DefaultBedrockConfig.GeyserListenAddr)
+	}
+
+	// Verify default follows best practice (localhost for same-machine)
+	if DefaultConfig.GeyserListenAddr == "0.0.0.0:25567" {
+		t.Error("Default configuration should use localhost for same-machine setups (use 0.0.0.0 when needed for Docker/remote)")
 	}
 }

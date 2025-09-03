@@ -123,7 +123,7 @@ func (r *Runner) Start(ctx context.Context, jarPath string, extraArgs ...string)
 		"java", managed.JavaPath,
 		"jar", absJarPath,
 		"config", absConfigPath,
-		"bedrockPort", managed.BedrockPort,
+		"bedrockPort", getBedrockPort(managed.ConfigOverrides),
 		"args", args)
 
 	cmd := exec.CommandContext(ctx, managed.JavaPath, args...)
@@ -229,9 +229,10 @@ func (r *Runner) writeGeyserConfig(managed bconfig.ManagedGeyser) (string, error
 
 	// Generate Geyser config based on our existing example
 	// Use Gate's Geyser listen address as the remote address
+	// Default bedrock port is 19132 - can be overridden via configOverrides.bedrock.port
 	geyserConfig := fmt.Sprintf(`# Auto-generated Geyser config by Gate managed mode
 bedrock:
-  port: %d
+  port: 19132
   motd1: "Gate + Geyser"
   motd2: "Managed Cross-Play"
   server-name: "Gate Bedrock"
@@ -290,7 +291,6 @@ disable-compression: true
 
 config-version: 4
 `,
-		managed.BedrockPort,
 		extractHost(r.cfg.GeyserListenAddr),
 		extractPort(r.cfg.GeyserListenAddr),
 		absKeyPath)
@@ -365,6 +365,28 @@ func mergeConfigMaps(base, override map[string]any) {
 func fileExists(path string) bool {
 	fi, err := os.Stat(path)
 	return err == nil && !fi.IsDir()
+}
+
+// getBedrockPort extracts the bedrock port from config overrides, defaulting to 19132
+func getBedrockPort(configOverrides map[string]any) int {
+	const defaultBedrockPort = 19132
+
+	if configOverrides == nil {
+		return defaultBedrockPort
+	}
+
+	// Check for bedrock.port in config overrides
+	if bedrockConfig, ok := configOverrides["bedrock"]; ok {
+		if bedrockMap, ok := bedrockConfig.(map[string]any); ok {
+			if port, ok := bedrockMap["port"]; ok {
+				if portInt, ok := port.(int); ok {
+					return portInt
+				}
+			}
+		}
+	}
+
+	return defaultBedrockPort
 }
 
 func download(ctx context.Context, url, dest string) error {
