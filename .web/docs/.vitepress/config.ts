@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress';
+import { defineConfig, HeadConfig } from 'vitepress';
 
 import {
   additionalTitle,
@@ -23,18 +23,13 @@ export default defineConfig({
   },
 
   transformHead: ({ pageData }) => {
-    const head = [];
-
-    // Use page-specific description from frontmatter if available
     const description = pageData.frontmatter.description || ogDescription;
-    head.push(['meta', { name: 'description', content: description }]);
-    head.push(['meta', { property: 'og:description', content: description }]);
-
-    // Use page-specific title from frontmatter if available
     const title = pageData.frontmatter.title || pageData.title || ogTitle;
-    head.push(['meta', { property: 'og:title', content: title }]);
-
-    return head;
+    return [
+      ['meta', { name: 'description', content: description }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { property: 'og:title', content: title }],
+    ];
   },
 
   head: [
