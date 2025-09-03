@@ -20,6 +20,7 @@ func Init(ctx context.Context) (clean func(), err error) {
 	}
 
 	log := logr.FromContextOrDiscard(ctx).WithName("otel")
+	eitherEnabled := os.Getenv("OTEL_METRICS_ENABLED") == "true" || os.Getenv("OTEL_TRACES_ENABLED") == "true"
 
 	otelShutdown, err := otelconfig.ConfigureOpenTelemetry(
 		otelconfig.WithServiceName(serviceName),
@@ -33,9 +34,13 @@ func Init(ctx context.Context) (clean func(), err error) {
 	}
 
 	return func() {
-		log.Info("shutting down OpenTelemetry, trying to push remaining telemetry data...")
+		if eitherEnabled {
+			log.Info("shutting down OpenTelemetry, trying to push remaining telemetry data...")
+		}
 		otelShutdown()
-		log.Info("OpenTelemetry shutdown complete")
+		if eitherEnabled {
+			log.Info("OpenTelemetry shutdown complete")
+		}
 	}, nil
 }
 
