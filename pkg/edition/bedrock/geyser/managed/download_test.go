@@ -231,13 +231,13 @@ func TestDownloadIfNewer(t *testing.T) {
 		// Create our own test file to avoid Windows file conflicts
 		tempDir := t.TempDir()
 		testJarPath := filepath.Join(tempDir, "test-geyser.jar")
-		
+
 		// First download the file
 		_, err := downloadIfNewer(ctx, geyserURL, testJarPath)
 		if err != nil {
 			t.Fatalf("Initial download failed: %v", err)
 		}
-		
+
 		// File exists now, should check for updates
 		originalInfo, err := os.Stat(testJarPath)
 		if err != nil {
@@ -276,13 +276,13 @@ func TestDownloadIfNewer(t *testing.T) {
 		// Create our own test file to avoid Windows file conflicts
 		tempDir := t.TempDir()
 		testJarPath := filepath.Join(tempDir, "test-geyser.jar")
-		
+
 		// First download the file
 		_, err := downloadIfNewer(ctx, geyserURL, testJarPath)
 		if err != nil {
 			t.Fatalf("Initial download failed: %v", err)
 		}
-		
+
 		// Immediately check again - should definitely not update
 		updated, err := downloadIfNewer(ctx, geyserURL, testJarPath)
 		if err != nil {

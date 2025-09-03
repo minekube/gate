@@ -418,25 +418,25 @@ func download(ctx context.Context, url, dest string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Write the file content
 	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close() // Ensure file is closed on error
+		f.Close()      // Ensure file is closed on error
 		os.Remove(tmp) // Clean up temp file
 		return err
 	}
 	if err := f.Sync(); err != nil {
-		f.Close() // Ensure file is closed on error
+		f.Close()      // Ensure file is closed on error
 		os.Remove(tmp) // Clean up temp file
 		return err
 	}
-	
+
 	// Explicitly close file before rename (critical for Windows compatibility)
 	if err := f.Close(); err != nil {
 		os.Remove(tmp) // Clean up temp file
 		return err
 	}
-	
+
 	if err := os.Rename(tmp, dest); err != nil {
 		os.Remove(tmp) // Clean up temp file if rename fails
 		return err
