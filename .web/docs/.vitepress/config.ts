@@ -22,13 +22,26 @@ export default defineConfig({
     hostname: ogUrl,
   },
 
+  transformHead: ({ pageData }) => {
+    const head = []
+    
+    // Use page-specific description from frontmatter if available
+    const description = pageData.frontmatter.description || ogDescription
+    head.push(['meta', { name: 'description', content: description }])
+    head.push(['meta', { property: 'og:description', content: description }])
+    
+    // Use page-specific title from frontmatter if available
+    const title = pageData.frontmatter.title || pageData.title || ogTitle
+    head.push(['meta', { property: 'og:title', content: title }])
+    
+    return head
+  },
+
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: ogTitle }],
     ['meta', { property: 'og:image', content: ogImage }],
     ['meta', { property: 'og:url', content: ogUrl }],
-    ['meta', { property: 'og:description', content: ogDescription }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
     // [
     //     'script',
