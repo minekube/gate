@@ -8,8 +8,8 @@ services:
       - ./gate.yml:/gate/gate.yml
       - ./geyser/key.pem:/gate/floodgate.pem
     ports:
-      - "25565:25565"  # Java Edition
-      - "25567:25567"  # Geyser listener
+      - '25565:25565' # Java Edition
+      - '25567:25567' # Geyser listener
     depends_on:
       - server1
 
@@ -17,11 +17,11 @@ services:
     image: itzg/minecraft-server
     restart: unless-stopped
     environment:
-      EULA: "TRUE"
-      TYPE: "CUSTOM"
-      CUSTOM_SERVER: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+      EULA: 'TRUE'
+      TYPE: 'CUSTOM'
+      CUSTOM_SERVER: 'https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone'
     ports:
-      - "19132:19132/udp"  # Bedrock Edition
+      - '19132:19132/udp' # Bedrock Edition
     volumes:
       - ./geyser/config.yml:/data/config.yml
       - ./geyser/key.pem:/data/key.pem
@@ -32,20 +32,16 @@ services:
     image: itzg/minecraft-server
     restart: unless-stopped
     environment:
-      EULA: "TRUE"
+      EULA: 'TRUE'
       TYPE: PAPER
       VERSION: 1.21.4
       PAPER_BUILD: latest
-      PLUGINS: |
-        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-      EXTRA_ARGS: "--world-dir ./worlds/"
+      EXTRA_ARGS: '--world-dir ./worlds/'
     volumes:
       - worlds:/worlds
       - ./server.properties:/data/server.properties
-      - ./geyser/floodgate.yml:/data/plugins/floodgate/config.yml
-      - ./geyser/key.pem:/data/plugins/floodgate/key.pem
     expose:
-      - "25565"
+      - '25565'
 
 volumes:
   worlds:

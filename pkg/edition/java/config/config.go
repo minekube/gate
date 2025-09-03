@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
@@ -71,6 +72,10 @@ var DefaultConfig = Config{
 	ShutdownReason:                      defaultShutdownReason(),
 	ForceKeyAuthentication:              true,
 	Lite:                                liteconfig.DefaultConfig,
+	Bedrock: BedrockConfig{
+		Enabled: false,
+		Config:  bconfig.DefaultConfig,
+	},
 }
 
 func defaultMotd() *configutil.TextComponent {
@@ -121,6 +126,15 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
 
 	Lite liteconfig.Config `yaml:"lite,omitempty" json:"lite,omitempty"` // Lite mode settings
+
+	// Bedrock edition configuration
+	Bedrock BedrockConfig `yaml:"bedrock,omitempty" json:"bedrock,omitempty"`
+}
+
+// BedrockConfig is embedded Bedrock configuration under config.bedrock
+type BedrockConfig struct {
+	Enabled bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Config  bconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 type (

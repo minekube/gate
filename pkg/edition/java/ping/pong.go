@@ -93,7 +93,7 @@ func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-func (p *ServerPing) MarshalYAML() (interface{}, error) {
+func (p *ServerPing) MarshalYAML() (any, error) {
 	b := new(strings.Builder)
 	err := (&legacy.Legacy{}).Marshal(b, p.Description)
 	if err != nil {

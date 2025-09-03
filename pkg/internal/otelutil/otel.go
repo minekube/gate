@@ -45,10 +45,10 @@ type logger struct {
 
 var _ otelconfig.Logger = &logger{}
 
-func (l *logger) Debugf(format string, v ...interface{}) {
+func (l *logger) Debugf(format string, v ...any) {
 	l.Logger.V(1).Info(fmt.Sprintf(format, v...))
 }
 
-func (l *logger) Fatalf(format string, v ...interface{}) {
+func (l *logger) Fatalf(format string, v ...any) {
 	l.Logger.Error(fmt.Errorf(format, v...), "fatal error")
 }

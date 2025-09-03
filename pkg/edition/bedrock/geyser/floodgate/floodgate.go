@@ -1,7 +1,11 @@
 package floodgate
 
 import (
+	"crypto/rand"
+	"crypto/sha1"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -43,6 +47,11 @@ func NewFloodgate(key []byte) (*Floodgate, error) {
 // Decrypt decrypts the given data using the Floodgate cipher.
 func (f *Floodgate) Decrypt(data []byte) ([]byte, error) {
 	return f.cipher.Decrypt(data)
+}
+
+// Encrypt encrypts the given data using the Floodgate cipher.
+func (f *Floodgate) Encrypt(data []byte) ([]byte, error) {
+	return f.cipher.Encrypt(data)
 }
 
 // ReadHostname extracts Bedrock player data from a hostname.
@@ -131,14 +140,48 @@ func ReadBedrockData(data string) (*BedrockData, error) {
 // JavaUuid generates a Java Edition UUID from the Bedrock XUID.
 // This creates a deterministic UUID that's consistent across sessions.
 func (d *BedrockData) JavaUuid() (uuid.UUID, error) {
-	xuid16 := strconv.FormatInt(d.Xuid, 16)
+	// Namespaced deterministic UUID (v5-like) based on XUID
+	h := sha1.New()
+	h.Write([]byte("FloodgateXUID:"))
+	h.Write([]byte(strconv.FormatInt(d.Xuid, 10)))
+	sum := h.Sum(nil)
+	if len(sum) < 16 {
+		return uuid.Nil, fmt.Errorf("invalid hash length")
+	}
+	// Set version (5) and variant per RFC 4122
+	sum[6] = (sum[6] & 0x0f) | (5 << 4)
+	sum[8] = (sum[8] & 0x3f) | 0x80
+	return uuid.FromBytes(sum[:16])
+}
 
-	// Pad with zeros if needed to ensure proper format
-	for len(xuid16) < 12 {
-		xuid16 = "0" + xuid16
+// GenerateKey generates a new 16-byte AES-128 key compatible with Floodgate.
+// This matches Floodgate's AesKeyProducer.KEY_SIZE = 128 bits.
+func GenerateKey() ([]byte, error) {
+	key := make([]byte, 16) // 128 bits
+	if _, err := rand.Read(key); err != nil {
+		return nil, fmt.Errorf("failed to generate random key: %w", err)
+	}
+	return key, nil
+}
+
+// GenerateKeyToFile generates a new Floodgate key and writes it to the specified path.
+// Creates parent directories if needed and sets secure file permissions (0600).
+func GenerateKeyToFile(keyPath string) error {
+	// Create parent directory if needed
+	if err := os.MkdirAll(filepath.Dir(keyPath), 0o755); err != nil {
+		return fmt.Errorf("failed to create key directory: %w", err)
 	}
 
-	// Create UUID in format: 00000000-0000-0000-000X-XXXXXXXXXXXX
-	uuidStr := fmt.Sprintf("00000000-0000-0000-000%s-%s", xuid16[0:1], xuid16[1:])
-	return uuid.Parse(uuidStr)
+	// Generate the key
+	key, err := GenerateKey()
+	if err != nil {
+		return err
+	}
+
+	// Write key to file with secure permissions
+	if err := os.WriteFile(keyPath, key, 0o600); err != nil {
+		return fmt.Errorf("failed to write key file: %w", err)
+	}
+
+	return nil
 }

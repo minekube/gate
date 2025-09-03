@@ -67,7 +67,7 @@ func (pm *ProfileManager) GetSkin(xuid int64) (*SkinResult, error) {
 }
 
 // geyserApiGet performs a GET request to the GeyserMC API.
-func (pm *ProfileManager) geyserApiGet(endpoint string, result interface{}) error {
+func (pm *ProfileManager) geyserApiGet(endpoint string, result any) error {
 	req, err := http.NewRequest("GET", GEYSER_API_URL+endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)

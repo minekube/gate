@@ -13,16 +13,16 @@ config:
       §bGate + Geyser Cross-Play
       §eJava & Bedrock Players Welcome!
 
-# Enable Bedrock edition support
-editions:
-  java:
-    enabled: true
+  # Enable Bedrock edition support (Geyser + Floodgate)
   bedrock:
     enabled: true
     config:
-      # Geyser will connect to this address
+      # Gate ↔ Geyser connection
       geyserListenAddr: '0.0.0.0:25567'
-      # Username format for Bedrock players to avoid conflicts
+      # Bedrock player settings
       usernameFormat: '.%s'
-      # Path to Floodgate key for authentication
+      # Floodgate authentication key
       floodgateKeyPath: '.examples/bedrock/geyser/key.pem'
+      # Managed Geyser (Gate handles Geyser process automatically)
+      managed:
+        enabled: true

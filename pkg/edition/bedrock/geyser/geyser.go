@@ -13,6 +13,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser/floodgate"
+	"go.minekube.com/gate/pkg/edition/bedrock/geyser/managed"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/util/errs"
@@ -22,6 +23,7 @@ import (
 // Integration provides Geyser integration for Gate.
 type Integration struct {
 	ctx            context.Context
+	cancel         context.CancelFunc
 	log            logr.Logger
 	proxy          *proxy.Proxy
 	config         *config.Config
@@ -29,6 +31,8 @@ type Integration struct {
 	profileManager *ProfileManager
 	connections    map[net.Addr]*GeyserConnection
 	mu             sync.RWMutex
+	unsubs         []func()
+	manager        *managed.Runner
 }
 
 // GeyserConnection represents a connection from Geyser.
@@ -53,7 +57,32 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 		"floodgateKeyPath", cfg.FloodgateKeyPath,
 		"geyserListenAddr", cfg.GeyserListenAddr,
 		"usernameFormat", cfg.UsernameFormat)
-	// Read floodgate key
+
+	ctx2, cancel := context.WithCancel(ctx)
+	integration := &Integration{
+		ctx:            ctx2,
+		cancel:         cancel,
+		log:            logr.FromContextOrDiscard(ctx).WithName("geyser"),
+		proxy:          p,
+		config:         cfg,
+		profileManager: NewProfileManager(),
+		connections:    make(map[net.Addr]*GeyserConnection),
+	}
+
+	managedConfig := cfg.GetManaged()
+	if managedConfig.Enabled {
+		// Create a config copy with the resolved managed settings
+		configCopy := *cfg
+		configCopy.Managed = &managedConfig
+		integration.manager = managed.New(&configCopy)
+
+		// In managed mode, ensure key exists before reading it
+		if err := integration.manager.EnsureKey(ctx); err != nil {
+			return nil, fmt.Errorf("failed to ensure floodgate key: %w", err)
+		}
+	}
+
+	// Read floodgate key (now guaranteed to exist if in managed mode)
 	keyBytes, err := os.ReadFile(cfg.FloodgateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read floodgate key: %w", err)
@@ -63,16 +92,7 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize floodgate: %w", err)
 	}
-
-	integration := &Integration{
-		ctx:            ctx,
-		log:            logr.FromContextOrDiscard(ctx).WithName("geyser"),
-		proxy:          p,
-		config:         cfg,
-		floodgate:      fg,
-		profileManager: NewProfileManager(),
-		connections:    make(map[net.Addr]*GeyserConnection),
-	}
+	integration.floodgate = fg
 
 	return integration, nil
 }
@@ -82,8 +102,21 @@ func (i *Integration) Start() error {
 	eventMgr := i.proxy.Event()
 
 	// Subscribe to proxy events
-	event.Subscribe(eventMgr, 0, i.onPreLogin)
-	event.Subscribe(eventMgr, 0, i.onGameProfile)
+	unsubPre := event.Subscribe(eventMgr, 0, i.onPreLogin)
+	unsubProf := event.Subscribe(eventMgr, 0, i.onGameProfile)
+	i.unsubs = append(i.unsubs, unsubPre, unsubProf)
+
+	// If managed mode enabled, ensure and start Geyser Standalone
+	if i.manager != nil {
+		jar, err := i.manager.Ensure(i.ctx)
+		if err != nil {
+			return fmt.Errorf("managed geyser ensure failed: %w", err)
+		}
+		if err := i.manager.Start(i.ctx, jar); err != nil {
+			return fmt.Errorf("managed geyser start failed: %w", err)
+		}
+		// Start method now waits for Geyser to be ready internally
+	}
 
 	// Start listening for Geyser connections
 	go func() {
@@ -94,6 +127,32 @@ func (i *Integration) Start() error {
 
 	i.log.Info("geyser integration started", "addr", i.config.GeyserListenAddr)
 	return nil
+}
+
+// Stop stops the Geyser integration listener and unsubscribes events.
+func (i *Integration) Stop() {
+	// Cancel listener context
+	if i.cancel != nil {
+		i.cancel()
+	}
+	// Unsubscribe events
+	for _, u := range i.unsubs {
+		if u != nil {
+			u()
+		}
+	}
+	i.unsubs = nil
+	// Close any tracked connections
+	i.mu.Lock()
+	for addr, c := range i.connections {
+		_ = c.Close()
+		delete(i.connections, addr)
+	}
+	i.mu.Unlock()
+	// Stop managed process if running
+	if i.manager != nil {
+		i.manager.Stop()
+	}
 }
 
 func (i *Integration) listenAndServe() error {

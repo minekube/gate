@@ -2,11 +2,7 @@ package proxy
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -14,6 +10,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 
@@ -21,6 +18,8 @@ import (
 type Options struct {
 	// Config requires a valid configuration.
 	Config *config.Config
+	// JavaProxy is required for integrating Geyser with the Java proxy.
+	JavaProxy *jproxy.Proxy
 	// The event manager to use.
 	// If none is set, no events are sent.
 	EventMgr event.Manager
@@ -35,20 +34,19 @@ func New(options Options) (p *Proxy, err error) {
 	if options.Config == nil {
 		return nil, errs.ErrMissingConfig
 	}
+	if options.JavaProxy == nil {
+		return nil, fmt.Errorf("java proxy is required for bedrock geyser integration")
+	}
 	eventMgr := options.EventMgr
 	if eventMgr == nil {
 		eventMgr = event.Nop
 	}
 
 	p = &Proxy{
-		event:  eventMgr,
-		log:    logr.Discard(),
-		config: options.Config,
-	}
-
-	p.listenerKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	if err != nil {
-		return nil, fmt.Errorf("error generating public/private key: %w", err)
+		event:     eventMgr,
+		log:       logr.Discard(),
+		config:    options.Config,
+		javaProxy: options.JavaProxy,
 	}
 
 	return p, nil
@@ -62,44 +60,77 @@ type Proxy struct {
 
 	startTime atomic.Value
 
-	closeMu       sync.Mutex
-	closeListener chan struct{}
-	started       bool
-
-	listenerKey       *ecdsa.PrivateKey
 	geyserIntegration *geyser.Integration
-	javaProxy         interface{} // Reference to Java proxy for integration
+	javaProxy         *jproxy.Proxy // Reference to Java proxy for integration
 }
 
-// SetJavaProxy sets the Java proxy reference for integration.
-func (p *Proxy) SetJavaProxy(javaProxy interface{}) {
-	p.javaProxy = javaProxy
-}
+func (p *Proxy) Event() event.Manager { return p.event }
 
 func (p *Proxy) Start(ctx context.Context) error {
 	p.log = logr.FromContextOrDiscard(ctx)
 
-	// Initialize Geyser integration if Java proxy is available
-	if p.javaProxy != nil {
-		if javaProxy, ok := p.javaProxy.(*jproxy.Proxy); ok {
-			integration, err := geyser.NewIntegration(ctx, javaProxy, p.config)
-			if err != nil {
-				p.log.Error(err, "failed to initialize geyser integration")
-				return err
-			}
-
-			p.geyserIntegration = integration
-
-			if err := integration.Start(); err != nil {
-				p.log.Error(err, "failed to start geyser integration")
-				return err
-			}
-		}
+	// Initialize Geyser integration
+	integration, err := geyser.NewIntegration(ctx, p.javaProxy, p.config)
+	if err != nil {
+		p.log.Error(err, "failed to initialize geyser integration")
+		return err
 	}
+
+	p.geyserIntegration = integration
+
+	if err := integration.Start(); err != nil {
+		p.log.Error(err, "failed to start geyser integration")
+		return err
+	}
+
+	// Listen for config reloads and restart Geyser integration when relevant fields change
+	unsubReload := reload.Subscribe(p.event, func(e *bedrockConfigUpdateEvent) {
+		prev := e.PrevConfig
+		curr := e.Config
+		// Replace config for future use
+		*p.config = *curr
+		// Determine if restart is required
+		prevManaged := prev.GetManaged()
+		currManaged := curr.GetManaged()
+		if prev.GeyserListenAddr != curr.GeyserListenAddr ||
+			prev.UsernameFormat != curr.UsernameFormat ||
+			prev.FloodgateKeyPath != curr.FloodgateKeyPath ||
+			prevManaged.Enabled != currManaged.Enabled ||
+			prevManaged.JarURL != currManaged.JarURL ||
+			prevManaged.BedrockPort != currManaged.BedrockPort {
+			p.log.Info("restarting geyser integration due to bedrock config change")
+			if p.geyserIntegration != nil {
+				p.geyserIntegration.Stop()
+			}
+			integ, err := geyser.NewIntegration(ctx, p.javaProxy, p.config)
+			if err != nil {
+				p.log.Error(err, "failed to re-initialize geyser integration")
+				return
+			}
+			p.geyserIntegration = integ
+			if err := integ.Start(); err != nil {
+				p.log.Error(err, "failed to restart geyser integration")
+				return
+			}
+			p.log.Info("geyser integration reloaded")
+		}
+	})
 
 	p.log.Info("bedrock proxy started with geyser integration")
 
-	// Wait for context cancellation
+	// Block until context cancellation - cleanup on exit
 	<-ctx.Done()
+
+	// Cleanup
+	if unsubReload != nil {
+		unsubReload()
+	}
+	if p.geyserIntegration != nil {
+		p.geyserIntegration.Stop()
+	}
+
+	p.log.Info("bedrock proxy stopped")
 	return nil
 }
+
+type bedrockConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]
