@@ -38,6 +38,7 @@ type Integration struct {
 
 // GeyserConnection represents a connection from Geyser.
 type GeyserConnection struct {
+	context.Context
 	net.Conn
 	*floodgate.BedrockData
 	closeCb func()
@@ -190,6 +191,24 @@ func (i *Integration) listenAndServe() error {
 	}
 }
 
+type bedrockContext struct{}
+
+var bedrockContextKey = bedrockContext{}
+
+func withBedrockContext(ctx context.Context, geyserConn *GeyserConnection) context.Context {
+	return context.WithValue(ctx, bedrockContextKey, geyserConn)
+}
+
+// FromContext safely retrieves a Geyser connection associated with a player's Conn().Context().
+func FromContext(ctx context.Context) (*GeyserConnection, bool) {
+	v, ok := ctx.Value(bedrockContextKey).(*GeyserConnection)
+	if !ok {
+		return nil, false
+	}
+	return v, true
+}
+
+
 func (i *Integration) handleConnection(conn net.Conn) {
 	// Wrap connection with proxy protocol support
 	geyserConn := &GeyserConnection{
@@ -198,6 +217,7 @@ func (i *Integration) handleConnection(conn net.Conn) {
 			_ = conn.Close()
 		},
 	}
+	geyserConn.Context = withBedrockContext(i.ctx, geyserConn)
 
 	i.mu.Lock()
 	i.connections[geyserConn.RemoteAddr()] = geyserConn
@@ -209,7 +229,7 @@ func (i *Integration) handleConnection(conn net.Conn) {
 
 func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {
 	// Check if this is a Bedrock player connection
-	geyserConn, isGeyser := i.getGeyserConnection(e.Conn().RemoteAddr())
+	geyserConn, isGeyser := FromContext(e.Conn().Context())
 	if !isGeyser {
 		return // Not a Geyser connection
 	}
@@ -240,7 +260,7 @@ func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {
 
 func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	// Check if this is a Bedrock player
-	geyserConn, isGeyser := i.getGeyserConnection(e.Conn().RemoteAddr())
+	geyserConn, isGeyser := FromContext(e.Conn().Context())
 	if !isGeyser || geyserConn.BedrockData == nil {
 		return
 	}
@@ -294,28 +314,4 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	e.SetGameProfile(gameProfile)
 }
 
-// getGeyserConnection safely retrieves a Geyser connection.
-func (i *Integration) getGeyserConnection(addr net.Addr) (*GeyserConnection, bool) {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
 
-	for _, conn := range i.connections {
-		if conn.RemoteAddr().String() == addr.String() {
-			return conn, true
-		}
-	}
-	return nil, false
-}
-
-// isGeyserConnection checks if an address belongs to a Geyser connection.
-func (i *Integration) isGeyserConnection(addr net.Addr) bool {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-
-	for _, conn := range i.connections {
-		if conn.RemoteAddr().String() == addr.String() {
-			return true
-		}
-	}
-	return false
-}

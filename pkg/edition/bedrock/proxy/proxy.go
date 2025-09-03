@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sync/atomic"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -45,7 +44,7 @@ func New(options Options) (p *Proxy, err error) {
 
 	p = &Proxy{
 		event:     eventMgr,
-		log:       logr.Discard(),
+		log:       options.Logger,
 		config:    options.Config,
 		javaProxy: options.JavaProxy,
 	}
@@ -58,8 +57,6 @@ type Proxy struct {
 	log    logr.Logger
 	event  event.Manager
 	config *config.Config
-
-	startTime atomic.Value
 
 	geyserIntegration *geyser.Integration
 	javaProxy         *jproxy.Proxy // Reference to Java proxy for integration
