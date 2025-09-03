@@ -1,3 +1,8 @@
+---
+title: 'Gate Minecraft Proxy with Modded Servers - Fabric & NeoForge'
+description: 'Complete guide to using Gate with modded Minecraft servers including Fabric and NeoForge. Velocity modern forwarding, player info forwarding, and mod compatibility.'
+---
+
 # Modded Server Compatibility
 
 Gate provides excellent compatibility with modded Minecraft servers including **Fabric** and **NeoForge**. This guide will help you set up Gate to work seamlessly with your modded servers.

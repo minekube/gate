@@ -1,3 +1,8 @@
+---
+title: 'Gate Java API - Minecraft Proxy Development in Java'
+description: 'Build Minecraft proxy extensions with Gate Java API. Familiar Java development environment with comprehensive SDK.'
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" class="tech-icon" alt="Java" /> Java
 
 Gate provides a Java API for integrating with your Java applications using gRPC. You can use the API to interact with Gate programmatically.

@@ -1,3 +1,8 @@
+---
+title: 'Gate Go API - Minecraft Proxy Development in Go'
+description: 'Build Minecraft proxy extensions with Gate Go API. Complete guide with installation, examples, and ConnectRPC integration.'
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original-wordmark.svg" class="tech-icon" alt="Go" /> Go Client
 
 Gate offers two powerful approaches to integrate with Go applications:

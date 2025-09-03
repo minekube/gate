@@ -1,3 +1,8 @@
+---
+title: 'Gate TypeScript API - Minecraft Proxy Development'
+description: 'Build Minecraft proxy extensions with Gate TypeScript API. Modern JavaScript/TypeScript SDK with comprehensive documentation.'
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" class="tech-icon" alt="TypeScript" /> TypeScript Guide
 
 Gate's TypeScript/JavaScript client libraries allow you to interact with Gate's API using your preferred runtime environment. This guide covers installation and usage across different JavaScript runtimes.

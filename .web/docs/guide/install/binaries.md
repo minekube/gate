@@ -1,3 +1,8 @@
+---
+title: 'Install Gate from Binaries - Direct Download Setup'
+description: 'Download and install Gate Minecraft proxy binaries for Linux, Windows, and macOS. Quick setup with direct executable files.'
+---
+
 # Downloading Prebuilt Binaries
 
 _The installation of Gate is ultra easy, NO Java needed!
@@ -107,11 +112,13 @@ If you encounter any issues:
 Our installation scripts are designed to be transparent and secure. Here's exactly what they do:
 
 1. **Safety First**:
+
    - Installs to user space (Linux/macOS: `~/.local/bin`, Windows: `%LOCALAPPDATA%\Gate\bin`)
    - Downloads only from official GitHub releases
    - Verifies file integrity using SHA256 checksums
 
 2. **Installation Steps**:
+
    - Detects system architecture (amd64/arm64)
    - Creates installation directory if it doesn't exist
    - Downloads the appropriate Gate binary

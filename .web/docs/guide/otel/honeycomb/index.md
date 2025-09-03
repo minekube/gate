@@ -1,3 +1,8 @@
+---
+title: 'Gate with Honeycomb Observability Platform'
+description: 'Integrate Gate Minecraft proxy with Honeycomb for advanced observability. Set up traces, metrics, and monitoring for your Minecraft server network.'
+---
+
 # Honeycomb
 
 [Honeycomb](https://www.honeycomb.io/) is an OpenTelemetry-compatible observability platform that requires minimal setup - just sign up, create an environment, and get your API key to start collecting telemetry data. Here's how to get started:

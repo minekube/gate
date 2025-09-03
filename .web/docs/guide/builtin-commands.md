@@ -1,3 +1,8 @@
+---
+title: 'Gate Built-in Minecraft Proxy Commands'
+description: 'Learn about Gate's built-in commands like /server, /glist, /send. Configure permissions and manage players across your Minecraft server network.'
+---
+
 # Builtin Commands
 
 Gate includes a few generally useful built-in commands by default.

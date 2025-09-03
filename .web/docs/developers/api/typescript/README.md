@@ -1,3 +1,8 @@
+---
+title: 'Gate TypeScript SDK - Getting Started Guide'
+description: 'Get started with Gate's TypeScript SDK for Minecraft proxy development. Installation, basic usage, and examples for Node.js, Bun, and browser.'
+---
+
 # bun
 
 To install dependencies:

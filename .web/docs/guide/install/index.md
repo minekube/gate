@@ -1,3 +1,8 @@
+---
+title: 'Install Gate Minecraft Proxy - Multiple Installation Methods'
+description: 'Install Gate Minecraft proxy with Docker, binaries, Go install, or Kubernetes. Choose the best installation method for your server setup.'
+---
+
 # Installation Methods
 
 ---

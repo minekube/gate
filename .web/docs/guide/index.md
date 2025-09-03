@@ -1,3 +1,52 @@
+---
+title: 'Gate Documentation - Complete Minecraft Proxy Guide'
+description: 'Comprehensive documentation for Gate, the modern Minecraft proxy. Learn installation, configuration, development, and advanced features.'
+---<<<<<<< HEAD
+=======
+---
+title: 'Gate Minecraft Proxy Guide - Introduction & Setup'
+description: 'Complete guide to Gate Minecraft proxy. Learn how to set up, configure, and deploy Gate as a modern replacement for BungeeCord and Velocity with Bedrock cross-play support.'
+
+head:
+  - - meta
+    - name: description
+      content: 'Complete guide to Gate Minecraft proxy. Learn how to set up, configure, and deploy Gate as a modern replacement for BungeeCord and Velocity with Bedrock cross-play support.'
+  - - meta
+    - name: keywords
+      content: 'gate minecraft proxy guide, minecraft proxy setup, bungeecord replacement guide, velocity alternative tutorial, minecraft server network setup, bedrock cross-play guide, go minecraft proxy'
+  - - meta
+    - property: 'og:title'
+      content: 'Gate Minecraft Proxy Guide - Complete Setup & Configuration'
+  - - meta
+    - property: 'og:description'
+      content: 'Learn how to set up Gate, the modern Minecraft proxy that replaces BungeeCord/Velocity. Features Bedrock cross-play, 10MB memory usage, and developer-friendly APIs.'
+  - - meta
+    - property: 'og:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - meta
+    - property: 'og:url'
+      content: 'https://gate.minekube.com/guide/'
+  - - meta
+    - property: 'og:type'
+      content: 'article'
+  - - meta
+    - name: 'twitter:card'
+      content: 'summary_large_image'
+  - - meta
+    - name: 'twitter:title'
+      content: 'Gate Minecraft Proxy Guide - Complete Setup & Configuration'
+  - - meta
+    - name: 'twitter:description'
+      content: 'Learn how to set up Gate, the modern Minecraft proxy that replaces BungeeCord/Velocity. Features Bedrock cross-play, 10MB memory usage, and developer-friendly APIs.'
+  - - meta
+    - name: 'twitter:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - link
+    - rel: canonical
+      href: 'https://gate.minekube.com/guide/'
+---
+
+>>>>>>> d4221cf (add more seo)
 # Introduction
 
 _Gate is a modern cloud-native, open source, fast, batteries-included and secure proxy for Minecraft servers

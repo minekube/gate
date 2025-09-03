@@ -1,3 +1,8 @@
+---
+title: 'Gate Go Integration Options - Embedding & Deployment'
+description: 'Learn different ways to integrate Gate Minecraft proxy with Go applications. Embedding options, deployment strategies, and integration patterns.'
+---
+
 <div class="integration-options">
   <a href="https://github.com/minekube/gate-plugin-template" class="option-card" target="_blank">
     <div class="option-content">

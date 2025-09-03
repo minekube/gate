@@ -1,3 +1,8 @@
+---
+title: 'Gate Connect Integration - Public Server Access'
+description: 'Connect your Gate proxy to Minekube Connect for public access and organic player traffic without port forwarding.'
+---
+
 # Enabling Connect Integration
 
 Gate has a builtin integration with [Connect](https://connect.minekube.com/) to list your proxy on

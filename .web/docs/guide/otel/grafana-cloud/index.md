@@ -1,3 +1,8 @@
+---
+title: 'Gate with Grafana Cloud Monitoring'
+description: 'Monitor Gate Minecraft proxy with Grafana Cloud. Set up dashboards, alerts, and telemetry for comprehensive server monitoring and observability.'
+---
+
 # Grafana Cloud
 
 [Grafana Cloud](https://grafana.com/products/cloud/) is a fully managed observability platform that supports OpenTelemetry. Follow these steps to set up Gate with Grafana Cloud:

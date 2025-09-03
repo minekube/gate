@@ -1,3 +1,8 @@
+---
+title: 'Why Choose Gate - Modern Minecraft Proxy Benefits'
+description: 'Discover why Gate is the best BungeeCord/Velocity alternative with cloud-native design, low memory usage, and modern features.'
+---
+
 # Why Gate?
 
 <div class="why-cards">

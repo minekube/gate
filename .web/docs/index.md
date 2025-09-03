@@ -1,9 +1,48 @@
 ---
 layout: home
-
 title: Gate
 titleTemplate: Next Generation Minecraft Proxy
-
+<<<<<<< HEAD
+=======
+description: 'Gate is a lightweight, cloud-native Minecraft proxy that replaces BungeeCord/Velocity. Built in Go with only 10MB memory usage, supports Bedrock cross-play, and offers developer-friendly APIs.'
+head:
+  - - meta
+    - name: description
+      content: 'Gate is a lightweight, cloud-native Minecraft proxy that replaces BungeeCord/Velocity. Built in Go with only 10MB memory usage, supports Bedrock cross-play, and offers developer-friendly APIs.'
+  - - meta
+    - name: keywords
+      content: 'minecraft proxy, bungeecord alternative, velocity alternative, minecraft server network, bedrock cross-play, minecraft go proxy, cloud native minecraft, lightweight minecraft proxy, minecraft network management'
+  - - meta
+    - property: 'og:title'
+      content: 'Gate - Next Generation Minecraft Proxy'
+  - - meta
+    - property: 'og:description'
+      content: 'Lightweight Minecraft proxy built in Go. Replace BungeeCord/Velocity with 10MB memory usage, Bedrock cross-play support, and modern developer APIs.'
+  - - meta
+    - property: 'og:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - meta
+    - property: 'og:url'
+      content: 'https://gate.minekube.com/'
+  - - meta
+    - property: 'og:type'
+      content: 'website'
+  - - meta
+    - name: 'twitter:card'
+      content: 'summary_large_image'
+  - - meta
+    - name: 'twitter:title'
+      content: 'Gate - Next Generation Minecraft Proxy'
+  - - meta
+    - name: 'twitter:description'
+      content: 'Lightweight Minecraft proxy built in Go. Replace BungeeCord/Velocity with 10MB memory usage, Bedrock cross-play support, and modern developer APIs.'
+  - - meta
+    - name: 'twitter:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - link
+    - rel: canonical
+      href: 'https://gate.minekube.com/'
+>>>>>>> d4221cf (add more seo)
 hero:
   name: Gate
   text: The Lightweight Minecraft Proxy
@@ -29,7 +68,6 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/minekube/gate
-
 features:
   - icon: 📦
     title: No JVM Required, High Performance

@@ -1,3 +1,8 @@
+---
+title: 'Gate Auto Config Reload - Live Configuration Updates'
+description: 'Learn about Gate automatic config reloading feature. Update server settings without restarting or disconnecting players.'
+---
+
 # Auto Config Reload
 
 _Gate watches your config file for updates._
@@ -37,6 +42,5 @@ This feature is always enabled by default, given that you have a config file.
 ## How to disable it
 
 Please note that the auto config reload feature cannot be disabled.
-If you feel a compelling need to do so, please don't hesitate to [open an issue](
-https://github.com/minekube/gate/issues/new?title=Disable%20auto%20config%20reload&body=I%20want%20to%20disable%20auto%20config%20reload%20because%20...)
+If you feel a compelling need to do so, please don't hesitate to [open an issue](https://github.com/minekube/gate/issues/new?title=Disable%20auto%20config%20reload&body=I%20want%20to%20disable%20auto%20config%20reload%20because%20...)
 on our GitHub repository.
