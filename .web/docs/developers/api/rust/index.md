@@ -1,6 +1,6 @@
 ---
-title: 'Gate Rust API - High-Performance Minecraft Proxy Development'
-description: 'Develop high-performance Minecraft proxy extensions with Gate Rust API. Memory-safe and fast proxy plugin development.'
+title: "Gate Rust API - High-Performance Minecraft Proxy Development"
+description: "Develop high-performance Minecraft proxy extensions with Gate Rust API. Memory-safe and fast proxy plugin development."
 ---
 
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg" class="tech-icon" alt="Rust" /> Rust Client

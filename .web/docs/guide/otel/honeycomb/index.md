@@ -1,6 +1,6 @@
 ---
-title: 'Gate with Honeycomb Observability Platform'
-description: 'Integrate Gate Minecraft proxy with Honeycomb for advanced observability. Set up traces, metrics, and monitoring for your Minecraft server network.'
+title: "Gate with Honeycomb Observability Platform"
+description: "Integrate Gate Minecraft proxy with Honeycomb for advanced observability. Set up traces, metrics, and monitoring for your Minecraft server network."
 ---
 
 # Honeycomb

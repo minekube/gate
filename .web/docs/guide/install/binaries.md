@@ -1,6 +1,6 @@
 ---
-title: 'Install Gate from Binaries - Direct Download Setup'
-description: 'Download and install Gate Minecraft proxy binaries for Linux, Windows, and macOS. Quick setup with direct executable files.'
+title: "Install Gate from Binaries - Direct Download Setup"
+description: "Download and install Gate Minecraft proxy binaries for Linux, Windows, and macOS. Quick setup with direct executable files."
 ---
 
 # Downloading Prebuilt Binaries

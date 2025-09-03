@@ -1,6 +1,6 @@
 ---
-title: 'Gate Web API - Browser TypeScript for Minecraft'
-description: 'Create web applications for Minecraft server management with Gate's browser TypeScript API. Frontend development for Minecraft proxy control.'
+title: "Gate Web API - Browser TypeScript for Minecraft"
+description: "Create web applications for Minecraft server management with Gate's browser TypeScript API. Frontend development for Minecraft proxy control."
 ---
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/chrome/chrome-original.svg" class="tech-icon" alt="Web" /> Web
 

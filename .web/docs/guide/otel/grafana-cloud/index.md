@@ -1,6 +1,6 @@
 ---
-title: 'Gate with Grafana Cloud Monitoring'
-description: 'Monitor Gate Minecraft proxy with Grafana Cloud. Set up dashboards, alerts, and telemetry for comprehensive server monitoring and observability.'
+title: "Gate with Grafana Cloud Monitoring"
+description: "Monitor Gate Minecraft proxy with Grafana Cloud. Set up dashboards, alerts, and telemetry for comprehensive server monitoring and observability."
 ---
 
 # Grafana Cloud

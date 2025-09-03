@@ -1,6 +1,6 @@
 ---
-title: 'Gate Minecraft Proxy with Modded Servers - Fabric & NeoForge'
-description: 'Complete guide to using Gate with modded Minecraft servers including Fabric and NeoForge. Velocity modern forwarding, player info forwarding, and mod compatibility.'
+title: "Gate Minecraft Proxy with Modded Servers - Fabric & NeoForge"
+description: "Complete guide to using Gate with modded Minecraft servers including Fabric and NeoForge. Velocity modern forwarding, player info forwarding, and mod compatibility."
 ---
 
 # Modded Server Compatibility

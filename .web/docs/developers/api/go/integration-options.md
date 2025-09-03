@@ -1,6 +1,6 @@
 ---
-title: 'Gate Go Integration Options - Embedding & Deployment'
-description: 'Learn different ways to integrate Gate Minecraft proxy with Go applications. Embedding options, deployment strategies, and integration patterns.'
+title: "Gate Go Integration Options - Embedding & Deployment"
+description: "Learn different ways to integrate Gate Minecraft proxy with Go applications. Embedding options, deployment strategies, and integration patterns."
 ---
 
 <div class="integration-options">

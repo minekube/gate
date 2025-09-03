@@ -1,6 +1,6 @@
 ---
-title: 'Gate Connect Integration - Public Server Access'
-description: 'Connect your Gate proxy to Minekube Connect for public access and organic player traffic without port forwarding.'
+title: "Gate Connect Integration - Public Server Access"
+description: "Connect your Gate proxy to Minekube Connect for public access and organic player traffic without port forwarding."
 ---
 
 # Enabling Connect Integration

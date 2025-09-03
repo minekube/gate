@@ -1,6 +1,6 @@
 ---
-title: 'Install Gate with Docker - Container Setup Guide'
-description: 'Run Gate Minecraft proxy in Docker containers. Complete guide with docker-compose, port configuration, and volume mounting.'
+title: "Install Gate with Docker - Container Setup Guide"
+description: "Run Gate Minecraft proxy in Docker containers. Complete guide with docker-compose, port configuration, and volume mounting."
 ---
 
 # Running Gate in Docker

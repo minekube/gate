@@ -1,6 +1,6 @@
 ---
-title: 'Gate API Documentation - Minecraft Proxy Development'
-description: 'Complete Gate API documentation for building Minecraft proxy extensions with multiple programming language support.'
+title: "Gate API Documentation - Minecraft Proxy Development"
+description: "Complete Gate API documentation for building Minecraft proxy extensions with multiple programming language support."
 ---
 
 # Gate HTTP API

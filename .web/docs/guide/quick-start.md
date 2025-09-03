@@ -1,8 +1,6 @@
 ---
-title: 'Gate Minecraft Proxy Quick Start Guide'
-description: 'Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement.'
----<<<<<<< HEAD
-=======
+title: "Gate Minecraft Proxy Quick Start Guide"
+description: "Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement."
 ---
 title: 'Gate Minecraft Proxy Quick Start Guide'
 description: 'Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement with Bedrock support.'

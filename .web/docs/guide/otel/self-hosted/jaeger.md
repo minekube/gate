@@ -1,6 +1,6 @@
 ---
-title: 'Self-Hosted Jaeger Tracing with Gate'
-description: 'Set up self-hosted Jaeger for Gate Minecraft proxy tracing. Configure distributed tracing to monitor request flows and performance bottlenecks.'
+title: "Self-Hosted Jaeger Tracing with Gate"
+description: "Set up self-hosted Jaeger for Gate Minecraft proxy tracing. Configure distributed tracing to monitor request flows and performance bottlenecks."
 ---
 
 # Self-Hosted Jaeger with Docker Compose

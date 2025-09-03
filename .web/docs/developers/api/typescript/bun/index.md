@@ -1,6 +1,6 @@
 ---
-title: 'Gate Bun API - Fast TypeScript Minecraft Development'
-description: 'Develop with Gate Bun TypeScript API for ultra-fast Minecraft proxy applications. Modern runtime for high-performance server development.'
+title: "Gate Bun API - Fast TypeScript Minecraft Development"
+description: "Develop with Gate Bun TypeScript API for ultra-fast Minecraft proxy applications. Modern runtime for high-performance server development."
 ---
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bun/bun-original.svg" class="tech-icon" alt="Bun" /> Bun
 

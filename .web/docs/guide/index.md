@@ -1,8 +1,6 @@
 ---
-title: 'Gate Documentation - Complete Minecraft Proxy Guide'
-description: 'Comprehensive documentation for Gate, the modern Minecraft proxy. Learn installation, configuration, development, and advanced features.'
----<<<<<<< HEAD
-=======
+title: "Gate Documentation - Complete Minecraft Proxy Guide"
+description: "Comprehensive documentation for Gate, the modern Minecraft proxy. Learn installation, configuration, development, and advanced features."
 ---
 title: 'Gate Minecraft Proxy Guide - Introduction & Setup'
 description: 'Complete guide to Gate Minecraft proxy. Learn how to set up, configure, and deploy Gate as a modern replacement for BungeeCord and Velocity with Bedrock cross-play support.'

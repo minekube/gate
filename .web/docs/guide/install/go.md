@@ -1,6 +1,6 @@
 ---
-title: 'Install Gate with Go - Build from Source'
-description: 'Install Gate Minecraft proxy using Go compiler. Build from source with latest features and custom configurations.'
+title: "Install Gate with Go - Build from Source"
+description: "Install Gate Minecraft proxy using Go compiler. Build from source with latest features and custom configurations."
 ---
 
 # Install using Go

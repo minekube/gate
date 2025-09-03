@@ -1,8 +1,7 @@
 ---
-title: 'Gate Minecraft Proxy Events System'
-description: 'Learn about Gate's event system for Minecraft proxy development. Handle player events, server connections, chat messages, and custom event listeners.'
+title: "Gate Minecraft Proxy Events System"
+description: "Learn about Gate's event system for Minecraft proxy development. Handle player events, server connections, chat messages, and custom event listeners."
 ---
-
 # Events
 
 _Gate provides a powerful event system that allows you to listen to and modify events that occur in the proxy._

@@ -1,6 +1,6 @@
 ---
-title: 'Gate Compatibility - Supported Minecraft Versions'
-description: 'Gate supports Minecraft versions 1.8 to latest, including modded servers, plugins, and cross-platform compatibility.'
+title: "Gate Compatibility - Supported Minecraft Versions"
+description: "Gate supports Minecraft versions 1.8 to latest, including modded servers, plugins, and cross-platform compatibility."
 ---
 
 # Server Compatibility

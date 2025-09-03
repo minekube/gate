@@ -1,6 +1,6 @@
 ---
-title: 'Gate Protocol Documentation - Generated API Reference'
-description: 'Generated protocol documentation for Gate Minecraft proxy API. Complete reference for all API endpoints, messages, and data structures.'
+title: "Gate Protocol Documentation - Generated API Reference"
+description: "Generated protocol documentation for Gate Minecraft proxy API. Complete reference for all API endpoints, messages, and data structures."
 ---
 
 # Protocol Documentation
@@ -380,4 +380,3 @@ All methods follow standard gRPC error codes and include detailed error messages
 | <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
 | <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
 | <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
-

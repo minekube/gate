@@ -1,6 +1,6 @@
 ---
-title: 'Gate OpenTelemetry Observability & Monitoring'
-description: 'Monitor Gate Minecraft proxy with OpenTelemetry. Set up metrics, traces, and logs for Grafana, Jaeger, Honeycomb, and other observability platforms.'
+title: "Gate OpenTelemetry Observability & Monitoring"
+description: "Monitor Gate Minecraft proxy with OpenTelemetry. Set up metrics, traces, and logs for Grafana, Jaeger, Honeycomb, and other observability platforms."
 ---
 
 # OpenTelemetry with Gate Overview

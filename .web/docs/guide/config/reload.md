@@ -1,6 +1,6 @@
 ---
-title: 'Gate Auto Config Reload - Live Configuration Updates'
-description: 'Learn about Gate automatic config reloading feature. Update server settings without restarting or disconnecting players.'
+title: "Gate Auto Config Reload - Live Configuration Updates"
+description: "Learn about Gate automatic config reloading feature. Update server settings without restarting or disconnecting players."
 ---
 
 # Auto Config Reload

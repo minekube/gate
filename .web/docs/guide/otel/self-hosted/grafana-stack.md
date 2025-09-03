@@ -1,6 +1,6 @@
 ---
-title: 'Self-Hosted Grafana Stack with Gate'
-description: 'Deploy complete Grafana monitoring stack for Gate Minecraft proxy. Include Prometheus, Grafana, and Jaeger for full observability.'
+title: "Self-Hosted Grafana Stack with Gate"
+description: "Deploy complete Grafana monitoring stack for Gate Minecraft proxy. Include Prometheus, Grafana, and Jaeger for full observability."
 ---
 
 # Self-Hosted Grafana, Prometheus & Tempo Stack

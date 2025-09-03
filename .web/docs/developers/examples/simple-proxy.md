@@ -1,6 +1,6 @@
 ---
-title: 'Gate Simple Proxy Example - Getting Started'
-description: 'Build your first Gate Minecraft proxy extension. Complete example showing how to create custom functionality with Go programming and Gate APIs.'
+title: "Gate Simple Proxy Example - Getting Started"
+description: "Build your first Gate Minecraft proxy extension. Complete example showing how to create custom functionality with Go programming and Gate APIs."
 ---
 
 # Simple Proxy • Example

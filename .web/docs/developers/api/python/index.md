@@ -1,6 +1,6 @@
 ---
-title: 'Gate Python API - Minecraft Proxy Development in Python'
-description: 'Develop Minecraft proxy extensions with Gate Python API. Easy-to-use SDK with examples and integration guides.'
+title: "Gate Python API - Minecraft Proxy Development in Python"
+description: "Develop Minecraft proxy extensions with Gate Python API. Easy-to-use SDK with examples and integration guides."
 ---
 
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" class="tech-icon" alt="Python" /> Python Client

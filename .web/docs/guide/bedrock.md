@@ -1,6 +1,6 @@
 ---
-title: 'Gate Bedrock Edition Support - Cross-Platform Gaming'
-description: 'Enable Minecraft Bedrock Edition support with Gate proxy. Connect Java and Bedrock players on the same network.'
+title: "Gate Bedrock Edition Support - Cross-Platform Gaming"
+description: "Enable Minecraft Bedrock Edition support with Gate proxy. Connect Java and Bedrock players on the same network."
 ---
 
 # Bedrock Edition Support

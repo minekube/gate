@@ -1,6 +1,6 @@
 ---
-title: 'Gate Kotlin API - Modern Minecraft Proxy Development'
-description: 'Develop Minecraft proxy extensions with Gate Kotlin API. Modern JVM language with concise syntax and Java interoperability.'
+title: "Gate Kotlin API - Modern Minecraft Proxy Development"
+description: "Develop Minecraft proxy extensions with Gate Kotlin API. Modern JVM language with concise syntax and Java interoperability."
 ---
 
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg" class="tech-icon" alt="Kotlin" /> Kotlin

@@ -1,6 +1,6 @@
 ---
-title: 'Gate API Definition & Protocol Specification'
-description: 'Technical API definition and protocol specification for Gate Minecraft proxy. Complete reference for integration and development.'
+title: "Gate API Definition & Protocol Specification"
+description: "Technical API definition and protocol specification for Gate Minecraft proxy. Complete reference for integration and development."
 ---
 
 # API Definition

@@ -1,6 +1,6 @@
 ---
-title: 'Gate API SDKs - Multi-Language Minecraft Proxy Development'
-description: 'Official SDKs for Gate Minecraft proxy development. Choose from Go, TypeScript, Python, Rust, Java, and Kotlin SDKs with installation guides.'
+title: "Gate API SDKs - Multi-Language Minecraft Proxy Development"
+description: "Official SDKs for Gate Minecraft proxy development. Choose from Go, TypeScript, Python, Rust, Java, and Kotlin SDKs with installation guides."
 ---
 
 ## Official SDKs

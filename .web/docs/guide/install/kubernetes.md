@@ -1,6 +1,6 @@
 ---
-title: 'Deploy Gate on Kubernetes - Container Orchestration'
-description: 'Deploy Gate Minecraft proxy on Kubernetes clusters with YAML manifests, services, and ingress configuration.'
+title: "Deploy Gate on Kubernetes - Container Orchestration"
+description: "Deploy Gate Minecraft proxy on Kubernetes clusters with YAML manifests, services, and ingress configuration."
 ---
 
 # Running Gate in Kubernetes

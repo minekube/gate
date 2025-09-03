@@ -1,6 +1,6 @@
 ---
-title: 'Gate Development Team - Meet the Creators'
-description: 'Meet the international team behind Gate Minecraft proxy development. Learn about the developers, contributors, and maintainers building the next-generation Minecraft proxy.'
+title: "Gate Development Team - Meet the Creators"
+description: "Meet the international team behind Gate Minecraft proxy development. Learn about the developers, contributors, and maintainers building the next-generation Minecraft proxy."
 ---
 
 <script setup>

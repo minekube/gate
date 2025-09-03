@@ -1,6 +1,6 @@
 ---
-title: 'Gate Lite Mode - Lightweight Minecraft Proxy'
-description: 'Gate Lite is an ultra-lightweight Minecraft reverse proxy for host-based connection routing with minimal resource usage.'
+title: "Gate Lite Mode - Lightweight Minecraft Proxy"
+description: "Gate Lite is an ultra-lightweight Minecraft reverse proxy for host-based connection routing with minimal resource usage."
 ---
 
 # Gate Lite Mode
