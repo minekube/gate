@@ -13,13 +13,13 @@ config:
       §bGate + Geyser Cross-Play
       §eJava & Bedrock Players Welcome!
 
-  # Enable Bedrock edition support (Geyser + Floodgate)
+  # Enable Bedrock edition support (Manual mode - Geyser runs as separate container)
   bedrock:
-    # Shorthand: managed: true implies both enabled: true and managed.enabled: true
-    managed: true
-    # Gate ↔ Geyser connection
+    enabled: true
+    # Gate ↔ Geyser connection (Geyser container connects to Gate container)
     geyserListenAddr: 'gate:25567'
     # Bedrock player settings
     usernameFormat: '.%s'
-    # Floodgate authentication key
+    # Floodgate authentication key (shared between containers)
     floodgateKeyPath: '/gate/floodgate.pem'
+    # managed: false (default - Docker manages Geyser container, not Gate)
