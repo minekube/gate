@@ -1,3 +1,8 @@
+---
+title: "Gate Kotlin API - Modern Minecraft Proxy Development"
+description: "Develop Minecraft proxy extensions with Gate Kotlin API. Modern JVM language with concise syntax and Java interoperability."
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg" class="tech-icon" alt="Kotlin" /> Kotlin
 
 Gate provides a Kotlin API for integrating with your Kotlin applications using either Connect-RPC or gRPC. You can use the API to interact with Gate programmatically.

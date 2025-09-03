@@ -1,3 +1,50 @@
+---
+title: "Gate Minecraft Proxy Quick Start Guide"
+description: "Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement."
+---
+title: 'Gate Minecraft Proxy Quick Start Guide'
+description: 'Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement with Bedrock support.'
+
+head:
+  - - meta
+    - name: description
+      content: 'Get started with Gate Minecraft proxy in minutes. Step-by-step installation, configuration, and setup guide for BungeeCord/Velocity replacement with Bedrock support.'
+  - - meta
+    - name: keywords
+      content: 'gate quick start, minecraft proxy installation, gate setup guide, minecraft server proxy tutorial, bungeecord alternative setup, velocity replacement guide, minecraft network setup'
+  - - meta
+    - property: 'og:title'
+      content: 'Gate Minecraft Proxy Quick Start - Installation & Setup Guide'
+  - - meta
+    - property: 'og:description'
+      content: 'Quick start guide for Gate Minecraft proxy. Install, configure, and run your own BungeeCord/Velocity replacement with Bedrock cross-play in minutes.'
+  - - meta
+    - property: 'og:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - meta
+    - property: 'og:url'
+      content: 'https://gate.minekube.com/guide/quick-start'
+  - - meta
+    - property: 'og:type'
+      content: 'article'
+  - - meta
+    - name: 'twitter:card'
+      content: 'summary_large_image'
+  - - meta
+    - name: 'twitter:title'
+      content: 'Gate Minecraft Proxy Quick Start - Installation & Setup Guide'
+  - - meta
+    - name: 'twitter:description'
+      content: 'Quick start guide for Gate Minecraft proxy. Install, configure, and run your own BungeeCord/Velocity replacement with Bedrock cross-play in minutes.'
+  - - meta
+    - name: 'twitter:image'
+      content: 'https://gate.minekube.com/og-image.png'
+  - - link
+    - rel: canonical
+      href: 'https://gate.minekube.com/guide/quick-start'
+---
+
+>>>>>>> d4221cf (add more seo)
 # Quick Start
 
 _This page quickly explains how to run Gate as a Minecraft proxy for your servers.

@@ -1,3 +1,8 @@
+---
+title: 'Gate Minecraft Proxy Guide - Introduction & Setup'
+description: 'Complete guide to Gate Minecraft proxy. Learn how to set up, configure, and deploy Gate as a modern replacement for BungeeCord and Velocity with Bedrock cross-play support.'
+---
+
 # Introduction
 
 _Gate is a modern cloud-native, open source, fast, batteries-included and secure proxy for Minecraft servers

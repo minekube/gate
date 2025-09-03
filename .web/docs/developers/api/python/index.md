@@ -1,3 +1,8 @@
+---
+title: "Gate Python API - Minecraft Proxy Development in Python"
+description: "Develop Minecraft proxy extensions with Gate Python API. Easy-to-use SDK with examples and integration guides."
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" class="tech-icon" alt="Python" /> Python Client
 
 Gate provides a Python API for integrating with your Python applications. You can use the API to interact with Gate programmatically using either gRPC or HTTP protocols.

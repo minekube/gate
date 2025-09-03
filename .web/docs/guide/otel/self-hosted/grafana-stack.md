@@ -1,3 +1,8 @@
+---
+title: "Self-Hosted Grafana Stack with Gate"
+description: "Deploy complete Grafana monitoring stack for Gate Minecraft proxy. Include Prometheus, Grafana, and Jaeger for full observability."
+---
+
 # Self-Hosted Grafana, Prometheus & Tempo Stack
 
 This guide provides instructions on how to set up a self-hosted Grafana, Prometheus, and Tempo stack using Docker Compose and configure Gate to send telemetry data (traces and metrics) to this stack.

@@ -3,6 +3,7 @@ layout: home
 
 title: Gate
 titleTemplate: Next Generation Minecraft Proxy
+description: 'Gate is a lightweight, high-performance Minecraft proxy written in Go. Replace BungeeCord/Velocity with 10MB memory usage, built-in Bedrock cross-play, and developer-friendly APIs.'
 
 hero:
   name: Gate

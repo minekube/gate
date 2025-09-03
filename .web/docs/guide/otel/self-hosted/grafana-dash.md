@@ -1,3 +1,8 @@
+---
+title: "Gate Grafana Dashboard Configuration"
+description: "Configure Grafana dashboards for Gate Minecraft proxy. Visual monitoring of connections, performance metrics, and server health indicators."
+---
+
 We provide a sample Grafana dashboard to help you get started with visualizing Gate's metrics.
 
 ::: info <VPBadge>You are expected to make your own dashboard, this is just a starting point.</VPBadge>

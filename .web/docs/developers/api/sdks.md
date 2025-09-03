@@ -1,3 +1,8 @@
+---
+title: "Gate API SDKs - Multi-Language Minecraft Proxy Development"
+description: "Official SDKs for Gate Minecraft proxy development. Choose from Go, TypeScript, Python, Rust, Java, and Kotlin SDKs with installation guides."
+---
+
 ## Official SDKs
 
 Gate's API definitions are hosted on [buf.build/minekube/gate](https://buf.build/minekube/gate/sdks), where you can directly pull client libraries using your preferred language's package manager:

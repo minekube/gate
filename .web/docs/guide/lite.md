@@ -1,3 +1,8 @@
+---
+title: "Gate Lite Mode - Lightweight Minecraft Proxy"
+description: "Gate Lite is an ultra-lightweight Minecraft reverse proxy for host-based connection routing with minimal resource usage."
+---
+
 # Gate Lite Mode
 
 Gate has a `Lite` mode that makes Gate act as an ultra-thin lightweight reverse proxy between
@@ -23,8 +28,10 @@ For each hostname, Gate will forward the player connection to the first matching
 [![Graph](/images/lite-mermaid-diagram-LR.svg)](https://gate.minekube.com)
 
 In this configuration, **Gate Lite** will route:
+
 - `Player Bob` -> `Backend A (10.0.0.1)`
--  `Player Alice` -> `Backend B (10.0.0.2)`
+- `Player Alice` -> `Backend B (10.0.0.2)`
+
 ```yaml config-lite.yml
 config:
   lite:
@@ -34,8 +41,8 @@ config:
         backend: 10.0.0.3:25568
       - host: '*.example.com'
         backend: 10.0.0.1:25567
-      - host: [ example.com, localhost ]
-        backend: [ 10.0.0.2:25566 ]
+      - host: [example.com, localhost]
+        backend: [10.0.0.2:25566]
 ```
 
 ## Ping Response Caching
@@ -57,7 +64,7 @@ config:
     enabled: true
     routes:
       - host: abc.example.com
-        backend: [ 10.0.0.3:25565, 10.0.0.4:25565 ]
+        backend: [10.0.0.3:25565, 10.0.0.4:25565]
         cachePingTTL: 3m # or 180s // [!code ++]
 ```
 
@@ -70,6 +77,7 @@ Note that routes can configure multiple random backends and each backend has its
 Setting the TTL to `-1s` disables response caching for this route only.
 
 ::: code-group
+
 ```yaml [config.yml]
 config:
   lite:
@@ -79,6 +87,7 @@ config:
         backend: 10.0.0.3:25568
         cachePingTTL: -1s // [!code ++]
 ```
+
 :::
 
 ## Fallback status for offline backends
@@ -87,6 +96,7 @@ If all backends of a route are unreachable, Gate Lite will return a fallback sta
 You can utilize all available status fields to customize the response. (See full sample config below.)
 
 ::: code-group
+
 ```yaml [config.yml]
 config:
   lite:
@@ -104,8 +114,9 @@ config:
             name: '§cTry again later!'
             protocol: -1
 ```
+
 :::
-          
+
 ## Modify virtual host
 
 Modifies the virtual host to match the backend address in the handshake request.
@@ -115,6 +126,7 @@ prevent players from using third party domains.
 To work around this limitation, simply enable this on your route:
 
 ::: code-group
+
 ```yaml [config.yml]
 config:
   lite:
@@ -124,6 +136,7 @@ config:
         backend: play.example.com
         modifyVirtualHost: true // [!code ++]
 ```
+
 :::
 
 Lite will modify the player's handshake packet's virtual host field from `localhost` -> `play.example.com`
@@ -134,9 +147,11 @@ before forwarding the connection to the backend.
 The Lite configuration is located in the same Gate `config.yml` file under `lite`.
 
 ::: code-group
+
 ```yaml [config-lite.yml on GitHub]
 <!--@include: ../../../config-lite.yml -->
 ```
+
 :::
 
 ## Proxy behind proxy

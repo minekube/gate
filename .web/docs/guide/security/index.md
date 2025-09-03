@@ -1,3 +1,8 @@
+---
+title: "Gate Security Features - Protect Your Minecraft Network"
+description: "Secure your Gate Minecraft proxy with rate limiting, DDoS protection, authentication, and network security features."
+---
+
 # Gate: Cybersecurity Threats and Measures
 
 This document presents the cybersecurity framework and measures implemented within the Minekube Gate proxy system, which

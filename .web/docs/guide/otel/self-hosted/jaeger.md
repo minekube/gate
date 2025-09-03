@@ -1,3 +1,8 @@
+---
+title: "Self-Hosted Jaeger Tracing with Gate"
+description: "Set up self-hosted Jaeger for Gate Minecraft proxy tracing. Configure distributed tracing to monitor request flows and performance bottlenecks."
+---
+
 # Self-Hosted Jaeger with Docker Compose
 
 This guide details setting up Jaeger (all-in-one) via Docker Compose for tracing with Gate.

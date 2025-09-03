@@ -1,3 +1,8 @@
+---
+title: "Gate Rust API - High-Performance Minecraft Proxy Development"
+description: "Develop high-performance Minecraft proxy extensions with Gate Rust API. Memory-safe and fast proxy plugin development."
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg" class="tech-icon" alt="Rust" /> Rust Client
 
 Gate provides a Rust API for integrating with your Rust applications. You can use the API to interact with Gate programmatically using gRPC.

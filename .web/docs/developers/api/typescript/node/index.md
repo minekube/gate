@@ -1,3 +1,8 @@
+---
+title: "Gate Node.js API - Minecraft Proxy with TypeScript"
+description: "Build Node.js applications for Minecraft proxy management with Gate's TypeScript API. Server-side JavaScript development for Minecraft automation."
+---
+
 # <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" class="tech-icon" alt="Node.js" /> Node.js
 
 You can use the following `.npmrc` to install the dependencies from the `buf.build` registry.

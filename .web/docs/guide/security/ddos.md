@@ -1,3 +1,8 @@
+---
+title: "Gate DDoS Protection - Defend Against Attacks"
+description: "Protect your Minecraft network from DDoS attacks using Gate built-in rate limiting and connection throttling features."
+---
+
 # Security considerations
 
 Gate is a Minecraft reverse proxy that connects players to backend servers.

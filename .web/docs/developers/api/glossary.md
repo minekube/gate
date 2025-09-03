@@ -1,3 +1,8 @@
+---
+title: "Gate API Glossary - Minecraft Proxy Terms & Definitions"
+description: "Comprehensive glossary of Gate API terms and concepts. Understand Minecraft proxy terminology, API concepts, and development vocabulary."
+---
+
 # API Technology Glossary
 
 This glossary provides a brief overview of the key technologies used in Gate's API.

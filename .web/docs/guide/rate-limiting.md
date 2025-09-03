@@ -1,3 +1,8 @@
+---
+title: "Gate Minecraft Proxy Rate Limiting & DDoS Protection"
+description: "Configure rate limiting in Gate Minecraft proxy to prevent abuse and attacks. IP-based connection and login limiters for server protection and quality control."
+---
+
 # Rate limiting
 
 _You can find the rate limiters under the `quota` section of the config._

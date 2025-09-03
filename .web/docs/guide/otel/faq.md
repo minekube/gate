@@ -1,3 +1,8 @@
+---
+title: "Gate OpenTelemetry FAQ - Common Questions"
+description: "Frequently asked questions about Gate OpenTelemetry integration. Troubleshoot monitoring setup, metrics collection, and observability configuration."
+---
+
 # OpenTelemetry FAQ
 
 This FAQ addresses common questions about using OpenTelemetry with Gate, particularly in conjunction with Grafana Mimir, Grafana Tempo, and the OpenTelemetry Collector.

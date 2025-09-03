@@ -1,3 +1,8 @@
+---
+title: "Gate Developer Documentation - Build Minecraft Proxy Extensions"
+description: "Developer documentation for Gate Minecraft proxy. Build plugins and extensions using APIs in Go, TypeScript, Python, Rust, Java, and Kotlin."
+---
+
 # Developers Guide
 
 _If you want to learn how to extend Gate with your own code, you are in the right place._

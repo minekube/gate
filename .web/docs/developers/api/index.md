@@ -1,3 +1,8 @@
+---
+title: "Gate API Documentation - Minecraft Proxy Development"
+description: "Complete Gate API documentation for building Minecraft proxy extensions with multiple programming language support."
+---
+
 # Gate HTTP API
 
 Gate provides a powerful API that exposes its functionality to a wide ecosystem of languages and tools. Using modern technologies like Protocol Buffers, gRPC, and ConnectRPC with schemas managed through buf.build.
