@@ -199,7 +199,7 @@ func withBedrockContext(ctx context.Context, geyserConn *GeyserConnection) conte
 	return context.WithValue(ctx, bedrockContextKey, geyserConn)
 }
 
-// FromContext safely retrieves a Geyser connection associated with a player's Conn().Context().
+// FromContext safely retrieves a Geyser connection associated with a player.Context().
 func FromContext(ctx context.Context) (*GeyserConnection, bool) {
 	v, ok := ctx.Value(bedrockContextKey).(*GeyserConnection)
 	if !ok {
