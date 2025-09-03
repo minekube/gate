@@ -447,6 +447,36 @@ The Floodgate protocol encodes comprehensive player information in an encrypted,
 
 The data extraction process includes robust validation to prevent malformed or malicious data from affecting server operation. Each field is validated according to Floodgate's specification, with appropriate error handling for edge cases like missing usernames or invalid XUIDs.
 
+#### Programmatic Access to Bedrock Data
+
+For developers building Gate plugins or extensions, Gate provides direct access to Bedrock player information through the context system. This allows you to create platform-specific features and optimizations in your Go code.
+
+```go
+import (
+    "go.minekube.com/common/minecraft/component"
+    "go.minekube.com/gate/pkg/edition/bedrock/geyser"
+    "go.minekube.com/gate/pkg/edition/java/proxy"
+)
+
+func handlePlayerJoin(event *proxy.PostLoginEvent) {
+    player := event.Player()
+
+    // Check if player is from Bedrock Edition
+    if bedrockData := geyser.FromContext(player.Context()); bedrockData != nil {
+        // This is a Bedrock player - access device info
+        if bedrockData.DeviceOS == geyser.DeviceOSAndroid {
+            player.SendMessage(&component.Text{Content: "Welcome mobile player!"})
+        }
+
+        // Access other Bedrock data:
+        // bedrockData.Username, bedrockData.Xuid, bedrockData.DeviceOS,
+        // bedrockData.InputMode, bedrockData.Language, etc.
+    }
+}
+```
+
+This programmatic access enables sophisticated cross-platform features like platform-specific optimizations, and targeted messaging based on the player's device capabilities.
+
 #### Deterministic UUID Generation
 
 One of the most critical aspects of cross-platform play is ensuring Bedrock players receive consistent Java Edition UUIDs across sessions. Gate implements a deterministic UUID generation algorithm that creates RFC 4122-compliant UUIDs from Bedrock XUIDs using cryptographic hashing.

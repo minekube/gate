@@ -208,7 +208,6 @@ func FromContext(ctx context.Context) (*GeyserConnection, bool) {
 	return v, true
 }
 
-
 func (i *Integration) handleConnection(conn net.Conn) {
 	// Wrap connection with proxy protocol support
 	geyserConn := &GeyserConnection{
@@ -313,5 +312,3 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 
 	e.SetGameProfile(gameProfile)
 }
-
-
