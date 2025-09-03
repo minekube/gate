@@ -1,41 +1,10 @@
 # Bedrock Edition Support
 
-Gate provides comprehensive support for Minecraft Bedrock Edition players through integration with [Geyser](https://geysermc.org/) and built-in Floodgate protocol support. This allows Bedrock players (mobile, console, Windows 10) to join your Java Edition servers **without requiring any backend plugins**.
+Enable cross-play between Java and Bedrock players on your Minecraft servers with **zero backend plugins required**.
 
-## Architecture Overview
+## 🚀 Quick Start (30 Seconds)
 
-Gate's Bedrock support uses a proxy-in-front-of-proxy architecture where Geyser Standalone runs in front of Gate:
-
-```mermaid
-graph LR
-    A["Bedrock Players<br/>(Mobile, Console, Win10)"] --> B["Geyser Standalone<br/>(Protocol Translation)"]
-    B --> C["Gate Proxy<br/>(Built-in Floodgate)"]
-    C --> D["Backend Servers<br/>(No plugins required)"]
-
-    E["Java Players<br/>(PC Java Edition)"] --> C
-
-    style A fill:#0d7377
-    style B fill:#14a085
-    style C fill:#f39c12
-    style D fill:#8e44ad
-    style E fill:#3498db
-```
-
-### How It Works
-
-1. **Bedrock Players** connect to Geyser Standalone on UDP port 19132
-2. **Geyser** translates Bedrock protocol to Java Edition protocol and forwards to Gate
-3. **Gate** receives the translated connection, handles Floodgate authentication, and forwards as a regular Java player
-4. **Backend servers** receive normal Java Edition connections (no plugins required)
-5. **Java Players** connect directly to Gate as usual
-
-::: tip No Backend Plugins Required!
-Unlike traditional Geyser setups, Gate has **built-in Floodgate protocol support**. Your backend servers (Paper, Spigot, etc.) don't need any plugins - they just see regular Java Edition players. Gate handles all the Bedrock authentication and data translation internally.
-:::
-
-## Quick Start (Recommended: Managed Mode)
-
-The easiest way to get started is using Gate's **Managed Mode**, which automatically handles everything for you:
+Get Bedrock support running instantly with managed mode:
 
 :::: code-group
 
@@ -48,155 +17,349 @@ config:
   try:
     - server1
 
-  # Enable Bedrock with Managed Mode (Zero Configuration!)
+  # Enable Bedrock support - that's it!
   bedrock:
-    enabled: true
-    config:
-      managed:
-        enabled: true # This is all you need!
+    managed: true
 ```
 
 ::::
 
-**That's it!** Gate will automatically:
-
-- ✅ **Generate Floodgate encryption key** (16-byte AES-128)
-- ✅ **Download latest Geyser Standalone JAR** with proper timeouts and User-Agent
-- ✅ **Create optimized Geyser configuration** that connects to Gate
-- ✅ **Start and manage Geyser process** with visible logs, ready detection, and graceful shutdown
-- ✅ **Smart updates** - Only downloads new Geyser versions when actually available (uses HTTP caching)
-
-### Starting with Managed Mode
-
 ```bash
-# Just start Gate - everything else is automatic!
+# Start Gate - everything else is automatic!
 gate --config config.yml
-```
-
-You'll see logs like:
-
-```
-INFO bedrock.managed generating floodgate key {"path": "floodgate.pem"}
-INFO bedrock.managed floodgate key generated successfully {"path": "floodgate.pem"}
-INFO bedrock.managed downloading geyser standalone {"url": "https://...", "path": ".geyser/geyser-standalone.jar"}
-INFO bedrock.managed geyser jar downloaded successfully {"path": ".geyser/geyser-standalone.jar"}
-INFO bedrock.managed starting geyser standalone process {"java": "java", "jar": "...", "config": "...", "bedrockPort": 19132}
-[GEYSER] [INFO] Started Geyser on UDP port 19132
-[GEYSER] [INFO] Connected to Java server on 0.0.0.0:25567
-[GEYSER] [INFO] Floodgate enabled for this connection
 ```
 
 **Connection Info:**
 
 - **Java Players**: `localhost:25565`
-- **Bedrock Players**: `localhost:19132`
+- **Bedrock Players**: `localhost:19132` (default, customizable via config overrides)
 
-## Advanced Managed Mode Configuration
+::: tip Zero Configuration Required!
+Gate automatically generates encryption keys, downloads Geyser, creates optimized configs, and manages everything for you. The `managed: true` shorthand enables both Bedrock support and managed mode in one line!
+:::
 
-You can customize managed mode if needed:
+---
+
+## 🏗️ How It Works
+
+Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with built-in Floodgate protocol support:
+
+```mermaid
+graph TD
+    A["📱 Bedrock Players<br/>(Mobile, Console, Win10)"] --> B["🔄 Geyser Standalone<br/>(Protocol Translation)"]
+    B --> C["🌉 Gate Proxy<br/>(Built-in Floodgate)"]
+    C --> D["🖥️ Backend Servers<br/>(No plugins needed)"]
+
+    E["☕ Java Players<br/>(PC Java Edition)"] --> C
+
+    style A fill:#0d7377
+    style B fill:#14a085
+    style C fill:#f39c12
+    style D fill:#8e44ad
+    style E fill:#3498db
+```
+
+### The Flow
+
+1. **Bedrock Players** connect to Geyser on UDP port 19132 (default, customizable)
+2. **Geyser** translates Bedrock protocol to Java Edition and forwards to Gate
+3. **Gate** receives translated connections, handles Floodgate authentication internally, and presents them as regular Java players to backend servers
+4. **Backend servers** see all players as normal Java Edition connections - no plugins required!
+
+### Key Benefits
+
+- ✅ **No backend plugins** - Gate handles all Bedrock logic internally
+- ✅ **Zero configuration** - Managed mode handles everything automatically
+- ✅ **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows 10)
+- ✅ **Secure** - Uses AES-128 encryption for player authentication
+
+---
+
+## ⚙️ Configuration Guide
+
+### Basic Configuration
+
+For most users, managed mode provides the perfect balance of simplicity and control:
 
 :::: code-group
 
-```yaml [config.yml]
-config:
-  bedrock:
-    enabled: true
-    config:
-      # Optional: Custom paths and settings
-      geyserListenAddr: '0.0.0.0:25567'
-      floodgateKeyPath: '/custom/path/key.pem'
-      usernameFormat: '.%s'
+```yaml [Minimal Setup]
+bedrock:
+  managed: true
+```
 
-      managed:
-        enabled: true
-        # Download URL for the Geyser Standalone JAR
-        jarUrl: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
-        # Directory where the JAR and runtime data is stored
-        dataDir: .geyser
-        # Path to Java (defaults to 'java' on PATH)
-        javaPath: java
-        # UDP port for Bedrock clients
-        bedrockPort: 19132
-        # Update the JAR on startup if a new build is available (default: true)
-        autoUpdate: true
-        # Extra JVM/CLI args passed to the process
-        extraArgs: ['-Xmx1G', '-XX:+UseG1GC']
-        # Custom overrides for the auto-generated Geyser config
-        configOverrides:
-          bedrock:
-            compression-level: 8
-            motd1: 'Custom MOTD'
-          debug-mode: true
-          max-players: 500
+```yaml [With Customization]
+bedrock:
+  # Custom username format to avoid conflicts
+  usernameFormat: '.%s' # .Steve instead of Steve
+
+  # Custom listen address for Geyser connections
+  geyserListenAddr: '0.0.0.0:25567'
+
+  # Custom key path (optional - auto-generated if not specified)
+  floodgateKeyPath: '/path/to/key.pem'
+
+  managed:
+    enabled: true
+    autoUpdate: true # Keep Geyser up-to-date automatically
+```
+
+```yaml [Alternative Shorthand]
+bedrock:
+  managed: true # Implies both enabled: true and managed.enabled: true
+  usernameFormat: '.%s'
+  geyserListenAddr: '0.0.0.0:25567'
 ```
 
 ::::
 
-### Managed Mode Behavior
+### Configuration Options
 
-- **`autoUpdate: true` (default)**: Smart update check on startup - only downloads if a newer version is available (uses HTTP `Last-Modified`/`ETag` headers)
-- **`autoUpdate: false`**: Only downloads if JAR is missing, skips update checks entirely
-- **Auto-reload**: Restarts Geyser when relevant config changes (listen address, ports, etc.)
-- **Graceful shutdown**: Stops Geyser process when Gate stops
-- **Config overrides**: Deep merges user overrides into the auto-generated Geyser config
+| Option             | Description                                                 | Default              |
+| ------------------ | ----------------------------------------------------------- | -------------------- |
+| `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `""` (no formatting) |
+| `geyserListenAddr` | Address where Gate listens for Geyser connections           | `0.0.0.0:25567`      |
+| `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
 
-### Config Overrides Examples
+### Managed Mode Options
 
-You can override any Geyser configuration option:
+| Option       | Description                        | Default   |
+| ------------ | ---------------------------------- | --------- |
+| `enabled`    | Enable automatic Geyser management | `false`   |
+| `autoUpdate` | Automatically update Geyser JAR    | `true`    |
+| `javaPath`   | Path to Java executable            | `java`    |
+| `dataDir`    | Directory for Geyser files         | `.geyser` |
+| `extraArgs`  | Additional JVM arguments           | `[]`      |
+
+### Configuration Modes
+
+Gate supports two approaches for Bedrock integration:
+
+#### Managed Mode (Recommended)
+
+Gate automatically handles Geyser for you:
+
+**Shorthand syntax:**
+
+```yaml
+bedrock:
+  managed: true # Simplest - enables everything automatically
+```
+
+**Explicit syntax (equivalent):**
+
+```yaml
+bedrock:
+  enabled: true
+  managed:
+    enabled: true
+```
+
+#### Manual Mode (Advanced)
+
+You manage your own Geyser installation:
+
+```yaml
+bedrock:
+  enabled: true
+  floodgateKeyPath: '/path/to/key.pem'
+  # managed: false (default when omitted)
+```
+
+| Mode        | Complexity | Control | Best For                     |
+| ----------- | ---------- | ------- | ---------------------------- |
+| **Managed** | Simple     | Medium  | Most users, quick setup      |
+| **Manual**  | Medium     | Full    | Advanced users, custom needs |
+
+---
+
+## 🔧 Advanced Configuration
+
+### Custom Geyser Settings
+
+Override any Geyser configuration option using `configOverrides`. For a complete list of available Geyser settings, see the [GeyserMC Configuration Guide](https://geysermc.org/wiki/geyser/understanding-the-config/).
 
 :::: code-group
 
 ```yaml [Performance Tuning]
-config:
-  bedrock:
-    config:
-      managed:
-        enabled: true
-        configOverrides:
-          bedrock:
-            compression-level: 8
-            mtu: 1200
-          use-direct-connection: false
-          disable-compression: false
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
+      # Optimize for performance
+      bedrock:
+        port: 19132 # Custom Bedrock port (defaults to 19132)
+        compression-level: 8
+        mtu: 1200
+      use-direct-connection: true
+      disable-compression: false
+      max-players: 500
 ```
 
 ```yaml [Custom Branding]
-config:
-  bedrock:
-    config:
-      managed:
-        enabled: true
-        configOverrides:
-          bedrock:
-            motd1: 'My Custom Server'
-            motd2: 'Cross-Play Enabled'
-            server-name: 'MyServer Bedrock'
-          xbox-achievements-enabled: true
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
+      # Customize server branding
+      bedrock:
+        motd1: 'My Amazing Server'
+        motd2: 'Cross-Play Enabled!'
+        server-name: 'MyServer Bedrock'
+      xbox-achievements-enabled: true
 ```
 
 ```yaml [Debug Mode]
-config:
-  bedrock:
-    config:
-      managed:
-        enabled: true
-        configOverrides:
-          debug-mode: true
-          log-player-ip-addresses: false
-          notify-on-new-bedrock-update: false
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
+      # Enable debugging
+      debug-mode: true
+      log-player-ip-addresses: false
+      notify-on-new-bedrock-update: false
+```
+
+```yaml [Custom Port with Shorthand]
+bedrock:
+  managed: true
+  configOverrides:
+    # Use a different Bedrock port
+    bedrock:
+      port: 25565 # Use same port as Java (if on different IPs)
 ```
 
 ::::
 
-The overrides use **deep merging**, so you can override nested values like `bedrock.compression-level` without affecting other `bedrock.*` settings.
+### Username Formatting
 
-::: warning Manual Setup Only for Advanced Users
-The manual setup below is only needed if you want to manage Geyser yourself or need custom configurations not supported by managed mode. **For most users, managed mode above is recommended.**
+Prevent conflicts between Java and Bedrock usernames:
+
+:::: code-group
+
+```yaml [Prefix with Dot]
+bedrock:
+  managed: true
+  usernameFormat: '.%s' # Steve becomes .Steve
+```
+
+```yaml [Suffix with Platform]
+bedrock:
+  managed: true
+  usernameFormat: '%s_BE' # Steve becomes Steve_BE
+```
+
+```yaml [Custom Format]
+bedrock:
+  managed: true
+  usernameFormat: 'Mobile_%s' # Steve becomes Mobile_Steve
+```
+
+::::
+
+### Manual Setup (Advanced)
+
+For users who want to manage their own Geyser installation:
+
+:::: code-group
+
+```yaml [Gate Configuration]
+bedrock:
+  enabled: true
+  # Geyser will connect to this address
+  geyserListenAddr: '0.0.0.0:25567'
+  # Username format for Bedrock players
+  usernameFormat: '.%s'
+  # Path to shared Floodgate key
+  floodgateKeyPath: '/path/to/key.pem'
+  # managed: false (default when omitted)
+```
+
+```yaml [Geyser config.yml]
+# Geyser Standalone configuration
+bedrock:
+  # UDP port for Bedrock players
+  port: 19132
+  address: 0.0.0.0
+
+remote:
+  # Connect to Gate's Bedrock listener
+  address: localhost
+  port: 25567
+  auth-type: floodgate
+  use-proxy-protocol: true
+
+# Point to shared Floodgate key
+floodgate-key-file: /path/to/key.pem
+
+# Enable passthrough for better integration
+passthrough-motd: true
+passthrough-player-counts: true
+
+# Performance settings
+max-players: 100
+debug-mode: false
+```
+
+::::
+
+**Setup Steps:**
+
+1. **Generate Floodgate key** (if you don't have one):
+
+   ```bash
+   # Generate 16-byte AES-128 key
+   openssl rand -out key.pem 16
+   chmod 600 key.pem
+   ```
+
+2. **Download Geyser Standalone**:
+
+   ```bash
+   # Download latest Geyser Standalone
+   wget https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone -O geyser-standalone.jar
+   ```
+
+3. **Configure both Gate and Geyser** with the examples above
+
+4. **Start in correct order**:
+
+   ```bash
+   # 1. Start Gate first
+   gate --config config.yml
+
+   # 2. Start your backend servers
+   # (with the shared key.pem if using Floodgate plugin)
+
+   # 3. Start Geyser Standalone
+   java -Xmx1G -jar geyser-standalone.jar
+   ```
+
+#### When to Use Manual Mode
+
+Consider manual setup if you:
+
+- Need custom Geyser configurations not supported by `configOverrides`
+- Want to run Geyser on a different server/container
+- Require specific Geyser versions or custom builds
+- Need to integrate with existing orchestration systems
+- Want full control over Geyser's lifecycle and resources
+
+#### Manual Mode Considerations
+
+- **Startup order matters**: Gate must start before Geyser connects
+- **Key management**: You're responsible for generating and securing Floodgate keys
+- **Updates**: You must manually update Geyser JAR files
+- **Configuration sync**: Gate and Geyser configs must stay coordinated
+- **Monitoring**: You need to monitor both Gate and Geyser processes
+
+::: warning Manual Setup Complexity
+Manual setup requires careful coordination of configurations, startup order, and key management. **Managed mode is recommended** for most users as it handles all of this automatically.
 :::
 
-## Alternative: Docker Compose
+### Docker Compose Setup
 
-If you prefer containers, use our pre-configured Docker Compose setup:
+For containerized deployments:
 
 :::: code-group
 
@@ -208,385 +371,355 @@ If you prefer containers, use our pre-configured Docker Compose setup:
 <!--@include: ../../../.examples/bedrock/gate.yml -->
 ```
 
-```yaml [geyser/config.yml]
-<!--@include: ../../../.examples/bedrock/geyser/config.yml -->
-```
-
-```yaml [geyser/floodgate.yml]
-<!--@include: ../../../.examples/bedrock/geyser/floodgate.yml -->
-```
-
-```properties [server.properties]
-<!--@include: ../../../.examples/bedrock/server.properties -->
-```
-
 ::::
 
-### Starting the Stack
-
 ```bash
-# Clone the example
+# Clone and start the stack
 git clone https://github.com/minekube/gate.git
 cd gate/.examples/bedrock
-
-# Start all services
 docker compose up -d
-
-# View logs
-docker compose logs -f
 ```
 
-## Manual Setup (Advanced)
-
-::: tip Use Managed Mode Instead
-**Most users should use Managed Mode above** for zero-configuration setup. This manual setup is for advanced users who need custom Geyser configurations.
-:::
-
-### Prerequisites
-
-- [Gate Proxy](https://gate.minekube.com/guide/install/) installed and running
-- [Geyser Standalone](https://geysermc.org/download/) downloaded
-- [Floodgate](https://geysermc.org/download/?project=floodgate) plugin for your backend servers
-
-### Step 1: Configure Gate
-
-Enable Bedrock support in your Gate configuration:
-
-:::: code-group
-
-```yaml [config.yml]
-config:
-  bind: 0.0.0.0:25565
-  onlineMode: true
-  servers:
-    server1: localhost:25566
-  try:
-    - server1
-  forwarding:
-    mode: velocity
-    velocitySecret: 'your-secret-key'
-
-  # Enable Bedrock edition support
-  bedrock:
-    enabled: true
-    config:
-      # Geyser will connect to this address
-      geyserListenAddr: '0.0.0.0:25567'
-      # Username format for Bedrock players to avoid conflicts
-      usernameFormat: '.%s'
-      # Path to Floodgate key for authentication
-      floodgateKeyPath: '/path/to/key.pem'
-```
-
-::::
-
-### Managed Mode Options
-
-Gate's managed mode supports various customization options:
-
-:::: code-group
-
-```yaml [config.yml]
-bedrock:
-  enabled: true
-  config:
-    geyserListenAddr: '0.0.0.0:25567'
-    floodgateKeyPath: '/path/to/key.pem'
-    managed:
-      enabled: true
-      # Download URL for the Geyser Standalone JAR
-      jarUrl: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
-      # Directory where the JAR and runtime data is stored
-      dataDir: .geyser
-      # Path to Java (defaults to 'java' on PATH)
-      javaPath: java
-      # UDP port for Bedrock clients
-      bedrockPort: 19132
-      # Update the JAR on startup if a new build is available
-      autoUpdate: true
-      # Extra JVM/CLI args passed to the process
-      extraArgs: []
-```
+---
 
-::::
+## 🔬 Internals & System Architecture
 
-When enabled, Gate will:
+_For developers who want to understand how Gate's Bedrock support works under the hood._
 
-- Smart download: Check for and download newer Geyser Standalone JAR versions using HTTP caching headers (avoids unnecessary downloads).
-- Start the process on Gate startup and stop it on shutdown/reload.
-- Continue to listen on `geyserListenAddr` for the translated TCP connection from Geyser.
+### Managed Mode Architecture
 
-### Step 2: Configure Geyser Standalone
+Gate's managed mode represents a complete lifecycle management system for Geyser Standalone. When enabled, Gate becomes responsible for every aspect of Geyser's operation, from initial setup to graceful shutdown. This approach eliminates the complexity of manual Geyser configuration while providing developers with full control through configuration overrides.
 
-:::: code-group
+The managed system operates through five core phases: **automatic key generation**, **intelligent JAR management**, **dynamic configuration generation**, **process orchestration**, and **ready state detection**. Each phase is designed to handle edge cases and failure scenarios gracefully, ensuring that Bedrock support remains robust even in challenging deployment environments.
 
-```yaml [geyser/config.yml]
-bedrock:
-  port: 19132
-  motd1: 'Gate + Geyser'
-  motd2: 'Bedrock & Java Cross-Play'
+#### Automatic Key Generation
 
-remote:
-  # Connect to Gate's Bedrock listener
-  address: localhost
-  port: 25567
-  auth-type: floodgate
-  use-proxy-protocol: true
+Gate implements cryptographically secure key generation that follows Floodgate's exact specifications. When no encryption key exists, the system automatically creates a 16-byte AES-128 key using the operating system's secure random number generator. This key serves as the shared secret between Geyser and Gate for authenticating Bedrock player data.
 
-# Point to the shared Floodgate key
-floodgate-key-file: key.pem
+The key generation process includes several security measures: secure file permissions are set to prevent unauthorized access, parent directories are created automatically to handle complex deployment structures, and the key format exactly matches what Floodgate expects. This eliminates the common configuration errors that occur when keys are generated manually or copied incorrectly between systems.
 
-# Enable passthrough for better integration
-passthrough-motd: true
-passthrough-player-counts: true
-```
+#### Smart JAR Management
 
-::::
+Gate's JAR management system implements intelligent HTTP caching to minimize bandwidth usage and startup time. Rather than downloading Geyser on every startup, the system uses HTTP conditional requests with ETag and Last-Modified headers to determine if updates are available. This approach respects Geyser's distribution server while ensuring users always run the latest compatible version.
 
-### Step 3: Configure Backend Servers
+The download system includes comprehensive error handling, timeout management, and integrity verification. When updates are available, downloads happen in the background with progress logging, and the system gracefully handles network failures or corrupted downloads by falling back to cached versions when possible.
 
-Your backend servers need minimal configuration since Gate handles all Bedrock-specific logic:
+#### Configuration Generation & Deep Merging
 
-:::: code-group
+Gate generates optimized Geyser configurations tailored specifically for proxy integration. The base configuration includes performance tunings discovered through extensive testing, proper proxy protocol settings, and security configurations that work seamlessly with Gate's authentication system.
 
-```properties [server.properties]
-# Must be false when using Gate proxy
-online-mode=false
-# Required for Bedrock players (optional but recommended)
-enforce-secure-profile=false
-```
+User customizations are applied through a deep merging algorithm that preserves the structure of nested configuration options. This means users can override specific settings like `bedrock.compression-level` without affecting other `bedrock` section options, providing fine-grained control while maintaining sensible defaults for unconfigured options.
 
-::::
+#### Process Orchestration & Ready Detection
 
-::: tip No Floodgate Plugin Required!
-Unlike traditional setups, you **don't need to install the Floodgate plugin** on your backend servers. Gate has built-in Floodgate protocol support and presents all players (Java and Bedrock) as regular Java Edition connections to your backend servers.
-:::
+Gate manages Geyser as a child process, handling all aspects of lifecycle management including startup argument construction, environment setup, and graceful shutdown coordination. The system monitors Geyser's output streams to detect when the service becomes ready to accept connections, ensuring that Gate doesn't route traffic before Geyser is prepared to handle it.
 
-### Step 4: Generate Floodgate Key
+The process management includes automatic restart capabilities on configuration changes, resource cleanup on shutdown, and comprehensive logging integration that merges Geyser's output with Gate's logging system for unified troubleshooting.
 
-Generate a shared encryption key for Floodgate:
+### Floodgate Protocol Implementation
 
-```bash
-# Generate a 16-byte AES-128 key for Floodgate (matches Floodgate specification)
-openssl rand -out key.pem 16
+Gate includes a complete, native implementation of the Floodgate protocol, eliminating the need for backend server plugins. This implementation handles the complex cryptographic operations required to securely authenticate Bedrock players and extract their platform-specific information.
 
-# Copy this key to required locations:
-# - Geyser Standalone directory
-# - Gate's configured floodgateKeyPath
+#### Bedrock Player Data Processing
 
-# Example locations:
-cp key.pem /path/to/geyser/key.pem
-cp key.pem /path/to/gate/floodgate.pem
-```
+The Floodgate protocol encodes comprehensive player information in an encrypted, structured format. Gate's implementation can decode this data to extract player usernames, Xbox User IDs (XUIDs), device platform information, language preferences, input methods, and other metadata that helps servers provide platform-appropriate experiences.
 
-::: tip Managed Mode Auto-Generation
-If you're using **Managed Mode** (recommended), you can skip this step entirely! Gate will automatically generate the Floodgate key for you.
-:::
+The data extraction process includes robust validation to prevent malformed or malicious data from affecting server operation. Each field is validated according to Floodgate's specification, with appropriate error handling for edge cases like missing usernames or invalid XUIDs.
 
-### Step 5: Start the Services
+#### Deterministic UUID Generation
 
-Start each service in the correct order:
+One of the most critical aspects of cross-platform play is ensuring Bedrock players receive consistent Java Edition UUIDs across sessions. Gate implements a deterministic UUID generation algorithm that creates RFC 4122-compliant UUIDs from Bedrock XUIDs using cryptographic hashing.
 
-#### 1. Start Gate Proxy
+This approach ensures that the same Bedrock player always receives the same Java UUID, enabling proper player data persistence, permissions systems, and plugin compatibility. The algorithm uses SHA1 hashing with a Floodgate-specific namespace to prevent UUID collisions while maintaining deterministic behavior.
 
-```bash
-# Start Gate with Bedrock support enabled
-gate --config config.yml
-```
+### Comprehensive Device Detection
 
-You should see logs indicating Bedrock support is active:
+Gate's device detection system provides servers with detailed information about player platforms, enabling platform-specific features and optimizations. The system recognizes all major Bedrock platforms including mobile devices, gaming consoles, desktop clients, and emerging platforms.
 
-```
-INFO bedrock.geyser geyser/geyser.go:95 geyser integration started {"addr": "0.0.0.0:25567"}
-INFO bedrock proxy/proxy.go:100 bedrock proxy started with geyser integration
-INFO bedrock.geyser geyser/geyser.go:116 listening for geyser connections {"addr": "0.0.0.0:25567"}
-```
+#### Platform Classification Intelligence
 
-#### 2. Start Backend Servers
+The device detection goes beyond simple platform identification to provide intelligent categorization. The system understands that Amazon Fire devices run Android-based Fire OS, that Samsung Gear VR operates on Android, and that different input methods (touch, controller, keyboard) affect gameplay mechanics.
 
-Start your Paper/Spigot servers with Floodgate installed:
+This intelligence enables servers to make informed decisions about features like UI scaling, control schemes, and performance optimizations. For example, a server might enable simplified controls for mobile players while providing full keyboard shortcuts for desktop users.
 
-```bash
-# Start your backend server (example for Paper)
-cd /path/to/your/server
-java -Xmx2G -jar paper-1.21.4.jar nogui
-```
+#### Cross-Platform Compatibility Handling
 
-Ensure the server starts with Floodgate:
+The detection system includes special handling for platform-specific quirks and limitations. It understands console-specific behaviors, mobile device performance constraints, and the unique characteristics of different Bedrock client implementations. This knowledge helps Gate provide appropriate translations and optimizations for each platform.
 
-```
-[INFO] [Floodgate] Floodgate has been enabled!
-[INFO] [Floodgate] Loaded Floodgate key!
-```
+The system also handles edge cases like players switching between devices, platform spoofing attempts, and the introduction of new Bedrock platforms through a flexible, extensible architecture that can adapt to Mojang's evolving Bedrock ecosystem.
 
-#### 3. Start Geyser Standalone
+---
 
-Download and start Geyser Standalone:
-
-```bash
-# Download Geyser Standalone (if not already downloaded)
-wget https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone -O geyser-standalone.jar
-
-# Start Geyser Standalone
-java -Xms1024M -jar geyser-standalone.jar
-```
-
-Geyser should connect to Gate and show:
-
-```
-[INFO] Started Geyser on 0.0.0.0:19132
-[INFO] Connected to Java server on localhost:25567
-[INFO] Floodgate enabled for this connection
-```
-
-### Startup Order Summary
-
-1. **Gate** (with Bedrock support) - Starts first, listens on 25565 (Java) and 25567 (Geyser)
-2. **Backend Servers** (with Floodgate) - Start second, connect to Gate
-3. **Geyser Standalone** - Start last, connects to Gate's Bedrock listener
-
-## Advanced Configuration
-
-### Custom Username Formatting
-
-Bedrock usernames can conflict with Java usernames. Configure formatting:
-
-:::: code-group
-
-```yaml [config.yml]
-bedrock:
-  config:
-    # Prefix Bedrock usernames with a dot
-    usernameFormat: '.%s'
-    # Or use a different format
-    # usernameFormat: "BE_%s"
-    # usernameFormat: "%s_Mobile"
-```
-
-::::
-
-### Security
-
-::: tip Keep Your Key Secure
-The Geyser listener port uses AES-GCM encryption with the shared `key.pem` file for authentication. As long as you keep this key secure, the connection is cryptographically protected against spoofing and impersonation.
-
-**Key Security Best Practices**:
-
-- Set proper file permissions: `chmod 600 key.pem`
-- Don't commit the key to version control: `echo "*.pem" >> .gitignore`
-- In production, use secrets management (Docker secrets, Kubernetes secrets, etc.)
-- Restrict network access to the Geyser listener port (recommended but not required)
-  :::
-
-Optional firewall protection:
-
-```bash
-# Only allow specific IPs to connect to Geyser listener
-sudo ufw allow from GEYSER_IP to any port 25567
-sudo ufw deny 25567
-```
-
-### Connect Integration
-
-Gate's Bedrock support works seamlessly with [Connect](/guide/connect):
-
-:::: code-group
-
-```yaml [config.yml]
-connect:
-  enabled: true
-  name: my-crossplay-server
-  allowOfflineModePlayers: true
-
-  bedrock:
-    enabled: true
-    config:
-      # Connect will handle the networking
-      geyserListenAddr: '0.0.0.0:25567'
-```
-
-::::
-
-## Troubleshooting
+## 🔍 Troubleshooting
 
 ### Common Issues
 
 :::: details Bedrock Players Can't Connect
 
-**Symptoms**:
+**Symptoms:**
 
-- Bedrock players see "Unable to connect to world"
-- Geyser logs show connection errors
+- "Unable to connect to world" on Bedrock clients
+- Geyser shows connection timeouts
 
-**Solutions**:
+**Solutions:**
 
-1. **Check ports** - Ensure UDP 19132 is open for Bedrock clients
-2. **Verify Geyser config** - Confirm `remote.address` points to Gate
-3. **Test connectivity** - Use `telnet gate-ip 25567` to test Gate's Bedrock listener
+1. **Check UDP port** - Ensure port 19132 is open for UDP traffic:
+
+   ```bash
+   # Test UDP port accessibility
+   nc -u -l 19132  # On server
+   nc -u server-ip 19132  # From client
+   ```
+
+2. **Verify managed mode status** - Check Gate logs for Geyser startup:
+
+   ```log
+   INFO bedrock.managed geyser standalone process started pid=1234
+   INFO [GEYSER] Done (5.2s)! Run /geyser help for help!
+   ```
+
+3. **Check firewall** - Allow UDP 19132 and TCP 25567:
+   ```bash
+   sudo ufw allow 19132/udp  # Bedrock clients
+   sudo ufw allow 25567/tcp  # Geyser to Gate
+   ```
 
 ::::
 
 :::: details Authentication Errors
 
-**Symptoms**:
+**Symptoms:**
 
-- "Failed to verify username" errors
-- Players get kicked during login
+- "Failed to verify username" in logs
+- Players kicked during login with authentication errors
 
-**Solutions**:
+**Solutions:**
 
-1. **Check Floodgate key** - Ensure the same `key.pem` is used everywhere
-2. **Verify permissions** - Make sure Gate can read the Floodgate key file
-3. **Check username format** - Ensure no conflicts between Java and Bedrock usernames
+1. **Verify key generation** - Check if Floodgate key was created:
+
+   ```bash
+   ls -la floodgate.pem
+   # Should show: -rw------- (0600 permissions)
+   # Should be exactly 16 bytes
+   ```
+
+2. **Check key permissions** - Ensure Gate can read the key:
+
+   ```bash
+   chmod 600 floodgate.pem
+   chown gate:gate floodgate.pem
+   ```
+
+3. **Validate key format** - Regenerate if corrupted:
+   ```bash
+   # Delete old key and restart Gate (auto-generates new one)
+   rm floodgate.pem
+   gate --config config.yml
+   ```
 
 ::::
 
 :::: details Performance Issues
 
-**Symptoms**:
+**Symptoms:**
 
 - High latency for Bedrock players
 - Server lag when Bedrock players join
 
-**Solutions**:
+**Solutions:**
 
-1. **Optimize Geyser** - Adjust `compression-level` and `mtu` settings
-2. **Resource allocation** - Ensure adequate RAM for protocol translation
-3. **Network optimization** - Use `use-direct-connection: true` in Geyser config
+1. **Tune Geyser settings** - Add performance overrides:
+
+   ```yaml
+   bedrock:
+     managed:
+       enabled: true
+       configOverrides:
+         bedrock:
+           compression-level: 8 # Higher compression
+           mtu: 1200 # Optimize packet size
+         use-direct-connection: true
+         disable-compression: false
+   ```
+
+2. **Increase memory** - Add JVM args for Geyser:
+
+   ```yaml
+   bedrock:
+     managed:
+       enabled: true
+       extraArgs: ['-Xmx2G', '-XX:+UseG1GC']
+   ```
+
+3. **Network optimization** - Reduce network overhead:
+   ```yaml
+   bedrock:
+     managed:
+       enabled: true
+       configOverrides:
+         scoreboard-packet-threshold: 20
+         enable-proxy-connections: false
+   ```
+
+::::
+
+### Manual Setup Issues
+
+:::: details Geyser Can't Connect to Gate
+
+**Symptoms:**
+
+- Geyser shows "Connection refused" or timeout errors
+- Geyser fails to connect to Gate's listener
+
+**Solutions:**
+
+1. **Check startup order** - Gate must be running before Geyser:
+
+   ```bash
+   # Verify Gate is listening on the configured port
+   netstat -tlnp | grep 25567
+   ```
+
+2. **Verify configuration alignment**:
+
+   ```yaml
+   # Gate config - geyserListenAddr
+   bedrock:
+     geyserListenAddr: '0.0.0.0:25567'
+
+   # Geyser config - remote.port must match
+   remote:
+     address: localhost
+     port: 25567
+   ```
+
+3. **Check firewall/networking**:
+   ```bash
+   # Test TCP connectivity from Geyser to Gate
+   telnet gate-host 25567
+   ```
+
+::::
+
+:::: details Floodgate Key Errors
+
+**Symptoms:**
+
+- "Failed to decrypt bedrock data" in Gate logs
+- Authentication failures for Bedrock players
+
+**Solutions:**
+
+1. **Verify key file paths match**:
+
+   ```bash
+   # Same key must exist at both locations
+   ls -la /path/to/key.pem  # Gate's floodgateKeyPath
+   ls -la /geyser/key.pem   # Geyser's floodgate-key-file
+   ```
+
+2. **Check key file permissions**:
+
+   ```bash
+   chmod 600 key.pem
+   chown gate:gate key.pem  # For Gate process
+   chown geyser:geyser key.pem  # For Geyser process
+   ```
+
+3. **Regenerate if corrupted**:
+   ```bash
+   # Generate new 16-byte key
+   openssl rand -out key.pem 16
+   # Copy to both Gate and Geyser locations
+   cp key.pem /path/to/gate/floodgate.pem
+   cp key.pem /path/to/geyser/key.pem
+   ```
+
+::::
+
+:::: details Configuration Sync Issues
+
+**Symptoms:**
+
+- Players can connect but experience issues
+- Inconsistent behavior between Java and Bedrock players
+
+**Solutions:**
+
+1. **Verify proxy protocol settings**:
+
+   ```yaml
+   # Geyser MUST use proxy protocol with Gate
+   remote:
+     use-proxy-protocol: true
+   ```
+
+2. **Check authentication mode alignment**:
+
+   ```yaml
+   # Both must use floodgate
+   remote:
+     auth-type: floodgate
+   ```
+
+3. **Ensure passthrough settings are correct**:
+   ```yaml
+   # For best integration with Gate
+   passthrough-motd: true
+   passthrough-player-counts: true
+   ```
+
+::::
+
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
+
+:::: code-group
+
+```yaml [config.yml]
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
+      debug-mode: true
+      log-player-ip-addresses: true
+```
 
 ::::
 
 ### Getting Help
 
-If you encounter issues:
-
-1. **Check logs** - Both Gate, Geyser, and server logs contain helpful information
-2. **Verify versions** - Ensure compatibility between Gate, Geyser, and Floodgate versions
+1. **Check logs** - Gate, Geyser, and backend server logs all contain useful information
+2. **Verify versions** - Ensure Gate, Geyser, and server versions are compatible
 3. **Community support** - Join the [Gate Discord](https://minekube.com/discord) for help
-4. **GitHub issues** - Report bugs with logs and reproduction steps
+4. **GitHub issues** - Report bugs with logs and reproduction steps at [gate/issues](https://github.com/minekube/gate/issues)
 
-## Supported Features
+---
 
-### ✅ Working Features
+## 📋 Supported Features
 
-- **Cross-play** - Java and Bedrock players on the same server
-- **Authentication** - Floodgate handles Bedrock player authentication
-- **Chat** - Full chat compatibility between editions
-- **Commands** - Most commands work for both editions
-- **Inventory** - Item synchronization between editions
+### ✅ Fully Supported
+
+- **Cross-platform play** - All Bedrock devices can join Java servers
+- **Authentication** - Secure Xbox Live authentication via Floodgate
+- **Chat & commands** - Full compatibility between editions
 - **World interaction** - Building, mining, crafting work normally
+- **Device detection** - Server can identify player platforms
+- **Inventory sync** - Items transfer correctly between editions
 
-### ⚠️ Limited Features
+### ⚠️ Partial Support
 
-- **Custom items** - Some Java-only items may not display correctly
-- **Resource packs** - Bedrock resource packs require special handling
+- **Custom items** - Java-specific items may render differently
+- **Resource packs** - Bedrock packs need special conversion
 - **Some plugins** - Java-specific plugins may not work with Bedrock players
 
 ### ❌ Not Supported
 
-- **Bedrock-only features** - Education Edition features, some UI elements
-- **Java mods** - Forge/Fabric mods don't work with Bedrock players
-- **Some advanced redstone** - Complex redstone may behave differently
+- **Bedrock-exclusive features** - Education Edition content, some UI elements
+- **Java mods** - Forge/Fabric mods don't work with Bedrock clients
+- **Complex redstone** - Some advanced redstone may behave differently
 
 ---
 

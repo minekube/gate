@@ -9,15 +9,3 @@ config:
   try:
     - server1
     - server2
-
-editions:
-  java:
-    enabled: true
-  bedrock:
-    enabled: true
-    # Geyser will connect to this address
-    geyserListenAddr: "0.0.0.0:25567"
-    # Username format for Bedrock players to avoid conflicts
-    usernameFormat: ".%s"
-    # Path to Floodgate key for authentication
-    floodgateKeyPath: "./floodgate.pem"

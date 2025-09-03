@@ -2,7 +2,7 @@ config:
   bind: 0.0.0.0:25565
   onlineMode: true
   servers:
-    server1: 0.0.0.0:25566
+    server1: server1:25566
   try:
     - server1
   # forwarding:
@@ -18,11 +18,11 @@ config:
     enabled: true
     config:
       # Gate ↔ Geyser connection
-      geyserListenAddr: '0.0.0.0:25567'
+      geyserListenAddr: 'gate:25567'
       # Bedrock player settings
       usernameFormat: '.%s'
       # Floodgate authentication key
-      floodgateKeyPath: '.examples/bedrock/geyser/key.pem'
+      floodgateKeyPath: '/gate/floodgate.pem'
       # Managed Geyser (Gate handles Geyser process automatically)
       managed:
         enabled: true

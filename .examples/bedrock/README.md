@@ -83,7 +83,6 @@ Java Players (25565/tcp) → Gate → Backend Servers
 Change the Bedrock username prefix in `gate.yml`:
 
 ```yaml
-editions:
   bedrock:
     usernameFormat: 'BE_%s' # Prefix with "BE_"
 ```
