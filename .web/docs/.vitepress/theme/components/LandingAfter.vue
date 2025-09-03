@@ -340,6 +340,229 @@
     </div>
   </div>
 
+  <!-- Bedrock Edition Support Section -->
+  <div
+    class="py-16 sm:py-20 bg-gradient-to-b from-[--vp-c-bg] to-[--vp-c-bg-soft]"
+  >
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl lg:text-center">
+        <h2 class="text-base font-semibold leading-7 text-[--vp-c-brand-2]">
+          Cross-Play Ready
+        </h2>
+        <p
+          class="mt-2 text-3xl font-bold tracking-tight text-[--vp-c-text-1] sm:text-4xl"
+        >
+          Bedrock Edition Support
+        </p>
+        <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
+          Unite Java and Bedrock players on the same server with built-in Geyser
+          integration. Use familiar tooling and plugins while welcoming players
+          from every platform.
+        </p>
+        <!-- Feature highlights -->
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border border-blue-200 dark:border-blue-800"
+          >
+            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+            <span class="text-sm font-medium text-blue-700 dark:text-blue-300"
+              >Cross-Play via Geyser</span
+            >
+          </div>
+          <div
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border border-green-200 dark:border-green-800"
+          >
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+            <span class="text-sm font-medium text-green-700 dark:text-green-300"
+              >Managed Mode Available</span
+            >
+          </div>
+          <div
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border border-purple-200 dark:border-purple-800"
+          >
+            <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+            <span
+              class="text-sm font-medium text-purple-700 dark:text-purple-300"
+              >No Backend Plugins</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact feature summary only (keep section within one viewport) -->
+
+      <!-- Architecture flow (enhanced design) -->
+      <div class="mt-8 flex justify-center">
+        <div class="w-full max-w-4xl">
+          <div class="relative">
+            <!-- Background glow -->
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-[--vp-c-brand-2]/10 via-[--vp-c-brand-1]/10 to-[--vp-c-brand-2]/10 rounded-2xl blur-xl"
+            ></div>
+
+            <!-- Main flow -->
+            <div
+              class="relative flex items-center justify-center gap-6 sm:gap-8 p-6 sm:p-8 bg-[--vp-c-bg-alt]/80 backdrop-blur-sm rounded-2xl border border-[--vp-c-divider]"
+            >
+              <!-- Geyser -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="relative">
+                  <div
+                    class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl blur opacity-25"
+                  ></div>
+                  <img
+                    src="https://github.com/GeyserMC.png"
+                    alt="Geyser"
+                    class="relative h-12 w-12 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900"
+                  />
+                </div>
+                <span
+                  class="text-xs font-medium text-blue-600 dark:text-blue-400"
+                  >Geyser</span
+                >
+              </div>
+
+              <!-- Arrow 1 -->
+              <div class="flex items-center">
+                <svg
+                  class="h-5 w-5 text-[--vp-c-brand-1] animate-pulse"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+
+              <!-- Gate (larger, central) -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="relative">
+                  <div
+                    class="absolute -inset-1 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30"
+                  ></div>
+                  <img
+                    src="/minekube-logo.png"
+                    alt="Gate"
+                    class="relative h-14 w-14 rounded-xl border-2 border-[--vp-c-brand-1] bg-white dark:bg-gray-900 p-1"
+                  />
+                </div>
+                <span class="text-xs font-semibold text-[--vp-c-brand-1]"
+                  >Gate</span
+                >
+              </div>
+
+              <!-- Arrow 2 -->
+              <div class="flex items-center">
+                <svg
+                  class="h-5 w-5 text-[--vp-c-brand-1] animate-pulse"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+
+              <!-- Backend -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="relative">
+                  <div
+                    class="absolute -inset-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl blur opacity-25"
+                  ></div>
+                  <img
+                    src="https://github.com/PaperMC.png"
+                    alt="Backend"
+                    class="relative h-12 w-12 rounded-xl border-2 border-orange-200 dark:border-orange-800 bg-white dark:bg-gray-900"
+                  />
+                </div>
+                <span
+                  class="text-xs font-medium text-orange-600 dark:text-orange-400"
+                  >Backend</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <p
+            class="mt-4 text-center text-sm text-[--vp-c-text-2] max-w-2xl mx-auto"
+          >
+            Bedrock players connect via Geyser → Gate translates protocols →
+            Backend servers handle gameplay
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick actions: Quick Start + Learn More -->
+      <div class="mx-auto mt-6 max-w-2xl lg:max-w-3xl">
+        <div class="relative group">
+          <div
+            class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+          ></div>
+          <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-[--vp-c-text-2]">Quick Start</span>
+              <button
+                @click="copyBedrockCommand"
+                class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
+                :class="{ 'copy-success': showBedrockCopySuccess }"
+              >
+                <svg
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    v-if="!showBedrockCopySuccess"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                  <path
+                    v-else
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </button>
+            </div>
+            <pre
+              class="text-sm font-mono overflow-x-auto"
+            ><code>git clone https://github.com/minekube/gate.git
+cd gate/.examples/bedrock
+./start.sh</code></pre>
+          </div>
+        </div>
+
+        <div class="mt-6 flex items-center justify-center gap-3">
+          <a
+            href="/guide/bedrock/#-quick-start-30-seconds"
+            class="rounded-full px-5 py-2.5 text-sm font-semibold text-white bg-[--vp-c-brand-2] hover:bg-[--vp-c-brand-1] transition-colors"
+            >Quick Start</a
+          >
+          <a
+            href="/guide/bedrock/#-configuration-guide"
+            class="rounded-full px-5 py-2.5 text-sm font-semibold border border-[--vp-c-divider] text-[--vp-c-text-1] hover:border-[--vp-c-brand-1] transition-colors"
+            >Configuration</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lite Mode Section -->
   <div class="py-24 sm:py-32">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
@@ -902,6 +1125,21 @@ const copyLiteConfig = () => {
 
   setTimeout(() => {
     showLiteCopySuccess.value = false;
+  }, 2000);
+};
+
+const showBedrockCopySuccess = ref(false);
+
+const copyBedrockCommand = () => {
+  const command = `git clone https://github.com/minekube/gate.git
+cd gate/.examples/bedrock
+./start.sh`;
+
+  navigator.clipboard.writeText(command);
+  showBedrockCopySuccess.value = true;
+
+  setTimeout(() => {
+    showBedrockCopySuccess.value = false;
   }, 2000);
 };
 

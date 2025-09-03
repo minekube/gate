@@ -23,6 +23,12 @@ func Port(addr net.Addr) uint16 {
 	return port
 }
 
+// PortStr returns the port of the address.
+func PortStr(addr string) uint16 {
+	_, port, _ := splitHostPort(addr)
+	return port
+}
+
 // HostPort returns the split host and port of a net.Addr.
 func HostPort(addr net.Addr) (host string, port uint16) {
 	host, port, _ = splitHostPort(addr.String())

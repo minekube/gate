@@ -1,8 +1,5 @@
 # Gate Lite Mode
 
-
-## What is Lite mode?
-
 Gate has a `Lite` mode that makes Gate act as an ultra-thin lightweight reverse proxy between
 the client and the backend server for host based connection forwarding.
 

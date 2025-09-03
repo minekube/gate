@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -17,8 +16,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"gopkg.in/yaml.v3"
 
-	"go.minekube.com/gate/pkg/bridge"
 	"go.minekube.com/gate/pkg/edition"
+	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
@@ -46,9 +45,7 @@ func New(options Options) (gate *Gate, err error) {
 	if options.Config == nil {
 		return nil, errorsutil.ErrMissingConfig
 	}
-	if !options.Config.Editions.Java.Enabled && !options.Config.Editions.Bedrock.Enabled {
-		return nil, fmt.Errorf("no edition enabled, enable at least one Minecraft proxy edition")
-	}
+	// Java is always enabled (embedded config), Bedrock is optional
 
 	// Require no config validation errors
 	warns, errs := options.Config.Validate()
@@ -62,53 +59,56 @@ func New(options Options) (gate *Gate, err error) {
 		eventMgr = event.Nop
 	}
 	reload.Map(eventMgr, func(c *config.Config) *jconfig.Config {
-		return &c.Editions.Java.Config
+		return &c.Config
 	})
 	reload.Map(eventMgr, func(c *config.Config) *connectcfg.Config {
 		return &c.Connect
 	})
+	// Map Bedrock config reload events
+	reload.Map(eventMgr, func(c *config.Config) *bconfig.Config {
+		if c.Config.Bedrock.Enabled {
+			bedrockConfig := c.Config.Bedrock.ToConfig()
+			return &bedrockConfig
+		}
+		return nil
+	})
 
 	gate = &Gate{
-		proc:   process.New(process.Options{AllOrNothing: true}),
-		bridge: &bridge.Bridge{},
+		proc: process.New(process.Options{AllOrNothing: true}),
 	}
 
 	c := options.Config
-	if c.Editions.Java.Enabled {
-		gate.bridge.JavaProxy, err = jproxy.New(jproxy.Options{
-			Config:   &c.Editions.Java.Config,
-			EventMgr: eventMgr,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
-		}
-		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
-			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("java"))
-			return gate.bridge.JavaProxy.Start(ctx)
-		})); err != nil {
-			return nil, err
-		}
+	// Java proxy is always created (embedded config)
+	gate.javaProxy, err = jproxy.New(jproxy.Options{
+		Config:   &c.Config,
+		EventMgr: eventMgr,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
 	}
-	if c.Editions.Bedrock.Enabled {
-		gate.bridge.BedrockProxy, err = bproxy.New(bproxy.Options{
-			Config:   &c.Editions.Bedrock.Config,
-			EventMgr: eventMgr,
+	if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
+		ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("java"))
+		return gate.javaProxy.Start(ctx)
+	})); err != nil {
+		return nil, err
+	}
+
+	if c.Config.Bedrock.Enabled {
+		// Convert flattened bedrock config to the original structure
+		bedrockConfig := c.Config.Bedrock.ToConfig()
+		gate.bedrockProxy, err = bproxy.New(bproxy.Options{
+			Config:    &bedrockConfig,
+			JavaProxy: gate.javaProxy,
+			EventMgr:  eventMgr,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Bedrock, err)
 		}
 		if err = gate.proc.Add(process.RunnableFunc(func(ctx context.Context) error {
 			ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("bedrock"))
-			return gate.bridge.BedrockProxy.Start(ctx)
+			return gate.bedrockProxy.Start(ctx)
 		})); err != nil {
 			return nil, err
-		}
-	}
-
-	if c.Editions.Bedrock.Enabled && c.Editions.Java.Enabled {
-		// More than one edition was enabled, setup bridge between them
-		if err = gate.bridge.Setup(); err != nil {
-			return nil, fmt.Errorf("error setting up bridge between proxy editions: %w", err)
 		}
 	}
 
@@ -125,18 +125,19 @@ func New(options Options) (gate *Gate, err error) {
 
 // Gate is the root holder of various child processes.
 type Gate struct {
-	bridge *bridge.Bridge     // The proxies.
-	proc   process.Collection // Parallel running proc.
+	javaProxy    *jproxy.Proxy      // The Java edition proxy.
+	bedrockProxy *bproxy.Proxy      // The Bedrock edition proxy.
+	proc         process.Collection // Parallel running proc.
 }
 
 // Java returns the Java edition proxy, or nil if none.
 func (g *Gate) Java() *jproxy.Proxy {
-	return g.bridge.JavaProxy
+	return g.javaProxy
 }
 
 // Bedrock returns the Bedrock edition proxy, or nil if none.
 func (g *Gate) Bedrock() *bproxy.Proxy {
-	return g.bridge.BedrockProxy
+	return g.bedrockProxy
 }
 
 // Start starts the Gate instance and all underlying proc.
@@ -324,10 +325,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
 	}
-	// Override Java config by shorter alias
-	if !reflect.DeepEqual(cfg.Config, jconfig.DefaultConfig) {
-		cfg.Editions.Java.Config = cfg.Config
-	}
+	// Java config is now embedded directly in cfg.Config
 	return &cfg, nil
 }
 
@@ -367,6 +365,7 @@ func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("error reading config file %q: %w", configFile, err)
 	}
+
 	if err = unmarshal(b, defaultConfig); err != nil {
 		return fmt.Errorf("error unmarshaling config file %q to %T: %w", configFile, defaultConfig, err)
 	}

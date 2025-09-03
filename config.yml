@@ -164,8 +164,8 @@ config:
         proxyProtocol: true # Use proxy protocol to connect to backend.
         tcpShieldRealIP: true # Optionally you can also use TCPShield's RealIP protocol.
       # You can also match to multiple hosts to one or multiple random backends.
-      - host: [ 127.0.0.1, localhost ]
-        backend: [ 172.16.0.12:25566, backend.example.com:25566 ]
+      - host: [127.0.0.1, localhost]
+        backend: [172.16.0.12:25566, backend.example.com:25566]
         # Ping responses are cached per backend address by default.
         # To disable motd caching set it to -1.
         # Default: 10s
@@ -188,6 +188,158 @@ config:
           #  online: 0
           #  max: 1000
           #favicon: server-icon.png
+
+  # Bedrock Edition (mobile, console, Windows) cross-play support.
+  # Enables Java and Bedrock players to play together through integrated Geyser and Floodgate.
+  # See https://gate.minekube.com/guide/bedrock for detailed setup guide.
+  bedrock:
+    # Enable Bedrock Edition support for cross-play.
+    # Default: false
+    enabled: false
+
+    # --- QUICK START ---
+    # For most users, this single line enables everything:
+    #managed: true
+
+    # --- ADVANCED CONFIGURATION ---
+    # If you need more control, use the structure below:
+
+    # Gate ↔ Geyser connection settings
+    # TCP address where Gate listens for connections from Geyser Standalone.
+    # Default: localhost:25567 (recommended for same-machine setups)
+    # Use 0.0.0.0:25567 for Docker Compose or when Geyser runs on a different machine
+    #geyserListenAddr: localhost:25567
+
+    # Bedrock player username format to avoid conflicts with Java players.
+    # Use %s as placeholder for the original Bedrock username.
+    # Examples: ".%s" (prefix dot), "[BE]%s" (prefix tag), "%s_BE" (suffix tag)
+    # Default: ".%s"
+    #usernameFormat: ".%s"
+
+    # Path to the Floodgate encryption key file (shared between Geyser and Gate).
+    # Gate can auto-generate this key in managed mode.
+    # Default: "floodgate.pem"
+    #floodgateKeyPath: "floodgate.pem"
+
+    # Managed Geyser mode: Gate automatically handles Geyser Standalone process.
+    # This is the recommended setup for most users.
+    managed:
+      # Enable managed mode (Gate downloads, configures, and runs Geyser).
+      # Default: false
+      enabled: false
+
+      # Download URL for Geyser Standalone JAR file.
+      # Leave empty to use the latest official release.
+      # Default: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
+      #jarUrl: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+
+      # Directory for Geyser data (JAR file, config, logs, etc.).
+      # Default: ".geyser"
+      #dataDir: ".geyser"
+
+      # Path to Java executable for running Geyser.
+      # Default: "java" (from PATH)
+      #javaPath: "java"
+
+      # Whether to automatically download JAR updates on startup.
+      # Default: true
+      #autoUpdate: true
+
+      # Additional JVM arguments for running Geyser.
+      # Default: []
+      #extraArgs:
+      #  - "-Xmx1G"
+      #  - "-XX:+UseG1GC"
+
+      # Custom overrides for the auto-generated Geyser config.
+      # This allows you to customize the Geyser config.
+      # See https://wiki.geysermc.org/geyser/understanding-the-config/ for all options.
+      configOverrides:
+        # Bedrock client settings
+        bedrock:
+          # UDP port for Bedrock clients to connect to.
+          # Default: 19132
+          port: 19132
+          # Server list display names
+          motd1: 'Gate + Geyser Cross-Play'
+          motd2: 'Java & Bedrock Together!'
+          # Server name shown in Bedrock client
+          server-name: 'My Minecraft Server'
+          # Compression level (1-9, higher = more CPU, less bandwidth)
+          # Default: 6
+          compression-level: 6
+
+        # Performance and debugging
+        # Enable debug logging (shows packet details)
+        # Default: false
+        debug-mode: false
+        # Whether to forward player ping to Gate.
+        # Default: true
+        forward-player-ping: true
+
+        # Bedrock-specific features
+        # Show block break cooldown as title/actionbar
+        # Options: title, actionbar, false
+        # Default: title
+        show-cooldown: title
+        # Show coordinates in debug info
+        # Default: true
+        show-coordinates: true
+        # Allow custom player skulls from Java Edition
+        # Default: true
+        allow-custom-skulls: true
+        # Maximum visible custom skulls (performance)
+        # Default: 128
+        max-visible-custom-skulls: 128
+
+        # Xbox and console features
+        # Enable Xbox achievements (Xbox players only)
+        # Default: false
+        xbox-achievements-enabled: false
+        # Add non-Bedrock items to Creative inventory
+        # Default: true
+        add-non-bedrock-items: true
+
+        # Advanced networking (rarely need to change)
+        # MTU size for UDP packets
+        # Default: 1400
+        mtu: 1400
+        # Use direct connections when possible
+        # Default: true
+        use-direct-connection: true
+
+        # Resource pack settings
+        # Force resource packs to be applied
+        # Default: true
+        force-resource-packs: true
+        # Enable proxy connections for resource pack downloads
+        # Default: false
+        enable-proxy-connections: false
+
+        # Floodgate settings (authentication for offline Bedrock players)
+        # Custom Floodgate key file path (overrides floodgateKeyPath above)
+        #floodgate-key-file: "/custom/path/to/key.pem"
+
+        # For complete list of all Geyser configuration options, see:
+        # https://wiki.geysermc.org/geyser/understanding-the-config/
+        #
+        # Common additional settings include:
+        # - passthrough-motd: true/false
+        # - passthrough-player-counts: true/false
+        # - ping-passthrough-interval: 3
+        # - scoreboard-packet-threshold: 20
+        # - disable-compression: false
+        # - notify-on-new-bedrock-update: true
+
+    # --- MANUAL SETUP (Alternative to Managed Mode) ---
+    # If you prefer to run your own Geyser instance instead of using managed mode:
+    # 1. Set managed.enabled: false (or omit the managed section)
+    # 2. Download and run Geyser Standalone manually
+    # 3. Configure Geyser to connect to Gate's geyserListenAddr (default: 25567)
+    # 4. Set auth-type: floodgate and use-proxy-protocol: true in Geyser config
+    # 5. Share the same floodgateKeyPath between Gate and your backend servers
+    #
+    # See https://gate.minekube.com/guide/bedrock#manual-setup for detailed instructions.
 
 # Configuration for Connect, a network that organizes all Minecraft servers/proxies
 # and makes them universally accessible for all players.

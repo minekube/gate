@@ -92,8 +92,8 @@ Visit the website https://gate.minekube.com/ for more information.`
 		}
 
 		// Flags overwrite config
-		debug = debug || cfg.Editions.Java.Config.Debug
-		cfg.Editions.Java.Config.Debug = debug
+		debug = debug || cfg.Config.Debug
+		cfg.Config.Debug = debug
 
 		if !c.IsSet("verbosity") && debug {
 			verbosity = math.MaxInt8

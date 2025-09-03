@@ -20,6 +20,7 @@ func Init(ctx context.Context) (clean func(), err error) {
 	}
 
 	log := logr.FromContextOrDiscard(ctx).WithName("otel")
+	eitherEnabled := os.Getenv("OTEL_METRICS_ENABLED") == "true" || os.Getenv("OTEL_TRACES_ENABLED") == "true"
 
 	otelShutdown, err := otelconfig.ConfigureOpenTelemetry(
 		otelconfig.WithServiceName(serviceName),
@@ -33,9 +34,13 @@ func Init(ctx context.Context) (clean func(), err error) {
 	}
 
 	return func() {
-		log.Info("shutting down OpenTelemetry, trying to push remaining telemetry data...")
+		if eitherEnabled {
+			log.Info("shutting down OpenTelemetry, trying to push remaining telemetry data...")
+		}
 		otelShutdown()
-		log.Info("OpenTelemetry shutdown complete")
+		if eitherEnabled {
+			log.Info("OpenTelemetry shutdown complete")
+		}
 	}, nil
 }
 
@@ -45,10 +50,10 @@ type logger struct {
 
 var _ otelconfig.Logger = &logger{}
 
-func (l *logger) Debugf(format string, v ...interface{}) {
+func (l *logger) Debugf(format string, v ...any) {
 	l.Logger.V(1).Info(fmt.Sprintf(format, v...))
 }
 
-func (l *logger) Fatalf(format string, v ...interface{}) {
+func (l *logger) Fatalf(format string, v ...any) {
 	l.Logger.Error(fmt.Errorf(format, v...), "fatal error")
 }

@@ -1,0 +1,47 @@
+services:
+  gate:
+    image: ghcr.io/minekube/gate:latest
+    restart: unless-stopped
+    environment:
+      - GATE_CONFIG_PATH=/gate/gate.yml
+    volumes:
+      - ./gate.yml:/gate/gate.yml
+      - ./geyser/key.pem:/gate/floodgate.pem
+    ports:
+      - '25565:25565' # Java Edition
+      - '25567:25567' # Geyser listener
+    depends_on:
+      - server1
+
+  geyser:
+    image: itzg/minecraft-server
+    restart: unless-stopped
+    environment:
+      EULA: 'TRUE'
+      TYPE: 'CUSTOM'
+      CUSTOM_SERVER: 'https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone'
+    ports:
+      - '19132:19132/udp' # Bedrock Edition
+    volumes:
+      - ./geyser/config.yml:/data/config.yml
+      - ./geyser/key.pem:/data/key.pem
+    depends_on:
+      - gate
+
+  server1:
+    image: itzg/minecraft-server
+    restart: unless-stopped
+    environment:
+      EULA: 'TRUE'
+      TYPE: PAPER
+      VERSION: 1.21.4
+      PAPER_BUILD: latest
+      EXTRA_ARGS: '--world-dir ./worlds/'
+    volumes:
+      - worlds:/worlds
+      - ./server.properties:/data/server.properties
+    expose:
+      - '25565'
+
+volumes:
+  worlds:

@@ -20,9 +20,12 @@ INFO	java	proxy/proxy.go:299	Using favicon from data uri	{"length": 3086}
 INFO	java	proxy/proxy.go:472	listening for connections	{"addr": "0.0.0.0:25565"}
 ```
 
-::: tip Running Gate Lite Mode
+::: tip Key Features
 
-Gate also has a [Lite mode](lite) that can passthrough connections based on the hostname.
+Gate supports:
+
+- **[Lite mode](lite)** - Lightweight reverse proxy for simple setups
+- **[Bedrock support](bedrock)** - Cross-play with mobile, console, and Windows players
 
 :::
 
@@ -44,6 +47,14 @@ There are many more options to configure, see [Configuration](/guide/config/) fo
 ## Next Steps
 
 <div class="next-steps">
+  <a href="/guide/bedrock" class="next-card" style="text-decoration: none;">
+    🎮 Bedrock Support
+    <span>Enable cross-play with mobile and console players</span>
+  </a>
+  <a href="/guide/lite" class="next-card" style="text-decoration: none;">
+    ⚡ Lite Mode
+    <span>Lightweight reverse proxy setup</span>
+  </a>
   <a href="/guide/config/" class="next-card" style="text-decoration: none;">
     📖 Configuration Guide
     <span>Learn about all configuration options</span>
@@ -51,10 +62,6 @@ There are many more options to configure, see [Configuration](/guide/config/) fo
   <a href="/developers/" class="next-card" style="text-decoration: none;">
     💻 Developer Guide
     <span>Extend Gate with custom code</span>
-  </a>
-  <a href="/guide/why" class="next-card" style="text-decoration: none;">
-    🎯 Why Gate?
-    <span>Learn about Gate's advantages</span>
   </a>
 </div>
 

@@ -34,8 +34,8 @@ func setupConnect(
 		)
 		trigger := func(c *config.Config) {
 			connect := c.Connect
-			if connect.Enabled && !c.Editions.Java.Enabled {
-				log.Info("Connect is only supported for Java edition")
+			// Connect is always supported now that Java is embedded
+			if !connect.Enabled {
 				return
 			}
 
