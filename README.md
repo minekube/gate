@@ -34,7 +34,7 @@ Follow our [quick start guide](https://gate.minekube.com/guide/quick-start/) on 
 
 ## Bedrock Cross-Play Support
 
-Gate includes built-in **Bedrock Edition support** enabling cross-play between
+Gate includes built-in **Bedrock Edition support** through Geyser enabling cross-play between
 Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows) players
 through integrated Geyser & Floodgate technology - **zero plugins required**!
 
