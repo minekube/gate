@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "author": "Minekube",
   "scripts": {
-    "dev": "vitepress dev docs",
-    "build": "vitepress build docs",
-    "serve": "vitepress serve docs"
+    "dev": "pnpm exec vitepress dev docs",
+    "build": "pnpm exec vitepress build docs",
+    "serve": "pnpm exec vitepress serve docs"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.13",
