@@ -104,7 +104,7 @@ func (i *Integration) Start() error {
 
 	// Subscribe to proxy events
 	// High priority to ensure that we handle Bedrock players before other handlers.
-	const priority = math.MaxInt-100 
+	const priority = math.MaxInt - 100
 	unsubPre := event.Subscribe(eventMgr, priority, i.onPreLogin)
 	unsubProf := event.Subscribe(eventMgr, priority, i.onGameProfile)
 	i.unsubs = append(i.unsubs, unsubPre, unsubProf)
