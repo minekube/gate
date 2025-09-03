@@ -76,7 +76,7 @@ bedrock:
 ```
 
 ```yaml [With Customization]
-  bedrock:
+bedrock:
   # Custom username format to avoid conflicts
   usernameFormat: '.%s' # .Steve instead of Steve
 
@@ -86,13 +86,13 @@ bedrock:
   # Custom key path (optional - auto-generated if not specified)
   floodgateKeyPath: '/path/to/key.pem'
 
-      managed:
-        enabled: true
+  managed:
+    enabled: true
     autoUpdate: true # Keep Geyser up-to-date automatically
 ```
 
 ```yaml [Alternative Shorthand]
-          bedrock:
+bedrock:
   managed: true # Implies both enabled: true and managed.enabled: true
   usernameFormat: '.%s'
   geyserListenAddr: 'localhost:25567'
@@ -183,31 +183,31 @@ Override any Geyser configuration option using `configOverrides`. For a complete
 :::: code-group
 
 ```yaml [Performance Tuning]
-  bedrock:
-      managed:
-        enabled: true
-        configOverrides:
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
       # Optimize for performance
-          bedrock:
+      bedrock:
         port: 19132 # Custom Bedrock port (defaults to 19132)
-            compression-level: 8
-            mtu: 1200
+        compression-level: 8
+        mtu: 1200
       use-direct-connection: true
-          disable-compression: false
+      disable-compression: false
       max-players: 500
 ```
 
 ```yaml [Custom Branding]
-  bedrock:
-      managed:
-        enabled: true
-        configOverrides:
+bedrock:
+  managed:
+    enabled: true
+    configOverrides:
       # Customize server branding
-          bedrock:
+      bedrock:
         motd1: 'My Amazing Server'
         motd2: 'Cross-Play Enabled!'
-            server-name: 'MyServer Bedrock'
-          xbox-achievements-enabled: true
+        server-name: 'MyServer Bedrock'
+      xbox-achievements-enabled: true
 ```
 
 ```yaml [Debug Mode]
@@ -252,8 +252,8 @@ bedrock:
 
 ```yaml [Custom Format]
 bedrock:
-managed: true
-usernameFormat: 'Mobile_%s' # Steve becomes Mobile_Steve
+  managed: true
+  usernameFormat: 'Mobile_%s' # Steve becomes Mobile_Steve
 ```
 
 ::::
@@ -272,7 +272,7 @@ bedrock:
   # Username format for Bedrock players
   usernameFormat: '.%s'
   # Path to shared Floodgate key
-    floodgateKeyPath: '/path/to/key.pem'
+  floodgateKeyPath: '/path/to/key.pem'
   # managed: false (default when omitted)
 ```
 
