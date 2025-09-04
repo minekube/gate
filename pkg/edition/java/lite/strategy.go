@@ -169,6 +169,11 @@ func (sm *StrategyManager) lowestLatencyNextBackend(log logr.Logger, backends []
 	return lowestBackend, log, true
 }
 
+// GetOrCreateCounter returns the connection counter for a backend (exposed for testing).
+func (sm *StrategyManager) GetOrCreateCounter(backend string) *atomic.Uint32 {
+	return sm.getOrCreateCounter(backend)
+}
+
 func (sm *StrategyManager) getOrCreateCounter(backend string) *atomic.Uint32 {
 	value, _ := sm.connectionCounters.LoadOrStore(backend, &atomic.Uint32{})
 	counter, ok := value.(*atomic.Uint32)
