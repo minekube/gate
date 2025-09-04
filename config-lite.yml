@@ -5,7 +5,7 @@ config:
   # The bind address to listen for Minecraft client connections.
   bind: 0.0.0.0:25565
   # Lite mode is a lightweight reverse proxy mode that acts as thin layer between the client and the backend server.
-  # See https://gate.minekube.com/guide/lite
+  # Full documentation: https://gate.minekube.com/guide/lite
   #
   # It efficiently routes client connections based on the virtual host address received in the handshake packet.
   # This allows to protect multiple backend servers behind a single port Gate Lite proxy instance.
@@ -48,8 +48,9 @@ config:
       # You can also match to multiple hosts to one or multiple backends.
       - host: [ 127.0.0.1, localhost ]
         backend: [ 172.16.0.12:25566, backend.example.com:25566 ]
-        # You can change the strategy of connecting if multiple backends are available.
-        # Strategies: random, round-robin, least-connections, lowest-latency.
+        # Load balancing strategy when multiple backends are available.
+        # See https://gate.minekube.com/guide/lite#load-balancing-strategies for detailed guide.
+        # Options: random, round-robin, least-connections, lowest-latency
         # Default: random
         strategy: random
         # Ping responses are cached per backend address by default.
