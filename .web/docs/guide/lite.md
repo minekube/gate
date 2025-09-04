@@ -86,16 +86,16 @@ config:
 
 ### Available Strategies
 
-| Strategy                | Description                                  | Best For                           | Algorithm                                                      |
-| ----------------------- | -------------------------------------------- | ---------------------------------- | -------------------------------------------------------------- |
-| **`random`** (default)  | Randomly selects from available backends      | General use, simple setups         | Cryptographically secure random selection                      |
-| **`round-robin`**       | Cycles through backends in sequential order   | Equal distribution, stateless apps | Fair rotation ensuring each backend gets equal traffic         |  
-| **`least-connections`** | Routes to backend with fewest active players  | Performance optimization           | Real-time connection tracking with atomic counters             |
-| **`lowest-latency`**    | Routes to fastest-responding backend          | Latency-sensitive applications     | Status ping latency measurement and caching                    |
+| Strategy                | Description                                  | Best For                           | Algorithm                                              |
+| ----------------------- | -------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
+| **`random`** (default)  | Randomly selects from available backends     | General use, simple setups         | Cryptographically secure random selection              |
+| **`round-robin`**       | Cycles through backends in sequential order  | Equal distribution, stateless apps | Fair rotation ensuring each backend gets equal traffic |
+| **`least-connections`** | Routes to backend with fewest active players | Performance optimization           | Real-time connection tracking with atomic counters     |
+| **`lowest-latency`**    | Routes to fastest-responding backend         | Latency-sensitive applications     | Status ping latency measurement and caching            |
 
 ### Strategy Details
 
-#### 🎲 Random Strategy
+#### Random Strategy
 
 **Perfect for:** Most use cases, development, simple load distribution
 
@@ -106,12 +106,12 @@ routes:
     strategy: random # or omit for default
 ```
 
-- ✅ **Simple and reliable** - No state tracking required
-- ✅ **Fast selection** - Immediate backend choice without health checks
-- ✅ **Cryptographically secure** - Uses proper random number generation
-- ✅ **Fault-tolerant** - Failed connections automatically retry next backend
+- **Simple and reliable** - No state tracking required
+- **Fast selection** - Immediate backend choice without health checks
+- **Cryptographically secure** - Uses proper random number generation
+- **Fault-tolerant** - Failed connections automatically retry next backend
 
-#### ⚡ Round-Robin Strategy
+#### Round-Robin Strategy
 
 **Perfect for:** Equal traffic distribution, stateless applications
 
@@ -122,12 +122,12 @@ routes:
     strategy: round-robin
 ```
 
-- ✅ **Fair distribution** - Each backend gets exactly equal traffic over time
-- ✅ **Predictable** - Deterministic routing pattern
-- ✅ **Fast selection** - No health checks, immediate backend choice
-- ✅ **Per-route state** - Independent rotation for different routes
+- **Fair distribution** - Each backend gets exactly equal traffic over time
+- **Predictable** - Deterministic routing pattern
+- **Fast selection** - No health checks, immediate backend choice
+- **Per-route state** - Independent rotation for different routes
 
-#### 📊 Least-Connections Strategy
+#### Least-Connections Strategy
 
 **Perfect for:** Performance optimization, varying workloads
 
@@ -138,12 +138,12 @@ routes:
     strategy: least-connections
 ```
 
-- ✅ **Performance-optimized** - Routes to least-loaded backend
-- ✅ **Real-time tracking** - Connection counts updated instantly
-- ✅ **Automatic cleanup** - Counters decremented when players disconnect
-- ✅ **Thread-safe** - Atomic operations prevent race conditions
+- **Performance-optimized** - Routes to least-loaded backend
+- **Real-time tracking** - Connection counts updated instantly
+- **Automatic cleanup** - Counters decremented when players disconnect
+- **Thread-safe** - Atomic operations prevent race conditions
 
-#### 🚀 Lowest-Latency Strategy
+#### Lowest-Latency Strategy
 
 **Perfect for:** Latency-sensitive applications, global deployments
 
@@ -154,10 +154,10 @@ routes:
     strategy: lowest-latency
 ```
 
-- ✅ **Latency-optimized** - Routes to fastest-responding backend
-- ✅ **Smart measurement** - Uses Minecraft status ping latency (not just TCP dial)
-- ✅ **Intelligent caching** - Latency measurements cached for 3 minutes
-- ✅ **Learning system** - Automatically measures and adapts to network conditions
+- **Latency-optimized** - Routes to fastest-responding backend
+- **Smart measurement** - Uses Minecraft status ping latency (not just TCP dial)
+- **Intelligent caching** - Latency measurements cached for 3 minutes
+- **Learning system** - Automatically measures and adapts to network conditions
 
 ### Configuration Examples
 
@@ -217,8 +217,6 @@ config:
 ::: tip Smart Failure Recovery
 Gate Lite uses **lazy failure detection** - if a backend is unreachable, the connection fails quickly and the system automatically tries the next available backend. This approach is faster than pre-checking backend health and provides natural failover behavior.
 :::
-
----
 
 ## Ping Response Caching
 

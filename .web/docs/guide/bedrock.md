@@ -43,7 +43,7 @@ gate --config config.yml
 Gate automatically generates encryption keys, downloads Geyser, creates optimized configs, and manages everything for you. The `managed: true` shorthand enables both Bedrock support and managed mode in one line!
 :::
 
----
+
 
 ## 🏗️ How It Works
 
@@ -65,7 +65,7 @@ Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with buil
 - ✅ **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows)
 - ✅ **Secure** - Uses AES-128 encryption for player authentication
 
----
+
 
 ## ⚙️ Configuration Guide
 
@@ -176,8 +176,6 @@ bedrock:
 | ----------- | ---------- | ------- | ---------------------------- |
 | **Managed** | Simple     | Medium  | Most users, quick setup      |
 | **Manual**  | Medium     | Full    | Advanced users, custom needs |
-
----
 
 ## 🔧 Advanced Configuration
 
@@ -751,8 +749,6 @@ bedrock:
 2. **Verify versions** - Ensure Gate, Geyser, and server versions are compatible
 3. **Community support** - Join the [Gate Discord](https://minekube.com/discord) for help
 4. **GitHub issues** - Report bugs with logs and reproduction steps at [gate/issues](https://github.com/minekube/gate/issues)
-
----
 
 ## 📋 Supported Features
 
