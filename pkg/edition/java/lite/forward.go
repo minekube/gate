@@ -66,7 +66,15 @@ func Forward(
 
 	// add connection to the connection counter if the strategy is least-connections
 	if route.Strategy == config.StrategyLeastConnections {
+		// Ensure counter map and specific counter are initialized
+		if leastConnectionCounterMap == nil {
+			leastConnectionCounterMap = make(map[string]*atomic.Uint32)
+		}
 		counter := leastConnectionCounterMap[backendAddr]
+		if counter == nil {
+			counter = &atomic.Uint32{}
+			leastConnectionCounterMap[backendAddr] = counter
+		}
 		counter.Add(1)
 		defer counter.Add(^uint32(0)) // removes count after connection loses connection
 	}
