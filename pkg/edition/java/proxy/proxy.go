@@ -55,8 +55,9 @@ type Proxy struct {
 	cancelStart context.CancelFunc
 	started     bool
 
-	muS     sync.RWMutex                 // Protects following field
-	servers map[string]*registeredServer // registered backend servers: by lower case names
+	muS           sync.RWMutex                 // Protects following fields
+	servers       map[string]*registeredServer // registered backend servers: by lower case names
+	configServers map[string]bool              // tracks which servers came from config (vs API)
 
 	muP         sync.RWMutex                   // Protects following fields
 	playerNames map[string]*connectedPlayer    // lower case usernames map
@@ -106,6 +107,7 @@ func New(options Options) (p *Proxy, err error) {
 		event:            eventMgr,
 		channelRegistrar: message.NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
+		configServers:    map[string]bool{},
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
@@ -298,26 +300,67 @@ func (p *Proxy) init() (err error) {
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
 
 	if !c.Lite.Enabled {
-		// Register servers
+		// Sync servers: register new/updated servers and unregister removed servers
 		if len(c.Servers) != 0 {
-			p.log.Info("registering servers...", "count", len(c.Servers))
+			p.log.Info("syncing servers...", "count", len(c.Servers))
 		}
+
+		// Track which servers should exist after sync
+		expectedServers := make(map[string]ServerInfo)
+
+		// Process servers from config
 		for name, addr := range c.Servers {
 			pAddr, err := netutil.Parse(addr, "tcp")
 			if err != nil {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+			expectedServers[strings.ToLower(name)] = info
 
-			// Check if server is already registered and equal to the one we want to register.
-			if rs := p.Server(name); rs != nil && ServerInfoEqual(rs.ServerInfo(), info) {
-				continue
+			// Check if server is already registered
+			if rs := p.Server(name); rs != nil {
+				if ServerInfoEqual(rs.ServerInfo(), info) {
+					// Server exists and is identical - mark as config-managed and continue
+					p.muS.Lock()
+					p.configServers[strings.ToLower(name)] = true
+					p.muS.Unlock()
+					continue
+				} else {
+					// Server exists but is different - unregister the old one first
+					_ = p.Unregister(rs.ServerInfo())
+				}
 			}
 
-			_ = p.Unregister(info)
+			// Register the new/updated server
 			_, err = p.Register(info)
 			if err != nil {
 				p.log.Error(err, "could not register server", "server", info)
+			} else {
+				// Mark as config-managed
+				p.muS.Lock()
+				p.configServers[strings.ToLower(name)] = true
+				p.muS.Unlock()
+			}
+		}
+
+		// Unregister config-managed servers that are no longer in config
+		// (but preserve API-registered servers)
+		currentServers := p.Servers()
+		for _, rs := range currentServers {
+			serverName := strings.ToLower(rs.ServerInfo().Name())
+			p.muS.RLock()
+			isConfigManaged := p.configServers[serverName]
+			p.muS.RUnlock()
+			_, shouldExist := expectedServers[serverName]
+
+			// Only unregister if it's config-managed AND not in new config
+			if isConfigManaged && !shouldExist {
+				if p.Unregister(rs.ServerInfo()) {
+					p.muS.Lock()
+					delete(p.configServers, serverName)
+					p.muS.Unlock()
+					p.log.Info("unregistered server removed from config", "name", rs.ServerInfo().Name())
+				}
 			}
 		}
 
@@ -435,6 +478,8 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	}
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
+	// Note: We don't mark API-registered servers as config-managed
+	// so they won't be unregistered during config reloads
 
 	p.log.Info("registered new server", "name", info.Name(), "addr", info.Addr())
 	return rs, nil
@@ -454,6 +499,7 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 		return false
 	}
 	delete(p.servers, name)
+	delete(p.configServers, name) // Clean up config tracking
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
