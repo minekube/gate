@@ -3,8 +3,6 @@ package lite
 import (
 	"math"
 	"math/rand"
-	"net"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -80,47 +78,41 @@ func (sm *StrategyManager) RecordLatency(backend string, latency time.Duration) 
 // Private helper methods
 
 func (sm *StrategyManager) randomNextBackend(log logr.Logger, backends []string) (string, logr.Logger, bool) {
-	availableBackends := slices.Clone(backends)
-	
-	for len(availableBackends) > 0 {
-		randIndex := sm.rng.Intn(len(availableBackends))
-		backend := availableBackends[randIndex]
-		
-		if sm.checkBackend(backend) {
-			return backend, log, true
-		}
-		
-		availableBackends = slices.Delete(availableBackends, randIndex, randIndex+1)
+	if len(backends) == 0 {
+		return "", log, false
 	}
 	
-	return "", log, false
+	// Simple random selection - let tryBackends handle health checking via actual dials
+	randIndex := sm.rng.Intn(len(backends))
+	backend := backends[randIndex]
+	
+	return backend, log, true
 }
 
 func (sm *StrategyManager) roundRobinNextBackend(log logr.Logger, routeHost string, backends []string) (string, logr.Logger, bool) {
-	for range backends {
-		value, _ := sm.roundRobinIndexes.LoadOrStore(routeHost, 0)
-		index := value.(int)
-		
-		backend := backends[index%len(backends)]
-		sm.roundRobinIndexes.Store(routeHost, index+1)
-		
-		if sm.checkBackend(backend) {
-			return backend, log, true
-		}
+	if len(backends) == 0 {
+		return "", log, false
 	}
 	
-	return "", log, false
+	// Get next backend in round-robin order
+	value, _ := sm.roundRobinIndexes.LoadOrStore(routeHost, 0)
+	index := value.(int)
+	
+	backend := backends[index%len(backends)]
+	sm.roundRobinIndexes.Store(routeHost, index+1)
+	
+	return backend, log, true
 }
 
 func (sm *StrategyManager) leastConnectionsNextBackend(log logr.Logger, backends []string) (string, logr.Logger, bool) {
+	if len(backends) == 0 {
+		return "", log, false
+	}
+	
 	var leastBackend string
 	var leastCount uint32 = math.MaxUint32
 	
 	for _, backend := range backends {
-		if !sm.checkBackend(backend) {
-			continue
-		}
-		
 		counter := sm.getOrCreateCounter(backend)
 		if counter == nil {
 			continue
@@ -134,36 +126,38 @@ func (sm *StrategyManager) leastConnectionsNextBackend(log logr.Logger, backends
 	}
 	
 	if leastBackend == "" {
-		return "", log, false
+		// Fallback to first backend if no counters exist
+		return backends[0], log, true
 	}
 	
 	return leastBackend, log, true
 }
 
 func (sm *StrategyManager) lowestLatencyNextBackend(log logr.Logger, backends []string) (string, logr.Logger, bool) {
+	if len(backends) == 0 {
+		return "", log, false
+	}
+	
 	var lowestBackend string
 	var lowestLatency time.Duration
 	
 	for _, backend := range backends {
-		if !sm.checkBackend(backend) {
-			continue
-		}
-		
 		latencyItem := sm.latencyCache.Get(backend)
 		if latencyItem == nil {
-			// Set a default latency that will be updated on first actual dial
-			sm.latencyCache.Set(backend, time.Nanosecond, time.Minute*3)
-			latencyItem = sm.latencyCache.Get(backend)
+			// No latency data yet - this backend will be tried and measured
+			// on first successful connection, so prefer it for initial measurement
+			return backend, log, true
 		}
 		
-		if latencyItem != nil && (lowestLatency == 0 || latencyItem.Value() < lowestLatency) {
+		if lowestLatency == 0 || latencyItem.Value() < lowestLatency {
 			lowestBackend = backend
 			lowestLatency = latencyItem.Value()
 		}
 	}
 	
 	if lowestBackend == "" {
-		return "", log, false
+		// Fallback to first backend if no latency data exists
+		return backends[0], log, true
 	}
 	
 	return lowestBackend, log, true
@@ -183,10 +177,3 @@ func (sm *StrategyManager) getOrCreateCounter(backend string) *atomic.Uint32 {
 	return counter
 }
 
-func (sm *StrategyManager) checkBackend(backend string) bool {
-	conn, err := net.DialTimeout("tcp", backend, time.Second*5)
-	if err == nil {
-		_ = conn.Close()
-	}
-	return err == nil
-}
