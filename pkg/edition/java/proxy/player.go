@@ -490,7 +490,7 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(p.serversToTry) == 0 {
-		// Extract hostname from virtual host and convert to lowercase (like Velocity)
+		// Extract hostname from virtual host and convert to lowercase
 		virtualHostStr := p.getVirtualHostname()
 		p.serversToTry = p.config().ForcedHosts[virtualHostStr]
 	}
