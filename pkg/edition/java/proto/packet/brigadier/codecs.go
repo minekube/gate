@@ -409,6 +409,31 @@ var (
 			}, nil
 		},
 	}
+
+	EntityArgumentPropertyCodec ArgumentPropertyCodec = &ArgumentPropertyCodecFuncs{
+		EncodeFn: func(wr io.Writer, v any, protocol proto.Protocol) error {
+			i, ok := v.(*EntityArgumentType)
+			if !ok {
+				return fmt.Errorf("expected *EntityArgumentType but got %T", v)
+			}
+			var b byte
+			if i.SingleEntity {
+				b = b | 0x1
+			}
+			if i.OnlyPlayers {
+				b = b | 0x2
+			}
+			return util.WriteByte(wr, b)
+		},
+		DecodeFn: func(rd io.Reader, protocol proto.Protocol) (any, error) {
+			b, err := util.ReadByte(rd)
+			if err != nil {
+				return nil, err
+			}
+
+			return &EntityArgumentType{SingleEntity: b&0x1 != 0, OnlyPlayers: b&0x2 != 0}, nil
+		},
+	}
 )
 
 const (

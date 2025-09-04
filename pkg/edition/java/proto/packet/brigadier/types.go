@@ -4,7 +4,10 @@ import (
 	"go.minekube.com/brigodier"
 )
 
-var RegistryKeyArgument brigodier.ArgumentType = &RegistryKeyArgumentType{}
+var (
+	RegistryKeyArgument brigodier.ArgumentType = &RegistryKeyArgumentType{}
+	PlayerArgument      brigodier.ArgumentType = &EntityArgumentType{SingleEntity: true, OnlyPlayers: true}
+)
 
 type RegistryKeyArgumentType struct {
 	Identifier string
@@ -55,3 +58,16 @@ func (r *ResourceSelectorArgumentType) Parse(rd *brigodier.StringReader) (any, e
 }
 
 func (r *ResourceSelectorArgumentType) String() string { return "resource_selector_argument" }
+
+// EntityArgumentType represents the minecraft:entity argument type.
+// See https://wiki.vg/Command_Data (minecraft:entity)
+// It provides auto-substitution of online player names in commands.
+type EntityArgumentType struct {
+	SingleEntity bool // Only select one entity
+	OnlyPlayers  bool // Only select players (not other entities)
+}
+
+func (t *EntityArgumentType) String() string { return "entity" }
+func (t *EntityArgumentType) Parse(rd *brigodier.StringReader) (any, error) {
+	return rd.ReadString()
+}
