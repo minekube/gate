@@ -132,4 +132,3 @@ type mockDecoder struct {
 func (m *mockDecoder) Decode() (*proto.PacketContext, error) {
 	return m.packetCtx, m.err
 }
-

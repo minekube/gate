@@ -332,7 +332,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
 	}
-	
+
 	// Normalize forced hosts keys to lowercase
 	if len(cfg.Config.ForcedHosts) > 0 {
 		normalizedForcedHosts := make(map[string][]string, len(cfg.Config.ForcedHosts))
@@ -343,7 +343,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 		}
 		cfg.Config.ForcedHosts = normalizedForcedHosts
 	}
-	
+
 	// Java config is now embedded directly in cfg.Config
 	return &cfg, nil
 }

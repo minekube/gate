@@ -79,13 +79,13 @@ type Strategy string
 const (
 	// StrategyRandom selects a random backend from available options.
 	StrategyRandom Strategy = "random"
-	
+
 	// StrategyRoundRobin cycles through backends in order for each new connection.
 	StrategyRoundRobin Strategy = "round-robin"
-	
+
 	// StrategyLeastConnections selects the backend with the fewest active connections.
 	StrategyLeastConnections Strategy = "least-connections"
-	
+
 	// StrategyLowestLatency selects the backend with the lowest ping response time.
 	StrategyLowestLatency Strategy = "lowest-latency"
 )

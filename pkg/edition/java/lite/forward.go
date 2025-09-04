@@ -172,7 +172,6 @@ func findRoute(
 	return log, src, route, nextBackend, nil
 }
 
-
 func dialRoute(
 	ctx context.Context,
 	dialTimeout time.Duration,
@@ -278,12 +277,12 @@ func ResolveStatusResponse(
 		start := time.Now()
 		newLog, response, respErr := resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
 		statusLatency := time.Since(start)
-		
+
 		// Record latency for lowest-latency strategy (only on success)
 		if respErr == nil {
 			strategyManager.RecordLatency(backendAddr, statusLatency)
 		}
-		
+
 		return newLog, response, respErr
 	})
 	if err != nil && route.Fallback != nil {

@@ -789,4 +789,3 @@ type (
 		config() *config.Config
 	}
 )
-

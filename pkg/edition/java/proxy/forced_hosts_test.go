@@ -30,7 +30,7 @@ func TestForcedHosts_NextServerToTry(t *testing.T) {
 			configProvider: &testConfigProvider{cfg: proxy.cfg},
 		},
 		virtualHost:  netutil.NewAddr("play.example.com:25565", "tcp"), // Full address
-		serversToTry: nil, // Initially empty
+		serversToTry: nil,                                              // Initially empty
 		tryIndex:     0,
 	}
 
@@ -70,7 +70,7 @@ func TestForcedHosts_FallbackToTryList(t *testing.T) {
 			configProvider: &testConfigProvider{cfg: proxy.cfg},
 		},
 		virtualHost:  netutil.NewAddr("play.example.com:25565", "tcp"), // No forced hosts for this hostname
-		serversToTry: nil, // Initially empty
+		serversToTry: nil,                                              // Initially empty
 		tryIndex:     0,
 	}
 
@@ -86,46 +86,46 @@ func TestForcedHosts_FallbackToTryList(t *testing.T) {
 func TestForcedHosts_VirtualHostProcessing(t *testing.T) {
 	// Test different virtual host formats to ensure proper hostname extraction
 	testCases := []struct {
-		name              string
-		virtualHost       string
-		configKey         string
+		name                string
+		virtualHost         string
+		configKey           string
 		shouldUseForcedHost bool
-		description       string
+		description         string
 	}{
 		{
-			name:              "exact hostname match",
-			virtualHost:       "play.example.com:25565",
-			configKey:         "play.example.com",
+			name:                "exact hostname match",
+			virtualHost:         "play.example.com:25565",
+			configKey:           "play.example.com",
 			shouldUseForcedHost: true,
-			description:       "Virtual host with port should match hostname-only config key",
+			description:         "Virtual host with port should match hostname-only config key",
 		},
 		{
-			name:              "case insensitive matching",
-			virtualHost:       "PLAY.EXAMPLE.COM:25565",
-			configKey:         "play.example.com",
+			name:                "case insensitive matching",
+			virtualHost:         "PLAY.EXAMPLE.COM:25565",
+			configKey:           "play.example.com",
 			shouldUseForcedHost: true,
-			description:       "Case should be ignored in hostname matching",
+			description:         "Case should be ignored in hostname matching",
 		},
 		{
-			name:              "different hostname",
-			virtualHost:       "different.example.com:25565",
-			configKey:         "play.example.com",
+			name:                "different hostname",
+			virtualHost:         "different.example.com:25565",
+			configKey:           "play.example.com",
 			shouldUseForcedHost: false,
-			description:       "Different hostname should not match",
+			description:         "Different hostname should not match",
 		},
 		{
-			name:              "hostname without port",
-			virtualHost:       "play.example.com",
-			configKey:         "play.example.com",
+			name:                "hostname without port",
+			virtualHost:         "play.example.com",
+			configKey:           "play.example.com",
 			shouldUseForcedHost: true,
-			description:       "Virtual host without port should match hostname config key",
+			description:         "Virtual host without port should match hostname config key",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			proxy := createTestProxyWithForcedHosts(t, map[string]string{
-				"forced": "localhost:25566",
+				"forced":   "localhost:25566",
 				"fallback": "localhost:25567",
 			}, map[string][]string{
 				tc.configKey: {"forced"},
@@ -145,11 +145,11 @@ func TestForcedHosts_VirtualHostProcessing(t *testing.T) {
 			require.NotNil(t, firstServer)
 
 			if tc.shouldUseForcedHost {
-				assert.Equal(t, "forced", firstServer.ServerInfo().Name(), 
+				assert.Equal(t, "forced", firstServer.ServerInfo().Name(),
 					"Should use forced host: %s", tc.description)
 				assert.Equal(t, []string{"forced"}, player.serversToTry)
 			} else {
-				assert.Equal(t, "fallback", firstServer.ServerInfo().Name(), 
+				assert.Equal(t, "fallback", firstServer.ServerInfo().Name(),
 					"Should use fallback: %s", tc.description)
 				assert.Equal(t, []string{"fallback"}, player.serversToTry)
 			}

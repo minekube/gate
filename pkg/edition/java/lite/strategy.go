@@ -21,7 +21,7 @@ type StrategyManager struct {
 	// Round-robin state per route host
 	roundRobinIndexes *sync.Map // map[string]int
 
-	// Connection counters for least-connections strategy  
+	// Connection counters for least-connections strategy
 	connectionCounters *sync.Map // map[string]*atomic.Uint32
 
 	// Latency cache for lowest-latency strategy
@@ -81,11 +81,11 @@ func (sm *StrategyManager) randomNextBackend(log logr.Logger, backends []string)
 	if len(backends) == 0 {
 		return "", log, false
 	}
-	
+
 	// Simple random selection - let tryBackends handle health checking via actual dials
 	randIndex := sm.rng.Intn(len(backends))
 	backend := backends[randIndex]
-	
+
 	return backend, log, true
 }
 
@@ -93,14 +93,14 @@ func (sm *StrategyManager) roundRobinNextBackend(log logr.Logger, routeHost stri
 	if len(backends) == 0 {
 		return "", log, false
 	}
-	
+
 	// Get next backend in round-robin order
 	value, _ := sm.roundRobinIndexes.LoadOrStore(routeHost, 0)
 	index := value.(int)
-	
+
 	backend := backends[index%len(backends)]
 	sm.roundRobinIndexes.Store(routeHost, index+1)
-	
+
 	return backend, log, true
 }
 
@@ -108,28 +108,28 @@ func (sm *StrategyManager) leastConnectionsNextBackend(log logr.Logger, backends
 	if len(backends) == 0 {
 		return "", log, false
 	}
-	
+
 	var leastBackend string
 	var leastCount uint32 = math.MaxUint32
-	
+
 	for _, backend := range backends {
 		counter := sm.getOrCreateCounter(backend)
 		if counter == nil {
 			continue
 		}
-		
+
 		count := counter.Load()
 		if count < leastCount {
 			leastBackend = backend
 			leastCount = count
 		}
 	}
-	
+
 	if leastBackend == "" {
 		// Fallback to first backend if no counters exist
 		return backends[0], log, true
 	}
-	
+
 	return leastBackend, log, true
 }
 
@@ -137,10 +137,10 @@ func (sm *StrategyManager) lowestLatencyNextBackend(log logr.Logger, backends []
 	if len(backends) == 0 {
 		return "", log, false
 	}
-	
+
 	var lowestBackend string
 	var lowestLatency time.Duration
-	
+
 	for _, backend := range backends {
 		latencyItem := sm.latencyCache.Get(backend)
 		if latencyItem == nil {
@@ -148,18 +148,18 @@ func (sm *StrategyManager) lowestLatencyNextBackend(log logr.Logger, backends []
 			// on first successful connection, so prefer it for initial measurement
 			return backend, log, true
 		}
-		
+
 		if lowestLatency == 0 || latencyItem.Value() < lowestLatency {
 			lowestBackend = backend
 			lowestLatency = latencyItem.Value()
 		}
 	}
-	
+
 	if lowestBackend == "" {
 		// Fallback to first backend if no latency data exists
 		return backends[0], log, true
 	}
-	
+
 	return lowestBackend, log, true
 }
 
@@ -176,4 +176,3 @@ func (sm *StrategyManager) getOrCreateCounter(backend string) *atomic.Uint32 {
 	}
 	return counter
 }
-
