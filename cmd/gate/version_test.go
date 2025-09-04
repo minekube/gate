@@ -31,13 +31,20 @@ func TestVersionCommand(t *testing.T) {
 		}
 	}
 	
-	// Verify our custom flags exist (version flags are added automatically by urfave/cli)
+	// Verify our custom flags exist  
 	assert.True(t, flags["verbosity"], "Verbosity flag should exist")
-	assert.True(t, flags["verbose"], "Verbose alias should exist")
+	assert.True(t, flags["v"], "Verbose -v alias should exist")
 	assert.True(t, flags["config"], "Config flag should exist") 
 	assert.True(t, flags["c"], "Config alias should exist")
 	assert.True(t, flags["debug"], "Debug flag should exist")
 	assert.True(t, flags["d"], "Debug alias should exist")
+	
+	// Verify version flags use correct Unix convention  
+	assert.True(t, flags["version"], "Version flag should exist")
+	assert.True(t, flags["V"], "Version -V alias should exist (Unix convention)")
+	
+	// Verify -v is used for verbosity (correct Unix convention)
+	assert.True(t, flags["v"], "Verbosity -v flag should exist for Unix convention")
 }
 
 func TestVersionString(t *testing.T) {
@@ -47,6 +54,23 @@ func TestVersionString(t *testing.T) {
 	
 	// Should not panic or return empty in normal circumstances
 	assert.True(t, len(versionStr) > 0, "Version should have content")
+}
+
+func TestCustomVersionFlag(t *testing.T) {
+	// Test that we properly customized the version flag to avoid conflicts
+	app := App()
+	
+	// Verify app has version set
+	assert.NotEmpty(t, app.Version, "App should have version set")
+	
+	// Verify custom version flag is in effect (should show in help)
+	help, err := app.ToMarkdown()
+	require.NoError(t, err)
+	
+	// Should mention -V for version (not -v) following Unix conventions
+	assert.Contains(t, help, "-V", "Help should show -V for version")
+	assert.Contains(t, help, "--version", "Help should show --version flag")
+	assert.Contains(t, help, "-v", "Help should show -v for verbosity")
 }
 
 func TestUserAgentIncludesVersion(t *testing.T) {

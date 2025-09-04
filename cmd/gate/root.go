@@ -43,15 +43,17 @@ func App() *cli.App {
 	app.Name = "gate"
 	app.Usage = "Gate is an extensible Minecraft proxy."
 	app.Version = version.String()
+	app.HideVersion = true // Hide automatic version flags to avoid conflicts
 	app.Description = `A high performant & paralleled Minecraft proxy server with
 	scalability, flexibility & excelled server version support.
 
 Visit the website https://gate.minekube.com/ for more information.`
 
 	var (
-		debug      bool
-		configFile string
-		verbosity  int
+		debug       bool
+		configFile  string
+		verbosity   int
+		showVersion bool
 	)
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
@@ -70,13 +72,26 @@ Visit the website https://gate.minekube.com/ for more information.`
 		},
 		&cli.IntFlag{
 			Name:        "verbosity",
-			Aliases:     []string{"verbose"},
+			Aliases:     []string{"v"},
 			Usage:       "The higher the verbosity the more logs are shown",
 			EnvVars:     []string{"GATE_VERBOSITY"},
 			Destination: &verbosity,
 		},
+		&cli.BoolFlag{
+			Name:        "version",
+			Aliases:     []string{"V"},
+			Usage:       "Show version information",
+			Destination: &showVersion,
+		},
 	}
+	
 	app.Action = func(c *cli.Context) error {
+		// Handle version flag (Unix convention: -V for version, -v for verbose)
+		if showVersion {
+			fmt.Printf("gate version %s\n", version.String())
+			return nil
+		}
+		
 		// Init viper
 		v, err := initViper(c, configFile)
 		if err != nil {
