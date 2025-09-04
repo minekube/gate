@@ -67,7 +67,6 @@ type Proxy struct {
 	loginsQuota      *addrquota.Quota
 
 	lite *lite.Lite // lite mode functionality
-	id   string      // id of the proxy
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -115,7 +114,6 @@ func New(options Options) (p *Proxy, err error) {
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
-		id:               "proxy_" + uuid.New().String(), // generate a random id for the proxy
 	}
 
 	// Connection & login rate limiters
@@ -792,6 +790,3 @@ type (
 	}
 )
 
-func (p *Proxy) getId() string {
-	return p.id
-}
