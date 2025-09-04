@@ -66,7 +66,8 @@ type Proxy struct {
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
-	id string // id of the proxy
+	strategyManager *lite.StrategyManager // for lite mode load balancing strategies
+	id              string                // id of the proxy
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -113,6 +114,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
+		strategyManager:  lite.NewStrategyManager(), // create strategy manager for this proxy instance
 		id:               "proxy_" + uuid.New().String(), // generate a random id for the proxy
 	}
 
@@ -406,6 +408,11 @@ func (p *Proxy) Config() config.Config {
 
 func (p *Proxy) config() *config.Config {
 	return p.cfg
+}
+
+// StrategyManager returns the proxy's strategy manager for lite mode.
+func (p *Proxy) StrategyManager() *lite.StrategyManager {
+	return p.strategyManager
 }
 
 // Server gets a backend server registered with the proxy by name.

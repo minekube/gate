@@ -7,13 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
-	"math/rand"
 	"net"
-	"slices"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -39,18 +34,18 @@ func Forward(
 	client netmc.MinecraftConn,
 	handshake *packet.Handshake,
 	pc *proto.PacketContext,
-	proxyId string,
+	strategyManager *StrategyManager,
 ) {
 	defer func() { _ = client.Close() }()
 
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
+	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		errs.V(log, err).Info("failed to find route", "error", err)
 		return
 	}
 
 	// Find a backend to dial successfully.
-	backendAddr, log, dst, err := tryBackends(nextBackend, proxyId, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
+	backendAddr, log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
 		return log, conn, err
 	})
@@ -64,19 +59,11 @@ func Forward(
 		return
 	}
 
-	// add connection to the connection counter if the strategy is least-connections
+	// Track connection for least-connections strategy
+	var decrementConnection func()
 	if route.Strategy == config.StrategyLeastConnections {
-		// Ensure counter map and specific counter are initialized
-		if leastConnectionCounterMap == nil {
-			leastConnectionCounterMap = make(map[string]*atomic.Uint32)
-		}
-		counter := leastConnectionCounterMap[backendAddr]
-		if counter == nil {
-			counter = &atomic.Uint32{}
-			leastConnectionCounterMap[backendAddr] = counter
-		}
-		counter.Add(1)
-		defer counter.Add(^uint32(0)) // removes count after connection loses connection
+		decrementConnection = strategyManager.IncrementConnection(backendAddr)
+		defer decrementConnection()
 	}
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
@@ -87,9 +74,9 @@ func Forward(
 var errAllBackendsFailed = errors.New("all backends failed")
 
 // tryBackends tries backends until one succeeds or all fail.
-func tryBackends[T any](next nextBackendFunc, proxyId string, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (string, logr.Logger, T, error) {
+func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendAddr string) (logr.Logger, T, error)) (string, logr.Logger, T, error) {
 	for {
-		backendAddr, log, ok := next(proxyId)
+		backendAddr, log, ok := next()
 		if !ok {
 			var zero T
 			return backendAddr, log, zero, errAllBackendsFailed
@@ -139,13 +126,14 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	}
 }
 
-type nextBackendFunc func(proxyId string) (backendAddr string, log logr.Logger, ok bool)
+type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
 
 func findRoute(
 	routes []config.Route,
 	log logr.Logger,
 	client netmc.MinecraftConn,
 	handshake *packet.Handshake,
+	strategyManager *StrategyManager,
 ) (
 	newLog logr.Logger,
 	src net.Conn,
@@ -177,168 +165,13 @@ func findRoute(
 	}
 
 	tryBackends := route.Backend.Copy()
-	nextBackend = func(proxyId string) (string, logr.Logger, bool) {
-		switch route.Strategy {
-		case config.StrategyRandom:
-			return randomNextBackend(log, tryBackends)(proxyId)
-		case config.StrategyRoundRobin:
-			return roundRobinNextBackend(log, host, tryBackends)(proxyId)
-		case config.StrategyLeastConnections:
-			return leastConnectionsNextBackend(log, tryBackends)(proxyId)
-		case config.StrategyLowestLatency:
-			return lowestLatencyNextBackend(log, tryBackends)(proxyId)
-		default:
-			// Default to random strategy
-			return randomNextBackend(log, tryBackends)(proxyId)
-		}
+	nextBackend = func() (string, logr.Logger, bool) {
+		return strategyManager.GetNextBackend(log, route, host, tryBackends)
 	}
 
 	return log, src, route, nextBackend, nil
 }
 
-var leastConnectionsRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-func randomNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func(proxyId string) (string, logr.Logger, bool) {
-		if len(tryBackends) == 0 {
-			return "", log, false
-		}
-
-		backends := slices.Clone(tryBackends)
-		for len(backends) > 0 {
-			randIndex := leastConnectionsRand.Intn(len(backends))
-			backend := backends[randIndex]
-			if checkBackend(backend) {
-				return backend, log, true
-			}
-
-			backends = slices.Delete(backends, randIndex, randIndex+1)
-		}
-
-		// no working backend found
-		return "", log, false
-	}
-}
-
-var roundRobinIndexPerGate map[string]*sync.Map
-
-func roundRobinNextBackend(log logr.Logger, routeHost string, tryBackends []string) nextBackendFunc {
-	return func(proxyId string) (string, logr.Logger, bool) {
-		if len(tryBackends) == 0 {
-			return "", log, false
-		}
-
-		if roundRobinIndexPerGate == nil {
-			roundRobinIndexPerGate = make(map[string]*sync.Map)
-		}
-
-		for range tryBackends {
-			roundRobinMap := roundRobinIndexPerGate[proxyId]
-			if roundRobinMap == nil {
-				roundRobinMap = &sync.Map{}
-				roundRobinIndexPerGate[proxyId] = roundRobinMap
-			}
-
-			value, _ := roundRobinMap.LoadOrStore(routeHost, 0)
-			index := value.(int)
-
-			backend := tryBackends[index%len(tryBackends)]
-			roundRobinMap.Store(routeHost, index+1)
-
-			if checkBackend(backend) {
-				return backend, log, true
-			}
-		}
-
-		// no working backend found
-		return "", log, false
-	}
-}
-
-var leastConnectionCounterMap map[string]*atomic.Uint32
-
-func leastConnectionsNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func(proxyId string) (string, logr.Logger, bool) {
-		if len(tryBackends) == 0 {
-			return "", log, false
-		}
-
-		var leastBackend string
-		var leastCount uint32 = math.MaxUint32
-
-		for _, backend := range tryBackends {
-			if !checkBackend(backend) {
-				continue
-			}
-
-			if leastConnectionCounterMap == nil {
-				leastConnectionCounterMap = make(map[string]*atomic.Uint32)
-			}
-
-			counter := leastConnectionCounterMap[backend]
-			if counter == nil {
-				counter = &atomic.Uint32{}
-				leastConnectionCounterMap[backend] = counter
-			}
-
-			count := counter.Load()
-			if count < leastCount {
-				leastBackend = backend
-				leastCount = count
-			}
-		}
-
-		// no working background found
-		if leastBackend == "" {
-			return "", log, false
-		}
-
-		return leastBackend, log, true
-	}
-}
-
-var latencyCache = ttlcache.New[string, time.Duration]()
-
-func lowestLatencyNextBackend(log logr.Logger, tryBackends []string) nextBackendFunc {
-	return func(proxyId string) (string, logr.Logger, bool) {
-		if len(tryBackends) == 0 {
-			return "", log, false
-		}
-		var lowestBackend string
-		var lowestLatency time.Duration
-		for _, backend := range tryBackends {
-			if !checkBackend(backend) {
-				continue
-			}
-
-			latencyItem := latencyCache.Get(backend)
-			if latencyItem == nil {
-				latency := time.Nanosecond
-				latencyCache.Set(backend, latency, time.Minute*3)
-				latencyItem = latencyCache.Get(backend)
-			}
-			if latencyItem != nil && (lowestLatency == 0 || latencyItem.Value() < lowestLatency) {
-				lowestBackend = backend
-				lowestLatency = latencyItem.Value()
-			}
-		}
-
-		// no working background found
-		if lowestBackend == "" {
-			return "", log, false
-		}
-
-		return lowestBackend, log, true
-	}
-}
-
-func checkBackend(backend string) bool {
-	conn, err := net.DialTimeout("tcp", backend, time.Second*5)
-	if err == nil {
-		conn.Close()
-	}
-	return err == nil
-}
 
 func dialRoute(
 	ctx context.Context,
@@ -354,7 +187,6 @@ func dialRoute(
 	defer cancel()
 
 	var dialer net.Dialer
-	now := time.Now()
 	dst, err = dialer.DialContext(dialCtx, "tcp", backendAddr)
 	if err != nil {
 		v := 0
@@ -366,7 +198,6 @@ func dialRoute(
 			Err:       fmt.Errorf("failed to connect to backend %s: %w", backendAddr, err),
 		}
 	}
-	latencyCache.Set(backendAddr, time.Since(now), time.Minute*3)
 	dstConn := dst
 	defer func() {
 		if err != nil {
@@ -435,15 +266,25 @@ func ResolveStatusResponse(
 	handshake *packet.Handshake,
 	handshakeCtx *proto.PacketContext,
 	statusRequestCtx *proto.PacketContext,
-	proxyId string,
+	strategyManager *StrategyManager,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake)
+	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		return log, nil, err
 	}
 
-	_, log, res, err := tryBackends(nextBackend, proxyId, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
-		return resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
+	_, log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
+		// Measure status response time for latency tracking (better than dial time)
+		start := time.Now()
+		newLog, response, respErr := resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
+		statusLatency := time.Since(start)
+		
+		// Record latency for lowest-latency strategy (only on success)
+		if respErr == nil {
+			strategyManager.RecordLatency(backendAddr, statusLatency)
+		}
+		
+		return newLog, response, respErr
 	})
 	if err != nil && route.Fallback != nil {
 		log.Info("failed to resolve status response, will use fallback status response", "error", err)
@@ -527,12 +368,10 @@ func resolveStatusResponse(
 		log.V(1).Info("resolving status")
 
 		ctx = logr.NewContext(ctx, log)
-		now := time.Now()
 		dst, err := dialRoute(ctx, dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, handshakeCtx, route.CachePingEnabled())
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial route: %w", err)
 		}
-		latencyCache.Set(backendAddr, time.Since(now), time.Minute*3)
 		defer func() { _ = dst.Close() }()
 
 		log = log.WithValues("backendAddr", netutil.Host(dst.RemoteAddr()))
