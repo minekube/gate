@@ -178,6 +178,10 @@ export default defineConfig({
               link: '/developers/events',
             },
             {
+              text: '⚡ Commands',
+              link: '/developers/commands',
+            },
+            {
               text: '💡 Examples',
               link: '/developers/examples/simple-proxy',
             },
@@ -209,6 +213,10 @@ export default defineConfig({
             {
               text: '🔧 Modded Servers Config',
               link: '/guide/config/modded-servers',
+            },
+            {
+              text: '🌐 ForcedHosts Routing',
+              link: '/guide/forced-hosts',
             },
           ],
         },
@@ -275,6 +283,10 @@ export default defineConfig({
             {
               text: 'Events',
               link: '/developers/events',
+            },
+            {
+              text: 'Commands',
+              link: '/developers/commands',
             },
           ],
         },

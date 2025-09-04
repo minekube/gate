@@ -95,6 +95,26 @@ config:
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.
   proxyProtocol: false
+  # ForcedHosts routes players to specific servers based on the hostname they connect with.
+  # This allows you to have multiple domains pointing to the same Gate proxy but route players
+  # to different servers based on which domain they used to connect.
+  # Available in classic mode only (when lite.enabled: false).
+  #
+  # Key features:
+  # - Hostname-only matching (port is ignored)
+  # - Case-insensitive matching
+  # - Supports multiple servers per hostname for load balancing
+  # - Falls back to 'try' list if no forced host matches
+  #
+  # Examples:
+  # forcedHosts:
+  #   "creative.example.com": ["server2"]           # Route creative.example.com to server2
+  #   "survival.example.com": ["server1", "server3"] # Route survival.example.com to server1 or server3
+  #   "lobby.example.com": ["server1"]              # Route lobby.example.com to server1
+  #
+  # Note: Players connecting via IP address or unmatched hostnames will use the 'try' list above.
+  # For lightweight deployments, see Gate Lite mode which provides similar host-based routing.
+  forcedHosts: {}
   # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
   # ops: The allowed operations per second.
   # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
