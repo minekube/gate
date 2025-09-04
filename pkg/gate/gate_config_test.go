@@ -62,11 +62,11 @@ config:
 	v2.SetConfigFile(configPath)
 	cfg2, err := LoadConfig(v2)
 	require.NoError(t, err)
-	
+
 	// This is the critical test - server4 should NOT persist
 	require.Len(t, cfg2.Config.Servers, 3, "Should have 3 servers after server4 is commented out")
 	require.NotContains(t, cfg2.Config.Servers, "server4", "server4 should NOT exist after being commented out")
-	
+
 	// Verify the remaining servers are correct
 	require.Contains(t, cfg2.Config.Servers, "server1")
 	require.Contains(t, cfg2.Config.Servers, "server2")
@@ -124,7 +124,7 @@ config:
 	v2.SetConfigFile(configPath)
 	cfg2, err := LoadConfig(v2)
 	require.NoError(t, err)
-	
+
 	// Verify forced host was removed
 	require.Len(t, cfg2.Config.ForcedHosts, 1, "Should have 1 forced host after removal")
 	require.NotContains(t, cfg2.Config.ForcedHosts, "test.com", "test.com should be removed")

@@ -11,34 +11,34 @@ import (
 // properly strips the leading "/" from commands before processing them.
 func TestHandleLegacyCommand_StripLeadingSlash(t *testing.T) {
 	tests := []struct {
-		name           string
-		inputMessage   string
-		expectedCmd    string
-		description    string
+		name         string
+		inputMessage string
+		expectedCmd  string
+		description  string
 	}{
 		{
-			name:           "command_with_slash",
-			inputMessage:   "/help",
-			expectedCmd:    "help",
-			description:    "Should strip leading slash from command",
+			name:         "command_with_slash",
+			inputMessage: "/help",
+			expectedCmd:  "help",
+			description:  "Should strip leading slash from command",
 		},
 		{
-			name:           "command_with_args",
-			inputMessage:   "/glist server1",
-			expectedCmd:    "glist server1",
-			description:    "Should strip leading slash from command with arguments",
+			name:         "command_with_args",
+			inputMessage: "/glist server1",
+			expectedCmd:  "glist server1",
+			description:  "Should strip leading slash from command with arguments",
 		},
 		{
-			name:           "empty_command",
-			inputMessage:   "/",
-			expectedCmd:    "",
-			description:    "Should handle single slash correctly",
+			name:         "empty_command",
+			inputMessage: "/",
+			expectedCmd:  "",
+			description:  "Should handle single slash correctly",
 		},
 		{
-			name:           "no_slash",
-			inputMessage:   "help",
-			expectedCmd:    "help",
-			description:    "Should handle message without slash (edge case)",
+			name:         "no_slash",
+			inputMessage: "help",
+			expectedCmd:  "help",
+			description:  "Should handle message without slash (edge case)",
 		},
 	}
 
