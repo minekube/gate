@@ -220,9 +220,9 @@ func WriteBytes17(wr io.Writer, b []byte, allowExtended bool) error {
 				ForgeMaxArrayLength, len(b))
 		}
 	} else {
-		if len(b) > math.MaxInt8 {
+		if len(b) > math.MaxInt16 {
 			return fmt.Errorf("cannot write byte array longer than %d (got %d bytes)",
-				math.MaxInt8, len(b))
+				math.MaxInt16, len(b))
 		}
 	}
 	// Writes a 2 or 3 byte number that represents the length of the packet. (3 byte "shorts" for
