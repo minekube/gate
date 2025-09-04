@@ -29,6 +29,7 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
+	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -489,7 +490,9 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(p.serversToTry) == 0 {
-		p.serversToTry = p.config().ForcedHosts[p.virtualHost.String()]
+		// Extract hostname from virtual host and convert to lowercase
+		virtualHostStr := p.getVirtualHostname()
+		p.serversToTry = p.config().ForcedHosts[virtualHostStr]
 	}
 	if len(p.serversToTry) == 0 {
 		connOrder := p.config().Try
@@ -518,6 +521,23 @@ func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredSe
 		}
 	}
 	return nil
+}
+
+// getVirtualHostname extracts the hostname from the virtual host address and converts it to lowercase.
+func (p *connectedPlayer) getVirtualHostname() string {
+	if p.virtualHost == nil {
+		return ""
+	}
+	
+	// Use Gate's existing utility functions to clean the virtual host
+	// 1. Clear virtual host (removes forge separators, TCPShield separators, etc.)
+	// 2. Extract hostname (removes port)
+	// 3. Convert to lowercase for consistent matching
+	virtualHostStr := p.virtualHost.String()
+	cleanedHost := lite.ClearVirtualHost(virtualHostStr)
+	hostname := netutil.HostStr(cleanedHost)
+	
+	return strings.ToLower(hostname)
 }
 
 // player's connection is closed at this point,
