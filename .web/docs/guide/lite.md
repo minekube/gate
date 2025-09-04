@@ -45,32 +45,176 @@ config:
         backend: [10.0.0.2:25566]
 ```
 
-## Strategy
+## Load Balancing Strategies
 
-When multiple backends are set, the strategy changes which one of the backends is used.
+When multiple backend servers are configured for a route, Gate Lite can intelligently distribute incoming connections using different **load balancing strategies**. This enables high availability, optimal performance, and efficient resource utilization across your backend infrastructure.
 
-There are four strategy types:
-  1. Random (default)
-    The backend will be randomly chosen.
-  2. Round-Robin
-    Each new connection is forwarded to the next backend in the list, cycling through all available backends in order.
-  3. Least-Connections
-    The backend with the lowest connections count, which gets added whenever a player joins one of the backends, is used.
-  4. Lowest-Latency
-    The backend with the lowest latency will be used.
+:::: code-group
+
+```yaml [Quick Example]
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: play.example.com
+        backend: 
+          - server1.internal:25565
+          - server2.internal:25565
+          - server3.internal:25565
+        strategy: least-connections  # Smart load balancing
+```
+
+```yaml [Multiple Strategies]
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: lobby.example.com
+        backend: [lobby1:25565, lobby2:25565]
+        strategy: round-robin      # Fair distribution
+        
+      - host: game.example.com  
+        backend: [game1:25565, game2:25565, game3:25565]
+        strategy: least-connections # Performance-based
+        
+      - host: '*.dev.example.com'
+        backend: [dev1:25565, dev2:25565]
+        strategy: random           # Simple randomization
+```
+
+::::
+
+### Available Strategies
+
+| Strategy | Description | Best For | Algorithm |
+|----------|-------------|----------|-----------|
+| **`random`** (default) | Randomly selects from healthy backends | General use, simple setups | Cryptographically secure random selection with health checking |
+| **`round-robin`** | Cycles through backends in sequential order | Equal distribution, stateless apps | Fair rotation ensuring each backend gets equal traffic |  
+| **`least-connections`** | Routes to backend with fewest active players | Performance optimization | Real-time connection tracking with atomic counters |
+| **`lowest-latency`** | Routes to fastest-responding backend | Latency-sensitive applications | Status ping latency measurement and caching |
+
+### Strategy Details
+
+#### 🎲 Random Strategy
+**Perfect for:** Most use cases, development, simple load distribution
 
 ```yaml
-  config:
-    lite:
-      enabled: true
-      routes:
-        - host: abc.example.com
-          backend: [10.0.0.1:25566, 10.0.0.1:25567, 10.0.0.1:25568]
-          # You can change the strategy of connecting if multiple backends are available.
-          # Strategies: random, round-robin, least-connections, lowest-latency.
-          # Default: random
-          strategy: random
+routes:
+  - host: example.com
+    backend: [server1:25565, server2:25565, server3:25565]
+    strategy: random  # or omit for default
 ```
+
+- ✅ **Simple and reliable** - No state tracking required
+- ✅ **Health-aware** - Automatically skips offline backends  
+- ✅ **Cryptographically secure** - Uses proper random number generation
+- ✅ **Fault-tolerant** - Gracefully handles backend failures
+
+#### ⚡ Round-Robin Strategy  
+**Perfect for:** Equal traffic distribution, stateless applications
+
+```yaml
+routes:
+  - host: api.example.com
+    backend: [api1:25565, api2:25565, api4:25565]
+    strategy: round-robin
+```
+
+- ✅ **Fair distribution** - Each backend gets exactly equal traffic over time
+- ✅ **Predictable** - Deterministic routing pattern  
+- ✅ **Health-aware** - Skips unhealthy backends in rotation
+- ✅ **Per-route state** - Independent rotation for different routes
+
+#### 📊 Least-Connections Strategy
+**Perfect for:** Performance optimization, varying workloads  
+
+```yaml
+routes:
+  - host: game.example.com
+    backend: [game1:25565, game2:25565, game3:25565]
+    strategy: least-connections
+```
+
+- ✅ **Performance-optimized** - Routes to least-loaded backend
+- ✅ **Real-time tracking** - Connection counts updated instantly
+- ✅ **Automatic cleanup** - Counters decremented when players disconnect
+- ✅ **Thread-safe** - Atomic operations prevent race conditions
+
+#### 🚀 Lowest-Latency Strategy
+**Perfect for:** Latency-sensitive applications, global deployments
+
+```yaml  
+routes:
+  - host: competitive.example.com
+    backend: [us-east:25565, us-west:25565, eu:25565]
+    strategy: lowest-latency
+```
+
+- ✅ **Latency-optimized** - Routes to fastest-responding backend
+- ✅ **Smart measurement** - Uses Minecraft status ping latency (not just TCP dial)
+- ✅ **Intelligent caching** - Latency measurements cached for 3 minutes
+- ✅ **Real-time adaptation** - Automatically adjusts to changing network conditions
+
+### Configuration Examples
+
+:::: code-group
+
+```yaml [Gaming Network]
+# Multi-server gaming network with optimized routing
+config:
+  lite:
+    enabled: true
+    routes:
+      # Lobby servers: equal distribution
+      - host: lobby.network.com
+        backend: [lobby1:25565, lobby2:25565]
+        strategy: round-robin
+        
+      # Game servers: performance-based routing  
+      - host: games.network.com
+        backend: [game1:25565, game2:25565, game3:25565]
+        strategy: least-connections
+        
+      # Global network: latency-optimized
+      - host: global.network.com
+        backend: [us:25565, eu:25565, asia:25565]
+        strategy: lowest-latency
+```
+
+```yaml [Development Environment]
+# Simple development setup with fallbacks
+config:
+  lite:
+    enabled: true  
+    routes:
+      - host: dev.example.com
+        backend: [primary:25565, backup:25565]
+        strategy: random  # Simple for dev
+        fallback:
+          motd: "§cDev servers offline"
+          
+      # Production-like testing
+      - host: staging.example.com
+        backend: [staging1:25565, staging2:25565]
+        strategy: least-connections
+```
+
+::::
+
+### How Strategies Work
+
+**Strategies affect both player connections AND server status pings**, ensuring consistent routing behavior:
+
+1. **Player Joins** `play.example.com` → Strategy selects `server2:25565`
+2. **Status Ping** from same client → Routes to same `server2:25565` 
+3. **Connection Tracking** → Real-time metrics updated for `least-connections`
+4. **Health Checking** → Unhealthy backends automatically excluded
+
+::: tip Smart Integration
+Gate Lite's strategies are **health-aware** - offline backends are automatically excluded from rotation, ensuring players always connect to working servers. Status ping measurements also feed back into the `lowest-latency` strategy for continuous optimization.
+:::
+
+---
 
 ## Ping Response Caching
 

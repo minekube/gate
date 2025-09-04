@@ -16,14 +16,14 @@ func TestStrategyValidation(t *testing.T) {
 	t.Log("Focusing on configuration validation and basic function structure")
 	
 	// Test that strategy constants are defined correctly
-	strategies := []string{
+	strategies := []config.Strategy{
 		config.StrategyRandom,
-		config.StrategyRoundRobin, 
+		config.StrategyRoundRobin,
 		config.StrategyLeastConnections,
 		config.StrategyLowestLatency,
 	}
 	
-	expectedStrategies := []string{"random", "round-robin", "least-connections", "lowest-latency"}
+	expectedStrategies := []config.Strategy{"random", "round-robin", "least-connections", "lowest-latency"}
 	assert.Equal(t, expectedStrategies, strategies, "Strategy constants should match expected values")
 }
 
@@ -72,7 +72,7 @@ func TestConfigValidation_InvalidStrategy(t *testing.T) {
 }
 
 func TestConfigValidation_ValidStrategies(t *testing.T) {
-	validStrategies := []string{
+	validStrategies := []config.Strategy{
 		config.StrategyRandom,
 		config.StrategyRoundRobin,
 		config.StrategyLeastConnections,
@@ -81,7 +81,7 @@ func TestConfigValidation_ValidStrategies(t *testing.T) {
 	}
 	
 	for _, strategy := range validStrategies {
-		t.Run("strategy_"+strategy, func(t *testing.T) {
+		t.Run("strategy_"+string(strategy), func(t *testing.T) {
 			cfg := config.Config{
 				Routes: []config.Route{
 					{
