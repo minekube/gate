@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -331,6 +332,18 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
 	}
+	
+	// Normalize forced hosts keys to lowercase
+	if len(cfg.Config.ForcedHosts) > 0 {
+		normalizedForcedHosts := make(map[string][]string, len(cfg.Config.ForcedHosts))
+		for host, servers := range cfg.Config.ForcedHosts {
+			// Convert hostname to lowercase for consistent lookup
+			normalizedHost := strings.ToLower(host)
+			normalizedForcedHosts[normalizedHost] = servers
+		}
+		cfg.Config.ForcedHosts = normalizedForcedHosts
+	}
+	
 	// Java config is now embedded directly in cfg.Config
 	return &cfg, nil
 }
