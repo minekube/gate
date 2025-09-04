@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
 	github.com/zyedidia/generic v1.2.1
-	go.minekube.com/brigodier v0.0.1
+	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.2.0
 	go.minekube.com/connect v0.6.2
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0
