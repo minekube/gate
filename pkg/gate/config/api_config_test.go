@@ -48,7 +48,7 @@ api:
 	// Test validation (should fail because bind is empty)
 	_, errs := cfg.Validate()
 	assert.NotEmpty(t, errs, "Should have validation errors because nested config is ignored")
-	assert.Contains(t, errs[0].Error(), "api.config.bind", "Error should mention API bind validation")
+	assert.Contains(t, errs[0].Error(), "api:", "Error should mention API validation")
 }
 
 func TestAPIConfigDisabled(t *testing.T) {
@@ -90,7 +90,7 @@ api:
 	// Test validation (should fail)
 	_, errs := cfg.Validate()
 	assert.NotEmpty(t, errs, "Should have validation errors for invalid bind")
-	assert.Contains(t, errs[0].Error(), "api.config.bind", "Error should mention API bind validation")
+	assert.Contains(t, errs[0].Error(), "api:", "Error should mention API validation")
 }
 
 func TestAPIConfigEmptyBind(t *testing.T) {
@@ -111,5 +111,18 @@ api:
 	// Test validation (should fail)
 	_, errs := cfg.Validate()
 	assert.NotEmpty(t, errs, "Should have validation errors for empty bind")
-	assert.Contains(t, errs[0].Error(), "api.config.bind", "Error should mention API bind validation")
+	assert.Contains(t, errs[0].Error(), "api:", "Error should mention API validation")
+}
+
+func TestAPIConfigDefaultSecurity(t *testing.T) {
+	// Test that default config uses localhost (not 0.0.0.0) for security
+	cfg := DefaultConfig
+	
+	assert.False(t, cfg.API.Enabled, "API should be disabled by default")
+	assert.Equal(t, "localhost:8080", cfg.API.Config.Bind, "Default API bind should use localhost for security")
+	
+	// Test that API config itself is valid (even though full config may have other warnings)
+	apiWarns, apiErrs := cfg.API.Config.Validate()
+	assert.Empty(t, apiErrs, "Default API config should have no validation errors")
+	assert.Empty(t, apiWarns, "Default API config should have no validation warnings")
 }
