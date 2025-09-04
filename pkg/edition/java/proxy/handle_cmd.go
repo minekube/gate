@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"go.minekube.com/gate/pkg/internal/future"
@@ -64,7 +65,9 @@ func (c *chatHandler) queueCommandResult(
 }
 
 func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
-	c.queueCommandResult(packet.Message, time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
+	// Strip the leading "/" from the message for legacy commands
+	command := strings.TrimPrefix(packet.Message, "/")
+	c.queueCommandResult(command, time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
 		if !e.Allowed() {
 			return nil
 		}
