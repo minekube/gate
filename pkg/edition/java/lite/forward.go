@@ -412,9 +412,25 @@ func fetchStatus(
 	dec.SetProtocol(protocol)
 	dec.SetState(state.Status)
 
+	return decodeStatusResponse(dec)
+}
+
+// statusDecoder interface for decoding status responses (allows mocking in tests)
+type statusDecoder interface {
+	Decode() (*proto.PacketContext, error)
+}
+
+// decodeStatusResponse decodes a status response from the decoder, handling the
+// ErrDecoderLeftBytes error that can occur when mods like BetterCompatibilityChecker
+// add extra data to the status response packet.
+func decodeStatusResponse(dec statusDecoder) (*packet.StatusResponse, error) {
 	pongCtx, err := dec.Decode()
-	if err != nil {
+	if err != nil && !errors.Is(err, proto.ErrDecoderLeftBytes) {
 		return nil, fmt.Errorf("failed to decode status response: %w", err)
+	}
+	// If we got ErrDecoderLeftBytes, pongCtx should still be valid
+	if pongCtx == nil {
+		return nil, fmt.Errorf("failed to decode status response: got nil packet context")
 	}
 
 	res, ok := pongCtx.Packet.(*packet.StatusResponse)
