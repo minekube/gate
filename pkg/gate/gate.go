@@ -321,6 +321,12 @@ func validateConfig(log logr.Logger, c *config.Config) error {
 func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	// Clone default config
 	cfg := func() config.Config { return config.DefaultConfig }()
+	// IMPORTANT: Create fresh maps to avoid sharing state between loads
+	// Maps are reference types in Go, so without this, all config instances
+	// would share the same map, causing removed servers to persist
+	cfg.Config.Servers = make(map[string]string)
+	cfg.Config.ForcedHosts = make(map[string][]string)
+
 	// Load in Gate config
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
