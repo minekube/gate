@@ -18,5 +18,3 @@ func hasCmdPerm(proxy *Proxy, perm string) brigodier.RequireFn {
 		return !proxy.cfg.RequireBuiltinCommandPermissions || c.Source.HasPermission(perm)
 	})
 }
-
-

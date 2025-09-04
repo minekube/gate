@@ -245,10 +245,6 @@ github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 github.com/zyedidia/generic v1.2.1 h1:Zv5KS/N2m0XZZiuLS82qheRG4X1o5gsWreGb0hR7XDc=
 github.com/zyedidia/generic v1.2.1/go.mod h1:ly2RBz4mnz1yeuVbQA/VFwGjK3mnHGRj1JuoG336Bis=
-go.minekube.com/brigodier v0.0.1 h1:v5x+fZNefM24JIi+fYQjQcjZ8rwJbfRSpnnpw4b/x6k=
-go.minekube.com/brigodier v0.0.1/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
-go.minekube.com/brigodier v0.0.2-0.20250904182839-eed8e761d22e h1:rOF4dLOIqE0uNEsOKA+laScIUzqOeDDDKtESxiB3MaQ=
-go.minekube.com/brigodier v0.0.2-0.20250904182839-eed8e761d22e/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
 go.minekube.com/brigodier v0.0.2 h1:g6VJtyeQr7Y+lAP1EfpM7Cdv5STiJaE2eXv8LRuGDG8=
 go.minekube.com/brigodier v0.0.2/go.mod h1:WJf/lyJVTId/phiY6phPW6++qkTjCQ72rbOWqo4XIqc=
 go.minekube.com/common v0.2.0 h1:b/4Scd2zXv1VIsbnTLKbTIipyVjmHHG/etMuJkrlJr4=

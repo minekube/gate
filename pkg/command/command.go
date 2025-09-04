@@ -127,13 +127,13 @@ func (m *Manager) CompletionSuggestions(parse *ParseResults) (*brigodier.Suggest
 func (m *Manager) RegisterWithAliases(command brigodier.LiteralNodeBuilder, aliases ...string) *brigodier.LiteralCommandNode {
 	// Register the primary command
 	primary := m.Register(command)
-	
+
 	// Create aliases using shallow copy approach (like Velocity)
 	for _, alias := range aliases {
 		aliasNode := m.shallowCopy(primary, strings.ToLower(alias))
 		m.Root.AddChild(aliasNode)
 	}
-	
+
 	return primary
 }
 
@@ -143,17 +143,17 @@ func (m *Manager) RegisterWithAliases(command brigodier.LiteralNodeBuilder, alia
 func (m *Manager) shallowCopy(original *brigodier.LiteralCommandNode, newName string) *brigodier.LiteralCommandNode {
 	// Create new literal builder with the alias name - chain calls to avoid type assertion issues
 	var builder brigodier.LiteralNodeBuilder = brigodier.Literal(newName)
-	
+
 	// Copy requirement if it exists
 	if original.Requirement() != nil {
 		builder = builder.Requires(original.Requirement())
 	}
-	
+
 	// Copy execution command if it exists
 	if original.Command() != nil {
 		builder = builder.Executes(original.Command())
 	}
-	
+
 	// Copy redirect information if it exists
 	if original.Redirect() != nil {
 		if original.RedirectModifier() != nil {
@@ -165,18 +165,17 @@ func (m *Manager) shallowCopy(original *brigodier.LiteralCommandNode, newName st
 			builder = builder.Fork(original.Redirect(), original.RedirectModifier())
 		}
 	}
-	
+
 	// Build the node first
 	aliasNode := builder.BuildLiteral()
-	
+
 	// Copy all children (shallow copy)
 	for _, child := range original.Children() {
 		aliasNode.AddChild(child)
 	}
-	
+
 	return aliasNode
 }
-
 
 // OfferSuggestions returns completion suggestions.
 func (m *Manager) OfferSuggestions(ctx context.Context, source Source, cmdline string) ([]string, error) {

@@ -84,14 +84,14 @@ Visit the website https://gate.minekube.com/ for more information.`
 			Destination: &showVersion,
 		},
 	}
-	
+
 	app.Action = func(c *cli.Context) error {
 		// Handle version flag (Unix convention: -V for version, -v for verbose)
 		if showVersion {
 			fmt.Printf("gate version %s\n", version.String())
 			return nil
 		}
-		
+
 		// Init viper
 		v, err := initViper(c, configFile)
 		if err != nil {
