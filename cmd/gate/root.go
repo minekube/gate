@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 	"go.minekube.com/gate/pkg/gate"
+	"go.minekube.com/gate/pkg/version"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -41,6 +42,7 @@ func App() *cli.App {
 	app := cli.NewApp()
 	app.Name = "gate"
 	app.Usage = "Gate is an extensible Minecraft proxy."
+	app.Version = version.String()
 	app.Description = `A high performant & paralleled Minecraft proxy server with
 	scalability, flexibility & excelled server version support.
 
@@ -68,7 +70,7 @@ Visit the website https://gate.minekube.com/ for more information.`
 		},
 		&cli.IntFlag{
 			Name:        "verbosity",
-			Aliases:     []string{"v"},
+			Aliases:     []string{"verbose"},
 			Usage:       "The higher the verbosity the more logs are shown",
 			EnvVars:     []string{"GATE_VERBOSITY"},
 			Destination: &verbosity,
