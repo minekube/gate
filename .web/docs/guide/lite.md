@@ -62,9 +62,9 @@ lite:
 ```yaml [Round-Robin]
 lite:
   routes:
-    - host: api.example.com
-      backend: [api1:25565, api2:25565, api3:25565]
-      strategy: round-robin # Fair rotation: api1 → api2 → api3 → api1...
+    - host: lobby.example.com
+      backend: [lobby1:25565, lobby2:25565, lobby3:25565]
+      strategy: round-robin # Fair rotation: lobby1 → lobby2 → lobby3 → lobby1...
 ```
 
 ```yaml [Least-Connections]
@@ -90,37 +90,38 @@ lite:
     - host: lobby.example.com
       backend: [lobby1:25565, lobby2:25565]
       strategy: random
-      
-    # Performance-based for game servers  
-    - host: games.example.com
-      backend: [game1:25565, game2:25565, game3:25565]
+
+    # Performance-based for game servers
+    - host: survival.example.com
+      backend: [survival1:25565, survival2:25565, survival3:25565]
       strategy: least-connections
-      
+
     # Latency-optimized for competitive
-    - host: competitive.example.com
-      backend: [us:25565, eu:25565, asia:25565]
+    - host: pvp.example.com
+      backend: [pvp-us:25565, pvp-eu:25565, pvp-asia:25565]
       strategy: lowest-latency
 ```
 
 ::::
 
-| Strategy | Description | Algorithm |
-|----------|-------------|-----------|
-| `random` (default) | Random backend selection | Cryptographically secure random |
-| `round-robin` | Sequential cycling | Fair rotation per route |
-| `least-connections` | Routes to least-loaded backend | Real-time connection counting |
-| `lowest-latency` | Routes to fastest backend | Status ping latency measurement |
+| Strategy            | Description                    | Algorithm                       |
+| ------------------- | ------------------------------ | ------------------------------- |
+| `random` (default)  | Random backend selection       | Cryptographically secure random |
+| `round-robin`       | Sequential cycling             | Fair rotation per route         |
+| `least-connections` | Routes to least-loaded backend | Real-time connection counting   |
+| `lowest-latency`    | Routes to fastest backend      | Status ping latency measurement |
 
 ::: tip Performance Notes
+
 - **Immediate selection**: All strategies return instantly without health checks
-- **Natural failover**: Failed connections automatically retry next backend  
+- **Natural failover**: Failed connections automatically retry next backend
 - **Latency measurement**: Uses status ping timing (not dial time) for accuracy
 - **Thread-safe**: Atomic operations for connection counting
-:::
+  :::
 
 ### Behavior Examples
 
-**Round-Robin**: Connection 1 → server1, Connection 2 → server2, Connection 3 → server3, Connection 4 → server1...
+**Round-Robin**: Connection 1 → lobby1, Connection 2 → lobby2, Connection 3 → lobby3, Connection 4 → lobby1...
 
 **Least-Connections**: Always routes to the backend with the fewest active players
 
