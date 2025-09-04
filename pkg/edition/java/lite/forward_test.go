@@ -10,23 +10,26 @@ import (
 
 // TestDecodeStatusResponse_WithErrDecoderLeftBytes tests that decodeStatusResponse
 // properly handles ErrDecoderLeftBytes error (from BetterCompatibilityChecker mod)
+// This test verifies the fix for issue #297: "Status/ping fails when server has the BetterCompatibilityChecker mod"
 func TestDecodeStatusResponse_WithErrDecoderLeftBytes(t *testing.T) {
 	// Create a mock decoder that returns ErrDecoderLeftBytes
+	// This simulates the scenario from issue #297 where BetterCompatibilityChecker mod
+	// adds extra data to status response packets
 	mockDecoder := &mockDecoder{
 		packetCtx: &proto.PacketContext{
 			Packet: &packet.StatusResponse{
 				Status: `{"version":{"name":"Test","protocol":754},"players":{"online":5,"max":20},"description":"Test Server"}`,
 			},
 		},
-		err: proto.ErrDecoderLeftBytes, // This is the error from BetterCompatibilityChecker
+		err: proto.ErrDecoderLeftBytes, // This is the error from BetterCompatibilityChecker (issue #297)
 	}
 
 	// Test that decodeStatusResponse handles the error correctly
 	result, err := decodeStatusResponse(mockDecoder)
 
-	// Should succeed despite ErrDecoderLeftBytes
+	// Should succeed despite ErrDecoderLeftBytes (fixing issue #297)
 	if err != nil {
-		t.Errorf("decodeStatusResponse should ignore ErrDecoderLeftBytes, got error: %v", err)
+		t.Errorf("decodeStatusResponse should ignore ErrDecoderLeftBytes (issue #297), got error: %v", err)
 	}
 
 	if result == nil {
