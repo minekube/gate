@@ -45,10 +45,7 @@ func TestHandleLegacyCommand_StripLeadingSlash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test the command stripping logic directly
-			command := tt.inputMessage
-			if strings.HasPrefix(command, "/") {
-				command = command[1:]
-			}
+			command := strings.TrimPrefix(tt.inputMessage, "/")
 
 			if command != tt.expectedCmd {
 				t.Errorf("Expected command '%s', got '%s'", tt.expectedCmd, command)
@@ -66,10 +63,7 @@ func TestLegacyCommandProcessing(t *testing.T) {
 	}
 
 	// Test the command extraction logic
-	command := packet.Message
-	if strings.HasPrefix(command, "/") {
-		command = command[1:]
-	}
+	command := strings.TrimPrefix(packet.Message, "/")
 
 	// Verify the command is properly stripped
 	if command != "help" {

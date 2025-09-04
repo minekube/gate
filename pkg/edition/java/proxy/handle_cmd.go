@@ -66,10 +66,7 @@ func (c *chatHandler) queueCommandResult(
 
 func (c *chatHandler) handleLegacyCommand(packet *chat.LegacyChat) error {
 	// Strip the leading "/" from the message for legacy commands
-	command := packet.Message
-	if strings.HasPrefix(command, "/") {
-		command = command[1:]
-	}
+	command := strings.TrimPrefix(packet.Message, "/")
 	c.queueCommandResult(command, time.Now(), nil, func(e *CommandExecuteEvent, lastSeenMessages *chat.LastSeenMessages) proto.Packet {
 		if !e.Allowed() {
 			return nil
