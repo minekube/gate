@@ -41,7 +41,6 @@ head:
       href: 'https://gate.minekube.com/guide/quick-start'
 ---
 
->>>>>>> d4221cf (add more seo)
 # Quick Start
 
 _This page quickly explains how to run Gate as a Minecraft proxy for your servers.
