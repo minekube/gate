@@ -65,6 +65,8 @@ type Proxy struct {
 
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
+
+	lite *lite.Lite // lite mode functionality
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -111,6 +113,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
+		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 	}
 
 	// Connection & login rate limiters
@@ -403,6 +406,11 @@ func (p *Proxy) Config() config.Config {
 
 func (p *Proxy) config() *config.Config {
 	return p.cfg
+}
+
+// Lite returns the proxy's lite mode functionality.
+func (p *Proxy) Lite() *lite.Lite {
+	return p.lite
 }
 
 // Server gets a backend server registered with the proxy by name.

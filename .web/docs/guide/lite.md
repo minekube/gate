@@ -1,6 +1,6 @@
 ---
-title: "Gate Lite Mode - Lightweight Minecraft Proxy"
-description: "Gate Lite is an ultra-lightweight Minecraft reverse proxy for host-based connection routing with minimal resource usage."
+title: 'Gate Lite Mode - Lightweight Minecraft Proxy'
+description: 'Gate Lite is an ultra-lightweight Minecraft reverse proxy for host-based connection routing with minimal resource usage.'
 ---
 
 # Gate Lite Mode
@@ -44,6 +44,87 @@ config:
       - host: [example.com, localhost]
         backend: [10.0.0.2:25566]
 ```
+
+## Load Balancing Strategies
+
+When multiple backends are configured, Gate Lite can distribute connections using different strategies.
+
+:::: code-group
+
+```yaml [Random (Default)]
+lite:
+  routes:
+    - host: play.example.com
+      backend: [server1:25565, server2:25565, server3:25565]
+      # strategy: random (default - can omit)
+```
+
+```yaml [Round-Robin]
+lite:
+  routes:
+    - host: api.example.com
+      backend: [api1:25565, api2:25565, api3:25565]
+      strategy: round-robin # Fair rotation: api1 → api2 → api3 → api1...
+```
+
+```yaml [Least-Connections]
+lite:
+  routes:
+    - host: game.example.com
+      backend: [game1:25565, game2:25565, game3:25565]
+      strategy: least-connections # Routes to server with fewest active players
+```
+
+```yaml [Lowest-Latency]
+lite:
+  routes:
+    - host: global.example.com
+      backend: [us:25565, eu:25565, asia:25565]
+      strategy: lowest-latency # Routes to fastest-responding server
+```
+
+```yaml [Mixed Strategies]
+lite:
+  routes:
+    # Simple random for lobby
+    - host: lobby.example.com
+      backend: [lobby1:25565, lobby2:25565]
+      strategy: random
+      
+    # Performance-based for game servers  
+    - host: games.example.com
+      backend: [game1:25565, game2:25565, game3:25565]
+      strategy: least-connections
+      
+    # Latency-optimized for competitive
+    - host: competitive.example.com
+      backend: [us:25565, eu:25565, asia:25565]
+      strategy: lowest-latency
+```
+
+::::
+
+| Strategy | Description | Algorithm |
+|----------|-------------|-----------|
+| `random` (default) | Random backend selection | Cryptographically secure random |
+| `round-robin` | Sequential cycling | Fair rotation per route |
+| `least-connections` | Routes to least-loaded backend | Real-time connection counting |
+| `lowest-latency` | Routes to fastest backend | Status ping latency measurement |
+
+::: tip Performance Notes
+- **Immediate selection**: All strategies return instantly without health checks
+- **Natural failover**: Failed connections automatically retry next backend  
+- **Latency measurement**: Uses status ping timing (not dial time) for accuracy
+- **Thread-safe**: Atomic operations for connection counting
+:::
+
+### Behavior Examples
+
+**Round-Robin**: Connection 1 → server1, Connection 2 → server2, Connection 3 → server3, Connection 4 → server1...
+
+**Least-Connections**: Always routes to the backend with the fewest active players
+
+**Lowest-Latency**: Routes based on cached status ping measurements (3-minute cache)
 
 ## Ping Response Caching
 

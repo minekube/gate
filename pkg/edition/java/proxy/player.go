@@ -528,7 +528,7 @@ func (p *connectedPlayer) getVirtualHostname() string {
 	if p.virtualHost == nil {
 		return ""
 	}
-	
+
 	// Use Gate's existing utility functions to clean the virtual host
 	// 1. Clear virtual host (removes forge separators, TCPShield separators, etc.)
 	// 2. Extract hostname (removes port)
@@ -536,7 +536,7 @@ func (p *connectedPlayer) getVirtualHostname() string {
 	virtualHostStr := p.virtualHost.String()
 	cleanedHost := lite.ClearVirtualHost(virtualHostStr)
 	hostname := netutil.HostStr(cleanedHost)
-	
+
 	return strings.ToLower(hostname)
 }
 

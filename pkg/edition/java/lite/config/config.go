@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
@@ -32,9 +33,10 @@ type (
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
 		// Deprecated: use TCPShieldRealIP instead.
-		RealIP            bool `json:"realIP,omitempty" yaml:"realIP,omitempty"`
-		TCPShieldRealIP   bool `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
-		ModifyVirtualHost bool `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		RealIP            bool     `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		TCPShieldRealIP   bool     `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
+		ModifyVirtualHost bool     `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		Strategy          Strategy `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 	}
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
@@ -71,6 +73,30 @@ func (r *Route) CachePingEnabled() bool { return r.GetCachePingTTL() > 0 }
 // GetTCPShieldRealIP returns the configured TCPShieldRealIP or deprecated RealIP value.
 func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP }
 
+// Strategy represents a load balancing strategy for lite mode routes.
+type Strategy string
+
+const (
+	// StrategyRandom selects a random backend from available options.
+	StrategyRandom Strategy = "random"
+
+	// StrategyRoundRobin cycles through backends in order for each new connection.
+	StrategyRoundRobin Strategy = "round-robin"
+
+	// StrategyLeastConnections selects the backend with the fewest active connections.
+	StrategyLeastConnections Strategy = "least-connections"
+
+	// StrategyLowestLatency selects the backend with the lowest ping response time.
+	StrategyLowestLatency Strategy = "lowest-latency"
+)
+
+var allowedStrategies = []Strategy{
+	StrategyRandom,
+	StrategyRoundRobin,
+	StrategyLeastConnections,
+	StrategyLowestLatency,
+}
+
 func (c Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
 
@@ -85,6 +111,9 @@ func (c Config) Validate() (warns []error, errs []error) {
 		}
 		if len(ep.Backend) == 0 {
 			e("Route %d: no backend configured", i)
+		}
+		if !slices.Contains(allowedStrategies, ep.Strategy) && ep.Strategy != "" {
+			e("Route %d: invalid strategy '%s', allowed: %v", i, ep.Strategy, allowedStrategies)
 		}
 		for i, addr := range ep.Backend {
 			_, err := netutil.Parse(addr, "tcp")
