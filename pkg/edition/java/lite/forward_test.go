@@ -123,7 +123,7 @@ func TestDecodeStatusResponse_WrongPacketType(t *testing.T) {
 	}
 }
 
-// mockDecoder implements the StatusDecoder interface for testing
+// mockDecoder implements the statusDecoder interface for testing
 type mockDecoder struct {
 	packetCtx *proto.PacketContext
 	err       error
