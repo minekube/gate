@@ -8,10 +8,10 @@ import (
 // Version information set by build flags
 // Version is the current version of Gate.
 // Set using -ldflags "-X go.minekube.com/gate/pkg/version.Version=v1.2.3"
-var version string = "unknown"
+var Version string = "unknown"
 
 func String() string {
-	return version
+	return Version
 }
 
 func UserAgent() string {

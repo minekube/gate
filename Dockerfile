@@ -17,8 +17,9 @@ COPY gate.go ./
 ARG TARGETOS TARGETARCH
 
 # Build
+ARG VERSION=unknown
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -ldflags="-s -w" -a -o gate gate.go
+    go build -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" -a -o gate gate.go
 
 # Move binary into final image
 FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian11 AS app

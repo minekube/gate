@@ -2,7 +2,7 @@ name: ci
 on:
   push:
   pull_request:
-    types: [ opened, reopened ]
+    types: [opened, reopened]
 
 env:
   REGISTRY: ghcr.io
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ ubuntu-latest, macos-latest, windows-latest ]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout
@@ -65,17 +65,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create image ref
+      - name: Create image ref and version
         id: image-ref
         run: |
           REF=$(git rev-parse --short $GITHUB_SHA)
+          # Get version from git tags or use commit-based version
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev-${REF}")
           IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
           IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
-          
-          echo "image=${IMAGE}" >> $GITHUB_STATE
+
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
           echo "image_latest=${IMAGE_LATEST}" >> $GITHUB_OUTPUT
-          
-          echo "${IMAGE}" >> $GITHUB_STEP_SUMMARY
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          echo "Building image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+          echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
 
       - name: Build and push docker image
         uses: docker/build-push-action@v6
@@ -86,6 +90,8 @@ jobs:
           platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
           cache-to: type=inline
+          build-args: |
+            VERSION=${{ steps.image-ref.outputs.version }}
           tags: |
             ${{ steps.image-ref.outputs.image }}
             ${{ steps.image-ref.outputs.image_latest }}

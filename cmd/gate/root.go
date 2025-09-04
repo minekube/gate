@@ -114,6 +114,8 @@ Visit the website https://gate.minekube.com/ for more information.`
 			c.Context = logr.NewContext(c.Context, log)
 		}
 
+		// Log startup information
+		log.Info("starting Gate proxy", "version", version.String())
 		log.Info("logging verbosity", "verbosity", verbosity)
 		log.Info("using config file", "config", v.ConfigFileUsed())
 
