@@ -1,5 +1,11 @@
 all: fmt vet mod lint
 
+# Build Gate with version information
+build:
+	@VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo "dev-$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)") && \
+	echo "Building Gate version: $$VERSION" && \
+	go build -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=$$VERSION'" -o gate gate.go
+
 # Run tests
 test: fmt vet
 	go test ./...

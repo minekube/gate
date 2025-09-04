@@ -4,6 +4,9 @@ before:
     - go mod download
 builds:
   - env: [ CGO_ENABLED=0 ]
+    ldflags:
+      - "-s -w"
+      - "-X 'go.minekube.com/gate/pkg/version.Version={{.Version}}'"
     goos:
       - linux
       - windows
