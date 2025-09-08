@@ -25,7 +25,7 @@ config:
       # Match the virtual host address to the backend server.
       - host: localhost
         # The backend server to connect to if matched.
-        backend: [localhost:25566, localhost:25567, localhost:25568]
+        backend: localhost:25566
         # The optional fallback status response when all backends of this route are offline.
         fallback:
           motd: |
