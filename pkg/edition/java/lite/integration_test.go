@@ -20,12 +20,12 @@ import (
 // that gets created in findRoute - now using simple pop-first approach
 func TestNextBackendFunctionality(t *testing.T) {
 	log := testr.New(t)
-	
+
 	// This simulates the actual simple code in findRoute
 	originalBackends := []string{"backend1:25565", "backend2:25565", "backend3:25565"}
 	tryBackends := make([]string, len(originalBackends))
 	copy(tryBackends, originalBackends)
-	
+
 	nextBackend := func() (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
@@ -46,29 +46,29 @@ func TestNextBackendFunctionality(t *testing.T) {
 
 		return backendAddr, log.WithValues("backendAddr", backendAddr), true
 	}
-	
+
 	// Test sequential pop behavior
 	backends := make([]string, 0, 3)
-	
+
 	// Should get backends in order
 	backend1, _, ok := nextBackend()
 	assert.True(t, ok, "Should get first backend")
 	backends = append(backends, backend1)
-	
+
 	backend2, _, ok := nextBackend()
-	assert.True(t, ok, "Should get second backend") 
+	assert.True(t, ok, "Should get second backend")
 	backends = append(backends, backend2)
-	
+
 	backend3, _, ok := nextBackend()
 	assert.True(t, ok, "Should get third backend")
 	backends = append(backends, backend3)
-	
+
 	// Should return false when no more backends
 	_, _, ok = nextBackend()
 	assert.False(t, ok, "Should return false when all backends exhausted")
-	
+
 	// Should have gotten all backends in order
-	assert.Equal(t, []string{"backend1:25565", "backend2:25565", "backend3:25565"}, backends, 
+	assert.Equal(t, []string{"backend1:25565", "backend2:25565", "backend3:25565"}, backends,
 		"Should get backends in sequential order")
 }
 

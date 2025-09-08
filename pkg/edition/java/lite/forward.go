@@ -84,8 +84,7 @@ func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendA
 
 		log, t, err := try(log, backendAddr)
 		if err != nil {
-			// Use higher verbosity to reduce log spam when backends are unreachable
-			errs.V(log.V(1), err).Info("failed to try backend", "error", err)
+			errs.V(log, err).Info("failed to try backend", "error", err)
 			continue
 		}
 		return backendAddr, log, t, nil
@@ -176,7 +175,7 @@ func findRoute(
 
 		dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
 		if err != nil {
-			log.V(1).Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
+			log.Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
 			return "", log, false
 		}
 		backendAddr := dstAddr.String()
@@ -322,8 +321,7 @@ func handleFallbackResponse(log logr.Logger, route *config.Route, protocol proto
 		return nil, log
 	}
 
-	// Use debug level to reduce spam when backends are unreachable
-	log.V(1).Info("failed to resolve status response, will use fallback status response", "error", backendErr)
+	log.Info("failed to resolve status response, will use fallback status response", "error", backendErr)
 
 	// Fallback status response if configured
 	fallbackPong, err := route.Fallback.Response(protocol)
