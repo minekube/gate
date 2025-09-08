@@ -84,7 +84,8 @@ func tryBackends[T any](next nextBackendFunc, try func(log logr.Logger, backendA
 
 		log, t, err := try(log, backendAddr)
 		if err != nil {
-			errs.V(log, err).Info("failed to try backend", "error", err)
+			// Use higher verbosity to reduce log spam when backends are unreachable
+			errs.V(log.V(1), err).Info("failed to try backend", "error", err)
 			continue
 		}
 		return backendAddr, log, t, nil
@@ -286,7 +287,8 @@ func ResolveStatusResponse(
 		return newLog, response, respErr
 	})
 	if err != nil && route.Fallback != nil {
-		log.Info("failed to resolve status response, will use fallback status response", "error", err)
+		// Use debug level to reduce spam when backends are unreachable
+		log.V(1).Info("failed to resolve status response, will use fallback status response", "error", err)
 
 		// Fallback status response if configured
 		fallbackPong, err := route.Fallback.Response(handshakeCtx.Protocol)
