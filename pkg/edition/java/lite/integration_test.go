@@ -17,86 +17,59 @@ import (
 )
 
 // TestNextBackendFunctionality tests the actual nextBackend implementation
-// that gets created in findRoute and ensures backends are properly cycled through
+// that gets created in findRoute - now using simple pop-first approach
 func TestNextBackendFunctionality(t *testing.T) {
-	sm := NewStrategyManager()
 	log := testr.New(t)
-
-	route := &config.Route{
-		Host:     []string{"test.example.com"},
-		Backend:  []string{"backend1:25565", "backend2:25565", "backend3:25565"},
-		Strategy: config.StrategyRoundRobin,
-	}
-
-	host := "test.example.com"
-
-	// This simulates the actual code in findRoute
-	tryBackends := route.Backend.Copy()
+	
+	// This simulates the actual simple code in findRoute
+	originalBackends := []string{"backend1:25565", "backend2:25565", "backend3:25565"}
+	tryBackends := make([]string, len(originalBackends))
+	copy(tryBackends, originalBackends)
+	
 	nextBackend := func() (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
+		// Pop first backend - simple and clean!
+		backend := tryBackends[0]
+		tryBackends = tryBackends[1:]
 
-		// Get next backend from strategy
-		backendAddr, newLog, ok := sm.GetNextBackend(log, route, host, tryBackends)
-		if !ok {
+		dstAddr, err := netutil.Parse(backend, "tcp")
+		if err != nil {
+			log.V(1).Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
 			return "", log, false
 		}
-
-		// Remove the selected backend from the list so it won't be tried again
-		// This is the ACTUAL code from forward.go
-		for i, backend := range tryBackends {
-			// Need to normalize both for comparison
-			normalizedBackend, err := netutil.Parse(backend, "tcp")
-			if err != nil {
-				continue
-			}
-			normalizedAddr := normalizedBackend.String()
-			if _, port := netutil.HostPort(normalizedBackend); port == 0 {
-				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
-			}
-
-			if normalizedAddr == backendAddr {
-				// Remove this backend from the list
-				tryBackends = append(tryBackends[:i], tryBackends[i+1:]...)
-				break
-			}
+		backendAddr := dstAddr.String()
+		if _, port := netutil.HostPort(dstAddr); port == 0 {
+			backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
 		}
 
-		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
+		return backendAddr, log.WithValues("backendAddr", backendAddr), true
 	}
-
-	// Test that we can get all backends and then no more
+	
+	// Test sequential pop behavior
 	backends := make([]string, 0, 3)
-
-	// Should get first backend
+	
+	// Should get backends in order
 	backend1, _, ok := nextBackend()
 	assert.True(t, ok, "Should get first backend")
 	backends = append(backends, backend1)
-
-	// Should get second backend
+	
 	backend2, _, ok := nextBackend()
-	assert.True(t, ok, "Should get second backend")
+	assert.True(t, ok, "Should get second backend") 
 	backends = append(backends, backend2)
-
-	// Should get third backend
+	
 	backend3, _, ok := nextBackend()
 	assert.True(t, ok, "Should get third backend")
 	backends = append(backends, backend3)
-
+	
 	// Should return false when no more backends
 	_, _, ok = nextBackend()
 	assert.False(t, ok, "Should return false when all backends exhausted")
-
-	// Verify we got all 3 unique backends
-	assert.Len(t, backends, 3, "Should have gotten 3 backends")
-
-	// Verify no duplicates
-	uniqueBackends := make(map[string]bool)
-	for _, b := range backends {
-		assert.False(t, uniqueBackends[b], "Should not have duplicate backend: %s", b)
-		uniqueBackends[b] = true
-	}
+	
+	// Should have gotten all backends in order
+	assert.Equal(t, []string{"backend1:25565", "backend2:25565", "backend3:25565"}, backends, 
+		"Should get backends in sequential order")
 }
 
 // TestFallbackResponseWithRealRoute tests handleFallbackResponse with various real route configurations

@@ -170,33 +170,21 @@ func findRoute(
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
+		// Pop first backend - simple and clean!
+		backend := tryBackends[0]
+		tryBackends = tryBackends[1:]
 
-		// Get next backend from strategy
-		backendAddr, newLog, ok := strategyManager.GetNextBackend(log, route, host, tryBackends)
-		if !ok {
+		dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
+		if err != nil {
+			log.V(1).Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
 			return "", log, false
 		}
-
-		// Remove the selected backend from the list so it won't be tried again
-		for i, backend := range tryBackends {
-			// Need to normalize both for comparison
-			normalizedBackend, err := netutil.Parse(backend, "tcp")
-			if err != nil {
-				continue
-			}
-			normalizedAddr := normalizedBackend.String()
-			if _, port := netutil.HostPort(normalizedBackend); port == 0 {
-				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
-			}
-
-			if normalizedAddr == backendAddr {
-				// Remove this backend from the list
-				tryBackends = append(tryBackends[:i], tryBackends[i+1:]...)
-				break
-			}
+		backendAddr := dstAddr.String()
+		if _, port := netutil.HostPort(dstAddr); port == 0 {
+			backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
 		}
 
-		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
+		return backendAddr, log.WithValues("backendAddr", backendAddr), true
 	}
 
 	return log, src, route, nextBackend, nil

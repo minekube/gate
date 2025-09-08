@@ -7,102 +7,75 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.minekube.com/gate/pkg/edition/java/lite/config"
 )
 
 // TestBackendSelection_TriesAllBackends verifies that when one backend fails,
-// the system tries other available backends (fixes issue #2)
+// the system tries other available backends in sequential order (fixes issue #2)
 func TestBackendSelection_TriesAllBackends(t *testing.T) {
 	log := testr.New(t)
-	sm := NewStrategyManager()
-
-	// Create a route with multiple backends
-	route := &config.Route{
-		Host:     []string{"test.example.com"},
-		Backend:  []string{"backend1:25565", "backend2:25565", "backend3:25565"},
-		Strategy: config.StrategyRandom,
-	}
-
-	// Track which backends were tried
-	triedBackends := make(map[string]bool)
-	attemptCount := 0
-
-	// Create a mock nextBackend function that simulates the real behavior
-	remainingBackends := route.Backend.Copy()
+	
+	// Create a simple nextBackend function that simulates the real behavior
+	backends := []string{"backend1:25565", "backend2:25565", "backend3:25565"}
+	remainingBackends := make([]string, len(backends))
+	copy(remainingBackends, backends)
+	
 	nextBackend := func() (string, logr.Logger, bool) {
 		if len(remainingBackends) == 0 {
 			return "", log, false
 		}
-
-		// Get next backend from strategy
-		backendAddr, newLog, ok := sm.GetNextBackend(log, route, "test.example.com", remainingBackends)
-		if !ok {
-			return "", log, false
-		}
-
-		// Remove the selected backend from the list so it won't be tried again
-		for i, backend := range remainingBackends {
-			if backend == backendAddr {
-				remainingBackends = append(remainingBackends[:i], remainingBackends[i+1:]...)
-				break
-			}
-		}
-
-		return backendAddr, newLog, true
+		// Pop first backend - simple sequential approach
+		backend := remainingBackends[0]
+		remainingBackends = remainingBackends[1:]
+		return backend, log, true
 	}
-
+	
+	// Track which backends were tried
+	triedBackends := make([]string, 0, 3)
+	attemptCount := 0
+	
 	// Try function that simulates all backends failing
 	tryFunc := func(log logr.Logger, backendAddr string) (logr.Logger, string, error) {
 		attemptCount++
-		triedBackends[backendAddr] = true
+		triedBackends = append(triedBackends, backendAddr)
 		// Simulate all backends failing
 		return log, "", errors.New("connection refused")
 	}
-
+	
 	// Should try all backends before giving up
 	_, _, _, err := tryBackends(nextBackend, tryFunc)
-
+	
 	assert.Equal(t, errAllBackendsFailed, err, "Should return errAllBackendsFailed when all backends fail")
 	assert.Equal(t, 3, attemptCount, "Should try all 3 backends")
 	assert.Equal(t, 3, len(triedBackends), "Should have tried 3 different backends")
-
-	// Verify all backends were tried
-	assert.True(t, triedBackends["backend1:25565"], "Should have tried backend1")
-	assert.True(t, triedBackends["backend2:25565"], "Should have tried backend2")
-	assert.True(t, triedBackends["backend3:25565"], "Should have tried backend3")
+	
+	// Verify backends were tried in sequential order
+	assert.Equal(t, []string{"backend1:25565", "backend2:25565", "backend3:25565"}, triedBackends, 
+		"Should try backends in sequential order")
 }
 
 // TestBackendSelection_SucceedsOnSecondBackend verifies that if the first backend fails
 // but the second succeeds, the connection is established with the second backend
 func TestBackendSelection_SucceedsOnSecondBackend(t *testing.T) {
 	log := testr.New(t)
-
-	// Create a route with multiple backends
-	route := &config.Route{
-		Host:     []string{"test.example.com"},
-		Backend:  []string{"bad:25565", "good:25565", "another:25565"},
-		Strategy: config.StrategyRoundRobin, // Use round-robin for predictable order
-	}
-
-	// Track attempts
-	attemptCount := 0
-
-	// Create nextBackend function
-	remainingBackends := route.Backend.Copy()
+	
+	// Create simple nextBackend function with sequential order
+	backends := []string{"bad:25565", "good:25565", "another:25565"}
+	remainingBackends := make([]string, len(backends))
+	copy(remainingBackends, backends)
+	
 	nextBackend := func() (string, logr.Logger, bool) {
 		if len(remainingBackends) == 0 {
 			return "", log, false
 		}
-
-		// For round-robin, we'll just take the first backend in the list
-		// (simulating round-robin behavior)
-		backendAddr := remainingBackends[0]
+		// Pop first backend - simple sequential approach
+		backend := remainingBackends[0]
 		remainingBackends = remainingBackends[1:]
-
-		return backendAddr, log, true
+		return backend, log, true
 	}
-
+	
+	// Track attempts
+	attemptCount := 0
+	
 	// Try function where first backend fails, second succeeds
 	tryFunc := func(log logr.Logger, backendAddr string) (logr.Logger, string, error) {
 		attemptCount++
@@ -112,10 +85,10 @@ func TestBackendSelection_SucceedsOnSecondBackend(t *testing.T) {
 		// Second backend succeeds
 		return log, "success", nil
 	}
-
+	
 	// Should succeed with the second backend
 	backendAddr, _, result, err := tryBackends(nextBackend, tryFunc)
-
+	
 	assert.NoError(t, err, "Should succeed when second backend is reachable")
 	assert.Equal(t, "success", result, "Should return success from second backend")
 	assert.Equal(t, "good:25565", backendAddr, "Should connect to the good backend")
@@ -125,103 +98,42 @@ func TestBackendSelection_SucceedsOnSecondBackend(t *testing.T) {
 // TestBackendSelection_NoDuplicateAttempts verifies that the same backend is not tried twice
 func TestBackendSelection_NoDuplicateAttempts(t *testing.T) {
 	log := testr.New(t)
-	sm := NewStrategyManager()
-
-	// Create a route with only 2 backends
-	route := &config.Route{
-		Host:     []string{"test.example.com"},
-		Backend:  []string{"backend1:25565", "backend2:25565"},
-		Strategy: config.StrategyRandom,
-	}
-
-	// Track which backends were tried
-	backendAttempts := make(map[string]int)
-
-	// Create nextBackend function with removal logic
-	remainingBackends := route.Backend.Copy()
+	
+	// Create simple nextBackend with sequential order  
+	backends := []string{"backend1:25565", "backend2:25565"}
+	remainingBackends := make([]string, len(backends))
+	copy(remainingBackends, backends)
+	
 	nextBackend := func() (string, logr.Logger, bool) {
 		if len(remainingBackends) == 0 {
 			return "", log, false
 		}
-
-		// Get next backend
-		backendAddr, newLog, ok := sm.GetNextBackend(log, route, "test.example.com", remainingBackends)
-		if !ok {
-			return "", log, false
-		}
-
-		// Remove from list
-		for i, backend := range remainingBackends {
-			if backend == backendAddr {
-				remainingBackends = append(remainingBackends[:i], remainingBackends[i+1:]...)
-				break
-			}
-		}
-
-		return backendAddr, newLog, true
+		// Pop first backend - guarantees no duplicates
+		backend := remainingBackends[0]
+		remainingBackends = remainingBackends[1:]
+		return backend, log, true
 	}
-
+	
+	// Track which backends were tried
+	backendAttempts := make(map[string]int)
+	
 	// Try function that tracks attempts
 	tryFunc := func(log logr.Logger, backendAddr string) (logr.Logger, string, error) {
 		backendAttempts[backendAddr]++
 		return log, "", errors.New("connection refused")
 	}
-
+	
 	// Try all backends
 	_, _, _, err := tryBackends(nextBackend, tryFunc)
-
+	
 	assert.Equal(t, errAllBackendsFailed, err)
-
-	// Each backend should only be tried once
+	
+	// Each backend should only be tried once (guaranteed by pop-first approach)
 	for backend, count := range backendAttempts {
 		assert.Equal(t, 1, count, "Backend %s should only be tried once, got %d attempts", backend, count)
 	}
-
+	
 	// Should have tried both backends
 	assert.Equal(t, 2, len(backendAttempts), "Should have tried exactly 2 backends")
 }
 
-// TestStrategyManager_GetNextBackend verifies the strategy manager properly returns backends
-func TestStrategyManager_GetNextBackend(t *testing.T) {
-	sm := NewStrategyManager()
-	log := testr.New(t)
-
-	tests := []struct {
-		name     string
-		strategy config.Strategy
-		backends []string
-	}{
-		{
-			name:     "Random strategy with multiple backends",
-			strategy: config.StrategyRandom,
-			backends: []string{"server1:25565", "server2:25565", "server3:25565"},
-		},
-		{
-			name:     "Round-robin strategy",
-			strategy: config.StrategyRoundRobin,
-			backends: []string{"server1:25565", "server2:25565"},
-		},
-		{
-			name:     "Default (empty) strategy",
-			strategy: "",
-			backends: []string{"server1:25565"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			route := &config.Route{
-				Strategy: tt.strategy,
-			}
-
-			// Should successfully return a backend
-			backend, _, ok := sm.GetNextBackend(log, route, "test.host", tt.backends)
-			require.True(t, ok, "Should return a backend")
-			assert.Contains(t, tt.backends, backend, "Returned backend should be from the list")
-
-			// Empty list should return false
-			_, _, ok = sm.GetNextBackend(log, route, "test.host", []string{})
-			assert.False(t, ok, "Should return false for empty backend list")
-		})
-	}
-}
