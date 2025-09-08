@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -25,6 +26,13 @@ import (
 	"go.minekube.com/gate/pkg/util/netutil"
 	"golang.org/x/sync/singleflight"
 )
+
+// IsConnectionRefused returns true if err indicates a connection refused error.
+// These errors are common when backends are down and should use debug logging.
+func IsConnectionRefused(err error) bool {
+	return err != nil && (errors.Is(err, syscall.ECONNREFUSED) ||
+		strings.Contains(strings.ToLower(err.Error()), "connection refused"))
+}
 
 // Forward forwards a client connection to a matching backend route.
 func Forward(
@@ -208,6 +216,11 @@ func dialRoute(
 		v := 0
 		if dialCtx.Err() != nil {
 			v++
+		}
+		// Treat connection refused as debug level to reduce spam
+		// These are common when backends are down and should not flood logs
+		if IsConnectionRefused(err) {
+			v = 1
 		}
 		return nil, &errs.VerbosityError{
 			Verbosity: v,
