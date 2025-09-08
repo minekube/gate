@@ -170,13 +170,13 @@ func findRoute(
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
-		
+
 		// Get next backend from strategy
 		backendAddr, newLog, ok := strategyManager.GetNextBackend(log, route, host, tryBackends)
 		if !ok {
 			return "", log, false
 		}
-		
+
 		// Remove the selected backend from the list so it won't be tried again
 		for i, backend := range tryBackends {
 			// Need to normalize both for comparison
@@ -188,14 +188,14 @@ func findRoute(
 			if _, port := netutil.HostPort(normalizedBackend); port == 0 {
 				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
 			}
-			
+
 			if normalizedAddr == backendAddr {
 				// Remove this backend from the list
 				tryBackends = append(tryBackends[:i], tryBackends[i+1:]...)
 				break
 			}
 		}
-		
+
 		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
 	}
 
@@ -315,27 +315,48 @@ func ResolveStatusResponse(
 
 		return newLog, response, respErr
 	})
-	if err != nil && route.Fallback != nil {
-		// Use debug level to reduce spam when backends are unreachable
-		log.V(1).Info("failed to resolve status response, will use fallback status response", "error", err)
 
-		// Fallback status response if configured
-		fallbackPong, err := route.Fallback.Response(handshakeCtx.Protocol)
-		if err != nil {
-			log.Info("failed to get fallback status response", "error", err)
-		}
-		if fallbackPong != nil {
-			status, err2 := json.Marshal(fallbackPong)
-			if err2 != nil {
-				return log, nil, fmt.Errorf("%w: failed to marshal fallback status response: %w", err, err2)
-			}
-			if log.V(1).Enabled() {
-				log.V(1).Info("using fallback status response", "status", string(status))
-			}
-			return log, &packet.StatusResponse{Status: string(status)}, nil
+	// Handle fallback if all backends failed
+	if err != nil {
+		fallbackResp, fallbackLog := handleFallbackResponse(log, route, handshakeCtx.Protocol, err)
+		if fallbackResp != nil {
+			return fallbackLog, fallbackResp, nil
 		}
 	}
+
 	return log, res, err
+}
+
+// handleFallbackResponse handles the fallback response when all backends fail.
+// This is extracted for better testability.
+func handleFallbackResponse(log logr.Logger, route *config.Route, protocol proto.Protocol, backendErr error) (*packet.StatusResponse, logr.Logger) {
+	if route == nil || route.Fallback == nil {
+		return nil, log
+	}
+
+	// Use debug level to reduce spam when backends are unreachable
+	log.V(1).Info("failed to resolve status response, will use fallback status response", "error", backendErr)
+
+	// Fallback status response if configured
+	fallbackPong, err := route.Fallback.Response(protocol)
+	if err != nil {
+		log.Info("failed to get fallback status response", "error", err)
+		return nil, log
+	}
+
+	if fallbackPong != nil {
+		status, err2 := json.Marshal(fallbackPong)
+		if err2 != nil {
+			log.Error(err2, "failed to marshal fallback status response")
+			return nil, log
+		}
+		if log.V(1).Enabled() {
+			log.V(1).Info("using fallback status response", "status", string(status))
+		}
+		return &packet.StatusResponse{Status: string(status)}, log
+	}
+
+	return nil, log
 }
 
 var (
