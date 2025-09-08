@@ -31,7 +31,7 @@ func TestRandomStrategy(t *testing.T) {
 	for _, backend := range backends {
 		assert.Greater(t, selections[backend], 0, "Backend %s should be selected at least once", backend)
 	}
-	
+
 	// Distribution shouldn't be completely even (it's random) but shouldn't be all one backend
 	assert.Greater(t, len(selections), 1, "Should have selected multiple different backends")
 }
@@ -57,7 +57,7 @@ func TestRoundRobinStrategy(t *testing.T) {
 		"server1:25565", "server2:25565", "server3:25565", // Second cycle
 		"server1:25565", "server2:25565", "server3:25565", // Third cycle
 	}
-	
+
 	assert.Equal(t, expected, selections, "Round-robin should cycle through backends in order")
 }
 
@@ -65,7 +65,7 @@ func TestRoundRobinStrategy_DifferentRoutes(t *testing.T) {
 	sm := NewStrategyManager()
 	log := testr.New(t)
 	backends := []string{"server1:25565", "server2:25565"}
-	
+
 	// Different routes should have independent round-robin state
 	route1 := "route1.example.com"
 	route2 := "route2.example.com"
@@ -73,15 +73,15 @@ func TestRoundRobinStrategy_DifferentRoutes(t *testing.T) {
 	// Get first backend from each route
 	backend1_route1, _, _ := sm.roundRobinNextBackend(log, route1, backends)
 	backend1_route2, _, _ := sm.roundRobinNextBackend(log, route2, backends)
-	
+
 	// Both should start with the first backend
 	assert.Equal(t, "server1:25565", backend1_route1, "Route1 should start with first backend")
 	assert.Equal(t, "server1:25565", backend1_route2, "Route2 should start with first backend")
-	
+
 	// Get second backend from route1
 	backend2_route1, _, _ := sm.roundRobinNextBackend(log, route1, backends)
 	assert.Equal(t, "server2:25565", backend2_route1, "Route1 should move to second backend")
-	
+
 	// Route2 should still be independent
 	backend2_route2, _, _ := sm.roundRobinNextBackend(log, route2, backends)
 	assert.Equal(t, "server2:25565", backend2_route2, "Route2 should also move to second backend")
@@ -132,7 +132,7 @@ func TestLowestLatencyStrategy(t *testing.T) {
 
 	// Record latencies
 	sm.RecordLatency("fast:25565", 10*time.Millisecond)
-	sm.RecordLatency("slow:25565", 100*time.Millisecond)  
+	sm.RecordLatency("slow:25565", 100*time.Millisecond)
 	sm.RecordLatency("medium:25565", 50*time.Millisecond)
 
 	// Should pick the fastest backend
@@ -220,7 +220,7 @@ func TestGetNextBackendStrategyRouting(t *testing.T) {
 			route := &config.Route{
 				Strategy: tt.strategy,
 			}
-			
+
 			backend, _, ok := sm.GetNextBackend(log, route, "test.host", backends)
 			require.True(t, ok, "Should return a backend for %s strategy", tt.strategy)
 			assert.Contains(t, backends, backend, "Should return one of the configured backends")

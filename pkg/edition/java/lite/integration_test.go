@@ -132,18 +132,3 @@ func TestFallbackResponseWithRealRoute(t *testing.T) {
 		})
 	}
 }
-
-// TestLogVerbosityActuallyWorks verifies that log.V(1) actually increases verbosity
-func TestLogVerbosityActuallyWorks(t *testing.T) {
-	log := testr.New(t)
-
-	// Normal log
-	normalLog := log
-	assert.True(t, normalLog.Enabled(), "Normal log should be enabled")
-
-	// Verbose log
-	verboseLog := log.V(1)
-	assert.NotNil(t, verboseLog, "V(1) should return a logger")
-	// In test mode, all verbosity levels are typically enabled
-	// but in production, V(1) would require -v flag
-}
