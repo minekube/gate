@@ -16,13 +16,14 @@ func TestStrategyValidation(t *testing.T) {
 
 	// Test that strategy constants are defined correctly
 	strategies := []config.Strategy{
+		config.StrategySequential,
 		config.StrategyRandom,
 		config.StrategyRoundRobin,
 		config.StrategyLeastConnections,
 		config.StrategyLowestLatency,
 	}
 
-	expectedStrategies := []config.Strategy{"random", "round-robin", "least-connections", "lowest-latency"}
+	expectedStrategies := []config.Strategy{"sequential", "random", "round-robin", "least-connections", "lowest-latency"}
 	assert.Equal(t, expectedStrategies, strategies, "Strategy constants should match expected values")
 }
 
@@ -72,11 +73,12 @@ func TestConfigValidation_InvalidStrategy(t *testing.T) {
 
 func TestConfigValidation_ValidStrategies(t *testing.T) {
 	validStrategies := []config.Strategy{
+		config.StrategySequential,
 		config.StrategyRandom,
 		config.StrategyRoundRobin,
 		config.StrategyLeastConnections,
 		config.StrategyLowestLatency,
-		"", // Empty should be valid (defaults to random)
+		"", // Empty should be valid (defaults to sequential)
 	}
 
 	for _, strategy := range validStrategies {

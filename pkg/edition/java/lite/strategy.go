@@ -45,6 +45,8 @@ func (sm *StrategyManager) GetNextBackend(log logr.Logger, route *config.Route, 
 	}
 
 	switch route.Strategy {
+	case config.StrategySequential:
+		return sm.sequentialNextBackend(log, backends)
 	case config.StrategyRandom:
 		return sm.randomNextBackend(log, backends)
 	case config.StrategyRoundRobin:
@@ -53,9 +55,12 @@ func (sm *StrategyManager) GetNextBackend(log logr.Logger, route *config.Route, 
 		return sm.leastConnectionsNextBackend(log, backends)
 	case config.StrategyLowestLatency:
 		return sm.lowestLatencyNextBackend(log, backends)
+	case "":
+		// Default to sequential strategy when no strategy is defined
+		return sm.sequentialNextBackend(log, backends)
 	default:
-		// Default to random strategy
-		return sm.randomNextBackend(log, backends)
+		// Default to sequential strategy for unknown strategies
+		return sm.sequentialNextBackend(log, backends)
 	}
 }
 
@@ -76,6 +81,17 @@ func (sm *StrategyManager) RecordLatency(backend string, latency time.Duration) 
 }
 
 // Private helper methods
+
+func (sm *StrategyManager) sequentialNextBackend(log logr.Logger, backends []string) (string, logr.Logger, bool) {
+	if len(backends) == 0 {
+		return "", log, false
+	}
+
+	// Sequential strategy always returns the first backend in the list
+	// The caller (tryBackends) will remove failed backends from the list
+	backend := backends[0]
+	return backend, log, true
+}
 
 func (sm *StrategyManager) randomNextBackend(log logr.Logger, backends []string) (string, logr.Logger, bool) {
 	if len(backends) == 0 {

@@ -77,6 +77,9 @@ func (r *Route) GetTCPShieldRealIP() bool { return r.TCPShieldRealIP || r.RealIP
 type Strategy string
 
 const (
+	// StrategySequential selects backends in config order for each connection attempt.
+	StrategySequential Strategy = "sequential"
+
 	// StrategyRandom selects a random backend from available options.
 	StrategyRandom Strategy = "random"
 
@@ -91,6 +94,7 @@ const (
 )
 
 var allowedStrategies = []Strategy{
+	StrategySequential,
 	StrategyRandom,
 	StrategyRoundRobin,
 	StrategyLeastConnections,
