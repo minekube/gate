@@ -163,4 +163,3 @@ func TestTryBackendsWithFallback(t *testing.T) {
 		assert.Equal(t, 2, attempts, "Should try 2 backends")
 	})
 }
-
