@@ -17,11 +17,11 @@ func TestLogSpamReduction(t *testing.T) {
 
 	// The actual log level check happens in tryBackends function
 	// where we use log.V(1) for failed backend attempts
-	
+
 	// Verify that log.V(1) creates a logger with increased verbosity
 	verboseLog := log.V(1)
 	assert.NotNil(t, verboseLog, "Should create verbose logger")
-	
+
 	// This test ensures the code compiles with the verbosity changes
 	// The actual effect is that failed backend logs will only show
 	// when running with -v flag or higher verbosity settings
@@ -30,7 +30,7 @@ func TestLogSpamReduction(t *testing.T) {
 // TestTryBackendsErrorHandling verifies error handling behavior
 func TestTryBackendsErrorHandling(t *testing.T) {
 	log := testr.New(t)
-	
+
 	attempts := 0
 	next := func() (string, logr.Logger, bool) {
 		attempts++
@@ -39,12 +39,12 @@ func TestTryBackendsErrorHandling(t *testing.T) {
 		}
 		return "backend" + string(rune('0'+attempts)), log, true
 	}
-	
+
 	tryFunc := func(log logr.Logger, backendAddr string) (logr.Logger, string, error) {
 		// Simulate all backends failing
 		return log, "", errors.New("connection refused")
 	}
-	
+
 	// Should try all backends and return errAllBackendsFailed
 	_, _, result, err := tryBackends(next, tryFunc)
 	assert.Equal(t, "", result)

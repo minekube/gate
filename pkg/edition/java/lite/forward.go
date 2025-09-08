@@ -167,7 +167,36 @@ func findRoute(
 
 	tryBackends := route.Backend.Copy()
 	nextBackend = func() (string, logr.Logger, bool) {
-		return strategyManager.GetNextBackend(log, route, host, tryBackends)
+		if len(tryBackends) == 0 {
+			return "", log, false
+		}
+		
+		// Get next backend from strategy
+		backendAddr, newLog, ok := strategyManager.GetNextBackend(log, route, host, tryBackends)
+		if !ok {
+			return "", log, false
+		}
+		
+		// Remove the selected backend from the list so it won't be tried again
+		for i, backend := range tryBackends {
+			// Need to normalize both for comparison
+			normalizedBackend, err := netutil.Parse(backend, "tcp")
+			if err != nil {
+				continue
+			}
+			normalizedAddr := normalizedBackend.String()
+			if _, port := netutil.HostPort(normalizedBackend); port == 0 {
+				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
+			}
+			
+			if normalizedAddr == backendAddr {
+				// Remove this backend from the list
+				tryBackends = append(tryBackends[:i], tryBackends[i+1:]...)
+				break
+			}
+		}
+		
+		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
 	}
 
 	return log, src, route, nextBackend, nil

@@ -46,8 +46,7 @@ func Test_match(t *testing.T) {
 func BenchmarkMatch(b *testing.B) {
 	s := "Some very long string to match against"
 	pattern := "*str?ng*"
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		match(s, pattern)
 	}
 }
