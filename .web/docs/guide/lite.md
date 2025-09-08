@@ -51,12 +51,20 @@ When multiple backends are configured, Gate Lite can distribute connections usin
 
 :::: code-group
 
-```yaml [Random (Default)]
+```yaml [Sequential (Default)]
 lite:
   routes:
     - host: play.example.com
       backend: [server1:25565, server2:25565, server3:25565]
-      # strategy: random (default - can omit)
+      # strategy: sequential # (default - can omit)
+```
+
+```yaml [Random]
+lite:
+  routes:
+    - host: play.example.com
+      backend: [server1:25565, server2:25565, server3:25565]
+      strategy: random
 ```
 
 ```yaml [Round-Robin]
@@ -104,12 +112,13 @@ lite:
 
 ::::
 
-| Strategy            | Description                    | Algorithm                       |
-| ------------------- | ------------------------------ | ------------------------------- |
-| `random` (default)  | Random backend selection       | Cryptographically secure random |
-| `round-robin`       | Sequential cycling             | Fair rotation per route         |
-| `least-connections` | Routes to least-loaded backend | Real-time connection counting   |
-| `lowest-latency`    | Routes to fastest backend      | Status ping latency measurement |
+| Strategy                 | Description                    | Algorithm                       |
+| ------------------------ | ------------------------------ | ------------------------------- |
+| `sequential` **default** | Sequential backend order       | Tries backends in config order  |
+| `random`                 | Random backend selection       | Cryptographically secure random |
+| `round-robin`            | Sequential cycling             | Fair rotation per route         |
+| `least-connections`      | Routes to least-loaded backend | Real-time connection counting   |
+| `lowest-latency`         | Routes to fastest backend      | Status ping latency measurement |
 
 ::: tip Performance Notes
 

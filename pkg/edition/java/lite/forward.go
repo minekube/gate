@@ -177,21 +177,40 @@ func findRoute(
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
-		// Pop first backend - simple and clean!
-		backend := tryBackends[0]
-		tryBackends = tryBackends[1:]
 
-		dstAddr, err := netutil.Parse(backend, src.RemoteAddr().Network())
-		if err != nil {
-			log.Info("failed to parse backend address", "wrongBackendAddr", backend, "error", err)
+		// Always use strategy manager (it handles empty strategy as sequential default)
+		backendAddr, newLog, ok := strategyManager.GetNextBackend(log, route, host, tryBackends)
+		if !ok {
 			return "", log, false
 		}
-		backendAddr := dstAddr.String()
-		if _, port := netutil.HostPort(dstAddr); port == 0 {
-			backendAddr = net.JoinHostPort(dstAddr.String(), "25565")
+
+		// Remove selected backend from list to avoid retrying it
+		for i, backend := range tryBackends {
+			normalizedBackend, err := netutil.Parse(backend, src.RemoteAddr().Network())
+			if err != nil {
+				continue
+			}
+			normalizedAddr := normalizedBackend.String()
+			if _, port := netutil.HostPort(normalizedBackend); port == 0 {
+				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
+			}
+
+			normalizedSelected, err := netutil.Parse(backendAddr, src.RemoteAddr().Network())
+			if err != nil {
+				continue
+			}
+			selectedAddr := normalizedSelected.String()
+			if _, port := netutil.HostPort(normalizedSelected); port == 0 {
+				selectedAddr = net.JoinHostPort(normalizedSelected.String(), "25565")
+			}
+
+			if normalizedAddr == selectedAddr {
+				tryBackends = append(tryBackends[:i], tryBackends[i+1:]...)
+				break
+			}
 		}
 
-		return backendAddr, log.WithValues("backendAddr", backendAddr), true
+		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
 	}
 
 	return log, src, route, nextBackend, nil

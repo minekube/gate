@@ -13,6 +13,28 @@ import (
 
 // Test each strategy behavior individually
 
+func TestSequentialStrategy(t *testing.T) {
+	sm := NewStrategyManager()
+	log := testr.New(t)
+	backends := []string{"server1:25565", "server2:25565", "server3:25565"}
+
+	// Sequential should always return the first backend in the list
+	backend1, _, ok := sm.sequentialNextBackend(log, backends)
+	require.True(t, ok, "Should return first backend")
+	assert.Equal(t, "server1:25565", backend1, "Should return first backend in list")
+
+	// Even with multiple calls, should always return first in current list
+	backend2, _, ok := sm.sequentialNextBackend(log, backends)
+	require.True(t, ok, "Should return first backend again")
+	assert.Equal(t, "server1:25565", backend2, "Should consistently return first backend")
+
+	// With reduced list, should return first of remaining
+	remainingBackends := []string{"server2:25565", "server3:25565"}
+	backend3, _, ok := sm.sequentialNextBackend(log, remainingBackends)
+	require.True(t, ok, "Should return first of remaining")
+	assert.Equal(t, "server2:25565", backend3, "Should return first of remaining backends")
+}
+
 func TestRandomStrategy(t *testing.T) {
 	sm := NewStrategyManager()
 	log := testr.New(t)
@@ -157,6 +179,7 @@ func TestStrategyWithEmptyBackends(t *testing.T) {
 		name     string
 		testFunc func(logr.Logger, []string) (string, logr.Logger, bool)
 	}{
+		{"sequential", sm.sequentialNextBackend},
 		{"random", sm.randomNextBackend},
 		{"roundRobin", func(log logr.Logger, backends []string) (string, logr.Logger, bool) {
 			return sm.roundRobinNextBackend(log, "test.host", backends)
@@ -182,6 +205,7 @@ func TestStrategyWithSingleBackend(t *testing.T) {
 		name     string
 		testFunc func(logr.Logger, []string) (string, logr.Logger, bool)
 	}{
+		{"sequential", sm.sequentialNextBackend},
 		{"random", sm.randomNextBackend},
 		{"roundRobin", func(log logr.Logger, backends []string) (string, logr.Logger, bool) {
 			return sm.roundRobinNextBackend(log, "test.host", backends)
@@ -208,11 +232,12 @@ func TestGetNextBackendStrategyRouting(t *testing.T) {
 		strategy config.Strategy
 		name     string
 	}{
+		{config.StrategySequential, "sequential"},
 		{config.StrategyRandom, "random"},
 		{config.StrategyRoundRobin, "round-robin"},
 		{config.StrategyLeastConnections, "least-connections"},
 		{config.StrategyLowestLatency, "lowest-latency"},
-		{"", "default (empty)"}, // Should default to random
+		{"", "default (empty)"}, // Should default to sequential
 	}
 
 	for _, tt := range tests {

@@ -50,9 +50,9 @@ config:
         backend: [172.16.0.12:25566, backend.example.com:25566]
         # Load balancing strategy when multiple backends are available.
         # See https://gate.minekube.com/guide/lite#load-balancing-strategies for detailed guide.
-        # Options: random, round-robin, least-connections, lowest-latency
-        # Default: random
-        strategy: random
+        # Options: sequential, random, round-robin, least-connections, lowest-latency
+        # Default: sequential (tries backends in config order)
+        # strategy: random  # Uncomment to use random instead of sequential
         # Ping responses are cached per backend address by default.
         # To disable motd caching set it to -1.
         # Default: 10s
