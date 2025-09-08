@@ -108,16 +108,3 @@ func TestSequentialVsRandomBehavior(t *testing.T) {
 		assert.Greater(t, len(selections), 1, "Random should select multiple backends over 100 attempts")
 	})
 }
-
-// Helper function to compare slices
-func equalSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
