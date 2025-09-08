@@ -75,11 +75,11 @@ func (e *MyError) Unwrap() error {
 // TestVerbosityForConnectionRefused verifies that connection refused errors get higher verbosity
 func TestVerbosityForConnectionRefused(t *testing.T) {
 	// Test the logic from dialRoute function
-	
+
 	// Simulate connection refused error (not a timeout)
 	connectionRefusedErr := syscall.ECONNREFUSED
 	dialCtxErr := error(nil) // No timeout
-	
+
 	v := 0
 	if dialCtxErr != nil {
 		v++
@@ -88,13 +88,13 @@ func TestVerbosityForConnectionRefused(t *testing.T) {
 	if IsConnectionRefused(connectionRefusedErr) {
 		v = 1
 	}
-	
+
 	assert.Equal(t, 1, v, "Connection refused errors should get verbosity 1 (debug level)")
-	
+
 	// Simulate timeout error
 	timeoutErr := errors.New("i/o timeout")
 	dialCtxErr = timeoutErr // Timeout occurred
-	
+
 	v = 0
 	if dialCtxErr != nil {
 		v++
@@ -102,13 +102,13 @@ func TestVerbosityForConnectionRefused(t *testing.T) {
 	if IsConnectionRefused(timeoutErr) {
 		v = 1
 	}
-	
+
 	assert.Equal(t, 1, v, "Timeout errors should also get verbosity 1")
-	
-	// Simulate other error  
+
+	// Simulate other error
 	otherErr := errors.New("some other error")
 	dialCtxErr = error(nil) // No timeout
-	
+
 	v = 0
 	if dialCtxErr != nil {
 		v++
@@ -116,6 +116,6 @@ func TestVerbosityForConnectionRefused(t *testing.T) {
 	if IsConnectionRefused(otherErr) {
 		v = 1
 	}
-	
+
 	assert.Equal(t, 0, v, "Other errors should get verbosity 0 (info level)")
 }

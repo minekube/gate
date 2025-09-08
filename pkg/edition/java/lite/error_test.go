@@ -11,7 +11,7 @@ import (
 
 func TestRealErrorVerbosity(t *testing.T) {
 	// Test with the actual error format from your logs
-	realError := fmt.Errorf("failed to dial route: failed to connect to backend localhost:25566: %w", 
+	realError := fmt.Errorf("failed to dial route: failed to connect to backend localhost:25566: %w",
 		fmt.Errorf("dial tcp [::1]:25566: connect: %w", syscall.ECONNREFUSED))
 
 	// Test our detection
@@ -20,7 +20,7 @@ func TestRealErrorVerbosity(t *testing.T) {
 
 	// Test what verbosity this gets
 	verbosityError := &errs.VerbosityError{
-		Verbosity: 1,  // This should be 1 for connection refused
+		Verbosity: 1, // This should be 1 for connection refused
 		Err:       realError,
 	}
 
@@ -36,11 +36,11 @@ func TestDialRouteErrorFormat(t *testing.T) {
 
 	// What dialRoute creates
 	dialErr := fmt.Errorf("failed to connect to backend %s: %w", backendAddr, baseErr)
-	
+
 	// Test detection on this format
 	isRefused := IsConnectionRefused(dialErr)
 	assert.True(t, isRefused, "Should detect connection refused in dialRoute error format")
-	
+
 	// Test detection on the syscall error directly
 	isRefusedDirect := IsConnectionRefused(baseErr)
 	assert.True(t, isRefusedDirect, "Should detect ECONNREFUSED directly")
