@@ -109,7 +109,7 @@ bedrock:
 
 | Option             | Description                                                 | Default              |
 | ------------------ | ----------------------------------------------------------- | -------------------- |
-| `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `""` (no formatting) |
+| `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `".%s"`              |
 | `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
 
