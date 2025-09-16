@@ -56,6 +56,36 @@ const (
 	// GateServiceRequestCookieProcedure is the fully-qualified name of the GateService's RequestCookie
 	// RPC.
 	GateServiceRequestCookieProcedure = "/minekube.gate.v1.GateService/RequestCookie"
+	// GateServiceGetStatusProcedure is the fully-qualified name of the GateService's GetStatus RPC.
+	GateServiceGetStatusProcedure = "/minekube.gate.v1.GateService/GetStatus"
+	// GateServiceGetConfigProcedure is the fully-qualified name of the GateService's GetConfig RPC.
+	GateServiceGetConfigProcedure = "/minekube.gate.v1.GateService/GetConfig"
+	// GateServiceValidateConfigProcedure is the fully-qualified name of the GateService's
+	// ValidateConfig RPC.
+	GateServiceValidateConfigProcedure = "/minekube.gate.v1.GateService/ValidateConfig"
+	// GateServiceApplyConfigProcedure is the fully-qualified name of the GateService's ApplyConfig RPC.
+	GateServiceApplyConfigProcedure = "/minekube.gate.v1.GateService/ApplyConfig"
+	// GateServiceListLiteRoutesProcedure is the fully-qualified name of the GateService's
+	// ListLiteRoutes RPC.
+	GateServiceListLiteRoutesProcedure = "/minekube.gate.v1.GateService/ListLiteRoutes"
+	// GateServiceGetLiteRouteProcedure is the fully-qualified name of the GateService's GetLiteRoute
+	// RPC.
+	GateServiceGetLiteRouteProcedure = "/minekube.gate.v1.GateService/GetLiteRoute"
+	// GateServiceUpdateLiteRouteStrategyProcedure is the fully-qualified name of the GateService's
+	// UpdateLiteRouteStrategy RPC.
+	GateServiceUpdateLiteRouteStrategyProcedure = "/minekube.gate.v1.GateService/UpdateLiteRouteStrategy"
+	// GateServiceAddLiteRouteBackendProcedure is the fully-qualified name of the GateService's
+	// AddLiteRouteBackend RPC.
+	GateServiceAddLiteRouteBackendProcedure = "/minekube.gate.v1.GateService/AddLiteRouteBackend"
+	// GateServiceRemoveLiteRouteBackendProcedure is the fully-qualified name of the GateService's
+	// RemoveLiteRouteBackend RPC.
+	GateServiceRemoveLiteRouteBackendProcedure = "/minekube.gate.v1.GateService/RemoveLiteRouteBackend"
+	// GateServiceUpdateLiteRouteOptionsProcedure is the fully-qualified name of the GateService's
+	// UpdateLiteRouteOptions RPC.
+	GateServiceUpdateLiteRouteOptionsProcedure = "/minekube.gate.v1.GateService/UpdateLiteRouteOptions"
+	// GateServiceUpdateLiteRouteFallbackProcedure is the fully-qualified name of the GateService's
+	// UpdateLiteRouteFallback RPC.
+	GateServiceUpdateLiteRouteFallbackProcedure = "/minekube.gate.v1.GateService/UpdateLiteRouteFallback"
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -92,6 +122,28 @@ type GateServiceClient interface {
 	// RequestCookie requests a cookie from a player's client.
 	// The payload in RequestCookieResponse may be empty if the cookie is not found.
 	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
+	// GetStatus returns current proxy metadata including version, mode, players and servers.
+	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
+	// GetConfig returns the current effective config with secrets redacted.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// ValidateConfig parses and validates a config payload without applying it.
+	ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error)
+	// ApplyConfig parses, validates, and applies a new config payload.
+	ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error)
+	// ListLiteRoutes returns lite routes and their active connection counters.
+	ListLiteRoutes(context.Context, *connect.Request[v1.ListLiteRoutesRequest]) (*connect.Response[v1.ListLiteRoutesResponse], error)
+	// GetLiteRoute returns detailed information about a single lite route.
+	GetLiteRoute(context.Context, *connect.Request[v1.GetLiteRouteRequest]) (*connect.Response[v1.GetLiteRouteResponse], error)
+	// UpdateLiteRouteStrategy updates the load-balancing strategy for a lite route.
+	UpdateLiteRouteStrategy(context.Context, *connect.Request[v1.UpdateLiteRouteStrategyRequest]) (*connect.Response[v1.UpdateLiteRouteStrategyResponse], error)
+	// AddLiteRouteBackend adds a backend target to a lite route.
+	AddLiteRouteBackend(context.Context, *connect.Request[v1.AddLiteRouteBackendRequest]) (*connect.Response[v1.AddLiteRouteBackendResponse], error)
+	// RemoveLiteRouteBackend removes a backend target from a lite route.
+	RemoveLiteRouteBackend(context.Context, *connect.Request[v1.RemoveLiteRouteBackendRequest]) (*connect.Response[v1.RemoveLiteRouteBackendResponse], error)
+	// UpdateLiteRouteOptions updates proxy options for a lite route using a field mask.
+	UpdateLiteRouteOptions(context.Context, *connect.Request[v1.UpdateLiteRouteOptionsRequest]) (*connect.Response[v1.UpdateLiteRouteOptionsResponse], error)
+	// UpdateLiteRouteFallback updates fallback metadata for a lite route using a field mask.
+	UpdateLiteRouteFallback(context.Context, *connect.Request[v1.UpdateLiteRouteFallbackRequest]) (*connect.Response[v1.UpdateLiteRouteFallbackResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -159,20 +211,97 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 			connect.WithClientOptions(opts...),
 		),
+		getStatus: connect.NewClient[v1.GetStatusRequest, v1.GetStatusResponse](
+			httpClient,
+			baseURL+GateServiceGetStatusProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("GetStatus")),
+			connect.WithClientOptions(opts...),
+		),
+		getConfig: connect.NewClient[v1.GetConfigRequest, v1.GetConfigResponse](
+			httpClient,
+			baseURL+GateServiceGetConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("GetConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		validateConfig: connect.NewClient[v1.ValidateConfigRequest, v1.ValidateConfigResponse](
+			httpClient,
+			baseURL+GateServiceValidateConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("ValidateConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		applyConfig: connect.NewClient[v1.ApplyConfigRequest, v1.ApplyConfigResponse](
+			httpClient,
+			baseURL+GateServiceApplyConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("ApplyConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		listLiteRoutes: connect.NewClient[v1.ListLiteRoutesRequest, v1.ListLiteRoutesResponse](
+			httpClient,
+			baseURL+GateServiceListLiteRoutesProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("ListLiteRoutes")),
+			connect.WithClientOptions(opts...),
+		),
+		getLiteRoute: connect.NewClient[v1.GetLiteRouteRequest, v1.GetLiteRouteResponse](
+			httpClient,
+			baseURL+GateServiceGetLiteRouteProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("GetLiteRoute")),
+			connect.WithClientOptions(opts...),
+		),
+		updateLiteRouteStrategy: connect.NewClient[v1.UpdateLiteRouteStrategyRequest, v1.UpdateLiteRouteStrategyResponse](
+			httpClient,
+			baseURL+GateServiceUpdateLiteRouteStrategyProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteStrategy")),
+			connect.WithClientOptions(opts...),
+		),
+		addLiteRouteBackend: connect.NewClient[v1.AddLiteRouteBackendRequest, v1.AddLiteRouteBackendResponse](
+			httpClient,
+			baseURL+GateServiceAddLiteRouteBackendProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("AddLiteRouteBackend")),
+			connect.WithClientOptions(opts...),
+		),
+		removeLiteRouteBackend: connect.NewClient[v1.RemoveLiteRouteBackendRequest, v1.RemoveLiteRouteBackendResponse](
+			httpClient,
+			baseURL+GateServiceRemoveLiteRouteBackendProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("RemoveLiteRouteBackend")),
+			connect.WithClientOptions(opts...),
+		),
+		updateLiteRouteOptions: connect.NewClient[v1.UpdateLiteRouteOptionsRequest, v1.UpdateLiteRouteOptionsResponse](
+			httpClient,
+			baseURL+GateServiceUpdateLiteRouteOptionsProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteOptions")),
+			connect.WithClientOptions(opts...),
+		),
+		updateLiteRouteFallback: connect.NewClient[v1.UpdateLiteRouteFallbackRequest, v1.UpdateLiteRouteFallbackResponse](
+			httpClient,
+			baseURL+GateServiceUpdateLiteRouteFallbackProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteFallback")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // gateServiceClient implements GateServiceClient.
 type gateServiceClient struct {
-	getPlayer        *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
-	listPlayers      *connect.Client[v1.ListPlayersRequest, v1.ListPlayersResponse]
-	listServers      *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
-	registerServer   *connect.Client[v1.RegisterServerRequest, v1.RegisterServerResponse]
-	unregisterServer *connect.Client[v1.UnregisterServerRequest, v1.UnregisterServerResponse]
-	connectPlayer    *connect.Client[v1.ConnectPlayerRequest, v1.ConnectPlayerResponse]
-	disconnectPlayer *connect.Client[v1.DisconnectPlayerRequest, v1.DisconnectPlayerResponse]
-	storeCookie      *connect.Client[v1.StoreCookieRequest, v1.StoreCookieResponse]
-	requestCookie    *connect.Client[v1.RequestCookieRequest, v1.RequestCookieResponse]
+	getPlayer               *connect.Client[v1.GetPlayerRequest, v1.GetPlayerResponse]
+	listPlayers             *connect.Client[v1.ListPlayersRequest, v1.ListPlayersResponse]
+	listServers             *connect.Client[v1.ListServersRequest, v1.ListServersResponse]
+	registerServer          *connect.Client[v1.RegisterServerRequest, v1.RegisterServerResponse]
+	unregisterServer        *connect.Client[v1.UnregisterServerRequest, v1.UnregisterServerResponse]
+	connectPlayer           *connect.Client[v1.ConnectPlayerRequest, v1.ConnectPlayerResponse]
+	disconnectPlayer        *connect.Client[v1.DisconnectPlayerRequest, v1.DisconnectPlayerResponse]
+	storeCookie             *connect.Client[v1.StoreCookieRequest, v1.StoreCookieResponse]
+	requestCookie           *connect.Client[v1.RequestCookieRequest, v1.RequestCookieResponse]
+	getStatus               *connect.Client[v1.GetStatusRequest, v1.GetStatusResponse]
+	getConfig               *connect.Client[v1.GetConfigRequest, v1.GetConfigResponse]
+	validateConfig          *connect.Client[v1.ValidateConfigRequest, v1.ValidateConfigResponse]
+	applyConfig             *connect.Client[v1.ApplyConfigRequest, v1.ApplyConfigResponse]
+	listLiteRoutes          *connect.Client[v1.ListLiteRoutesRequest, v1.ListLiteRoutesResponse]
+	getLiteRoute            *connect.Client[v1.GetLiteRouteRequest, v1.GetLiteRouteResponse]
+	updateLiteRouteStrategy *connect.Client[v1.UpdateLiteRouteStrategyRequest, v1.UpdateLiteRouteStrategyResponse]
+	addLiteRouteBackend     *connect.Client[v1.AddLiteRouteBackendRequest, v1.AddLiteRouteBackendResponse]
+	removeLiteRouteBackend  *connect.Client[v1.RemoveLiteRouteBackendRequest, v1.RemoveLiteRouteBackendResponse]
+	updateLiteRouteOptions  *connect.Client[v1.UpdateLiteRouteOptionsRequest, v1.UpdateLiteRouteOptionsResponse]
+	updateLiteRouteFallback *connect.Client[v1.UpdateLiteRouteFallbackRequest, v1.UpdateLiteRouteFallbackResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -220,6 +349,61 @@ func (c *gateServiceClient) RequestCookie(ctx context.Context, req *connect.Requ
 	return c.requestCookie.CallUnary(ctx, req)
 }
 
+// GetStatus calls minekube.gate.v1.GateService.GetStatus.
+func (c *gateServiceClient) GetStatus(ctx context.Context, req *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error) {
+	return c.getStatus.CallUnary(ctx, req)
+}
+
+// GetConfig calls minekube.gate.v1.GateService.GetConfig.
+func (c *gateServiceClient) GetConfig(ctx context.Context, req *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return c.getConfig.CallUnary(ctx, req)
+}
+
+// ValidateConfig calls minekube.gate.v1.GateService.ValidateConfig.
+func (c *gateServiceClient) ValidateConfig(ctx context.Context, req *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error) {
+	return c.validateConfig.CallUnary(ctx, req)
+}
+
+// ApplyConfig calls minekube.gate.v1.GateService.ApplyConfig.
+func (c *gateServiceClient) ApplyConfig(ctx context.Context, req *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error) {
+	return c.applyConfig.CallUnary(ctx, req)
+}
+
+// ListLiteRoutes calls minekube.gate.v1.GateService.ListLiteRoutes.
+func (c *gateServiceClient) ListLiteRoutes(ctx context.Context, req *connect.Request[v1.ListLiteRoutesRequest]) (*connect.Response[v1.ListLiteRoutesResponse], error) {
+	return c.listLiteRoutes.CallUnary(ctx, req)
+}
+
+// GetLiteRoute calls minekube.gate.v1.GateService.GetLiteRoute.
+func (c *gateServiceClient) GetLiteRoute(ctx context.Context, req *connect.Request[v1.GetLiteRouteRequest]) (*connect.Response[v1.GetLiteRouteResponse], error) {
+	return c.getLiteRoute.CallUnary(ctx, req)
+}
+
+// UpdateLiteRouteStrategy calls minekube.gate.v1.GateService.UpdateLiteRouteStrategy.
+func (c *gateServiceClient) UpdateLiteRouteStrategy(ctx context.Context, req *connect.Request[v1.UpdateLiteRouteStrategyRequest]) (*connect.Response[v1.UpdateLiteRouteStrategyResponse], error) {
+	return c.updateLiteRouteStrategy.CallUnary(ctx, req)
+}
+
+// AddLiteRouteBackend calls minekube.gate.v1.GateService.AddLiteRouteBackend.
+func (c *gateServiceClient) AddLiteRouteBackend(ctx context.Context, req *connect.Request[v1.AddLiteRouteBackendRequest]) (*connect.Response[v1.AddLiteRouteBackendResponse], error) {
+	return c.addLiteRouteBackend.CallUnary(ctx, req)
+}
+
+// RemoveLiteRouteBackend calls minekube.gate.v1.GateService.RemoveLiteRouteBackend.
+func (c *gateServiceClient) RemoveLiteRouteBackend(ctx context.Context, req *connect.Request[v1.RemoveLiteRouteBackendRequest]) (*connect.Response[v1.RemoveLiteRouteBackendResponse], error) {
+	return c.removeLiteRouteBackend.CallUnary(ctx, req)
+}
+
+// UpdateLiteRouteOptions calls minekube.gate.v1.GateService.UpdateLiteRouteOptions.
+func (c *gateServiceClient) UpdateLiteRouteOptions(ctx context.Context, req *connect.Request[v1.UpdateLiteRouteOptionsRequest]) (*connect.Response[v1.UpdateLiteRouteOptionsResponse], error) {
+	return c.updateLiteRouteOptions.CallUnary(ctx, req)
+}
+
+// UpdateLiteRouteFallback calls minekube.gate.v1.GateService.UpdateLiteRouteFallback.
+func (c *gateServiceClient) UpdateLiteRouteFallback(ctx context.Context, req *connect.Request[v1.UpdateLiteRouteFallbackRequest]) (*connect.Response[v1.UpdateLiteRouteFallbackResponse], error) {
+	return c.updateLiteRouteFallback.CallUnary(ctx, req)
+}
+
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
@@ -254,6 +438,28 @@ type GateServiceHandler interface {
 	// RequestCookie requests a cookie from a player's client.
 	// The payload in RequestCookieResponse may be empty if the cookie is not found.
 	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
+	// GetStatus returns current proxy metadata including version, mode, players and servers.
+	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
+	// GetConfig returns the current effective config with secrets redacted.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// ValidateConfig parses and validates a config payload without applying it.
+	ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error)
+	// ApplyConfig parses, validates, and applies a new config payload.
+	ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error)
+	// ListLiteRoutes returns lite routes and their active connection counters.
+	ListLiteRoutes(context.Context, *connect.Request[v1.ListLiteRoutesRequest]) (*connect.Response[v1.ListLiteRoutesResponse], error)
+	// GetLiteRoute returns detailed information about a single lite route.
+	GetLiteRoute(context.Context, *connect.Request[v1.GetLiteRouteRequest]) (*connect.Response[v1.GetLiteRouteResponse], error)
+	// UpdateLiteRouteStrategy updates the load-balancing strategy for a lite route.
+	UpdateLiteRouteStrategy(context.Context, *connect.Request[v1.UpdateLiteRouteStrategyRequest]) (*connect.Response[v1.UpdateLiteRouteStrategyResponse], error)
+	// AddLiteRouteBackend adds a backend target to a lite route.
+	AddLiteRouteBackend(context.Context, *connect.Request[v1.AddLiteRouteBackendRequest]) (*connect.Response[v1.AddLiteRouteBackendResponse], error)
+	// RemoveLiteRouteBackend removes a backend target from a lite route.
+	RemoveLiteRouteBackend(context.Context, *connect.Request[v1.RemoveLiteRouteBackendRequest]) (*connect.Response[v1.RemoveLiteRouteBackendResponse], error)
+	// UpdateLiteRouteOptions updates proxy options for a lite route using a field mask.
+	UpdateLiteRouteOptions(context.Context, *connect.Request[v1.UpdateLiteRouteOptionsRequest]) (*connect.Response[v1.UpdateLiteRouteOptionsResponse], error)
+	// UpdateLiteRouteFallback updates fallback metadata for a lite route using a field mask.
+	UpdateLiteRouteFallback(context.Context, *connect.Request[v1.UpdateLiteRouteFallbackRequest]) (*connect.Response[v1.UpdateLiteRouteFallbackResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -317,6 +523,72 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 		connect.WithHandlerOptions(opts...),
 	)
+	gateServiceGetStatusHandler := connect.NewUnaryHandler(
+		GateServiceGetStatusProcedure,
+		svc.GetStatus,
+		connect.WithSchema(gateServiceMethods.ByName("GetStatus")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceGetConfigHandler := connect.NewUnaryHandler(
+		GateServiceGetConfigProcedure,
+		svc.GetConfig,
+		connect.WithSchema(gateServiceMethods.ByName("GetConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceValidateConfigHandler := connect.NewUnaryHandler(
+		GateServiceValidateConfigProcedure,
+		svc.ValidateConfig,
+		connect.WithSchema(gateServiceMethods.ByName("ValidateConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceApplyConfigHandler := connect.NewUnaryHandler(
+		GateServiceApplyConfigProcedure,
+		svc.ApplyConfig,
+		connect.WithSchema(gateServiceMethods.ByName("ApplyConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceListLiteRoutesHandler := connect.NewUnaryHandler(
+		GateServiceListLiteRoutesProcedure,
+		svc.ListLiteRoutes,
+		connect.WithSchema(gateServiceMethods.ByName("ListLiteRoutes")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceGetLiteRouteHandler := connect.NewUnaryHandler(
+		GateServiceGetLiteRouteProcedure,
+		svc.GetLiteRoute,
+		connect.WithSchema(gateServiceMethods.ByName("GetLiteRoute")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceUpdateLiteRouteStrategyHandler := connect.NewUnaryHandler(
+		GateServiceUpdateLiteRouteStrategyProcedure,
+		svc.UpdateLiteRouteStrategy,
+		connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteStrategy")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceAddLiteRouteBackendHandler := connect.NewUnaryHandler(
+		GateServiceAddLiteRouteBackendProcedure,
+		svc.AddLiteRouteBackend,
+		connect.WithSchema(gateServiceMethods.ByName("AddLiteRouteBackend")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceRemoveLiteRouteBackendHandler := connect.NewUnaryHandler(
+		GateServiceRemoveLiteRouteBackendProcedure,
+		svc.RemoveLiteRouteBackend,
+		connect.WithSchema(gateServiceMethods.ByName("RemoveLiteRouteBackend")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceUpdateLiteRouteOptionsHandler := connect.NewUnaryHandler(
+		GateServiceUpdateLiteRouteOptionsProcedure,
+		svc.UpdateLiteRouteOptions,
+		connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteOptions")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceUpdateLiteRouteFallbackHandler := connect.NewUnaryHandler(
+		GateServiceUpdateLiteRouteFallbackProcedure,
+		svc.UpdateLiteRouteFallback,
+		connect.WithSchema(gateServiceMethods.ByName("UpdateLiteRouteFallback")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GateServiceGetPlayerProcedure:
@@ -337,6 +609,28 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 			gateServiceStoreCookieHandler.ServeHTTP(w, r)
 		case GateServiceRequestCookieProcedure:
 			gateServiceRequestCookieHandler.ServeHTTP(w, r)
+		case GateServiceGetStatusProcedure:
+			gateServiceGetStatusHandler.ServeHTTP(w, r)
+		case GateServiceGetConfigProcedure:
+			gateServiceGetConfigHandler.ServeHTTP(w, r)
+		case GateServiceValidateConfigProcedure:
+			gateServiceValidateConfigHandler.ServeHTTP(w, r)
+		case GateServiceApplyConfigProcedure:
+			gateServiceApplyConfigHandler.ServeHTTP(w, r)
+		case GateServiceListLiteRoutesProcedure:
+			gateServiceListLiteRoutesHandler.ServeHTTP(w, r)
+		case GateServiceGetLiteRouteProcedure:
+			gateServiceGetLiteRouteHandler.ServeHTTP(w, r)
+		case GateServiceUpdateLiteRouteStrategyProcedure:
+			gateServiceUpdateLiteRouteStrategyHandler.ServeHTTP(w, r)
+		case GateServiceAddLiteRouteBackendProcedure:
+			gateServiceAddLiteRouteBackendHandler.ServeHTTP(w, r)
+		case GateServiceRemoveLiteRouteBackendProcedure:
+			gateServiceRemoveLiteRouteBackendHandler.ServeHTTP(w, r)
+		case GateServiceUpdateLiteRouteOptionsProcedure:
+			gateServiceUpdateLiteRouteOptionsHandler.ServeHTTP(w, r)
+		case GateServiceUpdateLiteRouteFallbackProcedure:
+			gateServiceUpdateLiteRouteFallbackHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -380,4 +674,48 @@ func (UnimplementedGateServiceHandler) StoreCookie(context.Context, *connect.Req
 
 func (UnimplementedGateServiceHandler) RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.RequestCookie is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetStatus is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetConfig is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ValidateConfig is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ApplyConfig is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ListLiteRoutes(context.Context, *connect.Request[v1.ListLiteRoutesRequest]) (*connect.Response[v1.ListLiteRoutesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ListLiteRoutes is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) GetLiteRoute(context.Context, *connect.Request[v1.GetLiteRouteRequest]) (*connect.Response[v1.GetLiteRouteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetLiteRoute is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) UpdateLiteRouteStrategy(context.Context, *connect.Request[v1.UpdateLiteRouteStrategyRequest]) (*connect.Response[v1.UpdateLiteRouteStrategyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdateLiteRouteStrategy is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) AddLiteRouteBackend(context.Context, *connect.Request[v1.AddLiteRouteBackendRequest]) (*connect.Response[v1.AddLiteRouteBackendResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.AddLiteRouteBackend is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) RemoveLiteRouteBackend(context.Context, *connect.Request[v1.RemoveLiteRouteBackendRequest]) (*connect.Response[v1.RemoveLiteRouteBackendResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.RemoveLiteRouteBackend is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) UpdateLiteRouteOptions(context.Context, *connect.Request[v1.UpdateLiteRouteOptionsRequest]) (*connect.Response[v1.UpdateLiteRouteOptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdateLiteRouteOptions is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) UpdateLiteRouteFallback(context.Context, *connect.Request[v1.UpdateLiteRouteFallbackRequest]) (*connect.Response[v1.UpdateLiteRouteFallbackResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.UpdateLiteRouteFallback is not implemented"))
 }
