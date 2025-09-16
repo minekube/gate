@@ -71,30 +71,54 @@ jobs:
           REF=$(git rev-parse --short $GITHUB_SHA)
           # Get version from git tags or use commit-based version
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev-${REF}")
-          IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
-          IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
+          # Publish two images: gate/java and gate/bedrock
+          IMAGE_JAVA=${{ env.REGISTRY }}/${{ github.repository }}/java:${REF}
+          IMAGE_JAVA_LATEST=${{ env.REGISTRY }}/${{ github.repository }}/java:latest
+          IMAGE_BEDROCK=${{ env.REGISTRY }}/${{ github.repository }}/bedrock:${REF}
+          IMAGE_BEDROCK_LATEST=${{ env.REGISTRY }}/${{ github.repository }}/bedrock:latest
 
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-          echo "image_latest=${IMAGE_LATEST}" >> $GITHUB_OUTPUT
+          echo "image_java=${IMAGE_JAVA}" >> $GITHUB_OUTPUT
+          echo "image_java_latest=${IMAGE_JAVA_LATEST}" >> $GITHUB_OUTPUT
+          echo "image_bedrock=${IMAGE_BEDROCK}" >> $GITHUB_OUTPUT
+          echo "image_bedrock_latest=${IMAGE_BEDROCK_LATEST}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-          echo "Building image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+          echo "Building images:" >> $GITHUB_STEP_SUMMARY
+          echo "- ${IMAGE_JAVA}" >> $GITHUB_STEP_SUMMARY
+          echo "- ${IMAGE_BEDROCK}" >> $GITHUB_STEP_SUMMARY
           echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
 
-      - name: Build and push docker image
+      - name: Build and push docker image (gate/java)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
-          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
+          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_java_latest }}
           cache-to: type=inline
           build-args: |
             VERSION=${{ steps.image-ref.outputs.version }}
+          target: java
           tags: |
-            ${{ steps.image-ref.outputs.image }}
-            ${{ steps.image-ref.outputs.image_latest }}
+            ${{ steps.image-ref.outputs.image_java }}
+            ${{ steps.image-ref.outputs.image_java_latest }}
+
+      - name: Build and push docker image (gate/bedrock)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
+          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_bedrock_latest }}
+          cache-to: type=inline
+          build-args: |
+            VERSION=${{ steps.image-ref.outputs.version }}
+          target: bedrock
+          tags: |
+            ${{ steps.image-ref.outputs.image_bedrock }}
+            ${{ steps.image-ref.outputs.image_bedrock_latest }}
   releaser:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
