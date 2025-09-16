@@ -18,33 +18,40 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-func NewService(p *proxy.Proxy, handlers ServiceHandlers) *Service {
+// ConfigHandler defines methods for configuration management
+type ConfigHandler interface {
+	GetStatus(context.Context, *pb.GetStatusRequest) (*pb.GetStatusResponse, error)
+	GetConfig(context.Context, *pb.GetConfigRequest) (*pb.GetConfigResponse, error)
+	ValidateConfig(context.Context, *pb.ValidateConfigRequest) ([]string, error)
+	ApplyConfig(context.Context, *pb.ApplyConfigRequest) ([]string, error)
+}
+
+// LiteHandler defines methods for lite route management
+type LiteHandler interface {
+	ListLiteRoutes(context.Context, *pb.ListLiteRoutesRequest) (*pb.ListLiteRoutesResponse, error)
+	GetLiteRoute(context.Context, *pb.GetLiteRouteRequest) (*pb.GetLiteRouteResponse, error)
+	UpdateLiteRouteStrategy(context.Context, *pb.UpdateLiteRouteStrategyRequest) ([]string, error)
+	AddLiteRouteBackend(context.Context, *pb.AddLiteRouteBackendRequest) ([]string, error)
+	RemoveLiteRouteBackend(context.Context, *pb.RemoveLiteRouteBackendRequest) ([]string, error)
+	UpdateLiteRouteOptions(context.Context, *pb.UpdateLiteRouteOptionsRequest) ([]string, error)
+	UpdateLiteRouteFallback(context.Context, *pb.UpdateLiteRouteFallbackRequest) ([]string, error)
+}
+
+func NewService(p *proxy.Proxy, configHandler ConfigHandler, liteHandler LiteHandler) *Service {
 	return &Service{
-		p:        p,
-		handlers: handlers,
+		p:             p,
+		configHandler: configHandler,
+		liteHandler:   liteHandler,
 	}
 }
 
 type (
 	Handler = gatev1connect.GateServiceHandler
 
-	ServiceHandlers struct {
-		GetStatus               func(context.Context, *pb.GetStatusRequest) (*pb.GetStatusResponse, error)
-		GetConfig               func(context.Context, *pb.GetConfigRequest) (*pb.GetConfigResponse, error)
-		ValidateConfig          func(context.Context, *pb.ValidateConfigRequest) ([]string, error)
-		ApplyConfig             func(context.Context, *pb.ApplyConfigRequest) ([]string, error)
-		ListLiteRoutes          func(context.Context, *pb.ListLiteRoutesRequest) (*pb.ListLiteRoutesResponse, error)
-		GetLiteRoute            func(context.Context, *pb.GetLiteRouteRequest) (*pb.GetLiteRouteResponse, error)
-		UpdateLiteRouteStrategy func(context.Context, *pb.UpdateLiteRouteStrategyRequest) ([]string, error)
-		AddLiteRouteBackend     func(context.Context, *pb.AddLiteRouteBackendRequest) ([]string, error)
-		RemoveLiteRouteBackend  func(context.Context, *pb.RemoveLiteRouteBackendRequest) ([]string, error)
-		UpdateLiteRouteOptions  func(context.Context, *pb.UpdateLiteRouteOptionsRequest) ([]string, error)
-		UpdateLiteRouteFallback func(context.Context, *pb.UpdateLiteRouteFallbackRequest) ([]string, error)
-	}
-
 	Service struct {
-		p        *proxy.Proxy
-		handlers ServiceHandlers
+		p             *proxy.Proxy
+		configHandler ConfigHandler
+		liteHandler   LiteHandler
 	}
 )
 
@@ -259,10 +266,10 @@ func (s *Service) StoreCookie(ctx context.Context, c *connect.Request[pb.StoreCo
 }
 
 func (s *Service) GetStatus(ctx context.Context, c *connect.Request[pb.GetStatusRequest]) (*connect.Response[pb.GetStatusResponse], error) {
-	if s.handlers.GetStatus == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("get status handler not configured"))
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
 	}
-	resp, err := s.handlers.GetStatus(ctx, c.Msg)
+	resp, err := s.configHandler.GetStatus(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -270,10 +277,10 @@ func (s *Service) GetStatus(ctx context.Context, c *connect.Request[pb.GetStatus
 }
 
 func (s *Service) GetConfig(ctx context.Context, c *connect.Request[pb.GetConfigRequest]) (*connect.Response[pb.GetConfigResponse], error) {
-	if s.handlers.GetConfig == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("get config handler not configured"))
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
 	}
-	resp, err := s.handlers.GetConfig(ctx, c.Msg)
+	resp, err := s.configHandler.GetConfig(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -281,10 +288,10 @@ func (s *Service) GetConfig(ctx context.Context, c *connect.Request[pb.GetConfig
 }
 
 func (s *Service) ValidateConfig(ctx context.Context, c *connect.Request[pb.ValidateConfigRequest]) (*connect.Response[pb.ValidateConfigResponse], error) {
-	if s.handlers.ValidateConfig == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("validate config handler not configured"))
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
 	}
-	warns, err := s.handlers.ValidateConfig(ctx, c.Msg)
+	warns, err := s.configHandler.ValidateConfig(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -292,10 +299,10 @@ func (s *Service) ValidateConfig(ctx context.Context, c *connect.Request[pb.Vali
 }
 
 func (s *Service) ApplyConfig(ctx context.Context, c *connect.Request[pb.ApplyConfigRequest]) (*connect.Response[pb.ApplyConfigResponse], error) {
-	if s.handlers.ApplyConfig == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("apply config handler not configured"))
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
 	}
-	warns, err := s.handlers.ApplyConfig(ctx, c.Msg)
+	warns, err := s.configHandler.ApplyConfig(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -303,10 +310,10 @@ func (s *Service) ApplyConfig(ctx context.Context, c *connect.Request[pb.ApplyCo
 }
 
 func (s *Service) ListLiteRoutes(ctx context.Context, c *connect.Request[pb.ListLiteRoutesRequest]) (*connect.Response[pb.ListLiteRoutesResponse], error) {
-	if s.handlers.ListLiteRoutes == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("list lite routes handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	resp, err := s.handlers.ListLiteRoutes(ctx, c.Msg)
+	resp, err := s.liteHandler.ListLiteRoutes(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -314,10 +321,10 @@ func (s *Service) ListLiteRoutes(ctx context.Context, c *connect.Request[pb.List
 }
 
 func (s *Service) GetLiteRoute(ctx context.Context, c *connect.Request[pb.GetLiteRouteRequest]) (*connect.Response[pb.GetLiteRouteResponse], error) {
-	if s.handlers.GetLiteRoute == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("get lite route handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	resp, err := s.handlers.GetLiteRoute(ctx, c.Msg)
+	resp, err := s.liteHandler.GetLiteRoute(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -325,10 +332,10 @@ func (s *Service) GetLiteRoute(ctx context.Context, c *connect.Request[pb.GetLit
 }
 
 func (s *Service) UpdateLiteRouteStrategy(ctx context.Context, c *connect.Request[pb.UpdateLiteRouteStrategyRequest]) (*connect.Response[pb.UpdateLiteRouteStrategyResponse], error) {
-	if s.handlers.UpdateLiteRouteStrategy == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("update lite route strategy handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	warns, err := s.handlers.UpdateLiteRouteStrategy(ctx, c.Msg)
+	warns, err := s.liteHandler.UpdateLiteRouteStrategy(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -336,10 +343,10 @@ func (s *Service) UpdateLiteRouteStrategy(ctx context.Context, c *connect.Reques
 }
 
 func (s *Service) AddLiteRouteBackend(ctx context.Context, c *connect.Request[pb.AddLiteRouteBackendRequest]) (*connect.Response[pb.AddLiteRouteBackendResponse], error) {
-	if s.handlers.AddLiteRouteBackend == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("add lite route backend handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	warns, err := s.handlers.AddLiteRouteBackend(ctx, c.Msg)
+	warns, err := s.liteHandler.AddLiteRouteBackend(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -347,10 +354,10 @@ func (s *Service) AddLiteRouteBackend(ctx context.Context, c *connect.Request[pb
 }
 
 func (s *Service) RemoveLiteRouteBackend(ctx context.Context, c *connect.Request[pb.RemoveLiteRouteBackendRequest]) (*connect.Response[pb.RemoveLiteRouteBackendResponse], error) {
-	if s.handlers.RemoveLiteRouteBackend == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("remove lite route backend handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	warns, err := s.handlers.RemoveLiteRouteBackend(ctx, c.Msg)
+	warns, err := s.liteHandler.RemoveLiteRouteBackend(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -358,10 +365,10 @@ func (s *Service) RemoveLiteRouteBackend(ctx context.Context, c *connect.Request
 }
 
 func (s *Service) UpdateLiteRouteOptions(ctx context.Context, c *connect.Request[pb.UpdateLiteRouteOptionsRequest]) (*connect.Response[pb.UpdateLiteRouteOptionsResponse], error) {
-	if s.handlers.UpdateLiteRouteOptions == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("update lite route options handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	warns, err := s.handlers.UpdateLiteRouteOptions(ctx, c.Msg)
+	warns, err := s.liteHandler.UpdateLiteRouteOptions(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -369,10 +376,10 @@ func (s *Service) UpdateLiteRouteOptions(ctx context.Context, c *connect.Request
 }
 
 func (s *Service) UpdateLiteRouteFallback(ctx context.Context, c *connect.Request[pb.UpdateLiteRouteFallbackRequest]) (*connect.Response[pb.UpdateLiteRouteFallbackResponse], error) {
-	if s.handlers.UpdateLiteRouteFallback == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("update lite route fallback handler not configured"))
+	if s.liteHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("lite handler not configured"))
 	}
-	warns, err := s.handlers.UpdateLiteRouteFallback(ctx, c.Msg)
+	warns, err := s.liteHandler.UpdateLiteRouteFallback(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}

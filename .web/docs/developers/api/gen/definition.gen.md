@@ -15,6 +15,7 @@ description: "Generated protocol documentation for Gate Minecraft proxy API. Com
     - [ApplyConfigRequest](#minekube-gate-v1-ApplyConfigRequest)
     - [ApplyConfigResponse](#minekube-gate-v1-ApplyConfigResponse)
     - [BedrockPlayerData](#minekube-gate-v1-BedrockPlayerData)
+    - [ClassicStats](#minekube-gate-v1-ClassicStats)
     - [ConnectConfig](#minekube-gate-v1-ConnectConfig)
     - [ConnectPlayerRequest](#minekube-gate-v1-ConnectPlayerRequest)
     - [ConnectPlayerResponse](#minekube-gate-v1-ConnectPlayerResponse)
@@ -30,9 +31,7 @@ description: "Generated protocol documentation for Gate Minecraft proxy API. Com
     - [GetPlayerResponse](#minekube-gate-v1-GetPlayerResponse)
     - [GetStatusRequest](#minekube-gate-v1-GetStatusRequest)
     - [GetStatusResponse](#minekube-gate-v1-GetStatusResponse)
-    - [HealthServiceConfig](#minekube-gate-v1-HealthServiceConfig)
     - [JavaConfig](#minekube-gate-v1-JavaConfig)
-    - [JavaConfig.ForcedHostsEntry](#minekube-gate-v1-JavaConfig-ForcedHostsEntry)
     - [JavaConfig.ServersEntry](#minekube-gate-v1-JavaConfig-ServersEntry)
     - [ListLiteRoutesRequest](#minekube-gate-v1-ListLiteRoutesRequest)
     - [ListLiteRoutesResponse](#minekube-gate-v1-ListLiteRoutesResponse)
@@ -47,6 +46,7 @@ description: "Generated protocol documentation for Gate Minecraft proxy API. Com
     - [LiteRouteFallbackPlayers](#minekube-gate-v1-LiteRouteFallbackPlayers)
     - [LiteRouteFallbackVersion](#minekube-gate-v1-LiteRouteFallbackVersion)
     - [LiteRouteOptions](#minekube-gate-v1-LiteRouteOptions)
+    - [LiteStats](#minekube-gate-v1-LiteStats)
     - [Player](#minekube-gate-v1-Player)
     - [RegisterServerRequest](#minekube-gate-v1-RegisterServerRequest)
     - [RegisterServerResponse](#minekube-gate-v1-RegisterServerResponse)
@@ -58,7 +58,6 @@ description: "Generated protocol documentation for Gate Minecraft proxy API. Com
     - [StatusConfig](#minekube-gate-v1-StatusConfig)
     - [StoreCookieRequest](#minekube-gate-v1-StoreCookieRequest)
     - [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse)
-    - [StringList](#minekube-gate-v1-StringList)
     - [UnregisterServerRequest](#minekube-gate-v1-UnregisterServerRequest)
     - [UnregisterServerResponse](#minekube-gate-v1-UnregisterServerResponse)
     - [UpdateLiteRouteFallbackRequest](#minekube-gate-v1-UpdateLiteRouteFallbackRequest)
@@ -70,9 +69,13 @@ description: "Generated protocol documentation for Gate Minecraft proxy API. Com
     - [ValidateConfigRequest](#minekube-gate-v1-ValidateConfigRequest)
     - [ValidateConfigResponse](#minekube-gate-v1-ValidateConfigResponse)
   
-    - [ConfigFormat](#minekube-gate-v1-ConfigFormat)
+    - [BedrockDeviceOS](#minekube-gate-v1-BedrockDeviceOS)
+    - [BedrockInputMode](#minekube-gate-v1-BedrockInputMode)
+    - [BedrockUIProfile](#minekube-gate-v1-BedrockUIProfile)
+    - [LiteRouteStrategy](#minekube-gate-v1-LiteRouteStrategy)
     - [ProxyMode](#minekube-gate-v1-ProxyMode)
   
+    - [GateLiteService](#minekube-gate-v1-GateLiteService)
     - [GateService](#minekube-gate-v1-GateService)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -94,8 +97,8 @@ APIConfig represents the Gate API configuration
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| bind | [string](#string) |  |  |
+| enabled | [bool](#bool) |  | Whether the API is enabled |
+| bind | [string](#string) |  | The address to bind the API server to (using a localhost address is recommended) |
 
 
 
@@ -110,8 +113,8 @@ AddLiteRouteBackendRequest adds a backend to a route.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| backend | [string](#string) |  |  |
+| host | [string](#string) |  | Host matcher to update (case-insensitive) |
+| backend | [string](#string) |  | Backend address to add (e.g., &#34;localhost:25565&#34;) |
 
 
 
@@ -137,13 +140,12 @@ AddLiteRouteBackendResponse contains validation warnings.
 
 ### ApplyConfigRequest
 ApplyConfigRequest is the request for ApplyConfig method.
-Use either yaml_config for YAML configurations or json_config for structured JSON configurations.
+The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| yaml_config | [string](#string) |  | YAML configuration as string |
-| json_config | [GateConfig](#minekube-gate-v1-GateConfig) |  | JSON configuration as structured protobuf |
+| config | [string](#string) |  | Configuration data as YAML or JSON string |
 | persist | [bool](#bool) |  | Whether to persist the config to disk by overwriting the existing config file. Only works if a config file exists. Defaults to false (in-memory only). |
 
 
@@ -176,12 +178,28 @@ This data is only available for players connecting through Geyser/Floodgate.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | xuid | [int64](#int64) |  | Xbox User ID (XUID) - unique identifier for Bedrock players |
-| device_os | [string](#string) |  | Device operating system the player is using |
+| device_os | [BedrockDeviceOS](#minekube-gate-v1-BedrockDeviceOS) |  | Device operating system the player is using |
 | language | [string](#string) |  | Client language code (e.g., &#34;en_US&#34;) |
-| ui_profile | [int32](#int32) |  | UI profile: 0 = Classic, 1 = Pocket |
-| input_mode | [int32](#int32) |  | Input mode: 0 = Unknown, 1 = Mouse, 2 = Touch, 3 = GamePad, 4 = MotionController |
+| ui_profile | [BedrockUIProfile](#minekube-gate-v1-BedrockUIProfile) |  | UI profile (Classic or Pocket) |
+| input_mode | [BedrockInputMode](#minekube-gate-v1-BedrockInputMode) |  | Input method (mouse, touch, gamepad, etc.) |
 | behind_proxy | [bool](#bool) |  | Whether the player is connecting through a proxy |
 | linked_player | [string](#string) |  | Linked Java Edition username (if any) |
+
+
+
+
+
+
+<a name="minekube-gate-v1-ClassicStats"></a>
+
+### ClassicStats
+ClassicStats contains statistics for classic proxy mode.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| players | [int32](#int32) |  | Number of online players |
+| servers | [int32](#int32) |  | Number of registered servers |
 
 
 
@@ -196,9 +214,9 @@ ConnectConfig represents the Connect network configuration
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| name | [string](#string) |  |  |
-| allow_offline_mode_players | [bool](#bool) |  |  |
+| enabled | [bool](#bool) |  | Whether to connect Gate to the WatchService |
+| name | [string](#string) |  | Endpoint name |
+| allow_offline_mode_players | [bool](#bool) |  | Allow offline mode players to join |
 
 
 
@@ -244,7 +262,7 @@ DisconnectPlayerRequest is the request for DisconnectPlayer method.
 
 Formats:
 
-- `{\&#34;text\&#34;:\&#34;Hello, world!\&#34;}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+- `{&#34;text&#34;:&#34;Hello, world!&#34;}` - JSON text component. See https://wiki.vg/Text_formatting for details.
 
 - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
 
@@ -273,9 +291,9 @@ ForwardingConfig represents player info forwarding settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| mode | [string](#string) |  |  |
-| velocity_secret | [string](#string) |  |  |
-| bungee_guard_secret | [string](#string) |  |  |
+| mode | [string](#string) |  | Forwarding mode (&#34;none&#34;, &#34;legacy&#34;, &#34;velocity&#34;, &#34;bungeeguard&#34;) |
+| velocity_secret | [string](#string) |  | Secret used with &#34;velocity&#34; mode |
+| bungee_guard_secret | [string](#string) |  | Secret used with &#34;bungeeguard&#34; mode |
 
 
 
@@ -291,7 +309,6 @@ GateConfig represents the root configuration structure
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | api | [APIConfig](#minekube-gate-v1-APIConfig) |  |  |
-| health_service | [HealthServiceConfig](#minekube-gate-v1-HealthServiceConfig) |  |  |
 | connect | [ConnectConfig](#minekube-gate-v1-ConnectConfig) |  |  |
 | config | [JavaConfig](#minekube-gate-v1-JavaConfig) |  |  |
 
@@ -304,12 +321,6 @@ GateConfig represents the root configuration structure
 
 ### GetConfigRequest
 GetConfigRequest is the request for GetConfig method.
-If format is unspecified JSON will be returned.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| format | [ConfigFormat](#minekube-gate-v1-ConfigFormat) |  |  |
 
 
 
@@ -324,8 +335,7 @@ GetConfigResponse contains the serialized config payload.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| format | [ConfigFormat](#minekube-gate-v1-ConfigFormat) |  |  |
-| payload | [string](#string) |  |  |
+| payload | [string](#string) |  | YAML-serialized configuration data |
 
 
 
@@ -411,26 +421,10 @@ GetStatusResponse contains proxy runtime metadata.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [string](#string) |  |  |
-| mode | [ProxyMode](#minekube-gate-v1-ProxyMode) |  |  |
-| players | [int32](#int32) |  |  |
-| servers | [int32](#int32) |  |  |
-
-
-
-
-
-
-<a name="minekube-gate-v1-HealthServiceConfig"></a>
-
-### HealthServiceConfig
-HealthServiceConfig represents the health service configuration
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| bind | [string](#string) |  |  |
+| version | [string](#string) |  | Gate version string |
+| mode | [ProxyMode](#minekube-gate-v1-ProxyMode) |  | Current operating mode (classic or lite) |
+| classic | [ClassicStats](#minekube-gate-v1-ClassicStats) |  | Statistics for classic mode |
+| lite | [LiteStats](#minekube-gate-v1-LiteStats) |  | Statistics for lite mode |
 
 
 
@@ -445,32 +439,16 @@ JavaConfig represents the main Java edition configuration
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| bind | [string](#string) |  |  |
-| online_mode | [bool](#bool) |  |  |
-| forwarding | [ForwardingConfig](#minekube-gate-v1-ForwardingConfig) |  |  |
-| status | [StatusConfig](#minekube-gate-v1-StatusConfig) |  |  |
-| servers | [JavaConfig.ServersEntry](#minekube-gate-v1-JavaConfig-ServersEntry) | repeated |  |
-| try | [string](#string) | repeated |  |
-| forced_hosts | [JavaConfig.ForcedHostsEntry](#minekube-gate-v1-JavaConfig-ForcedHostsEntry) | repeated |  |
-| accept_transfers | [bool](#bool) |  |  |
-| bungee_plugin_channel_enabled | [bool](#bool) |  |  |
-| lite | [LiteConfig](#minekube-gate-v1-LiteConfig) |  | Add other commonly used fields as needed |
-
-
-
-
-
-
-<a name="minekube-gate-v1-JavaConfig-ForcedHostsEntry"></a>
-
-### JavaConfig.ForcedHostsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [StringList](#minekube-gate-v1-StringList) |  |  |
+| bind | [string](#string) |  | The address to listen for connections |
+| online_mode | [bool](#bool) |  | Whether to enable online mode |
+| forwarding | [ForwardingConfig](#minekube-gate-v1-ForwardingConfig) |  | Player info forwarding settings |
+| status | [StatusConfig](#minekube-gate-v1-StatusConfig) |  | Status response settings |
+| servers | [JavaConfig.ServersEntry](#minekube-gate-v1-JavaConfig-ServersEntry) | repeated | Registered servers (name:address) |
+| try | [string](#string) | repeated | Try server names order |
+| forced_hosts_json | [string](#string) |  | Note: forced_hosts is represented as JSON string due to protobuf limitations with map&lt;string, []string&gt; |
+| accept_transfers | [bool](#bool) |  | Whether to accept transfers from other hosts via transfer packet |
+| bungee_plugin_channel_enabled | [bool](#bool) |  | Whether to enable BungeeCord plugin messaging |
+| lite | [LiteConfig](#minekube-gate-v1-LiteConfig) |  | Lite mode settings |
 
 
 
@@ -581,8 +559,8 @@ LiteConfig represents Gate Lite mode configuration
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| routes | [LiteRoute](#minekube-gate-v1-LiteRoute) | repeated |  |
+| enabled | [bool](#bool) |  | Whether Lite mode is enabled |
+| routes | [LiteRoute](#minekube-gate-v1-LiteRoute) | repeated | Configured lite routes |
 
 
 
@@ -597,11 +575,11 @@ LiteRoute represents a configured lite route and runtime state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| hosts | [string](#string) | repeated |  |
-| backends | [LiteRouteBackend](#minekube-gate-v1-LiteRouteBackend) | repeated |  |
-| strategy | [string](#string) |  |  |
-| options | [LiteRouteOptions](#minekube-gate-v1-LiteRouteOptions) |  |  |
-| fallback | [LiteRouteFallback](#minekube-gate-v1-LiteRouteFallback) |  |  |
+| hosts | [string](#string) | repeated | Host patterns this route matches |
+| backends | [LiteRouteBackend](#minekube-gate-v1-LiteRouteBackend) | repeated | Backend servers for this route |
+| strategy | [LiteRouteStrategy](#minekube-gate-v1-LiteRouteStrategy) |  | Load balancing strategy |
+| options | [LiteRouteOptions](#minekube-gate-v1-LiteRouteOptions) |  | Proxy behavior options |
+| fallback | [LiteRouteFallback](#minekube-gate-v1-LiteRouteFallback) |  | Fallback response when all backends fail |
 
 
 
@@ -616,8 +594,8 @@ LiteRouteBackend represents a backend target for a lite route.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) |  |  |
-| active_connections | [uint32](#uint32) |  |  |
+| address | [string](#string) |  | Network address of the backend server |
+| active_connections | [uint32](#uint32) |  | Number of active connections to this backend |
 
 
 
@@ -632,10 +610,10 @@ LiteRouteFallback contains fallback response data served when all backends fail.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| motd_json | [string](#string) |  |  |
-| version | [LiteRouteFallbackVersion](#minekube-gate-v1-LiteRouteFallbackVersion) |  |  |
-| players | [LiteRouteFallbackPlayers](#minekube-gate-v1-LiteRouteFallbackPlayers) |  |  |
-| favicon | [string](#string) |  |  |
+| motd_json | [string](#string) |  | JSON-formatted MOTD for fallback response |
+| version | [LiteRouteFallbackVersion](#minekube-gate-v1-LiteRouteFallbackVersion) |  | Version information for fallback response |
+| players | [LiteRouteFallbackPlayers](#minekube-gate-v1-LiteRouteFallbackPlayers) |  | Player count information for fallback response |
+| favicon | [string](#string) |  | Base64-encoded favicon for fallback response |
 
 
 
@@ -650,8 +628,8 @@ LiteRouteFallbackPlayers contains fallback player counts.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| online | [int32](#int32) |  |  |
-| max | [int32](#int32) |  |  |
+| online | [int32](#int32) |  | Number of online players to display |
+| max | [int32](#int32) |  | Maximum players to display |
 
 
 
@@ -666,8 +644,8 @@ LiteRouteFallbackVersion contains display version metadata.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| protocol | [int32](#int32) |  |  |
+| name | [string](#string) |  | Version name displayed to clients |
+| protocol | [int32](#int32) |  | Protocol version number |
 
 
 
@@ -682,10 +660,26 @@ LiteRouteOptions captures proxy behaviour flags for a lite route.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxy_protocol | [bool](#bool) |  |  |
-| tcp_shield_real_ip | [bool](#bool) |  |  |
-| modify_virtual_host | [bool](#bool) |  |  |
-| cache_ping_ttl_ms | [int64](#int64) |  |  |
+| proxy_protocol | [bool](#bool) |  | Whether to enable HA-Proxy protocol for this route |
+| tcp_shield_real_ip | [bool](#bool) |  | Whether to enable TCPShield real IP support |
+| modify_virtual_host | [bool](#bool) |  | Whether to modify the virtual host header |
+| cache_ping_ttl_ms | [int64](#int64) |  | Cache TTL for ping responses in milliseconds |
+
+
+
+
+
+
+<a name="minekube-gate-v1-LiteStats"></a>
+
+### LiteStats
+LiteStats contains statistics for lite proxy mode.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| connections | [int32](#int32) |  | Number of active connections being proxied |
+| routes | [int32](#int32) |  | Number of configured routes |
 
 
 
@@ -743,8 +737,8 @@ RemoveLiteRouteBackendRequest removes a backend from a route.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| backend | [string](#string) |  |  |
+| host | [string](#string) |  | Host matcher to update (case-insensitive) |
+| backend | [string](#string) |  | Backend address to remove |
 
 
 
@@ -822,11 +816,11 @@ StatusConfig represents status response settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| motd | [string](#string) |  |  |
-| show_max_players | [int32](#int32) |  |  |
-| favicon | [string](#string) |  |  |
-| log_ping_requests | [bool](#bool) |  |  |
-| announce_forge | [bool](#bool) |  |  |
+| motd | [string](#string) |  | Message of the Day displayed in server list |
+| show_max_players | [int32](#int32) |  | Maximum players shown in server list |
+| favicon | [string](#string) |  | Base64-encoded favicon image |
+| log_ping_requests | [bool](#bool) |  | Whether to log ping requests |
+| announce_forge | [bool](#bool) |  | Whether the proxy should present itself as Forge/FML-compatible |
 
 
 
@@ -854,21 +848,6 @@ StoreCookieRequest is the request for StoreCookie method.
 
 ### StoreCookieResponse
 StoreCookieResponse is the response for StoreCookie method.
-
-
-
-
-
-
-<a name="minekube-gate-v1-StringList"></a>
-
-### StringList
-StringList helper for repeated string values in maps
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| values | [string](#string) | repeated |  |
 
 
 
@@ -909,9 +888,9 @@ UpdateLiteRouteFallbackRequest updates fallback metadata using a field mask.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| fallback | [LiteRouteFallback](#minekube-gate-v1-LiteRouteFallback) |  |  |
-| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  |  |
+| host | [string](#string) |  | Host matcher to update (case-insensitive) |
+| fallback | [LiteRouteFallback](#minekube-gate-v1-LiteRouteFallback) |  | New fallback configuration to apply |
+| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  | Field mask specifying which fallback fields to update |
 
 
 
@@ -941,9 +920,9 @@ UpdateLiteRouteOptionsRequest updates per-route options using a field mask.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| options | [LiteRouteOptions](#minekube-gate-v1-LiteRouteOptions) |  |  |
-| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  |  |
+| host | [string](#string) |  | Host matcher to update (case-insensitive) |
+| options | [LiteRouteOptions](#minekube-gate-v1-LiteRouteOptions) |  | New options to apply |
+| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  | Field mask specifying which options to update |
 
 
 
@@ -973,8 +952,8 @@ UpdateLiteRouteStrategyRequest updates the load-balancing strategy for a route.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| strategy | [string](#string) |  |  |
+| host | [string](#string) |  | Host matcher to update (case-insensitive) |
+| strategy | [LiteRouteStrategy](#minekube-gate-v1-LiteRouteStrategy) |  | New load balancing strategy to apply |
 
 
 
@@ -1000,13 +979,12 @@ UpdateLiteRouteStrategyResponse contains validation warnings.
 
 ### ValidateConfigRequest
 ValidateConfigRequest is the request for ValidateConfig method.
-Use either yaml_config for YAML configurations or json_config for structured JSON configurations.
+The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| yaml_config | [string](#string) |  | YAML configuration as string |
-| json_config | [GateConfig](#minekube-gate-v1-GateConfig) |  | JSON configuration as structured protobuf |
+| config | [string](#string) |  | Configuration data as YAML or JSON string |
 
 
 
@@ -1016,12 +994,13 @@ Use either yaml_config for YAML configurations or json_config for structured JSO
 <a name="minekube-gate-v1-ValidateConfigResponse"></a>
 
 ### ValidateConfigResponse
-ValidateConfigResponse contains validation warnings when the config is valid.
+ValidateConfigResponse contains validation results when the config is processed.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | warnings | [string](#string) | repeated |  |
+| errors | [string](#string) | repeated |  |
 
 
 
@@ -1030,16 +1009,75 @@ ValidateConfigResponse contains validation warnings when the config is valid.
  
 
 
-<a name="minekube-gate-v1-ConfigFormat"></a>
+<a name="minekube-gate-v1-BedrockDeviceOS"></a>
 
-### ConfigFormat
-ConfigFormat specifies the serialization format for config payloads.
+### BedrockDeviceOS
+BedrockDeviceOS represents the operating system of a Bedrock Edition player&#39;s device.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| CONFIG_FORMAT_UNSPECIFIED | 0 |  |
-| CONFIG_FORMAT_JSON | 1 |  |
-| CONFIG_FORMAT_YAML | 2 |  |
+| BEDROCK_DEVICE_OS_UNSPECIFIED | 0 |  |
+| BEDROCK_DEVICE_OS_UNKNOWN | 1 |  |
+| BEDROCK_DEVICE_OS_ANDROID | 2 |  |
+| BEDROCK_DEVICE_OS_IOS | 3 |  |
+| BEDROCK_DEVICE_OS_MACOS | 4 |  |
+| BEDROCK_DEVICE_OS_AMAZON | 5 |  |
+| BEDROCK_DEVICE_OS_GEAR_VR | 6 |  |
+| BEDROCK_DEVICE_OS_HOLOLENS | 7 | Deprecated |
+| BEDROCK_DEVICE_OS_WINDOWS_UWP | 8 |  |
+| BEDROCK_DEVICE_OS_WINDOWS_X86 | 9 |  |
+| BEDROCK_DEVICE_OS_DEDICATED | 10 |  |
+| BEDROCK_DEVICE_OS_APPLE_TV | 11 | Deprecated |
+| BEDROCK_DEVICE_OS_PLAYSTATION | 12 |  |
+| BEDROCK_DEVICE_OS_SWITCH | 13 |  |
+| BEDROCK_DEVICE_OS_XBOX | 14 |  |
+| BEDROCK_DEVICE_OS_WINDOWS_PHONE | 15 | Deprecated |
+| BEDROCK_DEVICE_OS_LINUX | 16 |  |
+
+
+
+<a name="minekube-gate-v1-BedrockInputMode"></a>
+
+### BedrockInputMode
+BedrockInputMode represents the input method used by a Bedrock Edition player.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BEDROCK_INPUT_MODE_UNSPECIFIED | 0 |  |
+| BEDROCK_INPUT_MODE_UNKNOWN | 1 |  |
+| BEDROCK_INPUT_MODE_MOUSE | 2 |  |
+| BEDROCK_INPUT_MODE_TOUCH | 3 |  |
+| BEDROCK_INPUT_MODE_GAMEPAD | 4 |  |
+| BEDROCK_INPUT_MODE_MOTION_CONTROLLER | 5 |  |
+
+
+
+<a name="minekube-gate-v1-BedrockUIProfile"></a>
+
+### BedrockUIProfile
+BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BEDROCK_UI_PROFILE_UNSPECIFIED | 0 |  |
+| BEDROCK_UI_PROFILE_CLASSIC | 1 |  |
+| BEDROCK_UI_PROFILE_POCKET | 2 |  |
+
+
+
+<a name="minekube-gate-v1-LiteRouteStrategy"></a>
+
+### LiteRouteStrategy
+LiteRouteStrategy represents load balancing strategies for lite routes.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LITE_ROUTE_STRATEGY_UNSPECIFIED | 0 |  |
+| LITE_ROUTE_STRATEGY_SEQUENTIAL | 1 |  |
+| LITE_ROUTE_STRATEGY_RANDOM | 2 |  |
+| LITE_ROUTE_STRATEGY_ROUND_ROBIN | 3 |  |
+| LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS | 4 |  |
+| LITE_ROUTE_STRATEGY_LOWEST_LATENCY | 5 |  |
 
 
 
@@ -1058,6 +1096,23 @@ ProxyMode enumerates the current operating mode of Gate.
  
 
  
+
+
+<a name="minekube-gate-v1-GateLiteService"></a>
+
+### GateLiteService
+GateLiteService provides APIs for managing Gate Lite mode routes and backends.
+This service is only available when Gate is running in Lite mode.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| ListLiteRoutes | [ListLiteRoutesRequest](#minekube-gate-v1-ListLiteRoutesRequest) | [ListLiteRoutesResponse](#minekube-gate-v1-ListLiteRoutesResponse) | ListLiteRoutes returns lite routes and their active connection counters. |
+| GetLiteRoute | [GetLiteRouteRequest](#minekube-gate-v1-GetLiteRouteRequest) | [GetLiteRouteResponse](#minekube-gate-v1-GetLiteRouteResponse) | GetLiteRoute returns detailed information about a single lite route. |
+| UpdateLiteRouteStrategy | [UpdateLiteRouteStrategyRequest](#minekube-gate-v1-UpdateLiteRouteStrategyRequest) | [UpdateLiteRouteStrategyResponse](#minekube-gate-v1-UpdateLiteRouteStrategyResponse) | UpdateLiteRouteStrategy updates the load-balancing strategy for a lite route. |
+| AddLiteRouteBackend | [AddLiteRouteBackendRequest](#minekube-gate-v1-AddLiteRouteBackendRequest) | [AddLiteRouteBackendResponse](#minekube-gate-v1-AddLiteRouteBackendResponse) | AddLiteRouteBackend adds a backend target to a lite route. |
+| RemoveLiteRouteBackend | [RemoveLiteRouteBackendRequest](#minekube-gate-v1-RemoveLiteRouteBackendRequest) | [RemoveLiteRouteBackendResponse](#minekube-gate-v1-RemoveLiteRouteBackendResponse) | RemoveLiteRouteBackend removes a backend target from a lite route. |
+| UpdateLiteRouteOptions | [UpdateLiteRouteOptionsRequest](#minekube-gate-v1-UpdateLiteRouteOptionsRequest) | [UpdateLiteRouteOptionsResponse](#minekube-gate-v1-UpdateLiteRouteOptionsResponse) | UpdateLiteRouteOptions updates proxy options for a lite route using a field mask. |
+| UpdateLiteRouteFallback | [UpdateLiteRouteFallbackRequest](#minekube-gate-v1-UpdateLiteRouteFallbackRequest) | [UpdateLiteRouteFallbackResponse](#minekube-gate-v1-UpdateLiteRouteFallbackResponse) | UpdateLiteRouteFallback updates fallback metadata for a lite route using a field mask. |
 
 
 <a name="minekube-gate-v1-GateService"></a>
@@ -1079,16 +1134,9 @@ All methods follow standard gRPC error codes and include detailed error messages
 | StoreCookie | [StoreCookieRequest](#minekube-gate-v1-StoreCookieRequest) | [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse) | StoreCookie stores a cookie on a player&#39;s client. Returns NOT_FOUND if the player doesn&#39;t exist. Passing an empty payload will remove the cookie. |
 | RequestCookie | [RequestCookieRequest](#minekube-gate-v1-RequestCookieRequest) | [RequestCookieResponse](#minekube-gate-v1-RequestCookieResponse) | RequestCookie requests a cookie from a player&#39;s client. The payload in RequestCookieResponse may be empty if the cookie is not found. |
 | GetStatus | [GetStatusRequest](#minekube-gate-v1-GetStatusRequest) | [GetStatusResponse](#minekube-gate-v1-GetStatusResponse) | GetStatus returns current proxy metadata including version, mode, players and servers. |
-| GetConfig | [GetConfigRequest](#minekube-gate-v1-GetConfigRequest) | [GetConfigResponse](#minekube-gate-v1-GetConfigResponse) | GetConfig returns the current effective config with secrets redacted. |
+| GetConfig | [GetConfigRequest](#minekube-gate-v1-GetConfigRequest) | [GetConfigResponse](#minekube-gate-v1-GetConfigResponse) | GetConfig returns the current effective config. |
 | ValidateConfig | [ValidateConfigRequest](#minekube-gate-v1-ValidateConfigRequest) | [ValidateConfigResponse](#minekube-gate-v1-ValidateConfigResponse) | ValidateConfig parses and validates a config payload without applying it. |
 | ApplyConfig | [ApplyConfigRequest](#minekube-gate-v1-ApplyConfigRequest) | [ApplyConfigResponse](#minekube-gate-v1-ApplyConfigResponse) | ApplyConfig parses, validates, and applies a new config payload. |
-| ListLiteRoutes | [ListLiteRoutesRequest](#minekube-gate-v1-ListLiteRoutesRequest) | [ListLiteRoutesResponse](#minekube-gate-v1-ListLiteRoutesResponse) | ListLiteRoutes returns lite routes and their active connection counters. |
-| GetLiteRoute | [GetLiteRouteRequest](#minekube-gate-v1-GetLiteRouteRequest) | [GetLiteRouteResponse](#minekube-gate-v1-GetLiteRouteResponse) | GetLiteRoute returns detailed information about a single lite route. |
-| UpdateLiteRouteStrategy | [UpdateLiteRouteStrategyRequest](#minekube-gate-v1-UpdateLiteRouteStrategyRequest) | [UpdateLiteRouteStrategyResponse](#minekube-gate-v1-UpdateLiteRouteStrategyResponse) | UpdateLiteRouteStrategy updates the load-balancing strategy for a lite route. |
-| AddLiteRouteBackend | [AddLiteRouteBackendRequest](#minekube-gate-v1-AddLiteRouteBackendRequest) | [AddLiteRouteBackendResponse](#minekube-gate-v1-AddLiteRouteBackendResponse) | AddLiteRouteBackend adds a backend target to a lite route. |
-| RemoveLiteRouteBackend | [RemoveLiteRouteBackendRequest](#minekube-gate-v1-RemoveLiteRouteBackendRequest) | [RemoveLiteRouteBackendResponse](#minekube-gate-v1-RemoveLiteRouteBackendResponse) | RemoveLiteRouteBackend removes a backend target from a lite route. |
-| UpdateLiteRouteOptions | [UpdateLiteRouteOptionsRequest](#minekube-gate-v1-UpdateLiteRouteOptionsRequest) | [UpdateLiteRouteOptionsResponse](#minekube-gate-v1-UpdateLiteRouteOptionsResponse) | UpdateLiteRouteOptions updates proxy options for a lite route using a field mask. |
-| UpdateLiteRouteFallback | [UpdateLiteRouteFallbackRequest](#minekube-gate-v1-UpdateLiteRouteFallbackRequest) | [UpdateLiteRouteFallbackResponse](#minekube-gate-v1-UpdateLiteRouteFallbackResponse) | UpdateLiteRouteFallback updates fallback metadata for a lite route using a field mask. |
 
  
 

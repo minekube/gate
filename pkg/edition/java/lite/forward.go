@@ -67,12 +67,9 @@ func Forward(
 		return
 	}
 
-	// Track connection for least-connections strategy
-	var decrementConnection func()
-	if route.Strategy == config.StrategyLeastConnections {
-		decrementConnection = strategyManager.IncrementConnection(backendAddr)
-		defer decrementConnection()
-	}
+	// Track connection for all strategies (used by status API and least-connections strategy)
+	decrementConnection := strategyManager.IncrementConnection(backendAddr)
+	defer decrementConnection()
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
 	pipe(log, src, dst)

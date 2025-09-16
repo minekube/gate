@@ -73,54 +73,264 @@ func (ProxyMode) EnumDescriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{0}
 }
 
-// ConfigFormat specifies the serialization format for config payloads.
-type ConfigFormat int32
+// BedrockDeviceOS represents the operating system of a Bedrock Edition player's device.
+type BedrockDeviceOS int32
 
 const (
-	ConfigFormat_CONFIG_FORMAT_UNSPECIFIED ConfigFormat = 0
-	ConfigFormat_CONFIG_FORMAT_JSON        ConfigFormat = 1
-	ConfigFormat_CONFIG_FORMAT_YAML        ConfigFormat = 2
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_UNSPECIFIED   BedrockDeviceOS = 0
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_UNKNOWN       BedrockDeviceOS = 1
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_ANDROID       BedrockDeviceOS = 2
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_IOS           BedrockDeviceOS = 3
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_MACOS         BedrockDeviceOS = 4
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_AMAZON        BedrockDeviceOS = 5
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_GEAR_VR       BedrockDeviceOS = 6
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_HOLOLENS      BedrockDeviceOS = 7 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_UWP   BedrockDeviceOS = 8
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_X86   BedrockDeviceOS = 9
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_DEDICATED     BedrockDeviceOS = 10
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_APPLE_TV      BedrockDeviceOS = 11 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_PLAYSTATION   BedrockDeviceOS = 12
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_SWITCH        BedrockDeviceOS = 13
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_XBOX          BedrockDeviceOS = 14
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_PHONE BedrockDeviceOS = 15 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_LINUX         BedrockDeviceOS = 16
 )
 
-// Enum value maps for ConfigFormat.
+// Enum value maps for BedrockDeviceOS.
 var (
-	ConfigFormat_name = map[int32]string{
-		0: "CONFIG_FORMAT_UNSPECIFIED",
-		1: "CONFIG_FORMAT_JSON",
-		2: "CONFIG_FORMAT_YAML",
+	BedrockDeviceOS_name = map[int32]string{
+		0:  "BEDROCK_DEVICE_OS_UNSPECIFIED",
+		1:  "BEDROCK_DEVICE_OS_UNKNOWN",
+		2:  "BEDROCK_DEVICE_OS_ANDROID",
+		3:  "BEDROCK_DEVICE_OS_IOS",
+		4:  "BEDROCK_DEVICE_OS_MACOS",
+		5:  "BEDROCK_DEVICE_OS_AMAZON",
+		6:  "BEDROCK_DEVICE_OS_GEAR_VR",
+		7:  "BEDROCK_DEVICE_OS_HOLOLENS",
+		8:  "BEDROCK_DEVICE_OS_WINDOWS_UWP",
+		9:  "BEDROCK_DEVICE_OS_WINDOWS_X86",
+		10: "BEDROCK_DEVICE_OS_DEDICATED",
+		11: "BEDROCK_DEVICE_OS_APPLE_TV",
+		12: "BEDROCK_DEVICE_OS_PLAYSTATION",
+		13: "BEDROCK_DEVICE_OS_SWITCH",
+		14: "BEDROCK_DEVICE_OS_XBOX",
+		15: "BEDROCK_DEVICE_OS_WINDOWS_PHONE",
+		16: "BEDROCK_DEVICE_OS_LINUX",
 	}
-	ConfigFormat_value = map[string]int32{
-		"CONFIG_FORMAT_UNSPECIFIED": 0,
-		"CONFIG_FORMAT_JSON":        1,
-		"CONFIG_FORMAT_YAML":        2,
+	BedrockDeviceOS_value = map[string]int32{
+		"BEDROCK_DEVICE_OS_UNSPECIFIED":   0,
+		"BEDROCK_DEVICE_OS_UNKNOWN":       1,
+		"BEDROCK_DEVICE_OS_ANDROID":       2,
+		"BEDROCK_DEVICE_OS_IOS":           3,
+		"BEDROCK_DEVICE_OS_MACOS":         4,
+		"BEDROCK_DEVICE_OS_AMAZON":        5,
+		"BEDROCK_DEVICE_OS_GEAR_VR":       6,
+		"BEDROCK_DEVICE_OS_HOLOLENS":      7,
+		"BEDROCK_DEVICE_OS_WINDOWS_UWP":   8,
+		"BEDROCK_DEVICE_OS_WINDOWS_X86":   9,
+		"BEDROCK_DEVICE_OS_DEDICATED":     10,
+		"BEDROCK_DEVICE_OS_APPLE_TV":      11,
+		"BEDROCK_DEVICE_OS_PLAYSTATION":   12,
+		"BEDROCK_DEVICE_OS_SWITCH":        13,
+		"BEDROCK_DEVICE_OS_XBOX":          14,
+		"BEDROCK_DEVICE_OS_WINDOWS_PHONE": 15,
+		"BEDROCK_DEVICE_OS_LINUX":         16,
 	}
 )
 
-func (x ConfigFormat) Enum() *ConfigFormat {
-	p := new(ConfigFormat)
+func (x BedrockDeviceOS) Enum() *BedrockDeviceOS {
+	p := new(BedrockDeviceOS)
 	*p = x
 	return p
 }
 
-func (x ConfigFormat) String() string {
+func (x BedrockDeviceOS) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ConfigFormat) Descriptor() protoreflect.EnumDescriptor {
+func (BedrockDeviceOS) Descriptor() protoreflect.EnumDescriptor {
 	return file_minekube_gate_v1_gate_service_proto_enumTypes[1].Descriptor()
 }
 
-func (ConfigFormat) Type() protoreflect.EnumType {
+func (BedrockDeviceOS) Type() protoreflect.EnumType {
 	return &file_minekube_gate_v1_gate_service_proto_enumTypes[1]
 }
 
-func (x ConfigFormat) Number() protoreflect.EnumNumber {
+func (x BedrockDeviceOS) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ConfigFormat.Descriptor instead.
-func (ConfigFormat) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use BedrockDeviceOS.Descriptor instead.
+func (BedrockDeviceOS) EnumDescriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{1}
+}
+
+// BedrockInputMode represents the input method used by a Bedrock Edition player.
+type BedrockInputMode int32
+
+const (
+	BedrockInputMode_BEDROCK_INPUT_MODE_UNSPECIFIED       BedrockInputMode = 0
+	BedrockInputMode_BEDROCK_INPUT_MODE_UNKNOWN           BedrockInputMode = 1
+	BedrockInputMode_BEDROCK_INPUT_MODE_MOUSE             BedrockInputMode = 2
+	BedrockInputMode_BEDROCK_INPUT_MODE_TOUCH             BedrockInputMode = 3
+	BedrockInputMode_BEDROCK_INPUT_MODE_GAMEPAD           BedrockInputMode = 4
+	BedrockInputMode_BEDROCK_INPUT_MODE_MOTION_CONTROLLER BedrockInputMode = 5
+)
+
+// Enum value maps for BedrockInputMode.
+var (
+	BedrockInputMode_name = map[int32]string{
+		0: "BEDROCK_INPUT_MODE_UNSPECIFIED",
+		1: "BEDROCK_INPUT_MODE_UNKNOWN",
+		2: "BEDROCK_INPUT_MODE_MOUSE",
+		3: "BEDROCK_INPUT_MODE_TOUCH",
+		4: "BEDROCK_INPUT_MODE_GAMEPAD",
+		5: "BEDROCK_INPUT_MODE_MOTION_CONTROLLER",
+	}
+	BedrockInputMode_value = map[string]int32{
+		"BEDROCK_INPUT_MODE_UNSPECIFIED":       0,
+		"BEDROCK_INPUT_MODE_UNKNOWN":           1,
+		"BEDROCK_INPUT_MODE_MOUSE":             2,
+		"BEDROCK_INPUT_MODE_TOUCH":             3,
+		"BEDROCK_INPUT_MODE_GAMEPAD":           4,
+		"BEDROCK_INPUT_MODE_MOTION_CONTROLLER": 5,
+	}
+)
+
+func (x BedrockInputMode) Enum() *BedrockInputMode {
+	p := new(BedrockInputMode)
+	*p = x
+	return p
+}
+
+func (x BedrockInputMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BedrockInputMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[2].Descriptor()
+}
+
+func (BedrockInputMode) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[2]
+}
+
+func (x BedrockInputMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BedrockInputMode.Descriptor instead.
+func (BedrockInputMode) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{2}
+}
+
+// BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+type BedrockUIProfile int32
+
+const (
+	BedrockUIProfile_BEDROCK_UI_PROFILE_UNSPECIFIED BedrockUIProfile = 0
+	BedrockUIProfile_BEDROCK_UI_PROFILE_CLASSIC     BedrockUIProfile = 1
+	BedrockUIProfile_BEDROCK_UI_PROFILE_POCKET      BedrockUIProfile = 2
+)
+
+// Enum value maps for BedrockUIProfile.
+var (
+	BedrockUIProfile_name = map[int32]string{
+		0: "BEDROCK_UI_PROFILE_UNSPECIFIED",
+		1: "BEDROCK_UI_PROFILE_CLASSIC",
+		2: "BEDROCK_UI_PROFILE_POCKET",
+	}
+	BedrockUIProfile_value = map[string]int32{
+		"BEDROCK_UI_PROFILE_UNSPECIFIED": 0,
+		"BEDROCK_UI_PROFILE_CLASSIC":     1,
+		"BEDROCK_UI_PROFILE_POCKET":      2,
+	}
+)
+
+func (x BedrockUIProfile) Enum() *BedrockUIProfile {
+	p := new(BedrockUIProfile)
+	*p = x
+	return p
+}
+
+func (x BedrockUIProfile) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BedrockUIProfile) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[3].Descriptor()
+}
+
+func (BedrockUIProfile) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[3]
+}
+
+func (x BedrockUIProfile) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BedrockUIProfile.Descriptor instead.
+func (BedrockUIProfile) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{3}
+}
+
+// LiteRouteStrategy represents load balancing strategies for lite routes.
+type LiteRouteStrategy int32
+
+const (
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_UNSPECIFIED       LiteRouteStrategy = 0
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_SEQUENTIAL        LiteRouteStrategy = 1
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_RANDOM            LiteRouteStrategy = 2
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_ROUND_ROBIN       LiteRouteStrategy = 3
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS LiteRouteStrategy = 4
+	LiteRouteStrategy_LITE_ROUTE_STRATEGY_LOWEST_LATENCY    LiteRouteStrategy = 5
+)
+
+// Enum value maps for LiteRouteStrategy.
+var (
+	LiteRouteStrategy_name = map[int32]string{
+		0: "LITE_ROUTE_STRATEGY_UNSPECIFIED",
+		1: "LITE_ROUTE_STRATEGY_SEQUENTIAL",
+		2: "LITE_ROUTE_STRATEGY_RANDOM",
+		3: "LITE_ROUTE_STRATEGY_ROUND_ROBIN",
+		4: "LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS",
+		5: "LITE_ROUTE_STRATEGY_LOWEST_LATENCY",
+	}
+	LiteRouteStrategy_value = map[string]int32{
+		"LITE_ROUTE_STRATEGY_UNSPECIFIED":       0,
+		"LITE_ROUTE_STRATEGY_SEQUENTIAL":        1,
+		"LITE_ROUTE_STRATEGY_RANDOM":            2,
+		"LITE_ROUTE_STRATEGY_ROUND_ROBIN":       3,
+		"LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS": 4,
+		"LITE_ROUTE_STRATEGY_LOWEST_LATENCY":    5,
+	}
+)
+
+func (x LiteRouteStrategy) Enum() *LiteRouteStrategy {
+	p := new(LiteRouteStrategy)
+	*p = x
+	return p
+}
+
+func (x LiteRouteStrategy) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LiteRouteStrategy) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[4].Descriptor()
+}
+
+func (LiteRouteStrategy) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[4]
+}
+
+func (x LiteRouteStrategy) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LiteRouteStrategy.Descriptor instead.
+func (LiteRouteStrategy) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{4}
 }
 
 // StoreCookieRequest is the request for StoreCookie method.
@@ -336,7 +546,7 @@ type DisconnectPlayerRequest struct {
 	//
 	// Formats:
 	//
-	// - `{\"text\":\"Hello, world!\"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+	// - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
 	//
 	// - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
 	//
@@ -1123,13 +1333,13 @@ type BedrockPlayerData struct {
 	// Xbox User ID (XUID) - unique identifier for Bedrock players
 	Xuid int64 `protobuf:"varint,1,opt,name=xuid,proto3" json:"xuid,omitempty"`
 	// Device operating system the player is using
-	DeviceOs string `protobuf:"bytes,2,opt,name=device_os,json=deviceOs,proto3" json:"device_os,omitempty"`
+	DeviceOs BedrockDeviceOS `protobuf:"varint,2,opt,name=device_os,json=deviceOs,proto3,enum=minekube.gate.v1.BedrockDeviceOS" json:"device_os,omitempty"`
 	// Client language code (e.g., "en_US")
 	Language string `protobuf:"bytes,3,opt,name=language,proto3" json:"language,omitempty"`
-	// UI profile: 0 = Classic, 1 = Pocket
-	UiProfile int32 `protobuf:"varint,4,opt,name=ui_profile,json=uiProfile,proto3" json:"ui_profile,omitempty"`
-	// Input mode: 0 = Unknown, 1 = Mouse, 2 = Touch, 3 = GamePad, 4 = MotionController
-	InputMode int32 `protobuf:"varint,5,opt,name=input_mode,json=inputMode,proto3" json:"input_mode,omitempty"`
+	// UI profile (Classic or Pocket)
+	UiProfile BedrockUIProfile `protobuf:"varint,4,opt,name=ui_profile,json=uiProfile,proto3,enum=minekube.gate.v1.BedrockUIProfile" json:"ui_profile,omitempty"`
+	// Input method (mouse, touch, gamepad, etc.)
+	InputMode BedrockInputMode `protobuf:"varint,5,opt,name=input_mode,json=inputMode,proto3,enum=minekube.gate.v1.BedrockInputMode" json:"input_mode,omitempty"`
 	// Whether the player is connecting through a proxy
 	BehindProxy bool `protobuf:"varint,6,opt,name=behind_proxy,json=behindProxy,proto3" json:"behind_proxy,omitempty"`
 	// Linked Java Edition username (if any)
@@ -1175,11 +1385,11 @@ func (x *BedrockPlayerData) GetXuid() int64 {
 	return 0
 }
 
-func (x *BedrockPlayerData) GetDeviceOs() string {
+func (x *BedrockPlayerData) GetDeviceOs() BedrockDeviceOS {
 	if x != nil {
 		return x.DeviceOs
 	}
-	return ""
+	return BedrockDeviceOS_BEDROCK_DEVICE_OS_UNSPECIFIED
 }
 
 func (x *BedrockPlayerData) GetLanguage() string {
@@ -1189,18 +1399,18 @@ func (x *BedrockPlayerData) GetLanguage() string {
 	return ""
 }
 
-func (x *BedrockPlayerData) GetUiProfile() int32 {
+func (x *BedrockPlayerData) GetUiProfile() BedrockUIProfile {
 	if x != nil {
 		return x.UiProfile
 	}
-	return 0
+	return BedrockUIProfile_BEDROCK_UI_PROFILE_UNSPECIFIED
 }
 
-func (x *BedrockPlayerData) GetInputMode() int32 {
+func (x *BedrockPlayerData) GetInputMode() BedrockInputMode {
 	if x != nil {
 		return x.InputMode
 	}
-	return 0
+	return BedrockInputMode_BEDROCK_INPUT_MODE_UNSPECIFIED
 }
 
 func (x *BedrockPlayerData) GetBehindProxy() bool {
@@ -1256,11 +1466,18 @@ func (*GetStatusRequest) Descriptor() ([]byte, []int) {
 
 // GetStatusResponse contains proxy runtime metadata.
 type GetStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	Mode          ProxyMode              `protobuf:"varint,2,opt,name=mode,proto3,enum=minekube.gate.v1.ProxyMode" json:"mode,omitempty"`
-	Players       int32                  `protobuf:"varint,3,opt,name=players,proto3" json:"players,omitempty"`
-	Servers       int32                  `protobuf:"varint,4,opt,name=servers,proto3" json:"servers,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Gate version string
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// Current operating mode (classic or lite)
+	Mode ProxyMode `protobuf:"varint,2,opt,name=mode,proto3,enum=minekube.gate.v1.ProxyMode" json:"mode,omitempty"`
+	// Mode-specific statistics
+	//
+	// Types that are valid to be assigned to Stats:
+	//
+	//	*GetStatusResponse_Classic
+	//	*GetStatusResponse_Lite
+	Stats         isGetStatusResponse_Stats `protobuf_oneof:"stats"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1309,16 +1526,155 @@ func (x *GetStatusResponse) GetMode() ProxyMode {
 	return ProxyMode_PROXY_MODE_UNSPECIFIED
 }
 
-func (x *GetStatusResponse) GetPlayers() int32 {
+func (x *GetStatusResponse) GetStats() isGetStatusResponse_Stats {
+	if x != nil {
+		return x.Stats
+	}
+	return nil
+}
+
+func (x *GetStatusResponse) GetClassic() *ClassicStats {
+	if x != nil {
+		if x, ok := x.Stats.(*GetStatusResponse_Classic); ok {
+			return x.Classic
+		}
+	}
+	return nil
+}
+
+func (x *GetStatusResponse) GetLite() *LiteStats {
+	if x != nil {
+		if x, ok := x.Stats.(*GetStatusResponse_Lite); ok {
+			return x.Lite
+		}
+	}
+	return nil
+}
+
+type isGetStatusResponse_Stats interface {
+	isGetStatusResponse_Stats()
+}
+
+type GetStatusResponse_Classic struct {
+	// Statistics for classic mode
+	Classic *ClassicStats `protobuf:"bytes,3,opt,name=classic,proto3,oneof"`
+}
+
+type GetStatusResponse_Lite struct {
+	// Statistics for lite mode
+	Lite *LiteStats `protobuf:"bytes,4,opt,name=lite,proto3,oneof"`
+}
+
+func (*GetStatusResponse_Classic) isGetStatusResponse_Stats() {}
+
+func (*GetStatusResponse_Lite) isGetStatusResponse_Stats() {}
+
+// ClassicStats contains statistics for classic proxy mode.
+type ClassicStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of online players
+	Players int32 `protobuf:"varint,1,opt,name=players,proto3" json:"players,omitempty"`
+	// Number of registered servers
+	Servers       int32 `protobuf:"varint,2,opt,name=servers,proto3" json:"servers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClassicStats) Reset() {
+	*x = ClassicStats{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassicStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassicStats) ProtoMessage() {}
+
+func (x *ClassicStats) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassicStats.ProtoReflect.Descriptor instead.
+func (*ClassicStats) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ClassicStats) GetPlayers() int32 {
 	if x != nil {
 		return x.Players
 	}
 	return 0
 }
 
-func (x *GetStatusResponse) GetServers() int32 {
+func (x *ClassicStats) GetServers() int32 {
 	if x != nil {
 		return x.Servers
+	}
+	return 0
+}
+
+// LiteStats contains statistics for lite proxy mode.
+type LiteStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of active connections being proxied
+	Connections int32 `protobuf:"varint,1,opt,name=connections,proto3" json:"connections,omitempty"`
+	// Number of configured routes
+	Routes        int32 `protobuf:"varint,2,opt,name=routes,proto3" json:"routes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LiteStats) Reset() {
+	*x = LiteStats{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LiteStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LiteStats) ProtoMessage() {}
+
+func (x *LiteStats) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LiteStats.ProtoReflect.Descriptor instead.
+func (*LiteStats) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *LiteStats) GetConnections() int32 {
+	if x != nil {
+		return x.Connections
+	}
+	return 0
+}
+
+func (x *LiteStats) GetRoutes() int32 {
+	if x != nil {
+		return x.Routes
 	}
 	return 0
 }
@@ -1327,16 +1683,15 @@ func (x *GetStatusResponse) GetServers() int32 {
 type GateConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Api           *APIConfig             `protobuf:"bytes,1,opt,name=api,proto3" json:"api,omitempty"`
-	HealthService *HealthServiceConfig   `protobuf:"bytes,2,opt,name=health_service,json=healthService,proto3" json:"health_service,omitempty"`
-	Connect       *ConnectConfig         `protobuf:"bytes,3,opt,name=connect,proto3" json:"connect,omitempty"`
-	Config        *JavaConfig            `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
+	Connect       *ConnectConfig         `protobuf:"bytes,2,opt,name=connect,proto3" json:"connect,omitempty"`
+	Config        *JavaConfig            `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GateConfig) Reset() {
 	*x = GateConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1348,7 +1703,7 @@ func (x *GateConfig) String() string {
 func (*GateConfig) ProtoMessage() {}
 
 func (x *GateConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1361,19 +1716,12 @@ func (x *GateConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateConfig.ProtoReflect.Descriptor instead.
 func (*GateConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{23}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GateConfig) GetApi() *APIConfig {
 	if x != nil {
 		return x.Api
-	}
-	return nil
-}
-
-func (x *GateConfig) GetHealthService() *HealthServiceConfig {
-	if x != nil {
-		return x.HealthService
 	}
 	return nil
 }
@@ -1394,16 +1742,18 @@ func (x *GateConfig) GetConfig() *JavaConfig {
 
 // APIConfig represents the Gate API configuration
 type APIConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Bind          string                 `protobuf:"bytes,2,opt,name=bind,proto3" json:"bind,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the API is enabled
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// The address to bind the API server to (using a localhost address is recommended)
+	Bind          string `protobuf:"bytes,2,opt,name=bind,proto3" json:"bind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *APIConfig) Reset() {
 	*x = APIConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1415,7 +1765,7 @@ func (x *APIConfig) String() string {
 func (*APIConfig) ProtoMessage() {}
 
 func (x *APIConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1428,7 +1778,7 @@ func (x *APIConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use APIConfig.ProtoReflect.Descriptor instead.
 func (*APIConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{24}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *APIConfig) GetEnabled() bool {
@@ -1445,72 +1795,22 @@ func (x *APIConfig) GetBind() string {
 	return ""
 }
 
-// HealthServiceConfig represents the health service configuration
-type HealthServiceConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Bind          string                 `protobuf:"bytes,2,opt,name=bind,proto3" json:"bind,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthServiceConfig) Reset() {
-	*x = HealthServiceConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthServiceConfig) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthServiceConfig) ProtoMessage() {}
-
-func (x *HealthServiceConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthServiceConfig.ProtoReflect.Descriptor instead.
-func (*HealthServiceConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *HealthServiceConfig) GetEnabled() bool {
-	if x != nil {
-		return x.Enabled
-	}
-	return false
-}
-
-func (x *HealthServiceConfig) GetBind() string {
-	if x != nil {
-		return x.Bind
-	}
-	return ""
-}
-
 // ConnectConfig represents the Connect network configuration
 type ConnectConfig struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	Enabled                 bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Name                    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	AllowOfflineModePlayers bool                   `protobuf:"varint,3,opt,name=allow_offline_mode_players,json=allowOfflineModePlayers,proto3" json:"allow_offline_mode_players,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether to connect Gate to the WatchService
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Endpoint name
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Allow offline mode players to join
+	AllowOfflineModePlayers bool `protobuf:"varint,3,opt,name=allow_offline_mode_players,json=allowOfflineModePlayers,proto3" json:"allow_offline_mode_players,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ConnectConfig) Reset() {
 	*x = ConnectConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1522,7 +1822,7 @@ func (x *ConnectConfig) String() string {
 func (*ConnectConfig) ProtoMessage() {}
 
 func (x *ConnectConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1535,7 +1835,7 @@ func (x *ConnectConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectConfig.ProtoReflect.Descriptor instead.
 func (*ConnectConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{26}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ConnectConfig) GetEnabled() bool {
@@ -1561,24 +1861,34 @@ func (x *ConnectConfig) GetAllowOfflineModePlayers() bool {
 
 // JavaConfig represents the main Java edition configuration
 type JavaConfig struct {
-	state                      protoimpl.MessageState `protogen:"open.v1"`
-	Bind                       string                 `protobuf:"bytes,1,opt,name=bind,proto3" json:"bind,omitempty"`
-	OnlineMode                 bool                   `protobuf:"varint,2,opt,name=online_mode,json=onlineMode,proto3" json:"online_mode,omitempty"`
-	Forwarding                 *ForwardingConfig      `protobuf:"bytes,3,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	Status                     *StatusConfig          `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	Servers                    map[string]string      `protobuf:"bytes,5,rep,name=servers,proto3" json:"servers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Try                        []string               `protobuf:"bytes,6,rep,name=try,proto3" json:"try,omitempty"`
-	ForcedHosts                map[string]*StringList `protobuf:"bytes,7,rep,name=forced_hosts,json=forcedHosts,proto3" json:"forced_hosts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	AcceptTransfers            bool                   `protobuf:"varint,8,opt,name=accept_transfers,json=acceptTransfers,proto3" json:"accept_transfers,omitempty"`
-	BungeePluginChannelEnabled bool                   `protobuf:"varint,9,opt,name=bungee_plugin_channel_enabled,json=bungeePluginChannelEnabled,proto3" json:"bungee_plugin_channel_enabled,omitempty"`
-	Lite                       *LiteConfig            `protobuf:"bytes,10,opt,name=lite,proto3" json:"lite,omitempty"` // Add other commonly used fields as needed
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The address to listen for connections
+	Bind string `protobuf:"bytes,1,opt,name=bind,proto3" json:"bind,omitempty"`
+	// Whether to enable online mode
+	OnlineMode bool `protobuf:"varint,2,opt,name=online_mode,json=onlineMode,proto3" json:"online_mode,omitempty"`
+	// Player info forwarding settings
+	Forwarding *ForwardingConfig `protobuf:"bytes,3,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
+	// Status response settings
+	Status *StatusConfig `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	// Registered servers (name:address)
+	Servers map[string]string `protobuf:"bytes,5,rep,name=servers,proto3" json:"servers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Try server names order
+	Try []string `protobuf:"bytes,6,rep,name=try,proto3" json:"try,omitempty"`
+	// Note: forced_hosts is represented as JSON string due to protobuf limitations with map<string, []string>
+	ForcedHostsJson string `protobuf:"bytes,7,opt,name=forced_hosts_json,json=forcedHostsJson,proto3" json:"forced_hosts_json,omitempty"`
+	// Whether to accept transfers from other hosts via transfer packet
+	AcceptTransfers bool `protobuf:"varint,8,opt,name=accept_transfers,json=acceptTransfers,proto3" json:"accept_transfers,omitempty"`
+	// Whether to enable BungeeCord plugin messaging
+	BungeePluginChannelEnabled bool `protobuf:"varint,9,opt,name=bungee_plugin_channel_enabled,json=bungeePluginChannelEnabled,proto3" json:"bungee_plugin_channel_enabled,omitempty"`
+	// Lite mode settings
+	Lite          *LiteConfig `protobuf:"bytes,10,opt,name=lite,proto3" json:"lite,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JavaConfig) Reset() {
 	*x = JavaConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1590,7 +1900,7 @@ func (x *JavaConfig) String() string {
 func (*JavaConfig) ProtoMessage() {}
 
 func (x *JavaConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1603,7 +1913,7 @@ func (x *JavaConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JavaConfig.ProtoReflect.Descriptor instead.
 func (*JavaConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{27}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *JavaConfig) GetBind() string {
@@ -1648,11 +1958,11 @@ func (x *JavaConfig) GetTry() []string {
 	return nil
 }
 
-func (x *JavaConfig) GetForcedHosts() map[string]*StringList {
+func (x *JavaConfig) GetForcedHostsJson() string {
 	if x != nil {
-		return x.ForcedHosts
+		return x.ForcedHostsJson
 	}
-	return nil
+	return ""
 }
 
 func (x *JavaConfig) GetAcceptTransfers() bool {
@@ -1678,17 +1988,20 @@ func (x *JavaConfig) GetLite() *LiteConfig {
 
 // ForwardingConfig represents player info forwarding settings
 type ForwardingConfig struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Mode              string                 `protobuf:"bytes,1,opt,name=mode,proto3" json:"mode,omitempty"`
-	VelocitySecret    string                 `protobuf:"bytes,2,opt,name=velocity_secret,json=velocitySecret,proto3" json:"velocity_secret,omitempty"`
-	BungeeGuardSecret string                 `protobuf:"bytes,3,opt,name=bungee_guard_secret,json=bungeeGuardSecret,proto3" json:"bungee_guard_secret,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Forwarding mode ("none", "legacy", "velocity", "bungeeguard")
+	Mode string `protobuf:"bytes,1,opt,name=mode,proto3" json:"mode,omitempty"`
+	// Secret used with "velocity" mode
+	VelocitySecret string `protobuf:"bytes,2,opt,name=velocity_secret,json=velocitySecret,proto3" json:"velocity_secret,omitempty"`
+	// Secret used with "bungeeguard" mode
+	BungeeGuardSecret string `protobuf:"bytes,3,opt,name=bungee_guard_secret,json=bungeeGuardSecret,proto3" json:"bungee_guard_secret,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ForwardingConfig) Reset() {
 	*x = ForwardingConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1700,7 +2013,7 @@ func (x *ForwardingConfig) String() string {
 func (*ForwardingConfig) ProtoMessage() {}
 
 func (x *ForwardingConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1713,7 +2026,7 @@ func (x *ForwardingConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForwardingConfig.ProtoReflect.Descriptor instead.
 func (*ForwardingConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{28}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ForwardingConfig) GetMode() string {
@@ -1739,19 +2052,24 @@ func (x *ForwardingConfig) GetBungeeGuardSecret() string {
 
 // StatusConfig represents status response settings
 type StatusConfig struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Motd            string                 `protobuf:"bytes,1,opt,name=motd,proto3" json:"motd,omitempty"`
-	ShowMaxPlayers  int32                  `protobuf:"varint,2,opt,name=show_max_players,json=showMaxPlayers,proto3" json:"show_max_players,omitempty"`
-	Favicon         string                 `protobuf:"bytes,3,opt,name=favicon,proto3" json:"favicon,omitempty"`
-	LogPingRequests bool                   `protobuf:"varint,4,opt,name=log_ping_requests,json=logPingRequests,proto3" json:"log_ping_requests,omitempty"`
-	AnnounceForge   bool                   `protobuf:"varint,5,opt,name=announce_forge,json=announceForge,proto3" json:"announce_forge,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Message of the Day displayed in server list
+	Motd string `protobuf:"bytes,1,opt,name=motd,proto3" json:"motd,omitempty"`
+	// Maximum players shown in server list
+	ShowMaxPlayers int32 `protobuf:"varint,2,opt,name=show_max_players,json=showMaxPlayers,proto3" json:"show_max_players,omitempty"`
+	// Base64-encoded favicon image
+	Favicon string `protobuf:"bytes,3,opt,name=favicon,proto3" json:"favicon,omitempty"`
+	// Whether to log ping requests
+	LogPingRequests bool `protobuf:"varint,4,opt,name=log_ping_requests,json=logPingRequests,proto3" json:"log_ping_requests,omitempty"`
+	// Whether the proxy should present itself as Forge/FML-compatible
+	AnnounceForge bool `protobuf:"varint,5,opt,name=announce_forge,json=announceForge,proto3" json:"announce_forge,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StatusConfig) Reset() {
 	*x = StatusConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1763,7 +2081,7 @@ func (x *StatusConfig) String() string {
 func (*StatusConfig) ProtoMessage() {}
 
 func (x *StatusConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1776,7 +2094,7 @@ func (x *StatusConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusConfig.ProtoReflect.Descriptor instead.
 func (*StatusConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{29}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *StatusConfig) GetMotd() string {
@@ -1816,16 +2134,18 @@ func (x *StatusConfig) GetAnnounceForge() bool {
 
 // LiteConfig represents Gate Lite mode configuration
 type LiteConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Routes        []*LiteRoute           `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether Lite mode is enabled
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Configured lite routes
+	Routes        []*LiteRoute `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LiteConfig) Reset() {
 	*x = LiteConfig{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1837,7 +2157,7 @@ func (x *LiteConfig) String() string {
 func (*LiteConfig) ProtoMessage() {}
 
 func (x *LiteConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1850,7 +2170,7 @@ func (x *LiteConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiteConfig.ProtoReflect.Descriptor instead.
 func (*LiteConfig) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{30}
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *LiteConfig) GetEnabled() bool {
@@ -1867,56 +2187,9 @@ func (x *LiteConfig) GetRoutes() []*LiteRoute {
 	return nil
 }
 
-// StringList helper for repeated string values in maps
-type StringList struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StringList) Reset() {
-	*x = StringList{}
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[31]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StringList) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StringList) ProtoMessage() {}
-
-func (x *StringList) ProtoReflect() protoreflect.Message {
-	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[31]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StringList.ProtoReflect.Descriptor instead.
-func (*StringList) Descriptor() ([]byte, []int) {
-	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{31}
-}
-
-func (x *StringList) GetValues() []string {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
 // GetConfigRequest is the request for GetConfig method.
-// If format is unspecified JSON will be returned.
 type GetConfigRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Format        ConfigFormat           `protobuf:"varint,1,opt,name=format,proto3,enum=minekube.gate.v1.ConfigFormat" json:"format,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1951,18 +2224,11 @@ func (*GetConfigRequest) Descriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *GetConfigRequest) GetFormat() ConfigFormat {
-	if x != nil {
-		return x.Format
-	}
-	return ConfigFormat_CONFIG_FORMAT_UNSPECIFIED
-}
-
 // GetConfigResponse contains the serialized config payload.
 type GetConfigResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Format        ConfigFormat           `protobuf:"varint,1,opt,name=format,proto3,enum=minekube.gate.v1.ConfigFormat" json:"format,omitempty"`
-	Payload       string                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// YAML-serialized configuration data
+	Payload       string `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1997,13 +2263,6 @@ func (*GetConfigResponse) Descriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *GetConfigResponse) GetFormat() ConfigFormat {
-	if x != nil {
-		return x.Format
-	}
-	return ConfigFormat_CONFIG_FORMAT_UNSPECIFIED
-}
-
 func (x *GetConfigResponse) GetPayload() string {
 	if x != nil {
 		return x.Payload
@@ -2012,14 +2271,11 @@ func (x *GetConfigResponse) GetPayload() string {
 }
 
 // ValidateConfigRequest is the request for ValidateConfig method.
-// Use either yaml_config for YAML configurations or json_config for structured JSON configurations.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
 type ValidateConfigRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Config:
-	//
-	//	*ValidateConfigRequest_YamlConfig
-	//	*ValidateConfigRequest_JsonConfig
-	Config        isValidateConfigRequest_Config `protobuf_oneof:"config"`
+	// Configuration data as YAML or JSON string
+	Config        string `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2054,51 +2310,18 @@ func (*ValidateConfigRequest) Descriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *ValidateConfigRequest) GetConfig() isValidateConfigRequest_Config {
+func (x *ValidateConfigRequest) GetConfig() string {
 	if x != nil {
 		return x.Config
-	}
-	return nil
-}
-
-func (x *ValidateConfigRequest) GetYamlConfig() string {
-	if x != nil {
-		if x, ok := x.Config.(*ValidateConfigRequest_YamlConfig); ok {
-			return x.YamlConfig
-		}
 	}
 	return ""
 }
 
-func (x *ValidateConfigRequest) GetJsonConfig() *GateConfig {
-	if x != nil {
-		if x, ok := x.Config.(*ValidateConfigRequest_JsonConfig); ok {
-			return x.JsonConfig
-		}
-	}
-	return nil
-}
-
-type isValidateConfigRequest_Config interface {
-	isValidateConfigRequest_Config()
-}
-
-type ValidateConfigRequest_YamlConfig struct {
-	YamlConfig string `protobuf:"bytes,1,opt,name=yaml_config,json=yamlConfig,proto3,oneof"` // YAML configuration as string
-}
-
-type ValidateConfigRequest_JsonConfig struct {
-	JsonConfig *GateConfig `protobuf:"bytes,2,opt,name=json_config,json=jsonConfig,proto3,oneof"` // JSON configuration as structured protobuf
-}
-
-func (*ValidateConfigRequest_YamlConfig) isValidateConfigRequest_Config() {}
-
-func (*ValidateConfigRequest_JsonConfig) isValidateConfigRequest_Config() {}
-
-// ValidateConfigResponse contains validation warnings when the config is valid.
+// ValidateConfigResponse contains validation results when the config is processed.
 type ValidateConfigResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Warnings      []string               `protobuf:"bytes,1,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Errors        []string               `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2140,18 +2363,22 @@ func (x *ValidateConfigResponse) GetWarnings() []string {
 	return nil
 }
 
+func (x *ValidateConfigResponse) GetErrors() []string {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
+}
+
 // ApplyConfigRequest is the request for ApplyConfig method.
-// Use either yaml_config for YAML configurations or json_config for structured JSON configurations.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
 type ApplyConfigRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Config:
-	//
-	//	*ApplyConfigRequest_YamlConfig
-	//	*ApplyConfigRequest_JsonConfig
-	Config isApplyConfigRequest_Config `protobuf_oneof:"config"`
+	// Configuration data as YAML or JSON string
+	Config string `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	// Whether to persist the config to disk by overwriting the existing config file.
 	// Only works if a config file exists. Defaults to false (in-memory only).
-	Persist       bool `protobuf:"varint,3,opt,name=persist,proto3" json:"persist,omitempty"`
+	Persist       bool `protobuf:"varint,2,opt,name=persist,proto3" json:"persist,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2186,29 +2413,11 @@ func (*ApplyConfigRequest) Descriptor() ([]byte, []int) {
 	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *ApplyConfigRequest) GetConfig() isApplyConfigRequest_Config {
+func (x *ApplyConfigRequest) GetConfig() string {
 	if x != nil {
 		return x.Config
 	}
-	return nil
-}
-
-func (x *ApplyConfigRequest) GetYamlConfig() string {
-	if x != nil {
-		if x, ok := x.Config.(*ApplyConfigRequest_YamlConfig); ok {
-			return x.YamlConfig
-		}
-	}
 	return ""
-}
-
-func (x *ApplyConfigRequest) GetJsonConfig() *GateConfig {
-	if x != nil {
-		if x, ok := x.Config.(*ApplyConfigRequest_JsonConfig); ok {
-			return x.JsonConfig
-		}
-	}
-	return nil
 }
 
 func (x *ApplyConfigRequest) GetPersist() bool {
@@ -2217,22 +2426,6 @@ func (x *ApplyConfigRequest) GetPersist() bool {
 	}
 	return false
 }
-
-type isApplyConfigRequest_Config interface {
-	isApplyConfigRequest_Config()
-}
-
-type ApplyConfigRequest_YamlConfig struct {
-	YamlConfig string `protobuf:"bytes,1,opt,name=yaml_config,json=yamlConfig,proto3,oneof"` // YAML configuration as string
-}
-
-type ApplyConfigRequest_JsonConfig struct {
-	JsonConfig *GateConfig `protobuf:"bytes,2,opt,name=json_config,json=jsonConfig,proto3,oneof"` // JSON configuration as structured protobuf
-}
-
-func (*ApplyConfigRequest_YamlConfig) isApplyConfigRequest_Config() {}
-
-func (*ApplyConfigRequest_JsonConfig) isApplyConfigRequest_Config() {}
 
 // ApplyConfigResponse contains validation warnings emitted while applying the config.
 type ApplyConfigResponse struct {
@@ -2454,9 +2647,11 @@ func (x *GetLiteRouteResponse) GetRoute() *LiteRoute {
 
 // LiteRouteBackend represents a backend target for a lite route.
 type LiteRouteBackend struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Address           string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	ActiveConnections uint32                 `protobuf:"varint,2,opt,name=active_connections,json=activeConnections,proto3" json:"active_connections,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Network address of the backend server
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// Number of active connections to this backend
+	ActiveConnections uint32 `protobuf:"varint,2,opt,name=active_connections,json=activeConnections,proto3" json:"active_connections,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2507,13 +2702,17 @@ func (x *LiteRouteBackend) GetActiveConnections() uint32 {
 
 // LiteRouteOptions captures proxy behaviour flags for a lite route.
 type LiteRouteOptions struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProxyProtocol     bool                   `protobuf:"varint,1,opt,name=proxy_protocol,json=proxyProtocol,proto3" json:"proxy_protocol,omitempty"`
-	TcpShieldRealIp   bool                   `protobuf:"varint,2,opt,name=tcp_shield_real_ip,json=tcpShieldRealIp,proto3" json:"tcp_shield_real_ip,omitempty"`
-	ModifyVirtualHost bool                   `protobuf:"varint,3,opt,name=modify_virtual_host,json=modifyVirtualHost,proto3" json:"modify_virtual_host,omitempty"`
-	CachePingTtlMs    int64                  `protobuf:"varint,4,opt,name=cache_ping_ttl_ms,json=cachePingTtlMs,proto3" json:"cache_ping_ttl_ms,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether to enable HA-Proxy protocol for this route
+	ProxyProtocol bool `protobuf:"varint,1,opt,name=proxy_protocol,json=proxyProtocol,proto3" json:"proxy_protocol,omitempty"`
+	// Whether to enable TCPShield real IP support
+	TcpShieldRealIp bool `protobuf:"varint,2,opt,name=tcp_shield_real_ip,json=tcpShieldRealIp,proto3" json:"tcp_shield_real_ip,omitempty"`
+	// Whether to modify the virtual host header
+	ModifyVirtualHost bool `protobuf:"varint,3,opt,name=modify_virtual_host,json=modifyVirtualHost,proto3" json:"modify_virtual_host,omitempty"`
+	// Cache TTL for ping responses in milliseconds
+	CachePingTtlMs int64 `protobuf:"varint,4,opt,name=cache_ping_ttl_ms,json=cachePingTtlMs,proto3" json:"cache_ping_ttl_ms,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *LiteRouteOptions) Reset() {
@@ -2576,11 +2775,15 @@ func (x *LiteRouteOptions) GetCachePingTtlMs() int64 {
 
 // LiteRouteFallback contains fallback response data served when all backends fail.
 type LiteRouteFallback struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
-	MotdJson      string                    `protobuf:"bytes,1,opt,name=motd_json,json=motdJson,proto3" json:"motd_json,omitempty"`
-	Version       *LiteRouteFallbackVersion `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Players       *LiteRouteFallbackPlayers `protobuf:"bytes,3,opt,name=players,proto3" json:"players,omitempty"`
-	Favicon       string                    `protobuf:"bytes,4,opt,name=favicon,proto3" json:"favicon,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// JSON-formatted MOTD for fallback response
+	MotdJson string `protobuf:"bytes,1,opt,name=motd_json,json=motdJson,proto3" json:"motd_json,omitempty"`
+	// Version information for fallback response
+	Version *LiteRouteFallbackVersion `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	// Player count information for fallback response
+	Players *LiteRouteFallbackPlayers `protobuf:"bytes,3,opt,name=players,proto3" json:"players,omitempty"`
+	// Base64-encoded favicon for fallback response
+	Favicon       string `protobuf:"bytes,4,opt,name=favicon,proto3" json:"favicon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2645,9 +2848,11 @@ func (x *LiteRouteFallback) GetFavicon() string {
 
 // LiteRouteFallbackVersion contains display version metadata.
 type LiteRouteFallbackVersion struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Protocol      int32                  `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version name displayed to clients
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Protocol version number
+	Protocol      int32 `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2698,9 +2903,11 @@ func (x *LiteRouteFallbackVersion) GetProtocol() int32 {
 
 // LiteRouteFallbackPlayers contains fallback player counts.
 type LiteRouteFallbackPlayers struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Online        int32                  `protobuf:"varint,1,opt,name=online,proto3" json:"online,omitempty"`
-	Max           int32                  `protobuf:"varint,2,opt,name=max,proto3" json:"max,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of online players to display
+	Online int32 `protobuf:"varint,1,opt,name=online,proto3" json:"online,omitempty"`
+	// Maximum players to display
+	Max           int32 `protobuf:"varint,2,opt,name=max,proto3" json:"max,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2751,12 +2958,17 @@ func (x *LiteRouteFallbackPlayers) GetMax() int32 {
 
 // LiteRoute represents a configured lite route and runtime state.
 type LiteRoute struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hosts         []string               `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
-	Backends      []*LiteRouteBackend    `protobuf:"bytes,2,rep,name=backends,proto3" json:"backends,omitempty"`
-	Strategy      string                 `protobuf:"bytes,3,opt,name=strategy,proto3" json:"strategy,omitempty"`
-	Options       *LiteRouteOptions      `protobuf:"bytes,4,opt,name=options,proto3" json:"options,omitempty"`
-	Fallback      *LiteRouteFallback     `protobuf:"bytes,5,opt,name=fallback,proto3" json:"fallback,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host patterns this route matches
+	Hosts []string `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	// Backend servers for this route
+	Backends []*LiteRouteBackend `protobuf:"bytes,2,rep,name=backends,proto3" json:"backends,omitempty"`
+	// Load balancing strategy
+	Strategy LiteRouteStrategy `protobuf:"varint,3,opt,name=strategy,proto3,enum=minekube.gate.v1.LiteRouteStrategy" json:"strategy,omitempty"`
+	// Proxy behavior options
+	Options *LiteRouteOptions `protobuf:"bytes,4,opt,name=options,proto3" json:"options,omitempty"`
+	// Fallback response when all backends fail
+	Fallback      *LiteRouteFallback `protobuf:"bytes,5,opt,name=fallback,proto3" json:"fallback,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2805,11 +3017,11 @@ func (x *LiteRoute) GetBackends() []*LiteRouteBackend {
 	return nil
 }
 
-func (x *LiteRoute) GetStrategy() string {
+func (x *LiteRoute) GetStrategy() LiteRouteStrategy {
 	if x != nil {
 		return x.Strategy
 	}
-	return ""
+	return LiteRouteStrategy_LITE_ROUTE_STRATEGY_UNSPECIFIED
 }
 
 func (x *LiteRoute) GetOptions() *LiteRouteOptions {
@@ -2828,9 +3040,11 @@ func (x *LiteRoute) GetFallback() *LiteRouteFallback {
 
 // UpdateLiteRouteStrategyRequest updates the load-balancing strategy for a route.
 type UpdateLiteRouteStrategyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Strategy      string                 `protobuf:"bytes,2,opt,name=strategy,proto3" json:"strategy,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host matcher to update (case-insensitive)
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// New load balancing strategy to apply
+	Strategy      LiteRouteStrategy `protobuf:"varint,2,opt,name=strategy,proto3,enum=minekube.gate.v1.LiteRouteStrategy" json:"strategy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2872,11 +3086,11 @@ func (x *UpdateLiteRouteStrategyRequest) GetHost() string {
 	return ""
 }
 
-func (x *UpdateLiteRouteStrategyRequest) GetStrategy() string {
+func (x *UpdateLiteRouteStrategyRequest) GetStrategy() LiteRouteStrategy {
 	if x != nil {
 		return x.Strategy
 	}
-	return ""
+	return LiteRouteStrategy_LITE_ROUTE_STRATEGY_UNSPECIFIED
 }
 
 // UpdateLiteRouteStrategyResponse contains validation warnings.
@@ -2926,9 +3140,11 @@ func (x *UpdateLiteRouteStrategyResponse) GetWarnings() []string {
 
 // AddLiteRouteBackendRequest adds a backend to a route.
 type AddLiteRouteBackendRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Backend       string                 `protobuf:"bytes,2,opt,name=backend,proto3" json:"backend,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host matcher to update (case-insensitive)
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// Backend address to add (e.g., "localhost:25565")
+	Backend       string `protobuf:"bytes,2,opt,name=backend,proto3" json:"backend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3024,9 +3240,11 @@ func (x *AddLiteRouteBackendResponse) GetWarnings() []string {
 
 // RemoveLiteRouteBackendRequest removes a backend from a route.
 type RemoveLiteRouteBackendRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Backend       string                 `protobuf:"bytes,2,opt,name=backend,proto3" json:"backend,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host matcher to update (case-insensitive)
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// Backend address to remove
+	Backend       string `protobuf:"bytes,2,opt,name=backend,proto3" json:"backend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3122,9 +3340,12 @@ func (x *RemoveLiteRouteBackendResponse) GetWarnings() []string {
 
 // UpdateLiteRouteOptionsRequest updates per-route options using a field mask.
 type UpdateLiteRouteOptionsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Options       *LiteRouteOptions      `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host matcher to update (case-insensitive)
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// New options to apply
+	Options *LiteRouteOptions `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
+	// Field mask specifying which options to update
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,3,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3228,9 +3449,12 @@ func (x *UpdateLiteRouteOptionsResponse) GetWarnings() []string {
 
 // UpdateLiteRouteFallbackRequest updates fallback metadata using a field mask.
 type UpdateLiteRouteFallbackRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Fallback      *LiteRouteFallback     `protobuf:"bytes,2,opt,name=fallback,proto3" json:"fallback,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host matcher to update (case-insensitive)
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// New fallback configuration to apply
+	Fallback *LiteRouteFallback `protobuf:"bytes,2,opt,name=fallback,proto3" json:"fallback,omitempty"`
+	// Field mask specifying which fallback fields to update
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,3,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3382,39 +3606,42 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\x06Player\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12=\n" +
-	"\abedrock\x18\x03 \x01(\v2#.minekube.gate.v1.BedrockPlayerDataR\abedrock\"\xe6\x01\n" +
+	"\abedrock\x18\x03 \x01(\v2#.minekube.gate.v1.BedrockPlayerDataR\abedrock\"\xd1\x02\n" +
 	"\x11BedrockPlayerData\x12\x12\n" +
-	"\x04xuid\x18\x01 \x01(\x03R\x04xuid\x12\x1b\n" +
-	"\tdevice_os\x18\x02 \x01(\tR\bdeviceOs\x12\x1a\n" +
-	"\blanguage\x18\x03 \x01(\tR\blanguage\x12\x1d\n" +
+	"\x04xuid\x18\x01 \x01(\x03R\x04xuid\x12>\n" +
+	"\tdevice_os\x18\x02 \x01(\x0e2!.minekube.gate.v1.BedrockDeviceOSR\bdeviceOs\x12\x1a\n" +
+	"\blanguage\x18\x03 \x01(\tR\blanguage\x12A\n" +
 	"\n" +
-	"ui_profile\x18\x04 \x01(\x05R\tuiProfile\x12\x1d\n" +
+	"ui_profile\x18\x04 \x01(\x0e2\".minekube.gate.v1.BedrockUIProfileR\tuiProfile\x12A\n" +
 	"\n" +
-	"input_mode\x18\x05 \x01(\x05R\tinputMode\x12!\n" +
+	"input_mode\x18\x05 \x01(\x0e2\".minekube.gate.v1.BedrockInputModeR\tinputMode\x12!\n" +
 	"\fbehind_proxy\x18\x06 \x01(\bR\vbehindProxy\x12#\n" +
 	"\rlinked_player\x18\a \x01(\tR\flinkedPlayer\"\x12\n" +
-	"\x10GetStatusRequest\"\x92\x01\n" +
+	"\x10GetStatusRequest\"\xd6\x01\n" +
 	"\x11GetStatusResponse\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12/\n" +
-	"\x04mode\x18\x02 \x01(\x0e2\x1b.minekube.gate.v1.ProxyModeR\x04mode\x12\x18\n" +
-	"\aplayers\x18\x03 \x01(\x05R\aplayers\x12\x18\n" +
-	"\aservers\x18\x04 \x01(\x05R\aservers\"\xfa\x01\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x1b.minekube.gate.v1.ProxyModeR\x04mode\x12:\n" +
+	"\aclassic\x18\x03 \x01(\v2\x1e.minekube.gate.v1.ClassicStatsH\x00R\aclassic\x121\n" +
+	"\x04lite\x18\x04 \x01(\v2\x1b.minekube.gate.v1.LiteStatsH\x00R\x04liteB\a\n" +
+	"\x05stats\"B\n" +
+	"\fClassicStats\x12\x18\n" +
+	"\aplayers\x18\x01 \x01(\x05R\aplayers\x12\x18\n" +
+	"\aservers\x18\x02 \x01(\x05R\aservers\"E\n" +
+	"\tLiteStats\x12 \n" +
+	"\vconnections\x18\x01 \x01(\x05R\vconnections\x12\x16\n" +
+	"\x06routes\x18\x02 \x01(\x05R\x06routes\"\xac\x01\n" +
 	"\n" +
 	"GateConfig\x12-\n" +
-	"\x03api\x18\x01 \x01(\v2\x1b.minekube.gate.v1.APIConfigR\x03api\x12L\n" +
-	"\x0ehealth_service\x18\x02 \x01(\v2%.minekube.gate.v1.HealthServiceConfigR\rhealthService\x129\n" +
-	"\aconnect\x18\x03 \x01(\v2\x1f.minekube.gate.v1.ConnectConfigR\aconnect\x124\n" +
-	"\x06config\x18\x04 \x01(\v2\x1c.minekube.gate.v1.JavaConfigR\x06config\"9\n" +
+	"\x03api\x18\x01 \x01(\v2\x1b.minekube.gate.v1.APIConfigR\x03api\x129\n" +
+	"\aconnect\x18\x02 \x01(\v2\x1f.minekube.gate.v1.ConnectConfigR\aconnect\x124\n" +
+	"\x06config\x18\x03 \x01(\v2\x1c.minekube.gate.v1.JavaConfigR\x06config\"9\n" +
 	"\tAPIConfig\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x12\n" +
-	"\x04bind\x18\x02 \x01(\tR\x04bind\"C\n" +
-	"\x13HealthServiceConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x12\n" +
 	"\x04bind\x18\x02 \x01(\tR\x04bind\"z\n" +
 	"\rConnectConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12;\n" +
-	"\x1aallow_offline_mode_players\x18\x03 \x01(\bR\x17allowOfflineModePlayers\"\xa0\x05\n" +
+	"\x1aallow_offline_mode_players\x18\x03 \x01(\bR\x17allowOfflineModePlayers\"\x9c\x04\n" +
 	"\n" +
 	"JavaConfig\x12\x12\n" +
 	"\x04bind\x18\x01 \x01(\tR\x04bind\x12\x1f\n" +
@@ -3425,18 +3652,15 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"forwarding\x126\n" +
 	"\x06status\x18\x04 \x01(\v2\x1e.minekube.gate.v1.StatusConfigR\x06status\x12C\n" +
 	"\aservers\x18\x05 \x03(\v2).minekube.gate.v1.JavaConfig.ServersEntryR\aservers\x12\x10\n" +
-	"\x03try\x18\x06 \x03(\tR\x03try\x12P\n" +
-	"\fforced_hosts\x18\a \x03(\v2-.minekube.gate.v1.JavaConfig.ForcedHostsEntryR\vforcedHosts\x12)\n" +
+	"\x03try\x18\x06 \x03(\tR\x03try\x12*\n" +
+	"\x11forced_hosts_json\x18\a \x01(\tR\x0fforcedHostsJson\x12)\n" +
 	"\x10accept_transfers\x18\b \x01(\bR\x0facceptTransfers\x12A\n" +
 	"\x1dbungee_plugin_channel_enabled\x18\t \x01(\bR\x1abungeePluginChannelEnabled\x120\n" +
 	"\x04lite\x18\n" +
 	" \x01(\v2\x1c.minekube.gate.v1.LiteConfigR\x04lite\x1a:\n" +
 	"\fServersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\\\n" +
-	"\x10ForcedHostsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
-	"\x05value\x18\x02 \x01(\v2\x1c.minekube.gate.v1.StringListR\x05value:\x028\x01\"\x7f\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x7f\n" +
 	"\x10ForwardingConfig\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12'\n" +
 	"\x0fvelocity_secret\x18\x02 \x01(\tR\x0evelocitySecret\x12.\n" +
@@ -3450,30 +3674,18 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\n" +
 	"LiteConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x123\n" +
-	"\x06routes\x18\x02 \x03(\v2\x1b.minekube.gate.v1.LiteRouteR\x06routes\"$\n" +
-	"\n" +
-	"StringList\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values\"J\n" +
-	"\x10GetConfigRequest\x126\n" +
-	"\x06format\x18\x01 \x01(\x0e2\x1e.minekube.gate.v1.ConfigFormatR\x06format\"e\n" +
-	"\x11GetConfigResponse\x126\n" +
-	"\x06format\x18\x01 \x01(\x0e2\x1e.minekube.gate.v1.ConfigFormatR\x06format\x12\x18\n" +
-	"\apayload\x18\x02 \x01(\tR\apayload\"\x85\x01\n" +
-	"\x15ValidateConfigRequest\x12!\n" +
-	"\vyaml_config\x18\x01 \x01(\tH\x00R\n" +
-	"yamlConfig\x12?\n" +
-	"\vjson_config\x18\x02 \x01(\v2\x1c.minekube.gate.v1.GateConfigH\x00R\n" +
-	"jsonConfigB\b\n" +
-	"\x06config\"4\n" +
+	"\x06routes\x18\x02 \x03(\v2\x1b.minekube.gate.v1.LiteRouteR\x06routes\"\x12\n" +
+	"\x10GetConfigRequest\"-\n" +
+	"\x11GetConfigResponse\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\tR\apayload\"/\n" +
+	"\x15ValidateConfigRequest\x12\x16\n" +
+	"\x06config\x18\x01 \x01(\tR\x06config\"L\n" +
 	"\x16ValidateConfigResponse\x12\x1a\n" +
-	"\bwarnings\x18\x01 \x03(\tR\bwarnings\"\x9c\x01\n" +
-	"\x12ApplyConfigRequest\x12!\n" +
-	"\vyaml_config\x18\x01 \x01(\tH\x00R\n" +
-	"yamlConfig\x12?\n" +
-	"\vjson_config\x18\x02 \x01(\v2\x1c.minekube.gate.v1.GateConfigH\x00R\n" +
-	"jsonConfig\x12\x18\n" +
-	"\apersist\x18\x03 \x01(\bR\apersistB\b\n" +
-	"\x06config\"1\n" +
+	"\bwarnings\x18\x01 \x03(\tR\bwarnings\x12\x16\n" +
+	"\x06errors\x18\x02 \x03(\tR\x06errors\"F\n" +
+	"\x12ApplyConfigRequest\x12\x16\n" +
+	"\x06config\x18\x01 \x01(\tR\x06config\x12\x18\n" +
+	"\apersist\x18\x02 \x01(\bR\apersist\"1\n" +
 	"\x13ApplyConfigResponse\x12\x1a\n" +
 	"\bwarnings\x18\x01 \x03(\tR\bwarnings\"\x17\n" +
 	"\x15ListLiteRoutesRequest\"M\n" +
@@ -3501,16 +3713,16 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\bprotocol\x18\x02 \x01(\x05R\bprotocol\"D\n" +
 	"\x18LiteRouteFallbackPlayers\x12\x16\n" +
 	"\x06online\x18\x01 \x01(\x05R\x06online\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x05R\x03max\"\xfc\x01\n" +
+	"\x03max\x18\x02 \x01(\x05R\x03max\"\xa1\x02\n" +
 	"\tLiteRoute\x12\x14\n" +
 	"\x05hosts\x18\x01 \x03(\tR\x05hosts\x12>\n" +
-	"\bbackends\x18\x02 \x03(\v2\".minekube.gate.v1.LiteRouteBackendR\bbackends\x12\x1a\n" +
-	"\bstrategy\x18\x03 \x01(\tR\bstrategy\x12<\n" +
+	"\bbackends\x18\x02 \x03(\v2\".minekube.gate.v1.LiteRouteBackendR\bbackends\x12?\n" +
+	"\bstrategy\x18\x03 \x01(\x0e2#.minekube.gate.v1.LiteRouteStrategyR\bstrategy\x12<\n" +
 	"\aoptions\x18\x04 \x01(\v2\".minekube.gate.v1.LiteRouteOptionsR\aoptions\x12?\n" +
-	"\bfallback\x18\x05 \x01(\v2#.minekube.gate.v1.LiteRouteFallbackR\bfallback\"P\n" +
+	"\bfallback\x18\x05 \x01(\v2#.minekube.gate.v1.LiteRouteFallbackR\bfallback\"u\n" +
 	"\x1eUpdateLiteRouteStrategyRequest\x12\x12\n" +
-	"\x04host\x18\x01 \x01(\tR\x04host\x12\x1a\n" +
-	"\bstrategy\x18\x02 \x01(\tR\bstrategy\"=\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12?\n" +
+	"\bstrategy\x18\x02 \x01(\x0e2#.minekube.gate.v1.LiteRouteStrategyR\bstrategy\"=\n" +
 	"\x1fUpdateLiteRouteStrategyResponse\x12\x1a\n" +
 	"\bwarnings\x18\x01 \x03(\tR\bwarnings\"J\n" +
 	"\x1aAddLiteRouteBackendRequest\x12\x12\n" +
@@ -3540,11 +3752,44 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\tProxyMode\x12\x1a\n" +
 	"\x16PROXY_MODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12PROXY_MODE_CLASSIC\x10\x01\x12\x13\n" +
-	"\x0fPROXY_MODE_LITE\x10\x02*]\n" +
-	"\fConfigFormat\x12\x1d\n" +
-	"\x19CONFIG_FORMAT_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12CONFIG_FORMAT_JSON\x10\x01\x12\x16\n" +
-	"\x12CONFIG_FORMAT_YAML\x10\x022\x95\x10\n" +
+	"\x0fPROXY_MODE_LITE\x10\x02*\xad\x04\n" +
+	"\x0fBedrockDeviceOS\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_UNKNOWN\x10\x01\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_ANDROID\x10\x02\x12\x19\n" +
+	"\x15BEDROCK_DEVICE_OS_IOS\x10\x03\x12\x1b\n" +
+	"\x17BEDROCK_DEVICE_OS_MACOS\x10\x04\x12\x1c\n" +
+	"\x18BEDROCK_DEVICE_OS_AMAZON\x10\x05\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_GEAR_VR\x10\x06\x12\x1e\n" +
+	"\x1aBEDROCK_DEVICE_OS_HOLOLENS\x10\a\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_WINDOWS_UWP\x10\b\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_WINDOWS_X86\x10\t\x12\x1f\n" +
+	"\x1bBEDROCK_DEVICE_OS_DEDICATED\x10\n" +
+	"\x12\x1e\n" +
+	"\x1aBEDROCK_DEVICE_OS_APPLE_TV\x10\v\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_PLAYSTATION\x10\f\x12\x1c\n" +
+	"\x18BEDROCK_DEVICE_OS_SWITCH\x10\r\x12\x1a\n" +
+	"\x16BEDROCK_DEVICE_OS_XBOX\x10\x0e\x12#\n" +
+	"\x1fBEDROCK_DEVICE_OS_WINDOWS_PHONE\x10\x0f\x12\x1b\n" +
+	"\x17BEDROCK_DEVICE_OS_LINUX\x10\x10*\xdc\x01\n" +
+	"\x10BedrockInputMode\x12\"\n" +
+	"\x1eBEDROCK_INPUT_MODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aBEDROCK_INPUT_MODE_UNKNOWN\x10\x01\x12\x1c\n" +
+	"\x18BEDROCK_INPUT_MODE_MOUSE\x10\x02\x12\x1c\n" +
+	"\x18BEDROCK_INPUT_MODE_TOUCH\x10\x03\x12\x1e\n" +
+	"\x1aBEDROCK_INPUT_MODE_GAMEPAD\x10\x04\x12(\n" +
+	"$BEDROCK_INPUT_MODE_MOTION_CONTROLLER\x10\x05*u\n" +
+	"\x10BedrockUIProfile\x12\"\n" +
+	"\x1eBEDROCK_UI_PROFILE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aBEDROCK_UI_PROFILE_CLASSIC\x10\x01\x12\x1d\n" +
+	"\x19BEDROCK_UI_PROFILE_POCKET\x10\x02*\xf4\x01\n" +
+	"\x11LiteRouteStrategy\x12#\n" +
+	"\x1fLITE_ROUTE_STRATEGY_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1eLITE_ROUTE_STRATEGY_SEQUENTIAL\x10\x01\x12\x1e\n" +
+	"\x1aLITE_ROUTE_STRATEGY_RANDOM\x10\x02\x12#\n" +
+	"\x1fLITE_ROUTE_STRATEGY_ROUND_ROBIN\x10\x03\x12)\n" +
+	"%LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS\x10\x04\x12&\n" +
+	"\"LITE_ROUTE_STRATEGY_LOWEST_LATENCY\x10\x052\xe3\t\n" +
 	"\vGateService\x12T\n" +
 	"\tGetPlayer\x12\".minekube.gate.v1.GetPlayerRequest\x1a#.minekube.gate.v1.GetPlayerResponse\x12Z\n" +
 	"\vListPlayers\x12$.minekube.gate.v1.ListPlayersRequest\x1a%.minekube.gate.v1.ListPlayersResponse\x12Z\n" +
@@ -3558,7 +3803,8 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\tGetStatus\x12\".minekube.gate.v1.GetStatusRequest\x1a#.minekube.gate.v1.GetStatusResponse\x12T\n" +
 	"\tGetConfig\x12\".minekube.gate.v1.GetConfigRequest\x1a#.minekube.gate.v1.GetConfigResponse\x12c\n" +
 	"\x0eValidateConfig\x12'.minekube.gate.v1.ValidateConfigRequest\x1a(.minekube.gate.v1.ValidateConfigResponse\x12Z\n" +
-	"\vApplyConfig\x12$.minekube.gate.v1.ApplyConfigRequest\x1a%.minekube.gate.v1.ApplyConfigResponse\x12c\n" +
+	"\vApplyConfig\x12$.minekube.gate.v1.ApplyConfigRequest\x1a%.minekube.gate.v1.ApplyConfigResponse2\xc3\x06\n" +
+	"\x0fGateLiteService\x12c\n" +
 	"\x0eListLiteRoutes\x12'.minekube.gate.v1.ListLiteRoutesRequest\x1a(.minekube.gate.v1.ListLiteRoutesResponse\x12]\n" +
 	"\fGetLiteRoute\x12%.minekube.gate.v1.GetLiteRouteRequest\x1a&.minekube.gate.v1.GetLiteRouteResponse\x12~\n" +
 	"\x17UpdateLiteRouteStrategy\x120.minekube.gate.v1.UpdateLiteRouteStrategyRequest\x1a1.minekube.gate.v1.UpdateLiteRouteStrategyResponse\x12r\n" +
@@ -3580,145 +3826,147 @@ func file_minekube_gate_v1_gate_service_proto_rawDescGZIP() []byte {
 	return file_minekube_gate_v1_gate_service_proto_rawDescData
 }
 
-var file_minekube_gate_v1_gate_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_minekube_gate_v1_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
+var file_minekube_gate_v1_gate_service_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_minekube_gate_v1_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
 var file_minekube_gate_v1_gate_service_proto_goTypes = []any{
 	(ProxyMode)(0),                          // 0: minekube.gate.v1.ProxyMode
-	(ConfigFormat)(0),                       // 1: minekube.gate.v1.ConfigFormat
-	(*StoreCookieRequest)(nil),              // 2: minekube.gate.v1.StoreCookieRequest
-	(*StoreCookieResponse)(nil),             // 3: minekube.gate.v1.StoreCookieResponse
-	(*RequestCookieRequest)(nil),            // 4: minekube.gate.v1.RequestCookieRequest
-	(*RequestCookieResponse)(nil),           // 5: minekube.gate.v1.RequestCookieResponse
-	(*DisconnectPlayerRequest)(nil),         // 6: minekube.gate.v1.DisconnectPlayerRequest
-	(*DisconnectPlayerResponse)(nil),        // 7: minekube.gate.v1.DisconnectPlayerResponse
-	(*ConnectPlayerRequest)(nil),            // 8: minekube.gate.v1.ConnectPlayerRequest
-	(*ConnectPlayerResponse)(nil),           // 9: minekube.gate.v1.ConnectPlayerResponse
-	(*RegisterServerRequest)(nil),           // 10: minekube.gate.v1.RegisterServerRequest
-	(*RegisterServerResponse)(nil),          // 11: minekube.gate.v1.RegisterServerResponse
-	(*UnregisterServerRequest)(nil),         // 12: minekube.gate.v1.UnregisterServerRequest
-	(*UnregisterServerResponse)(nil),        // 13: minekube.gate.v1.UnregisterServerResponse
-	(*ListServersRequest)(nil),              // 14: minekube.gate.v1.ListServersRequest
-	(*ListServersResponse)(nil),             // 15: minekube.gate.v1.ListServersResponse
-	(*Server)(nil),                          // 16: minekube.gate.v1.Server
-	(*GetPlayerRequest)(nil),                // 17: minekube.gate.v1.GetPlayerRequest
-	(*GetPlayerResponse)(nil),               // 18: minekube.gate.v1.GetPlayerResponse
-	(*ListPlayersRequest)(nil),              // 19: minekube.gate.v1.ListPlayersRequest
-	(*ListPlayersResponse)(nil),             // 20: minekube.gate.v1.ListPlayersResponse
-	(*Player)(nil),                          // 21: minekube.gate.v1.Player
-	(*BedrockPlayerData)(nil),               // 22: minekube.gate.v1.BedrockPlayerData
-	(*GetStatusRequest)(nil),                // 23: minekube.gate.v1.GetStatusRequest
-	(*GetStatusResponse)(nil),               // 24: minekube.gate.v1.GetStatusResponse
-	(*GateConfig)(nil),                      // 25: minekube.gate.v1.GateConfig
-	(*APIConfig)(nil),                       // 26: minekube.gate.v1.APIConfig
-	(*HealthServiceConfig)(nil),             // 27: minekube.gate.v1.HealthServiceConfig
-	(*ConnectConfig)(nil),                   // 28: minekube.gate.v1.ConnectConfig
-	(*JavaConfig)(nil),                      // 29: minekube.gate.v1.JavaConfig
-	(*ForwardingConfig)(nil),                // 30: minekube.gate.v1.ForwardingConfig
-	(*StatusConfig)(nil),                    // 31: minekube.gate.v1.StatusConfig
-	(*LiteConfig)(nil),                      // 32: minekube.gate.v1.LiteConfig
-	(*StringList)(nil),                      // 33: minekube.gate.v1.StringList
-	(*GetConfigRequest)(nil),                // 34: minekube.gate.v1.GetConfigRequest
-	(*GetConfigResponse)(nil),               // 35: minekube.gate.v1.GetConfigResponse
-	(*ValidateConfigRequest)(nil),           // 36: minekube.gate.v1.ValidateConfigRequest
-	(*ValidateConfigResponse)(nil),          // 37: minekube.gate.v1.ValidateConfigResponse
-	(*ApplyConfigRequest)(nil),              // 38: minekube.gate.v1.ApplyConfigRequest
-	(*ApplyConfigResponse)(nil),             // 39: minekube.gate.v1.ApplyConfigResponse
-	(*ListLiteRoutesRequest)(nil),           // 40: minekube.gate.v1.ListLiteRoutesRequest
-	(*ListLiteRoutesResponse)(nil),          // 41: minekube.gate.v1.ListLiteRoutesResponse
-	(*GetLiteRouteRequest)(nil),             // 42: minekube.gate.v1.GetLiteRouteRequest
-	(*GetLiteRouteResponse)(nil),            // 43: minekube.gate.v1.GetLiteRouteResponse
-	(*LiteRouteBackend)(nil),                // 44: minekube.gate.v1.LiteRouteBackend
-	(*LiteRouteOptions)(nil),                // 45: minekube.gate.v1.LiteRouteOptions
-	(*LiteRouteFallback)(nil),               // 46: minekube.gate.v1.LiteRouteFallback
-	(*LiteRouteFallbackVersion)(nil),        // 47: minekube.gate.v1.LiteRouteFallbackVersion
-	(*LiteRouteFallbackPlayers)(nil),        // 48: minekube.gate.v1.LiteRouteFallbackPlayers
-	(*LiteRoute)(nil),                       // 49: minekube.gate.v1.LiteRoute
-	(*UpdateLiteRouteStrategyRequest)(nil),  // 50: minekube.gate.v1.UpdateLiteRouteStrategyRequest
-	(*UpdateLiteRouteStrategyResponse)(nil), // 51: minekube.gate.v1.UpdateLiteRouteStrategyResponse
-	(*AddLiteRouteBackendRequest)(nil),      // 52: minekube.gate.v1.AddLiteRouteBackendRequest
-	(*AddLiteRouteBackendResponse)(nil),     // 53: minekube.gate.v1.AddLiteRouteBackendResponse
-	(*RemoveLiteRouteBackendRequest)(nil),   // 54: minekube.gate.v1.RemoveLiteRouteBackendRequest
-	(*RemoveLiteRouteBackendResponse)(nil),  // 55: minekube.gate.v1.RemoveLiteRouteBackendResponse
-	(*UpdateLiteRouteOptionsRequest)(nil),   // 56: minekube.gate.v1.UpdateLiteRouteOptionsRequest
-	(*UpdateLiteRouteOptionsResponse)(nil),  // 57: minekube.gate.v1.UpdateLiteRouteOptionsResponse
-	(*UpdateLiteRouteFallbackRequest)(nil),  // 58: minekube.gate.v1.UpdateLiteRouteFallbackRequest
-	(*UpdateLiteRouteFallbackResponse)(nil), // 59: minekube.gate.v1.UpdateLiteRouteFallbackResponse
-	nil,                                     // 60: minekube.gate.v1.JavaConfig.ServersEntry
-	nil,                                     // 61: minekube.gate.v1.JavaConfig.ForcedHostsEntry
-	(*fieldmaskpb.FieldMask)(nil),           // 62: google.protobuf.FieldMask
+	(BedrockDeviceOS)(0),                    // 1: minekube.gate.v1.BedrockDeviceOS
+	(BedrockInputMode)(0),                   // 2: minekube.gate.v1.BedrockInputMode
+	(BedrockUIProfile)(0),                   // 3: minekube.gate.v1.BedrockUIProfile
+	(LiteRouteStrategy)(0),                  // 4: minekube.gate.v1.LiteRouteStrategy
+	(*StoreCookieRequest)(nil),              // 5: minekube.gate.v1.StoreCookieRequest
+	(*StoreCookieResponse)(nil),             // 6: minekube.gate.v1.StoreCookieResponse
+	(*RequestCookieRequest)(nil),            // 7: minekube.gate.v1.RequestCookieRequest
+	(*RequestCookieResponse)(nil),           // 8: minekube.gate.v1.RequestCookieResponse
+	(*DisconnectPlayerRequest)(nil),         // 9: minekube.gate.v1.DisconnectPlayerRequest
+	(*DisconnectPlayerResponse)(nil),        // 10: minekube.gate.v1.DisconnectPlayerResponse
+	(*ConnectPlayerRequest)(nil),            // 11: minekube.gate.v1.ConnectPlayerRequest
+	(*ConnectPlayerResponse)(nil),           // 12: minekube.gate.v1.ConnectPlayerResponse
+	(*RegisterServerRequest)(nil),           // 13: minekube.gate.v1.RegisterServerRequest
+	(*RegisterServerResponse)(nil),          // 14: minekube.gate.v1.RegisterServerResponse
+	(*UnregisterServerRequest)(nil),         // 15: minekube.gate.v1.UnregisterServerRequest
+	(*UnregisterServerResponse)(nil),        // 16: minekube.gate.v1.UnregisterServerResponse
+	(*ListServersRequest)(nil),              // 17: minekube.gate.v1.ListServersRequest
+	(*ListServersResponse)(nil),             // 18: minekube.gate.v1.ListServersResponse
+	(*Server)(nil),                          // 19: minekube.gate.v1.Server
+	(*GetPlayerRequest)(nil),                // 20: minekube.gate.v1.GetPlayerRequest
+	(*GetPlayerResponse)(nil),               // 21: minekube.gate.v1.GetPlayerResponse
+	(*ListPlayersRequest)(nil),              // 22: minekube.gate.v1.ListPlayersRequest
+	(*ListPlayersResponse)(nil),             // 23: minekube.gate.v1.ListPlayersResponse
+	(*Player)(nil),                          // 24: minekube.gate.v1.Player
+	(*BedrockPlayerData)(nil),               // 25: minekube.gate.v1.BedrockPlayerData
+	(*GetStatusRequest)(nil),                // 26: minekube.gate.v1.GetStatusRequest
+	(*GetStatusResponse)(nil),               // 27: minekube.gate.v1.GetStatusResponse
+	(*ClassicStats)(nil),                    // 28: minekube.gate.v1.ClassicStats
+	(*LiteStats)(nil),                       // 29: minekube.gate.v1.LiteStats
+	(*GateConfig)(nil),                      // 30: minekube.gate.v1.GateConfig
+	(*APIConfig)(nil),                       // 31: minekube.gate.v1.APIConfig
+	(*ConnectConfig)(nil),                   // 32: minekube.gate.v1.ConnectConfig
+	(*JavaConfig)(nil),                      // 33: minekube.gate.v1.JavaConfig
+	(*ForwardingConfig)(nil),                // 34: minekube.gate.v1.ForwardingConfig
+	(*StatusConfig)(nil),                    // 35: minekube.gate.v1.StatusConfig
+	(*LiteConfig)(nil),                      // 36: minekube.gate.v1.LiteConfig
+	(*GetConfigRequest)(nil),                // 37: minekube.gate.v1.GetConfigRequest
+	(*GetConfigResponse)(nil),               // 38: minekube.gate.v1.GetConfigResponse
+	(*ValidateConfigRequest)(nil),           // 39: minekube.gate.v1.ValidateConfigRequest
+	(*ValidateConfigResponse)(nil),          // 40: minekube.gate.v1.ValidateConfigResponse
+	(*ApplyConfigRequest)(nil),              // 41: minekube.gate.v1.ApplyConfigRequest
+	(*ApplyConfigResponse)(nil),             // 42: minekube.gate.v1.ApplyConfigResponse
+	(*ListLiteRoutesRequest)(nil),           // 43: minekube.gate.v1.ListLiteRoutesRequest
+	(*ListLiteRoutesResponse)(nil),          // 44: minekube.gate.v1.ListLiteRoutesResponse
+	(*GetLiteRouteRequest)(nil),             // 45: minekube.gate.v1.GetLiteRouteRequest
+	(*GetLiteRouteResponse)(nil),            // 46: minekube.gate.v1.GetLiteRouteResponse
+	(*LiteRouteBackend)(nil),                // 47: minekube.gate.v1.LiteRouteBackend
+	(*LiteRouteOptions)(nil),                // 48: minekube.gate.v1.LiteRouteOptions
+	(*LiteRouteFallback)(nil),               // 49: minekube.gate.v1.LiteRouteFallback
+	(*LiteRouteFallbackVersion)(nil),        // 50: minekube.gate.v1.LiteRouteFallbackVersion
+	(*LiteRouteFallbackPlayers)(nil),        // 51: minekube.gate.v1.LiteRouteFallbackPlayers
+	(*LiteRoute)(nil),                       // 52: minekube.gate.v1.LiteRoute
+	(*UpdateLiteRouteStrategyRequest)(nil),  // 53: minekube.gate.v1.UpdateLiteRouteStrategyRequest
+	(*UpdateLiteRouteStrategyResponse)(nil), // 54: minekube.gate.v1.UpdateLiteRouteStrategyResponse
+	(*AddLiteRouteBackendRequest)(nil),      // 55: minekube.gate.v1.AddLiteRouteBackendRequest
+	(*AddLiteRouteBackendResponse)(nil),     // 56: minekube.gate.v1.AddLiteRouteBackendResponse
+	(*RemoveLiteRouteBackendRequest)(nil),   // 57: minekube.gate.v1.RemoveLiteRouteBackendRequest
+	(*RemoveLiteRouteBackendResponse)(nil),  // 58: minekube.gate.v1.RemoveLiteRouteBackendResponse
+	(*UpdateLiteRouteOptionsRequest)(nil),   // 59: minekube.gate.v1.UpdateLiteRouteOptionsRequest
+	(*UpdateLiteRouteOptionsResponse)(nil),  // 60: minekube.gate.v1.UpdateLiteRouteOptionsResponse
+	(*UpdateLiteRouteFallbackRequest)(nil),  // 61: minekube.gate.v1.UpdateLiteRouteFallbackRequest
+	(*UpdateLiteRouteFallbackResponse)(nil), // 62: minekube.gate.v1.UpdateLiteRouteFallbackResponse
+	nil,                                     // 63: minekube.gate.v1.JavaConfig.ServersEntry
+	(*fieldmaskpb.FieldMask)(nil),           // 64: google.protobuf.FieldMask
 }
 var file_minekube_gate_v1_gate_service_proto_depIdxs = []int32{
-	16, // 0: minekube.gate.v1.ListServersResponse.servers:type_name -> minekube.gate.v1.Server
-	21, // 1: minekube.gate.v1.GetPlayerResponse.player:type_name -> minekube.gate.v1.Player
-	21, // 2: minekube.gate.v1.ListPlayersResponse.players:type_name -> minekube.gate.v1.Player
-	22, // 3: minekube.gate.v1.Player.bedrock:type_name -> minekube.gate.v1.BedrockPlayerData
-	0,  // 4: minekube.gate.v1.GetStatusResponse.mode:type_name -> minekube.gate.v1.ProxyMode
-	26, // 5: minekube.gate.v1.GateConfig.api:type_name -> minekube.gate.v1.APIConfig
-	27, // 6: minekube.gate.v1.GateConfig.health_service:type_name -> minekube.gate.v1.HealthServiceConfig
-	28, // 7: minekube.gate.v1.GateConfig.connect:type_name -> minekube.gate.v1.ConnectConfig
-	29, // 8: minekube.gate.v1.GateConfig.config:type_name -> minekube.gate.v1.JavaConfig
-	30, // 9: minekube.gate.v1.JavaConfig.forwarding:type_name -> minekube.gate.v1.ForwardingConfig
-	31, // 10: minekube.gate.v1.JavaConfig.status:type_name -> minekube.gate.v1.StatusConfig
-	60, // 11: minekube.gate.v1.JavaConfig.servers:type_name -> minekube.gate.v1.JavaConfig.ServersEntry
-	61, // 12: minekube.gate.v1.JavaConfig.forced_hosts:type_name -> minekube.gate.v1.JavaConfig.ForcedHostsEntry
-	32, // 13: minekube.gate.v1.JavaConfig.lite:type_name -> minekube.gate.v1.LiteConfig
-	49, // 14: minekube.gate.v1.LiteConfig.routes:type_name -> minekube.gate.v1.LiteRoute
-	1,  // 15: minekube.gate.v1.GetConfigRequest.format:type_name -> minekube.gate.v1.ConfigFormat
-	1,  // 16: minekube.gate.v1.GetConfigResponse.format:type_name -> minekube.gate.v1.ConfigFormat
-	25, // 17: minekube.gate.v1.ValidateConfigRequest.json_config:type_name -> minekube.gate.v1.GateConfig
-	25, // 18: minekube.gate.v1.ApplyConfigRequest.json_config:type_name -> minekube.gate.v1.GateConfig
-	49, // 19: minekube.gate.v1.ListLiteRoutesResponse.routes:type_name -> minekube.gate.v1.LiteRoute
-	49, // 20: minekube.gate.v1.GetLiteRouteResponse.route:type_name -> minekube.gate.v1.LiteRoute
-	47, // 21: minekube.gate.v1.LiteRouteFallback.version:type_name -> minekube.gate.v1.LiteRouteFallbackVersion
-	48, // 22: minekube.gate.v1.LiteRouteFallback.players:type_name -> minekube.gate.v1.LiteRouteFallbackPlayers
-	44, // 23: minekube.gate.v1.LiteRoute.backends:type_name -> minekube.gate.v1.LiteRouteBackend
-	45, // 24: minekube.gate.v1.LiteRoute.options:type_name -> minekube.gate.v1.LiteRouteOptions
-	46, // 25: minekube.gate.v1.LiteRoute.fallback:type_name -> minekube.gate.v1.LiteRouteFallback
-	45, // 26: minekube.gate.v1.UpdateLiteRouteOptionsRequest.options:type_name -> minekube.gate.v1.LiteRouteOptions
-	62, // 27: minekube.gate.v1.UpdateLiteRouteOptionsRequest.update_mask:type_name -> google.protobuf.FieldMask
-	46, // 28: minekube.gate.v1.UpdateLiteRouteFallbackRequest.fallback:type_name -> minekube.gate.v1.LiteRouteFallback
-	62, // 29: minekube.gate.v1.UpdateLiteRouteFallbackRequest.update_mask:type_name -> google.protobuf.FieldMask
-	33, // 30: minekube.gate.v1.JavaConfig.ForcedHostsEntry.value:type_name -> minekube.gate.v1.StringList
-	17, // 31: minekube.gate.v1.GateService.GetPlayer:input_type -> minekube.gate.v1.GetPlayerRequest
-	19, // 32: minekube.gate.v1.GateService.ListPlayers:input_type -> minekube.gate.v1.ListPlayersRequest
-	14, // 33: minekube.gate.v1.GateService.ListServers:input_type -> minekube.gate.v1.ListServersRequest
-	10, // 34: minekube.gate.v1.GateService.RegisterServer:input_type -> minekube.gate.v1.RegisterServerRequest
-	12, // 35: minekube.gate.v1.GateService.UnregisterServer:input_type -> minekube.gate.v1.UnregisterServerRequest
-	8,  // 36: minekube.gate.v1.GateService.ConnectPlayer:input_type -> minekube.gate.v1.ConnectPlayerRequest
-	6,  // 37: minekube.gate.v1.GateService.DisconnectPlayer:input_type -> minekube.gate.v1.DisconnectPlayerRequest
-	2,  // 38: minekube.gate.v1.GateService.StoreCookie:input_type -> minekube.gate.v1.StoreCookieRequest
-	4,  // 39: minekube.gate.v1.GateService.RequestCookie:input_type -> minekube.gate.v1.RequestCookieRequest
-	23, // 40: minekube.gate.v1.GateService.GetStatus:input_type -> minekube.gate.v1.GetStatusRequest
-	34, // 41: minekube.gate.v1.GateService.GetConfig:input_type -> minekube.gate.v1.GetConfigRequest
-	36, // 42: minekube.gate.v1.GateService.ValidateConfig:input_type -> minekube.gate.v1.ValidateConfigRequest
-	38, // 43: minekube.gate.v1.GateService.ApplyConfig:input_type -> minekube.gate.v1.ApplyConfigRequest
-	40, // 44: minekube.gate.v1.GateService.ListLiteRoutes:input_type -> minekube.gate.v1.ListLiteRoutesRequest
-	42, // 45: minekube.gate.v1.GateService.GetLiteRoute:input_type -> minekube.gate.v1.GetLiteRouteRequest
-	50, // 46: minekube.gate.v1.GateService.UpdateLiteRouteStrategy:input_type -> minekube.gate.v1.UpdateLiteRouteStrategyRequest
-	52, // 47: minekube.gate.v1.GateService.AddLiteRouteBackend:input_type -> minekube.gate.v1.AddLiteRouteBackendRequest
-	54, // 48: minekube.gate.v1.GateService.RemoveLiteRouteBackend:input_type -> minekube.gate.v1.RemoveLiteRouteBackendRequest
-	56, // 49: minekube.gate.v1.GateService.UpdateLiteRouteOptions:input_type -> minekube.gate.v1.UpdateLiteRouteOptionsRequest
-	58, // 50: minekube.gate.v1.GateService.UpdateLiteRouteFallback:input_type -> minekube.gate.v1.UpdateLiteRouteFallbackRequest
-	18, // 51: minekube.gate.v1.GateService.GetPlayer:output_type -> minekube.gate.v1.GetPlayerResponse
-	20, // 52: minekube.gate.v1.GateService.ListPlayers:output_type -> minekube.gate.v1.ListPlayersResponse
-	15, // 53: minekube.gate.v1.GateService.ListServers:output_type -> minekube.gate.v1.ListServersResponse
-	11, // 54: minekube.gate.v1.GateService.RegisterServer:output_type -> minekube.gate.v1.RegisterServerResponse
-	13, // 55: minekube.gate.v1.GateService.UnregisterServer:output_type -> minekube.gate.v1.UnregisterServerResponse
-	9,  // 56: minekube.gate.v1.GateService.ConnectPlayer:output_type -> minekube.gate.v1.ConnectPlayerResponse
-	7,  // 57: minekube.gate.v1.GateService.DisconnectPlayer:output_type -> minekube.gate.v1.DisconnectPlayerResponse
-	3,  // 58: minekube.gate.v1.GateService.StoreCookie:output_type -> minekube.gate.v1.StoreCookieResponse
-	5,  // 59: minekube.gate.v1.GateService.RequestCookie:output_type -> minekube.gate.v1.RequestCookieResponse
-	24, // 60: minekube.gate.v1.GateService.GetStatus:output_type -> minekube.gate.v1.GetStatusResponse
-	35, // 61: minekube.gate.v1.GateService.GetConfig:output_type -> minekube.gate.v1.GetConfigResponse
-	37, // 62: minekube.gate.v1.GateService.ValidateConfig:output_type -> minekube.gate.v1.ValidateConfigResponse
-	39, // 63: minekube.gate.v1.GateService.ApplyConfig:output_type -> minekube.gate.v1.ApplyConfigResponse
-	41, // 64: minekube.gate.v1.GateService.ListLiteRoutes:output_type -> minekube.gate.v1.ListLiteRoutesResponse
-	43, // 65: minekube.gate.v1.GateService.GetLiteRoute:output_type -> minekube.gate.v1.GetLiteRouteResponse
-	51, // 66: minekube.gate.v1.GateService.UpdateLiteRouteStrategy:output_type -> minekube.gate.v1.UpdateLiteRouteStrategyResponse
-	53, // 67: minekube.gate.v1.GateService.AddLiteRouteBackend:output_type -> minekube.gate.v1.AddLiteRouteBackendResponse
-	55, // 68: minekube.gate.v1.GateService.RemoveLiteRouteBackend:output_type -> minekube.gate.v1.RemoveLiteRouteBackendResponse
-	57, // 69: minekube.gate.v1.GateService.UpdateLiteRouteOptions:output_type -> minekube.gate.v1.UpdateLiteRouteOptionsResponse
-	59, // 70: minekube.gate.v1.GateService.UpdateLiteRouteFallback:output_type -> minekube.gate.v1.UpdateLiteRouteFallbackResponse
+	19, // 0: minekube.gate.v1.ListServersResponse.servers:type_name -> minekube.gate.v1.Server
+	24, // 1: minekube.gate.v1.GetPlayerResponse.player:type_name -> minekube.gate.v1.Player
+	24, // 2: minekube.gate.v1.ListPlayersResponse.players:type_name -> minekube.gate.v1.Player
+	25, // 3: minekube.gate.v1.Player.bedrock:type_name -> minekube.gate.v1.BedrockPlayerData
+	1,  // 4: minekube.gate.v1.BedrockPlayerData.device_os:type_name -> minekube.gate.v1.BedrockDeviceOS
+	3,  // 5: minekube.gate.v1.BedrockPlayerData.ui_profile:type_name -> minekube.gate.v1.BedrockUIProfile
+	2,  // 6: minekube.gate.v1.BedrockPlayerData.input_mode:type_name -> minekube.gate.v1.BedrockInputMode
+	0,  // 7: minekube.gate.v1.GetStatusResponse.mode:type_name -> minekube.gate.v1.ProxyMode
+	28, // 8: minekube.gate.v1.GetStatusResponse.classic:type_name -> minekube.gate.v1.ClassicStats
+	29, // 9: minekube.gate.v1.GetStatusResponse.lite:type_name -> minekube.gate.v1.LiteStats
+	31, // 10: minekube.gate.v1.GateConfig.api:type_name -> minekube.gate.v1.APIConfig
+	32, // 11: minekube.gate.v1.GateConfig.connect:type_name -> minekube.gate.v1.ConnectConfig
+	33, // 12: minekube.gate.v1.GateConfig.config:type_name -> minekube.gate.v1.JavaConfig
+	34, // 13: minekube.gate.v1.JavaConfig.forwarding:type_name -> minekube.gate.v1.ForwardingConfig
+	35, // 14: minekube.gate.v1.JavaConfig.status:type_name -> minekube.gate.v1.StatusConfig
+	63, // 15: minekube.gate.v1.JavaConfig.servers:type_name -> minekube.gate.v1.JavaConfig.ServersEntry
+	36, // 16: minekube.gate.v1.JavaConfig.lite:type_name -> minekube.gate.v1.LiteConfig
+	52, // 17: minekube.gate.v1.LiteConfig.routes:type_name -> minekube.gate.v1.LiteRoute
+	52, // 18: minekube.gate.v1.ListLiteRoutesResponse.routes:type_name -> minekube.gate.v1.LiteRoute
+	52, // 19: minekube.gate.v1.GetLiteRouteResponse.route:type_name -> minekube.gate.v1.LiteRoute
+	50, // 20: minekube.gate.v1.LiteRouteFallback.version:type_name -> minekube.gate.v1.LiteRouteFallbackVersion
+	51, // 21: minekube.gate.v1.LiteRouteFallback.players:type_name -> minekube.gate.v1.LiteRouteFallbackPlayers
+	47, // 22: minekube.gate.v1.LiteRoute.backends:type_name -> minekube.gate.v1.LiteRouteBackend
+	4,  // 23: minekube.gate.v1.LiteRoute.strategy:type_name -> minekube.gate.v1.LiteRouteStrategy
+	48, // 24: minekube.gate.v1.LiteRoute.options:type_name -> minekube.gate.v1.LiteRouteOptions
+	49, // 25: minekube.gate.v1.LiteRoute.fallback:type_name -> minekube.gate.v1.LiteRouteFallback
+	4,  // 26: minekube.gate.v1.UpdateLiteRouteStrategyRequest.strategy:type_name -> minekube.gate.v1.LiteRouteStrategy
+	48, // 27: minekube.gate.v1.UpdateLiteRouteOptionsRequest.options:type_name -> minekube.gate.v1.LiteRouteOptions
+	64, // 28: minekube.gate.v1.UpdateLiteRouteOptionsRequest.update_mask:type_name -> google.protobuf.FieldMask
+	49, // 29: minekube.gate.v1.UpdateLiteRouteFallbackRequest.fallback:type_name -> minekube.gate.v1.LiteRouteFallback
+	64, // 30: minekube.gate.v1.UpdateLiteRouteFallbackRequest.update_mask:type_name -> google.protobuf.FieldMask
+	20, // 31: minekube.gate.v1.GateService.GetPlayer:input_type -> minekube.gate.v1.GetPlayerRequest
+	22, // 32: minekube.gate.v1.GateService.ListPlayers:input_type -> minekube.gate.v1.ListPlayersRequest
+	17, // 33: minekube.gate.v1.GateService.ListServers:input_type -> minekube.gate.v1.ListServersRequest
+	13, // 34: minekube.gate.v1.GateService.RegisterServer:input_type -> minekube.gate.v1.RegisterServerRequest
+	15, // 35: minekube.gate.v1.GateService.UnregisterServer:input_type -> minekube.gate.v1.UnregisterServerRequest
+	11, // 36: minekube.gate.v1.GateService.ConnectPlayer:input_type -> minekube.gate.v1.ConnectPlayerRequest
+	9,  // 37: minekube.gate.v1.GateService.DisconnectPlayer:input_type -> minekube.gate.v1.DisconnectPlayerRequest
+	5,  // 38: minekube.gate.v1.GateService.StoreCookie:input_type -> minekube.gate.v1.StoreCookieRequest
+	7,  // 39: minekube.gate.v1.GateService.RequestCookie:input_type -> minekube.gate.v1.RequestCookieRequest
+	26, // 40: minekube.gate.v1.GateService.GetStatus:input_type -> minekube.gate.v1.GetStatusRequest
+	37, // 41: minekube.gate.v1.GateService.GetConfig:input_type -> minekube.gate.v1.GetConfigRequest
+	39, // 42: minekube.gate.v1.GateService.ValidateConfig:input_type -> minekube.gate.v1.ValidateConfigRequest
+	41, // 43: minekube.gate.v1.GateService.ApplyConfig:input_type -> minekube.gate.v1.ApplyConfigRequest
+	43, // 44: minekube.gate.v1.GateLiteService.ListLiteRoutes:input_type -> minekube.gate.v1.ListLiteRoutesRequest
+	45, // 45: minekube.gate.v1.GateLiteService.GetLiteRoute:input_type -> minekube.gate.v1.GetLiteRouteRequest
+	53, // 46: minekube.gate.v1.GateLiteService.UpdateLiteRouteStrategy:input_type -> minekube.gate.v1.UpdateLiteRouteStrategyRequest
+	55, // 47: minekube.gate.v1.GateLiteService.AddLiteRouteBackend:input_type -> minekube.gate.v1.AddLiteRouteBackendRequest
+	57, // 48: minekube.gate.v1.GateLiteService.RemoveLiteRouteBackend:input_type -> minekube.gate.v1.RemoveLiteRouteBackendRequest
+	59, // 49: minekube.gate.v1.GateLiteService.UpdateLiteRouteOptions:input_type -> minekube.gate.v1.UpdateLiteRouteOptionsRequest
+	61, // 50: minekube.gate.v1.GateLiteService.UpdateLiteRouteFallback:input_type -> minekube.gate.v1.UpdateLiteRouteFallbackRequest
+	21, // 51: minekube.gate.v1.GateService.GetPlayer:output_type -> minekube.gate.v1.GetPlayerResponse
+	23, // 52: minekube.gate.v1.GateService.ListPlayers:output_type -> minekube.gate.v1.ListPlayersResponse
+	18, // 53: minekube.gate.v1.GateService.ListServers:output_type -> minekube.gate.v1.ListServersResponse
+	14, // 54: minekube.gate.v1.GateService.RegisterServer:output_type -> minekube.gate.v1.RegisterServerResponse
+	16, // 55: minekube.gate.v1.GateService.UnregisterServer:output_type -> minekube.gate.v1.UnregisterServerResponse
+	12, // 56: minekube.gate.v1.GateService.ConnectPlayer:output_type -> minekube.gate.v1.ConnectPlayerResponse
+	10, // 57: minekube.gate.v1.GateService.DisconnectPlayer:output_type -> minekube.gate.v1.DisconnectPlayerResponse
+	6,  // 58: minekube.gate.v1.GateService.StoreCookie:output_type -> minekube.gate.v1.StoreCookieResponse
+	8,  // 59: minekube.gate.v1.GateService.RequestCookie:output_type -> minekube.gate.v1.RequestCookieResponse
+	27, // 60: minekube.gate.v1.GateService.GetStatus:output_type -> minekube.gate.v1.GetStatusResponse
+	38, // 61: minekube.gate.v1.GateService.GetConfig:output_type -> minekube.gate.v1.GetConfigResponse
+	40, // 62: minekube.gate.v1.GateService.ValidateConfig:output_type -> minekube.gate.v1.ValidateConfigResponse
+	42, // 63: minekube.gate.v1.GateService.ApplyConfig:output_type -> minekube.gate.v1.ApplyConfigResponse
+	44, // 64: minekube.gate.v1.GateLiteService.ListLiteRoutes:output_type -> minekube.gate.v1.ListLiteRoutesResponse
+	46, // 65: minekube.gate.v1.GateLiteService.GetLiteRoute:output_type -> minekube.gate.v1.GetLiteRouteResponse
+	54, // 66: minekube.gate.v1.GateLiteService.UpdateLiteRouteStrategy:output_type -> minekube.gate.v1.UpdateLiteRouteStrategyResponse
+	56, // 67: minekube.gate.v1.GateLiteService.AddLiteRouteBackend:output_type -> minekube.gate.v1.AddLiteRouteBackendResponse
+	58, // 68: minekube.gate.v1.GateLiteService.RemoveLiteRouteBackend:output_type -> minekube.gate.v1.RemoveLiteRouteBackendResponse
+	60, // 69: minekube.gate.v1.GateLiteService.UpdateLiteRouteOptions:output_type -> minekube.gate.v1.UpdateLiteRouteOptionsResponse
+	62, // 70: minekube.gate.v1.GateLiteService.UpdateLiteRouteFallback:output_type -> minekube.gate.v1.UpdateLiteRouteFallbackResponse
 	51, // [51:71] is the sub-list for method output_type
 	31, // [31:51] is the sub-list for method input_type
 	31, // [31:31] is the sub-list for extension type_name
@@ -3731,23 +3979,19 @@ func file_minekube_gate_v1_gate_service_proto_init() {
 	if File_minekube_gate_v1_gate_service_proto != nil {
 		return
 	}
-	file_minekube_gate_v1_gate_service_proto_msgTypes[34].OneofWrappers = []any{
-		(*ValidateConfigRequest_YamlConfig)(nil),
-		(*ValidateConfigRequest_JsonConfig)(nil),
-	}
-	file_minekube_gate_v1_gate_service_proto_msgTypes[36].OneofWrappers = []any{
-		(*ApplyConfigRequest_YamlConfig)(nil),
-		(*ApplyConfigRequest_JsonConfig)(nil),
+	file_minekube_gate_v1_gate_service_proto_msgTypes[22].OneofWrappers = []any{
+		(*GetStatusResponse_Classic)(nil),
+		(*GetStatusResponse_Lite)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_minekube_gate_v1_gate_service_proto_rawDesc), len(file_minekube_gate_v1_gate_service_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   60,
+			NumEnums:      5,
+			NumMessages:   59,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_minekube_gate_v1_gate_service_proto_goTypes,
 		DependencyIndexes: file_minekube_gate_v1_gate_service_proto_depIdxs,
