@@ -254,7 +254,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	for host, servers := range c.ForcedHosts {
 		for _, name := range servers {
-			e("Forced host %q server %q must be registered under servers", host, name)
+			if _, ok := c.Servers[name]; !ok {
+				e("Forced host %q server %q must be registered under servers", host, name)
+			}
 		}
 	}
 
