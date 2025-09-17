@@ -55,7 +55,10 @@ type (
 	}
 )
 
-var _ Handler = (*Service)(nil)
+var (
+	_ Handler                              = (*Service)(nil)
+	_ gatev1connect.GateLiteServiceHandler = (*Service)(nil)
+)
 
 func (s *Service) ListPlayers(ctx context.Context, c *connect.Request[pb.ListPlayersRequest]) (*connect.Response[pb.ListPlayersResponse], error) {
 	var players []proxy.Player

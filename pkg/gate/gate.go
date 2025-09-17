@@ -38,6 +38,9 @@ type Options struct {
 	// The event manager to use.
 	// If none is set, no events are sent.
 	EventMgr event.Manager
+	// The config file path for persistence.
+	// If none is set, config persistence will be disabled.
+	ConfigFilePath string
 }
 
 // New returns a new Gate instance.
@@ -117,7 +120,7 @@ func New(options Options) (gate *Gate, err error) {
 		return nil, err
 	}
 
-	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java())); err != nil {
+	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java(), options.ConfigFilePath)); err != nil {
 		return nil, err
 	}
 
@@ -227,8 +230,9 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	// Setup new Gate instance with loaded config.
 	eventMgr := event.New(event.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
-		Config:   c.conf,
-		EventMgr: eventMgr,
+		Config:         c.conf,
+		EventMgr:       eventMgr,
+		ConfigFilePath: c.autoConfigReloadWatchPath,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating Gate instance: %w", err)
