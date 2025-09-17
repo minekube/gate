@@ -2,6 +2,7 @@ package api
 
 import (
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser"
+	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
 )
@@ -139,15 +140,15 @@ func convertInputMode(inputMode int) pb.BedrockInputMode {
 // ConvertStrategyFromString converts from Go strategy string to protobuf enum
 func ConvertStrategyFromString(strategy string) pb.LiteRouteStrategy {
 	switch strategy {
-	case "sequential":
+	case string(config.StrategySequential):
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_SEQUENTIAL
-	case "random":
+	case string(config.StrategyRandom):
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_RANDOM
-	case "round-robin":
+	case string(config.StrategyRoundRobin):
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_ROUND_ROBIN
-	case "least-connections":
+	case string(config.StrategyLeastConnections):
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS
-	case "lowest-latency":
+	case string(config.StrategyLowestLatency):
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_LOWEST_LATENCY
 	default:
 		return pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_SEQUENTIAL
@@ -158,16 +159,16 @@ func ConvertStrategyFromString(strategy string) pb.LiteRouteStrategy {
 func ConvertStrategyToString(strategy pb.LiteRouteStrategy) string {
 	switch strategy {
 	case pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_SEQUENTIAL:
-		return "sequential"
+		return string(config.StrategySequential)
 	case pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_RANDOM:
-		return "random"
+		return string(config.StrategyRandom)
 	case pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_ROUND_ROBIN:
-		return "round-robin"
+		return string(config.StrategyRoundRobin)
 	case pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS:
-		return "least-connections"
+		return string(config.StrategyLeastConnections)
 	case pb.LiteRouteStrategy_LITE_ROUTE_STRATEGY_LOWEST_LATENCY:
-		return "lowest-latency"
+		return string(config.StrategyLowestLatency)
 	default:
-		return "sequential"
+		return string(config.StrategySequential)
 	}
 }

@@ -45,18 +45,14 @@ func NewService(p *proxy.Proxy, configHandler ConfigHandler, liteHandler LiteHan
 	}
 }
 
-type (
-	Handler = gatev1connect.GateServiceHandler
-
-	Service struct {
-		p             *proxy.Proxy
-		configHandler ConfigHandler
-		liteHandler   LiteHandler
-	}
-)
+type Service struct {
+	p             *proxy.Proxy
+	configHandler ConfigHandler
+	liteHandler   LiteHandler
+}
 
 var (
-	_ Handler                              = (*Service)(nil)
+	_ gatev1connect.GateServiceHandler     = (*Service)(nil)
 	_ gatev1connect.GateLiteServiceHandler = (*Service)(nil)
 )
 
