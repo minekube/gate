@@ -67,12 +67,14 @@ func (h *ConfigHandlerImpl) GetStatus(ctx context.Context, req *pb.GetStatusRequ
 		h.mu.Unlock()
 
 		// Count total active connections across all backends
-		sm := h.proxy.Lite().StrategyManager()
 		var totalConnections int32
-		for _, route := range routes {
-			for _, backend := range route.Backend {
-				if counter := sm.GetOrCreateCounter(backend); counter != nil {
-					totalConnections += int32(counter.Load())
+		if h.proxy != nil && h.proxy.Lite() != nil {
+			sm := h.proxy.Lite().StrategyManager()
+			for _, route := range routes {
+				for _, backend := range route.Backend {
+					if counter := sm.GetOrCreateCounter(backend); counter != nil {
+						totalConnections += int32(counter.Load())
+					}
 				}
 			}
 		}
@@ -88,17 +90,21 @@ func (h *ConfigHandlerImpl) GetStatus(ctx context.Context, req *pb.GetStatusRequ
 
 		// Count players in classic mode
 		var players int32
-		for _, s := range h.proxy.Servers() {
-			s.Players().Range(func(proxy.Player) bool {
-				players++
-				return true
-			})
+		var servers int32
+		if h.proxy != nil {
+			for _, s := range h.proxy.Servers() {
+				s.Players().Range(func(proxy.Player) bool {
+					players++
+					return true
+				})
+			}
+			servers = int32(len(h.proxy.Servers()))
 		}
 
 		response.Stats = &pb.GetStatusResponse_Classic{
 			Classic: &pb.ClassicStats{
 				Players: players,
-				Servers: int32(len(h.proxy.Servers())),
+				Servers: servers,
 			},
 		}
 	}
@@ -453,7 +459,6 @@ func (h *LiteHandlerImpl) toProtoFallback(src *config2.Status) *pb.LiteRouteFall
 }
 
 func (h *LiteHandlerImpl) toProtoRoute(route config2.Route) *pb.LiteRoute {
-	sm := h.proxy.Lite().StrategyManager()
 	pbRoute := &pb.LiteRoute{
 		Hosts:    route.Host,
 		Strategy: api.ConvertStrategyFromString(string(route.Strategy)),
@@ -464,10 +469,14 @@ func (h *LiteHandlerImpl) toProtoRoute(route config2.Route) *pb.LiteRoute {
 			CachePingTtlMs:    int64(route.CachePingTTL),
 		},
 	}
+
 	for _, backend := range route.Backend {
 		var active uint32
-		if counter := sm.GetOrCreateCounter(backend); counter != nil {
-			active = counter.Load()
+		if h.proxy != nil && h.proxy.Lite() != nil {
+			sm := h.proxy.Lite().StrategyManager()
+			if counter := sm.GetOrCreateCounter(backend); counter != nil {
+				active = counter.Load()
+			}
 		}
 		pbRoute.Backends = append(pbRoute.Backends, &pb.LiteRouteBackend{
 			Address:           backend,
