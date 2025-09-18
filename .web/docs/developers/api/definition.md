@@ -9,9 +9,7 @@ description: "Technical API definition and protocol specification for Gate Minec
 
 ::: details `gate_service.proto`
 
-::: code-group 
-
-```protobuf [gate_service.proto]
+```protobuf
 <!--@include: ../../../../api/minekube/gate/v1/gate_service.proto -->
 ```
 
