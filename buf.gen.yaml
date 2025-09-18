@@ -15,3 +15,5 @@ plugins:
   - remote: buf.build/community/pseudomuto-doc
     out: .web/docs/developers/api/gen
     opt: markdown,definition.gen.md
+  - remote: buf.build/community/sudorandom-connect-openapi:v0.21.2
+    out: .web/docs/developers/api/gen/openapi
