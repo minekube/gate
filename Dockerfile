@@ -21,13 +21,13 @@ ARG VERSION=unknown
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" -a -o gate gate.go
 
-# Slim runtime (no JRE) – Gate-only image (unchanged, distroless)
-FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian12 AS java
+# Move binary into final image (default Gate image - distroless)
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian12 AS gate
 COPY --from=build /workspace/gate /
-CMD ["/gate"]
+ENTRYPOINT ["/gate"]
 
-# Bedrock runtime (bundles Java Temurin 21 JRE) – runs Gate by default
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jre AS bedrock
+# Move binary into final image (jre variant Gate image - temurin-21-jre)
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jre AS jre
 COPY --from=build /workspace/gate /usr/local/bin/gate
 ENV PATH=/opt/java/openjdk/bin:$PATH
 ENTRYPOINT ["/usr/local/bin/gate"]
