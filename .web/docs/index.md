@@ -20,7 +20,7 @@ hero:
       link: /guide/lite
     - theme: alt
       text: Bedrock
-      link: /guide/lite
+      link: /guide/bedrock
     - theme: alt
       text: Extensions
       link: /extensions

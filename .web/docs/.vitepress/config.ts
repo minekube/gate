@@ -95,7 +95,6 @@ export default defineConfig({
       { text: 'Bedrock', link: '/guide/bedrock' },
       { text: 'Lite Mode', link: '/guide/lite' },
       { text: 'API & SDKs', link: '/developers/api/' },
-      { text: 'Developers', link: '/developers/' },
       { text: 'Config', link: '/guide/config/' },
       { text: 'Downloads', link: '/guide/install/' },
       { text: 'Extensions', link: '/extensions' },
@@ -339,6 +338,10 @@ export default defineConfig({
             {
               text: 'Definition',
               link: '/developers/api/definition',
+            },
+            {
+              text: 'OpenAPI',
+              link: '/developers/api/openapi',
             },
             {
               text: 'Glossary',
