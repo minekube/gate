@@ -73,12 +73,18 @@ jobs:
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev-${REF}")
           IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
           IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
+          IMAGE_JRE=${{ env.REGISTRY }}/${{ github.repository }}/jre:${REF}
+          IMAGE_JRE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}/jre:latest
 
           echo "image=${IMAGE}" >> $GITHUB_OUTPUT
           echo "image_latest=${IMAGE_LATEST}" >> $GITHUB_OUTPUT
+          echo "image_jre=${IMAGE_JRE}" >> $GITHUB_OUTPUT
+          echo "image_jre_latest=${IMAGE_JRE_LATEST}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-          echo "Building image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+          echo "Building images:" >> $GITHUB_STEP_SUMMARY
+          echo "- ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+          echo "- ${IMAGE_JRE}" >> $GITHUB_STEP_SUMMARY
           echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
 
       - name: Build and push docker image
@@ -92,9 +98,26 @@ jobs:
           cache-to: type=inline
           build-args: |
             VERSION=${{ steps.image-ref.outputs.version }}
+          target: gate
           tags: |
             ${{ steps.image-ref.outputs.image }}
             ${{ steps.image-ref.outputs.image_latest }}
+
+      - name: Build and push docker image (jre variant)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
+          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_jre_latest }}
+          cache-to: type=inline
+          build-args: |
+            VERSION=${{ steps.image-ref.outputs.version }}
+          target: jre
+          tags: |
+            ${{ steps.image-ref.outputs.image_jre }}
+            ${{ steps.image-ref.outputs.image_jre_latest }}
   releaser:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
