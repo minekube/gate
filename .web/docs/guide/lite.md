@@ -156,7 +156,7 @@ config:
     routes:
       - host: abc.example.com
         backend: [10.0.0.3:25565, 10.0.0.4:25565]
-        cachePingTTL: 3m # or 180s // [!code ++]
+        cachePingTTL: 3m # or 180s [!code ++]
 ```
 
 _TTL - the Time-to-live before evicting the response data from the in-memory cache_
@@ -176,7 +176,7 @@ config:
     routes:
       - host: abc.example.com
         backend: 10.0.0.3:25568
-        cachePingTTL: -1s // [!code ++]
+        cachePingTTL: -1s # [!code ++]
 ```
 
 :::
@@ -225,7 +225,7 @@ config:
     routes:
       - host: localhost
         backend: play.example.com
-        modifyVirtualHost: true // [!code ++]
+        modifyVirtualHost: true # [!code ++]
 ```
 
 :::
@@ -260,7 +260,7 @@ config:
     routes:
       - host: abc.example.com
         backend: 10.0.0.3:25566
-        proxyProtocol: true // [!code ++]
+        proxyProtocol: true # [!code ++]
 ```
 
 - [Gate - Enable Proxy Protocol](https://github.com/minekube/gate/blob/7b03987bcdc7e8a6ed96156fa147bdd9dbf6ba4c/config.yml#L85)
