@@ -210,10 +210,6 @@ export default defineConfig({
               link: '/guide/connect',
             },
             {
-              text: '🔧 Modded Servers Config',
-              link: '/guide/config/modded-servers',
-            },
-            {
               text: '🌐 ForcedHosts Routing',
               link: '/guide/forced-hosts',
             },
