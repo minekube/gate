@@ -48,16 +48,16 @@ Always download the mod version that matches your Minecraft server version. Chec
 
 ```properties [server.properties]
 server-port=25566
-online-mode=false // [!code ++]
+online-mode=false # [!code ++]
 motd=Fabric Server with Gate Proxy
 ```
 
 ```toml [config/FabricProxy-Lite.toml]
-hackOnlineMode = false // [!code ++]
-hackEarlySend = false // [!code ++]
-hackMessageChain = false // [!code ++]
+hackOnlineMode = false # [!code ++]
+hackEarlySend = false # [!code ++]
+hackMessageChain = false # [!code ++]
 disconnectMessage = "This server requires you to connect with Gate."
-secret = "your-secret-key-here" // [!code ++]
+secret = "your-secret-key-here" # [!code ++]
 ```
 
 ```yaml [Gate config.yml]
@@ -68,8 +68,8 @@ config:
   try:
     - fabric-server
   forwarding:
-    mode: velocity // [!code ++]
-    velocitySecret: 'your-secret-key-here' // [!code ++]
+    mode: velocity # [!code ++]
+    velocitySecret: 'your-secret-key-here' # [!code ++]
   status:
     motd: |
       §bGate Proxy with Fabric
@@ -114,14 +114,14 @@ Ensure you download the correct mod version for your NeoForge server version. Ch
 
 ```properties [server.properties]
 server-port=25567
-online-mode=false // [!code ++]
+online-mode=false # [!code ++]
 motd=NeoForge Server with Gate Proxy
 ```
 
 ```toml [config/pcf-common.toml]
 #Modern Forwarding Settings
 [modernForwarding]
-    forwardingSecret = "your-secret-key-here" // [!code ++]
+    forwardingSecret = "your-secret-key-here" # [!code ++]
 
 [commandWrapping]
     #List of argument types that are not vanilla but are integrated into the server
@@ -136,8 +136,8 @@ config:
   try:
     - neoforge-server
   forwarding:
-    mode: velocity // [!code ++]
-    velocitySecret: 'your-secret-key-here' // [!code ++]
+    mode: velocity # [!code ++]
+    velocitySecret: 'your-secret-key-here' # [!code ++]
   status:
     motd: |
       §bGate Proxy with NeoForge
@@ -164,8 +164,8 @@ config:
     - neoforge-server
     - vanilla-server
   forwarding:
-    mode: velocity // [!code ++]
-    velocitySecret: 'shared-secret-key' // [!code ++]
+    mode: velocity # [!code ++]
+    velocitySecret: 'shared-secret-key' # [!code ++]
   status:
     motd: |
       §bGate Multi-Server Network
