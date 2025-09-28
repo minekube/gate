@@ -89,8 +89,10 @@ config:
     # Options: legacy, none, bungeeguard, velocity
     mode: legacy
     # The secret used if the mode is velocity.
+    # Can also be set via environment variable: GATE_VELOCITY_SECRET
     #velocitySecret: secret_here
     # The secret used if the mode is bungeeguard.
+    # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
     #bungeeGuardSecret: secret_here
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.

@@ -158,6 +158,11 @@ func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
 	v.SetEnvPrefix("GATE")
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	
+	// Bind custom environment variables for forwarding secrets
+	v.BindEnv("velocitySecret", "GATE_VELOCITY_SECRET")
+	v.BindEnv("bungeeGuardSecret", "GATE_BUNGEEGUARD_SECRET")
+	
 	return v, nil
 }
 
