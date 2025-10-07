@@ -118,6 +118,12 @@ retry:
 	}
 	ctx, err = d.decodePayload(payload)
 	if err != nil {
+		// Special case: ErrDecoderLeftBytes should still return the ctx
+		// This allows callers to decide whether to ignore this error
+		if errors.Is(err, proto.ErrDecoderLeftBytes) {
+			ctx.BytesRead = n
+			return ctx, err
+		}
 		return nil, err
 	}
 	ctx.BytesRead = n
