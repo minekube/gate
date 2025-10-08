@@ -21,6 +21,20 @@ var (
 	ErrInvalidEmitter            = errors.New("emitter must be a valid player")
 )
 
+const (
+	SourceMaster  = packet.SoundSourceMaster
+	SourceMusic   = packet.SoundSourceMusic
+	SourceRecord  = packet.SoundSourceRecord
+	SourceWeather = packet.SoundSourceWeather
+	SourceBlock   = packet.SoundSourceBlock
+	SourceHostile = packet.SoundSourceHostile
+	SourceNeutral = packet.SoundSourceNeutral
+	SourcePlayer  = packet.SoundSourcePlayer
+	SourceAmbient = packet.SoundSourceAmbient
+	SourceVoice   = packet.SoundSourceVoice
+	SourceUI      = packet.SoundSourceUI
+)
+
 // Player represents a player that can play and stop sounds.
 // This is typically a *connectedPlayer from the proxy package.
 type Player interface {
@@ -31,6 +45,12 @@ type Player interface {
 	CurrentServerEntityID() (int, bool)
 	// CheckServerMatch checks if the other player is on the same server.
 	CheckServerMatch(other interface{ CurrentServerEntityID() (int, bool) }) bool
+}
+
+// ParseSource parses a sound source from a string.
+func ParseSource(source string) (s packet.SoundSource, err error) {
+	err = s.UnmarshalText([]byte(source))
+	return
 }
 
 // Sound represents a sound that can be played.

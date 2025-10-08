@@ -40,12 +40,6 @@ func (s SoundSource) String() string {
 	}[s]
 }
 
-// ParseSoundSource parses a sound source from a string.
-func ParseSoundSource(source string) (s SoundSource, err error) {
-	err = s.UnmarshalText([]byte(source))
-	return
-}
-
 func (s *SoundSource) UnmarshalText(text []byte) error {
 	switch string(text) {
 	case "master":
@@ -101,7 +95,7 @@ func (s *SoundEntityPacket) Encode(c *proto.PacketContext, wr io.Writer) error {
 	// Write sound ID (hardcoded to 0 for named sounds)
 	w.VarInt(s.SoundID)
 	w.MinimalKey(s.SoundName)
-	
+
 	if w.Bool(s.FixedRange != nil) {
 		w.Float32(*s.FixedRange)
 	}

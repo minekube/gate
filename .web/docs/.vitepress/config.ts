@@ -283,6 +283,10 @@ export default defineConfig({
               text: 'Commands',
               link: '/developers/commands',
             },
+            {
+              text: 'Sounds',
+              link: '/developers/sound',
+            },
           ],
         },
         {
