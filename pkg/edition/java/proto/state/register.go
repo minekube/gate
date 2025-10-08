@@ -62,7 +62,7 @@ func init() {
 	Config.ServerBound.Register(&config.KnownPacks{},
 		m(0x07, version.Minecraft_1_20_5),
 	)
-	Config.ServerBound.Register(&p.ServerboundCustomClickActionPacket{},
+	Config.ServerBound.Register(&p.CustomClickActionPacket{},
 		m(0x08, version.Minecraft_1_21_6),
 	)
 	Config.ServerBound.Register(&config.CodeOfConductAcceptPacket{},
