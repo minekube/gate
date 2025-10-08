@@ -435,6 +435,9 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 		}
 	}
 
+	// Store the entity ID for sound API
+	destination.entityID = joinGame.EntityID
+
 	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
 	// track them.
 	c.mu.Lock()
