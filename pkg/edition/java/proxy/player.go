@@ -125,6 +125,7 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/bossbar
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/title
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/cookie
+	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/sound
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/proxy/tablist
 }
 
@@ -792,4 +793,36 @@ func (p *connectedPlayer) discardChatQueue() {
 
 func (p *connectedPlayer) HandshakeIntent() packet.HandshakeIntent {
 	return p.handshakeIntent
+}
+
+// CurrentServerEntityID returns the entity ID of the player on their current server.
+// Returns false if the player is not connected to a server.
+func (p *connectedPlayer) CurrentServerEntityID() (int, bool) {
+	serverConn := p.connectedServer()
+	if serverConn == nil {
+		return 0, false
+	}
+	return serverConn.entityID, true
+}
+
+// CheckServerMatch checks if the other player is on the same server.
+// This method is used by the sound package to verify emitters are on the same server.
+func (p *connectedPlayer) CheckServerMatch(other interface{ CurrentServerEntityID() (int, bool) }) bool {
+	// Simple implementation: check both have servers
+	thisEntityID, thisOk := p.CurrentServerEntityID()
+	otherEntityID, otherOk := other.CurrentServerEntityID()
+
+	if !thisOk || !otherOk {
+		return false
+	}
+
+	// If we can cast to connectedPlayer, do proper server name check
+	if otherPlayer, ok := other.(*connectedPlayer); ok {
+		thisServer := p.connectedServer()
+		otherServer := otherPlayer.connectedServer()
+		return ServerInfoEqual(thisServer.Server().ServerInfo(), otherServer.Server().ServerInfo())
+	}
+
+	// Fallback: just check both are connected
+	return thisEntityID != 0 && otherEntityID != 0
 }

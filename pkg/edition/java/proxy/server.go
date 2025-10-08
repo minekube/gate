@@ -225,6 +225,8 @@ type serverConnection struct {
 	gracefulDisconnect atomic.Bool
 	pendingPings       *lru.SyncCache[int64, time.Time]
 
+	entityID int // entity ID of the player on this server connection
+
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
 	connPhase  phase.BackendConnectionPhase

@@ -1131,8 +1131,12 @@ func (e *PlayerClientBrandEvent) Brand() string {
 //
 //
 
-// PreShutdownEvent is fired before the proxy begins to shut down by
-// stopping to accept new connections and disconnect all players.
+// PreShutdownEvent is fired by the proxy after it has stopped accepting new connections,
+// but before any players are disconnected. This is the last opportunity to interact with
+// currently connected players, such as transferring them to another proxy or performing
+// cleanup tasks.
+//
+// The proxy will wait for all event listeners to complete before disconnecting players.
 type PreShutdownEvent struct {
 	reason component.Component // may be nil
 }

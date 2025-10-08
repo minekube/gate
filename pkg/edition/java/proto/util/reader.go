@@ -481,3 +481,11 @@ func WriteKeyArray(wr io.Writer, keys []key.Key) error {
 	}
 	return nil
 }
+
+func ReadMinimalKey(rd io.Reader) (key.Key, error) {
+	str, err := ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	return key.New(key.MinecraftNamespace, str), nil
+}
