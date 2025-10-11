@@ -52,6 +52,7 @@ func NewConfigHandler(mu *sync.Mutex, cfg *config.Config, eventMgr event.Manager
 func (h *ConfigHandlerImpl) GetStatus(ctx context.Context, req *pb.GetStatusRequest) (*pb.GetStatusResponse, error) {
 	h.mu.Lock()
 	isLiteMode := h.cfg.Config.Lite.Enabled
+	routes := h.cfg.Config.Lite.Routes
 	h.mu.Unlock()
 
 	response := &pb.GetStatusResponse{
@@ -162,8 +163,8 @@ func (h *ConfigHandlerImpl) ApplyConfig(ctx context.Context, req *pb.ApplyConfig
 	h.mu.Lock()
 	prev := *h.cfg
 	*h.cfg = newCfg
-	reload.FireConfigUpdate(h.eventMgr, h.cfg, &prev)
 	h.mu.Unlock()
+	reload.FireConfigUpdate(h.eventMgr, h.cfg, &prev)
 	logr.FromContextOrDiscard(ctx).Info("applied config via api")
 
 	warnStrs := make([]string, len(warns))
@@ -536,8 +537,8 @@ func (h *LiteHandlerImpl) applyConfigUpdate(ctx context.Context, newCfg config.C
 	h.mu.Lock()
 	prev := *h.cfg
 	*h.cfg = newCfg
-	reload.FireConfigUpdate(h.eventMgr, h.cfg, &prev)
 	h.mu.Unlock()
+	reload.FireConfigUpdate(h.eventMgr, h.cfg, &prev)
 	logr.FromContextOrDiscard(ctx).Info(logMsg, kv...)
 	return warnStrs, nil
 }
