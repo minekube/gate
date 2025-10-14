@@ -567,7 +567,6 @@ func init() {
 		m(0x0F, version.Minecraft_1_19_4),
 		m(0x10, version.Minecraft_1_20_2),
 		m(0x0F, version.Minecraft_1_21_5),
-		m(0x13, version.Minecraft_1_21_9),
 	)
 	Play.ClientBound.Register(&p.AvailableCommands{},
 		m(0x11, version.Minecraft_1_13),
