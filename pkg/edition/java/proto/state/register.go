@@ -618,7 +618,6 @@ func init() {
 		m(0x17, version.Minecraft_1_20_2),
 		m(0x18, version.Minecraft_1_20_5),
 		m(0x17, version.Minecraft_1_21_5),
-		m(0x1B, version.Minecraft_1_21_9),
 	)
 	Play.ClientBound.Register(&p.ServerData{},
 		m(0x3F, version.Minecraft_1_19),
