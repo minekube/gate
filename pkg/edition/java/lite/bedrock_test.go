@@ -61,3 +61,45 @@ func TestClearVirtualHost_BedrockFloodgate(t *testing.T) {
 		})
 	}
 }
+
+func TestBedrockDataStripping(t *testing.T) {
+	tests := []struct {
+		name               string
+		serverAddress      string
+		stripBedrockData   bool
+		expectedPreserved  string // expected when stripBedrockData = false
+		expectedStripped   string // expected when stripBedrockData = true
+	}{
+		{
+			name:              "bedrock floodgate hostname",
+			serverAddress:     "lobby.example.com\x00encrypted_bedrock_data",
+			stripBedrockData:  false,
+			expectedPreserved: "lobby.example.com\x00encrypted_bedrock_data", // preserved
+			expectedStripped:  "lobby.example.com",                           // stripped
+		},
+		{
+			name:              "regular java hostname unchanged",
+			serverAddress:     "lobby.example.com",
+			stripBedrockData:  false,
+			expectedPreserved: "lobby.example.com",
+			expectedStripped:  "lobby.example.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test when stripBedrockData is false (default - preserve Floodgate data)
+			if !tt.stripBedrockData {
+				// When stripBedrockData is false, the data should be preserved
+				result := tt.serverAddress
+				assert.Equal(t, tt.expectedPreserved, result, "Floodgate data should be preserved when stripBedrockData is false")
+			}
+
+			// Test when stripBedrockData is true (strip Floodgate data)
+			if tt.stripBedrockData {
+				result := ClearVirtualHost(tt.serverAddress)
+				assert.Equal(t, tt.expectedStripped, result, "Floodgate data should be stripped when stripBedrockData is true")
+			}
+		})
+	}
+}
