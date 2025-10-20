@@ -260,6 +260,15 @@ func dialRoute(
 		}
 	}
 
+	// Strip Bedrock/Floodgate data from hostname before sending to backend
+	// Floodgate format: original_hostname\0encrypted_data[:port]
+	// This is necessary for Bedrock players connecting through Geyser with Floodgate
+	if strings.Contains(handshake.ServerAddress, forgeSeparator) {
+		clearedHost := ClearVirtualHost(handshake.ServerAddress)
+		handshake.ServerAddress = clearedHost
+		forceUpdatePacketContext = true
+	}
+
 	if route.ModifyVirtualHost {
 		clearedHost := ClearVirtualHost(handshake.ServerAddress)
 		backendHost := netutil.HostStr(backendAddr)
