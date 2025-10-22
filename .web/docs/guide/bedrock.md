@@ -773,7 +773,8 @@ bedrock:
 - **Java mods** - Forge/Fabric mods don't work with Bedrock clients
 - **Complex redstone** - Some advanced redstone may behave differently
 - **Lite Mode** - Gate Lite isn't compatible with Bedrock Edition but we are working on it!
-- **Connect** - Minekube Connect does not currently support Bedrock Edition connections
+- **Connect** - Gate Lite does not support Bedrock Edition connections at this time, but it is planned for a future release
+> Don't ask about ETA as we work in our free time with the [contributions of the community](https://github.com/minekube/gate/graphs/contributors/)
 
 ---
 
