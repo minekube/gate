@@ -974,7 +974,7 @@ try:
             <div
               class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
             >
-              800+
+              {{ communityStats.discordMembers }}+
             </div>
             <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
               Discord Members
@@ -985,7 +985,7 @@ try:
             <div
               class="text-2xl sm:text-3xl font-semibold text-[--vp-c-brand-1]"
             >
-              750+
+              {{ communityStats.githubStars }}+
             </div>
             <div class="text-xs sm:text-sm text-[--vp-c-text-2]">
               GitHub Stars
@@ -1076,8 +1076,8 @@ try:
         </p>
         <p class="mt-6 text-lg leading-8 text-[--vp-c-text-2]">
           Get help, share your projects, and chat with other server owners and
-          developers. Our Discord community is active 24/7 with over 800 members
-          ready to help.
+          developers. Our Discord community is active 24/7 with over
+          {{ communityStats.discordMembers }} members ready to help.
         </p>
       </div>
 
@@ -1106,7 +1106,9 @@ try:
         >
           <div class="flex items-center gap-8">
             <div class="text-center">
-              <div class="text-3xl font-bold text-[--vp-c-brand-1]">800+</div>
+              <div class="text-3xl font-bold text-[--vp-c-brand-1]">
+                {{ communityStats.discordMembers }}+
+              </div>
               <div class="text-sm text-[--vp-c-text-2]">Members</div>
             </div>
             <div class="text-center">
@@ -1143,6 +1145,7 @@ try:
 <script setup>
 import { ref } from 'vue';
 import Survey from './Survey.vue';
+import { communityStats } from '../../../shared/';
 
 const isWindows =
   typeof navigator !== 'undefined' && /Win/.test(navigator.platform);
