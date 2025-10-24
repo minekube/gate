@@ -4,7 +4,7 @@ import { useRouter } from 'vitepress';
 import { watch } from 'vue';
 import HomeHeroImage from './HomeHeroImage.vue';
 import LandingAfter from './LandingAfter.vue';
-import WidgetBot from './WidgetBot.vue';
+import DiscordButton from './DiscordButton.vue';
 
 const { Layout } = DefaultTheme;
 
@@ -34,7 +34,7 @@ if (typeof window !== 'undefined' && window.posthog) {
       <slot />
     </template>
     <template #layout-bottom>
-      <WidgetBot />
+      <DiscordButton />
     </template>
   </Layout>
 </template>

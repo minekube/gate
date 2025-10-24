@@ -38,6 +38,10 @@ export default defineConfig({
     ['meta', { property: 'og:image', content: ogImage }],
     ['meta', { property: 'og:url', content: ogUrl }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
+    [
+      'script',
+      { src: 'https://cdn.jsdelivr.net/npm/@widgetbot/html-embed', defer: '' },
+    ],
     // [
     //     'script',
     //     {
@@ -57,6 +61,11 @@ export default defineConfig({
 
   vue: {
     // reactivityTransform: true, // This option is deprecated
+    template: {
+      compilerOptions: {
+        isCustomElement: (tag) => tag === 'widgetbot',
+      },
+    },
   },
 
   ignoreDeadLinks: 'localhostLinks',
