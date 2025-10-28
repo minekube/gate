@@ -1334,37 +1334,17 @@ func (e *CookieRequestEvent) SetAllowed(allowed bool) { e.denied = !allowed }
 //
 //
 //
-<<<<<<< HEAD
-
-// Event when a new Server gets Registrated
-type ServerRegistrationEvent struct {
-	info ServerInfo
-}
-
-func (e *ServerRegistrationEvent) ServerInfo() ServerInfo { return e.ServerInfo() }
-
-//
-//
-//
-
-// Event when a Server gets Unregistrated
-type ServerUnregistrationEvent struct {
-	info ServerInfo
-}
-
-func (e *ServerUnregistrationEvent) ServerInfo() serverInfo { return e.ServerInfo() }
-=======
 //
 //
 
 // ServerRegisteredEvent is fired when a backend server is registered with the proxy.
 // This allows plugins to react to dynamically added servers and perform necessary setup.
 type ServerRegisteredEvent struct {
-	server RegisteredServer
+	server ServerInfo
 }
 
 // Server returns the server that was registered.
-func (e *ServerRegisteredEvent) Server() RegisteredServer {
+func (e *ServerRegisteredEvent) ServerInfo() ServerInfo {
 	return e.server
 }
 
@@ -1384,4 +1364,3 @@ type ServerUnregisteredEvent struct {
 func (e *ServerUnregisteredEvent) ServerInfo() ServerInfo {
 	return e.server
 }
->>>>>>> refs/remotes/origin/master

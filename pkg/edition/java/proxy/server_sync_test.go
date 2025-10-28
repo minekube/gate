@@ -333,32 +333,32 @@ func TestServerInfoEqual(t *testing.T) {
 // are fired when servers are registered and unregistered.
 func TestServerRegistrationEvents(t *testing.T) {
 	eventMgr := event.New()
-	
+
 	// Track events
 	var registeredServers []string
 	var unregisteredServers []string
-	
+
 	// Subscribe to ServerRegisteredEvent
 	event.Subscribe(eventMgr, 0, func(e *ServerRegisteredEvent) {
-		registeredServers = append(registeredServers, e.Server().ServerInfo().Name())
+		registeredServers = append(registeredServers, e.ServerInfo().Name())
 	})
-	
+
 	// Subscribe to ServerUnregisteredEvent
 	event.Subscribe(eventMgr, 0, func(e *ServerUnregisteredEvent) {
 		unregisteredServers = append(unregisteredServers, e.ServerInfo().Name())
 	})
-	
+
 	// Create proxy with event manager
 	cfg := &config.Config{
 		Servers: map[string]string{},
 		Lite:    liteconfig.Config{Enabled: false},
 	}
-	
+
 	authenticator, err := auth.New(auth.Options{})
 	if err != nil {
 		t.Fatalf("Failed to create authenticator: %v", err)
 	}
-	
+
 	proxy := &Proxy{
 		log:           logr.Discard(),
 		cfg:           cfg,
@@ -367,17 +367,17 @@ func TestServerRegistrationEvents(t *testing.T) {
 		configServers: make(map[string]bool),
 		authenticator: authenticator,
 	}
-	
+
 	// Register a server
 	serverInfo := NewServerInfo("test-server", mustParseAddr("localhost:25565"))
 	_, err = proxy.Register(serverInfo)
 	if err != nil {
 		t.Fatalf("Failed to register server: %v", err)
 	}
-	
+
 	// Wait for event to process
 	eventMgr.Wait()
-	
+
 	// Verify ServerRegisteredEvent was fired
 	if len(registeredServers) != 1 {
 		t.Errorf("Expected 1 registered event, got %d", len(registeredServers))
@@ -385,15 +385,15 @@ func TestServerRegistrationEvents(t *testing.T) {
 	if len(registeredServers) > 0 && registeredServers[0] != "test-server" {
 		t.Errorf("Expected registered server to be 'test-server', got '%s'", registeredServers[0])
 	}
-	
+
 	// Unregister the server
 	if !proxy.Unregister(serverInfo) {
 		t.Fatal("Failed to unregister server")
 	}
-	
+
 	// Wait for event to process
 	eventMgr.Wait()
-	
+
 	// Verify ServerUnregisteredEvent was fired
 	if len(unregisteredServers) != 1 {
 		t.Errorf("Expected 1 unregistered event, got %d", len(unregisteredServers))
@@ -406,31 +406,31 @@ func TestServerRegistrationEvents(t *testing.T) {
 // TestServerRegistrationEventsMultiple tests that events are fired for multiple server operations
 func TestServerRegistrationEventsMultiple(t *testing.T) {
 	eventMgr := event.New()
-	
+
 	// Track events
 	registeredCount := 0
 	unregisteredCount := 0
-	
+
 	// Subscribe to events
 	event.Subscribe(eventMgr, 0, func(e *ServerRegisteredEvent) {
 		registeredCount++
 	})
-	
+
 	event.Subscribe(eventMgr, 0, func(e *ServerUnregisteredEvent) {
 		unregisteredCount++
 	})
-	
+
 	// Create proxy with event manager
 	cfg := &config.Config{
 		Servers: map[string]string{},
 		Lite:    liteconfig.Config{Enabled: false},
 	}
-	
+
 	authenticator, err := auth.New(auth.Options{})
 	if err != nil {
 		t.Fatalf("Failed to create authenticator: %v", err)
 	}
-	
+
 	proxy := &Proxy{
 		log:           logr.Discard(),
 		cfg:           cfg,
@@ -439,37 +439,37 @@ func TestServerRegistrationEventsMultiple(t *testing.T) {
 		configServers: make(map[string]bool),
 		authenticator: authenticator,
 	}
-	
+
 	// Register multiple servers
 	servers := []ServerInfo{
 		NewServerInfo("server1", mustParseAddr("localhost:25565")),
 		NewServerInfo("server2", mustParseAddr("localhost:25566")),
 		NewServerInfo("server3", mustParseAddr("localhost:25567")),
 	}
-	
+
 	for _, s := range servers {
 		_, err := proxy.Register(s)
 		if err != nil {
 			t.Fatalf("Failed to register server %s: %v", s.Name(), err)
 		}
 	}
-	
+
 	eventMgr.Wait()
-	
+
 	// Verify all registration events were fired
 	if registeredCount != 3 {
 		t.Errorf("Expected 3 registered events, got %d", registeredCount)
 	}
-	
+
 	// Unregister all servers
 	for _, s := range servers {
 		if !proxy.Unregister(s) {
 			t.Errorf("Failed to unregister server %s", s.Name())
 		}
 	}
-	
+
 	eventMgr.Wait()
-	
+
 	// Verify all unregistration events were fired
 	if unregisteredCount != 3 {
 		t.Errorf("Expected 3 unregistered events, got %d", unregisteredCount)
