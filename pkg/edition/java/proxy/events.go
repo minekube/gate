@@ -1330,3 +1330,37 @@ func (e *CookieRequestEvent) Allowed() bool { return !e.denied }
 
 // SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
 func (e *CookieRequestEvent) SetAllowed(allowed bool) { e.denied = !allowed }
+
+//
+//
+//
+//
+//
+
+// ServerRegisteredEvent is fired when a backend server is registered with the proxy.
+// This allows plugins to react to dynamically added servers and perform necessary setup.
+type ServerRegisteredEvent struct {
+	server RegisteredServer
+}
+
+// Server returns the server that was registered.
+func (e *ServerRegisteredEvent) Server() RegisteredServer {
+	return e.server
+}
+
+//
+//
+//
+//
+//
+
+// ServerUnregisteredEvent is fired when a backend server is unregistered from the proxy.
+// This allows plugins to react to removed servers and perform necessary cleanup.
+type ServerUnregisteredEvent struct {
+	server ServerInfo
+}
+
+// ServerInfo returns the server info of the server that was unregistered.
+func (e *ServerUnregisteredEvent) ServerInfo() ServerInfo {
+	return e.server
+}
