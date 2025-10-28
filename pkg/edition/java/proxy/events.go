@@ -1330,3 +1330,25 @@ func (e *CookieRequestEvent) Allowed() bool { return !e.denied }
 
 // SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
 func (e *CookieRequestEvent) SetAllowed(allowed bool) { e.denied = !allowed }
+
+//
+//
+//
+
+// Event when a new Server gets Registrated
+type ServerRegistrationEvent struct {
+	info ServerInfo
+}
+
+func (e *ServerRegistrationEvent) ServerInfo() ServerInfo { return e.ServerInfo() }
+
+//
+//
+//
+
+// Event when a Server gets Unregistrated
+type ServerUnregistrationEvent struct {
+	info ServerInfo
+}
+
+func (e *ServerUnregistrationEvent) ServerInfo() serverInfo { return e.ServerInfo() }

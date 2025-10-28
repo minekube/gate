@@ -489,7 +489,9 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	// Note: We don't mark API-registered servers as config-managed
 	// so they won't be unregistered during config reloads
 
-	p.log.Info("registered new server", "name", info.Name(), "addr", info.Addr())
+	p.log.Info("registered new server",
+		"name", info.Name(), "addr", info.Addr())
+	p.event.Fire(&ServerRegistrationEvent{info: rs.ServerInfo()})
 	return rs, nil
 }
 
@@ -511,6 +513,7 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
+	p.event.Fire(&ServerUnregistrationEvent{info: rs.ServerInfo()})
 	return true
 }
 
