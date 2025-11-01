@@ -26,8 +26,8 @@ FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian12 AS gate
 COPY --from=build /workspace/gate /
 ENTRYPOINT ["/gate"]
 
-# Move binary into final image (jre variant Gate image - temurin-21-jre)
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jre AS jre
+# Move binary into final image (jre variant Gate image - temurin-25-jre-alpine)
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jre-alpine AS jre
 COPY --from=build /workspace/gate /usr/local/bin/gate
 ENV PATH=/opt/java/openjdk/bin:$PATH
 ENTRYPOINT ["/usr/local/bin/gate"]
