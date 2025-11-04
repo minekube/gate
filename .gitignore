@@ -3,4 +3,4 @@
 /.web/docs/.vitepress/cache
 tmp
 .geyser
-gate
+./gate
