@@ -363,7 +363,13 @@ Manual setup requires careful coordination of configurations, startup order, and
 
 ### Docker Compose Setup
 
-For containerized deployments, you **must use the JRE variant** of the Gate Docker image (`ghcr.io/minekube/gate/jre:latest`) because Bedrock support requires Java Runtime Environment to run Geyser. See the [Docker installation guide](install/docker#image-variants) for more details about image variants.
+::: important Managed Mode vs Custom Geyser Deployment
+
+**If using managed mode** (where Geyser runs inside the Gate container), you **must use the JRE variant** (`ghcr.io/minekube/gate/jre:latest`) because Bedrock support requires Java Runtime Environment to run Geyser. See the [Docker installation guide](install/docker#image-variants) for more details about image variants.
+
+**The example below** shows a **custom Geyser deployment** where Geyser runs in a separate container. This setup uses the standard Gate image since Geyser runs independently.
+
+:::
 
 :::: code-group
 
@@ -384,8 +390,8 @@ cd gate/.examples/bedrock
 docker compose up -d
 ```
 
-::: important JRE Variant Required for Bedrock
-When using Docker with Bedrock support, always use `ghcr.io/minekube/gate/jre:latest` instead of the standard `ghcr.io/minekube/gate:latest` image. The JRE variant includes Java Runtime Environment necessary for Geyser to run.
+::: tip Managed Mode with Docker
+If you're using **managed mode** (where Gate automatically runs Geyser), use `ghcr.io/minekube/gate/jre:latest` in your docker-compose.yml. The JRE variant includes Java Runtime Environment necessary for Geyser to run inside the Gate container.
 :::
 
 ::: tip Network Address Considerations
