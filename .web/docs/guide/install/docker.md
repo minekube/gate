@@ -24,11 +24,11 @@ The standard Gate image is based on a minimal distroless base image. This is the
 
 ### JRE Variant (`ghcr.io/minekube/gate/jre:latest`)
 
-The JRE variant includes Java Runtime Environment (JRE) and is **required for [Bedrock Edition support](bedrock)**. This image is based on `eclipse-temurin:25-jre-alpine` and includes Java necessary to run Geyser for Bedrock cross-play.
+The JRE variant includes Java Runtime Environment (JRE) and is **required for [Bedrock Edition support](../bedrock)**. This image is based on `eclipse-temurin:25-jre-alpine` and includes Java necessary to run Geyser for Bedrock cross-play.
 
 ::: tip When to Use the JRE Variant
 Use `ghcr.io/minekube/gate/jre:latest` if you:
-- Need [Bedrock Edition support](bedrock) (cross-play with mobile, console, and Windows Bedrock players)
+- Need [Bedrock Edition support](../bedrock) (cross-play with mobile, console, and Windows Bedrock players)
 - Are using Gate's managed Geyser mode
 - Require Java runtime in your container
 
@@ -122,7 +122,7 @@ You can join at `localhost:25565` and use `/server` to switch between the server
 
 ### Using the JRE Variant for Bedrock Support
 
-If you need [Bedrock Edition support](bedrock), use the JRE variant image:
+If you need [Bedrock Edition support](../bedrock), use the JRE variant image:
 
 ```yaml docker-compose.yaml
 version: '3.9'
@@ -137,7 +137,7 @@ services:
       - PATH-TO-CONFIG/config.yml:/config.yml
 ```
 
-The JRE variant includes Java Runtime Environment required for Geyser to run. See the [Bedrock Edition guide](bedrock) for complete Bedrock setup instructions.
+The JRE variant includes Java Runtime Environment required for Geyser to run. See the [Bedrock Edition guide](../bedrock) for complete Bedrock setup instructions.
 
 ## Troubleshooting
 
