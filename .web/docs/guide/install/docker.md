@@ -14,6 +14,27 @@ You can use specific version tags instead of the latest. Every commit to the `ma
 the `latest` tag as well as the commit's short SHA
 like [`6d3671c`](https://github.com/minekube/gate/pkgs/container/gate/50952923?tag=6d3671c).
 
+## Image Variants
+
+Gate provides two Docker image variants:
+
+### Standard Image (`ghcr.io/minekube/gate:latest`)
+
+The standard Gate image is based on a minimal distroless base image. This is the recommended image for most use cases as it has a smaller footprint and enhanced security.
+
+### JRE Variant (`ghcr.io/minekube/gate/jre:latest`)
+
+The JRE variant includes Java Runtime Environment (JRE) and is **required for [Bedrock Edition support](bedrock)**. This image is based on `eclipse-temurin:25-jre-alpine` and includes Java necessary to run Geyser for Bedrock cross-play.
+
+::: tip When to Use the JRE Variant
+Use `ghcr.io/minekube/gate/jre:latest` if you:
+- Need [Bedrock Edition support](bedrock) (cross-play with mobile, console, and Windows Bedrock players)
+- Are using Gate's managed Geyser mode
+- Require Java runtime in your container
+
+For all other use cases, use the standard `ghcr.io/minekube/gate:latest` image.
+:::
+
 ## `docker run`
 
 ```sh console
@@ -98,6 +119,25 @@ docker-compose up
 
 The files of the two servers are located in the `serverdata*` directories.
 You can join at `localhost:25565` and use `/server` to switch between the servers.
+
+### Using the JRE Variant for Bedrock Support
+
+If you need [Bedrock Edition support](bedrock), use the JRE variant image:
+
+```yaml docker-compose.yaml
+version: '3.9'
+
+services:
+  gate:
+    image: ghcr.io/minekube/gate/jre:latest
+    container_name: gate
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - PATH-TO-CONFIG/config.yml:/config.yml
+```
+
+The JRE variant includes Java Runtime Environment required for Geyser to run. See the [Bedrock Edition guide](bedrock) for complete Bedrock setup instructions.
 
 ## Troubleshooting
 
