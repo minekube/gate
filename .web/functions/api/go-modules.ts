@@ -1,8 +1,28 @@
-import { getOctokit } from './github-auth.js';
+/// <reference types="@cloudflare/workers-types" />
+
+import { getOctokit, type GitHubAppEnv } from './github-auth';
 
 const CACHE_DURATION = 60 * 60; // Cache duration in seconds
 
-export async function onRequest(context) {
+interface GoModuleRepository {
+  name: string;
+  owner: string;
+  description: string;
+  stars: number;
+  url: string;
+}
+
+interface CloudflarePagesFunctionEnv extends GitHubAppEnv {
+  GITHUB_CACHE: KVNamespace;
+}
+
+interface CloudflarePagesFunctionContext {
+  env: CloudflarePagesFunctionEnv;
+}
+
+export async function onRequest(
+  context: CloudflarePagesFunctionContext
+): Promise<Response> {
   const cacheKey = 'go-module-repositories';
 
   // Access the KV namespace from context.env
@@ -30,8 +50,8 @@ export async function onRequest(context) {
       order: 'desc',
     });
 
-    const uniqueRepos = new Set(); // Set to track processed repository names
-    const libraries = [];
+    const uniqueRepos = new Set<string>(); // Set to track processed repository names
+    const libraries: GoModuleRepository[] = [];
 
     for (const item of data.items) {
       const repo = item.repository;
@@ -48,6 +68,11 @@ export async function onRequest(context) {
       // Fetch additional repo details using Octokit
       try {
         const [owner, repoName] = repo.full_name.split('/');
+        if (!owner || !repoName) {
+          console.error(`Invalid repository name: ${repo.full_name}`);
+          continue;
+        }
+
         const { data: repoDetails } = await octokit.request(
           'GET /repos/{owner}/{repo}',
           {
@@ -58,14 +83,16 @@ export async function onRequest(context) {
 
         libraries.push({
           name: repo.name,
-          owner: repo.owner.login,
+          owner: repo.owner?.login ?? 'unknown',
           description: repoDetails.description || 'No description',
           stars: repoDetails.stargazers_count,
           url: repo.html_url,
         });
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         console.error(
-          `Error fetching repository details for ${repo.full_name}: ${error.message}`
+          `Error fetching repository details for ${repo.full_name}: ${errorMessage}`
         );
         // Continue with next repository
       }
@@ -85,8 +112,11 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    return new Response(`Error fetching data: ${error.message}`, {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    return new Response(`Error fetching data: ${errorMessage}`, {
       status: 500,
     });
   }
 }
+

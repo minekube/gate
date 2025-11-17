@@ -1,10 +1,30 @@
-// functions/api/extensions.js
+/// <reference types="@cloudflare/workers-types" />
 
-import { getOctokit } from './github-auth.js';
+// functions/api/extensions.ts
+
+import { getOctokit, type GitHubAppEnv } from './github-auth';
 
 const CACHE_DURATION = 60 * 60; // Cache duration in seconds
 
-export async function onRequest(context) {
+interface ExtensionRepository {
+  name: string;
+  owner: string;
+  description: string | null;
+  stars: number;
+  url: string;
+}
+
+interface CloudflarePagesFunctionEnv extends GitHubAppEnv {
+  GITHUB_CACHE: KVNamespace;
+}
+
+interface CloudflarePagesFunctionContext {
+  env: CloudflarePagesFunctionEnv;
+}
+
+export async function onRequest(
+  context: CloudflarePagesFunctionContext
+): Promise<Response> {
   const cacheKey = 'gate-extension-repositories';
 
   // Access the KV namespace from context.env
@@ -32,9 +52,9 @@ export async function onRequest(context) {
       order: 'desc',
     });
 
-    const libraries = data.items.map((item) => ({
+    const libraries: ExtensionRepository[] = data.items.map((item) => ({
       name: item.name,
-      owner: item.owner.login,
+      owner: item.owner?.login ?? 'unknown',
       description: item.description,
       stars: item.stargazers_count,
       url: item.html_url,
@@ -54,8 +74,11 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    return new Response(`Error fetching data: ${error.message}`, {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    return new Response(`Error fetching data: ${errorMessage}`, {
       status: 500,
     });
   }
 }
+
