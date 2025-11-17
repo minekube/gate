@@ -1,12 +1,12 @@
+import { getOctokit } from './github-auth.js';
+
 const CACHE_DURATION = 60 * 60; // Cache duration in seconds
 
 export async function onRequest(context) {
-  const githubApiUrl = 'https://api.github.com/search/code?q=filename:go.mod+go.minekube.com+in:file&sort=indexed&order=desc';
   const cacheKey = 'go-module-repositories';
 
-  // Access the KV namespace and GitHub token from context.env
+  // Access the KV namespace from context.env
   const GITHUB_CACHE = context.env.GITHUB_CACHE;
-  const githubToken = context.env.GITHUB_TOKEN;
 
   // Check for cached data
   const cachedResponse = await GITHUB_CACHE.get(cacheKey);
@@ -20,20 +20,16 @@ export async function onRequest(context) {
   }
 
   try {
-    // Fetch data from GitHub API
-    const response = await fetch(githubApiUrl, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'Authorization': `token ${githubToken}`,
-        'User-Agent': 'CloudflarePagesGateExtension/1.0 (+https://developers.cloudflare.com/pages)',
-      },
+    // Get authenticated Octokit instance
+    const octokit = await getOctokit(context.env, GITHUB_CACHE);
+
+    // Search for code files with go.mod containing go.minekube.com
+    const { data } = await octokit.request('GET /search/code', {
+      q: 'filename:go.mod go.minekube.com in:file',
+      sort: 'indexed',
+      order: 'desc',
     });
 
-    if (!response.ok) {
-      return new Response('Error fetching data from GitHub API', { status: 500 });
-    }
-
-    const data = await response.json();
     const uniqueRepos = new Set(); // Set to track processed repository names
     const libraries = [];
 
@@ -49,9 +45,17 @@ export async function onRequest(context) {
       // Mark the repository as processed
       uniqueRepos.add(repo.full_name);
 
-      // Fetch additional repo details
-      const repoDetails = await fetchRepositoryDetails(repo.full_name, githubToken);
-      if (repoDetails) {
+      // Fetch additional repo details using Octokit
+      try {
+        const [owner, repoName] = repo.full_name.split('/');
+        const { data: repoDetails } = await octokit.request(
+          'GET /repos/{owner}/{repo}',
+          {
+            owner,
+            repo: repoName,
+          }
+        );
+
         libraries.push({
           name: repo.name,
           owner: repo.owner.login,
@@ -59,11 +63,18 @@ export async function onRequest(context) {
           stars: repoDetails.stargazers_count,
           url: repo.html_url,
         });
+      } catch (error) {
+        console.error(
+          `Error fetching repository details for ${repo.full_name}: ${error.message}`
+        );
+        // Continue with next repository
       }
     }
 
     // Cache the deduplicated response
-    await GITHUB_CACHE.put(cacheKey, JSON.stringify(libraries), { expirationTtl: CACHE_DURATION });
+    await GITHUB_CACHE.put(cacheKey, JSON.stringify(libraries), {
+      expirationTtl: CACHE_DURATION,
+    });
 
     return new Response(JSON.stringify(libraries), {
       headers: {
@@ -74,26 +85,8 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    return new Response(`Error fetching data: ${error}`, { status: 500 });
+    return new Response(`Error fetching data: ${error.message}`, {
+      status: 500,
+    });
   }
-}
-
-// Helper function to fetch repository details
-async function fetchRepositoryDetails(repoFullName, githubToken) {
-  const repoUrl = `https://api.github.com/repos/${repoFullName}`;
-
-  const response = await fetch(repoUrl, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-      'Authorization': `token ${githubToken}`,
-      'User-Agent': 'CloudflarePagesGateExtension/1.0 (+https://developers.cloudflare.com/pages)',
-    },
-  });
-
-  if (!response.ok) {
-    console.error(`Error fetching repository details: ${response.status}`);
-    return null;
-  }
-
-  return await response.json();
 }
