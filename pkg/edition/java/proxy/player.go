@@ -121,6 +121,7 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 
 	// CurrentServerEntityID returns the entity ID of the player on their current server.
 	// Returns false if the player is not connected to a server.
+	// This method is required for the sound package.
 	CurrentServerEntityID() (int, bool)
 	// CheckServerMatch checks if the other player is on the same server.
 	// This method is used by the sound package to verify emitters are on the same server.
