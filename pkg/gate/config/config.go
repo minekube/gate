@@ -45,7 +45,7 @@ type HealthService struct {
 // API is the configuration for the Gate API.
 type API struct {
 	Enabled bool       `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Config  api.Config `yaml:",inline"`
+	Config  api.Config `json:",inline" yaml:",inline"`
 }
 
 // Validate validates a Config and all enabled configs.

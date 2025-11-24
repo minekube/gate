@@ -2,6 +2,11 @@ syntax = "proto3";
 
 package minekube.gate.v1;
 
+option go_package = "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1;gatev1";
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+
 // GateService is the service API for managing a Gate proxy instance.
 // It provides methods for managing players and servers.
 // All methods follow standard gRPC error codes and include detailed error messages.
@@ -46,6 +51,44 @@ service GateService {
   // RequestCookie requests a cookie from a player's client.
   // The payload in RequestCookieResponse may be empty if the cookie is not found.
   rpc RequestCookie(RequestCookieRequest) returns (RequestCookieResponse);
+
+  // GetStatus returns current proxy metadata including version, mode, players and servers.
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+
+  // GetConfig returns the current effective config.
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+
+  // ValidateConfig parses and validates a config payload without applying it.
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse);
+
+  // ApplyConfig parses, validates, and applies a new config payload.
+  rpc ApplyConfig(ApplyConfigRequest) returns (ApplyConfigResponse);
+
+}
+
+// GateLiteService provides APIs for managing Gate Lite mode routes and backends.
+// This service is only available when Gate is running in Lite mode.
+service GateLiteService {
+  // ListLiteRoutes returns lite routes and their active connection counters.
+  rpc ListLiteRoutes(ListLiteRoutesRequest) returns (ListLiteRoutesResponse);
+
+  // GetLiteRoute returns detailed information about a single lite route.
+  rpc GetLiteRoute(GetLiteRouteRequest) returns (GetLiteRouteResponse);
+
+  // UpdateLiteRouteStrategy updates the load-balancing strategy for a lite route.
+  rpc UpdateLiteRouteStrategy(UpdateLiteRouteStrategyRequest) returns (UpdateLiteRouteStrategyResponse);
+
+  // AddLiteRouteBackend adds a backend target to a lite route.
+  rpc AddLiteRouteBackend(AddLiteRouteBackendRequest) returns (AddLiteRouteBackendResponse);
+
+  // RemoveLiteRouteBackend removes a backend target from a lite route.
+  rpc RemoveLiteRouteBackend(RemoveLiteRouteBackendRequest) returns (RemoveLiteRouteBackendResponse);
+
+  // UpdateLiteRouteOptions updates proxy options for a lite route using a field mask.
+  rpc UpdateLiteRouteOptions(UpdateLiteRouteOptionsRequest) returns (UpdateLiteRouteOptionsResponse);
+
+  // UpdateLiteRouteFallback updates fallback metadata for a lite route using a field mask.
+  rpc UpdateLiteRouteFallback(UpdateLiteRouteFallbackRequest) returns (UpdateLiteRouteFallbackResponse);
 }
 
 // StoreCookieRequest is the request for StoreCookie method.
@@ -76,7 +119,6 @@ message RequestCookieResponse {
   // May be empty if the cookie is not found.
   bytes payload = 1;
 }
-
 
 // DisconnectPlayerRequest is the request for DisconnectPlayer method.
 message DisconnectPlayerRequest {
@@ -191,4 +233,384 @@ message Player {
   string id = 1;
   // The player's username
   string username = 2;
+  // Optional Bedrock player data (only present for Bedrock players)
+  BedrockPlayerData bedrock = 3;
+}
+
+// BedrockPlayerData contains information specific to Bedrock Edition players.
+// This data is only available for players connecting through Geyser/Floodgate.
+message BedrockPlayerData {
+  // Xbox User ID (XUID) - unique identifier for Bedrock players
+  int64 xuid = 1;
+  // Device operating system the player is using
+  BedrockDeviceOS device_os = 2;
+  // Client language code (e.g., "en_US")
+  string language = 3;
+  // UI profile (Classic or Pocket)
+  BedrockUIProfile ui_profile = 4;
+  // Input method (mouse, touch, gamepad, etc.)
+  BedrockInputMode input_mode = 5;
+  // Whether the player is connecting through a proxy
+  bool behind_proxy = 6;
+  // Linked Java Edition username (if any)
+  string linked_player = 7;
+}
+
+// GetStatusRequest is the request for GetStatus method.
+message GetStatusRequest {}
+
+// ProxyMode enumerates the current operating mode of Gate.
+enum ProxyMode {
+  PROXY_MODE_UNSPECIFIED = 0;
+  PROXY_MODE_CLASSIC = 1;
+  PROXY_MODE_LITE = 2;
+}
+
+// BedrockDeviceOS represents the operating system of a Bedrock Edition player's device.
+enum BedrockDeviceOS {
+  BEDROCK_DEVICE_OS_UNSPECIFIED = 0;
+  BEDROCK_DEVICE_OS_UNKNOWN = 1;
+  BEDROCK_DEVICE_OS_ANDROID = 2;
+  BEDROCK_DEVICE_OS_IOS = 3;
+  BEDROCK_DEVICE_OS_MACOS = 4;
+  BEDROCK_DEVICE_OS_AMAZON = 5;
+  BEDROCK_DEVICE_OS_GEAR_VR = 6;
+  BEDROCK_DEVICE_OS_HOLOLENS = 7;     // Deprecated
+  BEDROCK_DEVICE_OS_WINDOWS_UWP = 8;
+  BEDROCK_DEVICE_OS_WINDOWS_X86 = 9;
+  BEDROCK_DEVICE_OS_DEDICATED = 10;
+  BEDROCK_DEVICE_OS_APPLE_TV = 11;    // Deprecated
+  BEDROCK_DEVICE_OS_PLAYSTATION = 12;
+  BEDROCK_DEVICE_OS_SWITCH = 13;
+  BEDROCK_DEVICE_OS_XBOX = 14;
+  BEDROCK_DEVICE_OS_WINDOWS_PHONE = 15; // Deprecated
+  BEDROCK_DEVICE_OS_LINUX = 16;
+}
+
+// BedrockInputMode represents the input method used by a Bedrock Edition player.
+enum BedrockInputMode {
+  BEDROCK_INPUT_MODE_UNSPECIFIED = 0;
+  BEDROCK_INPUT_MODE_UNKNOWN = 1;
+  BEDROCK_INPUT_MODE_MOUSE = 2;
+  BEDROCK_INPUT_MODE_TOUCH = 3;
+  BEDROCK_INPUT_MODE_GAMEPAD = 4;
+  BEDROCK_INPUT_MODE_MOTION_CONTROLLER = 5;
+}
+
+// BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+enum BedrockUIProfile {
+  BEDROCK_UI_PROFILE_UNSPECIFIED = 0;
+  BEDROCK_UI_PROFILE_CLASSIC = 1;
+  BEDROCK_UI_PROFILE_POCKET = 2;
+}
+
+// LiteRouteStrategy represents load balancing strategies for lite routes.
+enum LiteRouteStrategy {
+  LITE_ROUTE_STRATEGY_UNSPECIFIED = 0;
+  LITE_ROUTE_STRATEGY_SEQUENTIAL = 1;
+  LITE_ROUTE_STRATEGY_RANDOM = 2;
+  LITE_ROUTE_STRATEGY_ROUND_ROBIN = 3;
+  LITE_ROUTE_STRATEGY_LEAST_CONNECTIONS = 4;
+  LITE_ROUTE_STRATEGY_LOWEST_LATENCY = 5;
+}
+
+// GetStatusResponse contains proxy runtime metadata.
+message GetStatusResponse {
+  // Gate version string
+  string version = 1;
+  // Current operating mode (classic or lite)
+  ProxyMode mode = 2;
+  // Mode-specific statistics
+  oneof stats {
+    // Statistics for classic mode
+    ClassicStats classic = 3;
+    // Statistics for lite mode
+    LiteStats lite = 4;
+  }
+}
+
+// ClassicStats contains statistics for classic proxy mode.
+message ClassicStats {
+  // Number of online players
+  int32 players = 1;
+  // Number of registered servers
+  int32 servers = 2;
+}
+
+// LiteStats contains statistics for lite proxy mode.
+message LiteStats {
+  // Number of active connections being proxied
+  int32 connections = 1;
+  // Number of configured routes
+  int32 routes = 2;
+}
+
+
+// GateConfig represents the root configuration structure
+message GateConfig {
+  APIConfig api = 1;
+  ConnectConfig connect = 2;
+  JavaConfig config = 3;
+}
+
+// APIConfig represents the Gate API configuration
+message APIConfig {
+  // Whether the API is enabled
+  bool enabled = 1;
+  // The address to bind the API server to (using a localhost address is recommended)
+  string bind = 2;
+}
+
+// ConnectConfig represents the Connect network configuration
+message ConnectConfig {
+  // Whether to connect Gate to the WatchService
+  bool enabled = 1;
+  // Endpoint name
+  string name = 2;
+  // Allow offline mode players to join
+  bool allow_offline_mode_players = 3;
+}
+
+// JavaConfig represents the main Java edition configuration
+message JavaConfig {
+  // The address to listen for connections
+  string bind = 1;
+  // Whether to enable online mode
+  bool online_mode = 2;
+  // Player info forwarding settings
+  ForwardingConfig forwarding = 3;
+  // Status response settings
+  StatusConfig status = 4;
+  // Registered servers (name:address)
+  map<string, string> servers = 5;
+  // Try server names order
+  repeated string try = 6;
+  // Note: forced_hosts is represented as JSON string due to protobuf limitations with map<string, []string>
+  string forced_hosts_json = 7;
+  // Whether to accept transfers from other hosts via transfer packet
+  bool accept_transfers = 8;
+  // Whether to enable BungeeCord plugin messaging
+  bool bungee_plugin_channel_enabled = 9;
+  // Lite mode settings
+  LiteConfig lite = 10;
+}
+
+// ForwardingConfig represents player info forwarding settings
+message ForwardingConfig {
+  // Forwarding mode ("none", "legacy", "velocity", "bungeeguard")
+  string mode = 1;
+  // Secret used with "velocity" mode
+  string velocity_secret = 2;
+  // Secret used with "bungeeguard" mode
+  string bungee_guard_secret = 3;
+}
+
+// StatusConfig represents status response settings
+message StatusConfig {
+  // Message of the Day displayed in server list
+  string motd = 1;
+  // Maximum players shown in server list
+  int32 show_max_players = 2;
+  // Base64-encoded favicon image
+  string favicon = 3;
+  // Whether to log ping requests
+  bool log_ping_requests = 4;
+  // Whether the proxy should present itself as Forge/FML-compatible
+  bool announce_forge = 5;
+}
+
+// LiteConfig represents Gate Lite mode configuration
+message LiteConfig {
+  // Whether Lite mode is enabled
+  bool enabled = 1;
+  // Configured lite routes
+  repeated LiteRoute routes = 2;
+}
+
+
+// GetConfigRequest is the request for GetConfig method.
+message GetConfigRequest {}
+
+// GetConfigResponse contains the serialized config payload.
+message GetConfigResponse {
+  // YAML-serialized configuration data
+  string payload = 1;
+}
+
+// ValidateConfigRequest is the request for ValidateConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+message ValidateConfigRequest {
+  // Configuration data as YAML or JSON string
+  string config = 1;
+}
+
+// ValidateConfigResponse contains validation results when the config is processed.
+message ValidateConfigResponse {
+  repeated string warnings = 1;
+  repeated string errors = 2;
+}
+
+// ApplyConfigRequest is the request for ApplyConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+message ApplyConfigRequest {
+  // Configuration data as YAML or JSON string
+  string config = 1;
+  // Whether to persist the config to disk by overwriting the existing config file.
+  // Only works if a config file exists. Defaults to false (in-memory only).
+  bool persist = 2;
+}
+
+// ApplyConfigResponse contains validation warnings emitted while applying the config.
+message ApplyConfigResponse {
+  repeated string warnings = 1;
+}
+
+// ListLiteRoutesRequest is the request for ListLiteRoutes method.
+message ListLiteRoutesRequest {}
+
+// ListLiteRoutesResponse is the response for ListLiteRoutes method.
+message ListLiteRoutesResponse {
+  repeated LiteRoute routes = 1;
+}
+
+// GetLiteRouteRequest is the request for GetLiteRoute method.
+message GetLiteRouteRequest {
+  // Host matcher to look up (case-insensitive).
+  string host = 1;
+}
+
+// GetLiteRouteResponse is the response for GetLiteRoute method.
+message GetLiteRouteResponse {
+  LiteRoute route = 1;
+}
+
+// LiteRouteBackend represents a backend target for a lite route.
+message LiteRouteBackend {
+  // Network address of the backend server
+  string address = 1;
+  // Number of active connections to this backend
+  uint32 active_connections = 2;
+}
+
+// LiteRouteOptions captures proxy behaviour flags for a lite route.
+message LiteRouteOptions {
+  // Whether to enable HA-Proxy protocol for this route
+  bool proxy_protocol = 1;
+  // Whether to enable TCPShield real IP support
+  bool tcp_shield_real_ip = 2;
+  // Whether to modify the virtual host header
+  bool modify_virtual_host = 3;
+  // Cache TTL for ping responses in milliseconds
+  int64 cache_ping_ttl_ms = 4;
+}
+
+// LiteRouteFallback contains fallback response data served when all backends fail.
+message LiteRouteFallback {
+  // JSON-formatted MOTD for fallback response
+  string motd_json = 1;
+  // Version information for fallback response
+  LiteRouteFallbackVersion version = 2;
+  // Player count information for fallback response
+  LiteRouteFallbackPlayers players = 3;
+  // Base64-encoded favicon for fallback response
+  string favicon = 4;
+}
+
+// LiteRouteFallbackVersion contains display version metadata.
+message LiteRouteFallbackVersion {
+  // Version name displayed to clients
+  string name = 1;
+  // Protocol version number
+  int32 protocol = 2;
+}
+
+// LiteRouteFallbackPlayers contains fallback player counts.
+message LiteRouteFallbackPlayers {
+  // Number of online players to display
+  int32 online = 1;
+  // Maximum players to display
+  int32 max = 2;
+}
+
+// LiteRoute represents a configured lite route and runtime state.
+message LiteRoute {
+  // Host patterns this route matches
+  repeated string hosts = 1;
+  // Backend servers for this route
+  repeated LiteRouteBackend backends = 2;
+  // Load balancing strategy
+  LiteRouteStrategy strategy = 3;
+  // Proxy behavior options
+  LiteRouteOptions options = 4;
+  // Fallback response when all backends fail
+  LiteRouteFallback fallback = 5;
+}
+
+// UpdateLiteRouteStrategyRequest updates the load-balancing strategy for a route.
+message UpdateLiteRouteStrategyRequest {
+  // Host matcher to update (case-insensitive)
+  string host = 1;
+  // New load balancing strategy to apply
+  LiteRouteStrategy strategy = 2;
+}
+
+// UpdateLiteRouteStrategyResponse contains validation warnings.
+message UpdateLiteRouteStrategyResponse {
+  repeated string warnings = 1;
+}
+
+// AddLiteRouteBackendRequest adds a backend to a route.
+message AddLiteRouteBackendRequest {
+  // Host matcher to update (case-insensitive)
+  string host = 1;
+  // Backend address to add (e.g., "localhost:25565")
+  string backend = 2;
+}
+
+// AddLiteRouteBackendResponse contains validation warnings.
+message AddLiteRouteBackendResponse {
+  repeated string warnings = 1;
+}
+
+// RemoveLiteRouteBackendRequest removes a backend from a route.
+message RemoveLiteRouteBackendRequest {
+  // Host matcher to update (case-insensitive)
+  string host = 1;
+  // Backend address to remove
+  string backend = 2;
+}
+
+// RemoveLiteRouteBackendResponse contains validation warnings.
+message RemoveLiteRouteBackendResponse {
+  repeated string warnings = 1;
+}
+
+// UpdateLiteRouteOptionsRequest updates per-route options using a field mask.
+message UpdateLiteRouteOptionsRequest {
+  // Host matcher to update (case-insensitive)
+  string host = 1;
+  // New options to apply
+  LiteRouteOptions options = 2;
+  // Field mask specifying which options to update
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// UpdateLiteRouteOptionsResponse contains validation warnings.
+message UpdateLiteRouteOptionsResponse {
+  repeated string warnings = 1;
+}
+
+// UpdateLiteRouteFallbackRequest updates fallback metadata using a field mask.
+message UpdateLiteRouteFallbackRequest {
+  // Host matcher to update (case-insensitive)
+  string host = 1;
+  // New fallback configuration to apply
+  LiteRouteFallback fallback = 2;
+  // Field mask specifying which fallback fields to update
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// UpdateLiteRouteFallbackResponse contains validation warnings.
+message UpdateLiteRouteFallbackResponse {
+  repeated string warnings = 1;
 }
