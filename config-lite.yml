@@ -45,6 +45,10 @@ config:
         backend: 172.16.0.12:25566
         proxyProtocol: true # Use proxy protocol to connect to backend.
         tcpShieldRealIP: true # Optionally you can also use TCPShield's RealIP protocol.
+      # Use hostname parameters in backend addresses with $1, $2, etc.
+      # Example: abc.domain.com → abc.servers.svc:25565
+      - host: '*.domain.com'
+        backend: '$1.servers.svc:25565'
       # You can also match to multiple hosts to one or multiple backends.
       - host: [127.0.0.1, localhost]
         backend: [172.16.0.12:25566, backend.example.com:25566]

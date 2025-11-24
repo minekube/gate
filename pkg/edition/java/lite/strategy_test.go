@@ -99,3 +99,133 @@ func TestConfigValidation_ValidStrategies(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigValidation_ParameterWarnings(t *testing.T) {
+	tests := []struct {
+		name          string
+		route         config.Route
+		expectWarns   bool
+		expectWarnMsg string
+	}{
+		{
+			name: "valid parameter usage",
+			route: config.Route{
+				Host:    []string{"*.domain.com"},
+				Backend: []string{"$1.servers.svc:25565"},
+			},
+			expectWarns: false,
+		},
+		{
+			name: "parameter without wildcards",
+			route: config.Route{
+				Host:    []string{"example.com"},
+				Backend: []string{"$1.servers.svc:25565"},
+			},
+			expectWarns:   true,
+			expectWarnMsg: "has 0 wildcard(s) but backend",
+		},
+		{
+			name: "parameter index exceeds wildcards",
+			route: config.Route{
+				Host:    []string{"*.domain.com"},
+				Backend: []string{"$2.servers.svc:25565"},
+			},
+			expectWarns:   true,
+			expectWarnMsg: "uses parameter $2",
+		},
+		{
+			name: "multiple parameters some valid some invalid",
+			route: config.Route{
+				Host:    []string{"*.domain.com"},
+				Backend: []string{"$1-$2.servers.svc:25565"},
+			},
+			expectWarns:   true,
+			expectWarnMsg: "uses parameter $2",
+		},
+		{
+			name: "multiple wildcards with valid parameters",
+			route: config.Route{
+				Host:    []string{"*.*.domain.com"},
+				Backend: []string{"$1-$2.servers.svc:25565"},
+			},
+			expectWarns: false,
+		},
+		{
+			name: "parameter index too high",
+			route: config.Route{
+				Host:    []string{"*.*.domain.com"},
+				Backend: []string{"$1-$2-$3.servers.svc:25565"},
+			},
+			expectWarns:   true,
+			expectWarnMsg: "uses parameter $3",
+		},
+		{
+			name: "question mark wildcard with parameter",
+			route: config.Route{
+				Host:    []string{"?.domain.com"},
+				Backend: []string{"$1.servers.svc:25565"},
+			},
+			expectWarns: false,
+		},
+		{
+			name: "mixed wildcards with parameters",
+			route: config.Route{
+				Host:    []string{"*.example.*"},
+				Backend: []string{"$1-$2.servers.svc:25565"},
+			},
+			expectWarns: false,
+		},
+		{
+			name: "no parameters in backend",
+			route: config.Route{
+				Host:    []string{"*.domain.com"},
+				Backend: []string{"static.servers.svc:25565"},
+			},
+			expectWarns: false,
+		},
+		{
+			name: "multiple hosts with parameters",
+			route: config.Route{
+				Host:    []string{"*.domain.com", "*.example.com"},
+				Backend: []string{"$1.servers.svc:25565"},
+			},
+			expectWarns: false, // Both hosts have wildcards
+		},
+		{
+			name: "multiple hosts one without wildcards",
+			route: config.Route{
+				Host:    []string{"example.com", "*.domain.com"},
+				Backend: []string{"$1.servers.svc:25565"},
+			},
+			expectWarns:   true,
+			expectWarnMsg: "has 0 wildcard(s) but backend",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				Routes: []config.Route{tt.route},
+			}
+
+			warns, errs := cfg.Validate()
+			assert.Empty(t, errs, "Should have no errors")
+
+			if tt.expectWarns {
+				assert.NotEmpty(t, warns, "Should have warnings")
+				if tt.expectWarnMsg != "" {
+					found := false
+					for _, warn := range warns {
+						if assert.Contains(t, warn.Error(), tt.expectWarnMsg, "Warning should contain expected message") {
+							found = true
+							break
+						}
+					}
+					assert.True(t, found, "Should find warning with expected message")
+				}
+			} else {
+				assert.Empty(t, warns, "Should have no warnings")
+			}
+		})
+	}
+}

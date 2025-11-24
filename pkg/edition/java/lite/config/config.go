@@ -3,7 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
@@ -103,6 +105,7 @@ var allowedStrategies = []Strategy{
 
 func (c Config) Validate() (warns []error, errs []error) {
 	e := func(m string, args ...any) { errs = append(errs, fmt.Errorf(m, args...)) }
+	w := func(m string, args ...any) { warns = append(warns, fmt.Errorf(m, args...)) }
 
 	if len(c.Routes) == 0 {
 		e("No routes configured")
@@ -119,15 +122,94 @@ func (c Config) Validate() (warns []error, errs []error) {
 		if !slices.Contains(allowedStrategies, ep.Strategy) && ep.Strategy != "" {
 			e("Route %d: invalid strategy '%s', allowed: %v", i, ep.Strategy, allowedStrategies)
 		}
-		for i, addr := range ep.Backend {
-			_, err := netutil.Parse(addr, "tcp")
-			if err != nil {
-				e("Route %d: backend %d: failed to parse address: %w", i, err)
+
+		// Validate parameter usage in backend addresses
+		for hostIdx, host := range ep.Host {
+			wildcardCount := countWildcards(host)
+			for backendIdx, addr := range ep.Backend {
+				paramIndices := extractParameterIndices(addr)
+				if len(paramIndices) > 0 {
+					// Check if parameters exceed available wildcards
+					maxParam := 0
+					for _, idx := range paramIndices {
+						if idx > maxParam {
+							maxParam = idx
+						}
+					}
+					if maxParam > wildcardCount {
+						w("Route %d: host %d '%s' has %d wildcard(s) but backend %d '%s' uses parameter $%d (parameters will not be substituted)",
+							i, hostIdx, host, wildcardCount, backendIdx, addr, maxParam)
+					}
+					// Warn if no wildcards but parameters are used
+					if wildcardCount == 0 {
+						w("Route %d: host %d '%s' has no wildcards but backend %d '%s' uses parameters (parameters will not be substituted)",
+							i, hostIdx, host, backendIdx, addr)
+					}
+				}
+
+				// Validate address parsing (after parameter substitution would happen)
+				// We can't fully validate addresses with parameters, but we can check the structure
+				_, err := netutil.Parse(addr, "tcp")
+				if err != nil {
+					// If it contains parameters, it might be valid after substitution
+					if !containsParameters(addr) {
+						e("Route %d: backend %d: failed to parse address: %w", i, backendIdx, err)
+					}
+				}
 			}
 		}
 	}
 
 	return
+}
+
+// countWildcards counts the number of wildcard characters (* and ?) in a pattern.
+func countWildcards(pattern string) int {
+	count := 0
+	escapeNext := false
+	for _, r := range pattern {
+		if escapeNext {
+			escapeNext = false
+			continue
+		}
+		if r == '\\' {
+			escapeNext = true
+			continue
+		}
+		if r == '*' || r == '?' {
+			count++
+		}
+	}
+	return count
+}
+
+// extractParameterIndices extracts all parameter indices ($1, $2, etc.) from a string.
+// Returns a slice of unique parameter indices found.
+func extractParameterIndices(s string) []int {
+	// Match $ followed by one or more digits
+	re := regexp.MustCompile(`\$(\d+)`)
+	matches := re.FindAllStringSubmatch(s, -1)
+
+	indices := make(map[int]bool)
+	for _, match := range matches {
+		if len(match) > 1 {
+			if idx, err := strconv.Atoi(match[1]); err == nil {
+				indices[idx] = true
+			}
+		}
+	}
+
+	result := make([]int, 0, len(indices))
+	for idx := range indices {
+		result = append(result, idx)
+	}
+	return result
+}
+
+// containsParameters returns true if the string contains parameter placeholders like $1, $2, etc.
+func containsParameters(s string) bool {
+	matched, _ := regexp.MatchString(`\$\d+`, s)
+	return matched
 }
 
 // Equal returns true if the Routes are equal.

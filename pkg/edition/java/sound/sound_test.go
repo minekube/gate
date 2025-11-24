@@ -24,8 +24,9 @@ func TestProxyPlayerImplementsSoundPlayer(t *testing.T) {
 
 // TestSoundPlayWithProxyPlayer validates that sound.Play can accept proxy.Player.
 // This mirrors the usage in the documentation examples where:
-//   player := e.Player()  // returns proxy.Player
-//   sound.Play(player, sound, player)  // should work
+//
+//	player := e.Player()  // returns proxy.Player
+//	sound.Play(player, sound, player)  // should work
 //
 // The function should compile even though proxy.Player doesn't explicitly
 // implement CurrentServerEntityID and CheckServerMatch in its interface.
