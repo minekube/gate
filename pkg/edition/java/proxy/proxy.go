@@ -490,10 +490,10 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	// so they won't be unregistered during config reloads
 
 	p.log.Info("registered new server", "name", info.Name(), "addr", info.Addr())
-	
+
 	// Fire ServerRegisteredEvent
 	p.event.Fire(&ServerRegisteredEvent{server: rs})
-	
+
 	return rs, nil
 }
 
@@ -515,10 +515,10 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
-	
+
 	// Fire ServerUnregisteredEvent
 	p.event.Fire(&ServerUnregisteredEvent{server: info})
-	
+
 	return true
 }
 
