@@ -127,8 +127,6 @@ A [Minekube Connect](https://connect.minekube.com/) token json file can be autom
 Copy the following snippet into a `docker-compose.yaml` file and run `docker-compose up`.
 
 ```yaml docker-compose.yaml
-version: '3.9'
-
 services:
   gate:
     image: ghcr.io/minekube/gate:latest
@@ -158,8 +156,6 @@ You can join at `localhost:25565` and use `/server` to switch between the server
 If you need [Bedrock Edition support](../bedrock), use the JRE variant image:
 
 ```yaml docker-compose.yaml
-version: '3.9'
-
 services:
   gate:
     image: ghcr.io/minekube/gate/jre:latest
