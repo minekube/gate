@@ -94,15 +94,21 @@ func (s *SoundEntityPacket) Encode(c *proto.PacketContext, wr io.Writer) error {
 
 	// Write sound ID (hardcoded to 0 for named sounds)
 	w.VarInt(s.SoundID)
-	w.MinimalKey(s.SoundName)
 
-	if w.Bool(s.FixedRange != nil) {
-		w.Float32(*s.FixedRange)
+	if s.SoundID == 0 {
+		w.MinimalKey(s.SoundName)
+
+		hasFixedRange := s.FixedRange != nil
+		w.Bool(hasFixedRange)
+		if hasFixedRange {
+			w.Float32(*s.FixedRange)
+		}
 	}
 
-	if err := writeSoundSource(wr, c.Protocol, s.SoundSource); err != nil {
-		return err
+	if c.Protocol.Lower(version.Minecraft_1_21_5) && s.SoundSource == SoundSourceUI {
+		return fmt.Errorf("UI sound-source is only supported in 1.21.5+")
 	}
+	w.VarInt(int(s.SoundSource))
 
 	w.VarInt(s.EntityID)
 	w.Float32(s.Volume)
@@ -121,17 +127,31 @@ func (s *SoundEntityPacket) Decode(c *proto.PacketContext, rd io.Reader) (err er
 	pr := util.PanicReader(rd)
 
 	pr.VarInt(&s.SoundID)
-	pr.MinimalKey(&s.SoundName)
 
-	if pr.Ok() {
-		var fixedRange float32
-		pr.Float32(&fixedRange)
-		s.FixedRange = &fixedRange
+	if s.SoundID == 0 {
+		pr.MinimalKey(&s.SoundName)
+
+		var hasFixedRange bool
+		pr.Bool(&hasFixedRange)
+
+		if hasFixedRange {
+			var fixedRange float32
+			pr.Float32(&fixedRange)
+			s.FixedRange = &fixedRange
+		} else {
+			s.FixedRange = nil
+		}
+	} else {
+		s.SoundName = nil
+		s.FixedRange = nil
 	}
 
-	s.SoundSource, err = readSoundSource(rd, c.Protocol)
-	if err != nil {
-		return err
+	var sourceOrdinal int
+	pr.VarInt(&sourceOrdinal)
+	s.SoundSource = SoundSource(sourceOrdinal)
+
+	if c.Protocol.Lower(version.Minecraft_1_21_5) && s.SoundSource == SoundSourceUI {
+		return fmt.Errorf("UI sound-source is only supported in 1.21.5+")
 	}
 
 	pr.VarInt(&s.EntityID)
@@ -186,11 +206,14 @@ func (s *StopSoundPacket) Decode(c *proto.PacketContext, rd io.Reader) error {
 	pr.Byte(&flags)
 
 	if flags&0x01 != 0 {
-		source, err := readSoundSource(rd, c.Protocol)
-		if err != nil {
-			return err
+		var sourceOrdinal int
+		pr.VarInt(&sourceOrdinal)
+
+		if c.Protocol.Lower(version.Minecraft_1_21_5) && sourceOrdinal == int(SoundSourceUI) {
+			return fmt.Errorf("UI sound-source is only supported in 1.21.5+")
 		}
-		s.Source = &source
+		src := SoundSource(sourceOrdinal)
+		s.Source = &src
 	}
 
 	if flags&0x02 != 0 {
@@ -200,23 +223,4 @@ func (s *StopSoundPacket) Decode(c *proto.PacketContext, rd io.Reader) error {
 	}
 
 	return nil
-}
-
-func writeSoundSource(wr io.Writer, protocol proto.Protocol, s SoundSource) error {
-	// UI sound source is only supported in 1.21.5+
-	if protocol.Lower(version.Minecraft_1_21_5) && s == SoundSourceUI {
-		return fmt.Errorf("UI sound-source is only supported in 1.21.5+")
-	}
-	return util.WriteVarInt(wr, int(s))
-}
-
-func readSoundSource(rd io.Reader, protocol proto.Protocol) (SoundSource, error) {
-	ordinal, err := util.ReadVarInt(rd)
-	if err != nil {
-		return 0, err
-	}
-	if protocol.Lower(version.Minecraft_1_21_5) && ordinal == int(SoundSourceUI) {
-		return 0, fmt.Errorf("UI sound-source is only supported in 1.21.5+")
-	}
-	return SoundSource(ordinal), nil
 }
