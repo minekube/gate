@@ -76,10 +76,10 @@ Gate supports:
 
 Gate connects to your Minecraft servers and forwards client connections to them.
 
-You can generate a default configuration file using:
+You can generate a simple configuration file using:
 
 ```sh console
-$ gate config > config.yml
+$ gate config -t simple -w
 ```
 
 Then edit the `config.yml` file to configure your backend servers:
