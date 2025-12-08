@@ -131,10 +131,7 @@ func (s *SoundEntityPacket) Decode(c *proto.PacketContext, rd io.Reader) (err er
 	if s.SoundID == 0 {
 		pr.MinimalKey(&s.SoundName)
 
-		var hasFixedRange bool
-		pr.Bool(&hasFixedRange)
-
-		if hasFixedRange {
+		if pr.Ok() {
 			var fixedRange float32
 			pr.Float32(&fixedRange)
 			s.FixedRange = &fixedRange
