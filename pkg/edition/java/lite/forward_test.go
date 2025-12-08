@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
@@ -32,9 +33,7 @@ func TestDecodeStatusResponse_WithErrDecoderLeftBytes(t *testing.T) {
 		t.Errorf("decodeStatusResponse should ignore ErrDecoderLeftBytes (issue #297), got error: %v", err)
 	}
 
-	if result == nil {
-		t.Fatal("decodeStatusResponse returned nil result")
-	}
+	require.NotNil(t, result, "decodeStatusResponse returned nil result")
 
 	// Verify the status response was properly decoded
 	expectedStatus := `{"version":{"name":"Test","protocol":754},"players":{"online":5,"max":20},"description":"Test Server"}`
@@ -89,9 +88,7 @@ func TestDecodeStatusResponse_Success(t *testing.T) {
 		t.Errorf("decodeStatusResponse should succeed, got error: %v", err)
 	}
 
-	if result == nil {
-		t.Fatal("decodeStatusResponse returned nil result")
-	}
+	require.NotNil(t, result, "decodeStatusResponse returned nil result")
 
 	// Verify the status response
 	expectedStatus := `{"version":{"name":"Normal","protocol":754},"players":{"online":10,"max":50}}`
