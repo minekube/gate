@@ -1,0 +1,407 @@
+# Gate proxy configuration for Minecraft Java Edition
+config:
+  # The bind address to listen for Minecraft client connections.
+  bind: 0.0.0.0:25565
+  # Whether to use the proxy in online (authenticate players with Mojang API) or offline mode (not recommended).
+  onlineMode: true
+  # Registers servers with the proxy by giving the address of backend server a custom reference name.
+  servers:
+    # Server name: server address
+    server1: localhost:25566
+    server2: localhost:25567
+    server3: localhost:25568
+    server4: localhost:25569
+  # The list of servers to try (ordered) to connect a player to
+  # upon login or fallback when a player is kicked from a server.
+  try:
+    - server1
+    - server2
+    - server3
+    - server4
+  # Configure the response for server list pings.
+  status:
+    # The message of the day in legacy '§' format or modern text component '{"text":"...", ...}' json.
+    motd: |
+      §bA Gate Proxy
+      §bVisit ➞ §fgithub.com/minekube/gate
+    # The maximum players shown (is not the actual player limit!).
+    showMaxPlayers: 1000
+    # The server image (optimal 64x64); a path of an image file or the base64 data uri.
+    favicon: data:image/png;base64,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
+    # Whether to log ping requests in the console.
+    logPingRequests: false
+    # Whether the proxy should present itself as Forge/FML-compatible server.
+    announceForge: false
+  # Allows players transferred from other hosts via the
+  # Transfer packet (Minecraft 1.20.5) to be received.
+  # Default: false
+  acceptTransfers: false
+  # Whether the proxy should support bungee plugin channels.
+  # (Disable this if your backend servers are untrusted.)
+  bungeePluginChannelEnabled: true
+  # Whether to register builtin commands on proxy start.
+  # Default: true
+  builtinCommands: true
+  # Whether players require permissions to
+  # execute a builtin proxy command like /server.
+  # Ignore this if `builtinCommands` is set to false.
+  # (This should be set to true in production environments.)
+  # Default: false
+  requireBuiltinCommandPermissions: false
+  # Declares the proxy commands to 1.13+ clients.
+  # Default: true
+  announceProxyCommands: true
+  # Should the proxy enforce the new public key
+  # security standard added in Minecraft 1.19?
+  # Default: true
+  forceKeyAuthentication: true
+  # The default disconnect reason to kick player on proxy shutdown when no other reason was given.
+  # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
+  shutdownReason: |
+    §cGate proxy is shutting down...
+    Please reconnect in a moment!
+  # Packet compression settings.
+  compression:
+    # The minimum size (in bytes) a packet must be before the proxy compresses it.
+    # The Minecraft vanilla server uses 256 by default.
+    threshold: 256
+    # Indicates what zlib compression level Gate should use.
+    # It goes from -1 to 9 where zero means no compression and -1 the default.
+    level: -1
+  # The time Gate waits to connect to a server before timing out.
+  connectionTimeout: 5s
+  # The time Gate waits to receive data from a server before timing out.
+  # If you use Forge, you may need to increase this setting.
+  readTimeout: 30s
+  # Whether to reconnect the player when disconnected from a server.
+  failoverOnUnexpectedServerDisconnect: true
+  # Whether to kick existing connected player when an online-mode player with the same name joins.
+  # This is useful for scenarios where the real Minecraft account takes precedence over the cracked one.
+  # Note that enabling this would allow real Minecraft account players to bully cracked players by
+  # taking the cracked player's name and block them from joining the server, while the online player is connected.
+  # Default: false
+  onlineModeKickExistingPlayers: false
+  # Enabled extra debug logging (only for debugging purposes).
+  debug: false
+  # This allows you to customize how player information such as IPs and UUIDs are forwarded to your server.
+  # See the documentation for more information.
+  forwarding:
+    # Options: legacy, none, bungeeguard, velocity
+    mode: legacy
+    # The secret used if the mode is velocity.
+    # Can also be set via environment variable: GATE_VELOCITY_SECRET
+    #velocitySecret: secret_here
+    # The secret used if the mode is bungeeguard.
+    # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
+    #bungeeGuardSecret: secret_here
+  # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
+  # Do not enable this if you don't know what it is.
+  proxyProtocol: false
+  # ForcedHosts routes players to specific servers based on the hostname they connect with.
+  # This allows you to have multiple domains pointing to the same Gate proxy but route players
+  # to different servers based on which domain they used to connect.
+  # Available in classic mode only (when lite.enabled: false).
+  #
+  # Key features:
+  # - Hostname-only matching (port is ignored)
+  # - Case-insensitive matching
+  # - Supports multiple servers per hostname for load balancing
+  # - Falls back to 'try' list if no forced host matches
+  #
+  # Examples:
+  # forcedHosts:
+  #   "creative.example.com": ["server2"]           # Route creative.example.com to server2
+  #   "survival.example.com": ["server1", "server3"] # Route survival.example.com to server1 or server3
+  #   "lobby.example.com": ["server1"]              # Route lobby.example.com to server1
+  #
+  # Note: Players connecting via IP address or unmatched hostnames will use the 'try' list above.
+  # For lightweight deployments, see Gate Lite mode which provides similar host-based routing.
+  forcedHosts: {}
+  # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
+  # ops: The allowed operations per second.
+  # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
+  # maxEntries: The maximum IPs to keep track of in cache for rate-limiting (if full, deletes oldest).
+  quota:
+    # Limit how many new connections can be established by the same IP range.
+    connections:
+      enabled: true
+      ops: 5
+      burst: 10
+      maxEntries: 1000
+    # Limit how many login requests can be made by the same IP range.
+    logins:
+      enabled: true
+      burst: 3
+      ops: 0.4
+      maxEntries: 1000
+  # Whether and how Gate should reply to GameSpy 4 (Minecraft query protocol on UDP) requests.
+  query:
+    enabled: false
+    port: 25577
+    showPlugins: false
+  auth:
+    # Customize the base URL for the Mojang session server to authenticate online mode players using different authentication servers.
+    # Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
+    #sessionServerUrl: https://example.com/mitm/session/minecraft/hasJoined
+
+  # Lite mode is a lightweight reverse proxy mode that acts as thin layer between the client and the backend server.
+  # Full documentation: https://gate.minekube.com/guide/lite
+  #
+  # It efficiently routes client connections based on the virtual host address received in the handshake packet.
+  # This allows to protect multiple backend servers behind a single port Gate Lite proxy instance.
+  # Player connections (including ping requests and player authentication) is forwarded to the destined backend server.
+  # This means Lite mode supports proxy behind proxy setups, but advanced features like server switching or proxy commands are no longer available
+  # and have no effect in Lite mode when extensions use higher level Gate APIs and events.
+  lite:
+    # Enable Lite mode.
+    # If disabled, the proxy will act as a full proxy with all features enabled just like BungeeCord/Velocity.
+    # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
+    # Default: false
+    enabled: false
+    # The routes that the proxy redirects player connections to based on matching the virtual host address.
+    # The routes are matched in order of appearance.
+    # Examples:
+    routes:
+      # Match the virtual host address to the backend server.
+      - host: localhost
+        # The backend server to connect to if matched.
+        backend: localhost:25566
+        # The optional fallback status response when all backends of this route are offline.
+        fallback:
+          motd: |
+            §cLocalhost server is offline.
+            §eCheck back later!
+          version:
+            name: '§cTry again later!'
+            protocol: -1
+          #players:
+          #  online: 0
+          #  max: 1000
+          # The optional favicon to show in the server list (optimal 64x64).
+          # Accepts a path of an image file or the base64 data uri.
+          favicon: data:image/png;base64,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
+      # You can also use * wildcard to match any subdomain.
+      - host: '*.example.com'
+        backend: 172.16.0.12:25566
+        proxyProtocol: true # Use proxy protocol to connect to backend.
+        tcpShieldRealIP: true # Optionally you can also use TCPShield's RealIP protocol.
+      # Use hostname parameters in backend addresses with $1, $2, etc.
+      # Extract parts of the hostname and use them in the backend address.
+      # Example: abc.domain.com → abc.servers.svc:25565
+      - host: '*.domain.com'
+        backend: '$1.servers.svc:25565'
+      # You can also match to multiple hosts to one or multiple backends.
+      - host: [127.0.0.1, localhost]
+        backend: [172.16.0.12:25566, backend.example.com:25566]
+        # Load balancing strategy when multiple backends are available.
+        # See https://gate.minekube.com/guide/lite#load-balancing-strategies for detailed guide.
+        # Options: random, round-robin, least-connections, lowest-latency
+        # Default: random
+        strategy: random
+        # Ping responses are cached per backend address by default.
+        # To disable motd caching set it to -1.
+        # Default: 10s
+        cachePingTTL: 60s
+        # Modifies the virtual host to match the backend address in the handshake request.
+        # This is useful when backends require players to connect with a specific domain.
+        # Lite will modify the player's handshake packet's virtual host field from `localhost` -> `backend.example.com`
+        # before forwarding the connection to the backend.
+        # Default: false
+        modifyVirtualHost: true
+      # Match all as last item routes any other host to a default backend.
+      - host: '*'
+        backend: 10.0.0.10:25565
+        fallback:
+          motd: §eNo server available for this host.
+          version:
+            name: §eTry example.com
+            protocol: -1
+          #players:
+          #  online: 0
+          #  max: 1000
+          #favicon: server-icon.png
+
+  # Bedrock Edition (mobile, console, Windows) cross-play support.
+  # Enables Java and Bedrock players to play together through integrated Geyser and Floodgate.
+  # See https://gate.minekube.com/guide/bedrock for detailed setup guide.
+  bedrock:
+    # Enable Bedrock Edition support for cross-play.
+    # Default: false
+    enabled: false
+
+    # --- QUICK START ---
+    # For most users, this single line enables everything:
+    #managed: true
+
+    # --- ADVANCED CONFIGURATION ---
+    # If you need more control, use the structure below:
+
+    # Gate ↔ Geyser connection settings
+    # TCP address where Gate listens for connections from Geyser Standalone.
+    # Default: localhost:25567 (recommended for same-machine setups)
+    # Use 0.0.0.0:25567 for Docker Compose or when Geyser runs on a different machine
+    #geyserListenAddr: localhost:25567
+
+    # Bedrock player username format to avoid conflicts with Java players.
+    # Use %s as placeholder for the original Bedrock username.
+    # Examples: ".%s" (prefix dot), "[BE]%s" (prefix tag), "%s_BE" (suffix tag)
+    # Default: ".%s"
+    #usernameFormat: ".%s"
+
+    # Path to the Floodgate encryption key file (shared between Geyser and Gate).
+    # Gate can auto-generate this key in managed mode.
+    # Default: "floodgate.pem"
+    #floodgateKeyPath: "floodgate.pem"
+
+    # Managed Geyser mode: Gate automatically handles Geyser Standalone process.
+    # This is the recommended setup for most users.
+    managed:
+      # Enable managed mode (Gate downloads, configures, and runs Geyser).
+      # Default: false
+      enabled: false
+
+      # Download URL for Geyser Standalone JAR file.
+      # Leave empty to use the latest official release.
+      # Default: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
+      #jarUrl: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+
+      # Directory for Geyser data (JAR file, config, logs, etc.).
+      # Default: ".geyser"
+      #dataDir: ".geyser"
+
+      # Path to Java executable for running Geyser.
+      # Default: "java" (from PATH)
+      #javaPath: "java"
+
+      # Whether to automatically download JAR updates on startup.
+      # Default: true
+      #autoUpdate: true
+
+      # Additional JVM arguments for running Geyser.
+      # Default: []
+      #extraArgs:
+      #  - "-Xmx1G"
+      #  - "-XX:+UseG1GC"
+
+      # Custom overrides for the auto-generated Geyser config.
+      # This allows you to customize the Geyser config.
+      # See https://wiki.geysermc.org/geyser/understanding-the-config/ for all options.
+      configOverrides:
+        # Bedrock client settings
+        bedrock:
+          # UDP port for Bedrock clients to connect to.
+          # Default: 19132
+          port: 19132
+          # Server list display names
+          motd1: 'Gate + Geyser Cross-Play'
+          motd2: 'Java & Bedrock Together!'
+          # Server name shown in Bedrock client
+          server-name: 'My Minecraft Server'
+          # Compression level (1-9, higher = more CPU, less bandwidth)
+          # Default: 6
+          compression-level: 6
+
+        # Performance and debugging
+        # Enable debug logging (shows packet details)
+        # Default: false
+        debug-mode: false
+        # Whether to forward player ping to Gate.
+        # Default: true
+        forward-player-ping: true
+
+        # Bedrock-specific features
+        # Show block break cooldown as title/actionbar
+        # Options: title, actionbar, false
+        # Default: title
+        show-cooldown: title
+        # Show coordinates in debug info
+        # Default: true
+        show-coordinates: true
+        # Allow custom player skulls from Java Edition
+        # Default: true
+        allow-custom-skulls: true
+        # Maximum visible custom skulls (performance)
+        # Default: 128
+        max-visible-custom-skulls: 128
+
+        # Xbox and console features
+        # Enable Xbox achievements (Xbox players only)
+        # Default: false
+        xbox-achievements-enabled: false
+        # Add non-Bedrock items to Creative inventory
+        # Default: true
+        add-non-bedrock-items: true
+
+        # Advanced networking (rarely need to change)
+        # MTU size for UDP packets
+        # Default: 1400
+        mtu: 1400
+        # Use direct connections when possible
+        # Default: true
+        use-direct-connection: true
+
+        # Resource pack settings
+        # Force resource packs to be applied
+        # Default: true
+        force-resource-packs: true
+        # Enable proxy connections for resource pack downloads
+        # Default: false
+        enable-proxy-connections: false
+
+        # Floodgate settings (authentication for offline Bedrock players)
+        # Custom Floodgate key file path (overrides floodgateKeyPath above)
+        #floodgate-key-file: "/custom/path/to/key.pem"
+
+        # For complete list of all Geyser configuration options, see:
+        # https://wiki.geysermc.org/geyser/understanding-the-config/
+        #
+        # Common additional settings include:
+        # - passthrough-motd: true/false
+        # - passthrough-player-counts: true/false
+        # - ping-passthrough-interval: 3
+        # - scoreboard-packet-threshold: 20
+        # - disable-compression: false
+        # - notify-on-new-bedrock-update: true
+
+    # --- MANUAL SETUP (Alternative to Managed Mode) ---
+    # If you prefer to run your own Geyser instance instead of using managed mode:
+    # 1. Set managed.enabled: false (or omit the managed section)
+    # 2. Download and run Geyser Standalone manually
+    # 3. Configure Geyser to connect to Gate's geyserListenAddr (default: 25567)
+    # 4. Set auth-type: floodgate and use-proxy-protocol: true in Geyser config
+    # 5. Share the same floodgateKeyPath between Gate and your backend servers
+    #
+    # See https://gate.minekube.com/guide/bedrock#manual-setup for detailed instructions.
+
+# Configuration for Connect, a network that organizes all Minecraft servers/proxies
+# and makes them universally accessible for all players.
+# Among a lot of other features it even allows players to join locally hosted
+# Minecraft servers without having an open port or public IP address.
+#
+# Visit https://connect.minekube.com/
+connect:
+  # Enabling Connect makes Gate register itself to Connect network.
+  # This feature is disabled by default, but you are encouraged to
+  # enable it and get empowered by the additional network services
+  # and by the growing community in this ecosystem.
+  enabled: false
+  # The endpoint name is a globally unique identifier of your server.
+  # If Connect is enabled, but no name is specified a random name is
+  # generated on every restart (only recommended for testing).
+  #
+  # It is supported to run multiple Gates on the same endpoint name for load balancing
+  # (use the same connect.json token file from first Gate instance).
+  #name: your-endpoint-name
+  # Whether to allow offline mode players to join.
+  # Default: false
+  allowOfflineModePlayers: true
+
+# Gate HTTP API configuration.
+# See https://gate.minekube.com/guide/api for more information.
+api:
+  # Whether to enable the API for Gate.
+  # Default: false
+  enabled: false
+  # The bind address to listen for API connections.
+  # Default: localhost:8080
+  bind: localhost:8080

@@ -49,6 +49,10 @@ func App() *cli.App {
 
 Visit the website https://gate.minekube.com/ for more information.`
 
+	app.Commands = []*cli.Command{
+		configCommand(),
+	}
+
 	var (
 		debug        bool
 		configFile   string

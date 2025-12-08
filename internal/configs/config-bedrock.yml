@@ -1,0 +1,25 @@
+config:
+  bind: 0.0.0.0:25565
+  onlineMode: true
+  servers:
+    server1: 0.0.0.0:25566
+  try:
+    - server1
+  # forwarding:
+  # mode: legacy
+  # velocitySecret: 'bedrock-crossplay-secret'
+  status:
+    motd: |
+      §bGate + Geyser Cross-Play
+      §eJava & Bedrock Players Welcome!
+
+  # Enable Bedrock edition support
+  bedrock:
+    managed: true
+    # Geyser will connect to this address that Gate listens on in parallel to the bind address.
+    # localhost is recommended for same-machine setups (use 0.0.0.0 for Docker Compose)
+    geyserListenAddr: 'localhost:25567'
+    # Username format for Bedrock players to avoid conflicts
+    usernameFormat: '.%s'
+    # Path to Floodgate key for authentication
+    floodgateKeyPath: '.examples/bedrock/geyser/key.pem'
