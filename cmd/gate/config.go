@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
-	"go.minekube.com/gate/internal/configs"
+	"go.minekube.com/gate/pkg/configs"
 )
 
 func configCommand() *cli.Command {

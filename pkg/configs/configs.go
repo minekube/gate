@@ -1,5 +1,5 @@
 // Package configs provides embedded default configuration files.
-// Run `go generate ./internal/configs` or `make sync-configs` to update the embedded configs from the root directory.
+// Run `go generate ./pkg/configs` or `make sync-configs` to update the embedded configs from the root directory.
 package configs
 
 //go:generate cp ../../config.yml config.yml
