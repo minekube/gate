@@ -2,11 +2,11 @@ all: fmt vet mod lint
 
 # Sync embedded config files from root directory
 sync-configs:
-	cp config.yml internal/configs/config.yml
-	cp config-simple.yml internal/configs/config-simple.yml
-	cp config-lite.yml internal/configs/config-lite.yml
-	cp config-bedrock.yml internal/configs/config-bedrock.yml
-	# Note: config-minimal.yml is maintained directly in internal/configs, not synced from root
+	cp config.yml pkg/internal/configs/config.yml
+	cp config-simple.yml pkg/internal/configs/config-simple.yml
+	cp config-lite.yml pkg/internal/configs/config-lite.yml
+	cp config-bedrock.yml pkg/internal/configs/config-bedrock.yml
+	# Note: config-minimal.yml is maintained directly in pkg/internal/configs, not synced from root
 
 # Build Gate with version information
 build: sync-configs
