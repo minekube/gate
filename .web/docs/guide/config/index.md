@@ -53,7 +53,7 @@ You can also create the `config.yml` file manually using any of the templates be
 ```
 
 ```yaml [Minimal]
-<!--@include: ../../../../pkg/internal/configs/config-minimal.yml -->
+<!--@include: ../../../../pkg/configs/config-minimal.yml -->
 ```
 
 :::

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go.minekube.com/gate/pkg/cmd/gate"
+	"go.minekube.com/gate/cmd/gate"
 )
 
 func main() {
