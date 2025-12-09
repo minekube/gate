@@ -1,11 +1,11 @@
 // Package configs provides embedded default configuration files.
-// Run `go generate ./pkg/configs` or `make sync-configs` to update the embedded configs from the root directory.
+// Run `go generate ./pkg/internal/configs` or `make sync-configs` to update the embedded configs from the root directory.
 package configs
 
-//go:generate cp ../../config.yml config.yml
-//go:generate cp ../../config-simple.yml config-simple.yml
-//go:generate cp ../../config-lite.yml config-lite.yml
-//go:generate cp ../../config-bedrock.yml config-bedrock.yml
+//go:generate cp ../../../config.yml config.yml
+//go:generate cp ../../../config-simple.yml config-simple.yml
+//go:generate cp ../../../config-lite.yml config-lite.yml
+//go:generate cp ../../../config-bedrock.yml config-bedrock.yml
 // Note: config-minimal.yml is maintained directly in this directory, not synced from root
 
 import _ "embed"
