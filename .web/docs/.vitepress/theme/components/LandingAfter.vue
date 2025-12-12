@@ -503,47 +503,131 @@
       </div>
 
       <!-- Quick actions: Quick Start + Learn More -->
-      <div class="mx-auto mt-6 max-w-2xl lg:max-w-3xl">
-        <div class="relative group">
+      <div class="mx-auto mt-6 max-w-2xl lg:max-w-5xl">
+        <!-- Mobile Toggle -->
+        <div class="mb-4 flex justify-center lg:hidden">
           <div
-            class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
-          ></div>
-          <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm text-[--vp-c-text-2]">Quick Start</span>
-              <button
-                @click="copyBedrockCommand"
-                class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
-                :class="{ 'copy-success': showBedrockCopySuccess }"
-              >
-                <svg
-                  class="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+            class="inline-flex items-center rounded-full bg-[--vp-c-bg-alt] p-1"
+          >
+            <button
+              @click="bedrockActiveTab = 'config'"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 text-sm transition-colors rounded-full',
+                bedrockActiveTab === 'config'
+                  ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]'
+                  : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]',
+              ]"
+            >
+              Config
+            </button>
+            <button
+              @click="bedrockActiveTab = 'git'"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 text-sm transition-colors rounded-full',
+                bedrockActiveTab === 'git'
+                  ? 'text-[--vp-c-text-1] bg-[--vp-c-brand-1]'
+                  : 'text-[--vp-c-text-2] hover:text-[--vp-c-text-1]',
+              ]"
+            >
+              Git Clone
+            </button>
+          </div>
+        </div>
+
+        <!-- Code Examples: Side by side on desktop, toggle on mobile -->
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <!-- Config Example -->
+          <div
+            class="relative group"
+            :class="bedrockActiveTab === 'git' ? 'hidden lg:block' : 'block'"
+          >
+            <div
+              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+            ></div>
+            <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-[--vp-c-text-2]">Enable in Config</span>
+                <button
+                  @click="copyBedrockConfig"
+                  class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
+                  :class="{ 'copy-success': showBedrockConfigCopySuccess }"
                 >
-                  <path
-                    v-if="!showBedrockCopySuccess"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                  <path
-                    v-else
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      v-if="!showBedrockConfigCopySuccess"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                    <path
+                      v-else
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <pre
+                class="text-sm font-mono overflow-x-auto"
+              ><code>config:
+  bedrock:
+    managed: true</code></pre>
             </div>
-            <pre
-              class="text-sm font-mono overflow-x-auto"
-            ><code>git clone https://github.com/minekube/gate.git
+          </div>
+
+          <!-- Git Clone Example -->
+          <div
+            class="relative group"
+            :class="bedrockActiveTab === 'config' ? 'hidden lg:block' : 'block'"
+          >
+            <div
+              class="absolute -inset-0.5 bg-gradient-to-r from-[--vp-c-brand-2] to-[--vp-c-brand-1] rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"
+            ></div>
+            <div class="relative bg-[--vp-c-bg-alt] rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-[--vp-c-text-2]">Git Clone Example</span>
+                <button
+                  @click="copyBedrockGit"
+                  class="text-[--vp-c-brand-2] hover:text-[--vp-c-brand-1] transition-all active:scale-90"
+                  :class="{ 'copy-success': showBedrockGitCopySuccess }"
+                >
+                  <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      v-if="!showBedrockGitCopySuccess"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                    <path
+                      v-else
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <pre
+                class="text-sm font-mono overflow-x-auto"
+              ><code>git clone https://github.com/minekube/gate.git
 cd gate/.examples/bedrock
 ./start.sh</code></pre>
+            </div>
           </div>
         </div>
 
@@ -1201,18 +1285,33 @@ const copyLiteConfig = () => {
   }, 2000);
 };
 
-const showBedrockCopySuccess = ref(false);
+const bedrockActiveTab = ref('config');
+const showBedrockConfigCopySuccess = ref(false);
+const showBedrockGitCopySuccess = ref(false);
 
-const copyBedrockCommand = () => {
+const copyBedrockConfig = () => {
+  const config = `config:
+  bedrock:
+    managed: true`;
+
+  navigator.clipboard.writeText(config);
+  showBedrockConfigCopySuccess.value = true;
+
+  setTimeout(() => {
+    showBedrockConfigCopySuccess.value = false;
+  }, 2000);
+};
+
+const copyBedrockGit = () => {
   const command = `git clone https://github.com/minekube/gate.git
 cd gate/.examples/bedrock
 ./start.sh`;
 
   navigator.clipboard.writeText(command);
-  showBedrockCopySuccess.value = true;
+  showBedrockGitCopySuccess.value = true;
 
   setTimeout(() => {
-    showBedrockCopySuccess.value = false;
+    showBedrockGitCopySuccess.value = false;
   }, 2000);
 };
 
