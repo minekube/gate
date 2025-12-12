@@ -5,8 +5,8 @@ export const gitHubLink = 'https://github.com/minekube';
 
 // Community stats
 export const communityStats = {
-  discordMembers: 1000,
-  githubStars: 750,
+  discordMembers: 1350,
+  githubStars: 900,
 };
 
 export const editLink = (project: string): DefaultTheme.EditLink => {
