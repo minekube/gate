@@ -10,11 +10,17 @@ import (
 const (
 	forgeSeparator           = "\x00"
 	tcpShieldRealIPSeparator = "///"
+	// floodgateSeparator is used to separate the original hostname from Bedrock player data
+	// This is the same as forgeSeparator but kept explicit for Bedrock handling
+	floodgateSeparator = "\x00"
 )
 
 // ClearVirtualHost cleans the given virtual host.
+// This handles Forge, TCPShield, and Floodgate (Bedrock) separators.
 func ClearVirtualHost(name string) string {
-	name = strings.Split(name, forgeSeparator)[0]           // Remove forge separator
+	// Remove forge separator (also handles Floodgate since they use the same separator)
+	// For Bedrock players via Floodgate, format is: original_hostname\0encrypted_data[:port]
+	name = strings.Split(name, forgeSeparator)[0]
 	name = strings.Split(name, tcpShieldRealIPSeparator)[0] // Remove real ip separator
 	name = strings.Trim(name, ".")
 	return name

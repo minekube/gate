@@ -316,6 +316,44 @@ config:
 Lite will modify the player's handshake packet's virtual host field from `localhost` -> `play.example.com`
 before forwarding the connection to the backend.
 
+## Bedrock/Floodgate support
+
+Gate Lite supports forwarding Bedrock players through Geyser with Floodgate. By default, Floodgate-encoded player data is **preserved** and forwarded to the backend server, which is the most common setup where the backend has Floodgate plugin installed with the same encryption key.
+
+### Default behavior (preserve Floodgate data)
+
+When Bedrock players connect through Geyser, their connection includes Floodgate-encoded data in the hostname. By default, Gate Lite forwards this data to the backend:
+
+```yaml
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: play.example.com
+        backend: velocity-server:25565
+        # stripBedrockData: false (default - Floodgate data is preserved)
+```
+
+This allows the backend Velocity/BungeeCord server with Floodgate plugin to authenticate the Bedrock player using the same encryption key.
+
+### Strip Floodgate data (optional)
+
+If your backend server **does not** have Floodgate installed and you want to send only the clean hostname, enable `stripBedrockData`:
+
+```yaml
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: play.example.com
+        backend: paper-server:25565
+        stripBedrockData: true # [!code ++]
+```
+
+::: warning
+Only enable `stripBedrockData: true` if your backend does **not** use Floodgate. Most setups should keep the default (`false`) to properly forward Bedrock player authentication data.
+:::
+
 ## Complete Lite config
 
 The Lite configuration is located in the same Gate `config.yml` file under `lite`.
