@@ -275,8 +275,12 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			})
 		}
 	} else if plugin.IsUnregister(packet) {
-		_, channels := c.getChannels(0, packet, c.player.Protocol())
+		channelIDs, channels := c.getChannels(0, packet, c.player.Protocol())
 		c.player.clientsideChannels.Remove(channels...)
+		c.proxy().event.FireParallel(&PlayerChannelUnregisterEvent{
+			channels: channelIDs,
+			player:   c.player,
+		})
 		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
 		brand := plugin.ReadBrandMessage(packet.Data)
@@ -438,20 +442,28 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	// Store the entity ID for sound API
 	destination.entityID = joinGame.EntityID
 
-	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
-	// track them.
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for barID := range c.mu.serverBossBars {
-		deletePacket := &bossbar.BossBar{
-			ID:     barID,
-			Action: bossbar.RemoveAction,
+	// Handle boss bars based on protocol version
+	if playerVersion.GreaterEqual(version.Minecraft_1_20_2) {
+		// For 1.20.2+, re-send proxy-level boss bars that the player had before the switch.
+		// Server boss bars are not tracked for these versions (client clears them during config phase).
+		c.player.bossBarManager.SendBossBars()
+	} else {
+		// For older versions, we need to manually remove boss bars as they don't get cleared
+		// when sending JoinGame.
+		c.mu.Lock()
+		for barID := range c.mu.serverBossBars {
+			deletePacket := &bossbar.BossBar{
+				ID:     barID,
+				Action: bossbar.RemoveAction,
+			}
+			if err = c.player.BufferPacket(deletePacket); err != nil {
+				c.mu.Unlock()
+				return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
+			}
 		}
-		if err = c.player.BufferPacket(deletePacket); err != nil {
-			return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
-		}
+		c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
+		c.mu.Unlock()
 	}
-	c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
 
 	// Tell the server about the proxy's plugin message channels.
 	serverVersion := serverMc.Protocol()
@@ -703,11 +715,6 @@ func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabComplet
 }
 
 func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest, pc *proto.PacketContext) {
-	startPos := strings.LastIndex(p.Command, " ") + 1
-	if !(startPos > 0) {
-		return
-	}
-
 	// In 1.13+, we need to do additional work for the richer suggestions available.
 	cmd := strings.TrimPrefix(p.Command, "/")
 	cmdEndPosition := strings.Index(cmd, " ")
@@ -728,32 +735,50 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 
 	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
-	suggestions, err := c.proxy().command.OfferSuggestions(ctx, c.player, cmd)
+	suggestions, err := c.proxy().command.OfferBrigodierSuggestions(ctx, c.player, cmd)
 	if err != nil {
 		c.log.Error(err, "Error while handling command tab completion for player",
 			"command", cmd)
 		return
 	}
-	if len(suggestions) == 0 {
+	if len(suggestions.Suggestions) == 0 {
 		return
 	}
 	if c.log1.Enabled() {
-		c.log1.Info("Response to TabCompleteRequest", "cmd", cmd, "suggestions", suggestions)
+		c.log1.Info("Response to TabCompleteRequest", "cmd", cmd, "suggestions", suggestions.Suggestions)
 	}
 
-	offers := make([]packet.TabCompleteOffer, 0, len(suggestions))
-	for _, suggestion := range suggestions {
+	// Calculate the minimum start position from all suggestions
+	startPos := -1
+	for _, s := range suggestions.Suggestions {
+		if startPos == -1 || s.Range.Start < startPos {
+			startPos = s.Range.Start
+		}
+	}
+	if startPos < 0 {
+		return
+	}
+
+	// Build offers, adjusting text for suggestions with different start positions
+	offers := make([]packet.TabCompleteOffer, 0, len(suggestions.Suggestions))
+	for _, s := range suggestions.Suggestions {
+		offerText := s.Text
+		// If this suggestion starts after the minimum start position,
+		// prepend the text between startPos and this suggestion's start
+		if s.Range.Start > startPos {
+			offerText = cmd[startPos:s.Range.Start] + s.Text
+		}
 		offers = append(offers, packet.TabCompleteOffer{
-			Text: suggestion,
+			Text: offerText,
 			// TODO support brigadier tooltip
 		})
 	}
 
-	// Send suggestions
+	// Send suggestions with the correct offset (+1 for the leading '/')
 	_ = c.player.WritePacket(&packet.TabCompleteResponse{
 		TransactionID: p.TransactionID,
-		Start:         startPos,
-		Length:        len(p.Command) - startPos,
+		Start:         startPos + 1, // +1 for the leading '/'
+		Length:        len(p.Command) - startPos - 1,
 		Offers:        offers,
 	})
 }
@@ -921,11 +946,18 @@ func (c *clientPlaySessionHandler) doSwitch() *future.Future[any] {
 
 		// Config state clears everything in the client. No need to clear later.
 		c.spawned.Store(false)
-		c.mu.Lock()
-		c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
-		c.mu.Unlock()
 		_ = c.player.tabList.RemoveAll()
 		_ = tablist.ClearTabListHeaderFooter(c.player.tabList)
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_20_2) {
+			// For 1.20.2+, start dropping proxy-level boss bar updates during transition.
+			// Server boss bars are not tracked for these versions (handled in handleBossBar).
+			c.player.bossBarManager.StartDropping()
+		} else {
+			// For older versions, clear server boss bar tracking.
+			c.mu.Lock()
+			c.mu.serverBossBars = make(map[uuid.UUID]struct{})
+			c.mu.Unlock()
+		}
 	}
 
 	c.player.switchToConfigState()

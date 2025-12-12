@@ -44,7 +44,12 @@ func (b *bossBar) RemoveViewer(viewer Viewer) error {
 	p := b.createRemovePacket()
 	b.mu.Unlock()
 
-	return viewer.WritePacket(p)
+	// Unregister from the viewer's manager if supported
+	if m, ok := viewer.(ManagedViewer); ok {
+		m.UnregisterBossBar(b)
+	}
+
+	return writePacketToViewer(viewer, p)
 }
 
 func (b *bossBar) AddViewer(viewer Viewer) error {
@@ -65,12 +70,21 @@ func (b *bossBar) AddViewer(viewer Viewer) error {
 	p := b.createAddPacket()
 	b.mu.Unlock()
 
-	err := viewer.WritePacket(p)
+	// Register with the viewer's manager if supported
+	if m, ok := viewer.(ManagedViewer); ok {
+		m.RegisterBossBar(b)
+	}
+
+	err := writePacketToViewer(viewer, p)
 	if err != nil {
 		b.mu.Lock()
 		delete(b.viewers, viewer.ID())
 		b.mu.Unlock()
 		v.removed()
+		// Unregister on failure
+		if m, ok := viewer.(ManagedViewer); ok {
+			m.UnregisterBossBar(b)
+		}
 		return err
 	}
 
@@ -105,8 +119,22 @@ var _ BossBar = (*bossBar)(nil)
 
 func (b *bossBar) writeToViewers(p proto.Packet) {
 	for _, viewer := range b.viewers {
-		go func(v Viewer) { _ = v.WritePacket(p) }(viewer)
+		go func(v Viewer) { _ = writePacketToViewer(v, p) }(viewer)
 	}
+}
+
+// writePacketToViewer writes a packet to a viewer, using the managed writer if available.
+// For 1.20.2+ viewers with a manager, this respects the dropping state during server transitions.
+func writePacketToViewer(viewer Viewer, p proto.Packet) error {
+	if m, ok := viewer.(ManagedViewer); ok {
+		if bb, ok := p.(*bossbar.BossBar); ok {
+			if !m.WriteBossBarPacket(bb) {
+				return nil // dropped intentionally
+			}
+			return nil
+		}
+	}
+	return viewer.WritePacket(p)
 }
 
 func (b *bossBar) Name() component.Component {
