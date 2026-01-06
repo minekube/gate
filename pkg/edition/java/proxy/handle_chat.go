@@ -91,14 +91,18 @@ func (c *chatHandler) handleSessionChat(packet *chat.SessionPlayerChat, unsigned
 			if packet.Signed && c.invalidChange(c.log, c.player) {
 				return nil
 			}
-			return asFuture((&chat.Builder{
+			builder := &chat.Builder{
 				Protocol:  server.Protocol(),
-				Message:   packet.Message,
+				Message:   evt.Message(),
 				Sender:    c.player.ID(),
 				Timestamp: packet.Timestamp,
-			}).ToServer())
+			}
+			if newLastSeenMessages != nil {
+				builder.LastSeenMessages = *newLastSeenMessages
+			}
+			return asFuture(builder.ToServer())
 		}
-		if newLastSeenMessages == nil && !unsigned {
+		if newLastSeenMessages != nil {
 			packet.LastSeenMessages = *newLastSeenMessages
 		}
 		return asFuture(packet)
