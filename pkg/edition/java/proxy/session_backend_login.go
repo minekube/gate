@@ -210,48 +210,41 @@ func (b *backendLoginSessionHandler) forwardForgeLoginPluginMessage(
 	serverMc netmc.MinecraftConn,
 	loginInbound *loginInboundConn,
 ) {
-	identifier, err := message.ChannelIdentifierFrom(p.Channel)
-	if err != nil {
-		b.log.Error(err, "failed to parse Forge channel identifier", "channel", p.Channel)
-		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
-			ID:      p.ID,
-			Success: false,
-		})
-		return
-	}
+	b.log.Info("forwarding Forge login plugin message to client",
+		"channel", p.Channel, "id", p.ID, "dataLen", len(p.Data))
 
-	b.log.V(1).Info("forwarding Forge login plugin message to client", "channel", p.Channel, "id", p.ID)
-
-	// Create a consumer that will receive the client's response
+	// Create a channel to receive the client's response
 	responseCh := make(chan *packet.LoginPluginResponse, 1)
-	consumer := &forgeLoginPluginConsumer{
-		backendID:  p.ID,
-		responseCh: responseCh,
-	}
 
-	// Send the message to the client
-	err = loginInbound.SendLoginPluginMessage(identifier, p.Data, consumer)
+	// Register to receive the response with the SAME message ID
+	loginInbound.registerForgeResponse(p.ID, responseCh)
+	defer loginInbound.unregisterForgeResponse(p.ID)
+
+	// Forward the EXACT same packet to the client (same ID, channel, data)
+	err := loginInbound.delegate.WritePacket(p)
 	if err != nil {
-		b.log.Error(err, "failed to send Forge login plugin message to client")
+		b.log.Error(err, "failed to forward Forge login plugin message to client")
 		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: false,
 		})
 		return
 	}
+
+	b.log.V(1).Info("sent LoginPluginMessage to client, waiting for response", "id", p.ID)
 
 	// Wait for the response (with timeout via request context)
 	select {
 	case resp := <-responseCh:
-		b.log.V(1).Info("received Forge login plugin response from client",
-			"channel", p.Channel, "success", resp.Success, "dataLen", len(resp.Data))
+		b.log.Info("received Forge login plugin response from client",
+			"channel", p.Channel, "id", resp.ID, "success", resp.Success, "dataLen", len(resp.Data))
 		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: resp.Success,
 			Data:    resp.Data,
 		})
 	case <-b.requestCtx.Done():
-		b.log.V(1).Info("timeout waiting for Forge login plugin response from client", "channel", p.Channel)
+		b.log.Info("timeout waiting for Forge login plugin response from client", "channel", p.Channel, "id", p.ID)
 		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: false,

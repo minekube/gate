@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -170,7 +171,111 @@ func (a *authSessionHandler) startLoginCompletion(player *connectedPlayer) {
 		}
 	}
 
+	// For Modern Forge clients, we need to connect to the backend BEFORE sending
+	// ServerLoginSuccess, so that login plugin messages can be forwarded while
+	// the client is still in LOGIN state.
+	if player.Type() == phase.ModernForge && a.inbound.Protocol().Lower(version.Minecraft_1_20_2) {
+		a.log.Info("Modern Forge client detected, deferring login completion until backend login")
+		a.startModernForgeLogin(player)
+		return
+	}
+
 	a.completeLoginProtocolPhaseAndInitialize(player)
+}
+
+// startModernForgeLogin initiates backend connection for Modern Forge clients
+// while keeping the client in LOGIN state for login plugin message forwarding.
+func (a *authSessionHandler) startModernForgeLogin(player *connectedPlayer) {
+	loginEvent := &LoginEvent{player: player}
+	a.eventMgr.Fire(loginEvent)
+	if !player.Active() {
+		a.eventMgr.Fire(&DisconnectEvent{
+			player:      player,
+			loginStatus: CanceledByUserBeforeCompleteLoginStatus,
+		})
+		return
+	}
+
+	if !loginEvent.Allowed() {
+		player.Disconnect(loginEvent.Reason())
+		return
+	}
+
+	if !a.registrar.registerConnection(player) {
+		player.Disconnect(alreadyConnected)
+		return
+	}
+
+	// Fire PostLoginEvent early so plugins can interact
+	a.eventMgr.Fire(&PostLoginEvent{player: player})
+
+	// Choose initial server
+	initialFromConfig := player.nextServerToTry(nil)
+	chooseServer := &PlayerChooseInitialServerEvent{
+		player:        player,
+		initialServer: initialFromConfig,
+	}
+	a.eventMgr.Fire(chooseServer)
+	if !player.Active() {
+		return
+	}
+	if chooseServer.InitialServer() == nil {
+		player.Disconnect(noAvailableServers)
+		return
+	}
+
+	// Connect to backend server while client is still in LOGIN state
+	// The backendLoginSessionHandler will forward login plugin messages
+	// via the stored loginInbound
+	a.log.Info("connecting to backend for Modern Forge handshake",
+		"server", chooseServer.InitialServer().ServerInfo().Name())
+
+	// Enable immediate sending of login plugin messages (don't queue them)
+	a.inbound.enableImmediateSend()
+
+	ctx, cancel := withConnectionTimeout(player.Context(), a.config())
+	defer cancel()
+
+	// Create connection request and connect
+	result, err := player.CreateConnectionRequest(chooseServer.InitialServer()).Connect(ctx)
+	if err != nil {
+		a.log.Error(err, "failed to connect to backend for Modern Forge handshake")
+		player.Disconnect(&component.Text{Content: "Failed to connect to server: " + err.Error()})
+		return
+	}
+
+	if !result.Status().Successful() {
+		reason := result.Reason()
+		if reason == nil {
+			reason = &component.Text{Content: "Connection failed"}
+		}
+		a.log.Info("backend connection failed for Modern Forge handshake",
+			"status", result.Status(), "reason", reason)
+		player.Disconnect(reason)
+		return
+	}
+
+	// Backend login succeeded! Now complete client login.
+	a.log.Info("backend login successful, completing client login for Modern Forge")
+
+	// Send ServerLoginSuccess to client
+	if player.WritePacket(&packet.ServerLoginSuccess{
+		UUID:       player.ID(),
+		Username:   player.Username(),
+		Properties: player.GameProfile().Properties,
+	}) != nil {
+		return
+	}
+
+	a.loginState.Store(&successSentAuthLoginState)
+	a.loginState.Store(&acknowledgedAuthLoginState)
+
+	// Transition client to PLAY state
+	a.connectedPlayer.MinecraftConn.SetActiveSessionHandler(state.Play,
+		newInitialConnectSessionHandler(a.connectedPlayer))
+
+	// Clear loginInbound since we're done with login phase
+	player.clearLoginInbound()
 }
 
 func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *connectedPlayer) {
@@ -242,11 +347,28 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 func (a *authSessionHandler) Deactivated() {}
 
 func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
+	a.log.V(1).Info("received packet in auth session",
+		"packetType", fmt.Sprintf("%T", pc.Packet),
+		"packetID", pc.PacketID,
+		"known", pc.KnownPacket())
+
 	switch t := pc.Packet.(type) {
 	case *packet.LoginAcknowledged:
 		a.handleLoginAcknowledged()
 	case *cookie.CookieResponse:
 		a.handleCookieResponse(t)
+	case *packet.LoginPluginResponse:
+		// Handle login plugin response for Modern Forge forwarding
+		a.log.Info("received LoginPluginResponse", "id", t.ID, "success", t.Success, "dataLen", len(t.Data))
+		// First try Forge direct forwarding
+		if a.inbound.handleForgeLoginPluginResponse(t) {
+			a.log.V(1).Info("handled as Forge response")
+			return
+		}
+		// Fall back to normal handling
+		if err := a.inbound.handleLoginPluginResponse(t); err != nil {
+			a.log.Error(err, "error handling login plugin response")
+		}
 	default:
 		a.log.Info("unexpected packet during auth session",
 			"packet", pc.Packet,
