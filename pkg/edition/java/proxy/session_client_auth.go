@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -66,6 +67,8 @@ func newAuthSessionHandler(
 func (a *authSessionHandler) Disconnected() {
 	defer a.inbound.cleanup()
 	if a.connectedPlayer != nil {
+		// Clear loginInbound to avoid memory leaks
+		a.connectedPlayer.clearLoginInbound()
 		a.connectedPlayer.teardown()
 	}
 }
@@ -93,6 +96,14 @@ func (a *authSessionHandler) Activated() {
 		a.sessionHandlerDeps,
 	)
 	a.connectedPlayer = player
+
+	// For Modern Forge clients, store the loginInbound for login plugin message forwarding.
+	// This allows the backend login handler to forward Forge handshake messages to the client.
+	if conn.Type() == phase.ModernForge {
+		player.setLoginInbound(a.inbound)
+		a.log.V(1).Info("stored loginInbound for Modern Forge login plugin forwarding")
+	}
+
 	if !a.registrar.canRegisterConnection(player) {
 		player.Disconnect(alreadyConnected)
 		return
