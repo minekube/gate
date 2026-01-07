@@ -412,15 +412,16 @@ func (l *LoginPluginMessage) Encode(_ *proto.PacketContext, wr io.Writer) error 
 	w := util.PanicWriter(wr)
 	w.VarInt(l.ID)
 	w.String(l.Channel)
-	w.Bytes(l.Data)
-	return nil
+	// Data is NOT length-prefixed, it's just the remaining bytes
+	return util.WriteRawBytes(wr, l.Data)
 }
 
 func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 	r := util.PanicReader(rd)
 	r.VarInt(&l.ID)
 	r.String(&l.Channel)
-	l.Data, err = util.ReadBytes(rd)
+	// Data is NOT length-prefixed, read all remaining bytes
+	l.Data, err = util.ReadRawBytes(rd)
 	if errors.Is(err, io.EOF) {
 		// Ignore if we couldn't read data
 		return nil

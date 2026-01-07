@@ -165,6 +165,11 @@ type connectedPlayer struct {
 
 	serversToTry []string // names of servers to try if we got disconnected from previous
 	tryIndex     int
+
+	// loginInbound is the login phase connection for Modern Forge clients.
+	// It's stored here so that login plugin messages from the backend can be
+	// forwarded to the client during the backend login phase.
+	loginInbound *loginInboundConn
 }
 
 var _ Player = (*connectedPlayer)(nil)
@@ -225,6 +230,27 @@ func (p *connectedPlayer) connectionInFlightOrConnectedServer() *serverConnectio
 		return p.connInFlight
 	}
 	return p.connectedServer_
+}
+
+// setLoginInbound stores the login phase connection for Modern Forge login plugin forwarding.
+func (p *connectedPlayer) setLoginInbound(inbound *loginInboundConn) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.loginInbound = inbound
+}
+
+// getLoginInbound returns the stored login phase connection, if any.
+func (p *connectedPlayer) getLoginInbound() *loginInboundConn {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.loginInbound
+}
+
+// clearLoginInbound clears the stored login phase connection.
+func (p *connectedPlayer) clearLoginInbound() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.loginInbound = nil
 }
 
 func (p *connectedPlayer) phase() phase.ClientConnectionPhase {

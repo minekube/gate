@@ -51,6 +51,9 @@ type loginInboundConn struct {
 	onAllMessagesHandled func() error
 
 	playerKey crypto.IdentifiedKey
+
+	// forgeResponses maps message IDs to channels for direct Forge login plugin forwarding
+	forgeResponses map[int]chan *packet.LoginPluginResponse
 }
 
 func newLoginInboundConn(delegate *initialInbound) *loginInboundConn {
@@ -150,4 +153,45 @@ func (l *loginInboundConn) cleanup() {
 	l.loginMessagesToSend.Clear()
 	l.outstandingResponses = map[int]MessageConsumer{}
 	l.onAllMessagesHandled = nil
+}
+
+// enableImmediateSend sets the login phase to immediately send messages
+// instead of queuing them. This is used for Modern Forge login plugin
+// message forwarding where we need to forward messages from the backend
+// to the client immediately without waiting for the login event flow.
+func (l *loginInboundConn) enableImmediateSend() {
+	l.isLoginEventFired = true
+}
+
+// registerForgeResponse registers a channel to receive a LoginPluginResponse with the given ID.
+func (l *loginInboundConn) registerForgeResponse(id int, ch chan *packet.LoginPluginResponse) {
+	if l.forgeResponses == nil {
+		l.forgeResponses = make(map[int]chan *packet.LoginPluginResponse)
+	}
+	l.forgeResponses[id] = ch
+}
+
+// unregisterForgeResponse removes a registered Forge response channel.
+func (l *loginInboundConn) unregisterForgeResponse(id int) {
+	if l.forgeResponses != nil {
+		delete(l.forgeResponses, id)
+	}
+}
+
+// handleForgeLoginPluginResponse handles a LoginPluginResponse for Forge forwarding.
+// Returns true if the response was handled as a Forge response.
+func (l *loginInboundConn) handleForgeLoginPluginResponse(res *packet.LoginPluginResponse) bool {
+	if l.forgeResponses == nil {
+		return false
+	}
+	ch, ok := l.forgeResponses[res.ID]
+	if !ok {
+		return false
+	}
+	select {
+	case ch <- res:
+	default:
+		// Channel full, drop
+	}
+	return true
 }

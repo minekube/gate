@@ -3,6 +3,7 @@ package proxy
 import (
 	"errors"
 	"reflect"
+	"strings"
 
 	"go.minekube.com/gate/pkg/edition/java/internal/velocity"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -109,6 +110,11 @@ func (b *backendLoginSessionHandler) handleEncryptionRequest() {
 	b.requestCtx.result(nil, ErrServerOnlineMode)
 }
 
+// isForgeHandshakeChannel returns true if the channel is a Forge handshake channel.
+func isForgeHandshakeChannel(channel string) bool {
+	return strings.HasPrefix(channel, "fml:") || strings.HasPrefix(channel, "forge:")
+}
+
 func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPluginMessage) {
 	mc, ok := b.serverConn.ensureConnected()
 	if !ok {
@@ -141,40 +147,129 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			return
 		}
 		b.informationForwarded.Store(true)
-	} else {
-		// Don't understand, fire event if we have subscribers
-		if !b.eventMgr.HasSubscriber(&ServerLoginPluginMessageEvent{}) {
-			_ = mc.WritePacket(&packet.LoginPluginResponse{
-				ID:      p.ID,
-				Success: false,
-			})
-			return
-		}
+		return
+	}
 
-		identifier, err := message.ChannelIdentifierFrom(p.Channel)
-		if err != nil {
-			b.log.V(1).Error(err, "could not parse channel from LoginPluginResponse")
+	// Check if this is a Forge handshake channel and player has loginInbound for forwarding
+	if isForgeHandshakeChannel(p.Channel) {
+		loginInbound := b.serverConn.player.getLoginInbound()
+		if loginInbound != nil {
+			// Forward the login plugin message to the client
+			b.forwardForgeLoginPluginMessage(p, mc, loginInbound)
 			return
 		}
-		e := &ServerLoginPluginMessageEvent{
-			id:         identifier,
-			contents:   p.Data,
-			sequenceID: p.ID,
-		}
-		b.eventMgr.Fire(e)
-		if e.Result().Allowed() {
-			_ = mc.WritePacket(&packet.LoginPluginResponse{
-				ID:      p.ID,
-				Success: true,
-				Data:    e.Result().Response,
-			})
-			return
-		}
+		// If no loginInbound, client is not in login phase anymore - respond with success but no data
+		// This tells Forge "I understand the protocol but have nothing to say"
+		b.log.V(1).Info("received Forge handshake but client is not in login phase, responding with empty success",
+			"channel", p.Channel)
+		_ = mc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: true,
+			Data:    nil,
+		})
+		return
+	}
+
+	// Don't understand, fire event if we have subscribers
+	if !b.eventMgr.HasSubscriber(&ServerLoginPluginMessageEvent{}) {
 		_ = mc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: false,
 		})
+		return
 	}
+
+	identifier, err := message.ChannelIdentifierFrom(p.Channel)
+	if err != nil {
+		b.log.V(1).Error(err, "could not parse channel from LoginPluginResponse")
+		return
+	}
+	e := &ServerLoginPluginMessageEvent{
+		id:         identifier,
+		contents:   p.Data,
+		sequenceID: p.ID,
+	}
+	b.eventMgr.Fire(e)
+	if e.Result().Allowed() {
+		_ = mc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: true,
+			Data:    e.Result().Response,
+		})
+		return
+	}
+	_ = mc.WritePacket(&packet.LoginPluginResponse{
+		ID:      p.ID,
+		Success: false,
+	})
+}
+
+// forwardForgeLoginPluginMessage forwards a Forge login plugin message to the client and waits for response.
+func (b *backendLoginSessionHandler) forwardForgeLoginPluginMessage(
+	p *packet.LoginPluginMessage,
+	serverMc netmc.MinecraftConn,
+	loginInbound *loginInboundConn,
+) {
+	b.log.Info("forwarding Forge login plugin message to client",
+		"channel", p.Channel, "id", p.ID, "dataLen", len(p.Data))
+
+	// Create a channel to receive the client's response
+	responseCh := make(chan *packet.LoginPluginResponse, 1)
+
+	// Register to receive the response with the SAME message ID
+	loginInbound.registerForgeResponse(p.ID, responseCh)
+	defer loginInbound.unregisterForgeResponse(p.ID)
+
+	// Forward the EXACT same packet to the client (same ID, channel, data)
+	err := loginInbound.delegate.WritePacket(p)
+	if err != nil {
+		b.log.Error(err, "failed to forward Forge login plugin message to client")
+		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: false,
+		})
+		return
+	}
+
+	b.log.V(1).Info("sent LoginPluginMessage to client, waiting for response", "id", p.ID)
+
+	// Wait for the response (with timeout via request context)
+	select {
+	case resp := <-responseCh:
+		b.log.Info("received Forge login plugin response from client",
+			"channel", p.Channel, "id", resp.ID, "success", resp.Success, "dataLen", len(resp.Data))
+		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: resp.Success,
+			Data:    resp.Data,
+		})
+	case <-b.requestCtx.Done():
+		b.log.Info("timeout waiting for Forge login plugin response from client", "channel", p.Channel, "id", p.ID)
+		_ = serverMc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: false,
+		})
+	}
+}
+
+// forgeLoginPluginConsumer implements MessageConsumer for forwarding Forge login plugin responses.
+type forgeLoginPluginConsumer struct {
+	backendID  int
+	responseCh chan *packet.LoginPluginResponse
+}
+
+func (c *forgeLoginPluginConsumer) OnMessageResponse(responseBody []byte) error {
+	resp := &packet.LoginPluginResponse{
+		ID:      c.backendID,
+		Success: responseBody != nil,
+		Data:    responseBody,
+	}
+	select {
+	case c.responseCh <- resp:
+	default:
+		// Channel full, drop the response
+	}
+	return nil
 }
 
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
@@ -198,6 +293,10 @@ var velocityIpForwardingFailure = &component.Text{
 }
 
 func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
+	// Clear loginInbound since backend login is complete and we no longer need to forward
+	// login plugin messages. This helps avoid memory leaks and prevents any confusion.
+	b.serverConn.player.clearLoginInbound()
+
 	if b.config().Forwarding.Mode == config.VelocityForwardingMode && !b.informationForwarded.Load() {
 		b.requestCtx.result(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
 		b.serverConn.disconnect()

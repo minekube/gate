@@ -83,8 +83,25 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		protocol = version.MaximumVersion.Protocol
 	}
 	var modInfo *modinfo.ModInfo
+	var forgeData *ping.ForgeData
 	if p.cfg.AnnounceForge {
-		modInfo = modinfo.Default
+		if protocol >= version.Minecraft_1_13.Protocol {
+			// Modern Forge (FML2/FML3) - use forgeData
+			fmlVersion := 2
+			if protocol >= version.Minecraft_1_20.Protocol {
+				fmlVersion = 3 // FML3 for 1.20+
+			}
+			forgeData = &ping.ForgeData{
+				Channels: []ping.ForgeChannel{
+					{Res: "fml:handshake", Version: "1.0", Required: true},
+				},
+				Mods:              []ping.ForgeMod{},
+				FMLNetworkVersion: fmlVersion,
+			}
+		} else {
+			// Legacy Forge - use modinfo
+			modInfo = modinfo.Default
+		}
 	}
 	return &ping.ServerPing{
 		Version: ping.Version{
@@ -98,6 +115,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		Description: p.cfg.Status.Motd.T(),
 		Favicon:     p.cfg.Status.Favicon,
 		ModInfo:     modInfo,
+		ForgeData:   forgeData,
 	}
 }
 

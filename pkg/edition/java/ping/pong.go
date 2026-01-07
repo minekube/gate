@@ -24,6 +24,29 @@ type ServerPing struct {
 	Description *component.Text  `json:"description" yaml:"description"`
 	Favicon     favicon.Favicon  `json:"favicon,omitempty" yaml:"favicon,omitempty"`
 	ModInfo     *modinfo.ModInfo `json:"modinfo,omitempty" yaml:"modinfo,omitempty"`
+	ForgeData   *ForgeData       `json:"forgeData,omitempty" yaml:"forgeData,omitempty"` // Modern Forge (1.13+)
+}
+
+// ForgeData is the modern Forge (1.13+) ping response data.
+// Used instead of ModInfo for FML2/FML3 clients.
+type ForgeData struct {
+	Channels          []ForgeChannel `json:"channels,omitempty"`
+	Mods              []ForgeMod     `json:"mods,omitempty"`
+	FMLNetworkVersion int            `json:"fmlNetworkVersion"` // 2 for FML2, 3 for FML3
+	Truncated         bool           `json:"truncated,omitempty"`
+}
+
+// ForgeChannel represents a Forge network channel.
+type ForgeChannel struct {
+	Res      string `json:"res"`      // Resource location (e.g., "fml:handshake")
+	Version  string `json:"version"`  // Channel version
+	Required bool   `json:"required"` // Whether the channel is required
+}
+
+// ForgeMod represents a mod in the Forge ping response.
+type ForgeMod struct {
+	ModId     string `json:"modId"`     // Mod identifier
+	ModMarker string `json:"modmarker"` // Mod version marker
 }
 
 // Make sure ServerPing implements the interfaces at compile time.

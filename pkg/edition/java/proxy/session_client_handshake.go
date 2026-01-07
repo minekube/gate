@@ -154,7 +154,9 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		return
 	}
 
-	h.conn.SetType(handshakeConnectionType(p))
+	connType := handshakeConnectionType(p)
+	h.conn.SetType(connType)
+	h.log.Info("detected connection type", "type", fmt.Sprintf("%T", connType), "serverAddress", p.ServerAddress, "protocol", p.ProtocolVersion)
 
 	// If the proxy is configured for velocity's forwarding mode, we must deny connections from 1.12.2
 	// and lower, otherwise IP information will never get forwarded.
@@ -185,7 +187,12 @@ func stateForProtocol(status int) *state.Registry {
 
 func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 	if strings.Contains(h.ServerAddress, modernforge.Token) &&
-		h.ProtocolVersion >= int(version.Minecraft_1_20_2.Protocol) {
+		h.ProtocolVersion >= int(version.Minecraft_1_20.Protocol) {
+		return phase.ModernForge
+	}
+	// Check for FML2 (1.13-1.19) and FML3 (1.20-1.20.1) markers
+	if (strings.Contains(h.ServerAddress, "\000FML2\000") || strings.Contains(h.ServerAddress, "\000FML3\000")) &&
+		h.ProtocolVersion >= int(version.Minecraft_1_13.Protocol) {
 		return phase.ModernForge
 	}
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
@@ -197,8 +204,6 @@ func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 		// forge handshake attempts. Also sends a reset handshake packet on every transition.
 		return phase.Undetermined17
 	}
-	// Note for future implementation: Forge 1.13+ identifies
-	// itself using a slightly different hostname token.
 	return phase.Vanilla
 }
 
