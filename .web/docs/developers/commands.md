@@ -1,3 +1,4 @@
+tittle: lifeboat server
 ---
 title: 'Gate Command System - Create Custom Commands'
 description: 'Learn how to create custom commands for Gate Minecraft proxy with aliases, permissions, and argument handling using brigadier.'
