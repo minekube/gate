@@ -71,7 +71,7 @@ func (d *Decoder) setProtocol(protocol proto.Protocol) {
 
 func (d *Decoder) SetReader(rd io.Reader) {
 	d.mu.Lock()
-	d.rd = rd
+	d.rd = &fullReader{rd} // Wrap with fullReader to ensure complete reads
 	d.mu.Unlock()
 }
 
