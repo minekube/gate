@@ -82,6 +82,19 @@ jobs:
           echo "image_jre_latest=${IMAGE_JRE_LATEST}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+          # If building from a tag, extract the version tag for docker tagging
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION_TAG=${GITHUB_REF#refs/tags/}
+            IMAGE_VERSION=${{ env.REGISTRY }}/${{ github.repository }}:${VERSION_TAG}
+            IMAGE_JRE_VERSION=${{ env.REGISTRY }}/${{ github.repository }}/jre:${VERSION_TAG}
+            echo "image_version=${IMAGE_VERSION}" >> $GITHUB_OUTPUT
+            echo "image_jre_version=${IMAGE_JRE_VERSION}" >> $GITHUB_OUTPUT
+            echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+            echo "Building images with version tag:" >> $GITHUB_STEP_SUMMARY
+            echo "- ${IMAGE_VERSION}" >> $GITHUB_STEP_SUMMARY
+            echo "- ${IMAGE_JRE_VERSION}" >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "Building images:" >> $GITHUB_STEP_SUMMARY
           echo "- ${IMAGE}" >> $GITHUB_STEP_SUMMARY
           echo "- ${IMAGE_JRE}" >> $GITHUB_STEP_SUMMARY
@@ -102,6 +115,7 @@ jobs:
           tags: |
             ${{ steps.image-ref.outputs.image }}
             ${{ steps.image-ref.outputs.image_latest }}
+            ${{ steps.image-ref.outputs.image_version }}
 
       - name: Build and push docker image (jre variant)
         uses: docker/build-push-action@v6
@@ -118,6 +132,7 @@ jobs:
           tags: |
             ${{ steps.image-ref.outputs.image_jre }}
             ${{ steps.image-ref.outputs.image_jre_latest }}
+            ${{ steps.image-ref.outputs.image_jre_version }}
   releaser:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
