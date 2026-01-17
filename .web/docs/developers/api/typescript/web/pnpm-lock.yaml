@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@buf/minekube_gate.connectrpc_es':
         specifier: ^1.6.1-20241118150055-50fffb007499.1
-        version: 1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))
+        version: 1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
       '@bufbuild/buf':
         specifier: ^1.47.2
         version: 1.63.0
@@ -19,10 +19,10 @@ importers:
         version: 1.10.1
       '@connectrpc/connect':
         specifier: ^1.0.0
-        version: 1.6.1(@bufbuild/protobuf@1.10.1)
+        version: 1.7.0(@bufbuild/protobuf@1.10.1)
       '@connectrpc/connect-web':
         specifier: ^1.6.1
-        version: 1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))
+        version: 1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
       typescript:
         specifier: ^5.0.0
         version: 5.6.3
@@ -95,8 +95,8 @@ packages:
       '@bufbuild/protobuf': ^1.10.0
       '@connectrpc/connect': 1.6.1
 
-  '@connectrpc/connect@1.6.1':
-    resolution: {integrity: sha512-KchMDNtU4CDTdkyf0qG7ugJ6qHTOR/aI7XebYn3OTCNagaDYWiZUVKgRgwH79yeMkpNgvEUaXSK7wKjaBK9b/Q==}
+  '@connectrpc/connect@1.7.0':
+    resolution: {integrity: sha512-iNKdJRi69YP3mq6AePRT8F/HrxWCewrhxnLMNm0vpqXAR8biwzRtO6Hjx80C6UvtKJ5sFmffQT7I4Baecz389w==}
     peerDependencies:
       '@bufbuild/protobuf': ^1.10.0
 
@@ -111,10 +111,10 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))':
+  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
     dependencies:
       '@buf/minekube_gate.bufbuild_es': 1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@1.10.1)
-      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.1)
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
     transitivePeerDependencies:
       - '@bufbuild/protobuf'
 
@@ -151,12 +151,12 @@ snapshots:
 
   '@bufbuild/protobuf@1.10.1': {}
 
-  '@connectrpc/connect-web@1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1))':
+  '@connectrpc/connect-web@1.6.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
-      '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.1)
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
 
-  '@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.1)':
+  '@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1)':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
