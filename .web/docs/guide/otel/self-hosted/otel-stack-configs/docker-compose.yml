@@ -78,7 +78,7 @@ services:
       - otel-stack
 
   grafana:
-    image: grafana/grafana:12.0.0
+    image: grafana/grafana:12.3.1
     container_name: grafana
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
