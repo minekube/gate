@@ -38,7 +38,7 @@ services:
       - prometheus
 
   prometheus:
-    image: prom/prometheus:v3.3.1
+    image: prom/prometheus:v3.9.1
     container_name: prometheus
     command:
       # Default uses 'push' config (collector pushes to Prometheus remote_write)
