@@ -458,6 +458,7 @@ func (s *serverConnection) startHandshake(
 			playerVHost = netutil.Host(s.server.ServerInfo().Addr())
 		}
 		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
+		s.log.Info("sending handshake to backend", "serverAddress", handshake.ServerAddress, "playerType", fmt.Sprintf("%T", s.player.Type()))
 	}
 	if err := serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
@@ -498,14 +499,24 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	// ID (undashed), and if you are in online-mode, their login properties (from Mojang).
 	playerIP := netutil.Host(s.player.RemoteAddr())
 	b := new(strings.Builder)
-	b.WriteString(s.server.ServerInfo().Addr().String())
+
+	// Use server address without any Forge markers (those go in properties for BungeeForge)
+	serverAddr := s.server.ServerInfo().Addr().String()
+	b.WriteString(serverAddr)
 	const sep = "\000"
 	b.WriteString(sep)
 	b.WriteString(playerIP)
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(s.player.profile.Properties)
+
+	// Add Forge marker as extraData property for BungeeForge compatibility
+	properties := s.player.profile.Properties
+	if forgeMarker := s.getForgeExtraDataProperty(); forgeMarker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: forgeMarker})
+	}
+
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
@@ -513,20 +524,54 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	return b.String()
 }
 
+// getForgeExtraDataProperty returns the Forge marker for BungeeForge's extraData property.
+// BungeeForge expects Forge markers as a property named "extraData" with value starting with "\x01FML"
+// (for 1.20.1 and earlier) or "\x01FORGE" (for 1.20.2+).
+// The marker is extracted and embedded in the hostname for Forge to recognize.
+func (s *serverConnection) getForgeExtraDataProperty() string {
+	if s.player.Type() == phase.ModernForge {
+		// Check if this is a Forge client by looking for markers in the virtual host
+		vHost := netutil.Host(s.player.virtualHost)
+		if idx := strings.Index(vHost, "\000"); idx != -1 {
+			for _, pt := range strings.Split(vHost, "\000") {
+				// Preserve the original marker type for BungeeForge to embed in the hostname
+				// BungeeForge 1.20.1 checks for startsWith("\x01FML")
+				// BungeeForge 1.20.2+ checks for startsWith("\x01FORGE")
+				if strings.HasPrefix(pt, "FML2") || strings.HasPrefix(pt, "FML3") || strings.HasPrefix(pt, "FORGE") {
+					return "\x01" + pt
+				}
+			}
+		}
+	} else if s.player.Type() == phase.LegacyForge {
+		return "\x01FML\x00"
+	}
+	return ""
+}
+
 func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) string {
 	// Bungeeguard IP forwading is the same as the legacy Bungeecord IP forwarding but with an additional
 	// property in the profile properties that contains the bungeeguard-token.
 	playerIP := netutil.Host(s.player.RemoteAddr())
 	b := new(strings.Builder)
-	b.WriteString(s.server.ServerInfo().Addr().String())
+
+	// Use server address without any Forge markers (those go in properties for BungeeForge)
+	serverAddr := s.server.ServerInfo().Addr().String()
+	b.WriteString(serverAddr)
 	const sep = "\000"
 	b.WriteString(sep)
 	b.WriteString(playerIP)
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(
-		append(s.player.profile.Properties, profile.Property{Name: "bungeeguard-token", Value: secret}))
+
+	// Add Forge marker and bungeeguard token as properties
+	properties := s.player.profile.Properties
+	if forgeMarker := s.getForgeExtraDataProperty(); forgeMarker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: forgeMarker})
+	}
+	properties = append(properties, profile.Property{Name: "bungeeguard-token", Value: secret})
+
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
