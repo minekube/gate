@@ -10,19 +10,19 @@ importers:
     dependencies:
       '@buf/minekube_gate.connectrpc_es':
         specifier: ^1.6.1-20241118150055-50fffb007499.1
-        version: 1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
+        version: 1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@2.11.0)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@2.11.0))
       '@bufbuild/buf':
         specifier: ^1.47.2
         version: 1.64.0
       '@bufbuild/protobuf':
-        specifier: ^1.0.0
-        version: 1.10.1
+        specifier: ^2.0.0
+        version: 2.11.0
       '@connectrpc/connect':
         specifier: ^1.0.0
-        version: 1.7.0(@bufbuild/protobuf@1.10.1)
+        version: 1.7.0(@bufbuild/protobuf@2.11.0)
       '@connectrpc/connect-node':
         specifier: ^1.6.1
-        version: 1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
+        version: 1.7.0(@bufbuild/protobuf@2.11.0)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@2.11.0))
       typescript:
         specifier: ^5.0.0
         version: 5.6.3
@@ -86,8 +86,8 @@ packages:
     engines: {node: '>=12'}
     hasBin: true
 
-  '@bufbuild/protobuf@1.10.1':
-    resolution: {integrity: sha512-wJ8ReQbHxsAfXhrf9ixl0aYbZorRuOWpBNzm8pL8ftmSxQx/wnJD5Eg861NwJU/czy2VXFIebCeZnZrI9rktIQ==}
+  '@bufbuild/protobuf@2.11.0':
+    resolution: {integrity: sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==}
 
   '@connectrpc/connect-node@1.7.0':
     resolution: {integrity: sha512-6vaPIkG/NyhxlYgytLoR9KYbPhczEboFB2OYWkA9qvUz1K7efXfeGrlRxoLtpa+r8VxyIOw73w5ktNe743nD+A==}
@@ -116,14 +116,14 @@ packages:
 
 snapshots:
 
-  '@buf/minekube_gate.bufbuild_es@1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@1.10.1)':
+  '@buf/minekube_gate.bufbuild_es@1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@2.11.0)':
     dependencies:
-      '@bufbuild/protobuf': 1.10.1
+      '@bufbuild/protobuf': 2.11.0
 
-  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
+  '@buf/minekube_gate.connectrpc_es@1.6.1-20241120101512-f1a10b5029ce.2(@bufbuild/protobuf@2.11.0)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@2.11.0))':
     dependencies:
-      '@buf/minekube_gate.bufbuild_es': 1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@1.10.1)
-      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
+      '@buf/minekube_gate.bufbuild_es': 1.10.0-20241120101512-f1a10b5029ce.1(@bufbuild/protobuf@2.11.0)
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@2.11.0)
     transitivePeerDependencies:
       - '@bufbuild/protobuf'
 
@@ -158,17 +158,17 @@ snapshots:
       '@bufbuild/buf-win32-arm64': 1.64.0
       '@bufbuild/buf-win32-x64': 1.64.0
 
-  '@bufbuild/protobuf@1.10.1': {}
+  '@bufbuild/protobuf@2.11.0': {}
 
-  '@connectrpc/connect-node@1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
+  '@connectrpc/connect-node@1.7.0(@bufbuild/protobuf@2.11.0)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@2.11.0))':
     dependencies:
-      '@bufbuild/protobuf': 1.10.1
-      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
+      '@bufbuild/protobuf': 2.11.0
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@2.11.0)
       undici: 5.29.0
 
-  '@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1)':
+  '@connectrpc/connect@1.7.0(@bufbuild/protobuf@2.11.0)':
     dependencies:
-      '@bufbuild/protobuf': 1.10.1
+      '@bufbuild/protobuf': 2.11.0
 
   '@fastify/busboy@2.1.1': {}
 
