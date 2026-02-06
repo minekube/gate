@@ -157,6 +157,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			return
 		}
 		e := &ServerLoginPluginMessageEvent{
+			connection: b.serverConn,
 			id:         identifier,
 			contents:   p.Data,
 			sequenceID: p.ID,
