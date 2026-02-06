@@ -1090,6 +1090,8 @@ type ServerLoginPluginMessageEvent struct {
 	contents   []byte
 	sequenceID int
 
+	connection *serverConnection
+
 	result ServerLoginPluginMessageResult
 }
 
@@ -1105,6 +1107,17 @@ func (e *ServerLoginPluginMessageEvent) SequenceID() int {
 
 func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {
 	return &e.result
+}
+
+func (e *ServerLoginPluginMessageEvent) Connection() ServerConnection {
+	return e.connection
+}
+
+func (e *ServerLoginPluginMessageEvent) Player() Player {
+	if e.connection == nil {
+		return nil
+	}
+	return e.connection.player
 }
 
 type ServerLoginPluginMessageResult struct {
