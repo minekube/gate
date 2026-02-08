@@ -1089,6 +1089,7 @@ type ServerLoginPluginMessageEvent struct {
 	id         message.ChannelIdentifier
 	contents   []byte
 	sequenceID int
+	serverConn *serverConnection
 
 	result ServerLoginPluginMessageResult
 }
@@ -1101,6 +1102,11 @@ func (e *ServerLoginPluginMessageEvent) Contents() []byte {
 // SequenceID returns the sequence id of the login plugin message sent by the server.
 func (e *ServerLoginPluginMessageEvent) SequenceID() int {
 	return e.sequenceID
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerLoginPluginMessageEvent) ServerConnection() ServerConnection {
+	return e.serverConn
 }
 
 func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {
