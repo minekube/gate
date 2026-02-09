@@ -107,6 +107,16 @@ func TestDecodeCESU8(t *testing.T) {
 	}
 }
 
+func TestDecodeCESU8_AllByteValues(t *testing.T) {
+	// Verify decodeCESU8 always terminates for every possible single-byte value.
+	// This confirms the removed size==0 guard in the invalid byte path was dead code.
+	for b := 0; b <= 0xFF; b++ {
+		input := string([]byte{byte(b)})
+		got := decodeCESU8(input)
+		assert.NotEmpty(t, got, "byte 0x%02X should produce output", b)
+	}
+}
+
 func TestFormatSNBT(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -183,6 +193,16 @@ func TestFormatSNBT(t *testing.T) {
 			input: `{a:"x::y",b:1}`,
 			want:  `{a: "x::y", b: 1}`,
 		},
+		{
+			name:  "empty input",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "deeply nested",
+			input: `{a:{b:{c:{d:1}}}}`,
+			want:  `{a: {b: {c: {d: 1}}}}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -222,6 +242,24 @@ func TestSnbtToJSON(t *testing.T) {
 			name:    "colon in quoted value",
 			snbt:    `{text:"http://example.com"}`,
 			want:    json.RawMessage(`{"text":"http://example.com"}`),
+			wantErr: false,
+		},
+		{
+			name:    "empty compound",
+			snbt:    `{}`,
+			want:    json.RawMessage(`{}`),
+			wantErr: false,
+		},
+		{
+			name:    "nested compounds",
+			snbt:    `{a:{b:{c:deep}}}`,
+			want:    json.RawMessage(`{"a":{"b":{"c":"deep"}}}`),
+			wantErr: false,
+		},
+		{
+			name:    "array of values",
+			snbt:    `{list:[1,2,3]}`,
+			want:    json.RawMessage(`{"list":[1,2,3]}`),
 			wantErr: false,
 		},
 		// Add more test cases as needed
@@ -269,6 +307,28 @@ func TestSnbtToJSON_WithCESU8(t *testing.T) {
 	assert.Contains(t, string(got), "😀")
 	assert.Contains(t, string(got), "hello")
 	assert.Contains(t, string(got), "world")
+}
+
+func TestSnbtToJSON_NonObject(t *testing.T) {
+	// Non-object SNBT should be returned as a JSON string
+	got, err := SnbtToJSON("hello world")
+	assert.NoError(t, err)
+	assert.Equal(t, `"hello world"`, string(got))
+}
+
+func TestSnbtToJSON_YAMLBooleanCoercion(t *testing.T) {
+	// YAML interprets true/false/yes/no/null as special types, not strings.
+	// This documents the current behavior — YAML coerces these values.
+	snbt := `{a:true,b:false,c:null}`
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.True(t, json.Valid(got), "result should be valid JSON: %s", string(got))
+	// Document that YAML coerces these: true/false become booleans, null becomes null
+	assert.Contains(t, string(got), `"a":true`)
+	assert.Contains(t, string(got), `"b":false`)
+	assert.Contains(t, string(got), `"c":null`)
 }
 
 func TestSnbtToJSON_EmptyValue(t *testing.T) {

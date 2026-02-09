@@ -16,6 +16,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var replacementChar = []byte(string(utf8.RuneError))
+
 // decodeCESU8 converts a string containing CESU-8 encoded surrogate pairs
 // into valid UTF-8. Java's Modified UTF-8 (used in NBT) encodes supplementary
 // Unicode characters (U+10000 and above, e.g. emoji) as a pair of 3-byte
@@ -71,12 +73,8 @@ func decodeCESU8(s string) string {
 				out = make([]byte, 0, n)
 				out = append(out, b[:i]...)
 			}
-			out = append(out, []byte(string(utf8.RuneError))...)
-			if size == 0 {
-				i++ // avoid infinite loop on zero-width error
-			} else {
-				i += size
-			}
+			out = append(out, replacementChar...)
+			i += size
 			continue
 		}
 
@@ -99,11 +97,11 @@ func decodeCESU8(s string) string {
 // Example: {:"",text:hi} -> {"": "", text: hi}
 // This is needed because the yaml parser requires spaces after colons and
 // cannot parse empty keys in flow mappings.
-// It correctly handles escaped quotes (\") and (\\) inside quoted strings,
-// as well as single-quoted strings with (\') escapes as produced by go-mc.
+// It correctly handles escaped quotes (\") and (\\) inside double-quoted strings,
+// as well as single-quoted strings.
 func formatSNBT(snbt string) string {
 	var result strings.Builder
-	result.Grow(len(snbt) + len(snbt)/4) // estimate extra space for added spaces
+	result.Grow(len(snbt) + len(snbt)/8) // estimate extra space for added spaces
 	var quoteChar byte                   // 0 = not in quotes, '"' or '\'' = in that quote type
 	hasKeyContent := false               // whether we've seen key content since last '{' or ','
 
@@ -130,7 +128,7 @@ func formatSNBT(snbt string) string {
 		case '"', '\'':
 			quoteChar = c
 			hasKeyContent = true
-		case '{':
+		case '{', '[':
 			hasKeyContent = false
 		case ',':
 			hasKeyContent = false
