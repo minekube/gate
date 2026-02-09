@@ -10,30 +10,148 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/Tnze/go-mc/nbt"
 	"gopkg.in/yaml.v3"
 )
 
-// formatSNBT adds spaces after colons that are not within quotes.
+// decodeCESU8 converts a string containing CESU-8 encoded surrogate pairs
+// into valid UTF-8. Java's Modified UTF-8 (used in NBT) encodes supplementary
+// Unicode characters (U+10000 and above, e.g. emoji) as a pair of 3-byte
+// CESU-8 sequences representing a UTF-16 surrogate pair, which is invalid UTF-8.
+// This function finds those paired surrogates and replaces them with the correct
+// 4-byte UTF-8 encoding. Unpaired surrogates and any other invalid UTF-8
+// sequences are replaced with U+FFFD.
+func decodeCESU8(s string) string {
+	b := []byte(s)
+	n := len(b)
+	if n == 0 {
+		return s
+	}
+
+	// Quick check: if already valid UTF-8, no CESU-8 surrogates are present.
+	if utf8.Valid(b) {
+		return s
+	}
+
+	var out []byte
+	for i := 0; i < n; {
+		// Check for a CESU-8 surrogate pair: two 3-byte sequences
+		// High surrogate: ED [A0-AF] [80-BF]  (U+D800..U+DBFF)
+		// Low surrogate:  ED [B0-BF] [80-BF]  (U+DC00..U+DFFF)
+		if i+5 < n &&
+			b[i] == 0xED && b[i+1] >= 0xA0 && b[i+1] <= 0xAF && b[i+2] >= 0x80 && b[i+2] <= 0xBF &&
+			b[i+3] == 0xED && b[i+4] >= 0xB0 && b[i+4] <= 0xBF && b[i+5] >= 0x80 && b[i+5] <= 0xBF {
+			// Decode high surrogate from 3-byte CESU-8: (b0 & 0x0F)<<12 | (b1 & 0x3F)<<6 | (b2 & 0x3F)
+			high := rune(b[i]&0x0F)<<12 | rune(b[i+1]&0x3F)<<6 | rune(b[i+2]&0x3F)
+			// Decode low surrogate
+			low := rune(b[i+3]&0x0F)<<12 | rune(b[i+4]&0x3F)<<6 | rune(b[i+5]&0x3F)
+			// Combine into supplementary codepoint
+			cp := 0x10000 + (high-0xD800)<<10 + (low - 0xDC00)
+
+			if out == nil {
+				out = make([]byte, 0, n)
+				out = append(out, b[:i]...)
+			}
+			var buf [4]byte
+			utf8.EncodeRune(buf[:], cp)
+			out = append(out, buf[:]...)
+			i += 6
+			continue
+		}
+
+		// Try to decode a valid UTF-8 rune at this position
+		r, size := utf8.DecodeRune(b[i:])
+		if r == utf8.RuneError && size <= 1 {
+			// Invalid byte sequence — could be an unpaired surrogate,
+			// a truncated multi-byte sequence, or a stray byte.
+			// Replace with U+FFFD.
+			if out == nil {
+				out = make([]byte, 0, n)
+				out = append(out, b[:i]...)
+			}
+			out = append(out, []byte(string(utf8.RuneError))...)
+			if size == 0 {
+				i++ // avoid infinite loop on zero-width error
+			} else {
+				i += size
+			}
+			continue
+		}
+
+		// Valid rune
+		if out != nil {
+			out = append(out, b[i:i+size]...)
+		}
+		i += size
+	}
+
+	if out == nil {
+		return s
+	}
+	return string(out)
+}
+
+// formatSNBT adds spaces after colons and commas that are not within quotes,
+// and quotes empty keys so the YAML parser can handle them.
 // Example: {a:1,b:hello,c:"world",d:true} -> {a: 1, b: hello, c: "world", d: true}
-// This is needed because the yaml parser requires spaces after colons
-func formatSNBT(snbt string) string { // TODO test properly
+// Example: {:"",text:hi} -> {"": "", text: hi}
+// This is needed because the yaml parser requires spaces after colons and
+// cannot parse empty keys in flow mappings.
+// It correctly handles escaped quotes (\") and (\\) inside quoted strings,
+// as well as single-quoted strings with (\') escapes as produced by go-mc.
+func formatSNBT(snbt string) string {
 	var result strings.Builder
-	inQuotes := false
+	result.Grow(len(snbt) + len(snbt)/4) // estimate extra space for added spaces
+	var quoteChar byte                   // 0 = not in quotes, '"' or '\'' = in that quote type
+	hasKeyContent := false               // whether we've seen key content since last '{' or ','
 
 	for i := 0; i < len(snbt); i++ {
-		switch snbt[i] {
-		case '"':
-			inQuotes = !inQuotes
-		case ':', ',':
-			if !inQuotes {
+		c := snbt[i]
+		if quoteChar != 0 {
+			// Inside a quoted string
+			if c == '\\' && i+1 < len(snbt) {
+				// Escaped character — write both bytes and skip the next one
+				result.WriteByte(c)
+				i++
 				result.WriteByte(snbt[i])
-				result.WriteByte(' ')
 				continue
 			}
+			if c == quoteChar {
+				// End of quoted string
+				quoteChar = 0
+			}
+			result.WriteByte(c)
+			continue
 		}
-		result.WriteByte(snbt[i])
+		// Outside quotes
+		switch c {
+		case '"', '\'':
+			quoteChar = c
+			hasKeyContent = true
+		case '{':
+			hasKeyContent = false
+		case ',':
+			hasKeyContent = false
+			result.WriteByte(c)
+			result.WriteByte(' ')
+			continue
+		case ':':
+			if !hasKeyContent {
+				// Empty key — insert a quoted empty string so YAML can parse it
+				result.WriteString(`""`)
+			}
+			hasKeyContent = false
+			result.WriteByte(c)
+			result.WriteByte(' ')
+			continue
+		default:
+			if c != ' ' && c != '\t' {
+				hasKeyContent = true
+			}
+		}
+		result.WriteByte(c)
 	}
 
 	return result.String()
@@ -42,6 +160,10 @@ func formatSNBT(snbt string) string { // TODO test properly
 // SnbtToJSON converts a stringified NBT to JSON.
 // Example: {a:1,b:hello,c:"world",d:true} -> {"a":1,"b":"hello","c":"world","d":true}
 func SnbtToJSON(snbt string) (json.RawMessage, error) {
+	// Decode CESU-8 surrogate pairs from Java's Modified UTF-8 (used in NBT)
+	// into valid UTF-8 before any parsing.
+	snbt = decodeCESU8(snbt)
+
 	// Trim whitespace, newlines, return characters, and tabs
 	snbt = strings.TrimSpace(snbt)
 
