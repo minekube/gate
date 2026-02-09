@@ -70,6 +70,33 @@ func TestDecodeCESU8(t *testing.T) {
 			input: "",
 			want:  "",
 		},
+		{
+			name:  "single invalid byte",
+			input: "a\x80b",
+			want:  "a\uFFFDb",
+		},
+		{
+			name:  "multiple consecutive invalid bytes",
+			input: "\x80\x81\x82",
+			want:  "\uFFFD\uFFFD\uFFFD",
+		},
+		{
+			name:  "truncated 3-byte sequence",
+			input: "a\xED\xA0b",
+			want:  "a\uFFFD\uFFFDb",
+		},
+		{
+			name: "high surrogate at end of string (truncated pair)",
+			// High surrogate ED A0 BD at end with no low surrogate
+			input: "test\xED\xA0\xBD",
+			want:  "test\uFFFD\uFFFD\uFFFD",
+		},
+		{
+			name: "surrogate pair split by valid ascii",
+			// High surrogate, then ASCII 'x', then low surrogate — not a valid pair
+			input: "\xED\xA0\xBDx\xED\xB8\x80",
+			want:  "\uFFFD\uFFFD\uFFFDx\uFFFD\uFFFD\uFFFD",
+		},
 	}
 
 	for _, tt := range tests {
@@ -135,6 +162,26 @@ func TestFormatSNBT(t *testing.T) {
 			name:  "normal key not affected",
 			input: `{text:hello}`,
 			want:  `{text: hello}`,
+		},
+		{
+			name:  "colon inside brackets does not produce empty key",
+			input: `{list:[a:1,b:2]}`,
+			want:  `{list: [a: 1, b: 2]}`,
+		},
+		{
+			name:  "nested brackets and braces",
+			input: `{a:[{b:1},{c:2}],d:3}`,
+			want:  `{a: [{b: 1}, {c: 2}], d: 3}`,
+		},
+		{
+			name:  "empty key at start of nested object inside array",
+			input: `{list:[{:"val"}]}`,
+			want:  `{list: [{"": "val"}]}`,
+		},
+		{
+			name:  "consecutive colons in quoted value",
+			input: `{a:"x::y",b:1}`,
+			want:  `{a: "x::y", b: 1}`,
 		},
 	}
 
@@ -222,6 +269,17 @@ func TestSnbtToJSON_WithCESU8(t *testing.T) {
 	assert.Contains(t, string(got), "😀")
 	assert.Contains(t, string(got), "hello")
 	assert.Contains(t, string(got), "world")
+}
+
+func TestSnbtToJSON_EmptyValue(t *testing.T) {
+	// Empty values (e.g. "text:") should parse as null/empty, not error
+	snbt := `{text:,other:hello}`
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.True(t, json.Valid(got), "result should be valid JSON: %s", string(got))
+	assert.Contains(t, string(got), `"other":"hello"`)
 }
 
 func TestSnbtToJSON_EmptyKeys(t *testing.T) {
