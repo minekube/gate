@@ -208,6 +208,12 @@ config:
         # before forwarding the connection to the backend.
         # Default: false
         modifyVirtualHost: true
+        # Strip Floodgate-encoded Bedrock player data from virtual host before forwarding.
+        # By default (false), Floodgate data is preserved and forwarded to the backend,
+        # which is required when the backend has Floodgate plugin installed with the same key.
+        # Only enable (true) if backend doesn't use Floodgate and needs the clean hostname.
+        # Default: false
+        #stripBedrockData: false
       # Match all as last item routes any other host to a default backend.
       - host: '*'
         backend: 10.0.0.10:25565

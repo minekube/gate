@@ -39,6 +39,12 @@ type (
 		TCPShieldRealIP   bool     `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
 		ModifyVirtualHost bool     `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
 		Strategy          Strategy `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+		// StripBedrockData removes Floodgate-encoded Bedrock player data from the virtual host before forwarding.
+		// When false (default), the Floodgate data is preserved and forwarded to the backend server,
+		// which is required when the backend has Floodgate plugin installed with the same encryption key.
+		// Set to true only if the backend doesn't use Floodgate and needs the clean hostname.
+		// Default: false (preserve Floodgate data)
+		StripBedrockData bool `json:"stripBedrockData,omitempty" yaml:"stripBedrockData,omitempty"`
 	}
 	Status struct {
 		MOTD    *configutil.TextComponent `yaml:"motd,omitempty" json:"motd,omitempty"`
