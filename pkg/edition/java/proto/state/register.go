@@ -523,7 +523,7 @@ func init() {
 		m(0x18, version.Minecraft_1_20_2),
 		m(0x19, version.Minecraft_1_20_5),
 		m(0x18, version.Minecraft_1_21_5),
-		m(0x1C, version.Minecraft_1_21_9),
+		m(0x18, version.Minecraft_1_21_9),
 	)
 	Play.ClientBound.Register(&p.RemoveResourcePack{},
 		m(0x43, version.Minecraft_1_20_3),
