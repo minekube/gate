@@ -44,6 +44,7 @@ func FindRouteWithGroups(pattern string, routes ...config.Route) (host string, r
 //	'?': matches any single character
 func match(s, pattern string) bool {
 	s = strings.ToLower(s)
+	pattern = strings.ToLower(pattern)
 	reg := compiledRegexCache.Get(pattern)
 	return reg != nil && reg.Value() != nil && reg.Value().MatchString(s)
 }
@@ -51,11 +52,13 @@ func match(s, pattern string) bool {
 var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
 	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
 		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
+			// pattern is the cache key, we must not modify it for the Set call
 
-			pattern = strings.ToLower(pattern)
-			pattern = "^" + strings.ReplaceAll(pattern, "?", ".") + "$"
-			pattern = strings.ReplaceAll(pattern, "*", ".*")
-			reg, _ := regexp.Compile(pattern)
+			// Escape meta characters to treat them as literals, then restore wildcards
+			regexStr := regexp.QuoteMeta(pattern)
+			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", ".") + "$"
+			regexStr = strings.ReplaceAll(regexStr, "\\*", ".*")
+			reg, _ := regexp.Compile(regexStr)
 
 			return c.Set(pattern, reg, ttlcache.NoTTL)
 		}),
