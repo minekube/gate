@@ -229,12 +229,10 @@ func classifyForwardEnd(ctx context.Context, result copyResult) ForwardEndReason
 		if errors.As(result.err, &netErr) && netErr.Timeout() {
 			return Timeout
 		}
-		if ctx != nil && ctx.Err() != nil && !errors.Is(result.err, io.EOF) && !errs.IsConnClosedErr(result.err) {
+		if ctx != nil && ctx.Err() != nil {
 			return Shutdown
 		}
-		if !errors.Is(result.err, io.EOF) && !errs.IsConnClosedErr(result.err) {
-			return Error
-		}
+		return Error
 	}
 
 	if result.dir == pipeBackendToClient {
