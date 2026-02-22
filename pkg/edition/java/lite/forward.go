@@ -46,18 +46,38 @@ func Forward(
 ) {
 	defer func() { _ = client.Close() }()
 
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, match, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		errs.V(log, err).Info("failed to find route", "error", err)
 		return
 	}
 
+	src := match.src
+	route := match.route
+	rt := strategyManager.runtime
+	observe := rt != nil && rt.maybeEnableObservability()
+	clientAddr := cloneAddr(src.RemoteAddr())
+	clientIP := effectiveClientIP(route, handshake.ServerAddress, src.RemoteAddr())
+
 	// Find a backend to dial successfully.
-	backendAddr, log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
+	backendAddr, log, dst, err := tryBackends(match.nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
 		return log, conn, err
 	})
 	if err != nil {
+		if observe {
+			rt.Event().Fire(&ForwardEndedEvent{
+				ConnectionID: "",
+				ClientIP:     clientIP,
+				ClientAddr:   clientAddr,
+				BackendAddr:  nil,
+				Host:         match.virtualHost,
+				RouteID:      match.routeID(),
+				StartedAt:    time.Time{},
+				EndedAt:      time.Now(),
+				Reason:       BackendConnectFailed,
+			})
+		}
 		return
 	}
 	defer func() { _ = dst.Close() }()
@@ -74,8 +94,47 @@ func Forward(
 		defer decrementConnection()
 	}
 
+	var connectionID string
+	var startedAt time.Time
+	if observe {
+		connectionID = rt.tracker.nextConnectionID()
+		startedAt = time.Now()
+		active := ActiveForward{
+			ConnectionID: connectionID,
+			ClientIP:     clientIP,
+			BackendAddr:  cloneAddr(dst.RemoteAddr()),
+			Host:         match.virtualHost,
+			RouteID:      match.routeID(),
+			StartedAt:    startedAt,
+		}
+		rt.tracker.add(active)
+		rt.Event().Fire(&ForwardStartedEvent{
+			ConnectionID: active.ConnectionID,
+			ClientIP:     active.ClientIP,
+			ClientAddr:   cloneAddr(clientAddr),
+			BackendAddr:  cloneAddr(active.BackendAddr),
+			Host:         active.Host,
+			RouteID:      active.RouteID,
+			StartedAt:    active.StartedAt,
+		})
+	}
+
 	log.Info("forwarding connection", "backendAddr", backendAddr)
-	pipe(log, src, dst)
+	reason, endedAt := pipeWithReason(client.Context(), log, src, dst)
+	if observe {
+		rt.tracker.remove(connectionID)
+		rt.Event().Fire(&ForwardEndedEvent{
+			ConnectionID: connectionID,
+			ClientIP:     clientIP,
+			ClientAddr:   cloneAddr(clientAddr),
+			BackendAddr:  cloneAddr(dst.RemoteAddr()),
+			Host:         match.virtualHost,
+			RouteID:      match.routeID(),
+			StartedAt:    startedAt,
+			EndedAt:      endedAt,
+			Reason:       reason,
+		})
+	}
 }
 
 // errAllBackendsFailed is returned when all backends failed to dial.
@@ -116,25 +175,73 @@ func emptyReadBuff(src netmc.MinecraftConn, dst net.Conn) error {
 	return nil
 }
 
-func pipe(log logr.Logger, src, dst net.Conn) {
+type pipeDirection int
+
+const (
+	pipeClientToBackend pipeDirection = iota
+	pipeBackendToClient
+)
+
+type copyResult struct {
+	dir   pipeDirection
+	bytes int64
+	err   error
+}
+
+func pipeWithReason(ctx context.Context, log logr.Logger, src, dst net.Conn) (ForwardEndReason, time.Time) {
 	// disable deadlines
 	var zero time.Time
 	_ = src.SetDeadline(zero)
 	_ = dst.SetDeadline(zero)
+
+	results := make(chan copyResult, 2)
 
 	go func() {
 		i, err := io.Copy(src, dst)
 		if log.Enabled() {
 			log.V(1).Info("done copying backend -> client", "bytes", i, "error", err)
 		}
+		results <- copyResult{dir: pipeBackendToClient, bytes: i, err: err}
 	}()
-	i, err := io.Copy(dst, src)
-	if log.Enabled() {
-		log.V(1).Info("done copying client -> backend", "bytes", i, "error", err)
-	}
+
+	go func() {
+		i, err := io.Copy(dst, src)
+		if log.Enabled() {
+			log.V(1).Info("done copying client -> backend", "bytes", i, "error", err)
+		}
+		results <- copyResult{dir: pipeClientToBackend, bytes: i, err: err}
+	}()
+
+	first := <-results
+	endedAt := time.Now()
+
+	_ = src.Close()
+	_ = dst.Close()
+
+	return classifyForwardEnd(ctx, first), endedAt
 }
 
 type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
+
+func classifyForwardEnd(ctx context.Context, result copyResult) ForwardEndReason {
+	if result.err != nil {
+		var netErr net.Error
+		if errors.As(result.err, &netErr) && netErr.Timeout() {
+			return Timeout
+		}
+		if ctx != nil && ctx.Err() != nil && !errors.Is(result.err, io.EOF) && !errs.IsConnClosedErr(result.err) {
+			return Shutdown
+		}
+		if !errors.Is(result.err, io.EOF) && !errs.IsConnClosedErr(result.err) {
+			return Error
+		}
+	}
+
+	if result.dir == pipeBackendToClient {
+		return BackendClosed
+	}
+	return ClientClosed
+}
 
 // substituteBackendParams replaces $1, $2, etc. in the backend address template with captured groups.
 // If a parameter index is out of range or missing, it leaves the parameter as-is (e.g., "$99" stays "$99").
@@ -164,36 +271,59 @@ func findRoute(
 	strategyManager *StrategyManager,
 ) (
 	newLog logr.Logger,
-	src net.Conn,
-	route *config.Route,
-	nextBackend nextBackendFunc,
+	match routeMatch,
 	err error,
 ) {
 	srcConn, ok := netmc.Assert[interface{ Conn() net.Conn }](client)
 	if !ok {
-		return log, src, nil, nil, errors.New("failed to assert connection as net.Conn")
+		return log, match, errors.New("failed to assert connection as net.Conn")
 	}
-	src = srcConn.Conn()
+	match.src = srcConn.Conn()
 
 	clearedHost := ClearVirtualHost(handshake.ServerAddress)
 	log = log.WithName("lite").WithValues(
-		"clientAddr", netutil.Host(src.RemoteAddr()),
+		"clientAddr", netutil.Host(match.src.RemoteAddr()),
 		"virtualHost", clearedHost,
 		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
 	)
+	match.virtualHost = clearedHost
 
-	host, route, groups := FindRouteWithGroups(clearedHost, routes...)
+	var (
+		route      *config.Route
+		host       string
+		groups     []string
+		routeIndex = -1
+	)
+	for i := range routes {
+		rt := &routes[i]
+		for _, candidate := range rt.Host {
+			matched, capturedGroups := matchWithGroups(clearedHost, candidate)
+			if matched {
+				route = rt
+				host = candidate
+				groups = capturedGroups
+				routeIndex = i
+				break
+			}
+		}
+		if route != nil {
+			break
+		}
+	}
 	if route == nil {
-		return log.V(1), src, nil, nil, fmt.Errorf("no route configured for host %s", clearedHost)
+		return log.V(1), match, fmt.Errorf("no route configured for host %s", clearedHost)
 	}
 	log = log.WithValues("route", host)
+	match.route = route
+	match.routeIndex = routeIndex
+	match.matchedHost = host
 
 	if len(route.Backend) == 0 {
-		return log, src, route, nil, errors.New("no backend configured for route")
+		return log, match, errors.New("no backend configured for route")
 	}
 
 	tryBackends := route.Backend.Copy()
-	nextBackend = func() (string, logr.Logger, bool) {
+	match.nextBackend = func() (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
 		}
@@ -217,7 +347,7 @@ func findRoute(
 				originalBackend = substituteBackendParams(backend, groups)
 			}
 
-			normalizedBackend, err := netutil.Parse(originalBackend, src.RemoteAddr().Network())
+			normalizedBackend, err := netutil.Parse(originalBackend, match.src.RemoteAddr().Network())
 			if err != nil {
 				continue
 			}
@@ -226,7 +356,7 @@ func findRoute(
 				normalizedAddr = net.JoinHostPort(normalizedBackend.String(), "25565")
 			}
 
-			normalizedSelected, err := netutil.Parse(backendAddr, src.RemoteAddr().Network())
+			normalizedSelected, err := netutil.Parse(backendAddr, match.src.RemoteAddr().Network())
 			if err != nil {
 				continue
 			}
@@ -244,7 +374,7 @@ func findRoute(
 		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
 	}
 
-	return log, src, route, nextBackend, nil
+	return log, match, nil
 }
 
 func dialRoute(
@@ -347,12 +477,14 @@ func ResolveStatusResponse(
 	statusRequestCtx *proto.PacketContext,
 	strategyManager *StrategyManager,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, match, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		return log, nil, err
 	}
+	src := match.src
+	route := match.route
 
-	_, log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
+	_, log, res, err := tryBackends(match.nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
 		// Measure status response time for latency tracking (better than dial time)
 		start := time.Now()
 		newLog, response, respErr := resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
@@ -375,6 +507,22 @@ func ResolveStatusResponse(
 	}
 
 	return log, res, err
+}
+
+type routeMatch struct {
+	src         net.Conn
+	route       *config.Route
+	routeIndex  int
+	matchedHost string
+	virtualHost string
+	nextBackend nextBackendFunc
+}
+
+func (m routeMatch) routeID() string {
+	if m.routeIndex < 0 {
+		return m.matchedHost
+	}
+	return fmt.Sprintf("%d:%s", m.routeIndex, m.matchedHost)
 }
 
 // handleFallbackResponse handles the fallback response when all backends fail.

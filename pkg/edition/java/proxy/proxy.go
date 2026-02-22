@@ -113,7 +113,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
+		lite:             lite.NewLiteWithEvent(eventMgr), // create lite mode functionality for this proxy instance
 	}
 
 	// Connection & login rate limiters
@@ -176,6 +176,11 @@ func (p *Proxy) Start(ctx context.Context) error {
 	// Init "plugins" with the proxy
 	if err := p.initPlugins(ctx); err != nil {
 		return err
+	}
+	if p.cfg.Lite.Enabled {
+		if err := p.initLitePlugins(ctx); err != nil {
+			return err
+		}
 	}
 
 	logInfo := func() {
@@ -385,6 +390,19 @@ func (p *Proxy) initPlugins(ctx context.Context) error {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
 		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
+	}
+	return nil
+}
+
+func (p *Proxy) initLitePlugins(ctx context.Context) error {
+	log := logr.FromContextOrDiscard(ctx)
+	rt := p.lite.Runtime()
+	for _, pl := range lite.Plugins {
+		start := time.Now()
+		if err := pl.Init(ctx, rt); err != nil {
+			return fmt.Errorf("error running init hook for lite plugin %q: %w", pl.Name, err)
+		}
+		log.Info("initialized lite plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
 	}
 	return nil
 }
