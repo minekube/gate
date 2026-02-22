@@ -17,6 +17,8 @@ Player connections are offloaded to the destined backend server, including ping 
 **Lite mode supports [proxy behind proxy](#proxy-behind-proxy) setups**, but advanced features like backend server switching or proxy commands are no
 longer available in this mode and have no effect when extensions use higher level Gate APIs or non-Lite events.
 
+If you need generic Lite routing observability for an external module, use the Lite extension hooks described in [Lite Extensions](/developers/lite-extensions).
+
 ## Host based Routing
 
 If you point your domain to the IP address Gate listens on, you can use the domain name as the host address.

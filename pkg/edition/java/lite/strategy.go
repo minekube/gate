@@ -26,6 +26,8 @@ type StrategyManager struct {
 
 	// Latency cache for lowest-latency strategy
 	latencyCache *ttlcache.Cache[string, time.Duration]
+
+	runtime *Runtime
 }
 
 // NewStrategyManager creates a new strategy manager for a Gate instance.
@@ -36,6 +38,10 @@ func NewStrategyManager() *StrategyManager {
 		connectionCounters: &sync.Map{},
 		latencyCache:       ttlcache.New[string, time.Duration](),
 	}
+}
+
+func (sm *StrategyManager) setRuntime(rt *Runtime) {
+	sm.runtime = rt
 }
 
 // GetNextBackend returns the next backend using the specified strategy.

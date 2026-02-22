@@ -59,6 +59,7 @@ func main() {
 
 The best way to learn how to extend Gate is by looking at some examples.
 If you want to see a complete Go project that uses Gate, check out the [Simple Proxy](examples/simple-proxy) example.
+If you are running Gate in Lite mode and only need routing observability hooks, see [Lite Extensions](/developers/lite-extensions).
 
 ## Gate's Plugin Architecture
 
