@@ -3,6 +3,7 @@ package lite
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,16 @@ func TestClassifyForwardEnd(t *testing.T) {
 		assert.Equal(t, Shutdown, reason)
 	})
 
+	t.Run("shutdown with closed conn error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		reason := classifyForwardEnd(ctx, copyResult{
+			dir: pipeBackendToClient,
+			err: net.ErrClosed,
+		})
+		assert.Equal(t, Shutdown, reason)
+	})
+
 	t.Run("backend closed", func(t *testing.T) {
 		reason := classifyForwardEnd(context.Background(), copyResult{
 			dir: pipeBackendToClient,
@@ -53,6 +64,14 @@ func TestClassifyForwardEnd(t *testing.T) {
 		reason := classifyForwardEnd(context.Background(), copyResult{
 			dir: pipeClientToBackend,
 			err: errors.New("boom"),
+		})
+		assert.Equal(t, Error, reason)
+	})
+
+	t.Run("closed conn without shutdown is error", func(t *testing.T) {
+		reason := classifyForwardEnd(context.Background(), copyResult{
+			dir: pipeBackendToClient,
+			err: net.ErrClosed,
 		})
 		assert.Equal(t, Error, reason)
 	})
