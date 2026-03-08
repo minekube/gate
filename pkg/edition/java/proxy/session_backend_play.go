@@ -190,11 +190,9 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	// Register and unregister packets are simply forwarded to the server as-is.
+	// Register and unregister packets from the backend must be forwarded to the client as-is.
 	if plugin.IsRegister(packet) || plugin.IsUnregister(packet) {
-		if serverMc, ok := b.serverConn.ensureConnected(); ok {
-			_ = serverMc.WritePacket(packet)
-		}
+		b.forwardToPlayer(pc, packet)
 		return
 	}
 
