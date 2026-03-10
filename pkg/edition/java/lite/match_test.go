@@ -37,6 +37,13 @@ func Test_match(t *testing.T) {
 		{"a", "A*", true},
 		{"A", "a*", true},
 		{"abc.example.COm", "*.Example.Com", true},
+		// Dots are treated as literal characters, not regex wildcards
+		{"exampleXcom", "example.com", false},
+		{"example.com", "example.com", true},
+		// Repeated calls with same pattern hit the cache and still work
+		{"foo.example.com", "*.example.com", true},
+		{"bar.example.com", "*.example.com", true},
+		{"notmatching.other.com", "*.example.com", false},
 	}
 
 	for _, test := range tests {
@@ -51,6 +58,60 @@ func BenchmarkMatch(b *testing.B) {
 	pattern := "*str?ng*"
 	for b.Loop() {
 		match(s, pattern)
+	}
+}
+
+func BenchmarkMatchWithGroups(b *testing.B) {
+	s := "abc.example.com"
+	pattern := "*.example.*"
+	for b.Loop() {
+		matchWithGroups(s, pattern)
+	}
+}
+
+func Test_matchCacheConsistency(t *testing.T) {
+	// Verify that the cache returns correct results on repeated lookups
+	// with the same pattern. This caught a bug where the loader mutated
+	// the pattern key before storing, causing perpetual cache misses.
+	pattern := "*.example.com"
+	cases := []struct {
+		s    string
+		want bool
+	}{
+		{"first.example.com", true},
+		{"second.example.com", true},
+		{"third.example.com", true},
+		{"notmatching.other.com", false},
+		{"fourth.example.com", true},
+	}
+	for _, tc := range cases {
+		if got := match(tc.s, pattern); got != tc.want {
+			t.Errorf("match(%q, %q) = %v, want %v", tc.s, pattern, got, tc.want)
+		}
+	}
+}
+
+func Test_matchWithGroupsCacheConsistency(t *testing.T) {
+	pattern := "*.example.*"
+	cases := []struct {
+		s          string
+		want       bool
+		wantGroups []string
+	}{
+		{"first.example.com", true, []string{"first", "com"}},
+		{"second.example.org", true, []string{"second", "org"}},
+		{"third.example.net", true, []string{"third", "net"}},
+		{"notmatching.other.com", false, nil},
+		{"fourth.example.io", true, []string{"fourth", "io"}},
+	}
+	for _, tc := range cases {
+		got, groups := matchWithGroups(tc.s, pattern)
+		if got != tc.want {
+			t.Errorf("matchWithGroups(%q, %q) = %v, want %v", tc.s, pattern, got, tc.want)
+		}
+		if !slices.Equal(groups, tc.wantGroups) {
+			t.Errorf("matchWithGroups(%q, %q) groups = %v, want %v", tc.s, pattern, groups, tc.wantGroups)
+		}
 	}
 }
 
@@ -210,6 +271,22 @@ func Test_matchWithGroups(t *testing.T) {
 			pattern:    "*.example.*",
 			want:       true,
 			wantGroups: []string{"abc", "com"},
+		},
+
+		// Dot treated as literal
+		{
+			name:       "dot is literal not regex wildcard",
+			s:          "exampleXcom",
+			pattern:    "example.com",
+			want:       false,
+			wantGroups: nil,
+		},
+		{
+			name:       "dot matches literal dot",
+			s:          "example.com",
+			pattern:    "example.com",
+			want:       true,
+			wantGroups: []string{},
 		},
 
 		// Complex patterns
