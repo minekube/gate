@@ -3,6 +3,7 @@ package lite
 import (
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/jellydator/ttlcache/v3"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
@@ -48,7 +49,7 @@ var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
 			regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
 			reg, _ := regexp.Compile(regexStr)
 
-			return c.Set(pattern, reg, ttlcache.NoTTL)
+			return c.Set(pattern, reg, time.Hour)
 		}),
 	),
 )
