@@ -44,6 +44,7 @@ func FindRouteWithGroups(pattern string, routes ...config.Route) (host string, r
 //	'?': matches any single character
 func match(s, pattern string) bool {
 	s = strings.ToLower(s)
+	pattern = strings.ToLower(pattern)
 	reg := compiledRegexCache.Get(pattern)
 	return reg != nil && reg.Value() != nil && reg.Value().MatchString(s)
 }
@@ -51,11 +52,13 @@ func match(s, pattern string) bool {
 var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
 	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
 		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
+			// pattern is the cache key, we must not modify it for the Set call
 
-			pattern = strings.ToLower(pattern)
-			pattern = "^" + strings.ReplaceAll(pattern, "?", ".") + "$"
-			pattern = strings.ReplaceAll(pattern, "*", ".*")
-			reg, _ := regexp.Compile(pattern)
+			// Escape meta characters to treat them as literals, then restore wildcards
+			regexStr := regexp.QuoteMeta(pattern)
+			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", ".") + "$"
+			regexStr = strings.ReplaceAll(regexStr, "\\*", ".*")
+			reg, _ := regexp.Compile(regexStr)
 
 			return c.Set(pattern, reg, ttlcache.NoTTL)
 		}),
@@ -75,44 +78,14 @@ func matchWithGroups(s, pattern string) (bool, []string) {
 	s = strings.ToLower(s)
 	pattern = strings.ToLower(pattern)
 
-	// Build regex pattern with capture groups
-	regexPattern := "^"
+	// Escape all regex metacharacters, then restore glob wildcards as capture groups
+	regexStr := regexp.QuoteMeta(pattern)
+	regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", "(.)") + "$"
+	regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
 
-	// Track if we're inside a character class (not used in current patterns, but for safety)
-	escapeNext := false
-	for _, r := range pattern {
-		if escapeNext {
-			regexPattern += string(r)
-			escapeNext = false
-			continue
-		}
-
-		switch r {
-		case '*':
-			// Each * becomes a capture group (.*?)
-			regexPattern += "(.*?)"
-		case '?':
-			// Each ? becomes a capture group (.)
-			regexPattern += "(.)"
-		case '\\':
-			// Escape next character
-			escapeNext = true
-			regexPattern += "\\"
-		default:
-			// Escape regex special characters
-			if strings.ContainsRune(".^$+()[]{}|", r) {
-				regexPattern += "\\"
-			}
-			regexPattern += string(r)
-		}
-	}
-
-	regexPattern += "$"
-
-	reg, err := regexp.Compile(regexPattern)
+	reg, err := regexp.Compile(regexStr)
 	if err != nil {
-		// If regex compilation fails, fall back to simple match
-		return match(s, pattern), nil
+		return false, nil
 	}
 
 	matches := reg.FindStringSubmatch(s)
