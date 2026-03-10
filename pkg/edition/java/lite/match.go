@@ -78,17 +78,12 @@ func matchWithGroups(s, pattern string) (bool, []string) {
 	s = strings.ToLower(s)
 	pattern = strings.ToLower(pattern)
 
-	// Escape all regex metacharacters, then restore glob wildcards as capture groups
-	regexStr := regexp.QuoteMeta(pattern)
-	regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", "(.)") + "$"
-	regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
-
-	reg, err := regexp.Compile(regexStr)
-	if err != nil {
+	item := compiledGroupsRegexCache.Get(pattern)
+	if item == nil || item.Value() == nil {
 		return false, nil
 	}
 
-	matches := reg.FindStringSubmatch(s)
+	matches := item.Value().FindStringSubmatch(s)
 	if matches == nil {
 		return false, nil
 	}
@@ -100,3 +95,17 @@ func matchWithGroups(s, pattern string) (bool, []string) {
 
 	return true, []string{}
 }
+
+var compiledGroupsRegexCache = ttlcache.New[string, *regexp.Regexp](
+	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
+		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
+			// Escape all regex metacharacters, then restore glob wildcards as capture groups
+			regexStr := regexp.QuoteMeta(pattern)
+			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", "(.)") + "$"
+			regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
+			reg, _ := regexp.Compile(regexStr)
+
+			return c.Set(pattern, reg, ttlcache.NoTTL)
+		}),
+	),
+)

@@ -61,6 +61,14 @@ func BenchmarkMatch(b *testing.B) {
 	}
 }
 
+func BenchmarkMatchWithGroups(b *testing.B) {
+	s := "abc.example.com"
+	pattern := "*.example.*"
+	for b.Loop() {
+		matchWithGroups(s, pattern)
+	}
+}
+
 func Test_matchCacheConsistency(t *testing.T) {
 	// Verify that the cache returns correct results on repeated lookups
 	// with the same pattern. This caught a bug where the loader mutated
@@ -79,6 +87,30 @@ func Test_matchCacheConsistency(t *testing.T) {
 	for _, tc := range cases {
 		if got := match(tc.s, pattern); got != tc.want {
 			t.Errorf("match(%q, %q) = %v, want %v", tc.s, pattern, got, tc.want)
+		}
+	}
+}
+
+func Test_matchWithGroupsCacheConsistency(t *testing.T) {
+	pattern := "*.example.*"
+	cases := []struct {
+		s          string
+		want       bool
+		wantGroups []string
+	}{
+		{"first.example.com", true, []string{"first", "com"}},
+		{"second.example.org", true, []string{"second", "org"}},
+		{"third.example.net", true, []string{"third", "net"}},
+		{"notmatching.other.com", false, nil},
+		{"fourth.example.io", true, []string{"fourth", "io"}},
+	}
+	for _, tc := range cases {
+		got, groups := matchWithGroups(tc.s, pattern)
+		if got != tc.want {
+			t.Errorf("matchWithGroups(%q, %q) = %v, want %v", tc.s, pattern, got, tc.want)
+		}
+		if !slices.Equal(groups, tc.wantGroups) {
+			t.Errorf("matchWithGroups(%q, %q) groups = %v, want %v", tc.s, pattern, groups, tc.wantGroups)
 		}
 	}
 }
