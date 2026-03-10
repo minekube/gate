@@ -36,6 +36,32 @@ func FindRouteWithGroups(pattern string, routes ...config.Route) (host string, r
 	return "", nil, nil
 }
 
+// compiledRegexCache caches compiled glob-to-regex patterns with capture groups.
+// Used by both match (boolean) and matchWithGroups (with captures).
+var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
+	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
+		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
+			// pattern is the cache key, we must not modify it for the Set call.
+			// Escape all regex metacharacters, then restore glob wildcards as capture groups.
+			regexStr := regexp.QuoteMeta(pattern)
+			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", "(.)") + "$"
+			regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
+			reg, _ := regexp.Compile(regexStr)
+
+			return c.Set(pattern, reg, ttlcache.NoTTL)
+		}),
+	),
+)
+
+func getRegexp(pattern string) *regexp.Regexp {
+	pattern = strings.ToLower(pattern)
+	item := compiledRegexCache.Get(pattern)
+	if item == nil {
+		return nil
+	}
+	return item.Value()
+}
+
 // match takes in two strings, s and pattern, and returns a boolean indicating whether s matches pattern.
 //
 // The following special characters are used in pattern:
@@ -43,27 +69,9 @@ func FindRouteWithGroups(pattern string, routes ...config.Route) (host string, r
 //	'*': matches any sequence of characters (including an empty sequence)
 //	'?': matches any single character
 func match(s, pattern string) bool {
-	s = strings.ToLower(s)
-	pattern = strings.ToLower(pattern)
-	reg := compiledRegexCache.Get(pattern)
-	return reg != nil && reg.Value() != nil && reg.Value().MatchString(s)
+	reg := getRegexp(pattern)
+	return reg != nil && reg.MatchString(strings.ToLower(s))
 }
-
-var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
-	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
-		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
-			// pattern is the cache key, we must not modify it for the Set call
-
-			// Escape meta characters to treat them as literals, then restore wildcards
-			regexStr := regexp.QuoteMeta(pattern)
-			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", ".") + "$"
-			regexStr = strings.ReplaceAll(regexStr, "\\*", ".*")
-			reg, _ := regexp.Compile(regexStr)
-
-			return c.Set(pattern, reg, ttlcache.NoTTL)
-		}),
-	),
-)
 
 // matchWithGroups takes in two strings, s and pattern, and returns a boolean indicating whether s matches pattern,
 // along with captured groups from wildcards.
@@ -75,15 +83,12 @@ var compiledRegexCache = ttlcache.New[string, *regexp.Regexp](
 //
 // Returns (matched bool, groups []string) where groups contains the captured values in order.
 func matchWithGroups(s, pattern string) (bool, []string) {
-	s = strings.ToLower(s)
-	pattern = strings.ToLower(pattern)
-
-	item := compiledGroupsRegexCache.Get(pattern)
-	if item == nil || item.Value() == nil {
+	reg := getRegexp(pattern)
+	if reg == nil {
 		return false, nil
 	}
 
-	matches := item.Value().FindStringSubmatch(s)
+	matches := reg.FindStringSubmatch(strings.ToLower(s))
 	if matches == nil {
 		return false, nil
 	}
@@ -95,17 +100,3 @@ func matchWithGroups(s, pattern string) (bool, []string) {
 
 	return true, []string{}
 }
-
-var compiledGroupsRegexCache = ttlcache.New[string, *regexp.Regexp](
-	ttlcache.WithLoader[string, *regexp.Regexp](ttlcache.LoaderFunc[string, *regexp.Regexp](
-		func(c *ttlcache.Cache[string, *regexp.Regexp], pattern string) *ttlcache.Item[string, *regexp.Regexp] {
-			// Escape all regex metacharacters, then restore glob wildcards as capture groups
-			regexStr := regexp.QuoteMeta(pattern)
-			regexStr = "^" + strings.ReplaceAll(regexStr, "\\?", "(.)") + "$"
-			regexStr = strings.ReplaceAll(regexStr, "\\*", "(.*?)")
-			reg, _ := regexp.Compile(regexStr)
-
-			return c.Set(pattern, reg, ttlcache.NoTTL)
-		}),
-	),
-)
