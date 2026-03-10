@@ -57,7 +57,7 @@ func (g *GameProfile) UnmarshalJSON(data []byte) (err error) {
 type Property struct {
 	Name      string `json:"name"`
 	Value     string `json:"value"`
-	Signature string `json:"signature"`
+	Signature string `json:"signature,omitempty"`
 }
 
 func (p *Property) String() string {

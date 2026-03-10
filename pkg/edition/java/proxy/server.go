@@ -505,7 +505,12 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(s.player.profile.Properties)
+	// Add BungeeForge extraData property for Forge client compatibility.
+	properties := s.player.profile.Properties
+	if marker := s.forgeExtraDataProperty(); marker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: marker})
+	}
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
@@ -525,13 +530,35 @@ func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) str
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(
-		append(s.player.profile.Properties, profile.Property{Name: "bungeeguard-token", Value: secret}))
+	// Add BungeeForge extraData property for Forge client compatibility.
+	properties := s.player.profile.Properties
+	if marker := s.forgeExtraDataProperty(); marker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: marker})
+	}
+	properties = append(properties, profile.Property{Name: "bungeeguard-token", Value: secret})
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
 	b.WriteString(string(props)) // first convert props to string
 	return b.String()
+}
+
+// forgeExtraDataProperty returns the Forge marker for BungeeForge's extraData property.
+// BungeeForge expects a property named "extraData" with a value starting with "\x01FML"
+// (for Forge 1.8-1.20.1) or "\x01FORGE" (for 1.20.2+).
+func (s *serverConnection) forgeExtraDataProperty() string {
+	if s.player.Type() == phase.ModernForge {
+		vHost := netutil.Host(s.player.virtualHost)
+		for _, pt := range strings.Split(vHost, "\000") {
+			if strings.HasPrefix(pt, "FML2") || strings.HasPrefix(pt, "FML3") || strings.HasPrefix(pt, "FORGE") {
+				return "\x01" + pt
+			}
+		}
+	} else if s.player.Type() == phase.LegacyForge {
+		return "\x01FML\x00"
+	}
+	return ""
 }
 
 // Returns the active backend server connection or false if inactive.
