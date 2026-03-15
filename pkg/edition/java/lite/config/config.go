@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -20,20 +21,29 @@ import (
 var DefaultConfig = Config{
 	Enabled: false,
 	Routes:  []Route{},
+	NoRouteMessage: (*configutil.TextComponent)(&component.Text{
+		Content: "Could not find a route to connect to.",
+	}),
+	NoBackendMessage: (*configutil.TextComponent)(&component.Text{
+		Content: "Could not connect to a backend server.",
+	}),
 }
 
 type (
 	// Config is the configuration for Lite mode.
 	Config struct {
-		Enabled bool    `yaml:"enabled,omitempty" json:"enabled,omitempty"`
-		Routes  []Route `yaml:"routes,omitempty" json:"routes,omitempty"`
+		Enabled          bool                      `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		Routes           []Route                   `yaml:"routes,omitempty" json:"routes,omitempty"`
+		NoRouteMessage   *configutil.TextComponent `yaml:"noRouteMessage,omitempty" json:"noRouteMessage,omitempty"`     // Disconnect message when no route is found for the host.
+		NoBackendMessage *configutil.TextComponent `yaml:"noBackendMessage,omitempty" json:"noBackendMessage,omitempty"` // Default message when all backends for a route fail. Can be overridden on a per-route basis.
 	}
 	Route struct {
-		Host          configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
-		Backend       configutil.SingleOrMulti[string] `json:"backend,omitempty" yaml:"backend,omitempty"`
-		CachePingTTL  configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"` // 0 = default, < 0 = disabled
-		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
-		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
+		Host             configutil.SingleOrMulti[string] `json:"host,omitempty" yaml:"host,omitempty"`
+		Backend          configutil.SingleOrMulti[string] `json:"backend,omitempty" yaml:"backend,omitempty"`
+		CachePingTTL     configutil.Duration              `json:"cachePingTTL,omitempty" yaml:"cachePingTTL,omitempty"`         // 0 = default, < 0 = disabled
+		Fallback         *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`                 // nil = disabled
+		NoBackendMessage *configutil.TextComponent        `yaml:"noBackendMessage,omitempty" json:"noBackendMessage,omitempty"` // The disconnect message when all backends for this route fail. Overrides the global noBackendMessage.
+		ProxyProtocol    bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
 		// Deprecated: use TCPShieldRealIP instead.
 		RealIP            bool     `json:"realIP,omitempty" yaml:"realIP,omitempty"`
 		TCPShieldRealIP   bool     `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
