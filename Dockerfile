@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.24.2 AS build
+FROM --platform=$BUILDPLATFORM golang:1.25.6 AS build
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -27,7 +27,7 @@ COPY --from=build /workspace/gate /
 ENTRYPOINT ["/gate"]
 
 # Move binary into final image (jre variant Gate image - temurin-25-jre-alpine)
-FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jre-alpine AS jre
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25.0.1_8-jre-alpine AS jre
 COPY --from=build /workspace/gate /usr/local/bin/gate
 ENV PATH=/opt/java/openjdk/bin:$PATH
 ENTRYPOINT ["/usr/local/bin/gate"]

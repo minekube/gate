@@ -1,9 +1,10 @@
 package chat
 
 import (
+	"io"
+
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"io"
 )
 
 type UnsignedPlayerCommand struct {
@@ -21,7 +22,8 @@ func (u *UnsignedPlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) err
 }
 
 func (u *UnsignedPlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
-	u.Command, err = util.ReadStringMax(rd, MaxServerBoundMessageLength)
+	// UnsignedPlayerCommand always uses 65536 cap since it's only available in 1.20.5+
+	u.Command, err = util.ReadStringMax(rd, util.DefaultMaxStringSize)
 	return err
 }
 

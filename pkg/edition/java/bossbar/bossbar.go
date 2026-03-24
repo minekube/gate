@@ -85,6 +85,20 @@ type Viewer interface {
 	proto.PacketWriter
 }
 
+// ManagedViewer is an optional interface for viewers that support boss bar management
+// during server transitions (1.20.2+). If a viewer implements this interface, the boss bar
+// will register/unregister with the viewer's manager and use WriteBossBarPacket for packets.
+type ManagedViewer interface {
+	Viewer
+	// RegisterBossBar registers a boss bar with this viewer's manager.
+	RegisterBossBar(bar BossBar)
+	// UnregisterBossBar unregisters a boss bar from this viewer's manager.
+	UnregisterBossBar(bar BossBar)
+	// WriteBossBarPacket writes a boss bar packet, respecting the dropping state.
+	// Returns true if the packet was written (or dropped intentionally).
+	WriteBossBarPacket(p *packet.BossBar) bool
+}
+
 // Color is the color of the percent bar.
 type Color = packet.Color
 

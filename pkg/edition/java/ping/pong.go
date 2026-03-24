@@ -61,10 +61,15 @@ func (p *ServerPing) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("error decoding json: %w", err)
 	}
 
-	var err error
-	out.Alias.Description, err = componentutil.ParseTextComponent(out.Version.Protocol, string(out.Description))
-	if err != nil {
-		return fmt.Errorf("error decoding description: %w", err)
+	// Handle null or missing description (e.g., from backend server ping passthrough)
+	if len(out.Description) == 0 || string(out.Description) == "null" {
+		out.Alias.Description = &component.Text{} // empty component
+	} else {
+		var err error
+		out.Alias.Description, err = componentutil.ParseTextComponent(out.Version.Protocol, string(out.Description))
+		if err != nil {
+			return fmt.Errorf("error decoding description: %w", err)
+		}
 	}
 
 	*p = ServerPing(out.Alias)

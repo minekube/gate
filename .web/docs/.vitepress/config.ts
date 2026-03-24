@@ -199,7 +199,7 @@ export default defineConfig({
           text: 'Configuration',
           items: [
             {
-              text: '📋 Complete Configuration',
+              text: '📋 Configuration & Templates',
               link: '/guide/config/',
             },
             {

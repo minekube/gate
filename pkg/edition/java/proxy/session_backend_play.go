@@ -170,15 +170,18 @@ func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSetting
 }
 
 func (b *backendPlaySessionHandler) handleBossBar(p *bossbar.BossBar, pc *proto.PacketContext) {
-	b.playerSessionHandler.mu.Lock()
-	switch p.Action {
-	case bossbar.AddAction:
-		b.playerSessionHandler.mu.serverBossBars[p.ID] = struct{}{}
-	case bossbar.RemoveAction:
-		delete(b.playerSessionHandler.mu.serverBossBars, p.ID)
-	default:
+	// Only track server boss bars for versions below 1.20.2.
+	// For 1.20.2+, the client clears boss bars during config phase anyway.
+	if b.serverConn.player.Protocol().Lower(version.Minecraft_1_20_2) {
+		b.playerSessionHandler.mu.Lock()
+		switch p.Action {
+		case bossbar.AddAction:
+			b.playerSessionHandler.mu.serverBossBars[p.ID] = struct{}{}
+		case bossbar.RemoveAction:
+			delete(b.playerSessionHandler.mu.serverBossBars, p.ID)
+		}
+		b.playerSessionHandler.mu.Unlock()
 	}
-	b.playerSessionHandler.mu.Unlock()
 	b.forwardToPlayer(pc, nil) // forward on
 }
 
@@ -187,11 +190,9 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	// Register and unregister packets are simply forwarded to the server as-is.
+	// Register and unregister packets from the backend must be forwarded to the client as-is.
 	if plugin.IsRegister(packet) || plugin.IsUnregister(packet) {
-		if serverMc, ok := b.serverConn.ensureConnected(); ok {
-			_ = serverMc.WritePacket(packet)
-		}
+		b.forwardToPlayer(pc, packet)
 		return
 	}
 

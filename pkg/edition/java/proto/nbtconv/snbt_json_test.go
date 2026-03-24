@@ -4,9 +4,214 @@ package nbtconv
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestDecodeCESU8(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "plain ascii",
+			input: "hello world",
+			want:  "hello world",
+		},
+		{
+			name:  "valid utf-8 passthrough",
+			input: "café ñ 日本語",
+			want:  "café ñ 日本語",
+		},
+		{
+			name: "U+1F600 grinning face - CESU-8 surrogate pair",
+			// U+1F600 → UTF-16: D83D DE00
+			// CESU-8 high surrogate D83D: ED A0 BD
+			// CESU-8 low surrogate  DE00: ED B8 80
+			input: "hello \xED\xA0\xBD\xED\xB8\x80 world",
+			want:  "hello 😀 world",
+		},
+		{
+			name: "U+1F4A9 pile of poo",
+			// U+1F4A9 → UTF-16: D83D DCA9
+			// High: ED A0 BD, Low: ED B2 A9
+			input: "\xED\xA0\xBD\xED\xB2\xA9",
+			want:  "💩",
+		},
+		{
+			name: "multiple surrogate pairs",
+			// Two emoji in a row: U+1F600 then U+1F4A9
+			input: "\xED\xA0\xBD\xED\xB8\x80\xED\xA0\xBD\xED\xB2\xA9",
+			want:  "😀💩",
+		},
+		{
+			name: "surrogate pair mixed with valid utf-8",
+			// "Test: 😀 done"
+			input: "Test: \xED\xA0\xBD\xED\xB8\x80 done",
+			want:  "Test: 😀 done",
+		},
+		{
+			name: "unpaired high surrogate replaced with U+FFFD",
+			// Just a high surrogate ED A0 BD with no low surrogate following.
+			// Each invalid byte produces its own U+FFFD per Go's utf8.DecodeRune.
+			input: "a\xED\xA0\xBDb",
+			want:  "a\uFFFD\uFFFD\uFFFDb",
+		},
+		{
+			name: "unpaired low surrogate replaced with U+FFFD",
+			// Just a low surrogate ED B8 80 with no preceding high surrogate
+			input: "a\xED\xB8\x80b",
+			want:  "a\uFFFD\uFFFD\uFFFDb",
+		},
+		{
+			name:  "empty string",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "single invalid byte",
+			input: "a\x80b",
+			want:  "a\uFFFDb",
+		},
+		{
+			name:  "multiple consecutive invalid bytes",
+			input: "\x80\x81\x82",
+			want:  "\uFFFD\uFFFD\uFFFD",
+		},
+		{
+			name:  "truncated 3-byte sequence",
+			input: "a\xED\xA0b",
+			want:  "a\uFFFD\uFFFDb",
+		},
+		{
+			name: "high surrogate at end of string (truncated pair)",
+			// High surrogate ED A0 BD at end with no low surrogate
+			input: "test\xED\xA0\xBD",
+			want:  "test\uFFFD\uFFFD\uFFFD",
+		},
+		{
+			name: "surrogate pair split by valid ascii",
+			// High surrogate, then ASCII 'x', then low surrogate — not a valid pair
+			input: "\xED\xA0\xBDx\xED\xB8\x80",
+			want:  "\uFFFD\uFFFD\uFFFDx\uFFFD\uFFFD\uFFFD",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := decodeCESU8(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestDecodeCESU8_AllByteValues(t *testing.T) {
+	// Verify decodeCESU8 always terminates for every possible single-byte value.
+	// This confirms the removed size==0 guard in the invalid byte path was dead code.
+	for b := 0; b <= 0xFF; b++ {
+		input := string([]byte{byte(b)})
+		got := decodeCESU8(input)
+		assert.NotEmpty(t, got, "byte 0x%02X should produce output", b)
+	}
+}
+
+func TestFormatSNBT(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "simple",
+			input: `{a:1,b:hello}`,
+			want:  `{a: 1, b: hello}`,
+		},
+		{
+			name:  "quoted value preserved",
+			input: `{a:"hello:world"}`,
+			want:  `{a: "hello:world"}`,
+		},
+		{
+			name:  "escaped quote inside string",
+			input: `{a:"he said \"hi\"",b:2}`,
+			want:  `{a: "he said \"hi\"", b: 2}`,
+		},
+		{
+			name:  "single quoted string with colon",
+			input: `{a:'hello:world',b:2}`,
+			want:  `{a: 'hello:world', b: 2}`,
+		},
+		{
+			name:  "escaped single quote",
+			input: `{a:'it\'s here',b:2}`,
+			want:  `{a: 'it\'s here', b: 2}`,
+		},
+		{
+			name:  "escaped backslash before quote",
+			input: `{a:"path\\",b:2}`,
+			want:  `{a: "path\\", b: 2}`,
+		},
+		{
+			name:  "empty key gets quoted",
+			input: `{:""}`,
+			want:  `{"": ""}`,
+		},
+		{
+			name:  "empty key after comma",
+			input: `{a:1,:""}`,
+			want:  `{a: 1, "": ""}`,
+		},
+		{
+			name:  "empty key in nested",
+			input: `{extra:[{:""}],text:}`,
+			want:  `{extra: [{"": ""}], text: }`,
+		},
+		{
+			name:  "normal key not affected",
+			input: `{text:hello}`,
+			want:  `{text: hello}`,
+		},
+		{
+			name:  "colon inside brackets does not produce empty key",
+			input: `{list:[a:1,b:2]}`,
+			want:  `{list: [a: 1, b: 2]}`,
+		},
+		{
+			name:  "nested brackets and braces",
+			input: `{a:[{b:1},{c:2}],d:3}`,
+			want:  `{a: [{b: 1}, {c: 2}], d: 3}`,
+		},
+		{
+			name:  "empty key at start of nested object inside array",
+			input: `{list:[{:"val"}]}`,
+			want:  `{list: [{"": "val"}]}`,
+		},
+		{
+			name:  "consecutive colons in quoted value",
+			input: `{a:"x::y",b:1}`,
+			want:  `{a: "x::y", b: 1}`,
+		},
+		{
+			name:  "empty input",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "deeply nested",
+			input: `{a:{b:{c:{d:1}}}}`,
+			want:  `{a: {b: {c: {d: 1}}}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatSNBT(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
 
 func TestSnbtToJSON(t *testing.T) {
 	tests := []struct {
@@ -25,6 +230,36 @@ func TestSnbtToJSON(t *testing.T) {
 			name:    "inception as string",
 			snbt:    `{a:1,b:"{c:2,d: {e: 3}}"}`,
 			want:    json.RawMessage(`{"a":1,"b":"{c:2,d: {e: 3}}"}`),
+			wantErr: false,
+		},
+		{
+			name:    "escaped quotes in value",
+			snbt:    `{text:"he said \"hello\""}`,
+			want:    json.RawMessage(`{"text":"he said \"hello\""}`),
+			wantErr: false,
+		},
+		{
+			name:    "colon in quoted value",
+			snbt:    `{text:"http://example.com"}`,
+			want:    json.RawMessage(`{"text":"http://example.com"}`),
+			wantErr: false,
+		},
+		{
+			name:    "empty compound",
+			snbt:    `{}`,
+			want:    json.RawMessage(`{}`),
+			wantErr: false,
+		},
+		{
+			name:    "nested compounds",
+			snbt:    `{a:{b:{c:deep}}}`,
+			want:    json.RawMessage(`{"a":{"b":{"c":"deep"}}}`),
+			wantErr: false,
+		},
+		{
+			name:    "array of values",
+			snbt:    `{list:[1,2,3]}`,
+			want:    json.RawMessage(`{"list":[1,2,3]}`),
 			wantErr: false,
 		},
 		// Add more test cases as needed
@@ -57,4 +292,68 @@ func TestSnbtToJSON(t *testing.T) {
 			assert.Equal(t, string(tt.want), string(got3))
 		})
 	}
+}
+
+func TestSnbtToJSON_WithCESU8(t *testing.T) {
+	// Simulate what BinaryTagToJSON does: SNBT containing CESU-8 surrogate pairs
+	// This is what tag.String() would produce for NBT strings with emoji.
+	// SnbtToJSON now handles decodeCESU8 internally.
+	cesu8SNBT := "{text: \"hello \xED\xA0\xBD\xED\xB8\x80 world\"}"
+
+	got, err := SnbtToJSON(cesu8SNBT)
+	assert.NoError(t, err)
+
+	// The JSON should contain the proper UTF-8 emoji
+	assert.Contains(t, string(got), "😀")
+	assert.Contains(t, string(got), "hello")
+	assert.Contains(t, string(got), "world")
+}
+
+func TestSnbtToJSON_NonObject(t *testing.T) {
+	// Non-object SNBT should be returned as a JSON string
+	got, err := SnbtToJSON("hello world")
+	assert.NoError(t, err)
+	assert.Equal(t, `"hello world"`, string(got))
+}
+
+func TestSnbtToJSON_YAMLBooleanCoercion(t *testing.T) {
+	// YAML interprets true/false/yes/no/null as special types, not strings.
+	// This documents the current behavior — YAML coerces these values.
+	snbt := `{a:true,b:false,c:null}`
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.True(t, json.Valid(got), "result should be valid JSON: %s", string(got))
+	// Document that YAML coerces these: true/false become booleans, null becomes null
+	assert.Contains(t, string(got), `"a":true`)
+	assert.Contains(t, string(got), `"b":false`)
+	assert.Contains(t, string(got), `"c":null`)
+}
+
+func TestSnbtToJSON_EmptyValue(t *testing.T) {
+	// Empty values (e.g. "text:") should parse as null/empty, not error
+	snbt := `{text:,other:hello}`
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.True(t, json.Valid(got), "result should be valid JSON: %s", string(got))
+	assert.Contains(t, string(got), `"other":"hello"`)
+}
+
+func TestSnbtToJSON_EmptyKeys(t *testing.T) {
+	// Real-world SNBT from a Minecraft server with empty keys in compound tags.
+	// The empty key pattern {: ""} is valid SNBT but invalid YAML flow mapping.
+	snbt := `{extra:[{color:"#FFFFFF",extra:["test"],text:},{:""},` +
+		`{color:"#AAAAAA",extra:[evlad],text:}],text:}`
+
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	// Verify it produced valid JSON
+	assert.True(t, json.Valid(got), "result should be valid JSON: %s", string(got))
+	// The empty key should be preserved
+	assert.Contains(t, string(got), `""`)
 }

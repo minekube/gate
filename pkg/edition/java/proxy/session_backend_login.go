@@ -160,6 +160,7 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			id:         identifier,
 			contents:   p.Data,
 			sequenceID: p.ID,
+			serverConn: b.serverConn,
 		}
 		b.eventMgr.Fire(e)
 		if e.Result().Allowed() {

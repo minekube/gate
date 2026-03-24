@@ -115,13 +115,17 @@ type connectionRequest struct {
 
 func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, error) {
 	result, err := c.internalConnect(ctx)
-	if err == nil {
+	if err == nil && !result.Status().Successful() {
 		if !result.safe {
 			// It's not safe to continue the connection, we need to shut it down.
-			c.player.handleConnectionErr(result.attemptedConn, err, true)
-		} else if !result.Status().Successful() {
-			c.player.resetInFlightConnection()
+			// Use the result's reason for the disconnect message.
+			reason := result.Reason()
+			if reason == nil {
+				reason = internalServerConnectionError
+			}
+			c.player.handleDisconnectWithReason(result.attemptedConn, reason, false)
 		}
+		c.player.resetInFlightConnection()
 	}
 	return result, err
 }

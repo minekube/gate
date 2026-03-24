@@ -363,7 +363,7 @@ Manual setup requires careful coordination of configurations, startup order, and
 
 ### Docker Compose Setup
 
-For containerized deployments:
+This example shows a **custom Geyser deployment** where Geyser runs in a separate container. For **managed mode** (Geyser runs inside Gate), use the JRE variant (`ghcr.io/minekube/gate/jre:latest`) instead. See the [Docker installation guide](install/docker#image-variants) for details.
 
 :::: code-group
 

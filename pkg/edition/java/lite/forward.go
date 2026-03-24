@@ -136,6 +136,26 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 
 type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
 
+// substituteBackendParams replaces $1, $2, etc. in the backend address template with captured groups.
+// If a parameter index is out of range or missing, it leaves the parameter as-is (e.g., "$99" stays "$99").
+func substituteBackendParams(template string, groups []string) string {
+	if len(groups) == 0 {
+		return template
+	}
+
+	result := template
+	// Replace $1, $2, etc. with captured groups
+	// We need to handle this carefully to avoid replacing $10 when we mean $1
+	// Process from highest index to lowest to avoid partial replacements
+	for i := len(groups); i >= 1; i-- {
+		param := fmt.Sprintf("$%d", i)
+		if i-1 < len(groups) {
+			result = strings.ReplaceAll(result, param, groups[i-1])
+		}
+	}
+	return result
+}
+
 func findRoute(
 	routes []config.Route,
 	log logr.Logger,
@@ -162,7 +182,7 @@ func findRoute(
 		"protocol", proto.Protocol(handshake.ProtocolVersion).String(),
 	)
 
-	host, route := FindRoute(clearedHost, routes...)
+	host, route, groups := FindRouteWithGroups(clearedHost, routes...)
 	if route == nil {
 		return log.V(1), src, nil, nil, fmt.Errorf("no route configured for host %s", clearedHost)
 	}
@@ -184,9 +204,20 @@ func findRoute(
 			return "", log, false
 		}
 
+		// Substitute parameters in backend address if groups were captured
+		if len(groups) > 0 {
+			backendAddr = substituteBackendParams(backendAddr, groups)
+		}
+
 		// Remove selected backend from list to avoid retrying it
 		for i, backend := range tryBackends {
-			normalizedBackend, err := netutil.Parse(backend, src.RemoteAddr().Network())
+			// Apply parameter substitution to the original backend for comparison
+			originalBackend := backend
+			if len(groups) > 0 {
+				originalBackend = substituteBackendParams(backend, groups)
+			}
+
+			normalizedBackend, err := netutil.Parse(originalBackend, src.RemoteAddr().Network())
 			if err != nil {
 				continue
 			}

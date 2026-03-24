@@ -45,6 +45,89 @@ config:
         backend: [10.0.0.2:25566]
 ```
 
+## Hostname Parameter Routing
+
+Gate Lite supports extracting parts of hostnames using wildcard patterns and using them in backend addresses via `$1`, `$2`, etc. parameters. This enables dynamic routing where parts of the hostname are used to construct the backend address.
+
+:::: code-group
+
+```yaml [Basic Usage]
+lite:
+  routes:
+    # Extract subdomain and use it in backend address
+    - host: '*.domain.com'
+      backend: '$1.servers.svc:25565'
+    # Example: abc.domain.com → abc.servers.svc:25565
+```
+
+```yaml [Multiple Parameters]
+lite:
+  routes:
+    # Capture multiple parts
+    - host: '*.*.example.com'
+      backend: '$1-$2.servers.svc:25565'
+    # Example: abc.def.example.com → abc-def.servers.svc:25565
+
+    # Use parameters in different order
+    - host: '*.subdomain.*'
+      backend: '$2.$1.backend:25565'
+    # Example: abc.subdomain.com → com.abc.backend:25565
+```
+
+```yaml [Question Mark Wildcard]
+lite:
+  routes:
+    # Using ? for single character matching
+    - host: '?.example.com'
+      backend: 'server-$1:25565'
+    # Example: a.example.com → server-a:25565
+```
+
+```yaml [Real-World Example]
+lite:
+  routes:
+    # Route abc.domain.com to abc.servers.svc:25565
+    - host: '*.domain.com'
+      backend: '$1.servers.svc:25565'
+
+    # Route abc.def.domain.com to abc-def.servers.svc:25565
+    - host: '*.*.domain.com'
+      backend: '$1-$2.servers.svc:25565'
+```
+
+::::
+
+### Parameter Indexing
+
+- `$1` refers to the first wildcard match (`*` or `?`)
+- `$2` refers to the second wildcard match
+- `$3` refers to the third wildcard match
+- And so on...
+
+Wildcards are numbered in the order they appear in the pattern from left to right.
+
+### Wildcard Types
+
+- `*` matches any sequence of characters (including empty) and captures it
+- `?` matches any single character and captures it
+
+### Edge Cases
+
+- If a parameter index is out of range (e.g., `$99` when only 2 groups are captured), it remains as-is in the backend address
+- If no wildcards are present in the pattern, parameters in the backend address are not substituted
+- Empty captures (e.g., `*` matching empty string) result in empty strings in the backend address
+
+::: tip Config Validation
+
+Gate validates your configuration and will warn you about invalid parameter usage:
+
+- **Parameters without wildcards**: If you use `$1` in a backend address but the host pattern has no wildcards, Gate will warn that parameters won't be substituted
+- **Out-of-range parameters**: If you use `$2` but the pattern only has one wildcard, Gate will warn that the parameter exceeds available wildcards
+
+These are warnings, not errors - your configuration will still work, but parameters will remain as literal text (e.g., `$1.servers.svc:25565` instead of being substituted).
+
+:::
+
 ## Load Balancing Strategies
 
 When multiple backends are configured, Gate Lite can distribute connections using different strategies.

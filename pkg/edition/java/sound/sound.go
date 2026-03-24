@@ -37,14 +37,14 @@ const (
 
 // Player represents a player that can play and stop sounds.
 // This is typically a *connectedPlayer from the proxy package.
+//
+// The Play function uses type assertions to access additional methods
+// (CurrentServerEntityID, CheckServerMatch) that are not part of this
+// interface, allowing API users to pass proxy.Player without requiring
+// those methods in the proxy.Player interface.
 type Player interface {
 	proto.PacketWriter
 	Protocol() proto.Protocol
-	// CurrentServerEntityID returns the entity ID of the player on their current server.
-	// Returns false if the player is not connected to a server.
-	CurrentServerEntityID() (int, bool)
-	// CheckServerMatch checks if the other player is on the same server.
-	CheckServerMatch(other interface{ CurrentServerEntityID() (int, bool) }) bool
 }
 
 // ParseSource parses a sound source from a string.
@@ -110,8 +110,22 @@ func Play(player Player, sound Sound, emitter Player) error {
 		return fmt.Errorf("%w: player is on %s", ErrUISourceUnsupported, player.Protocol())
 	}
 
+	// Type assert to access server entity methods that are not part of the Player interface.
+	// This allows API users to pass proxy.Player without requiring those methods in the interface.
+	type entityIDProvider interface {
+		CurrentServerEntityID() (int, bool)
+	}
+	type serverMatcher interface {
+		CheckServerMatch(other interface{ CurrentServerEntityID() (int, bool) }) bool
+	}
+
+	entityProvider, ok := player.(entityIDProvider)
+	if !ok {
+		return fmt.Errorf("player does not implement required methods for sound playback")
+	}
+
 	// Get target player's entity ID
-	targetEntityID, ok := player.CurrentServerEntityID()
+	targetEntityID, ok := entityProvider.CurrentServerEntityID()
 	if !ok {
 		return ErrNotConnected
 	}
@@ -122,11 +136,20 @@ func Play(player Player, sound Sound, emitter Player) error {
 		// Self emitter
 		emitterEntityID = targetEntityID
 	} else if emitter != nil {
+		// Type assert emitter to entityIDProvider
+		emitterProvider, ok := emitter.(entityIDProvider)
+		if !ok {
+			return ErrInvalidEmitter
+		}
 		// Check if emitter is on the same server
-		if !player.CheckServerMatch(emitter) {
+		matcher, ok := player.(serverMatcher)
+		if !ok {
+			return fmt.Errorf("player does not implement CheckServerMatch")
+		}
+		if !matcher.CheckServerMatch(emitterProvider) {
 			return ErrDifferentServers
 		}
-		emitterEntityID, ok = emitter.CurrentServerEntityID()
+		emitterEntityID, ok = emitterProvider.CurrentServerEntityID()
 		if !ok {
 			return ErrEmitterNotConnected
 		}

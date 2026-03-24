@@ -1061,6 +1061,26 @@ func (e *PlayerChannelRegisterEvent) Player() Player {
 //
 //
 
+// PlayerChannelUnregisterEvent is fired when a client Player sends a plugin message through the
+// unregister channel. The proxy will not wait on this event to finish firing.
+type PlayerChannelUnregisterEvent struct {
+	channels []message.ChannelIdentifier
+	player   Player
+}
+
+func (e *PlayerChannelUnregisterEvent) Channels() []message.ChannelIdentifier {
+	return e.channels
+}
+
+func (e *PlayerChannelUnregisterEvent) Player() Player {
+	return e.player
+}
+
+//
+//
+//
+//
+
 // ServerLoginPluginMessageEvent is fired when a server sends a login plugin message to the proxy.
 // Plugins have the opportunity to respond to the messages as needed. The proxy will wait on this
 // event to finish. The server will be responsible for continuing the login process once the server
@@ -1069,6 +1089,7 @@ type ServerLoginPluginMessageEvent struct {
 	id         message.ChannelIdentifier
 	contents   []byte
 	sequenceID int
+	serverConn *serverConnection
 
 	result ServerLoginPluginMessageResult
 }
@@ -1081,6 +1102,11 @@ func (e *ServerLoginPluginMessageEvent) Contents() []byte {
 // SequenceID returns the sequence id of the login plugin message sent by the server.
 func (e *ServerLoginPluginMessageEvent) SequenceID() int {
 	return e.sequenceID
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerLoginPluginMessageEvent) ServerConnection() ServerConnection {
+	return e.serverConn
 }
 
 func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {

@@ -150,7 +150,8 @@ type connectedPlayer struct {
 	clientsideChannels                 *sets.CappedSet[string]
 	pendingConfigurationSwitch         bool
 
-	tabList internaltablist.InternalTabList // Player's tab list
+	tabList        internaltablist.InternalTabList // Player's tab list
+	bossBarManager *bossBarManager                 // Boss bar manager for 1.20.2+
 
 	mu                   sync.RWMutex // Protects following fields
 	connectedServer_     *serverConnection
@@ -201,10 +202,15 @@ func newConnectedPlayer(
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
 	p.chatQueue = newChatQueue(p)
 	p.tabList = internaltablist.New(p)
+	p.bossBarManager = newBossBarManager(p)
 	return p
 }
 
 func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }
+
+// BossBarManager returns the player's boss bar manager.
+// It is used to handle proxy-level boss bars during server transitions on 1.20.2+.
+func (p *connectedPlayer) BossBarManager() *bossBarManager { return p.bossBarManager }
 
 func (p *connectedPlayer) connectionInFlight() *serverConnection {
 	p.mu.RLock()

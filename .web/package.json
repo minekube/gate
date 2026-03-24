@@ -9,9 +9,12 @@
     "serve": "pnpm exec vitepress serve docs"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251117.0",
+    "@types/node": "^20.14.0",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.20",
     "tailwindcss": "^3.2.4",
+    "typescript": "^5.9.3",
     "vitepress": "^1.6.4",
     "vue": "^3.2.45"
   },
@@ -22,6 +25,8 @@
     }
   },
   "dependencies": {
+    "@octokit/auth-app": "^8.1.2",
+    "@octokit/core": "^7.0.6",
     "posthog-js": "^1.93.3"
   }
 }

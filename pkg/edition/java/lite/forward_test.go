@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
@@ -32,9 +33,7 @@ func TestDecodeStatusResponse_WithErrDecoderLeftBytes(t *testing.T) {
 		t.Errorf("decodeStatusResponse should ignore ErrDecoderLeftBytes (issue #297), got error: %v", err)
 	}
 
-	if result == nil {
-		t.Fatal("decodeStatusResponse returned nil result")
-	}
+	require.NotNil(t, result, "decodeStatusResponse returned nil result")
 
 	// Verify the status response was properly decoded
 	expectedStatus := `{"version":{"name":"Test","protocol":754},"players":{"online":5,"max":20},"description":"Test Server"}`
@@ -89,9 +88,7 @@ func TestDecodeStatusResponse_Success(t *testing.T) {
 		t.Errorf("decodeStatusResponse should succeed, got error: %v", err)
 	}
 
-	if result == nil {
-		t.Fatal("decodeStatusResponse returned nil result")
-	}
+	require.NotNil(t, result, "decodeStatusResponse returned nil result")
 
 	// Verify the status response
 	expectedStatus := `{"version":{"name":"Normal","protocol":754},"players":{"online":10,"max":50}}`
@@ -131,4 +128,101 @@ type mockDecoder struct {
 
 func (m *mockDecoder) Decode() (*proto.PacketContext, error) {
 	return m.packetCtx, m.err
+}
+
+func Test_substituteBackendParams(t *testing.T) {
+	tests := []struct {
+		name     string
+		template string
+		groups   []string
+		want     string
+	}{
+		{
+			name:     "single parameter",
+			template: "$1.servers.svc:25565",
+			groups:   []string{"abc"},
+			want:     "abc.servers.svc:25565",
+		},
+		{
+			name:     "multiple parameters",
+			template: "$1-$2.servers.svc:25565",
+			groups:   []string{"abc", "def"},
+			want:     "abc-def.servers.svc:25565",
+		},
+		{
+			name:     "three parameters",
+			template: "$1.$2.$3.servers.svc:25565",
+			groups:   []string{"a", "b", "c"},
+			want:     "a.b.c.servers.svc:25565",
+		},
+		{
+			name:     "parameter in middle",
+			template: "prefix-$1-suffix:25565",
+			groups:   []string{"middle"},
+			want:     "prefix-middle-suffix:25565",
+		},
+		{
+			name:     "multiple same parameter",
+			template: "$1.$1.servers.svc:25565",
+			groups:   []string{"abc"},
+			want:     "abc.abc.servers.svc:25565",
+		},
+		{
+			name:     "no groups",
+			template: "$1.servers.svc:25565",
+			groups:   []string{},
+			want:     "$1.servers.svc:25565",
+		},
+		{
+			name:     "no parameters in template",
+			template: "static.backend:25565",
+			groups:   []string{"abc", "def"},
+			want:     "static.backend:25565",
+		},
+		{
+			name:     "out of range parameter",
+			template: "$1.$99.servers.svc:25565",
+			groups:   []string{"abc"},
+			want:     "abc.$99.servers.svc:25565",
+		},
+		{
+			name:     "parameter index beyond groups",
+			template: "$1.$2.$3.servers.svc:25565",
+			groups:   []string{"abc", "def"},
+			want:     "abc.def.$3.servers.svc:25565",
+		},
+		{
+			name:     "empty group value",
+			template: "$1.servers.svc:25565",
+			groups:   []string{""},
+			want:     ".servers.svc:25565",
+		},
+		{
+			name:     "real world example",
+			template: "$1.servers.svc:25565",
+			groups:   []string{"abc"},
+			want:     "abc.servers.svc:25565",
+		},
+		{
+			name:     "parameter with port",
+			template: "$1.servers.svc:$2",
+			groups:   []string{"abc", "25565"},
+			want:     "abc.servers.svc:25565",
+		},
+		{
+			name:     "higher index first",
+			template: "$2.$1.servers.svc:25565",
+			groups:   []string{"abc", "def"},
+			want:     "def.abc.servers.svc:25565",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := substituteBackendParams(tt.template, tt.groups)
+			if got != tt.want {
+				t.Errorf("substituteBackendParams(%q, %v) = %q, want %q", tt.template, tt.groups, got, tt.want)
+			}
+		})
+	}
 }
