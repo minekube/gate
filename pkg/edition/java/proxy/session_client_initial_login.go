@@ -161,7 +161,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
 			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
-				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false)
+				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false, "")
 				l.conn.SetActiveSessionHandler(state.Login, sh)
 				return nil
 			}
@@ -180,7 +180,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		}
 
 		// Offline mode login
-		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false)
+		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false, "")
 		l.conn.SetActiveSessionHandler(state.Login, sh)
 		return nil
 	})
@@ -190,11 +190,13 @@ func (l *initialLoginSessionHandler) newAuthSessionHandler(
 	inbound *loginInboundConn,
 	profile *profile.GameProfile,
 	onlineMode bool,
+	serverIdHash string,
 ) netmc.SessionHandler {
 	return newAuthSessionHandler(
 		inbound,
 		profile,
 		onlineMode,
+		serverIdHash,
 		l.sessionHandlerDeps,
 	)
 }
@@ -317,7 +319,7 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 	}
 
 	// All went well, initialize the session.
-	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true)
+	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true, serverID)
 	l.conn.SetActiveSessionHandler(state.Login, sh)
 }
 

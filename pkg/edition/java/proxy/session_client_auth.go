@@ -21,10 +21,11 @@ import (
 type authSessionHandler struct {
 	*sessionHandlerDeps
 
-	log        logr.Logger
-	inbound    *loginInboundConn
-	profile    *profile.GameProfile
-	onlineMode bool
+	log          logr.Logger
+	inbound      *loginInboundConn
+	profile      *profile.GameProfile
+	onlineMode   bool
+	serverIdHash string
 
 	loginState *atomic.Pointer[authLoginState] // 1.20.2+
 
@@ -49,6 +50,7 @@ func newAuthSessionHandler(
 	inbound *loginInboundConn,
 	profile *profile.GameProfile,
 	onlineMode bool,
+	serverIdHash string,
 	sessionHandlerDeps *sessionHandlerDeps,
 ) netmc.SessionHandler {
 	var defaultState atomic.Pointer[authLoginState]
@@ -60,6 +62,7 @@ func newAuthSessionHandler(
 		inbound:            inbound,
 		profile:            profile,
 		onlineMode:         onlineMode,
+		serverIdHash:       serverIdHash,
 	}
 }
 
@@ -163,7 +166,7 @@ func (a *authSessionHandler) startLoginCompletion(player *connectedPlayer) {
 }
 
 func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *connectedPlayer) {
-	loginEvent := &LoginEvent{player: player}
+	loginEvent := &LoginEvent{player: player, serverIdHash: a.serverIdHash}
 	// should fire event in sync to retain unlocked decoder to update state
 	a.eventMgr.Fire(loginEvent)
 	if !player.Active() {
