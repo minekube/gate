@@ -69,7 +69,7 @@ func (t *testMinecraftConn) Type() phase.ConnectionType {
 	}
 	return phase.Vanilla
 }
-func (t *testMinecraftConn) SetType(ct phase.ConnectionType) { t.connType = ct }
+func (t *testMinecraftConn) SetType(ct phase.ConnectionType)            { t.connType = ct }
 func (t *testMinecraftConn) ActiveSessionHandler() netmc.SessionHandler { return nil }
 func (t *testMinecraftConn) SetActiveSessionHandler(*state.Registry, netmc.SessionHandler) {
 }
