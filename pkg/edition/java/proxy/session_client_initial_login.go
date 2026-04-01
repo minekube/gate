@@ -190,13 +190,13 @@ func (l *initialLoginSessionHandler) newAuthSessionHandler(
 	inbound *loginInboundConn,
 	profile *profile.GameProfile,
 	onlineMode bool,
-	serverIdHash string,
+	serverIDHash string,
 ) netmc.SessionHandler {
 	return newAuthSessionHandler(
 		inbound,
 		profile,
 		onlineMode,
-		serverIdHash,
+		serverIDHash,
 		l.sessionHandlerDeps,
 	)
 }

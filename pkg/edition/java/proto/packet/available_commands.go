@@ -155,7 +155,7 @@ func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
 	if err != nil {
 		return err
 	}
-	wireNodes := make([]*WireNode, 0, min(commands, 1<<15))
+	wireNodes := make([]*WireNode, 0, min(commands, util.MaxPreAllocSize))
 	for i := 0; i < commands; i++ {
 		wn := &WireNode{IDx: i}
 		if err = wn.decode(rd, c.Protocol); err != nil {

@@ -46,9 +46,9 @@ func readStringMax(rd io.Reader, max, length int) (string, error) {
 	return string(str), nil
 }
 
-// maxPreAllocSize is the maximum pre-allocation size for collections
+// MaxPreAllocSize is the maximum pre-allocation size for collections
 // decoded from untrusted packet data to prevent memory exhaustion.
-const maxPreAllocSize = 1 << 15 // 32768 (math.MaxInt16)
+const MaxPreAllocSize = 1 << 15 // 32768 (math.MaxInt16)
 
 func ReadStringArray(rd io.Reader) ([]string, error) {
 	length, err := ReadVarInt(rd)
@@ -58,7 +58,7 @@ func ReadStringArray(rd io.Reader) ([]string, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	a := make([]string, 0, min(length, maxPreAllocSize))
+	a := make([]string, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
 		s, err := ReadString(rd)
 		if err != nil {
@@ -164,7 +164,7 @@ func ReadVarIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	array := make([]int, 0, min(length, maxPreAllocSize))
+	array := make([]int, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
 		v, err := ReadVarInt(rd)
 		if err != nil {
@@ -246,7 +246,7 @@ func ReadIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got negative-length int array (%d)", length)
 	}
-	a := make([]int, 0, min(length, maxPreAllocSize))
+	a := make([]int, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
 		v, err := ReadVarInt(rd)
 		if err != nil {
@@ -378,7 +378,7 @@ func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
 	if err != nil {
 		return
 	}
-	props = make([]profile.Property, 0, size)
+	props = make([]profile.Property, 0, min(size, MaxPreAllocSize))
 	var name, value, signature string
 	for i := 0; i < size; i++ {
 		name, err = ReadString(rd)
@@ -466,12 +466,13 @@ func ReadKeyArray(rd io.Reader) ([]key.Key, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	keys := make([]key.Key, length)
+	keys := make([]key.Key, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
-		keys[i], err = ReadKey(rd)
+		k, err := ReadKey(rd)
 		if err != nil {
 			return nil, err
 		}
+		keys = append(keys, k)
 	}
 	return keys, nil
 }

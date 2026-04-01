@@ -32,7 +32,7 @@ func (r *Remove) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	r.PlayersToRemove = make([]uuid.UUID, 0, min(count, 1<<15))
+	r.PlayersToRemove = make([]uuid.UUID, 0, min(count, util.MaxPreAllocSize))
 	for i := 0; i < count; i++ {
 		id, err := util.ReadUUID(rd)
 		if err != nil {
