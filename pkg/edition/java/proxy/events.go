@@ -324,10 +324,17 @@ func (e *PreLoginEvent) ForceOfflineMode() {
 //
 
 type LoginEvent struct {
-	player Player
+	player       Player
+	serverIDHash string // server ID hash sent to Mojang for authentication, empty if offline-mode
 
 	denied bool
 	reason component.Component
+}
+
+// ServerIDHash returns the server ID hash that was sent to Mojang to authenticate the player.
+// Returns empty string if the connection was in offline-mode.
+func (e *LoginEvent) ServerIDHash() string {
+	return e.serverIDHash
 }
 
 func (e *LoginEvent) Player() Player {

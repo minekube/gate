@@ -54,6 +54,7 @@ func TestBackendPlayRegisterForwardsToPlayer(t *testing.T) {
 
 type testMinecraftConn struct {
 	writtenPackets []proto.Packet
+	connType       phase.ConnectionType
 }
 
 func (t *testMinecraftConn) Context() context.Context { return context.Background() }
@@ -63,9 +64,12 @@ func (t *testMinecraftConn) Protocol() proto.Protocol { return version.Minecraft
 func (t *testMinecraftConn) RemoteAddr() net.Addr     { return &net.TCPAddr{} }
 func (t *testMinecraftConn) LocalAddr() net.Addr      { return &net.TCPAddr{} }
 func (t *testMinecraftConn) Type() phase.ConnectionType {
+	if t.connType != nil {
+		return t.connType
+	}
 	return phase.Vanilla
 }
-func (t *testMinecraftConn) SetType(phase.ConnectionType)               {}
+func (t *testMinecraftConn) SetType(ct phase.ConnectionType)            { t.connType = ct }
 func (t *testMinecraftConn) ActiveSessionHandler() netmc.SessionHandler { return nil }
 func (t *testMinecraftConn) SetActiveSessionHandler(*state.Registry, netmc.SessionHandler) {
 }

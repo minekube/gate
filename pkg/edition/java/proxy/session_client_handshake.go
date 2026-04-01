@@ -184,8 +184,15 @@ func stateForProtocol(status int) *state.Registry {
 }
 
 func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
+	// Modern Forge 1.20.2+ uses the FORGE token.
 	if strings.Contains(h.ServerAddress, modernforge.Token) &&
 		h.ProtocolVersion >= int(version.Minecraft_1_20_2.Protocol) {
+		return phase.ModernForge
+	}
+	// Modern Forge 1.13-1.20.1 uses FML2 (1.13-1.17) or FML3 (1.18-1.20.1) tokens.
+	if h.ProtocolVersion >= int(version.Minecraft_1_13.Protocol) &&
+		(strings.Contains(h.ServerAddress, "\000FML2\000") ||
+			strings.Contains(h.ServerAddress, "\000FML3\000")) {
 		return phase.ModernForge
 	}
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
@@ -197,8 +204,6 @@ func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 		// forge handshake attempts. Also sends a reset handshake packet on every transition.
 		return phase.Undetermined17
 	}
-	// Note for future implementation: Forge 1.13+ identifies
-	// itself using a slightly different hostname token.
 	return phase.Vanilla
 }
 

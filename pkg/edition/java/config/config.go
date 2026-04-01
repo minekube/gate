@@ -204,7 +204,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	for _, quota := range []QuotaSettings{c.Quota.Connections, c.Quota.Logins} {
 		if quota.Enabled {
 			if quota.OPS <= 0 {
-				e("Invalid quota ops %d, use a number > 0", quota.OPS)
+				e("Invalid quota ops %g, use a number > 0", quota.OPS)
 			}
 			if quota.Burst < 1 {
 				e("Invalid quota burst %d, use a number >= 1", quota.Burst)

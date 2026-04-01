@@ -344,7 +344,11 @@ func (c *minecraftConn) bufferPacket(packet proto.Packet, canQueue bool) (err er
 		c.mu.Lock()
 		playPacketQueue := c.playPacketQueue
 		c.mu.Unlock()
-		if playPacketQueue.Queue(packet) {
+		queued, queueErr := playPacketQueue.Queue(packet)
+		if queueErr != nil {
+			return queueErr
+		}
+		if queued {
 			// Packet was queued, don't write it now
 			c.log.V(1).Info("queued packet", "packet", fmt.Sprintf("%T", packet))
 			return nil

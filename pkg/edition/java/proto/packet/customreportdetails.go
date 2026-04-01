@@ -24,7 +24,7 @@ func (p *CustomReportDetails) Decode(c *proto.PacketContext, rd io.Reader) (err 
 	r := protoutil.PanicReader(rd)
 	var detailsCount int
 	r.VarInt(&detailsCount)
-	p.Details = make(map[string]string, detailsCount)
+	p.Details = make(map[string]string, min(detailsCount, protoutil.MaxPreAllocSize))
 	for i := 0; i < detailsCount; i++ {
 		var key, value string
 		r.String(&key)
