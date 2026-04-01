@@ -249,25 +249,22 @@ func TestReadVarIntReturnN(t *testing.T) {
 
 func TestReadStringArray_NegativeLength(t *testing.T) {
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, -1)
+	require.NoError(t, WriteVarInt(buf, -1))
 	_, err := ReadStringArray(buf)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "negative-length")
 }
 
 func TestReadStringArray_CappedAllocation(t *testing.T) {
-	// Write a huge length but provide no actual data.
-	// Without capping, this would try to allocate a massive slice.
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, 1<<30) // 1 billion
+	require.NoError(t, WriteVarInt(buf, 1<<30))
 	_, err := ReadStringArray(buf)
-	// Should fail on reading the first string, not on allocation
 	require.Error(t, err)
 }
 
 func TestReadVarIntArray_NegativeLength(t *testing.T) {
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, -1)
+	require.NoError(t, WriteVarInt(buf, -1))
 	_, err := ReadVarIntArray(buf)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "negative-length")
@@ -275,14 +272,14 @@ func TestReadVarIntArray_NegativeLength(t *testing.T) {
 
 func TestReadVarIntArray_CappedAllocation(t *testing.T) {
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, 1<<30)
+	require.NoError(t, WriteVarInt(buf, 1<<30))
 	_, err := ReadVarIntArray(buf)
 	require.Error(t, err)
 }
 
 func TestReadIntArray_NegativeLength(t *testing.T) {
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, -1)
+	require.NoError(t, WriteVarInt(buf, -1))
 	_, err := ReadIntArray(buf)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "negative-length")
@@ -291,9 +288,9 @@ func TestReadIntArray_NegativeLength(t *testing.T) {
 func TestReadStringArray_Roundtrip(t *testing.T) {
 	want := []string{"hello", "world", "test"}
 	buf := new(bytes.Buffer)
-	WriteVarInt(buf, len(want))
+	require.NoError(t, WriteVarInt(buf, len(want)))
 	for _, s := range want {
-		WriteString(buf, s)
+		require.NoError(t, WriteString(buf, s))
 	}
 	got, err := ReadStringArray(buf)
 	require.NoError(t, err)
@@ -303,7 +300,7 @@ func TestReadStringArray_Roundtrip(t *testing.T) {
 func TestReadVarIntArray_Roundtrip(t *testing.T) {
 	want := []int{1, 42, -7, 0, 300}
 	buf := new(bytes.Buffer)
-	WriteVarIntArray(buf, want)
+	require.NoError(t, WriteVarIntArray(buf, want))
 	got, err := ReadVarIntArray(buf)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
