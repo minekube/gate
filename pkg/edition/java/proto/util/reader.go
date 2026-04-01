@@ -46,12 +46,19 @@ func readStringMax(rd io.Reader, max, length int) (string, error) {
 	return string(str), nil
 }
 
+// maxPreAllocSize is the maximum pre-allocation size for collections
+// decoded from untrusted packet data to prevent memory exhaustion.
+const maxPreAllocSize = 1 << 15 // 32768 (math.MaxInt16)
+
 func ReadStringArray(rd io.Reader) ([]string, error) {
 	length, err := ReadVarInt(rd)
 	if err != nil {
 		return nil, err
 	}
-	a := make([]string, 0, length)
+	if length < 0 {
+		return nil, fmt.Errorf("got a negative-length array (%d)", length)
+	}
+	a := make([]string, 0, min(length, maxPreAllocSize))
 	for i := 0; i < length; i++ {
 		s, err := ReadString(rd)
 		if err != nil {
@@ -157,12 +164,13 @@ func ReadVarIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	array := make([]int, length)
+	array := make([]int, 0, min(length, maxPreAllocSize))
 	for i := 0; i < length; i++ {
-		array[i], err = ReadVarInt(rd)
+		v, err := ReadVarInt(rd)
 		if err != nil {
 			return nil, err
 		}
+		array = append(array, v)
 	}
 	return array, nil
 }
@@ -238,12 +246,13 @@ func ReadIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got negative-length int array (%d)", length)
 	}
-	a := make([]int, length)
+	a := make([]int, 0, min(length, maxPreAllocSize))
 	for i := 0; i < length; i++ {
-		a[i], err = ReadVarInt(rd)
+		v, err := ReadVarInt(rd)
 		if err != nil {
 			return nil, err
 		}
+		a = append(a, v)
 	}
 	return a, nil
 }
