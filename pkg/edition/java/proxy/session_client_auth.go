@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
+	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -187,11 +188,36 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 		return
 	}
 
-	if player.WritePacket(&packet.ServerLoginSuccess{
+	loginSuccess := &packet.ServerLoginSuccess{
 		UUID:       player.ID(),
 		Username:   player.Username(),
 		Properties: player.GameProfile().Properties,
-	}) != nil {
+	}
+
+	// For Modern Forge clients on pre-1.20.2, delay sending LoginSuccess so the
+	// client remains in the LOGIN state during the backend FML handshake relay.
+	// The relay will send LoginSuccess after the FML negotiation completes.
+	if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) && player.Type() == phase.ModernForge {
+		a.log.Info("delaying LoginSuccess for Modern Forge FML handshake relay")
+		relay := newModernForgeLoginRelay(a.inbound, player, loginSuccess)
+		player.mu.Lock()
+		player.forgeLoginRelay = relay
+		player.mu.Unlock()
+
+		// Clear the login completion callback to prevent it from firing
+		// during the relay when outstanding responses go to zero.
+		a.inbound.clearOnAllMessagesHandled()
+
+		a.loginState.Store(&successSentAuthLoginState)
+		a.loginState.Store(&acknowledgedAuthLoginState)
+
+		// Connect to initial server in a separate goroutine so the client's
+		// read loop can process LoginPluginResponse packets for the FML relay.
+		go a.connectToInitialServer(player)
+		return
+	}
+
+	if player.WritePacket(loginSuccess) != nil {
 		return
 	}
 
@@ -237,6 +263,8 @@ func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	switch t := pc.Packet.(type) {
 	case *packet.LoginAcknowledged:
 		a.handleLoginAcknowledged()
+	case *packet.LoginPluginResponse:
+		a.handleLoginPluginResponse(t)
 	case *cookie.CookieResponse:
 		a.handleCookieResponse(t)
 	default:
@@ -248,6 +276,15 @@ func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		_ = a.inbound.delegate.Close()
 	}
 
+}
+
+// handleLoginPluginResponse handles LoginPluginResponse packets during the
+// Modern Forge login relay. The loginInboundConn dispatches to the relay
+// consumer which forwards the response to the backend.
+func (a *authSessionHandler) handleLoginPluginResponse(p *packet.LoginPluginResponse) {
+	if err := a.inbound.handleLoginPluginResponse(p); err != nil {
+		a.log.Error(err, "error handling login plugin response during forge relay")
+	}
 }
 
 func (a *authSessionHandler) config() *config.Config {
