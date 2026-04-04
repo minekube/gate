@@ -34,10 +34,9 @@ type modernForgeLoginRelay struct {
 // forgeLoginExchange records a single FML LoginPluginMessage exchange
 // between the backend and client, for replay during server switch.
 type forgeLoginExchange struct {
-	Channel  string
-	Request  []byte // data sent by backend
-	Response []byte // data from client (nil if client rejected)
-	Success  bool
+	channel  string
+	request  []byte // data sent by backend
+	response []byte // data from client (nil if rejected)
 }
 
 func newModernForgeLoginRelay(
@@ -109,10 +108,9 @@ func (c *forgeRelayConsumer) OnMessageResponse(responseBody []byte) error {
 	// Cache the exchange for server switch replay.
 	c.relay.mu.Lock()
 	c.relay.cachedExchanges = append(c.relay.cachedExchanges, forgeLoginExchange{
-		Channel:  c.channel,
-		Request:  c.requestData,
-		Response: responseBody,
-		Success:  responseBody != nil,
+		channel:  c.channel,
+		request:  c.requestData,
+		response: responseBody,
 	})
 	c.relay.mu.Unlock()
 
@@ -160,7 +158,7 @@ func (r *modernForgeReplayRelay) replayResponse(
 
 	return backendConn.WritePacket(&packet.LoginPluginResponse{
 		ID:      backendMsgID,
-		Success: exchange.Success,
-		Data:    exchange.Response,
+		Success: exchange.response != nil,
+		Data:    exchange.response,
 	})
 }

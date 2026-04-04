@@ -141,8 +141,9 @@ func (l *loginInboundConn) loginEventFired(onAllMessagesHandled func() error) er
 	return l.delegate.Flush()
 }
 
-// clearOnAllMessagesHandled removes the onAllMessagesHandled callback
-// to prevent it from firing during the Modern Forge login relay.
+// clearOnAllMessagesHandled removes the onAllMessagesHandled callback.
+// Called before the Modern Forge login relay to prevent the PreLogin
+// completion callback from re-firing when relay responses are processed.
 func (l *loginInboundConn) clearOnAllMessagesHandled() {
 	l.onAllMessagesHandled = nil
 }

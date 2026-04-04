@@ -428,7 +428,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	// respond to the new backend's fml:loginwrapper messages on behalf of
 	// the client (which is already in PLAY state).
 	s.player.mu.Lock()
-	if s.player.forgeLoginCache != nil && s.player.CurrentServer() != nil {
+	if s.player.forgeLoginCache != nil && s.player.connectedServer_ != nil {
 		s.player.forgeReplayRelay = newModernForgeReplayRelay(s.player.forgeLoginCache)
 	}
 	s.player.mu.Unlock()

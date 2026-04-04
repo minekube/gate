@@ -46,9 +46,9 @@ func TestModernForgeRelay_Complete(t *testing.T) {
 // replayed during a server switch.
 func TestModernForgeReplayRelay(t *testing.T) {
 	cached := []forgeLoginExchange{
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x01}, Response: []byte{0x02, 0x00}, Success: true},
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x03}, Response: []byte{0x63}, Success: true},
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x04}, Response: []byte{0x63}, Success: true},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x01}, response: []byte{0x02, 0x00}},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x03}, response: []byte{0x63}},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x04}, response: []byte{0x63}},
 	}
 
 	replay := newModernForgeReplayRelay(cached)
@@ -72,8 +72,8 @@ func TestModernForgeReplayRelay(t *testing.T) {
 		if !resp.Success {
 			t.Fatalf("response[%d] Success = false, want true", i)
 		}
-		if string(resp.Data) != string(cached[i].Response) {
-			t.Fatalf("response[%d] data = %x, want %x", i, resp.Data, cached[i].Response)
+		if string(resp.Data) != string(cached[i].response) {
+			t.Fatalf("response[%d] data = %x, want %x", i, resp.Data, cached[i].response)
 		}
 	}
 }
@@ -82,7 +82,7 @@ func TestModernForgeReplayRelay(t *testing.T) {
 // more FML messages than were cached, the proxy responds with Success=false.
 func TestModernForgeReplayRelay_ExhaustedCache(t *testing.T) {
 	cached := []forgeLoginExchange{
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x01}, Response: []byte{0x02}, Success: true},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x01}, response: []byte{0x02}},
 	}
 
 	replay := newModernForgeReplayRelay(cached)
@@ -113,8 +113,8 @@ func TestModernForge_BackendLoginHandler_ReplayOnSwitch(t *testing.T) {
 	}
 
 	cached := []forgeLoginExchange{
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x01}, Response: []byte{0x02}, Success: true},
-		{Channel: ForgeLoginWrapperChannel, Request: []byte{0x03}, Response: []byte{0x63}, Success: true},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x01}, response: []byte{0x02}},
+		{channel: ForgeLoginWrapperChannel, request: []byte{0x03}, response: []byte{0x63}},
 	}
 	player.mu.Lock()
 	player.forgeReplayRelay = newModernForgeReplayRelay(cached)

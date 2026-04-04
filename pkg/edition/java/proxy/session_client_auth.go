@@ -209,11 +209,7 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 		player.forgeLoginRelay = relay
 		player.mu.Unlock()
 
-		// Clear the login completion callback to prevent it from firing
-		// during the relay when outstanding responses go to zero.
 		a.inbound.clearOnAllMessagesHandled()
-
-		a.loginState.Store(&successSentAuthLoginState)
 		a.loginState.Store(&acknowledgedAuthLoginState)
 
 		// Connect in a goroutine so the client's read loop can process

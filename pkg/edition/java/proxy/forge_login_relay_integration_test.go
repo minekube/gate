@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/funcr"
-	"github.com/robinbraemer/event"
-	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -564,13 +562,4 @@ func mustReadString(t *testing.T, r io.Reader) string {
 		t.Fatalf("readString error: %v", err)
 	}
 	return string(buf)
-}
-
-// Ensure the test proxy satisfies the auth.Authenticator interface requirement
-var _ auth.Authenticator = (auth.Authenticator)(nil)
-
-// initPlugins is needed for proxy.New - verify it exists
-func init() {
-	// Touch event.New to verify import
-	_ = event.New()
 }

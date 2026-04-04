@@ -242,13 +242,8 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	// it from LOGIN to PLAY state, and caches the FML exchanges for server switch.
 	b.serverConn.player.mu.Lock()
 	relay := b.serverConn.player.forgeLoginRelay
-	replayRelay := b.serverConn.player.forgeReplayRelay
-	if relay != nil {
-		b.serverConn.player.forgeLoginRelay = nil
-	}
-	if replayRelay != nil {
-		b.serverConn.player.forgeReplayRelay = nil
-	}
+	b.serverConn.player.forgeLoginRelay = nil
+	b.serverConn.player.forgeReplayRelay = nil
 	b.serverConn.player.mu.Unlock()
 
 	if relay != nil {
