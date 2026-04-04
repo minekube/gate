@@ -423,6 +423,16 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		serverMc.AddSessionHandler(state.Login, handler)
 	}
 
+	// For Modern Forge server switches: set up replay relay using cached
+	// FML exchanges from the initial connection. This allows the proxy to
+	// respond to the new backend's fml:loginwrapper messages on behalf of
+	// the client (which is already in PLAY state).
+	s.player.mu.Lock()
+	if s.player.forgeLoginCache != nil && s.player.connectedServer_ != nil {
+		s.player.forgeReplayRelay = newModernForgeReplayRelay(s.player.forgeLoginCache)
+	}
+	s.player.mu.Unlock()
+
 	// Set the connection phase, which may, for future forge (or whatever), be
 	// determined at this point already
 	s.mu.Lock()

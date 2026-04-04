@@ -141,41 +141,73 @@ func (b *backendLoginSessionHandler) handleLoginPluginMessage(p *packet.LoginPlu
 			return
 		}
 		b.informationForwarded.Store(true)
-	} else {
-		// Don't understand, fire event if we have subscribers
-		if !b.eventMgr.HasSubscriber(&ServerLoginPluginMessageEvent{}) {
-			_ = mc.WritePacket(&packet.LoginPluginResponse{
-				ID:      p.ID,
-				Success: false,
-			})
+		return
+	}
+
+	// Modern Forge FML relay: forward fml:loginwrapper messages to the client
+	// during initial connection, or replay cached responses during server switch.
+	if p.Channel == ForgeLoginWrapperChannel {
+		// Initial connection: relay to client (client still in LOGIN state)
+		b.serverConn.player.mu.RLock()
+		relay := b.serverConn.player.forgeLoginRelay
+		replayRelay := b.serverConn.player.forgeReplayRelay
+		b.serverConn.player.mu.RUnlock()
+
+		if relay != nil {
+			b.log.V(1).Info("relaying FML LoginPluginMessage to client",
+				"channel", p.Channel, "backendMsgID", p.ID, "dataLen", len(p.Data))
+			if err := relay.relayToClient(mc, p); err != nil {
+				b.log.Error(err, "error relaying forge login plugin message to client")
+				b.serverConn.disconnect()
+			}
 			return
 		}
 
-		identifier, err := message.ChannelIdentifierFrom(p.Channel)
-		if err != nil {
-			b.log.V(1).Error(err, "could not parse channel from LoginPluginResponse")
+		// Server switch: replay cached response
+		if replayRelay != nil {
+			b.log.V(1).Info("replaying cached FML response to backend",
+				"channel", p.Channel, "backendMsgID", p.ID)
+			if err := replayRelay.replayResponse(p.ID, mc); err != nil {
+				b.log.Error(err, "error replaying forge login response")
+				b.serverConn.disconnect()
+			}
 			return
 		}
-		e := &ServerLoginPluginMessageEvent{
-			id:         identifier,
-			contents:   p.Data,
-			sequenceID: p.ID,
-			serverConn: b.serverConn,
-		}
-		b.eventMgr.Fire(e)
-		if e.Result().Allowed() {
-			_ = mc.WritePacket(&packet.LoginPluginResponse{
-				ID:      p.ID,
-				Success: true,
-				Data:    e.Result().Response,
-			})
-			return
-		}
+	}
+
+	// Don't understand, fire event if we have subscribers
+	if !b.eventMgr.HasSubscriber(&ServerLoginPluginMessageEvent{}) {
 		_ = mc.WritePacket(&packet.LoginPluginResponse{
 			ID:      p.ID,
 			Success: false,
 		})
+		return
 	}
+
+	identifier, err := message.ChannelIdentifierFrom(p.Channel)
+	if err != nil {
+		b.log.V(1).Error(err, "could not parse channel from LoginPluginResponse")
+		return
+	}
+	e := &ServerLoginPluginMessageEvent{
+		id:         identifier,
+		contents:   p.Data,
+		sequenceID: p.ID,
+		serverConn: b.serverConn,
+	}
+	b.eventMgr.Fire(e)
+	if e.Result().Allowed() {
+		_ = mc.WritePacket(&packet.LoginPluginResponse{
+			ID:      p.ID,
+			Success: true,
+			Data:    e.Result().Response,
+		})
+		return
+	}
+	_ = mc.WritePacket(&packet.LoginPluginResponse{
+		ID:      p.ID,
+		Success: false,
+	})
 }
 
 func (b *backendLoginSessionHandler) handleDisconnect(p *packet.Disconnect) {
@@ -203,6 +235,39 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 		b.requestCtx.result(disconnectResult(velocityIpForwardingFailure, b.serverConn.server, true), nil)
 		b.serverConn.disconnect()
 		return
+	}
+
+	// Complete Modern Forge login relay if active.
+	// This sends the delayed ServerLoginSuccess to the client, transitioning
+	// it from LOGIN to PLAY state, and caches the FML exchanges for server switch.
+	b.serverConn.player.mu.Lock()
+	relay := b.serverConn.player.forgeLoginRelay
+	b.serverConn.player.forgeLoginRelay = nil
+	b.serverConn.player.forgeReplayRelay = nil
+	b.serverConn.player.mu.Unlock()
+
+	if relay != nil {
+		b.log.Info("completing Modern Forge login relay, sending LoginSuccess to client")
+		if err := relay.complete(); err != nil {
+			b.log.Error(err, "error completing forge login relay")
+			b.requestCtx.result(nil, err)
+			b.serverConn.disconnect()
+			return
+		}
+
+		// Cache the FML exchanges for future server switches.
+		exchanges := relay.exchanges()
+		b.serverConn.player.mu.Lock()
+		b.serverConn.player.forgeLoginCache = exchanges
+		b.serverConn.player.mu.Unlock()
+
+		// Switch client from LOGIN to PLAY state.
+		// The decoder's SetState uses atomic pointers, so this does not block
+		// even though the client's read loop may be in Decode waiting for data.
+		b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play,
+			newInitialConnectSessionHandler(b.serverConn.player))
+
+		b.eventMgr.Fire(&PostLoginEvent{player: b.serverConn.player})
 	}
 
 	// The player has been logged on to the backend server, but we're not done yet. There could be

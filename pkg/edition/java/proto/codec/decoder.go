@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/go-logr/logr"
 
@@ -26,47 +27,51 @@ type Decoder struct {
 	hexDump   bool // for debugging
 	direction proto.Direction
 
-	mu                   sync.Mutex // Protects following field and locked while reading a packet.
+	mu                   sync.Mutex // Protects following fields and locked while reading a packet.
 	rd                   io.Reader  // The underlying reader.
-	registry             *state.ProtocolRegistry
-	state                *state.Registry
 	compression          bool
 	compressionThreshold int
 	zrd                  io.ReadCloser
+
+	// registry and state use atomic pointers so SetState/SetProtocol can be
+	// called without holding mu. This allows changing the decoder state while
+	// another goroutine is blocked in Decode (waiting for network I/O).
+	registry atomic.Pointer[state.ProtocolRegistry]
+	state    atomic.Pointer[state.Registry]
 }
 
 var _ proto.PacketDecoder = (*Decoder)(nil)
 
 func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger) *Decoder {
-	return &Decoder{
+	d := &Decoder{
 		rd:        &fullReader{r}, // using the fullReader is essential here!
 		direction: direction,
-		state:     state.Handshake,
-		registry:  state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol),
 		log:       log.WithName("decoder"),
 		hexDump:   os.Getenv("HEXDUMP") == "true",
 	}
+	d.state.Store(state.Handshake)
+	d.registry.Store(state.FromDirection(direction, state.Handshake, version.MinimumVersion.Protocol))
+	return d
 }
 
 type fullReader struct{ io.Reader }
 
 func (fr *fullReader) Read(p []byte) (int, error) { return io.ReadFull(fr.Reader, p) }
 
-func (d *Decoder) SetState(state *state.Registry) {
-	d.mu.Lock()
-	d.state = state
-	d.setProtocol(d.registry.Protocol)
-	d.mu.Unlock()
+// SetState changes the decoder's protocol state (e.g., Login → Play).
+// This is safe to call while Decode is blocked on network I/O in another
+// goroutine — the new state takes effect on the next packet decode.
+func (d *Decoder) SetState(newState *state.Registry) {
+	d.state.Store(newState)
+	protocol := d.registry.Load().Protocol
+	d.registry.Store(state.FromDirection(d.direction, newState, protocol))
 }
 
+// SetProtocol changes the decoder's protocol version.
+// Safe to call concurrently with Decode.
 func (d *Decoder) SetProtocol(protocol proto.Protocol) {
-	d.mu.Lock()
-	d.setProtocol(protocol)
-	d.mu.Unlock()
-}
-
-func (d *Decoder) setProtocol(protocol proto.Protocol) {
-	d.registry = state.FromDirection(d.direction, d.state, protocol)
+	currentState := d.state.Load()
+	d.registry.Store(state.FromDirection(d.direction, currentState, protocol))
 }
 
 func (d *Decoder) SetReader(rd io.Reader) {
@@ -218,9 +223,10 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 // that is returned when the payload's data had more bytes than the decoder has read,
 // or drop the packet.
 func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) {
+	registry := d.registry.Load()
 	ctx = &proto.PacketContext{
 		Direction: d.direction,
-		Protocol:  d.registry.Protocol,
+		Protocol:  registry.Protocol,
 		Payload:   p,
 	}
 	payload := bytes.NewReader(p)
@@ -234,7 +240,7 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 	// Now the payload reader should only have left the packet's actual data.
 
 	// Try find and create packet from the id.
-	ctx.Packet = d.registry.CreatePacket(ctx.PacketID)
+	ctx.Packet = registry.CreatePacket(ctx.PacketID)
 	if ctx.Packet == nil {
 		// Packet id is unknown in this registry,
 		// the payload is probably being forwarded as is.

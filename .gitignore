@@ -4,3 +4,5 @@
 tmp
 .geyser
 ./gate
+.DS_Store
+config-forge-test.yml
