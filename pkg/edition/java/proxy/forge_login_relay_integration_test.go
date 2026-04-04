@@ -28,15 +28,14 @@ import (
 //  2. Client sends ServerLogin
 //  3. Proxy authenticates (offline mode) and delays LoginSuccess
 //  4. Proxy connects to mock backend
-//  5. Backend sends velocity:player_info (or just fml:loginwrapper)
-//  6. Backend sends fml:loginwrapper LoginPluginMessages
-//  7. Proxy relays to client (still in LOGIN state)
-//  8. Client responds with LoginPluginResponse
-//  9. Proxy forwards response to backend
-//  10. Backend sends ServerLoginSuccess
-//  11. Proxy sends delayed LoginSuccess to client
-//  12. Backend sends JoinGame
-//  13. Client is connected and in PLAY state
+//  5. Backend sends fml:loginwrapper LoginPluginMessages
+//  6. Proxy relays to client (still in LOGIN state)
+//  7. Client responds with LoginPluginResponse
+//  8. Proxy forwards response to backend
+//  9. Backend sends ServerLoginSuccess
+//  10. Proxy sends delayed LoginSuccess to client
+//  11. Backend sends JoinGame
+//  12. Client is connected and in PLAY state
 func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 	// --- Start mock Forge backend server ---
 	backendListener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -73,7 +72,7 @@ func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 		}
 		defer conn.Close()
 
-		conn.SetDeadline(time.Now().Add(10 * time.Second))
+		_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
 
 		// Read Handshake packet from proxy
 		_, _, err = readPacket(conn)
@@ -177,10 +176,10 @@ func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 
 	// --- Create and start Gate proxy ---
 	cfg := config.DefaultConfig
-	cfg.Bind = "127.0.0.1:0"          // random port
-	cfg.OnlineMode = false             // offline mode for testing
+	cfg.Bind = "127.0.0.1:0" // random port
+	cfg.OnlineMode = false   // offline mode for testing
 	cfg.Forwarding.Mode = config.NoneForwardingMode
-	cfg.Compression.Threshold = -1     // disable compression for simpler wire format
+	cfg.Compression.Threshold = -1 // disable compression for simpler wire format
 	cfg.Servers = map[string]string{
 		"lobby": backendAddr,
 	}
@@ -231,7 +230,7 @@ func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 		t.Fatalf("client: failed to connect to proxy: %v", err)
 	}
 	defer clientConn.Close()
-	clientConn.SetDeadline(time.Now().Add(10 * time.Second))
+	_ = clientConn.SetDeadline(time.Now().Add(10 * time.Second))
 
 	t.Log("Client: connected to proxy")
 
@@ -249,8 +248,7 @@ func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 	}
 	t.Log("Client: sent ServerLogin")
 
-	// Read packets from proxy - should get SetCompression (maybe) then LoginPluginMessages
-	// before getting ServerLoginSuccess
+	// Read packets from proxy - should get LoginPluginMessages before ServerLoginSuccess
 	gotLoginSuccess := false
 	fmlResponseCount := 0
 	loginPluginMsgCount := 0
@@ -308,8 +306,6 @@ func TestModernForgeIntegration_FullJoinFlow(t *testing.T) {
 			gotLoginSuccess = true
 			t.Log("Client: received ServerLoginSuccess - FML relay complete!")
 			// We got LoginSuccess — the relay worked! Stop here.
-			// The JoinGame handling is a separate concern and Gate's
-			// transition handler will process it normally.
 			goto done
 
 		default:
@@ -355,11 +351,12 @@ done:
 }
 
 // --- Wire protocol helpers ---
+// These use util.PanicWriter for bytes.Buffer writes (which never fail).
 
 // writeFrame writes a Minecraft protocol frame: VarInt(length) + payload
 func writeFrame(w io.Writer, payload []byte) error {
 	var frame bytes.Buffer
-	util.WriteVarInt(&frame, len(payload))
+	util.PanicWriter(&frame).VarInt(len(payload))
 	frame.Write(payload)
 	_, err := w.Write(frame.Bytes())
 	return err
@@ -368,46 +365,46 @@ func writeFrame(w io.Writer, payload []byte) error {
 // writeHandshake writes a Handshake packet with FML3 marker
 func writeHandshake(w io.Writer, host string, port int, protocolVersion int) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x00) // Handshake packet ID
-	util.WriteVarInt(&payload, protocolVersion)
-	util.WriteString(&payload, host+"\x00FML3\x00") // FML3 marker
-	util.WriteUint16(&payload, uint16(port))
-	util.WriteVarInt(&payload, 2) // Login intent
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x00) // Handshake packet ID
+	pw.VarInt(protocolVersion)
+	pw.String(host + "\x00FML3\x00") // FML3 marker
+	_ = util.WriteUint16(&payload, uint16(port))
+	pw.VarInt(2) // Login intent
 	return writeFrame(w, payload.Bytes())
 }
 
 // writeServerLogin writes a ServerLogin packet for 1.20 (protocol 763)
-// For 1.19.3+: no PlayerKey field
-// For 1.19.1+, < 1.20.2: Bool(hasUUID) + optional UUID
 func writeServerLogin(w io.Writer, username string) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x00) // ServerLogin packet ID
-	util.WriteString(&payload, username)
-	// 1.19.3+ skips PlayerKey
-	// 1.19.1+ < 1.20.2: write hasUUID=true + UUID
-	util.WriteBool(&payload, true)
-	util.WriteUUID(&payload, uuid.New())
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x00) // ServerLogin packet ID
+	pw.String(username)
+	pw.Bool(true) // hasUUID (1.19.1+ < 1.20.2)
+	_ = util.WriteUUID(&payload, uuid.New())
 	return writeFrame(w, payload.Bytes())
 }
 
-// writeLoginPluginMessage writes a LoginPluginMessage (server -> client direction, ID 0x04)
+// writeLoginPluginMessage writes a LoginPluginMessage (server -> client, ID 0x04)
 func writeLoginPluginMessage(w io.Writer, id int, channel string, data []byte) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x04) // LoginPluginMessage packet ID
-	util.WriteVarInt(&payload, id)
-	util.WriteString(&payload, channel)
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x04) // LoginPluginMessage packet ID
+	pw.VarInt(id)
+	pw.String(channel)
 	payload.Write(data) // raw bytes, no length prefix
 	return writeFrame(w, payload.Bytes())
 }
 
-// writeLoginPluginResponse writes a LoginPluginResponse (client -> server direction, ID 0x02)
+// writeLoginPluginResponse writes a LoginPluginResponse (client -> server, ID 0x02)
 func writeLoginPluginResponse(w io.Writer, id int, success bool, data []byte) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x02) // LoginPluginResponse packet ID
-	util.WriteVarInt(&payload, id)
-	util.WriteBool(&payload, success)
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x02) // LoginPluginResponse packet ID
+	pw.VarInt(id)
+	pw.Bool(success)
 	if success && data != nil {
-		payload.Write(data) // raw bytes
+		payload.Write(data)
 	}
 	return writeFrame(w, payload.Bytes())
 }
@@ -415,47 +412,43 @@ func writeLoginPluginResponse(w io.Writer, id int, success bool, data []byte) er
 // writeServerLoginSuccess writes a ServerLoginSuccess packet
 func writeServerLoginSuccess(w io.Writer, id uuid.UUID, username string) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x02) // ServerLoginSuccess packet ID
-	util.WriteUUID(&payload, id)
-	util.WriteString(&payload, username)
-	util.WriteVarInt(&payload, 0) // 0 properties
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x02) // ServerLoginSuccess packet ID
+	_ = util.WriteUUID(&payload, id)
+	pw.String(username)
+	pw.VarInt(0) // 0 properties
 	return writeFrame(w, payload.Bytes())
 }
 
 // writeJoinGame writes a minimal JoinGame packet for 1.20.1
 func writeJoinGame(w io.Writer) error {
 	var payload bytes.Buffer
-	util.WriteVarInt(&payload, 0x28) // JoinGame packet ID for 1.20/1.20.1
-	util.WriteInt32(&payload, 1)     // Entity ID
-	util.WriteBool(&payload, false)  // Is Hardcore
-	util.WriteUint8(&payload, 0)     // Game Mode (survival)
-	util.WriteInt8(&payload, -1)     // Previous Game Mode
-	// Dimension count + names
-	util.WriteVarInt(&payload, 1) // 1 dimension
-	util.WriteString(&payload, "minecraft:overworld")
-	// Registry codec (NBT compound) - write minimal valid NBT
-	// For simplicity, write an empty compound tag
-	payload.Write([]byte{0x0a})                          // TAG_Compound
-	payload.Write([]byte{0x00, 0x00})                    // empty name
-	payload.Write([]byte{0x00})                          // TAG_End
-	util.WriteString(&payload, "minecraft:overworld")    // Dimension Type
-	util.WriteString(&payload, "minecraft:overworld")    // Dimension Name
-	util.WriteInt64(&payload, 0)                         // Hashed Seed
-	util.WriteVarInt(&payload, 20)                       // Max Players
-	util.WriteVarInt(&payload, 10)                       // View Distance
-	util.WriteVarInt(&payload, 10)                       // Simulation Distance
-	util.WriteBool(&payload, false)                      // Reduced Debug Info
-	util.WriteBool(&payload, true)                       // Enable Respawn Screen
-	util.WriteBool(&payload, false)                      // Is Debug
-	util.WriteBool(&payload, false)                      // Is Flat
-	util.WriteBool(&payload, false)                      // Has Death Location
-	util.WriteVarInt(&payload, 0)                        // Portal Cooldown
+	pw := util.PanicWriter(&payload)
+	pw.VarInt(0x28)                               // JoinGame packet ID for 1.20/1.20.1
+	_ = util.WriteInt32(&payload, 1)              // Entity ID
+	pw.Bool(false)                                // Is Hardcore
+	_ = util.WriteUint8(&payload, 0)              // Game Mode
+	_ = util.WriteInt8(&payload, -1)              // Previous Game Mode
+	pw.VarInt(1)                                  // 1 dimension
+	pw.String("minecraft:overworld")              // Dimension name
+	payload.Write([]byte{0x0a, 0x00, 0x00, 0x00}) // Minimal NBT compound
+	pw.String("minecraft:overworld")              // Dimension Type
+	pw.String("minecraft:overworld")              // Dimension Name
+	pw.Int64(0)                                   // Hashed Seed
+	pw.VarInt(20)                                 // Max Players
+	pw.VarInt(10)                                 // View Distance
+	pw.VarInt(10)                                 // Simulation Distance
+	pw.Bool(false)                                // Reduced Debug Info
+	pw.Bool(true)                                 // Enable Respawn Screen
+	pw.Bool(false)                                // Is Debug
+	pw.Bool(false)                                // Is Flat
+	pw.Bool(false)                                // Has Death Location
+	pw.VarInt(0)                                  // Portal Cooldown
 	return writeFrame(w, payload.Bytes())
 }
 
 // readPacket reads a Minecraft protocol packet and returns (packetID, data, error)
 func readPacket(r io.Reader) (int, []byte, error) {
-	// Read VarInt length
 	length, err := readVarInt(r)
 	if err != nil {
 		return 0, nil, fmt.Errorf("read frame length: %w", err)
@@ -464,23 +457,19 @@ func readPacket(r io.Reader) (int, []byte, error) {
 		return 0, nil, fmt.Errorf("invalid frame length: %d", length)
 	}
 
-	// Read payload
 	payload := make([]byte, length)
 	if _, err := io.ReadFull(r, payload); err != nil {
 		return 0, nil, fmt.Errorf("read payload: %w", err)
 	}
 
-	// Parse packet ID
 	reader := bytes.NewReader(payload)
 	packetID, err := readVarInt(reader)
 	if err != nil {
 		return 0, nil, fmt.Errorf("read packet ID: %w", err)
 	}
 
-	// Rest is packet data
 	data := make([]byte, reader.Len())
 	_, _ = reader.Read(data)
-
 	return packetID, data, nil
 }
 
@@ -490,7 +479,7 @@ func readLoginPluginResponse(r io.Reader) (id int, data []byte, success bool, er
 	if err != nil {
 		return 0, nil, false, err
 	}
-	if packetID != 0x02 { // LoginPluginResponse
+	if packetID != 0x02 {
 		return 0, nil, false, fmt.Errorf("expected packet ID 0x02, got 0x%02x", packetID)
 	}
 

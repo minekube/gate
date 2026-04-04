@@ -160,9 +160,9 @@ type connectedPlayer struct {
 	clientSettingsPacket *packet.ClientSettings
 	modInfo              *modinfo.ModInfo
 	connPhase            phase.ClientConnectionPhase
-	forgeLoginRelay      *modernForgeLoginRelay   // non-nil during initial Modern Forge login relay
-	forgeReplayRelay     *modernForgeReplayRelay  // non-nil during server switch FML replay
-	forgeLoginCache      []forgeLoginExchange      // cached FML exchanges from initial connection
+	forgeLoginRelay      *modernForgeLoginRelay  // non-nil during initial Modern Forge login relay
+	forgeReplayRelay     *modernForgeReplayRelay // non-nil during server switch FML replay
+	forgeLoginCache      []forgeLoginExchange    // cached FML exchanges from initial connection
 
 	clientBrand string // may be empty
 
