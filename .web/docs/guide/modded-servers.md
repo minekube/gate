@@ -1,11 +1,11 @@
 ---
-title: "Gate Minecraft Proxy with Modded Servers - Fabric & NeoForge"
-description: "Complete guide to using Gate with modded Minecraft servers including Fabric and NeoForge. Velocity modern forwarding, player info forwarding, and mod compatibility."
+title: "Gate Minecraft Proxy with Modded Servers - Fabric, Forge & NeoForge"
+description: "Complete guide to using Gate with modded Minecraft servers including Fabric, Forge 1.13-1.20.1, and NeoForge. Velocity modern forwarding, player info forwarding, and mod compatibility."
 ---
 
 # Modded Server Compatibility
 
-Gate provides excellent compatibility with modded Minecraft servers including **Fabric** and **NeoForge**. This guide will help you set up Gate to work seamlessly with your modded servers.
+Gate provides excellent compatibility with modded Minecraft servers including **Fabric**, **Forge** (1.13–1.20.1), and **NeoForge**. This guide will help you set up Gate to work seamlessly with your modded servers.
 
 ## Overview
 
@@ -145,6 +145,52 @@ config:
 ```
 
 :::
+
+## Forge 1.13–1.20.1 Server Setup
+
+Gate has built-in support for Forge 1.13–1.20.1 (FML2/FML3). During login, Gate relays the Forge mod negotiation (`fml:loginwrapper` LoginPluginMessages) between the backend and the client — no client-side mods required. This is similar to what [Ambassador](https://modrinth.com/plugin/ambassador) does for Velocity.
+
+::: info Forge 1.20.2+ uses the CONFIG phase
+For Forge/NeoForge 1.20.2 and above, mod negotiation happens in the CONFIG phase (after login), which Gate handles natively. The login relay described here is only needed for 1.13–1.20.1.
+:::
+
+### Required Mods (Server-Side Only)
+
+For **Velocity modern forwarding**, install [Proxy-Compatible-Forge (PCF)](https://modrinth.com/mod/proxy-compatible-forge) on the Forge server to handle player info forwarding. For **legacy BungeeCord forwarding**, you can use [BungeeForge](https://github.com/caunt/BungeeForge) instead — no PCF needed.
+
+### Server Configuration
+
+::: code-group
+
+```properties [server.properties]
+server-port=25566
+online-mode=false # [!code ++]
+```
+
+```toml [config/proxy-compatible-forge.toml]
+[forwarding]
+    enabled = true
+    mode = "MODERN"
+    secret = "your-secret-key-here" # [!code ++]
+```
+
+```yaml [Gate config.yml]
+config:
+  bind: 0.0.0.0:25565
+  servers:
+    forge-server: localhost:25566
+  try:
+    - forge-server
+  forwarding:
+    mode: velocity # [!code ++]
+    velocitySecret: 'your-secret-key-here' # [!code ++]
+```
+
+:::
+
+### Server Switching
+
+When switching a player between Forge servers, Gate replays the cached FML handshake responses from the initial connection. This works transparently when the servers have compatible mod lists (same mods and registries). If the servers are incompatible, the player will be disconnected.
 
 ## Multi-Server Setup
 
