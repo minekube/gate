@@ -21,8 +21,8 @@ importers:
         specifier: ^1.0.0
         version: 1.7.0(@bufbuild/protobuf@1.10.1)
       '@connectrpc/connect-web':
-        specifier: ^1.6.1
-        version: 1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
+        specifier: ^2.0.0
+        version: 2.1.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
       typescript:
         specifier: ^5.0.0
         version: 5.6.3
@@ -89,11 +89,11 @@ packages:
   '@bufbuild/protobuf@1.10.1':
     resolution: {integrity: sha512-wJ8ReQbHxsAfXhrf9ixl0aYbZorRuOWpBNzm8pL8ftmSxQx/wnJD5Eg861NwJU/czy2VXFIebCeZnZrI9rktIQ==}
 
-  '@connectrpc/connect-web@1.7.0':
-    resolution: {integrity: sha512-qyP0YOnUPRWwCc/VfsoydMJvkb7EyUPr2q9sHgBuJzbADjiqck1gKH5V5ZPzPhTLBvmz5UvG+wiZ5sMRQHU1MQ==}
+  '@connectrpc/connect-web@2.1.1':
+    resolution: {integrity: sha512-J8317Q2MaFRCT1jzVR1o06bZhDIBmU0UAzWx6xOIXzOq8+k71/+k7MUF7AwcBUX+34WIvbm5syRgC5HXQA8fOg==}
     peerDependencies:
-      '@bufbuild/protobuf': ^1.10.0
-      '@connectrpc/connect': 1.7.0
+      '@bufbuild/protobuf': ^2.7.0
+      '@connectrpc/connect': 2.1.1
 
   '@connectrpc/connect@1.7.0':
     resolution: {integrity: sha512-iNKdJRi69YP3mq6AePRT8F/HrxWCewrhxnLMNm0vpqXAR8biwzRtO6Hjx80C6UvtKJ5sFmffQT7I4Baecz389w==}
@@ -151,7 +151,7 @@ snapshots:
 
   '@bufbuild/protobuf@1.10.1': {}
 
-  '@connectrpc/connect-web@1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
+  '@connectrpc/connect-web@2.1.1(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
       '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
