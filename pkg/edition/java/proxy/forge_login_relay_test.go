@@ -22,8 +22,9 @@ func TestModernForgeRelay_Complete(t *testing.T) {
 		log:           logr.Discard(),
 	}
 
+	login := newTestLoginInboundConn(clientConn)
 	loginSuccess := &packet.ServerLoginSuccess{Username: "ForgePlayer"}
-	relay := newModernForgeLoginRelay(player, loginSuccess)
+	relay := newModernForgeLoginRelay(login, player, loginSuccess)
 
 	if err := relay.complete(); err != nil {
 		t.Fatalf("complete error: %v", err)
@@ -233,6 +234,15 @@ func TestModernForge_DelayedLoginSuccess_Detection(t *testing.T) {
 				t.Fatalf("isModernForgePre1202 = %v, want %v", isModernForgePre1202, tt.expectDelay)
 			}
 		})
+	}
+}
+
+// newTestLoginInboundConn creates a loginInboundConn suitable for testing.
+func newTestLoginInboundConn(mc *testMinecraftConn) *loginInboundConn {
+	return &loginInboundConn{
+		delegate:             &initialInbound{MinecraftConn: mc},
+		outstandingResponses: map[int]MessageConsumer{},
+		isLoginEventFired:    true,
 	}
 }
 

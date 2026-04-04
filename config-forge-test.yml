@@ -11,7 +11,7 @@ config:
       §eModern Forge Login Relay
     showMaxPlayers: 20
   compression:
-    threshold: 256
+    threshold: -1
     level: -1
   connectionTimeout: 5s
   readTimeout: 30s

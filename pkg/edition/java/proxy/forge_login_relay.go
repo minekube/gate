@@ -1,11 +1,11 @@
 package proxy
 
 import (
-	"fmt"
 	"sync"
 
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 )
 
 // ForgeLoginWrapperChannel is the Forge login wrapper channel used for FML2/FML3
@@ -16,21 +16,16 @@ const ForgeLoginWrapperChannel = "fml:loginwrapper"
 // and a client during the LOGIN phase. This enables Forge 1.13-1.20.1 mod negotiation
 // through the proxy when using Velocity modern forwarding.
 //
-// The relay works synchronously: the backend goroutine writes LoginPluginMessages to
-// the client connection and reads LoginPluginResponses directly. This is safe because
-// the client's read loop goroutine is blocked in connectToInitialServer (application-
-// level blocking), not in Decode, so the decoder mutex is not held and no concurrent
-// reads occur.
+// The relay uses loginInboundConn to send LoginPluginMessages to the client and
+// receive responses via consumer callbacks. The client's read loop goroutine
+// processes responses via the auth session handler's HandlePacket.
 type modernForgeLoginRelay struct {
-	player *connectedPlayer
+	clientLogin *loginInboundConn
+	player      *connectedPlayer
 
 	// pendingLoginSuccess is the ServerLoginSuccess packet to send to the client
 	// after the FML handshake completes.
 	pendingLoginSuccess *packet.ServerLoginSuccess
-
-	// nextClientID tracks the next message ID to use when sending to the client.
-	// Backend and client use independent ID spaces.
-	nextClientID int
 
 	mu              sync.Mutex
 	cachedExchanges []forgeLoginExchange
@@ -46,67 +41,43 @@ type forgeLoginExchange struct {
 }
 
 func newModernForgeLoginRelay(
+	clientLogin *loginInboundConn,
 	player *connectedPlayer,
 	pendingLoginSuccess *packet.ServerLoginSuccess,
 ) *modernForgeLoginRelay {
 	return &modernForgeLoginRelay{
+		clientLogin:         clientLogin,
 		player:              player,
 		pendingLoginSuccess: pendingLoginSuccess,
 	}
 }
 
-// relayToClient forwards a backend LoginPluginMessage to the client and reads
-// the client's response synchronously. The response is cached for future server
-// switch replay and forwarded to the backend.
-//
-// This method reads directly from the client connection. It is safe to call from
-// the backend goroutine because the client's read loop is blocked in
-// connectToInitialServer (not in Decode), so the decoder mutex is free.
+// relayToClient forwards a backend LoginPluginMessage to the client via the
+// login plugin message mechanism. The consumer callback will forward the
+// client's response back to the backend.
 func (r *modernForgeLoginRelay) relayToClient(
 	backendConn netmc.MinecraftConn,
 	msg *packet.LoginPluginMessage,
 ) error {
-	// Send LoginPluginMessage to client with our own ID
-	clientID := r.nextClientID
-	r.nextClientID++
-
-	if err := r.player.WritePacket(&packet.LoginPluginMessage{
-		ID:      clientID,
-		Channel: msg.Channel,
-		Data:    msg.Data,
-	}); err != nil {
-		return fmt.Errorf("error sending forge message to client: %w", err)
-	}
-
-	// Read LoginPluginResponse directly from the client connection.
-	// The client's read loop goroutine is blocked in connectToInitialServer,
-	// so we are the only reader on this connection.
-	pc, err := r.player.MinecraftConn.Reader().ReadPacket()
+	identifier, err := message.ChannelIdentifierFrom(msg.Channel)
 	if err != nil {
-		return fmt.Errorf("error reading forge response from client: %w", err)
+		return err
 	}
 
-	resp, ok := pc.Packet.(*packet.LoginPluginResponse)
-	if !ok {
-		return fmt.Errorf("expected LoginPluginResponse from client, got %T", pc.Packet)
+	data := msg.Data
+	if len(data) == 0 {
+		// SendLoginPluginMessage requires non-empty data.
+		data = []byte{0}
 	}
 
-	// Cache the exchange for server switch replay.
-	r.mu.Lock()
-	r.cachedExchanges = append(r.cachedExchanges, forgeLoginExchange{
-		Channel:  msg.Channel,
-		Request:  msg.Data,
-		Response: resp.Data,
-		Success:  resp.Success,
-	})
-	r.mu.Unlock()
-
-	// Forward the response to the backend with the original backend message ID.
-	return backendConn.WritePacket(&packet.LoginPluginResponse{
-		ID:      msg.ID,
-		Success: resp.Success,
-		Data:    resp.Data,
-	})
+	consumer := &forgeRelayConsumer{
+		relay:        r,
+		backendConn:  backendConn,
+		backendMsgID: msg.ID,
+		channel:      msg.Channel,
+		requestData:  msg.Data,
+	}
+	return r.clientLogin.SendLoginPluginMessage(identifier, data, consumer)
 }
 
 // complete sends the pending ServerLoginSuccess to the client,
@@ -122,6 +93,35 @@ func (r *modernForgeLoginRelay) exchanges() []forgeLoginExchange {
 	out := make([]forgeLoginExchange, len(r.cachedExchanges))
 	copy(out, r.cachedExchanges)
 	return out
+}
+
+// forgeRelayConsumer forwards a client's LoginPluginResponse back to the
+// backend server. It also caches the exchange for future server switch replay.
+type forgeRelayConsumer struct {
+	relay        *modernForgeLoginRelay
+	backendConn  netmc.MinecraftConn
+	backendMsgID int
+	channel      string
+	requestData  []byte
+}
+
+func (c *forgeRelayConsumer) OnMessageResponse(responseBody []byte) error {
+	// Cache the exchange for server switch replay.
+	c.relay.mu.Lock()
+	c.relay.cachedExchanges = append(c.relay.cachedExchanges, forgeLoginExchange{
+		Channel:  c.channel,
+		Request:  c.requestData,
+		Response: responseBody,
+		Success:  responseBody != nil,
+	})
+	c.relay.mu.Unlock()
+
+	// Forward the response to the backend.
+	return c.backendConn.WritePacket(&packet.LoginPluginResponse{
+		ID:      c.backendMsgID,
+		Success: responseBody != nil,
+		Data:    responseBody,
+	})
 }
 
 // modernForgeReplayRelay replays cached FML LoginPluginMessage responses

@@ -198,23 +198,27 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 	// client remains in the LOGIN state during the backend FML handshake relay.
 	// The relay will send LoginSuccess after the FML negotiation completes.
 	//
-	// We call connectToInitialServer synchronously (NOT in a goroutine) because:
-	// - The backend goroutine reads LoginPluginResponses directly from the client connection
-	// - The client's read loop goroutine (this goroutine) is blocked here in connectToInitialServer
-	// - This means the decoder mutex is NOT held, allowing handleJoinGame to switch the client to PLAY
+	// We run connectToInitialServer in a goroutine so the client's read loop can
+	// process LoginPluginResponse packets for the FML relay. The decoder's SetState
+	// uses atomic pointer swaps, so switching the client to PLAY from the backend
+	// goroutine (in handleServerLoginSuccess) does not block on the decoder mutex.
 	if a.inbound.Protocol().Lower(version.Minecraft_1_20_2) && player.Type() == phase.ModernForge {
 		a.log.Info("delaying LoginSuccess for Modern Forge FML handshake relay")
-		relay := newModernForgeLoginRelay(player, loginSuccess)
+		relay := newModernForgeLoginRelay(a.inbound, player, loginSuccess)
 		player.mu.Lock()
 		player.forgeLoginRelay = relay
 		player.mu.Unlock()
 
+		// Clear the login completion callback to prevent it from firing
+		// during the relay when outstanding responses go to zero.
+		a.inbound.clearOnAllMessagesHandled()
+
 		a.loginState.Store(&successSentAuthLoginState)
 		a.loginState.Store(&acknowledgedAuthLoginState)
 
-		// Block here while the backend goroutine handles the FML relay.
-		// handleJoinGame will switch the client to PLAY state.
-		a.connectToInitialServer(player)
+		// Connect in a goroutine so the client's read loop can process
+		// LoginPluginResponse packets for the FML relay.
+		go a.connectToInitialServer(player)
 		return
 	}
 
@@ -264,6 +268,8 @@ func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	switch t := pc.Packet.(type) {
 	case *packet.LoginAcknowledged:
 		a.handleLoginAcknowledged()
+	case *packet.LoginPluginResponse:
+		a.handleLoginPluginResponse(t)
 	case *cookie.CookieResponse:
 		a.handleCookieResponse(t)
 	default:
@@ -275,6 +281,12 @@ func (a *authSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		_ = a.inbound.delegate.Close()
 	}
 
+}
+
+func (a *authSessionHandler) handleLoginPluginResponse(p *packet.LoginPluginResponse) {
+	if err := a.inbound.handleLoginPluginResponse(p); err != nil {
+		a.log.Error(err, "error handling login plugin response during forge relay")
+	}
 }
 
 func (a *authSessionHandler) config() *config.Config {
