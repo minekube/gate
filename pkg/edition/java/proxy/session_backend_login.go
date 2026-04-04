@@ -252,7 +252,7 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	b.serverConn.player.mu.Unlock()
 
 	if relay != nil {
-		b.log.Info("completing Modern Forge login relay, sending LoginSuccess to client")
+		b.log.Info("forge relay: sending LoginSuccess to client")
 		if err := relay.complete(); err != nil {
 			b.log.Error(err, "error completing forge login relay")
 			b.requestCtx.result(nil, err)
@@ -265,12 +265,13 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 		b.serverConn.player.mu.Lock()
 		b.serverConn.player.forgeLoginCache = exchanges
 		b.serverConn.player.mu.Unlock()
+		b.log.Info("forge relay: LoginSuccess sent, proceeding to backend transition",
+			"cachedExchanges", len(exchanges))
 
-		// Switch client from LOGIN to PLAY state.
-		b.serverConn.player.MinecraftConn.SetActiveSessionHandler(state.Play,
-			newInitialConnectSessionHandler(b.serverConn.player))
-
-		b.eventMgr.Fire(&PostLoginEvent{player: b.serverConn.player})
+		// Do NOT switch client to PLAY here — handleJoinGame will do it.
+		// The client's read loop goroutine is blocked in connectToInitialServer
+		// (not in Decode), so handleJoinGame's SetActiveSessionHandler will
+		// acquire the decoder mutex without blocking.
 	}
 
 	// The player has been logged on to the backend server, but we're not done yet. There could be

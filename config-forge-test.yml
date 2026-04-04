@@ -1,0 +1,21 @@
+config:
+  bind: 0.0.0.0:20565
+  onlineMode: false
+  servers:
+    forge: localhost:25566
+  try:
+    - forge
+  status:
+    motd: |
+      §bGate + Forge 1.20.1 Test
+      §eModern Forge Login Relay
+    showMaxPlayers: 20
+  compression:
+    threshold: 256
+    level: -1
+  connectionTimeout: 5s
+  readTimeout: 30s
+  forwarding:
+    mode: velocity
+    velocitySecret: forge-relay-test
+  debug: true
