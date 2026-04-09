@@ -414,6 +414,69 @@ func (e *PostLoginEvent) Player() Player {
 //
 //
 //
+//
+//
+
+// PlayerConfigurationStartEvent is fired when the backend starts the configuration stage
+//
+// This is the earliest proxy-side hook to send config-state packets (e.g. CodeOfConductPacket)
+// before configuration finishes.
+type PlayerConfigurationStartEvent struct {
+	player        Player
+	server        RegisteredServer
+	codeOfConduct []byte
+}
+
+// Player returns the player entering configuration stage.
+func (e *PlayerConfigurationStartEvent) Player() Player {
+	return e.player
+}
+
+// Server returns the backend server the player is currently configuring against.
+func (e *PlayerConfigurationStartEvent) Server() RegisteredServer {
+	return e.server
+}
+
+// SendCodeOfConduct asks the proxy to send CodeOfConductPacket to the client
+// and hold configuration completion until the player accepts.
+func (e *PlayerConfigurationStartEvent) SendCodeOfConduct(payload []byte) {
+	e.codeOfConduct = payload
+}
+
+// ShouldSendCodeOfConduct reports whether sending code-of-conduct packet was requested.
+func (e *PlayerConfigurationStartEvent) ShouldSendCodeOfConduct() bool {
+	return e.codeOfConduct != nil
+}
+
+// CodeOfConductPayload returns the payload previously provided via SendCodeOfConduct.
+func (e *PlayerConfigurationStartEvent) CodeOfConductPayload() []byte {
+	return e.codeOfConduct
+}
+
+//
+//
+//
+//
+//
+//
+
+// CodeOfConductAcceptEvent is fired when a player accepts the code of conduct
+// in config state (Minecraft 1.21.9+).
+type CodeOfConductAcceptEvent struct {
+	player Player
+}
+
+// Player returns the player that accepted the code of conduct.
+func (e *CodeOfConductAcceptEvent) Player() Player {
+	return e.player
+}
+
+//
+//
+//
+//
+//
+//
 
 // PlayerChooseInitialServerEvent is fired when a player has finished the login process,
 // and we need to choose the first server to connect to.
