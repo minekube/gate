@@ -134,6 +134,17 @@ config:
       burst: 3
       ops: 0.4
       maxEntries: 1000
+  # Per-connection serverbound packet rate limiting. Unlike quota (which limits
+  # new connections/logins per IP), this bounds how many packets/bytes a single
+  # already-connected client may send, mitigating packet floods. The connection
+  # is closed when a limit is exceeded.
+  packetLimiter:
+    # The sliding window the rates are measured over.
+    interval: 7s
+    # Max serverbound packets per second per connection. Set to 0 (or below) to disable.
+    packetsPerSecond: 500
+    # Max serverbound bytes per second per connection. Set to 0 (or below) to disable.
+    bytesPerSecond: -1
   # Whether and how Gate should reply to GameSpy 4 (Minecraft query protocol on UDP) requests.
   query:
     enabled: false
