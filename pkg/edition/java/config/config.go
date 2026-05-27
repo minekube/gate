@@ -57,6 +57,11 @@ var DefaultConfig = Config{
 			MaxEntries: 1000,
 		},
 	},
+	PacketLimiter: PacketLimiter{
+		Interval:         configutil.Duration(7 * time.Second),
+		PacketsPerSecond: 500,
+		BytesPerSecond:   -1, // disabled by default; packet-rate limiting is enough for most setups
+	},
 	Compression: Compression{
 		Threshold: 256,
 		Level:     -1,
@@ -105,10 +110,11 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"` // Write timeout
 	ReadTimeout       configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`             // Read timeout
 
-	Quota                Quota       `yaml:"quota,omitempty" json:"quota,omitempty"` // Rate limiting settings
-	Compression          Compression `yaml:"compression,omitempty" json:"compression,omitempty"`
-	ProxyProtocol        bool        `yaml:"proxyProtocol,omitempty" json:"proxyProtocol,omitempty"`     // Enable HA-Proxy protocol mode
-	ProxyProtocolBackend bool        `yaml:"proxyProtocolBackend" json:"proxyProtocolBackend,omitempty"` // Enable HA-Proxy protocol mode for backend servers
+	Quota                Quota         `yaml:"quota,omitempty" json:"quota,omitempty"`                 // Rate limiting settings
+	PacketLimiter        PacketLimiter `yaml:"packetLimiter,omitempty" json:"packetLimiter,omitempty"` // Per-connection serverbound packet rate limiting
+	Compression          Compression   `yaml:"compression,omitempty" json:"compression,omitempty"`
+	ProxyProtocol        bool          `yaml:"proxyProtocol,omitempty" json:"proxyProtocol,omitempty"`     // Enable HA-Proxy protocol mode
+	ProxyProtocolBackend bool          `yaml:"proxyProtocolBackend" json:"proxyProtocolBackend,omitempty"` // Enable HA-Proxy protocol mode for backend servers
 
 	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections" json:"shouldPreventClientProxyConnections,omitempty"` // Sends player IP to Mojang on login
 
@@ -154,7 +160,15 @@ type (
 	Quota struct {
 		Connections QuotaSettings `yaml:"connections"` // Limits new connections per second, per IP block.
 		Logins      QuotaSettings `yaml:"logins"`      // Limits logins per second, per IP block.
-		// Maybe add a bytes-per-sec limiter, or should be managed by a higher layer.
+	}
+	// PacketLimiter limits how many serverbound packets/bytes a single connection
+	// may send over a sliding window, mitigating packet floods from already
+	// connected clients (the Quota limits only apply at connect/login time).
+	// A limit <= 0 disables that dimension; if both are <= 0 the limiter is off.
+	PacketLimiter struct {
+		Interval         configutil.Duration `yaml:"interval"`         // Sliding window the rates are measured over.
+		PacketsPerSecond int                 `yaml:"packetsPerSecond"` // Max serverbound packets/s per connection (<=0 disables).
+		BytesPerSecond   int                 `yaml:"bytesPerSecond"`   // Max serverbound bytes/s per connection (<=0 disables).
 	}
 	QuotaSettings struct {
 		Enabled    bool    `yaml:"enabled"`    // If false, there is no such limiting.
@@ -213,6 +227,10 @@ func (c *Config) Validate() (warns []error, errs []error) {
 				e("Invalid quota max entries %d, use a number >= 1", quota.Burst)
 			}
 		}
+	}
+
+	if pl := c.PacketLimiter; (pl.PacketsPerSecond > 0 || pl.BytesPerSecond > 0) && pl.Interval <= 0 {
+		w("Packet limiter has a rate set but interval <= 0; the limiter is disabled. Set packetLimiter.interval > 0 to enable it.")
 	}
 
 	if c.Lite.Enabled {
