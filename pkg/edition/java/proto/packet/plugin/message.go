@@ -1,12 +1,19 @@
 package plugin
 
 import (
+	"fmt"
 	"io"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
+
+// MaxServerboundPayloadSize is the maximum size (in bytes) of a serverbound
+// plugin message payload. This matches the vanilla client limit; rejecting
+// larger serverbound payloads prevents a client from abusing plugin messages.
+// Clientbound payloads (proxy<-backend) are not subject to this limit.
+const MaxServerboundPayloadSize = 32767
 
 // Message is a Minecraft plugin message packet.
 type Message struct {
@@ -40,7 +47,17 @@ func (p *Message) Decode(c *proto.PacketContext, r io.Reader) (err error) {
 		p.Channel = TransformLegacyToModernChannel(p.Channel)
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		p.Data, err = io.ReadAll(r)
+		if c.Direction == proto.ServerBound {
+			// Reject serverbound payloads larger than the vanilla limit. Read one
+			// byte past the limit so we can detect (rather than silently truncate).
+			p.Data, err = io.ReadAll(io.LimitReader(r, MaxServerboundPayloadSize+1))
+			if err == nil && len(p.Data) > MaxServerboundPayloadSize {
+				return fmt.Errorf("serverbound plugin message payload too large: %d > %d bytes",
+					len(p.Data), MaxServerboundPayloadSize)
+			}
+		} else {
+			p.Data, err = io.ReadAll(r)
+		}
 	} else {
 		p.Data, err = util.ReadBytes17(r)
 	}

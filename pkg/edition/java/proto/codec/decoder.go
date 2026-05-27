@@ -190,9 +190,15 @@ func (d *Decoder) decompress(claimedUncompressedSize int, rd io.Reader) (decompr
 		return nil, errs.NewSilentErr("uncompressed size %d is less than set threshold %d",
 			claimedUncompressedSize, d.compressionThreshold)
 	}
-	if claimedUncompressedSize > UncompressedCap {
+	// Serverbound (client->proxy) data is untrusted, so cap it tighter than
+	// clientbound (backend->proxy) data.
+	maxSize := UncompressedCap
+	if d.direction == proto.ServerBound {
+		maxSize = ServerboundUncompressedCap
+	}
+	if claimedUncompressedSize > maxSize {
 		return nil, errs.NewSilentErr("uncompressed size %d exceeds hard threshold of %d",
-			claimedUncompressedSize, UncompressedCap)
+			claimedUncompressedSize, maxSize)
 	}
 
 	if d.zrd == nil {
