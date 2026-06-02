@@ -80,6 +80,8 @@ type Config struct {
 type ManagedGeyser struct {
 	Enabled         bool           `yaml:"enabled,omitempty" json:"enabled,omitempty"`                 // Enable managed Geyser mode (Gate handles Geyser process)
 	Engine          ManagedEngine  `yaml:"engine,omitempty" json:"engine,omitempty"`                   // Managed engine: "geyserlite" (default) or "java"
+	Geyserlite      *Geyserlite    `yaml:"geyserlite,omitempty" json:"geyserlite,omitempty"`           // Geyserlite-specific managed settings
+	Java            *JavaGeyser    `yaml:"java,omitempty" json:"java,omitempty"`                       // Java Geyser Standalone-specific managed settings
 	Mode            string         `yaml:"mode,omitempty" json:"mode,omitempty"`                       // Geyserlite mode: "subprocess" (default) or "embedded"
 	JarURL          string         `yaml:"jarUrl,omitempty" json:"jarUrl,omitempty"`                   // Download URL for Geyser Standalone JAR
 	DataDir         string         `yaml:"dataDir,omitempty" json:"dataDir,omitempty"`                 // Directory for JAR and runtime data
@@ -90,8 +92,28 @@ type ManagedGeyser struct {
 	Version         string         `yaml:"version,omitempty" json:"version,omitempty"`                 // Geyserlite release version for auto-download
 	Offline         bool           `yaml:"offline,omitempty" json:"offline,omitempty"`                 // Disable geyserlite auto-download lookup
 	AutoUpdate      bool           `yaml:"autoUpdate,omitempty" json:"autoUpdate,omitempty"`           // Download latest JAR on startup
-	ExtraArgs       []string       `yaml:"extraArgs,omitempty" json:"extraArgs,omitempty"`             // Additional JVM arguments
+	ExtraArgs       []string       `yaml:"extraArgs,omitempty" json:"extraArgs,omitempty"`             // Legacy additional process/JVM arguments
 	ConfigOverrides map[string]any `yaml:"configOverrides,omitempty" json:"configOverrides,omitempty"` // Custom overrides for auto-generated Geyser config
+}
+
+// Geyserlite configures the native geyserlite managed engine.
+type Geyserlite struct {
+	Mode        string   `yaml:"mode,omitempty" json:"mode,omitempty"`               // "subprocess" (default) or "embedded"
+	LibraryPath string   `yaml:"libraryPath,omitempty" json:"libraryPath,omitempty"` // Shared library path for embedded mode
+	BinaryPath  string   `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`   // Binary path for subprocess mode
+	Mirror      string   `yaml:"mirror,omitempty" json:"mirror,omitempty"`           // Release mirror base URL
+	Version     string   `yaml:"version,omitempty" json:"version,omitempty"`         // Release version for auto-download
+	Offline     bool     `yaml:"offline,omitempty" json:"offline,omitempty"`         // Disable auto-download lookup
+	ExtraArgs   []string `yaml:"extraArgs,omitempty" json:"extraArgs,omitempty"`     // Additional subprocess arguments
+}
+
+// JavaGeyser configures the Java Geyser Standalone managed engine.
+type JavaGeyser struct {
+	JarURL     string   `yaml:"jarUrl,omitempty" json:"jarUrl,omitempty"`         // Download URL for Geyser Standalone JAR
+	DataDir    string   `yaml:"dataDir,omitempty" json:"dataDir,omitempty"`       // Directory for JAR and runtime data
+	JavaPath   string   `yaml:"javaPath,omitempty" json:"javaPath,omitempty"`     // Path to Java executable
+	AutoUpdate *bool    `yaml:"autoUpdate,omitempty" json:"autoUpdate,omitempty"` // Download latest JAR on startup
+	ExtraArgs  []string `yaml:"extraArgs,omitempty" json:"extraArgs,omitempty"`   // Additional JVM arguments
 }
 
 // GetManaged returns the managed config with defaults applied.
@@ -106,48 +128,7 @@ func (c *Config) GetManaged() ManagedGeyser {
 
 	// Override with user-specified values (only non-zero values override defaults)
 	managed.Enabled = c.Managed.Enabled // Always take user's enabled value
-	if c.Managed.Engine != "" {
-		managed.Engine = normalizeManagedEngine(c.Managed.Engine)
-	}
-	if c.Managed.Mode != "" {
-		managed.Mode = c.Managed.Mode
-	}
-	if c.Managed.JarURL != "" {
-		managed.JarURL = c.Managed.JarURL
-	}
-	if c.Managed.DataDir != "" {
-		managed.DataDir = c.Managed.DataDir
-	}
-	if c.Managed.JavaPath != "" {
-		managed.JavaPath = c.Managed.JavaPath
-	}
-	if c.Managed.LibraryPath != "" {
-		managed.LibraryPath = c.Managed.LibraryPath
-	}
-	if c.Managed.BinaryPath != "" {
-		managed.BinaryPath = c.Managed.BinaryPath
-	}
-	if c.Managed.Mirror != "" {
-		managed.Mirror = c.Managed.Mirror
-	}
-	if c.Managed.Version != "" {
-		managed.Version = c.Managed.Version
-	}
-	managed.Offline = c.Managed.Offline
-	// AutoUpdate: only override if user has non-zero ExtraArgs (indicating they set other fields)
-	// This is a heuristic since we can't distinguish unset bool from explicit false
-	if len(c.Managed.ExtraArgs) > 0 || c.Managed.JarURL != "" || c.Managed.DataDir != "" || c.Managed.JavaPath != "" {
-		// User specified other fields, so they might have intentionally set AutoUpdate
-		managed.AutoUpdate = c.Managed.AutoUpdate
-	}
-	// Otherwise keep default AutoUpdate = true
-
-	if c.Managed.ExtraArgs != nil {
-		managed.ExtraArgs = c.Managed.ExtraArgs
-	}
-	if c.Managed.ConfigOverrides != nil {
-		managed.ConfigOverrides = c.Managed.ConfigOverrides
-	}
+	applyManagedOverrides(&managed, c.Managed)
 
 	return managed
 }
@@ -232,51 +213,104 @@ func (bc *BedrockConfig) GetManagedConfig() ManagedGeyser {
 	// Start with defaults and apply user values using the original logic
 	managed := DefaultManaged
 	managed.Enabled = managedStruct.Enabled // Always take user's enabled value
+	applyManagedOverrides(&managed, &managedStruct)
 
-	if managedStruct.Engine != "" {
-		managed.Engine = normalizeManagedEngine(managedStruct.Engine)
+	return managed
+}
+
+func applyManagedOverrides(managed *ManagedGeyser, user *ManagedGeyser) {
+	if user.Engine != "" {
+		managed.Engine = normalizeManagedEngine(user.Engine)
 	}
-	if managedStruct.Mode != "" {
-		managed.Mode = managedStruct.Mode
+	if user.Mode != "" {
+		managed.Mode = user.Mode
 	}
-	if managedStruct.JarURL != "" {
-		managed.JarURL = managedStruct.JarURL
+	if user.JarURL != "" {
+		managed.JarURL = user.JarURL
 	}
-	if managedStruct.DataDir != "" {
-		managed.DataDir = managedStruct.DataDir
+	if user.DataDir != "" {
+		managed.DataDir = user.DataDir
 	}
-	if managedStruct.JavaPath != "" {
-		managed.JavaPath = managedStruct.JavaPath
+	if user.JavaPath != "" {
+		managed.JavaPath = user.JavaPath
 	}
-	if managedStruct.LibraryPath != "" {
-		managed.LibraryPath = managedStruct.LibraryPath
+	if user.LibraryPath != "" {
+		managed.LibraryPath = user.LibraryPath
 	}
-	if managedStruct.BinaryPath != "" {
-		managed.BinaryPath = managedStruct.BinaryPath
+	if user.BinaryPath != "" {
+		managed.BinaryPath = user.BinaryPath
 	}
-	if managedStruct.Mirror != "" {
-		managed.Mirror = managedStruct.Mirror
+	if user.Mirror != "" {
+		managed.Mirror = user.Mirror
 	}
-	if managedStruct.Version != "" {
-		managed.Version = managedStruct.Version
+	if user.Version != "" {
+		managed.Version = user.Version
 	}
-	managed.Offline = managedStruct.Offline
+	managed.Offline = user.Offline
 	// AutoUpdate: only override if user has non-zero ExtraArgs (indicating they set other fields)
 	// This is a heuristic since we can't distinguish unset bool from explicit false
-	if len(managedStruct.ExtraArgs) > 0 || managedStruct.JarURL != "" || managedStruct.DataDir != "" || managedStruct.JavaPath != "" {
+	if len(user.ExtraArgs) > 0 || user.JarURL != "" || user.DataDir != "" || user.JavaPath != "" {
 		// User specified other fields, so they might have intentionally set AutoUpdate
-		managed.AutoUpdate = managedStruct.AutoUpdate
+		managed.AutoUpdate = user.AutoUpdate
 	}
 	// Otherwise keep default AutoUpdate = true
 
-	if managedStruct.ExtraArgs != nil {
-		managed.ExtraArgs = managedStruct.ExtraArgs
+	if user.ExtraArgs != nil {
+		managed.ExtraArgs = user.ExtraArgs
 	}
-	if managedStruct.ConfigOverrides != nil {
-		managed.ConfigOverrides = managedStruct.ConfigOverrides
+	switch managed.Engine {
+	case ManagedEngineJava:
+		if user.Java != nil {
+			applyJavaOverrides(managed, user.Java)
+		}
+	default:
+		if user.Geyserlite != nil {
+			applyGeyserliteOverrides(managed, user.Geyserlite)
+		}
 	}
+	if user.ConfigOverrides != nil {
+		managed.ConfigOverrides = user.ConfigOverrides
+	}
+}
 
-	return managed
+func applyGeyserliteOverrides(managed *ManagedGeyser, user *Geyserlite) {
+	if user.Mode != "" {
+		managed.Mode = user.Mode
+	}
+	if user.LibraryPath != "" {
+		managed.LibraryPath = user.LibraryPath
+	}
+	if user.BinaryPath != "" {
+		managed.BinaryPath = user.BinaryPath
+	}
+	if user.Mirror != "" {
+		managed.Mirror = user.Mirror
+	}
+	if user.Version != "" {
+		managed.Version = user.Version
+	}
+	managed.Offline = user.Offline
+	if user.ExtraArgs != nil {
+		managed.ExtraArgs = user.ExtraArgs
+	}
+}
+
+func applyJavaOverrides(managed *ManagedGeyser, user *JavaGeyser) {
+	if user.JarURL != "" {
+		managed.JarURL = user.JarURL
+	}
+	if user.DataDir != "" {
+		managed.DataDir = user.DataDir
+	}
+	if user.JavaPath != "" {
+		managed.JavaPath = user.JavaPath
+	}
+	if user.AutoUpdate != nil {
+		managed.AutoUpdate = *user.AutoUpdate
+	}
+	if user.ExtraArgs != nil {
+		managed.ExtraArgs = user.ExtraArgs
+	}
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling to handle managed: true shorthand
