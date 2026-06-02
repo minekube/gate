@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"gopkg.in/yaml.v3"
 
 	"go.minekube.com/gate/pkg/util/configutil"
@@ -26,14 +28,25 @@ var DefaultBedrockConfig = BedrockConfig{
 	Managed:          BoolOrManagedGeyser{},
 }
 
-// DefaultManaged provides default settings for managed Geyser Standalone.
+// DefaultManaged provides default settings for managed Geyser.
 var DefaultManaged = ManagedGeyser{
 	Enabled:    false,
+	Engine:     ManagedEngineGeyserlite,
 	JarURL:     "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone",
 	DataDir:    ".geyser",
 	JavaPath:   "java",
 	AutoUpdate: true, // Always download if missing or update available
 }
+
+// ManagedEngine selects which managed Geyser implementation Gate starts.
+type ManagedEngine string
+
+const (
+	// ManagedEngineGeyserlite starts the native geyserlite integration.
+	ManagedEngineGeyserlite ManagedEngine = "geyserlite"
+	// ManagedEngineJava starts the current Java Geyser Standalone JAR runner.
+	ManagedEngineJava ManagedEngine = "java"
+)
 
 // Config configures Bedrock Edition support via Geyser protocol translation and Floodgate authentication.
 // This enables cross-play between Java Edition and Bedrock Edition (mobile, console, Windows) players.
@@ -52,11 +65,11 @@ type Config struct {
 	FloodgateKeyPath string `yaml:"floodgateKeyPath,omitempty" json:"floodgateKeyPath,omitempty"` // Path to Floodgate AES encryption key shared with backend servers
 
 	// Managed Geyser (recommended): Gate automatically handles Geyser process
-	Managed *ManagedGeyser `yaml:"managed,omitempty" json:"managed,omitempty"` // Automatic Geyser JAR management and process control
+	Managed *ManagedGeyser `yaml:"managed,omitempty" json:"managed,omitempty"` // Automatic Geyser management and process control
 }
 
-// ManagedGeyser configures automatic Geyser Standalone management.
-// When enabled, Gate automatically downloads, configures, starts, and updates Geyser.
+// ManagedGeyser configures automatic Geyser management.
+// When enabled, Gate automatically configures and starts the selected Geyser engine.
 // This is the recommended approach for most users.
 //
 // Note: The Bedrock port (default 19132) should be configured via ConfigOverrides:
@@ -66,9 +79,16 @@ type Config struct {
 //	    port: 19133  # Custom Bedrock port
 type ManagedGeyser struct {
 	Enabled         bool           `yaml:"enabled,omitempty" json:"enabled,omitempty"`                 // Enable managed Geyser mode (Gate handles Geyser process)
+	Engine          ManagedEngine  `yaml:"engine,omitempty" json:"engine,omitempty"`                   // Managed engine: "geyserlite" (default) or "java"
+	Mode            string         `yaml:"mode,omitempty" json:"mode,omitempty"`                       // Geyserlite mode: "subprocess" (default) or "embedded"
 	JarURL          string         `yaml:"jarUrl,omitempty" json:"jarUrl,omitempty"`                   // Download URL for Geyser Standalone JAR
 	DataDir         string         `yaml:"dataDir,omitempty" json:"dataDir,omitempty"`                 // Directory for JAR and runtime data
 	JavaPath        string         `yaml:"javaPath,omitempty" json:"javaPath,omitempty"`               // Path to Java executable
+	LibraryPath     string         `yaml:"libraryPath,omitempty" json:"libraryPath,omitempty"`         // Geyserlite shared library path for embedded mode
+	BinaryPath      string         `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`           // Geyserlite binary path for subprocess mode
+	Mirror          string         `yaml:"mirror,omitempty" json:"mirror,omitempty"`                   // Geyserlite release mirror base URL
+	Version         string         `yaml:"version,omitempty" json:"version,omitempty"`                 // Geyserlite release version for auto-download
+	Offline         bool           `yaml:"offline,omitempty" json:"offline,omitempty"`                 // Disable geyserlite auto-download lookup
 	AutoUpdate      bool           `yaml:"autoUpdate,omitempty" json:"autoUpdate,omitempty"`           // Download latest JAR on startup
 	ExtraArgs       []string       `yaml:"extraArgs,omitempty" json:"extraArgs,omitempty"`             // Additional JVM arguments
 	ConfigOverrides map[string]any `yaml:"configOverrides,omitempty" json:"configOverrides,omitempty"` // Custom overrides for auto-generated Geyser config
@@ -86,6 +106,12 @@ func (c *Config) GetManaged() ManagedGeyser {
 
 	// Override with user-specified values (only non-zero values override defaults)
 	managed.Enabled = c.Managed.Enabled // Always take user's enabled value
+	if c.Managed.Engine != "" {
+		managed.Engine = normalizeManagedEngine(c.Managed.Engine)
+	}
+	if c.Managed.Mode != "" {
+		managed.Mode = c.Managed.Mode
+	}
 	if c.Managed.JarURL != "" {
 		managed.JarURL = c.Managed.JarURL
 	}
@@ -95,6 +121,19 @@ func (c *Config) GetManaged() ManagedGeyser {
 	if c.Managed.JavaPath != "" {
 		managed.JavaPath = c.Managed.JavaPath
 	}
+	if c.Managed.LibraryPath != "" {
+		managed.LibraryPath = c.Managed.LibraryPath
+	}
+	if c.Managed.BinaryPath != "" {
+		managed.BinaryPath = c.Managed.BinaryPath
+	}
+	if c.Managed.Mirror != "" {
+		managed.Mirror = c.Managed.Mirror
+	}
+	if c.Managed.Version != "" {
+		managed.Version = c.Managed.Version
+	}
+	managed.Offline = c.Managed.Offline
 	// AutoUpdate: only override if user has non-zero ExtraArgs (indicating they set other fields)
 	// This is a heuristic since we can't distinguish unset bool from explicit false
 	if len(c.Managed.ExtraArgs) > 0 || c.Managed.JarURL != "" || c.Managed.DataDir != "" || c.Managed.JavaPath != "" {
@@ -194,6 +233,12 @@ func (bc *BedrockConfig) GetManagedConfig() ManagedGeyser {
 	managed := DefaultManaged
 	managed.Enabled = managedStruct.Enabled // Always take user's enabled value
 
+	if managedStruct.Engine != "" {
+		managed.Engine = normalizeManagedEngine(managedStruct.Engine)
+	}
+	if managedStruct.Mode != "" {
+		managed.Mode = managedStruct.Mode
+	}
 	if managedStruct.JarURL != "" {
 		managed.JarURL = managedStruct.JarURL
 	}
@@ -203,6 +248,19 @@ func (bc *BedrockConfig) GetManagedConfig() ManagedGeyser {
 	if managedStruct.JavaPath != "" {
 		managed.JavaPath = managedStruct.JavaPath
 	}
+	if managedStruct.LibraryPath != "" {
+		managed.LibraryPath = managedStruct.LibraryPath
+	}
+	if managedStruct.BinaryPath != "" {
+		managed.BinaryPath = managedStruct.BinaryPath
+	}
+	if managedStruct.Mirror != "" {
+		managed.Mirror = managedStruct.Mirror
+	}
+	if managedStruct.Version != "" {
+		managed.Version = managedStruct.Version
+	}
+	managed.Offline = managedStruct.Offline
 	// AutoUpdate: only override if user has non-zero ExtraArgs (indicating they set other fields)
 	// This is a heuristic since we can't distinguish unset bool from explicit false
 	if len(managedStruct.ExtraArgs) > 0 || managedStruct.JarURL != "" || managedStruct.DataDir != "" || managedStruct.JavaPath != "" {
@@ -223,6 +281,16 @@ func (bc *BedrockConfig) GetManagedConfig() ManagedGeyser {
 
 // UnmarshalYAML implements custom YAML unmarshaling to handle managed: true shorthand
 func (bc *BedrockConfig) UnmarshalYAML(node *yaml.Node) error {
+	var enabled bool
+	if err := node.Decode(&enabled); err == nil {
+		*bc = DefaultBedrockConfig
+		bc.Enabled = enabled
+		if enabled {
+			bc.Managed = configutil.NewBoolOrStructBool[ManagedGeyser](true)
+		}
+		return nil
+	}
+
 	// First unmarshal into a temporary structure
 	type tempBedrockConfig BedrockConfig
 	temp := &tempBedrockConfig{}
@@ -239,4 +307,15 @@ func (bc *BedrockConfig) UnmarshalYAML(node *yaml.Node) error {
 	}
 
 	return nil
+}
+
+func normalizeManagedEngine(engine ManagedEngine) ManagedEngine {
+	switch ManagedEngine(strings.ToLower(string(engine))) {
+	case "", ManagedEngineGeyserlite:
+		return ManagedEngineGeyserlite
+	case ManagedEngineJava:
+		return ManagedEngineJava
+	default:
+		return engine
+	}
 }

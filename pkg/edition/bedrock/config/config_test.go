@@ -1,6 +1,8 @@
 package config
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -187,6 +189,46 @@ func TestGetManaged(t *testing.T) {
 				t.Errorf("ConfigOverrides: got %+v, want %+v", result.ConfigOverrides, tt.expected.ConfigOverrides)
 			}
 		})
+	}
+}
+
+func TestValidateRejectsUnknownManagedEngine(t *testing.T) {
+	cfg := Config{
+		GeyserListenAddr: "localhost:25567",
+		UsernameFormat:   ".%s",
+		FloodgateKeyPath: filepath.Join(t.TempDir(), "floodgate.key"),
+		Managed: &ManagedGeyser{
+			Enabled: true,
+			Engine:  "bogus",
+		},
+	}
+
+	_, errs := cfg.Validate()
+	if len(errs) == 0 {
+		t.Fatal("Validate() returned no errors for unknown managed engine")
+	}
+}
+
+func TestValidateGeyserliteManagedSkipsJavaWarnings(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	cfg := Config{
+		GeyserListenAddr: "localhost:25567",
+		UsernameFormat:   ".%s",
+		FloodgateKeyPath: keyPath,
+		Managed: &ManagedGeyser{
+			Enabled: true,
+			Engine:  ManagedEngineGeyserlite,
+		},
+	}
+
+	warns, errs := cfg.Validate()
+	if len(errs) > 0 {
+		t.Fatalf("Validate() errors = %v", errs)
+	}
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), "jarUrl") || strings.Contains(warn.Error(), "javaPath") {
+			t.Fatalf("Validate() emitted Java warning for geyserlite engine: %v", warn)
+		}
 	}
 }
 

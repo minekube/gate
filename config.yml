@@ -234,6 +234,8 @@ config:
 
   # Bedrock Edition (mobile, console, Windows) cross-play support.
   # Enables Java and Bedrock players to play together through integrated Geyser and Floodgate.
+  # Absolute simplest setup: replace this object with `bedrock: true`.
+  # That enables managed mode with the default geyserlite engine.
   # See https://gate.minekube.com/guide/bedrock for detailed setup guide.
   bedrock:
     # Enable Bedrock Edition support for cross-play.
@@ -241,7 +243,8 @@ config:
     enabled: false
 
     # --- QUICK START ---
-    # For most users, this single line enables everything:
+    # For most users, either replace this whole object with top-level `bedrock: true`,
+    # or keep the object form and use:
     #managed: true
 
     # --- ADVANCED CONFIGURATION ---
@@ -264,14 +267,26 @@ config:
     # Default: "floodgate.pem"
     #floodgateKeyPath: "floodgate.pem"
 
-    # Managed Geyser mode: Gate automatically handles Geyser Standalone process.
+    # Managed Geyser mode: Gate automatically handles the Geyser process.
     # This is the recommended setup for most users.
     managed:
-      # Enable managed mode (Gate downloads, configures, and runs Geyser).
+      # Enable managed mode (Gate configures and runs Geyser).
       # Default: false
       enabled: false
 
+      # Managed engine. "geyserlite" is the default native engine.
+      # Set to "java" to use the current Java Geyser Standalone JAR runner.
+      # Default: "geyserlite"
+      #engine: "geyserlite"
+
+      # Geyserlite runtime mode. "subprocess" isolates native crashes from Gate.
+      # Set to "embedded" for in-process libgeyserlite.so loading.
+      # Geyserlite only.
+      # Default: "subprocess"
+      #mode: "subprocess"
+
       # Download URL for Geyser Standalone JAR file.
+      # Java engine only.
       # Leave empty to use the latest official release.
       # Default: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
       #jarUrl: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
@@ -281,14 +296,25 @@ config:
       #dataDir: ".geyser"
 
       # Path to Java executable for running Geyser.
+      # Java engine only.
       # Default: "java" (from PATH)
       #javaPath: "java"
 
+      # Optional geyserlite binary/library location overrides.
+      # Geyserlite only.
+      #libraryPath: "/opt/geyserlite/libgeyserlite.so"
+      #binaryPath: "/opt/geyserlite/geyserlite"
+      #version: "v0.2.0"
+      #mirror: "https://github.com/minekube/geyserlite/releases/download"
+      #offline: false
+
       # Whether to automatically download JAR updates on startup.
+      # Java engine only.
       # Default: true
       #autoUpdate: true
 
       # Additional JVM arguments for running Geyser.
+      # Java engine and geyserlite subprocess mode.
       # Default: []
       #extraArgs:
       #  - "-Xmx1G"

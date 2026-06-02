@@ -45,6 +45,64 @@ bedrock:
 	}
 }
 
+func TestBedrockConfig_TopLevelBoolEnablesManagedGeyserlite(t *testing.T) {
+	yamlConfig := `
+bedrock: true
+`
+
+	type testConfig struct {
+		Bedrock bconfig.BedrockConfig `yaml:"bedrock"`
+	}
+
+	var cfg testConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("Failed to unmarshal config: %v", err)
+	}
+
+	if !cfg.Bedrock.Enabled {
+		t.Fatal("Expected Bedrock.Enabled to be true when bedrock: true")
+	}
+	if cfg.Bedrock.Managed.IsNil() {
+		t.Fatal("Expected Bedrock.Managed to be set when bedrock: true")
+	}
+	if !cfg.Bedrock.Managed.IsBool() || !cfg.Bedrock.Managed.BoolValue() {
+		t.Fatalf("Expected Bedrock.Managed to be true, got %v", cfg.Bedrock.Managed)
+	}
+
+	bedrockConfig := cfg.Bedrock.ToConfig()
+	managedConfig := bedrockConfig.GetManaged()
+	if !managedConfig.Enabled {
+		t.Fatal("Expected resolved managed config to be enabled")
+	}
+	if managedConfig.Engine != bconfig.ManagedEngineGeyserlite {
+		t.Fatalf("Expected bedrock: true to default to geyserlite engine, got %q", managedConfig.Engine)
+	}
+}
+
+func TestBedrockConfig_ManagedJavaEngine(t *testing.T) {
+	yamlConfig := `
+bedrock:
+  managed:
+    enabled: true
+    engine: java
+`
+
+	type testConfig struct {
+		Bedrock bconfig.BedrockConfig `yaml:"bedrock"`
+	}
+
+	var cfg testConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("Failed to unmarshal config: %v", err)
+	}
+
+	bedrockConfig := cfg.Bedrock.ToConfig()
+	managedConfig := bedrockConfig.GetManaged()
+	if managedConfig.Engine != bconfig.ManagedEngineJava {
+		t.Fatalf("Expected managed engine java, got %q", managedConfig.Engine)
+	}
+}
+
 func TestBedrockConfig_FlattenedStructure(t *testing.T) {
 	yamlConfig := `
 bedrock:

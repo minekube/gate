@@ -118,6 +118,18 @@ func TestRequiresRestart(t *testing.T) {
 			description:   "JAR URL change should trigger restart",
 		},
 		{
+			name: "managed engine change",
+			modifyConfig: func(cfg *config.Config) *config.Config {
+				modified := *cfg
+				managedCopy := *cfg.Managed
+				managedCopy.Engine = config.ManagedEngineJava
+				modified.Managed = &managedCopy
+				return &modified
+			},
+			shouldRestart: true,
+			description:   "Managed engine change should trigger restart",
+		},
+		{
 			name: "bedrock port change in configOverrides",
 			modifyConfig: func(cfg *config.Config) *config.Config {
 				modified := *cfg

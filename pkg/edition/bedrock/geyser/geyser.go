@@ -21,6 +21,52 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
+type managedRunner interface {
+	EnsureKey(context.Context) error
+	Start(context.Context) error
+	Stop()
+}
+
+type javaManagedRunner struct {
+	runner *managed.Runner
+}
+
+func newJavaManagedRunner(cfg *config.Config) *javaManagedRunner {
+	return &javaManagedRunner{runner: managed.New(cfg)}
+}
+
+func (r *javaManagedRunner) EnsureKey(ctx context.Context) error {
+	return r.runner.EnsureKey(ctx)
+}
+
+func (r *javaManagedRunner) Start(ctx context.Context) error {
+	jar, err := r.runner.Ensure(ctx)
+	if err != nil {
+		return fmt.Errorf("managed java geyser ensure failed: %w", err)
+	}
+	if err := r.runner.Start(ctx, jar); err != nil {
+		return fmt.Errorf("managed java geyser start failed: %w", err)
+	}
+	return nil
+}
+
+func (r *javaManagedRunner) Stop() {
+	r.runner.Stop()
+}
+
+func newManagedRunner(cfg *config.Config) (managedRunner, error) {
+	managedConfig := cfg.GetManaged()
+	switch managedConfig.Engine {
+	case "", config.ManagedEngineGeyserlite:
+		return newLiteManagedRunner(cfg), nil
+	case config.ManagedEngineJava:
+		return newJavaManagedRunner(cfg), nil
+	default:
+		return nil, fmt.Errorf("unknown managed geyser engine %q (want %q or %q)",
+			managedConfig.Engine, config.ManagedEngineGeyserlite, config.ManagedEngineJava)
+	}
+}
+
 // Integration provides Geyser integration for Gate.
 type Integration struct {
 	ctx            context.Context
@@ -33,7 +79,7 @@ type Integration struct {
 	connections    map[net.Addr]*GeyserConnection
 	mu             sync.RWMutex
 	unsubs         []func()
-	manager        *managed.Runner
+	manager        managedRunner
 }
 
 // GeyserConnection represents a connection from Geyser.
@@ -73,10 +119,14 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 
 	managedConfig := cfg.GetManaged()
 	if managedConfig.Enabled {
-		// Create a config copy with the resolved managed settings
 		configCopy := *cfg
 		configCopy.Managed = &managedConfig
-		integration.manager = managed.New(&configCopy)
+		manager, err := newManagedRunner(&configCopy)
+		if err != nil {
+			cancel()
+			return nil, err
+		}
+		integration.manager = manager
 
 		// In managed mode, ensure key exists before reading it
 		if err := integration.manager.EnsureKey(ctx); err != nil {
@@ -112,11 +162,7 @@ func (i *Integration) Start() error {
 
 	// If managed mode enabled, ensure and start Geyser Standalone
 	if i.manager != nil {
-		jar, err := i.manager.Ensure(i.ctx)
-		if err != nil {
-			return fmt.Errorf("managed geyser ensure failed: %w", err)
-		}
-		if err := i.manager.Start(i.ctx, jar); err != nil {
+		if err := i.manager.Start(i.ctx); err != nil {
 			return fmt.Errorf("managed geyser start failed: %w", err)
 		}
 		// Start method now waits for Geyser to be ready internally
