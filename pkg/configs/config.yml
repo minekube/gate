@@ -268,46 +268,54 @@ config:
       # Default: "geyserlite"
       #engine: "geyserlite"
 
-      # Geyserlite runtime mode. "subprocess" isolates native crashes from Gate.
-      # Set to "embedded" for in-process libgeyserlite.so loading.
-      # Geyserlite only.
-      # Default: "subprocess"
-      #mode: "subprocess"
+      # Geyserlite-specific managed settings.
+      # These fields only affect engine: "geyserlite".
+      geyserlite:
+        # Runtime mode. "subprocess" isolates native crashes from Gate.
+        # Set to "embedded" for in-process shared library loading.
+        # Default: "subprocess"
+        #mode: "subprocess"
 
-      # Download URL for Geyser Standalone JAR file.
-      # Java engine only.
-      # Leave empty to use the latest official release.
-      # Default: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
-      #jarUrl: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+        # Optional binary/library location overrides.
+        # Use the platform shared library path for embedded mode.
+        #libraryPath: "/opt/geyserlite/libgeyserlite.so"
+        #binaryPath: "/opt/geyserlite/geyserlite"
+        #version: "v0.2.1"
+        #mirror: "https://github.com/minekube/geyserlite/releases/download"
+        #offline: false
 
-      # Directory for Geyser data (JAR file, config, logs, etc.).
-      # Default: ".geyser"
-      #dataDir: ".geyser"
+        # Additional subprocess arguments.
+        # Default: []
+        #extraArgs: []
 
-      # Path to Java executable for running Geyser.
-      # Java engine only.
-      # Default: "java" (from PATH)
-      #javaPath: "java"
+      # Java Geyser Standalone-specific managed settings.
+      # These fields only affect engine: "java".
+      java:
+        # Download URL for Geyser Standalone JAR file.
+        # Leave empty to use the latest official release.
+        # Default: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
+        #jarUrl: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
 
-      # Optional geyserlite binary/library location overrides.
-      # Geyserlite only.
-      #libraryPath: "/opt/geyserlite/libgeyserlite.so"
-      #binaryPath: "/opt/geyserlite/geyserlite"
-      #version: "v0.2.0"
-      #mirror: "https://github.com/minekube/geyserlite/releases/download"
-      #offline: false
+        # Directory for Geyser data (JAR file, config, logs, etc.).
+        # Default: ".geyser"
+        #dataDir: ".geyser"
 
-      # Whether to automatically download JAR updates on startup.
-      # Java engine only.
-      # Default: true
-      #autoUpdate: true
+        # Path to Java executable for running Geyser.
+        # Default: "java" (from PATH)
+        #javaPath: "java"
 
-      # Additional JVM arguments for running Geyser.
-      # Java engine and geyserlite subprocess mode.
-      # Default: []
-      #extraArgs:
-      #  - "-Xmx1G"
-      #  - "-XX:+UseG1GC"
+        # Whether to automatically download JAR updates on startup.
+        # Default: true
+        #autoUpdate: true
+
+        # Additional JVM arguments for running Geyser.
+        # Default: []
+        #extraArgs:
+        #  - "-Xmx1G"
+        #  - "-XX:+UseG1GC"
+
+      # Backward compatibility: the engine-specific fields above are also still
+      # accepted directly under managed, but the nested form is clearer.
 
       # Custom overrides for the auto-generated Geyser config.
       # This allows you to customize the Geyser config.

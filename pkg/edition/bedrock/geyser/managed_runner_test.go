@@ -81,7 +81,7 @@ func TestLiteManagedRunnerOptionsMapManagedConfig(t *testing.T) {
 			LibraryPath: "/opt/geyserlite/libgeyserlite.so",
 			BinaryPath:  "/opt/geyserlite/geyserlite",
 			Mirror:      "https://mirror.example.com/geyserlite",
-			Version:     "v0.2.0",
+			Version:     "v0.2.1",
 			Offline:     true,
 			ExtraArgs:   []string{"-Xmx512m"},
 			ConfigOverrides: map[string]any{
@@ -117,7 +117,7 @@ func TestLiteManagedRunnerOptionsMapManagedConfig(t *testing.T) {
 	if opts.Mirror != "https://mirror.example.com/geyserlite" {
 		t.Fatalf("Mirror = %q", opts.Mirror)
 	}
-	if opts.Version != "v0.2.0" {
+	if opts.Version != "v0.2.1" {
 		t.Fatalf("Version = %q", opts.Version)
 	}
 	if !opts.Offline {
