@@ -140,7 +140,16 @@ func requiresRestart(prev, curr *config.Config) bool {
 	currManaged := curr.GetManaged()
 
 	if prevManaged.Enabled != currManaged.Enabled ||
-		prevManaged.JarURL != currManaged.JarURL {
+		prevManaged.Engine != currManaged.Engine ||
+		prevManaged.Mode != currManaged.Mode ||
+		prevManaged.JarURL != currManaged.JarURL ||
+		prevManaged.JavaPath != currManaged.JavaPath ||
+		prevManaged.LibraryPath != currManaged.LibraryPath ||
+		prevManaged.BinaryPath != currManaged.BinaryPath ||
+		prevManaged.Mirror != currManaged.Mirror ||
+		prevManaged.Version != currManaged.Version ||
+		prevManaged.Offline != currManaged.Offline ||
+		!reflect.DeepEqual(prevManaged.ExtraArgs, currManaged.ExtraArgs) {
 		return true
 	}
 

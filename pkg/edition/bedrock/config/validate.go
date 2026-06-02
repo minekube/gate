@@ -38,6 +38,14 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	// Validate managed mode options
 	if managed.Enabled {
+		switch managed.Engine {
+		case "", ManagedEngineGeyserlite, ManagedEngineJava:
+		default:
+			e("Invalid managed engine %q, use %q or %q", managed.Engine, ManagedEngineGeyserlite, ManagedEngineJava)
+		}
+		if managed.Mode != "" && managed.Mode != "embedded" && managed.Mode != "subprocess" {
+			e("Invalid managed mode %q, use \"embedded\" or \"subprocess\"", managed.Mode)
+		}
 		if managed.JarURL == "" {
 			w("managed mode enabled but jarUrl is empty; using latest default")
 		}
