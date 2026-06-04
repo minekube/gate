@@ -244,7 +244,7 @@ remote:
   port: %d
   auth-type: floodgate
   use-proxy-protocol: true
-  forward-hostname: false
+  forward-hostname: true
 
 # Point to the shared Floodgate key (absolute path)
 floodgate-key-file: %s
