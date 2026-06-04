@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.66.1](https://github.com/minekube/gate/compare/v0.66.0...v0.66.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* **bedrock:** wait for managed geyserlite readiness ([cf0a4ef](https://github.com/minekube/gate/commit/cf0a4efaaee747c45381748f3160fb31a875d785))
+* **bedrock:** wait for managed geyserlite readiness ([5dcbdf3](https://github.com/minekube/gate/commit/5dcbdf388f73264f271f2d5f7a07b058d175bf11))
+
 ## [0.66.0](https://github.com/minekube/gate/compare/v0.65.0...v0.66.0) (2026-06-04)
 
 
