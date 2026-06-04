@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.5](https://github.com/minekube/gate/compare/v0.66.4...v0.66.5) (2026-06-04)
+
+
+### Bug Fixes
+
+* **docker:** use glibc base images so dynamically linked gate binary execs ([#712](https://github.com/minekube/gate/issues/712)) ([9d503c3](https://github.com/minekube/gate/commit/9d503c348a724711835a1fcd78e8434b77024d23))
+
 ## [0.66.4](https://github.com/minekube/gate/compare/v0.66.3...v0.66.4) (2026-06-04)
 
 
