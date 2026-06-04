@@ -1,0 +1,4 @@
+settings:
+  # Gate uses legacy/Bungee forwarding for backend player identity data.
+  # Keep backend access restricted to the proxy when online-mode=false.
+  bungeecord: true

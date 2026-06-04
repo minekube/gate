@@ -1,80 +1,70 @@
-# Gate + Geyser Bedrock Support Example
+# Gate + geyserlite Bedrock Support Example
 
-This example demonstrates how to set up Gate with Geyser for Bedrock Edition support, allowing both Java and Bedrock players to join the same server.
+This example demonstrates Gate's managed Bedrock mode. Gate starts geyserlite automatically so Java and Bedrock players can join the same Paper backend.
 
 ## Quick Start
 
-1. **Generate Floodgate Key** (first time only):
-
-   ```bash
-   # Generate a new Floodgate key
-   docker run --rm -v $(pwd)/geyser:/data itzg/minecraft-server \
-     sh -c "mkdir -p /data && openssl genpkey -algorithm RSA -out /data/key.pem -pkcs8"
-   ```
-
-2. **Start the services**:
+1. **Start the services**:
 
    ```bash
    docker compose up -d
    ```
 
-3. **Check logs**:
+2. **Check logs**:
 
    ```bash
    docker compose logs -f
    ```
 
-4. **Connect**:
+3. **Connect**:
    - **Java players**: Connect to `localhost:25565`
    - **Bedrock players**: Connect to `localhost:19132`
 
 ## Architecture
 
 ```
-Bedrock Players (19132/udp) → Geyser → Gate (25567) → Backend Servers
+Bedrock Players (19132/udp) → Gate managed geyserlite → Paper
 Java Players (25565/tcp) → Gate → Backend Servers
 ```
 
 ## Services
 
 - **Gate**: Main proxy server handling both Java and translated Bedrock connections
-- **Geyser**: Protocol translator converting Bedrock to Java Edition protocol
-- **Server1**: Backend Minecraft server (no plugins required)
-- **Volumes**: Persistent world data
+- **geyserlite**: Native Geyser engine downloaded and started by Gate managed mode
+- **Server1**: Paper `26.1.2` backend running on Java 25
+- **Volumes**: Persistent Gate cache/data and Paper world data
 
 ## Configuration Files
 
-- `gate.yml` - Gate proxy configuration with Bedrock support enabled
-- `geyser/config.yml` - Geyser standalone configuration
-
+- `gate.yml` - Gate proxy configuration with `bedrock: true`
 - `server.properties` - Backend server properties
+- `spigot.yml` - Enables Bungee/legacy forwarding for Gate
 - `docker-compose.yml` - Docker services orchestration
 
 ## Security Notes
 
-- The Gate Bedrock listener (port 25567) should only accept connections from Geyser
-- In production, use firewall rules to restrict access to this port
-- The `key.pem` file enables secure authentication between Geyser and Gate (no backend plugins required)
+- The backend runs with `online-mode=false` because Gate authenticates players.
+- Restrict backend access so players cannot bypass Gate.
+- `spigot.yml` enables Bungee/legacy forwarding, which is required for Gate to pass player identity data.
 
 ## Troubleshooting
 
 ### Bedrock players can't connect
 
 - Check that UDP port 19132 is accessible
-- Verify Geyser logs for connection errors
-- Ensure the Floodgate key is properly shared
+- Verify Gate logs for geyserlite startup errors
+- Ensure the Gate container can write to its cache/data volumes
 
 ### Authentication errors
 
-- Verify the `key.pem` is accessible by both Geyser and Gate
-- Check file permissions on the key file
-- Ensure backend servers have `online-mode=false` (since Gate handles authentication)
+- Ensure backend servers have `online-mode=false`
+- Ensure `settings.bungeecord: true` is present in `spigot.yml`
+- Keep backend access restricted to Gate
 
 ### Performance issues
 
-- Adjust Geyser's `compression-level` and `mtu` settings
-- Monitor resource usage of the Geyser container
-- Consider using `use-direct-connection: true` in Geyser config
+- Monitor resource usage of the Gate container
+- Configure advanced managed options in `gate.yml` if you need custom geyserlite settings
 
 ## Customization
 
