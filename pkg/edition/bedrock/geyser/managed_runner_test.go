@@ -1,9 +1,12 @@
 package geyser
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	geyserlite "go.minekube.com/geyserlite"
@@ -130,3 +133,70 @@ func TestLiteManagedRunnerOptionsMapManagedConfig(t *testing.T) {
 		t.Fatalf("ConfigOverrides = %#v, want bedrock override", opts.ConfigOverrides)
 	}
 }
+
+func TestLiteManagedRunnerStartWaitsUntilHealthy(t *testing.T) {
+	tempDir := t.TempDir()
+	keyPath := filepath.Join(tempDir, "floodgate.key")
+	if err := os.WriteFile(keyPath, []byte("0123456789abcdef"), 0o600); err != nil {
+		t.Fatalf("write key: %v", err)
+	}
+
+	cfg := &config.Config{
+		GeyserListenAddr: "localhost:25567",
+		FloodgateKeyPath: keyPath,
+		Managed: &config.ManagedGeyser{
+			Enabled: true,
+			Engine:  config.ManagedEngineGeyserlite,
+		},
+	}
+
+	fake := &fakeGeyserliteServer{started: make(chan struct{})}
+	runner := newLiteManagedRunner(cfg)
+	runner.newServer = func(geyserlite.Options) (geyserliteServer, error) {
+		return fake, nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 1)
+	go func() { errCh <- runner.Start(ctx) }()
+
+	select {
+	case <-fake.started:
+	case <-time.After(time.Second):
+		t.Fatal("geyserlite server did not start")
+	}
+
+	select {
+	case err := <-errCh:
+		t.Fatalf("Start returned before Healthy: %v", err)
+	case <-time.After(2 * liteManagedReadyPoll):
+	}
+
+	fake.healthy.Store(true)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Start returned error after Healthy: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Start did not return after Healthy")
+	}
+
+	runner.Stop()
+}
+
+type fakeGeyserliteServer struct {
+	healthy atomic.Bool
+	started chan struct{}
+}
+
+func (f *fakeGeyserliteServer) Start(ctx context.Context) error {
+	close(f.started)
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (f *fakeGeyserliteServer) Stop(context.Context) error { return nil }
+
+func (f *fakeGeyserliteServer) Healthy() bool { return f.healthy.Load() }
