@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.66.2](https://github.com/minekube/gate/compare/v0.66.1...v0.66.2) (2026-06-04)
+
+
+### Bug Fixes
+
+* **bedrock:** forward hostnames in managed java geyser ([a71a7d2](https://github.com/minekube/gate/commit/a71a7d26c00cd86199ad11a89f634f9202149e5c))
+* **bedrock:** forward hostnames in managed Java Geyser ([392ce14](https://github.com/minekube/gate/commit/392ce14d8c3b1582b0b7226544276c47a148c252))
+
 ## [0.66.1](https://github.com/minekube/gate/compare/v0.66.0...v0.66.1) (2026-06-04)
 
 
