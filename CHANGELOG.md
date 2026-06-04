@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.4](https://github.com/minekube/gate/compare/v0.66.3...v0.66.4) (2026-06-04)
+
+
+### Bug Fixes
+
+* **java:** allow nil tab list header footer ([#710](https://github.com/minekube/gate/issues/710)) ([10c0f64](https://github.com/minekube/gate/commit/10c0f64af2efbb56298009db868ab6573eb17d48))
+
 ## [0.66.3](https://github.com/minekube/gate/compare/v0.66.2...v0.66.3) (2026-06-04)
 
 
