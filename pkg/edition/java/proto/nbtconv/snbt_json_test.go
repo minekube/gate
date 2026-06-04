@@ -357,3 +357,26 @@ func TestSnbtToJSON_EmptyKeys(t *testing.T) {
 	// The empty key should be preserved
 	assert.Contains(t, string(got), `""`)
 }
+
+func TestSnbtToJSON_ComponentStyleByteBooleans(t *testing.T) {
+	// Modern Java chat components encode style booleans as NBT byte tags.
+	// go-mc renders those as 0B/1B in SNBT; they must become JSON booleans
+	// before the component codec sees them.
+	snbt := `{text:"hi",italic:0B,bold:1B,extra:[{text:" child",underlined:1b,strikethrough:0b,obfuscated:1}]}`
+
+	got, err := SnbtToJSON(snbt)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.JSONEq(t, `{
+		"text": "hi",
+		"italic": false,
+		"bold": true,
+		"extra": [{
+			"text": " child",
+			"underlined": true,
+			"strikethrough": false,
+			"obfuscated": true
+		}]
+	}`, string(got))
+}
