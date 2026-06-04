@@ -17,3 +17,6 @@ checksum:
   name_template: 'checksums.txt'
 changelog:
   sort: asc
+release:
+  mode: keep-existing
+  replace_existing_artifacts: true

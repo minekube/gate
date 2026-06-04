@@ -1,11 +1,16 @@
 name: ci
 on:
   push:
+  workflow_dispatch:
   pull_request:
     types: [opened, reopened]
 
 env:
   REGISTRY: ghcr.io
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   lint:
@@ -44,7 +49,7 @@ jobs:
       - name: Test
         run: make test
   build:
-    if: ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
+    if: ( github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') ) || ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
     needs:
       - lint
       - test
