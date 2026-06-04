@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.3](https://github.com/minekube/gate/compare/v0.66.2...v0.66.3) (2026-06-04)
+
+
+### Bug Fixes
+
+* **java:** normalize NBT component style booleans ([486e4a8](https://github.com/minekube/gate/commit/486e4a802e26168d832e0c27e1bbd48070eb54e1))
+
 ## [0.66.2](https://github.com/minekube/gate/compare/v0.66.1...v0.66.2) (2026-06-04)
 
 
