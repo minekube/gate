@@ -160,20 +160,23 @@ func (i *Integration) Start() error {
 	unsubProf := event.Subscribe(eventMgr, priority, i.onGameProfile)
 	i.unsubs = append(i.unsubs, unsubPre, unsubProf)
 
-	// If managed mode enabled, ensure and start Geyser Standalone
-	if i.manager != nil {
-		if err := i.manager.Start(i.ctx); err != nil {
-			return fmt.Errorf("managed geyser start failed: %w", err)
-		}
-		// Start method now waits for Geyser to be ready internally
+	ln, err := i.listen()
+	if err != nil {
+		return err
 	}
-
-	// Start listening for Geyser connections
 	go func() {
-		if err := i.listenAndServe(); err != nil {
+		if err := i.serve(ln); err != nil {
 			i.log.Error(err, "geyser listener failed")
 		}
 	}()
+
+	// If managed mode enabled, ensure and start Geyser Standalone
+	if i.manager != nil {
+		if err := i.manager.Start(i.ctx); err != nil {
+			_ = ln.Close()
+			return fmt.Errorf("managed geyser start failed: %w", err)
+		}
+	}
 
 	i.log.Info("geyser integration started", "addr", i.config.GeyserListenAddr)
 	return nil
@@ -205,16 +208,20 @@ func (i *Integration) Stop() {
 	}
 }
 
-func (i *Integration) listenAndServe() error {
+func (i *Integration) listen() (net.Listener, error) {
 	if i.ctx.Err() != nil {
-		return i.ctx.Err()
+		return nil, i.ctx.Err()
 	}
 
 	var lc net.ListenConfig
 	ln, err := lc.Listen(i.ctx, "tcp", i.config.GeyserListenAddr)
 	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %w", i.config.GeyserListenAddr, err)
+		return nil, fmt.Errorf("failed to listen on %s: %w", i.config.GeyserListenAddr, err)
 	}
+	return ln, nil
+}
+
+func (i *Integration) serve(ln net.Listener) error {
 	defer func() { _ = ln.Close() }()
 
 	ctx, cancel := context.WithCancel(i.ctx)

@@ -15,16 +15,33 @@ import (
 )
 
 type liteManagedRunner struct {
-	cfg    *config.Config
-	server *geyserlite.Server
-	cancel context.CancelFunc
-	done   chan error
-	mu     sync.Mutex
+	cfg       *config.Config
+	newServer func(geyserlite.Options) (geyserliteServer, error)
+	server    geyserliteServer
+	cancel    context.CancelFunc
+	done      chan error
+	mu        sync.Mutex
 }
 
 func newLiteManagedRunner(cfg *config.Config) *liteManagedRunner {
-	return &liteManagedRunner{cfg: cfg}
+	return &liteManagedRunner{
+		cfg: cfg,
+		newServer: func(opts geyserlite.Options) (geyserliteServer, error) {
+			return geyserlite.New(opts)
+		},
+	}
 }
+
+type geyserliteServer interface {
+	Start(context.Context) error
+	Stop(context.Context) error
+	Healthy() bool
+}
+
+const (
+	liteManagedStartupTimeout = 10 * time.Minute
+	liteManagedReadyPoll      = 100 * time.Millisecond
+)
 
 func (r *liteManagedRunner) EnsureKey(ctx context.Context) error {
 	log := slog.Default().With("component", "geyserlite.managed")
@@ -54,7 +71,7 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	server, err := geyserlite.New(opts)
+	server, err := r.newServer(opts)
 	if err != nil {
 		return err
 	}
@@ -73,17 +90,38 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 		done <- err
 	}()
 
-	select {
-	case err := <-done:
-		r.server = nil
-		r.cancel = nil
-		r.done = nil
-		return err
-	case <-time.After(250 * time.Millisecond):
-		return nil
-	case <-ctx.Done():
-		cancel()
-		return ctx.Err()
+	ticker := time.NewTicker(liteManagedReadyPoll)
+	defer ticker.Stop()
+	timeout := time.NewTimer(liteManagedStartupTimeout)
+	defer timeout.Stop()
+
+	for {
+		select {
+		case err := <-done:
+			r.server = nil
+			r.cancel = nil
+			r.done = nil
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("geyserlite exited before becoming healthy")
+		case <-ticker.C:
+			if server.Healthy() {
+				return nil
+			}
+		case <-timeout.C:
+			cancel()
+			r.server = nil
+			r.cancel = nil
+			r.done = nil
+			return fmt.Errorf("timed out after %s waiting for geyserlite to become healthy", liteManagedStartupTimeout)
+		case <-ctx.Done():
+			cancel()
+			r.server = nil
+			r.cancel = nil
+			r.done = nil
+			return ctx.Err()
+		}
 	}
 }
 
