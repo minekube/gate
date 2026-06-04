@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Tnze/go-mc/nbt"
 	"go.minekube.com/common/minecraft/key"
 	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
@@ -276,7 +277,12 @@ var packets = []proto.Packet{
 	&cookie.CookieResponse{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
 	&cookie.CookieStore{Key: key.New("minecraft", "test"), Payload: []byte("payload")},
 	&DialogClear{},
-	&DialogShow{},
+	&DialogShow{
+		BinaryTag: nbt.RawMessage{
+			Type: nbt.TagCompound,
+			Data: []byte{nbt.TagEnd},
+		},
+	},
 }
 
 func generatePlayerKey() crypto.IdentifiedKey {
