@@ -38,8 +38,14 @@ jobs:
           PR_NUMBER=$(echo '${{ steps.rp.outputs.pr }}' | jq -r '.number')
           gh pr merge "$PR_NUMBER" \
             --repo "${{ github.repository }}" \
-            --auto \
             --merge
+
+          # Merges done with GITHUB_TOKEN do not trigger a new push workflow.
+          # Run this workflow again on master so release-please observes the
+          # merged release PR and creates the tag/GitHub release.
+          gh workflow run release-please.yml \
+            --repo "${{ github.repository }}" \
+            --ref "${{ github.ref_name }}"
 
   trigger-release:
     needs: release-please
