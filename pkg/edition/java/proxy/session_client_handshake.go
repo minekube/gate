@@ -227,6 +227,10 @@ func (i *initialInbound) VirtualHost() net.Addr {
 	return i.virtualHost
 }
 
+func (i *initialInbound) setVirtualHost(addr net.Addr) {
+	i.virtualHost = addr
+}
+
 func (i *initialInbound) HandshakeIntent() packet.HandshakeIntent {
 	return i.handshakeIntent
 }
@@ -241,7 +245,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), i.State().State))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(normalizeDisconnectReason(reason), i.Protocol(), i.State().State))
 }
 
 //
