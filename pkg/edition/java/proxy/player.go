@@ -607,6 +607,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 	if !p.Active() {
 		return
 	}
+	reason = normalizeDisconnectReason(reason)
 
 	var r string
 	b := new(strings.Builder)

@@ -283,6 +283,22 @@ func (e *PreLoginEvent) Conn() Inbound {
 	return e.connection
 }
 
+// SetVirtualHost replaces the virtual host for the connecting player.
+// It is intended for integrations that decode proxy metadata from the
+// handshake host and need later routing/backend handshakes to see the
+// original clean host.
+func (e *PreLoginEvent) SetVirtualHost(addr net.Addr) bool {
+	type virtualHostSetter interface {
+		setVirtualHost(net.Addr)
+	}
+	setter, ok := e.connection.(virtualHostSetter)
+	if !ok {
+		return false
+	}
+	setter.setVirtualHost(addr)
+	return true
+}
+
 // Result returns the current result of the PreLoginEvent.
 func (e *PreLoginEvent) Result() PreLoginResult {
 	return e.result

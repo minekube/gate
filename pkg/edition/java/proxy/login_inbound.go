@@ -74,6 +74,8 @@ func (l *loginInboundConn) Protocol() proto.Protocol { return l.delegate.Protoco
 
 func (l *loginInboundConn) VirtualHost() net.Addr { return l.delegate.VirtualHost() }
 
+func (l *loginInboundConn) setVirtualHost(addr net.Addr) { l.delegate.setVirtualHost(addr) }
+
 func (l *loginInboundConn) HandshakeIntent() packet.HandshakeIntent {
 	return l.delegate.HandshakeIntent()
 }

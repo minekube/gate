@@ -6,6 +6,8 @@ import (
 	"math"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -15,9 +17,11 @@ import (
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser/floodgate"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser/managed"
+	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -87,7 +91,9 @@ type GeyserConnection struct {
 	context.Context
 	net.Conn
 	*floodgate.BedrockData
-	closeCb func()
+	OriginalHost  string
+	LinkedAccount *LinkedAccountResult
+	closeCb       func()
 }
 
 func (c *GeyserConnection) Close() error {
@@ -297,6 +303,8 @@ func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {
 		}
 
 		geyserConn.BedrockData = bedrockData
+		geyserConn.OriginalHost = originalHost
+		e.SetVirtualHost(cleanedVirtualHost(hostname, originalHost))
 
 		// Force offline mode for Bedrock players (Floodgate handles auth)
 		e.ForceOfflineMode()
@@ -352,6 +360,9 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 
 	// Check for linked Java account
 	if linkedAccount, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid); err == nil && linkedAccount != nil && linkedAccount.JavaID != uuid.Nil {
+		geyserConn.LinkedAccount = linkedAccount
+		bedrockData.LinkedPlayer = linkedAccount.JavaName
+
 		// Use linked Java account details
 		i.log.Info("bedrock player using linked java account",
 			"bedrock_name", bedrockData.Username,
@@ -364,4 +375,57 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	}
 
 	e.SetGameProfile(gameProfile)
+}
+
+func cleanedVirtualHost(current net.Addr, originalHost string) net.Addr {
+	network := "tcp"
+	currentPort := uint16(0)
+	if current != nil {
+		network = current.Network()
+		currentPort = virtualHostPort(current)
+	}
+	host, port := splitOriginalHostPort(originalHost)
+	if port == 0 {
+		port = currentPort
+	}
+	host = lite.ClearVirtualHost(host)
+	if port == 0 {
+		return netutil.NewAddr(host, network)
+	}
+	return netutil.NewAddr(net.JoinHostPort(host, strconv.Itoa(int(port))), network)
+}
+
+func virtualHostPort(addr net.Addr) uint16 {
+	_, port := netutil.HostPort(addr)
+	if port != 0 {
+		return port
+	}
+	host := addr.String()
+	if !strings.Contains(host, "\x00") {
+		return 0
+	}
+	idx := strings.LastIndex(host, ":")
+	if idx == -1 || idx == len(host)-1 {
+		return 0
+	}
+	portInt, err := strconv.Atoi(host[idx+1:])
+	if err != nil || portInt <= 0 || portInt > 65535 {
+		return 0
+	}
+	return uint16(portInt)
+}
+
+func splitOriginalHostPort(originalHost string) (string, uint16) {
+	host, portStr, err := net.SplitHostPort(originalHost)
+	if err == nil {
+		port, err := strconv.Atoi(portStr)
+		if err == nil && port > 0 && port <= 65535 {
+			return host, uint16(port)
+		}
+		return host, 0
+	}
+	if strings.HasPrefix(originalHost, "[") && strings.HasSuffix(originalHost, "]") {
+		return strings.TrimSuffix(strings.TrimPrefix(originalHost, "["), "]"), 0
+	}
+	return originalHost, 0
 }
