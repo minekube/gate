@@ -283,6 +283,22 @@ func (e *PreLoginEvent) Conn() Inbound {
 	return e.connection
 }
 
+// SetVirtualHost replaces the virtual host for the connecting player.
+// It is intended for integrations that decode proxy metadata from the
+// handshake host and need later routing/backend handshakes to see the
+// original clean host.
+func (e *PreLoginEvent) SetVirtualHost(addr net.Addr) bool {
+	type virtualHostSetter interface {
+		setVirtualHost(net.Addr)
+	}
+	setter, ok := e.connection.(virtualHostSetter)
+	if !ok {
+		return false
+	}
+	setter.setVirtualHost(addr)
+	return true
+}
+
 // Result returns the current result of the PreLoginEvent.
 func (e *PreLoginEvent) Result() PreLoginResult {
 	return e.result
@@ -324,10 +340,17 @@ func (e *PreLoginEvent) ForceOfflineMode() {
 //
 
 type LoginEvent struct {
-	player Player
+	player       Player
+	serverIDHash string // server ID hash sent to Mojang for authentication, empty if offline-mode
 
 	denied bool
 	reason component.Component
+}
+
+// ServerIDHash returns the server ID hash that was sent to Mojang to authenticate the player.
+// Returns empty string if the connection was in offline-mode.
+func (e *LoginEvent) ServerIDHash() string {
+	return e.serverIDHash
 }
 
 func (e *LoginEvent) Player() Player {

@@ -1,10 +1,49 @@
 package managed
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	"gopkg.in/yaml.v3"
 )
+
+func TestWriteGeyserConfigForwardsHostnameByDefault(t *testing.T) {
+	dataDir := t.TempDir()
+	keyPath := filepath.Join(dataDir, "floodgate.pem")
+	if err := os.WriteFile(keyPath, []byte("test-key"), 0o600); err != nil {
+		t.Fatalf("failed to write key: %v", err)
+	}
+
+	r := &Runner{cfg: &bconfig.Config{
+		GeyserListenAddr: "127.0.0.1:25567",
+		FloodgateKeyPath: keyPath,
+	}}
+
+	configPath, err := r.writeGeyserConfig(bconfig.ManagedGeyser{DataDir: dataDir})
+	if err != nil {
+		t.Fatalf("writeGeyserConfig failed: %v", err)
+	}
+
+	configBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("failed to read config: %v", err)
+	}
+
+	var result map[string]any
+	if err := yaml.Unmarshal(configBytes, &result); err != nil {
+		t.Fatalf("failed to parse generated config: %v", err)
+	}
+
+	remote := result["remote"].(map[string]any)
+	if remote["forward-hostname"] != true {
+		t.Fatalf("expected remote.forward-hostname = true, got %v", remote["forward-hostname"])
+	}
+	if remote["use-proxy-protocol"] != true {
+		t.Fatalf("expected remote.use-proxy-protocol = true, got %v", remote["use-proxy-protocol"])
+	}
+}
 
 func TestApplyConfigOverrides(t *testing.T) {
 	r := &Runner{}

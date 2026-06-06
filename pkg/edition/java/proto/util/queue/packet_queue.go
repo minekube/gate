@@ -1,10 +1,19 @@
 package queue
 
 import (
+	"errors"
+
 	"github.com/edwingeng/deque/v2"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
+
+// maxQueueLen is the maximum number of packets that can be queued
+// to prevent unbounded memory growth from a malicious or buggy peer.
+const maxQueueLen = 1024
+
+// ErrQueueFull is returned when the play packet queue exceeds its maximum size.
+var ErrQueueFull = errors.New("play packet queue full")
 
 // PlayPacketQueue is a packet queue for the PLAY state.
 // It holds packets that are not registered in the CONFIG state and releases them when ReleaseQueue is called.
@@ -32,15 +41,19 @@ func NewPlayPacketQueue(version proto.Protocol, direction proto.Direction) *Play
 // Queue returns true if the packet was queued.
 // If the packet is not registered in the CONFIG state, it will be queued.
 // Otherwise, it will not be queued and false will be returned.
-func (h *PlayPacketQueue) Queue(packet proto.Packet) bool {
+// Returns an error if the queue is full.
+func (h *PlayPacketQueue) Queue(packet proto.Packet) (bool, error) {
 	if h == nil {
-		return false
+		return false, nil
 	}
 	if _, ok := h.registry.PacketID(packet); !ok {
+		if h.queue.Len() >= maxQueueLen {
+			return false, ErrQueueFull
+		}
 		h.queue.PushBack(packet)
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 // ReleaseQueue releases all packets in the queue to the sink packet writer.

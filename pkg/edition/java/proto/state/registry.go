@@ -19,13 +19,14 @@ type Registry struct {
 func NewRegistry(state states.State) *Registry {
 	return &Registry{
 		State:       state,
-		ServerBound: NewPacketRegistry(proto.ServerBound),
-		ClientBound: NewPacketRegistry(proto.ClientBound),
+		ServerBound: NewPacketRegistry(state, proto.ServerBound),
+		ClientBound: NewPacketRegistry(state, proto.ClientBound),
 	}
 }
 
 // PacketRegistry stores packets protocol versions sent to server or client.
 type PacketRegistry struct {
+	State     states.State
 	Direction proto.Direction                      // The direction the registered packets are send to.
 	Protocols map[proto.Protocol]*ProtocolRegistry // The protocol versions.
 	// Whether to fallback to the minimum protocol version
@@ -33,8 +34,9 @@ type PacketRegistry struct {
 	Fallback bool
 }
 
-func NewPacketRegistry(direction proto.Direction) *PacketRegistry {
+func NewPacketRegistry(state states.State, direction proto.Direction) *PacketRegistry {
 	r := &PacketRegistry{
+		State:     state,
 		Direction: direction,
 		Protocols: map[proto.Protocol]*ProtocolRegistry{},
 		Fallback:  true, // fallback by default
@@ -42,6 +44,7 @@ func NewPacketRegistry(direction proto.Direction) *PacketRegistry {
 	for _, ver := range version.Versions {
 		if !version.Protocol(ver.Protocol).Legacy() && !version.Protocol(ver.Protocol).Unknown() {
 			r.Protocols[ver.Protocol] = &ProtocolRegistry{
+				State:       state,
 				Protocol:    ver.Protocol,
 				PacketIDs:   map[proto.PacketID]proto.PacketType{},
 				PacketTypes: map[proto.PacketType]proto.PacketID{},
@@ -62,6 +65,7 @@ func (p *PacketRegistry) ProtocolRegistry(protocol proto.Protocol) *ProtocolRegi
 
 // ProtocolRegistry stores packets of a protocol version.
 type ProtocolRegistry struct {
+	State       states.State                        // The protocol state.
 	Protocol    proto.Protocol                      // The protocol version of the registered packets.
 	PacketIDs   map[proto.PacketID]proto.PacketType // Gets packet type by packet id.
 	PacketTypes map[proto.PacketType]proto.PacketID // Gets packet id by packet type.
@@ -85,6 +89,9 @@ func (r *ProtocolRegistry) CreatePacket(id proto.PacketID) proto.Packet {
 		// Shall never happen...
 		// Tried to create packet that does not implement Packet interface
 		return nil
+	}
+	if stateful, ok := p.(interface{ SetState(states.State) }); ok {
+		stateful.SetState(r.State)
 	}
 	return p
 }

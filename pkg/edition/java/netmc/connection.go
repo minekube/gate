@@ -27,6 +27,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 
@@ -141,6 +142,7 @@ func NewMinecraftConn(
 	readTimeout time.Duration,
 	writeTimeout time.Duration,
 	compressionLevel int,
+	packetLimiter *packetlimiter.Limiter,
 ) (conn MinecraftConn, startReadLoop func()) {
 	in := proto.ServerBound  // reads from client are server bound (proxy <- client)
 	out := proto.ClientBound // writes to client are client bound (proxy -> client)
@@ -156,17 +158,18 @@ func NewMinecraftConn(
 
 	ctx, cancel := context.WithCancel(ctx)
 	c := &minecraftConn{
-		log:         log,
-		c:           base,
-		ctx:         ctx,
-		cancelCtx:   cancel,
-		rd:          NewReader(base, in, readTimeout, log),
-		wr:          NewWriter(base, out, writeTimeout, compressionLevel, log),
-		state:       state.Handshake,
-		protocol:    version.Minecraft_1_7_2.Protocol,
-		connType:    phase.Undetermined,
-		direction:   direction,
-		autoReading: newStateControl(true),
+		log:           log,
+		c:             base,
+		ctx:           ctx,
+		cancelCtx:     cancel,
+		rd:            NewReader(base, in, readTimeout, log),
+		wr:            NewWriter(base, out, writeTimeout, compressionLevel, log),
+		state:         state.Handshake,
+		protocol:      version.Minecraft_1_7_2.Protocol,
+		connType:      phase.Undetermined,
+		direction:     direction,
+		autoReading:   newStateControl(true),
+		packetLimiter: packetLimiter,
 	}
 	c.sessionHandlerMu.sessionHandlers = make(map[*state.Registry]SessionHandler)
 	return c, c.startReadLoop
@@ -182,7 +185,8 @@ type minecraftConn struct {
 	rd Reader
 	wr Writer
 
-	autoReading *stateControl // Whether the connection should automatically read packets from the underlying connection.
+	autoReading   *stateControl          // Whether the connection should automatically read packets from the underlying connection.
+	packetLimiter *packetlimiter.Limiter // Per-connection serverbound rate limiter; nil disables it (e.g. backend connections).
 
 	ctx             context.Context // is canceled when connection closed
 	cancelCtx       context.CancelFunc
@@ -238,6 +242,14 @@ func (c *minecraftConn) startReadLoop() {
 			return false
 		}
 		bytesRead += int64(packetCtx.BytesRead)
+
+		// Enforce the per-connection serverbound packet rate limit (nil/disabled
+		// for backend connections and when not configured).
+		if !c.packetLimiter.Account(packetCtx.BytesRead) {
+			c.log.Info("serverbound packet rate limit exceeded, closing connection",
+				"remoteAddr", c.c.RemoteAddr())
+			return false
+		}
 
 		// TODO wrap packetCtx into struct with source info
 		// (minecraftConn) and chain into packet interceptor to...
@@ -344,7 +356,11 @@ func (c *minecraftConn) bufferPacket(packet proto.Packet, canQueue bool) (err er
 		c.mu.Lock()
 		playPacketQueue := c.playPacketQueue
 		c.mu.Unlock()
-		if playPacketQueue.Queue(packet) {
+		queued, queueErr := playPacketQueue.Queue(packet)
+		if queueErr != nil {
+			return queueErr
+		}
+		if queued {
 			// Packet was queued, don't write it now
 			c.log.V(1).Info("queued packet", "packet", fmt.Sprintf("%T", packet))
 			return nil

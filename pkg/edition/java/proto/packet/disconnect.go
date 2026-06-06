@@ -3,7 +3,6 @@ package packet
 import (
 	"errors"
 	"io"
-	"log/slog"
 
 	"go.minekube.com/common/minecraft/component"
 
@@ -45,7 +44,6 @@ func NewDisconnect(reason component.Component, protocol proto.Protocol, stat sta
 		protocol = version.Minecraft_1_20_2.Protocol
 	}
 	if reason == nil {
-		slog.Error("tried to create a Disconnect packet with a nil reason")
 		reason = &component.Text{Content: ""}
 	}
 	return &Disconnect{

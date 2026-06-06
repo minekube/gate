@@ -21,6 +21,11 @@ const (
 	VanillaMaximumUncompressedSize = 8 * 1024 * 1024   // 8MiB
 	HardMaximumUncompressedSize    = 128 * 1024 * 1024 // 128MiB
 	UncompressedCap                = VanillaMaximumUncompressedSize
+	// ServerboundUncompressedCap is the maximum claimed decompressed size for a
+	// serverbound packet. It is tighter than UncompressedCap because serverbound
+	// data comes from the (untrusted) client, limiting how much memory a client
+	// can force the proxy to allocate. Clientbound data keeps UncompressedCap.
+	ServerboundUncompressedCap = 2 * 1024 * 1024 // 2MiB
 )
 
 // Encoder is a synchronized packet encoder.

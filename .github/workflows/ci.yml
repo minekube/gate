@@ -1,11 +1,16 @@
 name: ci
 on:
   push:
+  workflow_dispatch:
   pull_request:
     types: [opened, reopened]
 
 env:
   REGISTRY: ghcr.io
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   lint:
@@ -23,6 +28,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          install-mode: goinstall
           args: --timeout 3m0s
   test:
     strategy:
@@ -42,11 +48,61 @@ jobs:
 
       - name: Test
         run: make test
+  # Regression test for https://github.com/minekube/gate/issues/697:
+  # The published images crashed with "exec /gate: no such file or directory"
+  # because the gate binary is dynamically linked (the geyserlite dependency
+  # pulls in github.com/ebitengine/purego, which imports libdl.so.2 via
+  # //go:cgo_import_dynamic even with CGO_ENABLED=0) but the runtime base image
+  # had no glibc dynamic loader. This job builds the actual images and runs the
+  # binary so a broken runtime base fails CI instead of shipping.
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build gate image (host arch, load)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          target: gate
+          build-args: |
+            VERSION=smoke-test
+          tags: gate:smoke
+
+      - name: Smoke test - gate binary execs in distroless image
+        run: |
+          out="$(docker run --rm gate:smoke --version)"
+          echo "$out"
+          echo "$out" | grep -q "gate version smoke-test"
+
+      - name: Build jre variant image (host arch, load)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          target: jre
+          build-args: |
+            VERSION=smoke-test
+          tags: gate-jre:smoke
+
+      - name: Smoke test - gate binary execs in jre image
+        run: |
+          out="$(docker run --rm gate-jre:smoke --version)"
+          echo "$out"
+          echo "$out" | grep -q "gate version smoke-test"
   build:
-    if: ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
+    if: ( github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') ) || ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
     needs:
       - lint
       - test
+      - docker-smoke
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.image-ref.outputs.image }}
@@ -106,7 +162,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
+          platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
           cache-to: type=inline
           build-args: |
@@ -123,7 +179,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64,linux/arm/v7,linux/arm/v8,linux/s390x
+          platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_jre_latest }}
           cache-to: type=inline
           build-args: |

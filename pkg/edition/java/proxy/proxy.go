@@ -32,6 +32,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
+	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -621,12 +622,16 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		raw = e.Connection()
 	}
 
-	// Create client connection
+	// Create client connection. Client connections are serverbound (untrusted),
+	// so apply the configured per-connection packet rate limiter.
+	pl := p.cfg.PacketLimiter
+	limiter := packetlimiter.New(pl.PacketsPerSecond, pl.BytesPerSecond, time.Duration(pl.Interval))
 	conn, readLoop := netmc.NewMinecraftConn(
 		ctx, raw, proto.ServerBound,
 		time.Duration(p.cfg.ReadTimeout)*time.Millisecond,
 		time.Duration(p.cfg.ConnectionTimeout)*time.Millisecond,
 		p.cfg.Compression.Level,
+		limiter,
 	)
 	conn.SetActiveSessionHandler(state.Handshake, newHandshakeSessionHandler(conn, &sessionHandlerDeps{
 		proxy:          p,

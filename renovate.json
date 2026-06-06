@@ -5,6 +5,28 @@
   ],
   "packageRules": [
     {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "go.minekube.com/geyserlite"
+      ],
+      "groupName": "geyserlite",
+      "commitMessagePrefix": "fix(deps):",
+      "commitMessageTopic": "geyserlite",
+      "labels": [
+        "dependencies",
+        "geyserlite"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
       "matchUpdateTypes": [
         "minor",
         "patch"

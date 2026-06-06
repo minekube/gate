@@ -24,7 +24,7 @@ The standard Gate image is based on a minimal distroless base image. This is the
 
 ### JRE Variant (`ghcr.io/minekube/gate/jre:latest`)
 
-The JRE variant includes Java Runtime Environment (JRE) and is **required for [Bedrock Edition support](../bedrock)**. This image is based on `eclipse-temurin:25-jre-alpine` and includes Java necessary to run Geyser for Bedrock cross-play.
+The JRE variant includes Java Runtime Environment (JRE) and is **required for [Bedrock Edition support](../bedrock)**. This image is based on `eclipse-temurin:25-jre` (glibc) and includes Java necessary to run Geyser for Bedrock cross-play.
 
 ::: tip When to Use the JRE Variant
 Use `ghcr.io/minekube/gate/jre:latest` if you:

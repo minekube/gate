@@ -51,11 +51,18 @@ Gate has excellent compatibility with modded Minecraft servers:
 - **Command support** - Proper handling of modded commands
 - **Cross-version support** - Works with various Minecraft versions
 
-### Legacy Forge
+### Forge 1.13–1.20.1 (FML2/FML3) <VPBadge>Fully Supported</VPBadge>
+
+- **All forwarding modes** - Velocity modern forwarding (with [PCF](https://modrinth.com/mod/proxy-compatible-forge)), BungeeCord, and BungeeGuard
+- **Built-in FML login relay** - Gate relays `fml:loginwrapper` LoginPluginMessages during the LOGIN phase, similar to what [Ambassador](https://modrinth.com/plugin/ambassador) does for Velocity
+- **No client-side mods required** - The player doesn't need any special mods
+- **Server switch support** - Cached FML responses are replayed for compatible server switches
+
+### Legacy Forge (1.8–1.12.2)
 
 - **Limited support** - Basic functionality works
 - **Legacy forwarding only** - Use BungeeCord forwarding
-- **Older versions** - 1.12.2 and below may have compatibility issues
+- **Older versions** - May have compatibility issues
 
 For detailed setup instructions, configuration examples, and troubleshooting, see our comprehensive [Modded Servers Guide](modded-servers).
 

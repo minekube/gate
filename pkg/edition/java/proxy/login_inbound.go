@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/gammazero/deque"
 	"go.minekube.com/common/minecraft/component"
@@ -43,9 +44,16 @@ type Inbound interface {
 }
 
 type loginInboundConn struct {
-	delegate             *initialInbound
+	delegate        *initialInbound
+	sequenceCounter atomic.Int32
+
+	// mu guards the fields below, which are accessed both from event-handler
+	// goroutines (SendLoginPluginMessage) and the client read loop
+	// (handleLoginPluginResponse). External callbacks (the message consumer,
+	// onAllMessagesHandled) and connection I/O are always invoked without the
+	// lock held to avoid re-entrant deadlocks.
+	mu                   sync.Mutex
 	outstandingResponses map[int]MessageConsumer
-	sequenceCounter      atomic.Int32
 	loginMessagesToSend  deque.Deque[*packet.LoginPluginMessage]
 	isLoginEventFired    bool
 	onAllMessagesHandled func() error
@@ -65,6 +73,8 @@ var _ LoginPhaseConnection = (*loginInboundConn)(nil)
 func (l *loginInboundConn) Protocol() proto.Protocol { return l.delegate.Protocol() }
 
 func (l *loginInboundConn) VirtualHost() net.Addr { return l.delegate.VirtualHost() }
+
+func (l *loginInboundConn) setVirtualHost(addr net.Addr) { l.delegate.setVirtualHost(addr) }
 
 func (l *loginInboundConn) HandshakeIntent() packet.HandshakeIntent {
 	return l.delegate.HandshakeIntent()
@@ -94,51 +104,84 @@ func (l *loginInboundConn) SendLoginPluginMessage(identifier message.ChannelIden
 	}
 
 	id := int(l.sequenceCounter.Inc())
-	l.outstandingResponses[id] = consumer
-
 	msg := &packet.LoginPluginMessage{
 		ID:      id,
 		Channel: identifier.ID(),
 		Data:    contents,
 	}
-	if l.isLoginEventFired {
+
+	l.mu.Lock()
+	l.outstandingResponses[id] = consumer
+	fired := l.isLoginEventFired
+	if !fired {
+		l.loginMessagesToSend.PushBack(msg)
+	}
+	l.mu.Unlock()
+
+	if fired {
 		return l.delegate.WritePacket(msg)
 	}
-	l.loginMessagesToSend.PushBack(msg)
 	return nil
 }
 
 func (l *loginInboundConn) handleLoginPluginResponse(res *packet.LoginPluginResponse) (err error) {
+	l.mu.Lock()
 	consumer, ok := l.outstandingResponses[res.ID]
 	if !ok {
+		l.mu.Unlock()
 		return nil
 	}
 	delete(l.outstandingResponses, res.ID)
+	l.mu.Unlock()
 
-	defer func() {
-		if len(l.outstandingResponses) == 0 && l.onAllMessagesHandled != nil {
-			err = errors.Join(err, l.onAllMessagesHandled())
-		}
-	}()
+	// Invoke the consumer without the lock held; it may call back into
+	// SendLoginPluginMessage (which also takes the lock).
 	if res.Success {
-		return consumer.OnMessageResponse(res.Data)
+		err = consumer.OnMessageResponse(res.Data)
+	} else {
+		err = consumer.OnMessageResponse(nil)
 	}
-	return consumer.OnMessageResponse(nil)
+
+	// After the consumer ran (it may have queued more messages), fire the
+	// all-handled callback if nothing is outstanding.
+	l.mu.Lock()
+	done := len(l.outstandingResponses) == 0
+	onAllMessagesHandled := l.onAllMessagesHandled
+	l.mu.Unlock()
+	if done && onAllMessagesHandled != nil {
+		err = errors.Join(err, onAllMessagesHandled())
+	}
+	return err
 }
 
 func (l *loginInboundConn) loginEventFired(onAllMessagesHandled func() error) error {
+	l.mu.Lock()
 	l.isLoginEventFired = true
 	l.onAllMessagesHandled = onAllMessagesHandled
-	if l.loginMessagesToSend.Len() == 0 {
+	msgs := make([]*packet.LoginPluginMessage, 0, l.loginMessagesToSend.Len())
+	for l.loginMessagesToSend.Len() != 0 {
+		msgs = append(msgs, l.loginMessagesToSend.PopFront())
+	}
+	l.mu.Unlock()
+
+	if len(msgs) == 0 {
 		return onAllMessagesHandled()
 	}
-	for l.loginMessagesToSend.Len() != 0 {
-		msg := l.loginMessagesToSend.PopFront()
+	for _, msg := range msgs {
 		if err := l.delegate.BufferPacket(msg); err != nil {
 			return err
 		}
 	}
 	return l.delegate.Flush()
+}
+
+// clearOnAllMessagesHandled removes the onAllMessagesHandled callback.
+// Called before the Modern Forge login relay to prevent the PreLogin
+// completion callback from re-firing when relay responses are processed.
+func (l *loginInboundConn) clearOnAllMessagesHandled() {
+	l.mu.Lock()
+	l.onAllMessagesHandled = nil
+	l.mu.Unlock()
 }
 
 func (l *loginInboundConn) disconnect(reason component.Component) error {
@@ -147,7 +190,9 @@ func (l *loginInboundConn) disconnect(reason component.Component) error {
 }
 
 func (l *loginInboundConn) cleanup() {
+	l.mu.Lock()
 	l.loginMessagesToSend.Clear()
 	l.outstandingResponses = map[int]MessageConsumer{}
 	l.onAllMessagesHandled = nil
+	l.mu.Unlock()
 }

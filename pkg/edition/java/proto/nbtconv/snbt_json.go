@@ -187,17 +187,75 @@ func SnbtToJSON(snbt string) (json.RawMessage, error) {
 
 	// Parse non-standard json with yaml, which is a superset of json.
 	// We use YAML parser, since it's a superset of JSON and quotes are optional.
-	type M map[string]any
-	var m M
+	var m map[string]any
 	if err := yaml.Unmarshal([]byte(snbt), &m); err != nil {
 		return nil, fmt.Errorf("error unmarshalling snbt to yaml: %w", err)
 	}
+	normalizeComponentStyleBooleans(m)
 	// Marshal back to JSON
 	j, err := json.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling yaml to json: %w", err)
 	}
 	return j, nil
+}
+
+var componentStyleBooleanKeys = map[string]struct{}{
+	"bold":          {},
+	"italic":        {},
+	"underlined":    {},
+	"strikethrough": {},
+	"obfuscated":    {},
+}
+
+func normalizeComponentStyleBooleans(v any) {
+	switch v := v.(type) {
+	case map[string]any:
+		for k, child := range v {
+			if _, ok := componentStyleBooleanKeys[k]; ok {
+				if b, ok := nbtByteBool(child); ok {
+					v[k] = b
+					continue
+				}
+			}
+			normalizeComponentStyleBooleans(child)
+		}
+	case []any:
+		for _, child := range v {
+			normalizeComponentStyleBooleans(child)
+		}
+	}
+}
+
+func nbtByteBool(v any) (bool, bool) {
+	switch v := v.(type) {
+	case bool:
+		return v, true
+	case int:
+		if v == 0 || v == 1 {
+			return v == 1, true
+		}
+	case int64:
+		if v == 0 || v == 1 {
+			return v == 1, true
+		}
+	case uint64:
+		if v == 0 || v == 1 {
+			return v == 1, true
+		}
+	case float64:
+		if v == 0 || v == 1 {
+			return v == 1, true
+		}
+	case string:
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case "0", "0b", "false":
+			return false, true
+		case "1", "1b", "true":
+			return true, true
+		}
+	}
+	return false, false
 }
 
 // JsonToSNBT converts a JSON to stringified NBT.

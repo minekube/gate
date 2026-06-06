@@ -1,7 +1,11 @@
 package config
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestGetManaged(t *testing.T) {
@@ -187,6 +191,166 @@ func TestGetManaged(t *testing.T) {
 				t.Errorf("ConfigOverrides: got %+v, want %+v", result.ConfigOverrides, tt.expected.ConfigOverrides)
 			}
 		})
+	}
+}
+
+func TestValidateRejectsUnknownManagedEngine(t *testing.T) {
+	cfg := Config{
+		GeyserListenAddr: "localhost:25567",
+		UsernameFormat:   ".%s",
+		FloodgateKeyPath: filepath.Join(t.TempDir(), "floodgate.key"),
+		Managed: &ManagedGeyser{
+			Enabled: true,
+			Engine:  "bogus",
+		},
+	}
+
+	_, errs := cfg.Validate()
+	if len(errs) == 0 {
+		t.Fatal("Validate() returned no errors for unknown managed engine")
+	}
+}
+
+func TestValidateGeyserliteManagedSkipsJavaWarnings(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	cfg := Config{
+		GeyserListenAddr: "localhost:25567",
+		UsernameFormat:   ".%s",
+		FloodgateKeyPath: keyPath,
+		Managed: &ManagedGeyser{
+			Enabled: true,
+			Engine:  ManagedEngineGeyserlite,
+		},
+	}
+
+	warns, errs := cfg.Validate()
+	if len(errs) > 0 {
+		t.Fatalf("Validate() errors = %v", errs)
+	}
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), "jarUrl") || strings.Contains(warn.Error(), "javaPath") {
+			t.Fatalf("Validate() emitted Java warning for geyserlite engine: %v", warn)
+		}
+	}
+}
+
+func TestManagedNestedGeyserliteConfig(t *testing.T) {
+	yamlConfig := `
+managed:
+  enabled: true
+  engine: geyserlite
+  geyserlite:
+    mode: embedded
+    libraryPath: /opt/geyserlite/libgeyserlite.so
+    binaryPath: /opt/geyserlite/geyserlite
+    mirror: https://mirror.example.com/geyserlite
+    version: v0.2.1
+    offline: true
+    extraArgs:
+      - --trace
+  configOverrides:
+    bedrock:
+      port: 19133
+`
+
+	var cfg Config
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+
+	managed := cfg.GetManaged()
+	if !managed.Enabled {
+		t.Fatal("Enabled = false, want true")
+	}
+	if managed.Engine != ManagedEngineGeyserlite {
+		t.Fatalf("Engine = %q, want %q", managed.Engine, ManagedEngineGeyserlite)
+	}
+	if managed.Mode != "embedded" {
+		t.Fatalf("Mode = %q, want embedded", managed.Mode)
+	}
+	if managed.LibraryPath != "/opt/geyserlite/libgeyserlite.so" {
+		t.Fatalf("LibraryPath = %q", managed.LibraryPath)
+	}
+	if managed.BinaryPath != "/opt/geyserlite/geyserlite" {
+		t.Fatalf("BinaryPath = %q", managed.BinaryPath)
+	}
+	if managed.Mirror != "https://mirror.example.com/geyserlite" {
+		t.Fatalf("Mirror = %q", managed.Mirror)
+	}
+	if managed.Version != "v0.2.1" {
+		t.Fatalf("Version = %q", managed.Version)
+	}
+	if !managed.Offline {
+		t.Fatal("Offline = false, want true")
+	}
+	if len(managed.ExtraArgs) != 1 || managed.ExtraArgs[0] != "--trace" {
+		t.Fatalf("ExtraArgs = %#v, want --trace", managed.ExtraArgs)
+	}
+	if managed.ConfigOverrides == nil {
+		t.Fatal("ConfigOverrides = nil")
+	}
+}
+
+func TestManagedNestedJavaConfig(t *testing.T) {
+	yamlConfig := `
+managed:
+  enabled: true
+  engine: java
+  java:
+    jarUrl: https://custom.example.com/geyser.jar
+    dataDir: /srv/geyser
+    javaPath: /usr/bin/java
+    autoUpdate: false
+    extraArgs:
+      - -Xmx2G
+`
+
+	var cfg Config
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+
+	managed := cfg.GetManaged()
+	if managed.Engine != ManagedEngineJava {
+		t.Fatalf("Engine = %q, want %q", managed.Engine, ManagedEngineJava)
+	}
+	if managed.JarURL != "https://custom.example.com/geyser.jar" {
+		t.Fatalf("JarURL = %q", managed.JarURL)
+	}
+	if managed.DataDir != "/srv/geyser" {
+		t.Fatalf("DataDir = %q", managed.DataDir)
+	}
+	if managed.JavaPath != "/usr/bin/java" {
+		t.Fatalf("JavaPath = %q", managed.JavaPath)
+	}
+	if managed.AutoUpdate {
+		t.Fatal("AutoUpdate = true, want false")
+	}
+	if len(managed.ExtraArgs) != 1 || managed.ExtraArgs[0] != "-Xmx2G" {
+		t.Fatalf("ExtraArgs = %#v, want -Xmx2G", managed.ExtraArgs)
+	}
+}
+
+func TestManagedNestedConfigOverridesLegacyFlatFields(t *testing.T) {
+	cfg := Config{
+		Managed: &ManagedGeyser{
+			Enabled:     true,
+			Engine:      ManagedEngineGeyserlite,
+			Mode:        "subprocess",
+			LibraryPath: "/legacy/libgeyserlite.so",
+			Geyserlite: &Geyserlite{
+				Mode:        "embedded",
+				LibraryPath: "/nested/libgeyserlite.so",
+			},
+		},
+	}
+
+	managed := cfg.GetManaged()
+	if managed.Mode != "embedded" {
+		t.Fatalf("Mode = %q, want nested value embedded", managed.Mode)
+	}
+	if managed.LibraryPath != "/nested/libgeyserlite.so" {
+		t.Fatalf("LibraryPath = %q, want nested value", managed.LibraryPath)
 	}
 }
 
