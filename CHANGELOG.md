@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.6](https://github.com/minekube/gate/compare/v0.66.5...v0.66.6) (2026-06-06)
+
+
+### Bug Fixes
+
+* **bedrock:** trust linked Geyser accounts safely ([c307797](https://github.com/minekube/gate/commit/c307797319aa578a78efaa12ff79aa0cc6d39919))
+
 ## [0.66.5](https://github.com/minekube/gate/compare/v0.66.4...v0.66.5) (2026-06-04)
 
 
