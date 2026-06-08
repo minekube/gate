@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.9](https://github.com/minekube/gate/compare/v0.66.8...v0.66.9) (2026-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_protocolbuffers_java to v29.5.0.2.20241118150055.50fffb007499 ([#727](https://github.com/minekube/gate/issues/727)) ([e85b87c](https://github.com/minekube/gate/commit/e85b87c244b12a48550f06db43b813c56fa2d4fb))
+
 ## [0.66.8](https://github.com/minekube/gate/compare/v0.66.7...v0.66.8) (2026-06-08)
 
 
