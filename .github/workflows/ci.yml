@@ -24,12 +24,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: latest
-          install-mode: goinstall
-          args: --timeout 3m0s
+        run: golangci-lint run --timeout 3m0s
   test:
     strategy:
       fail-fast: false
