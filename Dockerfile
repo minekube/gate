@@ -46,7 +46,7 @@ ENTRYPOINT ["/gate"]
 # Move binary into final image (jre variant Gate image - temurin-25-jre)
 # Must be a glibc-based JRE (not the alpine/musl variant) for the same reason
 # as above: the dynamically linked Gate binary needs the glibc loader.
-FROM eclipse-temurin:25.0.1_8-jre AS jre
+FROM eclipse-temurin:25.0.3_9-jre AS jre
 COPY --from=build /workspace/gate /usr/local/bin/gate
 ENV PATH=/opt/java/openjdk/bin:$PATH
 ENV XDG_CACHE_HOME=/var/cache/gate
