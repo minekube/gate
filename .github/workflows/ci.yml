@@ -54,9 +54,14 @@ jobs:
   # pulls in github.com/ebitengine/purego, which imports libdl.so.2 via
   # //go:cgo_import_dynamic even with CGO_ENABLED=0) but the runtime base image
   # had no glibc dynamic loader. This job builds the actual images and runs the
-  # binary so a broken runtime base fails CI instead of shipping.
+  # binary and starts managed Bedrock on both architectures so broken runtime
+  # dependencies or cache paths fail CI instead of shipping.
   docker-smoke:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,6 +85,25 @@ jobs:
           out="$(docker run --rm gate:smoke --version)"
           echo "$out"
           echo "$out" | grep -q "gate version smoke-test"
+
+      - name: Smoke test - managed Bedrock starts in read-only distroless image
+        run: |
+          cid=$(docker run -d --read-only --tmpfs /tmp \
+            -v "$PWD/.github/testdata/managed-bedrock.yml:/config.yml:ro" \
+            gate:smoke --config /config.yml)
+          trap 'docker logs "$cid" 2>&1 || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+
+          for _ in $(seq 1 180); do
+            logs=$(docker logs "$cid" 2>&1)
+            if grep -q "geyser integration started" <<<"$logs"; then
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != "true" ]; then
+              exit 1
+            fi
+            sleep 1
+          done
+          exit 1
 
       - name: Build jre variant image (host arch, load)
         uses: docker/build-push-action@v6
