@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.7](https://github.com/minekube/gate/compare/v0.66.6...v0.66.7) (2026-06-08)
+
+
+### Bug Fixes
+
+* **docker:** support managed geyserlite on arm64 ([#717](https://github.com/minekube/gate/issues/717)) ([beda893](https://github.com/minekube/gate/commit/beda893a11a3d158939201746c5686de13100138))
+
 ## [0.66.6](https://github.com/minekube/gate/compare/v0.66.5...v0.66.6) (2026-06-06)
 
 
