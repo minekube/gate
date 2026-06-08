@@ -23,7 +23,7 @@ config:
     - server1
 
   # Enable managed Bedrock support - that's it.
-  bedrock: true
+  bedrock: true # [!code focus]
 ```
 
 ::::
