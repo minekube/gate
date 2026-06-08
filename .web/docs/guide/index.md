@@ -20,9 +20,9 @@ that focuses on scalability, flexibility, multi-version support, **cross-platfor
 
 Gate is a lightweight yet powerful Minecraft proxy that can run anywhere - from your local machine to large-scale cloud deployments:
 
-- 🚀 Run locally as a simple [binary](install/binaries)
-- 🐳 Deploy with [Docker](install/docker) containers
-- ☸️ Scale infinitely in [Kubernetes](install/kubernetes) clusters
+- Run locally as a simple [binary](install/binaries)
+- Deploy with [Docker](install/docker) containers
+- Scale infinitely in [Kubernetes](install/kubernetes) clusters
 
 It's designed as a modern replacement for legacy proxies like BungeeCord, while maintaining compatibility to run alongside them. Built entirely in Go and inspired by the Velocity project, Gate brings enterprise-grade performance to Minecraft server networks.
 
@@ -37,15 +37,15 @@ Google, Microsoft, Meta, Amazon, Twitter, PayPal, Twitch, Netflix, Dropbox, Uber
 
 Ready to jump in? Choose your path:
 
-- 🎮 **Server Owners**: Head to the [Quick Start](quick-start) guide
-- 💻 **Developers**: Check out the [Developer Guide](/developers/)
+- **Server Owners**: Head to the [Quick Start](quick-start) guide
+- **Developers**: Check out the [Developer Guide](/developers/)
 
 ## Why Use a Minecraft Proxy?
 
 <div class="feature-cards">
   <div class="feature-card">
     <div class="card-content">
-      <h3>🎮 Seamless Player Experience</h3>
+      <h3>Seamless Player Experience</h3>
       <ul>
         <li>Move players between servers instantly</li>
         <li>No disconnects during server switches</li>
@@ -57,7 +57,7 @@ Ready to jump in? Choose your path:
 
   <div class="feature-card">
     <div class="card-content">
-      <h3>🔌 Network-Wide Features</h3>
+      <h3>Network-Wide Features</h3>
       <ul>
         <li>Cross-server chat systems</li>
         <li>Global command handling</li>
@@ -69,7 +69,7 @@ Ready to jump in? Choose your path:
 
   <a href="/guide/bedrock" class="feature-card" style="text-decoration: none; color: inherit;">
     <div class="card-content">
-      <h3>📱 Cross-Platform Support</h3>
+      <h3>Cross-Platform Support</h3>
       <ul>
         <li>Java Edition (PC) players</li>
         <li>Bedrock Edition (Mobile, Console, Win)</li>
@@ -81,7 +81,7 @@ Ready to jump in? Choose your path:
 
   <div class="feature-card">
     <div class="card-content">
-      <h3>🔍 Advanced Monitoring</h3>
+      <h3>Advanced Monitoring</h3>
       <ul>
         <li>Real-time packet inspection</li>
         <li>Network traffic analysis</li>
