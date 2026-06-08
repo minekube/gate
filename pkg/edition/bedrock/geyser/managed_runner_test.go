@@ -134,6 +134,49 @@ func TestLiteManagedRunnerOptionsMapManagedConfig(t *testing.T) {
 	}
 }
 
+func TestLiteManagedRunnerDefaultsUseSubprocessAutoDownload(t *testing.T) {
+	tempDir := t.TempDir()
+	keyPath := filepath.Join(tempDir, "floodgate.key")
+	key := []byte("0123456789abcdef")
+	if err := os.WriteFile(keyPath, key, 0o600); err != nil {
+		t.Fatalf("write key: %v", err)
+	}
+
+	cfg := &config.Config{
+		GeyserListenAddr: "localhost:25567",
+		FloodgateKeyPath: keyPath,
+		Managed: &config.ManagedGeyser{
+			Enabled: true,
+			Engine:  config.ManagedEngineGeyserlite,
+		},
+	}
+
+	runner := newLiteManagedRunner(cfg)
+	opts, err := runner.options()
+	if err != nil {
+		t.Fatalf("options() error = %v", err)
+	}
+
+	if opts.Mode != geyserlite.ModeSubprocess {
+		t.Fatalf("Mode = %v, want ModeSubprocess", opts.Mode)
+	}
+	if opts.LibraryPath != "" {
+		t.Fatalf("LibraryPath = %q, want empty for auto-download subprocess mode", opts.LibraryPath)
+	}
+	if opts.BinaryPath != "" {
+		t.Fatalf("BinaryPath = %q, want empty for auto-download subprocess mode", opts.BinaryPath)
+	}
+	if opts.Version != "" {
+		t.Fatalf("Version = %q, want empty to use geyserlite.DefaultVersion", opts.Version)
+	}
+	if opts.Mirror != "" {
+		t.Fatalf("Mirror = %q, want empty to use geyserlite.DefaultDownloadBase", opts.Mirror)
+	}
+	if opts.Offline {
+		t.Fatal("Offline = true, want false so auto-download can fetch release assets")
+	}
+}
+
 func TestLiteManagedRunnerStartWaitsUntilHealthy(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "floodgate.key")
