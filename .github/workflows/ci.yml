@@ -47,6 +47,10 @@ jobs:
 
       - name: Test
         run: make test
+
+      - name: Smoke test - Geyserlite Windows auto-download starts
+        if: matrix.platform == 'windows-latest'
+        run: go test ./pkg/edition/bedrock/geyser -tags=geyserlite_smoke -run TestLiteManagedRunnerWindowsAutoDownloadSmoke -count=1 -timeout 6m -v
   # Regression test for https://github.com/minekube/gate/issues/697:
   # The published images crashed with "exec /gate: no such file or directory"
   # because the gate binary is dynamically linked (the geyserlite dependency
