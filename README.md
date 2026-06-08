@@ -38,6 +38,12 @@ Gate includes built-in **Bedrock Edition support** through Geyser enabling cross
 Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows) players
 through integrated Geyser & Floodgate technology - **zero plugins required**!
 
+Enable managed Bedrock support with one config line:
+
+```yaml
+bedrock: true
+```
+
 See the [Bedrock Guide](https://gate.minekube.com/guide/bedrock/) for setup instructions.
 
 ```mermaid
@@ -79,4 +85,4 @@ graph LR
 ## Developers Starter Template
 
 The starter template is designed to help you get started with your own Gate powered project.
-Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
+Fork it: [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)

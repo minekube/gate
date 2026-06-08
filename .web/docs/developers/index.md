@@ -12,11 +12,11 @@ _If you want to learn how to extend Gate with your own code, you are in the righ
 ## Starter Template
 
 The starter template is designed to help you get started with your own Gate powered project.
-Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
+Fork it: [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
 
 ## Any Language
 
-Go to the [API](/developers/api/) 🌐 section to learn how to use Gate's API from any programming language.
+Go to the [API](/developers/api/) section to learn how to use Gate's API from any programming language.
 
 ## Integration Options
 

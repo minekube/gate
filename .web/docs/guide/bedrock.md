@@ -7,7 +7,7 @@ description: "Enable Minecraft Bedrock Edition support with Gate proxy. Connect 
 
 Enable cross-play between Java and Bedrock players on your Minecraft servers with **zero backend plugins required**.
 
-## 🚀 Quick Start (30 Seconds)
+## Quick Start (30 Seconds)
 
 Get Bedrock support running instantly with managed mode:
 
@@ -22,9 +22,8 @@ config:
   try:
     - server1
 
-  # Enable Bedrock support - that's it!
-  bedrock:
-    managed: true
+  # Enable managed Bedrock support - that's it.
+  bedrock: true
 ```
 
 ::::
@@ -39,13 +38,13 @@ gate --config config.yml
 - **Java Players**: `localhost:25565`
 - **Bedrock Players**: `localhost:19132` (default, customizable via config overrides)
 
-::: tip Zero Configuration Required!
-Gate automatically generates encryption keys, downloads Geyser, creates optimized configs, and manages everything for you. The `managed: true` shorthand enables both Bedrock support and managed mode in one line!
+::: tip Zero Configuration Required
+Gate automatically generates encryption keys, downloads Geyser, creates optimized configs, and manages everything for you. The `bedrock: true` shorthand enables both Bedrock support and managed mode in one line.
 :::
 
 
 
-## 🏗️ How It Works
+## How It Works
 
 Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with built-in Floodgate protocol support:
 
@@ -60,14 +59,14 @@ Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with buil
 
 ### Key Benefits
 
-- ✅ **No backend plugins** - Gate handles all Bedrock logic internally
-- ✅ **Zero configuration** - Managed mode handles everything automatically
-- ✅ **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows)
-- ✅ **Secure** - Uses AES-128 encryption for player authentication
+- **No backend plugins** - Gate handles all Bedrock logic internally
+- **Zero configuration** - Managed mode handles everything automatically
+- **Cross-platform** - Supports all Bedrock platforms (mobile, console, Windows)
+- **Secure** - Uses AES-128 encryption for player authentication
 
 
 
-## ⚙️ Configuration Guide
+## Configuration Guide
 
 ### Basic Configuration
 
@@ -76,8 +75,7 @@ For most users, managed mode provides the perfect balance of simplicity and cont
 :::: code-group
 
 ```yaml [Minimal Setup]
-bedrock:
-  managed: true
+bedrock: true
 ```
 
 ```yaml [With Customization]
@@ -98,7 +96,7 @@ bedrock:
 
 ```yaml [Alternative Shorthand]
 bedrock:
-  managed: true # Implies both enabled: true and managed.enabled: true
+  managed: true # Use this object form when setting other Bedrock fields.
   usernameFormat: '.%s'
   geyserListenAddr: 'localhost:25567'
 ```
@@ -119,9 +117,9 @@ bedrock:
 
 **Use `0.0.0.0:25567` for:**
 
-- 🐳 Docker Compose with separate containers
-- 🌐 Remote Geyser on different server
-- ☁️ Kubernetes pod-to-pod communication
+- Docker Compose with separate containers
+- Remote Geyser on different server
+- Kubernetes pod-to-pod communication
 
 Note: All connections are authenticated via Floodgate keys regardless of the binding address.
 
@@ -148,17 +146,15 @@ Gate automatically handles Geyser for you:
 **Shorthand syntax:**
 
 ```yaml
-bedrock:
-  managed: true # Simplest - enables everything automatically
+bedrock: true # Simplest - enables everything automatically
 ```
 
-**Explicit syntax (equivalent):**
+**Object syntax for additional Bedrock fields:**
 
 ```yaml
 bedrock:
-  enabled: true
-  managed:
-    enabled: true
+  managed: true
+  usernameFormat: '.%s'
 ```
 
 #### Manual Mode (Advanced)
@@ -177,7 +173,7 @@ bedrock:
 | **Managed** | Simple     | Medium  | Most users, quick setup      |
 | **Manual**  | Medium     | Full    | Advanced users, custom needs |
 
-## 🔧 Advanced Configuration
+## Advanced Configuration
 
 ### Custom Geyser Settings
 
@@ -226,11 +222,12 @@ bedrock:
 
 ```yaml [Custom Port with Shorthand]
 bedrock:
-  managed: true
-  configOverrides:
-    # Use a different Bedrock port
-    bedrock:
-      port: 25565 # Use same port as Java (if on different IPs)
+  managed:
+    enabled: true
+    configOverrides:
+      # Use a different Bedrock port
+      bedrock:
+        port: 25565 # Use same port as Java (if on different IPs)
 ```
 
 ::::
@@ -388,15 +385,15 @@ docker compose up -d
 
 **Default: `localhost:25567`** (recommended for same-machine setups)
 
-- ✅ **Local installations** - Gate and Geyser on same server
-- ✅ **Managed mode** - Gate automatically runs Geyser locally
-- ✅ **Simplicity** - No network configuration needed
+- **Local installations** - Gate and Geyser on same server
+- **Managed mode** - Gate automatically runs Geyser locally
+- **Simplicity** - No network configuration needed
 
 **Use `0.0.0.0:25567` for:**
 
-- 🐳 **Docker Compose** - Gate and Geyser in separate containers
-- 🌐 **Remote Geyser** - Geyser runs on a different machine
-- ☁️ **Kubernetes** - Pods communicate across network
+- **Docker Compose** - Gate and Geyser in separate containers
+- **Remote Geyser** - Geyser runs on a different machine
+- **Kubernetes** - Pods communicate across network
 
 The Docker example above uses `gate:25567` (service name) which is correct for container networks.
 
@@ -406,7 +403,7 @@ All connections require valid Floodgate keys for authentication.
 
 ---
 
-## 🔬 Internals & System Architecture
+## Internals & System Architecture
 
 _For developers who want to understand how Gate's Bedrock support works under the hood._
 
@@ -504,7 +501,7 @@ The system also handles edge cases like players switching between devices, platf
 
 ---
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -750,9 +747,9 @@ bedrock:
 3. **Community support** - Join the [Gate Discord](https://minekube.com/discord) for help
 4. **GitHub issues** - Report bugs with logs and reproduction steps at [gate/issues](https://github.com/minekube/gate/issues)
 
-## 📋 Supported Features
+## Supported Features
 
-### ✅ Fully Supported
+### Fully Supported
 
 - **Cross-platform play** - All Bedrock devices can join Java servers
 - **Authentication** - Secure Xbox Live authentication via Floodgate
@@ -760,21 +757,20 @@ bedrock:
 - **World interaction** - Building, mining, crafting work normally
 - **Device detection** - Server can identify player platforms
 - **Inventory sync** - Items transfer correctly between editions
+- **Minekube Connect** - [Connect](https://connect.minekube.com/) supports Bedrock players through the managed Connect edge and standard Gate connectors. Endpoint names, `play.minekube.net` subdomains, and custom domains continue to route as usual.
 
-### ⚠️ Partial Support
+### Partial Support
 
 - **Custom items** - Java-specific items may render differently
 - **Resource packs** - Bedrock packs need special conversion
 - **Some plugins** - Java-specific plugins may not work with Bedrock players
 
-### ❌ Not Supported
+### Not Supported
 
 - **Bedrock-exclusive features** - Education Edition content, some UI elements
 - **Java mods** - Forge/Fabric mods don't work with Bedrock clients
 - **Complex redstone** - Some advanced redstone may behave differently
-- **Lite Mode** - Gate Lite isn't compatible with Bedrock Edition but we are working on it!
-- **Connect** - [Minekube Connect](https://connect.minekube.com/) does not currently support Bedrock Edition connections, but this is planned for a future release.
-> Don't ask about ETA as we work in our free time with the [contributions of the community](https://github.com/minekube/gate/graphs/contributors/)
+- **Lite Mode** - Gate Lite is a thin Java protocol reverse proxy and is not the right place to run Bedrock translation. Use standard Gate for self-hosted Bedrock support.
 
 ---
 
