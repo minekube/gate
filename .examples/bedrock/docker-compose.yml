@@ -2,12 +2,13 @@ services:
   gate:
     image: ghcr.io/minekube/gate:latest
     restart: unless-stopped
+    working_dir: /data
     environment:
-      - GATE_CONFIG_PATH=/gate/gate.yml
+      - GATE_CONFIG=/config/gate.yml
     volumes:
-      - ./gate.yml:/gate/gate.yml
-      - gate-cache:/gate/.cache
-      - gate-data:/gate/data
+      - ./gate.yml:/config/gate.yml:ro
+      - gate-cache:/var/cache/gate
+      - gate-data:/data
     ports:
       - '25565:25565' # Java Edition
       - '19132:19132/udp' # Bedrock Edition
