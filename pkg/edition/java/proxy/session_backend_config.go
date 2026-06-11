@@ -26,6 +26,7 @@ type backendConfigSessionHandler struct {
 	serverConn          *serverConnection
 	requestCtx          *connRequestCxt
 	state               backendConfigSessionState
+	codeOfConductHold   bool
 	resourcePackToApply *ResourcePackInfo
 	log                 logr.Logger
 
@@ -66,11 +67,22 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !b.shouldHandle() {
 		return
 	}
+	if b.codeOfConductHold {
+		switch p := pc.Packet.(type) {
+		case *packet.KeepAlive:
+			b.handleKeepAlive(p)
+		case *packet.Disconnect:
+			b.handleDisconnect(p)
+		}
+		return
+	}
 	switch p := pc.Packet.(type) {
 	case *packet.KeepAlive:
 		b.handleKeepAlive(p)
 	case *config.StartUpdate:
 		b.forwardToServer(pc, nil)
+	case *config.CodeOfConductPacket:
+		b.handleCodeOfConductPacket(pc)
 	case *packet.ResourcePackRequest:
 		b.handleResourcePackRequest(p)
 	case *packet.RemoveResourcePack:
@@ -84,17 +96,7 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *plugin.Message:
 		b.handlePluginMessage(pc, p)
 	case *packet.Disconnect:
-		b.serverConn.disconnect()
-		// If the player receives a DisconnectPacket without a connection to a server in progress,
-		// it means that the backend server has kicked the player during reconfiguration
-		if b.serverConn.player.connectionInFlight() != nil {
-			result := disconnectResultForPacket(b.log.V(1), p,
-				b.serverConn.player.Protocol(), b.serverConn.server, true,
-			)
-			b.requestCtx.result(result, nil)
-		} else {
-			b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
-		}
+		b.handleDisconnect(p)
 	case *packet.Transfer:
 		b.handleTransfer(p)
 	case *cookie.CookieStore:
@@ -122,6 +124,16 @@ func (b *backendConfigSessionHandler) Activated() {
 	if player.Protocol() == version.Minecraft_1_20_2.Protocol {
 		b.resourcePackToApply = player.resourcePackHandler.FirstAppliedPack()
 		player.resourcePackHandler.ClearAppliedResourcePacks()
+	}
+
+	// Emit Configuration event and initiate CoC
+	e := &PlayerConfigurationStartEvent{
+		player: b.serverConn.player,
+		server: b.serverConn.server,
+	}
+	b.proxy().event.Fire(e)
+	if player.Protocol().Greater(version.Minecraft_1_21_9) && e.ShouldSendCodeOfConduct() {
+		b.initiateCodeOfConduct(e.CodeOfConductPayload())
 	}
 }
 
@@ -209,6 +221,48 @@ func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpd
 			_ = player.resourcePackHandler.QueueResourcePack(b.resourcePackToApply)
 		}
 	})
+}
+
+func (b *backendConfigSessionHandler) handleDisconnect(p *packet.Disconnect) {
+	b.serverConn.disconnect()
+	// If the player receives a DisconnectPacket without a connection to a server in progress,
+	// it means that the backend server has kicked the player during reconfiguration
+	if b.serverConn.player.connectionInFlight() != nil {
+		result := disconnectResultForPacket(b.log.V(1), p,
+			b.serverConn.player.Protocol(), b.serverConn.server, true,
+		)
+		b.requestCtx.result(result, nil)
+	} else {
+		b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
+	}
+}
+
+func (b *backendConfigSessionHandler) handleCodeOfConductPacket(pc *proto.PacketContext) {
+	b.requireCodeOfConduct()
+	b.forwardToPlayer(pc, nil)
+}
+
+func (b *backendConfigSessionHandler) initiateCodeOfConduct(payload []byte) {
+	b.requireCodeOfConduct()
+	if err := b.serverConn.player.WritePacket(&config.CodeOfConductPacket{Data: payload}); err != nil {
+		b.log.V(1).Error(err, "error writing CodeOfConduct packet")
+	}
+}
+
+func (b *backendConfigSessionHandler) requireCodeOfConduct() {
+	if b.codeOfConductHold {
+		return
+	}
+	b.codeOfConductHold = true
+	b.serverConn.connection.SetAutoReading(false)
+}
+
+func (b *backendConfigSessionHandler) releaseCodeOfConductHold() {
+	if !b.codeOfConductHold {
+		return
+	}
+	b.codeOfConductHold = false
+	b.serverConn.connection.SetAutoReading(true)
 }
 
 func (b *backendConfigSessionHandler) handleTransfer(p *packet.Transfer) {
