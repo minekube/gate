@@ -37,7 +37,7 @@ func IsConnectionRefused(err error) bool {
 // Forward forwards a client connection to a matching backend route.
 func Forward(
 	dialTimeout time.Duration,
-	routes []config.Route,
+	cfg *config.Config,
 	log logr.Logger,
 	client netmc.MinecraftConn,
 	handshake *packet.Handshake,
@@ -46,9 +46,18 @@ func Forward(
 ) {
 	defer func() { _ = client.Close() }()
 
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, src, route, nextBackend, err := findRoute(cfg.Routes, log, client, handshake, strategyManager)
 	if err != nil {
 		errs.V(log, err).Info("failed to find route", "error", err)
+		reason := cfg.NoRouteMessage
+		if reason == nil {
+			reason = config.DefaultConfig.NoRouteMessage
+		}
+		_ = client.WritePacket(packet.NewDisconnect(
+			reason.T(),
+			client.Protocol(),
+			client.State().State,
+		))
 		return
 	}
 
@@ -58,6 +67,19 @@ func Forward(
 		return log, conn, err
 	})
 	if err != nil {
+		errs.V(log, err).Info("failed to connect to any backend", "error", err)
+		reason := route.NoBackendMessage
+		if reason == nil {
+			reason = cfg.NoBackendMessage
+		}
+		if reason == nil {
+			reason = config.DefaultConfig.NoBackendMessage
+		}
+		_ = client.WritePacket(packet.NewDisconnect(
+			reason.T(),
+			client.Protocol(),
+			client.State().State,
+		))
 		return
 	}
 	defer func() { _ = dst.Close() }()
@@ -339,7 +361,7 @@ func update(pc *proto.PacketContext, h *packet.Handshake) {
 // ResolveStatusResponse resolves the status response for the matching route and caches it for a short time.
 func ResolveStatusResponse(
 	dialTimeout time.Duration,
-	routes []config.Route,
+	cfg *config.Config,
 	log logr.Logger,
 	client netmc.MinecraftConn,
 	handshake *packet.Handshake,
@@ -347,7 +369,7 @@ func ResolveStatusResponse(
 	statusRequestCtx *proto.PacketContext,
 	strategyManager *StrategyManager,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, src, route, nextBackend, err := findRoute(cfg.Routes, log, client, handshake, strategyManager)
 	if err != nil {
 		return log, nil, err
 	}
