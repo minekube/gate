@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.67.1](https://github.com/o7studios/gate/compare/v0.67.0...v0.67.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.81.0.1.20241118150055.50fffb007499 ([#736](https://github.com/o7studios/gate/issues/736)) ([3f260e5](https://github.com/o7studios/gate/commit/3f260e51a557b1e4fdb5369cdf163ca5c46db592))
+* **deps:** update dependency build.buf.gen:minekube_gate_protocolbuffers_java to v29.5.0.2.20241118150055.50fffb007499 ([#727](https://github.com/o7studios/gate/issues/727)) ([e85b87c](https://github.com/o7studios/gate/commit/e85b87c244b12a48550f06db43b813c56fa2d4fb))
+* **deps:** update geyserlite to v0.3.0 ([#722](https://github.com/o7studios/gate/issues/722)) ([69bfeb7](https://github.com/o7studios/gate/commit/69bfeb7bd3504231a547df13aebbd2f86ad040fe))
+* **deps:** update grpc-java monorepo to v1.81.0 ([#738](https://github.com/o7studios/gate/issues/738)) ([f122ad7](https://github.com/o7studios/gate/commit/f122ad75a93f01783e99395005ba48ad658cb4ed))
+* **deps:** update module github.com/gammazero/deque to v1.2.1 ([#729](https://github.com/o7studios/gate/issues/729)) ([1520d56](https://github.com/o7studios/gate/commit/1520d5612ac390191e91eaa522b02e9b5ab9467b))
+* **deps:** update module github.com/gookit/color to v1.6.1 ([#731](https://github.com/o7studios/gate/issues/731)) ([da4e57d](https://github.com/o7studios/gate/commit/da4e57d343c19cd804ff567214a5072b8d33006b))
+* **docker:** support managed geyserlite on arm64 ([#717](https://github.com/o7studios/gate/issues/717)) ([beda893](https://github.com/o7studios/gate/commit/beda893a11a3d158939201746c5686de13100138))
+
 ## [0.67.0](https://github.com/o7studios/gate/compare/v0.66.6...v0.67.0) (2026-06-06)
 
 
