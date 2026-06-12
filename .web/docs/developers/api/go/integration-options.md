@@ -6,7 +6,7 @@ description: "Learn different ways to integrate Gate Minecraft proxy with Go app
 <div class="integration-options">
   <a href="https://github.com/minekube/gate-plugin-template" class="option-card" target="_blank">
     <div class="option-content">
-      <h3>🔌 Native Go Plugin</h3>
+      <h3>Native Go Plugin</h3>
       <ul>
         <li>Create your own Go module and import Gate APIs</li>
         <li>Compile like a normal Go program</li>
@@ -22,7 +22,7 @@ description: "Learn different ways to integrate Gate Minecraft proxy with Go app
 
   <a href="/developers/api/" class="option-card">
     <div class="option-content">
-      <h3>🌐 HTTP API Client</h3>
+      <h3>HTTP API Client</h3>
       <ul>
         <li>Language-agnostic interface</li>
         <li>Perfect for out-of-process execution</li>

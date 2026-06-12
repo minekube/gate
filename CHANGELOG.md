@@ -58,6 +58,48 @@
 * Update for Minecraft 1.21.9 and 1.21.10 ([#580](https://github.com/o7studios/gate/issues/580)) ([40a741e](https://github.com/o7studios/gate/commit/40a741e6b076b6fb4c64c87c8a9357541a439677))
 * **WIP:** add opentelemetry ([#439](https://github.com/o7studios/gate/issues/439)) ([18eda21](https://github.com/o7studios/gate/commit/18eda21c439aa0d96ae3dc115a229690070999fc))
 
+## [0.66.13](https://github.com/minekube/gate/compare/v0.66.12...v0.66.13) (2026-06-10)
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.81.0 ([#738](https://github.com/minekube/gate/issues/738)) ([f122ad7](https://github.com/minekube/gate/commit/f122ad75a93f01783e99395005ba48ad658cb4ed))
+
+## [0.66.12](https://github.com/minekube/gate/compare/v0.66.11...v0.66.12) (2026-06-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.81.0.1.20241118150055.50fffb007499 ([#736](https://github.com/minekube/gate/issues/736)) ([3f260e5](https://github.com/minekube/gate/commit/3f260e51a557b1e4fdb5369cdf163ca5c46db592))
+
+## [0.66.11](https://github.com/minekube/gate/compare/v0.66.10...v0.66.11) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gookit/color to v1.6.1 ([#731](https://github.com/minekube/gate/issues/731)) ([da4e57d](https://github.com/minekube/gate/commit/da4e57d343c19cd804ff567214a5072b8d33006b))
+
+## [0.66.10](https://github.com/minekube/gate/compare/v0.66.9...v0.66.10) (2026-06-09)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gammazero/deque to v1.2.1 ([#729](https://github.com/minekube/gate/issues/729)) ([1520d56](https://github.com/minekube/gate/commit/1520d5612ac390191e91eaa522b02e9b5ab9467b))
+
+## [0.66.9](https://github.com/minekube/gate/compare/v0.66.8...v0.66.9) (2026-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_protocolbuffers_java to v29.5.0.2.20241118150055.50fffb007499 ([#727](https://github.com/minekube/gate/issues/727)) ([e85b87c](https://github.com/minekube/gate/commit/e85b87c244b12a48550f06db43b813c56fa2d4fb))
+
+## [0.66.8](https://github.com/minekube/gate/compare/v0.66.7...v0.66.8) (2026-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.3.0 ([#722](https://github.com/minekube/gate/issues/722)) ([69bfeb7](https://github.com/minekube/gate/commit/69bfeb7bd3504231a547df13aebbd2f86ad040fe))
+
+## [0.66.7](https://github.com/minekube/gate/compare/v0.66.6...v0.66.7) (2026-06-08)
 
 ### Bug Fixes
 
@@ -316,6 +358,7 @@
 * **web:** fix bedrock quick link ([#571](https://github.com/o7studios/gate/issues/571)) ([6b2129e](https://github.com/o7studios/gate/commit/6b2129e672a85698a16e312587ab1c1a47c9af1f))
 * Workaround until fix of https://github.com/spf13/viper/issues/338 (fixes [#218](https://github.com/o7studios/gate/issues/218)) ([ef86ad3](https://github.com/o7studios/gate/commit/ef86ad39777acc7f2710a188d87b81410d785fbe))
 * wrap SetReader with fullReader to fix large packet read issues ([#615](https://github.com/o7studios/gate/issues/615)) ([4b5d548](https://github.com/o7studios/gate/commit/4b5d54834f5ae19cae8068186694b0bc322fcbcf))
+* **docker:** support managed geyserlite on arm64 ([#717](https://github.com/minekube/gate/issues/717)) ([beda893](https://github.com/minekube/gate/commit/beda893a11a3d158939201746c5686de13100138))
 
 ## [0.66.6](https://github.com/minekube/gate/compare/v0.66.5...v0.66.6) (2026-06-06)
 

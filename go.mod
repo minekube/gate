@@ -11,13 +11,13 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dboslee/lru v0.0.1
 	github.com/edwingeng/deque/v2 v2.1.1
-	github.com/gammazero/deque v1.2.0
+	github.com/gammazero/deque v1.2.1
 	github.com/go-faker/faker/v4 v4.7.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
 	github.com/google/uuid v1.6.0
-	github.com/gookit/color v1.6.0
+	github.com/gookit/color v1.6.1
 	github.com/honeycombio/otel-config-go v1.17.0
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/knadh/koanf/providers/file v1.2.1
@@ -34,7 +34,7 @@ require (
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.3.0
 	go.minekube.com/connect v0.6.2
-	go.minekube.com/geyserlite v0.2.4
+	go.minekube.com/geyserlite v0.3.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/metric v1.41.0

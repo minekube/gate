@@ -86,7 +86,7 @@ Sound sources determine which volume slider in the client controls the sound:
 | Player actions      | `sound.SourcePlayer`        |
 | Ambient sounds      | `sound.SourceAmbient`       |
 | Voice chat          | `sound.SourceVoice`         |
-| Interface sounds    | `sound.SourceUI` ⚠️ 1.21.5+ |
+| Interface sounds    | `sound.SourceUI` (1.21.5+) |
 
 ### Parsing Sound Sources
 

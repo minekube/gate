@@ -15,12 +15,12 @@ Gate is only a single executable file ready to run the proxy._
 ```sh [Linux/macOS]
 curl -fsSL https://gate.minekube.com/install | bash
 
-✨ Installing Gate...
-⚡ Downloading Gate 0.42.2 for darwin-arm64...
-✅ Checksum verified for gate_0.42.2_darwin_arm64
-✨ Successfully installed Gate 0.42.2!
-📍 Location: /Users/robin/.local/bin/gate
-🚀 Run gate to start the proxy
+Installing Gate...
+Downloading Gate 0.42.2 for darwin-arm64...
+Checksum verified for gate_0.42.2_darwin_arm64
+Successfully installed Gate 0.42.2!
+Location: /Users/robin/.local/bin/gate
+Run gate to start the proxy
 ```
 
 ```powershell [Windows]
