@@ -103,7 +103,8 @@ func (b *backendTransitionSessionHandler) shouldHandle() bool {
 }
 
 func (b *backendTransitionSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	_ = b.serverConn.conn().WritePacket(p)
+	recordBackendKeepAlive(b.serverConn, p)
+	_ = b.serverConn.player.WritePacket(p)
 }
 func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect) {
 	var connType phase.ConnectionType

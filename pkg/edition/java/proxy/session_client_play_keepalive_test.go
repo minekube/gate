@@ -140,3 +140,20 @@ func TestForwardKeepAliveFallsBackToInFlightConnection(t *testing.T) {
 		t.Fatalf("expected in-flight backend to receive keep-alive once, got %d writes", len(inFlightBackend.written))
 	}
 }
+
+func TestBackendTransitionKeepAliveTracksAndForwardsToPlayer(t *testing.T) {
+	player, sc, backend := newKeepAliveFixture(state.Play, state.Play)
+	handler := &backendTransitionSessionHandler{serverConn: sc}
+
+	handler.handleKeepAlive(&packet.KeepAlive{RandomID: 1234})
+
+	if len(backend.written) != 0 {
+		t.Fatalf("expected transition keep-alive not to be written back to backend, got %d writes", len(backend.written))
+	}
+	if len(player.MinecraftConn.(*keepAliveTestConn).written) != 1 {
+		t.Fatalf("expected transition keep-alive forwarded to player once, got %d writes", len(player.MinecraftConn.(*keepAliveTestConn).written))
+	}
+	if _, ok := sc.pendingPings.Get(1234); !ok {
+		t.Fatal("expected transition keep-alive to be tracked as pending")
+	}
+}
