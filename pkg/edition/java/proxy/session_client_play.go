@@ -302,16 +302,16 @@ func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlaye
 	// connection.
 	serverConn.pendingPings.Delete(p.RandomID)
 
-	// Only forward to the backend when it is open and in the same protocol state
-	// as the client. During a server switch the backend may be in CONFIG while
-	// the client is still in PLAY; forwarding then would mis-encode the packet.
+	// A matching pending ID proves this reply belongs to this backend. Encode it
+	// with the backend connection state; during 1.20.2+ switches the client and
+	// backend can briefly be in different CONFIG/PLAY states.
 	serverMc := serverConn.conn()
-	clientState := player.State()
-	if serverMc != nil && !netmc.Closed(serverMc) &&
-		clientState == serverMc.State() &&
-		(clientState == state.Config || clientState == state.Play) {
-		player.ping.Store(time.Since(sentTime))
-		_ = serverMc.WritePacket(p)
+	if serverMc != nil && !netmc.Closed(serverMc) {
+		backendState := serverMc.State()
+		if backendState == state.Config || backendState == state.Play {
+			player.ping.Store(time.Since(sentTime))
+			_ = serverMc.WritePacket(p)
+		}
 	}
 	return true
 }
