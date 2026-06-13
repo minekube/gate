@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -144,7 +143,7 @@ func (b *backendPlaySessionHandler) Disconnected() {
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *proto.PacketContext) {
-	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
+	recordBackendKeepAlive(b.serverConn, p)
 	b.forwardToPlayer(pc, nil) // forward on
 }
 

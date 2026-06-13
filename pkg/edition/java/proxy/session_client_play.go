@@ -316,6 +316,11 @@ func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlaye
 	return true
 }
 
+func recordBackendKeepAlive(serverConn *serverConnection, p *packet.KeepAlive) {
+	serverConn.pendingPings.Flush()
+	serverConn.pendingPings.Set(p.RandomID, time.Now())
+}
+
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 	serverConn := c.player.connectedServer()
 
