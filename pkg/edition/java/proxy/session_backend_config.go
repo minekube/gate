@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -248,7 +247,7 @@ func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContex
 }
 
 func (b *backendConfigSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
+	recordBackendKeepAlive(b.serverConn, p)
 	_ = b.serverConn.player.WritePacket(p)
 }
 
