@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.18](https://github.com/minekube/gate/compare/v0.66.17...v0.66.18) (2026-06-14)
+
+
+### Bug Fixes
+
+* **deps:** update kotlinx-coroutines monorepo to v1.11.0 ([#759](https://github.com/minekube/gate/issues/759)) ([6690cf1](https://github.com/minekube/gate/commit/6690cf1ba8f6c0654c57ff5afced151c8b8e19c8))
+
 ## [0.66.17](https://github.com/minekube/gate/compare/v0.66.16...v0.66.17) (2026-06-14)
 
 
