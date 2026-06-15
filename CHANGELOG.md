@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.21](https://github.com/minekube/gate/compare/v0.66.20...v0.66.21) (2026-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/go-faker/faker/v4 to v4.8.0 ([#768](https://github.com/minekube/gate/issues/768)) ([694b83f](https://github.com/minekube/gate/commit/694b83f8c2af0d14e0ac7b3f1b15e00c4e9faddf))
+
 ## [0.66.20](https://github.com/minekube/gate/compare/v0.66.19...v0.66.20) (2026-06-15)
 
 
