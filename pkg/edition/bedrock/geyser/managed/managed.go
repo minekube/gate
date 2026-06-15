@@ -256,7 +256,7 @@ legacy-ping-passthrough: false
 ping-passthrough-interval: 3
 
 # Performance settings
-forward-player-ping: true
+forward-player-ping: false
 max-players: 100
 debug-mode: false
 

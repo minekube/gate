@@ -339,9 +339,10 @@ config:
         # Enable debug logging (shows packet details)
         # Default: false
         debug-mode: false
-        # Whether to forward player ping to Gate.
-        # Default: true
-        forward-player-ping: true
+        # Whether to forward Bedrock client latency to Gate/backend keepalives.
+        # Keep disabled for stable mobile connections.
+        # Default: false
+        forward-player-ping: false
 
         # Bedrock-specific features
         # Show block break cooldown as title/actionbar
