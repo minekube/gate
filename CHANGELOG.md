@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.20](https://github.com/minekube/gate/compare/v0.66.19...v0.66.20) (2026-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/coder/websocket to v1.8.15 ([#766](https://github.com/minekube/gate/issues/766)) ([f321f8c](https://github.com/minekube/gate/commit/f321f8ca7b7ce7d60f1be40476babf3bdf756c8a))
+
 ## [0.66.19](https://github.com/minekube/gate/compare/v0.66.18...v0.66.19) (2026-06-15)
 
 
