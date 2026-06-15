@@ -45,6 +45,38 @@ func TestWriteGeyserConfigForwardsHostnameByDefault(t *testing.T) {
 	}
 }
 
+func TestWriteGeyserConfigDisablesForwardPlayerPingByDefault(t *testing.T) {
+	dataDir := t.TempDir()
+	keyPath := filepath.Join(dataDir, "floodgate.pem")
+	if err := os.WriteFile(keyPath, []byte("test-key"), 0o600); err != nil {
+		t.Fatalf("failed to write key: %v", err)
+	}
+
+	r := &Runner{cfg: &bconfig.Config{
+		GeyserListenAddr: "127.0.0.1:25567",
+		FloodgateKeyPath: keyPath,
+	}}
+
+	configPath, err := r.writeGeyserConfig(bconfig.ManagedGeyser{DataDir: dataDir})
+	if err != nil {
+		t.Fatalf("writeGeyserConfig failed: %v", err)
+	}
+
+	configBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("failed to read config: %v", err)
+	}
+
+	var result map[string]any
+	if err := yaml.Unmarshal(configBytes, &result); err != nil {
+		t.Fatalf("failed to parse generated config: %v", err)
+	}
+
+	if result["forward-player-ping"] != false {
+		t.Fatalf("expected forward-player-ping = false, got %v", result["forward-player-ping"])
+	}
+}
+
 func TestApplyConfigOverrides(t *testing.T) {
 	r := &Runner{}
 
