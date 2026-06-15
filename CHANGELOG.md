@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.22](https://github.com/minekube/gate/compare/v0.66.21...v0.66.22) (2026-06-15)
+
+
+### Bug Fixes
+
+* **bedrock:** avoid forwarding mobile ping to backend keepalive ([#771](https://github.com/minekube/gate/issues/771)) ([0b6c3ba](https://github.com/minekube/gate/commit/0b6c3ba369db8b01adf1a092848972122c73713f))
+
 ## [0.66.21](https://github.com/minekube/gate/compare/v0.66.20...v0.66.21) (2026-06-15)
 
 
