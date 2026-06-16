@@ -308,6 +308,7 @@ type ServerLoginSuccess struct {
 	UUID       uuid.UUID
 	Username   string
 	Properties []profile.Property // 1.19+
+	SessionID  uuid.UUID          // 26.2+
 }
 
 const serverLoginSuccessStrictErrorHandling = true
@@ -340,6 +341,12 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 	}
 	if c.Protocol == version.Minecraft_1_20_5.Protocol || c.Protocol == version.Minecraft_1_21.Protocol {
 		err = util.WriteBool(wr, serverLoginSuccessStrictErrorHandling)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		err = util.WriteUUID(wr, s.SessionID)
 		if err != nil {
 			return err
 		}
@@ -382,6 +389,12 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 	}
 	if c.Protocol == version.Minecraft_1_20_5.Protocol || c.Protocol == version.Minecraft_1_21.Protocol {
 		_, err = util.ReadBool(rd)
+		if err != nil {
+			return
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		s.SessionID, err = util.ReadUUID(rd)
 		if err != nil {
 			return
 		}
