@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.26](https://github.com/minekube/gate/compare/v0.66.25...v0.66.26) (2026-06-16)
+
+
+### Bug Fixes
+
+* **deps:** update module go.uber.org/zap to v1.28.0 ([#778](https://github.com/minekube/gate/issues/778)) ([a85fe51](https://github.com/minekube/gate/commit/a85fe518c77da8a4f3677c6e6f895e76bd61458c))
+
 ## [0.66.25](https://github.com/minekube/gate/compare/v0.66.24...v0.66.25) (2026-06-16)
 
 
