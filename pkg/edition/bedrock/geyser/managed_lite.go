@@ -1,3 +1,5 @@
+//go:build !musl
+
 package geyser
 
 import (
