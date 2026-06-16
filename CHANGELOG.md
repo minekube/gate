@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.23](https://github.com/minekube/gate/compare/v0.66.22...v0.66.23) (2026-06-16)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/connect to v1.20.0 ([#763](https://github.com/minekube/gate/issues/763)) ([c6741c7](https://github.com/minekube/gate/commit/c6741c74fb3a2b9dfe749812cf9fbc0c4a4187f3))
+
 ## [0.66.22](https://github.com/minekube/gate/compare/v0.66.21...v0.66.22) (2026-06-15)
 
 
