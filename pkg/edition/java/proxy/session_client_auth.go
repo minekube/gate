@@ -193,6 +193,9 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 		Username:   player.Username(),
 		Properties: player.GameProfile().Properties,
 	}
+	if a.inbound.Protocol().GreaterEqual(version.Minecraft_26_2) {
+		loginSuccess.SessionID = a.proxy.sessionID()
+	}
 
 	// For Modern Forge clients on pre-1.20.2, delay sending LoginSuccess so the
 	// client remains in the LOGIN state during the backend FML handshake relay.

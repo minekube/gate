@@ -191,8 +191,8 @@ func init() {
 	empty(id("minecraft:block_predicate", mapSet(Minecraft_1_19, 13)))
 	empty(id("minecraft:item_stack", mapSet(Minecraft_1_19, 14)))
 	empty(id("minecraft:item_predicate", mapSet(Minecraft_1_19, 15)))
-	empty(id("minecraft:color", mapSet(Minecraft_1_19, 16)))
-	empty(id("minecraft:hex_color", mapSet(Minecraft_1_21_6, 17))) // added in 1.21.6
+	empty(id("minecraft:color", mapSet(Minecraft_26_2, -1), mapSet(Minecraft_1_19, 16))) // renamed to team_color in 26.2
+	empty(id("minecraft:hex_color", mapSet(Minecraft_1_21_6, 17)))                       // added in 1.21.6
 	empty(id("minecraft:component", mapSet(Minecraft_1_21_6, 18), mapSet(Minecraft_1_19, 17)))
 	empty(id("minecraft:style", mapSet(Minecraft_1_21_6, 19), mapSet(Minecraft_1_20_3, 18)))
 	empty(id("minecraft:message", mapSet(Minecraft_1_21_6, 20), mapSet(Minecraft_1_20_3, 19), mapSet(Minecraft_1_19, 18)))
@@ -236,7 +236,8 @@ func init() {
 	empty(id("minecraft:loot_predicate", mapSet(Minecraft_1_21_6, 53), mapSet(Minecraft_1_21_5, 52), mapSet(Minecraft_1_20_5, 51)))
 	empty(id("minecraft:loot_modifier", mapSet(Minecraft_1_21_6, 54), mapSet(Minecraft_1_21_5, 53), mapSet(Minecraft_1_20_5, 52)))
 
-	empty(id("minecraft:dialog", mapSet(Minecraft_1_21_6, 55))) // added in 1.21.6
+	empty(id("minecraft:dialog", mapSet(Minecraft_1_21_6, 55)))   // added in 1.21.6
+	empty(id("minecraft:team_color", mapSet(Minecraft_26_2, 16))) // renamed from color in 26.2
 
 	// Crossstitch support
 	register(id("crossstitch:mod_argument", mapSet(Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)

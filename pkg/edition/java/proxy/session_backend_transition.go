@@ -196,6 +196,8 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 		b.serverConn.player.mu.Unlock()
 	}
 
+	p.OnlineMode = b.serverConn.player.OnlineMode()
+
 	// The goods are in hand! We got JoinGame.
 	// Let's transition completely to the new state.
 	smc.SetAutoReading(false)

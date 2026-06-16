@@ -64,6 +64,9 @@ type Proxy struct {
 	playerNames map[string]*connectedPlayer    // lower case usernames map
 	playerIDs   map[uuid.UUID]*connectedPlayer // uuids map
 
+	sessionIDMu      sync.Mutex
+	currentSessionID uuid.UUID
+
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
@@ -752,11 +755,43 @@ retry:
 // unregisters a connected player
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
 	p.muP.Lock()
-	defer p.muP.Unlock()
 	_, found = p.playerIDs[player.ID()]
 	delete(p.playerNames, strings.ToLower(player.Username()))
 	delete(p.playerIDs, player.ID())
+	empty := len(p.playerIDs) == 0
+	p.muP.Unlock()
+	if empty {
+		p.resetSessionIDIfEmpty()
+	}
 	return found
+}
+
+func (p *Proxy) sessionID() uuid.UUID {
+	p.sessionIDMu.Lock()
+	defer p.sessionIDMu.Unlock()
+	if p.currentSessionID == uuid.Nil {
+		p.currentSessionID = uuid.New()
+	}
+	return p.currentSessionID
+}
+
+func (p *Proxy) resetSessionIDIfEmpty() {
+	p.muP.RLock()
+	empty := len(p.playerIDs) == 0
+	p.muP.RUnlock()
+	if !empty {
+		return
+	}
+
+	p.sessionIDMu.Lock()
+	defer p.sessionIDMu.Unlock()
+
+	p.muP.RLock()
+	empty = len(p.playerIDs) == 0
+	p.muP.RUnlock()
+	if empty {
+		p.currentSessionID = uuid.Nil
+	}
 }
 
 //
