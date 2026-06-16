@@ -5,8 +5,9 @@
   "author": "Minekube",
   "scripts": {
     "dev": "pnpm exec vitepress dev docs",
-    "build": "pnpm exec vitepress build docs",
-    "serve": "pnpm exec vitepress serve docs"
+    "build": "node scripts/build-with-community-stats.mjs",
+    "serve": "pnpm exec vitepress serve docs",
+    "test": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251117.0",

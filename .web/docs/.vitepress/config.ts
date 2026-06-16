@@ -12,11 +12,25 @@ const ogUrl = 'https://gate.minekube.com';
 const ogImage = `${ogUrl}/og-image.png`;
 const ogTitle = 'Gate Proxy';
 const ogDescription = 'Next Generation Minecraft Proxy';
+const numberFromEnv = (value: string | undefined, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
+const communityStats = {
+  discordMembers: numberFromEnv(process.env.GATE_DOCS_DISCORD_MEMBERS, 1650),
+  githubStars: numberFromEnv(process.env.GATE_DOCS_GITHUB_STARS, 1050),
+};
 
 export default defineConfig({
   title: `Gate Proxy${additionalTitle}`,
   description: ogDescription,
   appearance: 'dark',
+
+  vite: {
+    define: {
+      __COMMUNITY_STATS__: communityStats,
+    },
+  },
 
   sitemap: {
     hostname: ogUrl,
