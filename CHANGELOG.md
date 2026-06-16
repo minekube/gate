@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.66.23](https://github.com/minekube/gate/compare/v0.66.22...v0.66.23) (2026-06-16)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/connect to v1.20.0 ([#763](https://github.com/minekube/gate/issues/763)) ([c6741c7](https://github.com/minekube/gate/commit/c6741c74fb3a2b9dfe749812cf9fbc0c4a4187f3))
+
+## [0.66.22](https://github.com/minekube/gate/compare/v0.66.21...v0.66.22) (2026-06-15)
+
+
+### Bug Fixes
+
+* **bedrock:** avoid forwarding mobile ping to backend keepalive ([#771](https://github.com/minekube/gate/issues/771)) ([0b6c3ba](https://github.com/minekube/gate/commit/0b6c3ba369db8b01adf1a092848972122c73713f))
+
+## [0.66.21](https://github.com/minekube/gate/compare/v0.66.20...v0.66.21) (2026-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/go-faker/faker/v4 to v4.8.0 ([#768](https://github.com/minekube/gate/issues/768)) ([694b83f](https://github.com/minekube/gate/commit/694b83f8c2af0d14e0ac7b3f1b15e00c4e9faddf))
+
+## [0.66.20](https://github.com/minekube/gate/compare/v0.66.19...v0.66.20) (2026-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/coder/websocket to v1.8.15 ([#766](https://github.com/minekube/gate/issues/766)) ([f321f8c](https://github.com/minekube/gate/commit/f321f8ca7b7ce7d60f1be40476babf3bdf756c8a))
+
+## [0.66.19](https://github.com/minekube/gate/compare/v0.66.18...v0.66.19) (2026-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update module buf.build/gen/go/minekube/gate/connectrpc/go to v1.20.0-20250516132630-2a0c7768e191.1 ([#761](https://github.com/minekube/gate/issues/761)) ([0c6591e](https://github.com/minekube/gate/commit/0c6591eae358c647fc0671c8cfd8e043a87d5087))
+
+## [0.66.18](https://github.com/minekube/gate/compare/v0.66.17...v0.66.18) (2026-06-14)
+
+
+### Bug Fixes
+
+* **deps:** update kotlinx-coroutines monorepo to v1.11.0 ([#759](https://github.com/minekube/gate/issues/759)) ([6690cf1](https://github.com/minekube/gate/commit/6690cf1ba8f6c0654c57ff5afced151c8b8e19c8))
+
 ## [0.66.17](https://github.com/minekube/gate/compare/v0.66.16...v0.66.17) (2026-06-14)
 
 
