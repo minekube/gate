@@ -1064,6 +1064,54 @@ func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackI
 //
 //
 
+// ServerResourcePackRemoveEvent is fired when the downstream server tries to remove a
+// resource pack from the player. If PackID returns uuid.Nil, the downstream server
+// requested that all resource packs should be removed. If this event is denied, the
+// remove packet is not forwarded to the client and the proxy keeps its applied
+// resource pack state unchanged.
+type ServerResourcePackRemoveEvent struct {
+	denied     bool
+	packID     uuid.UUID
+	serverConn *serverConnection
+}
+
+// newServerResourcePackRemoveEvent creates a new ServerResourcePackRemoveEvent.
+func newServerResourcePackRemoveEvent(
+	packID uuid.UUID,
+	serverConn *serverConnection,
+) *ServerResourcePackRemoveEvent {
+	return &ServerResourcePackRemoveEvent{
+		packID:     packID,
+		serverConn: serverConn,
+	}
+}
+
+// Allowed indicates whether removing the resource pack from the client is allowed.
+func (e *ServerResourcePackRemoveEvent) Allowed() bool {
+	return !e.denied
+}
+
+// SetAllowed allows or denies removing the resource pack from the client.
+func (e *ServerResourcePackRemoveEvent) SetAllowed(allowed bool) {
+	e.denied = !allowed
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerResourcePackRemoveEvent) ServerConnection() ServerConnection {
+	return e.serverConn
+}
+
+// PackID returns the resource pack ID requested for removal, or uuid.Nil when
+// all resource packs should be removed.
+func (e *ServerResourcePackRemoveEvent) PackID() uuid.UUID {
+	return e.packID
+}
+
+//
+//
+//
+//
+
 // PlayerChannelRegisterEvent is fired when a client Player sends a plugin message through the
 // register channel. The proxy will not wait on this event to finish firing.
 type PlayerChannelRegisterEvent struct {
