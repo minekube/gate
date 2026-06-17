@@ -3,7 +3,8 @@ before:
   hooks:
     - go mod download
 builds:
-  - env: [ CGO_ENABLED=0 ]
+  - id: gate
+    env: [ CGO_ENABLED=0 ]
     ldflags:
       - "-s -w"
       - "-X 'go.minekube.com/gate/pkg/version.Version={{.Version}}'"
@@ -11,8 +12,31 @@ builds:
       - linux
       - windows
       - darwin
+  - id: gate-musl
+    env: [ CGO_ENABLED=0 ]
+    tags:
+      - musl
+    ldflags:
+      - "-s -w"
+      - "-X 'go.minekube.com/gate/pkg/version.Version={{.Version}}'"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - '386'
 archives:
-  - format: binary
+  - id: gate
+    ids:
+      - gate
+    formats:
+      - binary
+  - id: gate-musl
+    ids:
+      - gate-musl
+    formats:
+      - binary
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}_musl"
 checksum:
   name_template: 'checksums.txt'
 changelog:

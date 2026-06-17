@@ -16,6 +16,11 @@ build: sync-configs
 
 # Run tests
 test: fmt vet
+	sh .web/docs/public/build_tags_test.sh
+	@case "$$(uname -s)" in \
+		MINGW*|MSYS*|CYGWIN*) echo "Skipping installer shell tests on Windows";; \
+		*) bash .web/docs/public/install_test.sh;; \
+	esac
 	go test ./...
 
 # Run go fmt against code
