@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.27](https://github.com/minekube/gate/compare/v0.66.26...v0.66.27) (2026-06-17)
+
+
+### Bug Fixes
+
+* add musl linux installer assets ([e22541c](https://github.com/minekube/gate/commit/e22541cbf57fa9841eb5ddaf19a913abe6e92c26))
+
 ## [0.66.26](https://github.com/minekube/gate/compare/v0.66.25...v0.66.26) (2026-06-16)
 
 
