@@ -71,6 +71,7 @@ type Proxy struct {
 	loginsQuota      *addrquota.Quota
 
 	lite *lite.Lite // lite mode functionality
+	via  *viaManagedRunner
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -118,6 +119,7 @@ func New(options Options) (p *Proxy, err error) {
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
+		via:              newViaManagedRunner(options.Config),
 	}
 
 	// Connection & login rate limiters
@@ -172,6 +174,13 @@ func (p *Proxy) Start(ctx context.Context) error {
 	ctx = p.startCtx
 	defer p.cancelStart()
 	p.closeMu.Unlock()
+
+	if p.via != nil && p.via.enabled() {
+		if err := p.via.Start(ctx); err != nil {
+			return fmt.Errorf("error starting vialite: %w", err)
+		}
+		defer p.via.Stop()
+	}
 
 	if err := p.init(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
@@ -322,11 +331,14 @@ func (p *Proxy) init() (err error) {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+			if p.via != nil && p.via.backendEnabled(name) {
+				info = newViaServerInfo(info, p.via)
+			}
 			expectedServers[strings.ToLower(name)] = info
 
 			// Check if server is already registered
 			if rs := p.Server(name); rs != nil {
-				if ServerInfoEqual(rs.ServerInfo(), info) {
+				if serverInfoSyncEqual(rs.ServerInfo(), info) {
 					// Server exists and is identical - mark as config-managed and continue
 					p.muS.Lock()
 					p.configServers[strings.ToLower(name)] = true

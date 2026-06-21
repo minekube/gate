@@ -94,6 +94,22 @@ config:
     # The secret used if the mode is bungeeguard.
     # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
     #bungeeGuardSecret: secret_here
+  # Via backend protocol translation for Gate classic mode.
+  # This loads vialite in-process at startup and routes configured classic backend connections
+  # through Via-compatible translation before Gate dials the backend.
+  # Not used in lite mode. Changes require a Gate restart.
+  via:
+    enabled: false
+    # Options: embedded, subprocess
+    mode: embedded
+    # Optional local bind for the native runtime's internal loopback listener.
+    #bind: 127.0.0.1:0
+    # Optional artifact overrides.
+    #libraryPath: /opt/vialite/libvialite.so
+    #binaryPath: /opt/vialite/vialite
+    #version: v0.1.0
+    #mirror: https://github.com/minekube/vialite/releases/download
+    #offline: false
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.
   proxyProtocol: false
@@ -134,6 +150,17 @@ config:
       burst: 3
       ops: 0.4
       maxEntries: 1000
+  # Per-connection serverbound packet rate limiting. Unlike quota (which limits
+  # new connections/logins per IP), this bounds how many packets/bytes a single
+  # already-connected client may send, mitigating packet floods. The connection
+  # is closed when a limit is exceeded.
+  packetLimiter:
+    # The sliding window the rates are measured over.
+    interval: 7s
+    # Max serverbound packets per second per connection. Set to 0 (or below) to disable.
+    packetsPerSecond: 500
+    # Max serverbound bytes per second per connection. Set to 0 (or below) to disable.
+    bytesPerSecond: -1
   # Whether and how Gate should reply to GameSpy 4 (Minecraft query protocol on UDP) requests.
   query:
     enabled: false
