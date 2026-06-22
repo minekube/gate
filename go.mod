@@ -34,7 +34,7 @@ require (
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.3.0
 	go.minekube.com/connect v0.6.2
-	go.minekube.com/geyserlite v0.3.12
+	go.minekube.com/geyserlite v0.3.13
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/metric v1.41.0
