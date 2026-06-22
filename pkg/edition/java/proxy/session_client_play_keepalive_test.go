@@ -35,7 +35,7 @@ func newKeepAliveFixture(clientState, backendState *state.Registry) (*connectedP
 	sc := &serverConnection{
 		player:       player,
 		log:          logr.Discard(),
-		pendingPings: lru.NewSync[int64, time.Time](lru.WithCapacity(5)),
+		pendingPings: lru.NewSync[int64, time.Time](lru.WithCapacity(pendingKeepAliveCapacity)),
 	}
 	sc.connection = backend
 	return player, sc, backend
@@ -96,28 +96,37 @@ func TestSendKeepAliveIgnoresUnknownPing(t *testing.T) {
 	}
 }
 
-// Backends such as Minestom only accept a response to the latest keep-alive
-// they sent. Keep older IDs out of the pending set so late Bedrock/Geyser
-// replies are dropped instead of being forwarded to the backend and causing
-// "Bad Keep Alive packet" kicks after rapid server switches.
-func TestRecordBackendKeepAliveInvalidatesOlderPendingPings(t *testing.T) {
+func TestConsumePendingKeepAliveConsumesOnce(t *testing.T) {
+	_, sc, _ := newKeepAliveFixture(state.Play, state.Play)
+	const id = int64(1001)
+	sc.pendingPings.Set(id, time.Now())
+
+	if _, ok := consumePendingKeepAlive(sc, id); !ok {
+		t.Fatal("expected first consume to find pending keep-alive")
+	}
+	if _, ok := consumePendingKeepAlive(sc, id); ok {
+		t.Fatal("expected second consume to miss already-consumed keep-alive")
+	}
+}
+
+// Paper can send several keep-alives while the client stalls. When the client
+// replies in order, forwarding only the newest reply makes Paper see a skipped
+// earlier challenge and kick the player as out-of-order.
+func TestRecordBackendKeepAliveRetainsQueuedPendingPings(t *testing.T) {
 	player, sc, backend := newKeepAliveFixture(state.Play, state.Play)
 
-	recordBackendKeepAlive(sc, &packet.KeepAlive{RandomID: 1})
-	recordBackendKeepAlive(sc, &packet.KeepAlive{RandomID: 2})
-
-	if sendKeepAliveToBackend(sc, player, &packet.KeepAlive{RandomID: 1}) {
-		t.Fatal("expected stale keep-alive response to be ignored")
-	}
-	if len(backend.written) != 0 {
-		t.Fatalf("expected stale keep-alive not to be forwarded, got %d writes", len(backend.written))
+	ids := []int64{1, 2, 3, 4, 5, 6, 7}
+	for _, id := range ids {
+		recordBackendKeepAlive(sc, &packet.KeepAlive{RandomID: id})
 	}
 
-	if !sendKeepAliveToBackend(sc, player, &packet.KeepAlive{RandomID: 2}) {
-		t.Fatal("expected latest keep-alive response to be consumed")
+	for _, id := range ids {
+		if !sendKeepAliveToBackend(sc, player, &packet.KeepAlive{RandomID: id}) {
+			t.Fatalf("expected queued keep-alive %d to be consumed", id)
+		}
 	}
-	if len(backend.written) != 1 {
-		t.Fatalf("expected latest keep-alive forwarded once, got %d writes", len(backend.written))
+	if len(backend.written) != len(ids) {
+		t.Fatalf("expected all queued keep-alives forwarded once, got %d writes", len(backend.written))
 	}
 }
 

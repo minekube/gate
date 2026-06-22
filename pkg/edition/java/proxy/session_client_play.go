@@ -293,15 +293,10 @@ func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlaye
 	if serverConn == nil {
 		return false
 	}
-	sentTime, ok := serverConn.pendingPings.Get(p.RandomID)
+	sentTime, ok := consumePendingKeepAlive(serverConn, p.RandomID)
 	if !ok {
 		return false
 	}
-	// We removed this pending ping, so it is ours: consume it regardless of
-	// whether it can be forwarded, so it is not re-dispatched to another
-	// connection.
-	serverConn.pendingPings.Delete(p.RandomID)
-
 	// A matching pending ID proves this reply belongs to this backend. Encode it
 	// with the backend connection state; during 1.20.2+ switches the client and
 	// backend can briefly be in different CONFIG/PLAY states.
@@ -316,8 +311,25 @@ func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlaye
 	return true
 }
 
+func consumePendingKeepAlive(serverConn *serverConnection, randomID int64) (time.Time, bool) {
+	serverConn.mu.Lock()
+	defer serverConn.mu.Unlock()
+
+	sentTime, ok := serverConn.pendingPings.Get(randomID)
+	if !ok {
+		return time.Time{}, false
+	}
+	// We removed this pending ping, so it is ours: consume it regardless of
+	// whether it can be forwarded, so it is not re-dispatched to another
+	// connection or forwarded twice by concurrent handlers.
+	serverConn.pendingPings.Delete(randomID)
+	return sentTime, true
+}
+
 func recordBackendKeepAlive(serverConn *serverConnection, p *packet.KeepAlive) {
-	serverConn.pendingPings.Flush()
+	serverConn.mu.Lock()
+	defer serverConn.mu.Unlock()
+
 	serverConn.pendingPings.Set(p.RandomID, time.Now())
 }
 
