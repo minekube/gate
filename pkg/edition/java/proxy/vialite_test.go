@@ -1,0 +1,257 @@
+//go:build !musl && !windows
+
+package proxy
+
+import (
+	"context"
+	"errors"
+	"net"
+	"testing"
+	"time"
+
+	"github.com/go-logr/logr"
+	"github.com/robinbraemer/event"
+
+	"go.minekube.com/gate/pkg/edition/java/auth"
+	"go.minekube.com/gate/pkg/edition/java/config"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	vialite "go.minekube.com/vialite"
+)
+
+func TestViaServerInfoDialUsesTranslatedBackendAddress(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	accepted := make(chan struct{})
+	go func() {
+		conn, err := ln.Accept()
+		if err == nil {
+			_ = conn.Close()
+			close(accepted)
+		}
+	}()
+
+	info := newViaServerInfo(
+		NewServerInfo("lobby", mustParseAddr("127.0.0.1:25566")),
+		&viaManagedRunner{server: &fakeVialiteServer{backends: map[string]string{"lobby": ln.Addr().String()}}},
+	)
+	dialer, ok := info.(ServerDialer)
+	if !ok {
+		t.Fatalf("ServerInfo = %T, want ServerDialer", info)
+	}
+	conn, err := dialer.Dial(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	_ = conn.Close()
+
+	select {
+	case <-accepted:
+	case <-time.After(time.Second):
+		t.Fatal("translated backend address was not dialed")
+	}
+}
+
+func TestProxyInitWrapsViaConfigServer(t *testing.T) {
+	cfg := &config.Config{
+		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
+		Via: config.Via{
+			Enabled: true,
+		},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	authenticator, err := auth.New(auth.Options{})
+	if err != nil {
+		t.Fatalf("auth.New: %v", err)
+	}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		authenticator: authenticator,
+		via: &viaManagedRunner{
+			cfg:            cfg,
+			server:         &fakeVialiteServer{backends: map[string]string{"lobby": "127.0.0.1:25590"}},
+			activeBackends: map[string]struct{}{"lobby": {}},
+		},
+	}
+
+	if err := p.init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	server := p.Server("lobby")
+	if server == nil {
+		t.Fatal("lobby server was not registered")
+	}
+	if _, ok := server.ServerInfo().(ServerDialer); !ok {
+		t.Fatalf("ServerInfo = %T, want ServerDialer", server.ServerInfo())
+	}
+}
+
+func TestProxyInitDoesNotWrapViaInLiteMode(t *testing.T) {
+	cfg := &config.Config{
+		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
+		Via: config.Via{
+			Enabled: true,
+		},
+		Lite: liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		},
+	}
+	authenticator, err := auth.New(auth.Options{})
+	if err != nil {
+		t.Fatalf("auth.New: %v", err)
+	}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		authenticator: authenticator,
+		via: &viaManagedRunner{
+			cfg:            cfg,
+			server:         &fakeVialiteServer{backends: map[string]string{"lobby": "127.0.0.1:25590"}},
+			activeBackends: map[string]struct{}{"lobby": {}},
+		},
+	}
+
+	if err := p.init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	if server := p.Server("lobby"); server != nil {
+		t.Fatalf("Lite mode registered classic server: %v", server)
+	}
+}
+
+func TestProxyInitDoesNotWrapViaEnabledAfterStartup(t *testing.T) {
+	cfg := &config.Config{
+		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
+		Via: config.Via{
+			Enabled: true,
+		},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	authenticator, err := auth.New(auth.Options{})
+	if err != nil {
+		t.Fatalf("auth.New: %v", err)
+	}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		authenticator: authenticator,
+		via:           &viaManagedRunner{cfg: cfg},
+	}
+
+	if err := p.init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	server := p.Server("lobby")
+	if server == nil {
+		t.Fatal("lobby server was not registered")
+	}
+	if _, ok := server.ServerInfo().(ServerDialer); ok {
+		t.Fatalf("ServerInfo = %T, did not want ServerDialer without active vialite", server.ServerInfo())
+	}
+}
+
+func TestViaManagedRunnerOptionsMapConfig(t *testing.T) {
+	cfg := &config.Config{
+		Servers: map[string]string{
+			"lobby":    "127.0.0.1:25566",
+			"survival": "127.0.0.1:25567",
+		},
+		Forwarding: config.Forwarding{Mode: config.VelocityForwardingMode},
+		Via: config.Via{
+			Enabled:     true,
+			Mode:        "subprocess",
+			Bind:        "127.0.0.1:25590",
+			LibraryPath: "/opt/vialite/libvialite.so",
+			BinaryPath:  "/opt/vialite/vialite",
+			Version:     "v0.1.0",
+			Mirror:      "https://mirror.example.com/vialite",
+			Offline:     true,
+		},
+	}
+
+	opts, err := newViaManagedRunner(cfg).options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	if opts.Mode != vialite.ModeSubprocess {
+		t.Fatalf("Mode = %v, want subprocess", opts.Mode)
+	}
+	if opts.Bind != "127.0.0.1:25590" || opts.LibraryPath != "/opt/vialite/libvialite.so" || opts.BinaryPath != "/opt/vialite/vialite" {
+		t.Fatalf("unexpected paths/bind: %#v", opts)
+	}
+	if opts.Version != "v0.1.0" || opts.Mirror != "https://mirror.example.com/vialite" || !opts.Offline {
+		t.Fatalf("unexpected release settings: %#v", opts)
+	}
+	if len(opts.Backends) != 2 {
+		t.Fatalf("Backends len = %d, want 2", len(opts.Backends))
+	}
+	backendByName := map[string]vialite.Backend{}
+	for _, backend := range opts.Backends {
+		backendByName[backend.Name] = backend
+	}
+	for name, address := range cfg.Servers {
+		backend, ok := backendByName[name]
+		if !ok {
+			t.Fatalf("missing backend %q in %#v", name, opts.Backends)
+		}
+		if backend.Address != address || backend.Forwarding != vialite.ForwardingVelocity {
+			t.Fatalf("unexpected backend %q: %#v", name, backend)
+		}
+	}
+}
+
+func TestViaManagedRunnerOptionsUseConfiguredServerNames(t *testing.T) {
+	cfg := &config.Config{
+		Servers: map[string]string{
+			"Lobby": "127.0.0.1:25566",
+		},
+		Via: config.Via{
+			Enabled: true,
+		},
+	}
+
+	opts, err := newViaManagedRunner(cfg).options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	if len(opts.Backends) != 1 {
+		t.Fatalf("Backends len = %d, want 1", len(opts.Backends))
+	}
+	backend := opts.Backends[0]
+	if backend.Name != "Lobby" || backend.Address != "127.0.0.1:25566" {
+		t.Fatalf("unexpected backend: %#v", backend)
+	}
+}
+
+type fakeVialiteServer struct {
+	backends map[string]string
+}
+
+func (f *fakeVialiteServer) Start(context.Context) error     { return nil }
+func (f *fakeVialiteServer) WaitReady(context.Context) error { return nil }
+func (f *fakeVialiteServer) Stop(context.Context) error      { return nil }
+func (f *fakeVialiteServer) Healthy() bool                   { return true }
+
+func (f *fakeVialiteServer) BackendDialAddress(name string) (string, error) {
+	addr, ok := f.backends[name]
+	if !ok {
+		return "", errors.New("backend not found")
+	}
+	return addr, nil
+}

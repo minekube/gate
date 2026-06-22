@@ -94,6 +94,22 @@ config:
     # The secret used if the mode is bungeeguard.
     # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
     #bungeeGuardSecret: secret_here
+  # Via backend protocol translation for Gate classic mode.
+  # This loads vialite in-process at startup and routes configured classic backend connections
+  # through Via-compatible translation before Gate dials the backend.
+  # Not used in lite mode. Changes require a Gate restart.
+  via:
+    enabled: false
+    # Options: embedded, subprocess
+    mode: embedded
+    # Optional local bind for the native runtime's internal loopback listener.
+    #bind: 127.0.0.1:0
+    # Optional artifact overrides.
+    #libraryPath: /opt/vialite/libvialite.so
+    #binaryPath: /opt/vialite/vialite
+    #version: v0.1.0
+    #mirror: https://github.com/minekube/vialite/releases/download
+    #offline: false
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.
   proxyProtocol: false

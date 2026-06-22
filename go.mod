@@ -35,6 +35,7 @@ require (
 	go.minekube.com/common v0.3.0
 	go.minekube.com/connect v0.6.2
 	go.minekube.com/geyserlite v0.3.13
+	go.minekube.com/vialite v0.0.0-20260621104032-00edaf7f9039
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/metric v1.41.0
@@ -107,3 +108,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )
+
+replace go.minekube.com/vialite => github.com/minekube/vialite/go v0.0.0-20260621104032-00edaf7f9039

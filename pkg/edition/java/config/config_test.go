@@ -1,17 +1,85 @@
 package config
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 )
 
 func Test_texts(t *testing.T) {
 	require.NotNil(t, defaultMotd())
 	require.NotNil(t, defaultShutdownReason())
+}
+
+func TestViaConfigValidate(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"Lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"Lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Mode:    "embedded",
+	}
+
+	_, errs := cfg.Validate()
+	require.Empty(t, errs)
+}
+
+func TestViaConfigHasNoBackendOverrideSetting(t *testing.T) {
+	typ := reflect.TypeOf(Via{})
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		yamlName, _, _ := strings.Cut(field.Tag.Get("yaml"), ",")
+		require.NotEqual(t, "backends", yamlName, "via config should stay automatic and not expose per-backend overrides")
+	}
+}
+
+func TestViaConfigRejectsInvalidMode(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Mode:    "native",
+	}
+
+	_, errs := cfg.Validate()
+	require.NotEmpty(t, errs)
+}
+
+func TestViaConfigRejectsInvalidBind(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Bind:    "127.0.0.1",
+	}
+
+	_, errs := cfg.Validate()
+	require.NotEmpty(t, errs)
+}
+
+func TestViaConfigIgnoredInLiteMode(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Lite = liteconfig.Config{
+		Enabled: true,
+		Routes: []liteconfig.Route{{
+			Host:    []string{"example.com"},
+			Backend: []string{"127.0.0.1:25566"},
+		}},
+	}
+	cfg.Via = Via{
+		Enabled: true,
+	}
+
+	_, errs := cfg.Validate()
+	require.Empty(t, errs)
 }
 
 func TestBedrockConfig_ManagedShorthand(t *testing.T) {
