@@ -268,6 +268,8 @@ go.minekube.com/geyserlite v0.3.5 h1:H/7ctRDCQo09is1eu1MEXtvU78jN3dn2+6M3hW7vJDs
 go.minekube.com/geyserlite v0.3.5/go.mod h1:KJZMMNqKn0i/OTpJkCP7EpQuAXF/HWE+mwAP7U5G0rw=
 go.minekube.com/geyserlite v0.3.10 h1:vQEamuLjJcY4t+BN9jOrhzaEifsqHJUL0gMSp/08T6g=
 go.minekube.com/geyserlite v0.3.10/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
+go.minekube.com/geyserlite v0.3.12 h1:eCI7vv0sY3nOM1q3H0nQMLI2dto7icN3yJad8DwfyUs=
+go.minekube.com/geyserlite v0.3.12/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
