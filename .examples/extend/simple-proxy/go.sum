@@ -151,6 +151,8 @@ github.com/jellydator/ttlcache/v3 v3.3.0 h1:BdoC9cE81qXfrxeb9eoJi9dWrdhSuwXMAnHT
 github.com/jellydator/ttlcache/v3 v3.3.0/go.mod h1:bj2/e0l4jRnQdrnSTaGTsh4GSXvMjQcy41i7th0GVGw=
 github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP4mnWdTY=
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
+github.com/jellydator/ttlcache/v3 v3.4.1 h1:bOdXmXiycyK6E6Qjyuj5vl+/vU3SCOoDs8a86NbHjAQ=
+github.com/jellydator/ttlcache/v3 v3.4.1/go.mod h1:j7LO12PNghFg5+0v9budMAT4rDK4JY969jb9vOdOBBk=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
@@ -338,6 +340,10 @@ go.minekube.com/geyserlite v0.3.10 h1:vQEamuLjJcY4t+BN9jOrhzaEifsqHJUL0gMSp/08T6
 go.minekube.com/geyserlite v0.3.10/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.minekube.com/geyserlite v0.3.12 h1:eCI7vv0sY3nOM1q3H0nQMLI2dto7icN3yJad8DwfyUs=
 go.minekube.com/geyserlite v0.3.12/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
+go.minekube.com/geyserlite v0.3.13 h1:Pe6I20z1EvXgWHJ/OUrXag+vQ2m0GcnUFhY140E4UbI=
+go.minekube.com/geyserlite v0.3.13/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
+go.minekube.com/vialite v0.1.0 h1:RMnNeDcDKchIs+N5KqxOzCK9tgkrVPjgUgjU5ARdn5o=
+go.minekube.com/vialite v0.1.0/go.mod h1:W9L1l8/b/GsLmkw1BW4wijaaPj/zV3OdrtYJgWdkhxE=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
