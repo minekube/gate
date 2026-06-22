@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.3.0
-	go.minekube.com/gate v0.66.28
+	go.minekube.com/gate v0.66.30
 )
 
 require (
@@ -23,7 +23,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dboslee/lru v0.0.1 // indirect
-	github.com/ebitengine/purego v0.10.0 // indirect
+	github.com/ebitengine/purego v0.10.1 // indirect
 	github.com/edwingeng/deque/v2 v2.1.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.minekube.com/connect v0.6.2 // indirect
-	go.minekube.com/geyserlite v0.3.5 // indirect
+	go.minekube.com/geyserlite v0.3.10 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.63.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0 // indirect
