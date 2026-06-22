@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.35](https://github.com/minekube/gate/compare/v0.66.34...v0.66.35) (2026-06-22)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/jellydator/ttlcache/v3 to v3.4.1 ([#804](https://github.com/minekube/gate/issues/804)) ([3e3500e](https://github.com/minekube/gate/commit/3e3500e9a46c113756d0d36881b193530c5c43a7))
+
 ## [0.66.34](https://github.com/minekube/gate/compare/v0.66.33...v0.66.34) (2026-06-22)
 
 
