@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.66.36](https://github.com/minekube/gate/compare/v0.66.35...v0.66.36) (2026-06-22)
+
+
+### Bug Fixes
+
+* retain queued backend keepalive replies ([#807](https://github.com/minekube/gate/issues/807)) ([03af8de](https://github.com/minekube/gate/commit/03af8dea7ef15c10baeec465354af0162f95b4ab))
+
 ## [0.66.35](https://github.com/minekube/gate/compare/v0.66.34...v0.66.35) (2026-06-22)
 
 
