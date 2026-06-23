@@ -35,6 +35,12 @@ func (r *viaManagedRunner) BackendDialAddress(string) (string, error) {
 	return "", fmt.Errorf("vialite is unavailable in this build")
 }
 
+func (r *viaManagedRunner) AddBackend(context.Context, ServerInfo) (bool, error) {
+	return false, nil
+}
+
+func (r *viaManagedRunner) RemoveBackend(context.Context, string) error { return nil }
+
 type viaServerInfo struct {
 	ServerInfo
 }

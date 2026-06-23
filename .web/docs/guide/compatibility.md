@@ -14,6 +14,26 @@ Gate provides excellent support for **modded servers** including Fabric and NeoF
 Gate is compatible with Minecraft 1.8 through the latest version
 and we maintainers update Gate as soon as a new Minecraft version is released.
 
+## Java Version Translation
+
+Gate can run managed Via translation in classic proxy mode. When `config.via.enabled`
+is true, Gate starts vialite, keeps it on the latest stable release by default,
+and routes backend connections through Via-compatible protocol translation.
+This applies to both configured servers and API-registered servers, so dynamic
+Connect/session backends can be joined by Java clients even when the backend
+Minecraft version differs from the client version.
+
+```yaml
+config:
+  via:
+    enabled: true
+```
+
+Lite mode does not run managed Via translation. Dynamic API-registered backend
+translation uses the default subprocess mode; embedded mode is limited to
+configured servers. For controlled deployments, Gate still supports exact
+vialite version pins, offline mode, and local artifact paths.
+
 ## Paper <VPBadge>Recommended</VPBadge>
 
 We highly recommend using [Paper](https://papermc.io/) for running a server in most cases.

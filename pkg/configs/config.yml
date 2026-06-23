@@ -95,12 +95,13 @@ config:
     # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
     #bungeeGuardSecret: secret_here
   # Via backend protocol translation for Gate classic mode.
-  # This starts vialite at startup and routes configured classic backend connections
-  # through Via-compatible translation before Gate dials the backend.
+  # This starts vialite at startup and routes configured or API-registered classic
+  # backend connections through Via-compatible translation before Gate dials the backend.
   # Not used in lite mode. Changes require a Gate restart.
   via:
     enabled: false
     # Options: subprocess, embedded. Subprocess uses released vialite artifacts and is the default.
+    # API-registered dynamic backends use subprocess mode; embedded mode only translates configured servers.
     mode: subprocess
     # Optional local bind for the native runtime's internal loopback listener.
     #bind: 127.0.0.1:0

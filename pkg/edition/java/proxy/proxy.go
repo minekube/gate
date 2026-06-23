@@ -496,10 +496,39 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	name := strings.ToLower(info.Name())
 
 	p.muS.Lock()
-	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
+		p.muS.Unlock()
 		return exists, ErrServerAlreadyExists
 	}
+	p.muS.Unlock()
+
+	var viaAdded bool
+	if _, alreadyVia := info.(*viaServerInfo); !alreadyVia && p.via != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		enabled, err := p.via.AddBackend(ctx, info)
+		if err != nil {
+			return nil, fmt.Errorf("error adding via backend %q: %w", info.Name(), err)
+		}
+		if enabled {
+			viaAdded = true
+			info = newViaServerInfo(info, p.via)
+		}
+	}
+
+	p.muS.Lock()
+	if exists, ok := p.servers[name]; ok {
+		p.muS.Unlock()
+		if viaAdded {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := p.via.RemoveBackend(ctx, info.Name()); err != nil {
+				p.log.Error(err, "could not remove duplicate via backend", "server", info.Name())
+			}
+		}
+		return exists, ErrServerAlreadyExists
+	}
+	defer p.muS.Unlock()
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 	// Note: We don't mark API-registered servers as config-managed
@@ -528,6 +557,13 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	}
 	delete(p.servers, name)
 	delete(p.configServers, name) // Clean up config tracking
+	if p.via != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := p.via.RemoveBackend(ctx, info.Name()); err != nil {
+			p.log.Error(err, "could not remove via backend", "server", info.Name())
+		}
+	}
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
