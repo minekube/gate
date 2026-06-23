@@ -81,7 +81,8 @@ Gate's Go API are added to vialite at runtime, which lets Connect-style session
 backends use the same version compatibility path as static config servers. Exact
 release pins, offline mode, and local artifact paths remain available for
 controlled deployments, but no manual version setting is required for the
-default path.
+default path. Dynamic API-registered backend translation uses the default
+subprocess mode; embedded mode is limited to configured servers.
 
 ## Gate Lite Mode
 

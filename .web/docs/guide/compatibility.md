@@ -29,8 +29,10 @@ config:
     enabled: true
 ```
 
-Lite mode does not run managed Via translation. For controlled deployments, Gate
-still supports exact vialite version pins, offline mode, and local artifact paths.
+Lite mode does not run managed Via translation. Dynamic API-registered backend
+translation uses the default subprocess mode; embedded mode is limited to
+configured servers. For controlled deployments, Gate still supports exact
+vialite version pins, offline mode, and local artifact paths.
 
 ## Paper <VPBadge>Recommended</VPBadge>
 

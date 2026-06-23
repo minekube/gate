@@ -5,6 +5,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -182,7 +183,7 @@ func TestProxyRegisterAddsDynamicViaBackend(t *testing.T) {
 			cfg:             cfg,
 			server:          &fakeVialiteServer{backends: map[string]string{}},
 			activeBackends:  map[string]struct{}{},
-			dynamicBackends: map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
 		},
 	}
 
@@ -217,7 +218,7 @@ func TestProxyUnregisterRemovesDynamicViaBackend(t *testing.T) {
 			cfg:             cfg,
 			server:          fake,
 			activeBackends:  map[string]struct{}{},
-			dynamicBackends: map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
 		},
 	}
 
@@ -232,6 +233,136 @@ func TestProxyUnregisterRemovesDynamicViaBackend(t *testing.T) {
 	}
 	if p.via.backendEnabled("connect-session-1") {
 		t.Fatal("dynamic backend remained active after unregister")
+	}
+}
+
+func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	viaLn, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer viaLn.Close()
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}, viaAddr: viaLn.Addr().String()}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:        "connect-session-1",
+		addr:        mustParseAddr("127.0.0.1:25566"),
+		connections: make(chan net.Conn, 1),
+		dialed:      make(chan Player, 1),
+	}
+
+	server, err := p.Register(original)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	added := fakeVia.added["connect-session-1"]
+	if added.Address == original.Addr().String() {
+		t.Fatalf("via backend address = %q, want bridge address", added.Address)
+	}
+
+	viaAccepted := make(chan struct{})
+	go func() {
+		viaConn, err := viaLn.Accept()
+		if err != nil {
+			return
+		}
+		defer viaConn.Close()
+		bridgeConn, err := net.Dial("tcp", added.Address)
+		if err != nil {
+			return
+		}
+		defer bridgeConn.Close()
+		close(viaAccepted)
+		go func() { _, _ = io.Copy(bridgeConn, viaConn) }()
+		_, _ = io.Copy(viaConn, bridgeConn)
+	}()
+
+	dialer := server.ServerInfo().(ServerDialer)
+	conn, err := dialer.Dial(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	defer conn.Close()
+	select {
+	case <-viaAccepted:
+	case <-time.After(time.Second):
+		t.Fatal("via listener was not dialed")
+	}
+	var backendConn net.Conn
+	select {
+	case backendConn = <-original.connections:
+	case <-time.After(time.Second):
+		t.Fatal("original ServerDialer was not used")
+	}
+	defer backendConn.Close()
+	if _, err := conn.Write([]byte("x")); err != nil {
+		t.Fatalf("write client: %v", err)
+	}
+	buf := make([]byte, 1)
+	if _, err := backendConn.Read(buf); err != nil {
+		t.Fatalf("backend read: %v", err)
+	}
+	if string(buf) != "x" {
+		t.Fatalf("backend read %q, want x", string(buf))
+	}
+	if _, err := backendConn.Write([]byte("y")); err != nil {
+		t.Fatalf("backend write: %v", err)
+	}
+	if _, err := conn.Read(buf); err != nil {
+		t.Fatalf("client read: %v", err)
+	}
+	if string(buf) != "y" {
+		t.Fatalf("client read %q, want y", string(buf))
+	}
+	select {
+	case <-original.dialed:
+	case <-time.After(time.Second):
+		t.Fatal("original ServerDialer did not receive player context")
+	}
+}
+
+func TestProxyRegisterFallsBackWhenDynamicViaUnsupported(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true, Mode: "embedded"},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	info := NewServerInfo("connect-session-1", mustParseAddr("127.0.0.1:25566"))
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          &fakeVialiteServer{backends: map[string]string{}, addErr: vialite.ErrDynamicBackendsUnsupported},
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+
+	server, err := p.Register(info)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(*viaServerInfo); ok {
+		t.Fatalf("ServerInfo = %T, did not want via wrapper when dynamic Via unsupported", server.ServerInfo())
 	}
 }
 
@@ -356,6 +487,8 @@ type fakeVialiteServer struct {
 	backends map[string]string
 	added    map[string]vialite.Backend
 	removed  map[string]bool
+	viaAddr  string
+	addErr   error
 }
 
 func (f *fakeVialiteServer) Start(context.Context) error     { return nil }
@@ -372,13 +505,19 @@ func (f *fakeVialiteServer) BackendDialAddress(name string) (string, error) {
 }
 
 func (f *fakeVialiteServer) AddBackend(ctx context.Context, backend vialite.Backend) (string, error) {
+	if f.addErr != nil {
+		return "", f.addErr
+	}
 	if f.backends == nil {
 		f.backends = map[string]string{}
 	}
 	if f.added == nil {
 		f.added = map[string]vialite.Backend{}
 	}
-	addr := "127.0.0.1:25590"
+	addr := f.viaAddr
+	if addr == "" {
+		addr = "127.0.0.1:25590"
+	}
 	f.added[backend.Name] = backend
 	f.backends[backend.Name] = addr
 	return addr, nil
@@ -391,4 +530,33 @@ func (f *fakeVialiteServer) RemoveBackend(ctx context.Context, name string) erro
 	f.removed[name] = true
 	delete(f.backends, name)
 	return nil
+}
+
+type fakeDynamicDialer struct {
+	name        string
+	addr        net.Addr
+	connections chan net.Conn
+	dialed      chan Player
+}
+
+func (f *fakeDynamicDialer) Name() string   { return f.name }
+func (f *fakeDynamicDialer) Addr() net.Addr { return f.addr }
+
+func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, error) {
+	client, server := net.Pipe()
+	select {
+	case f.dialed <- player:
+	case <-ctx.Done():
+		_ = client.Close()
+		_ = server.Close()
+		return nil, ctx.Err()
+	}
+	select {
+	case f.connections <- server:
+		return client, nil
+	case <-ctx.Done():
+		_ = client.Close()
+		_ = server.Close()
+		return nil, ctx.Err()
+	}
 }

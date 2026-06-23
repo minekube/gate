@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"runtime"
 	"strings"
@@ -33,8 +34,12 @@ type viaManagedRunner struct {
 	cancel          context.CancelFunc
 	done            chan error
 	activeBackends  map[string]struct{}
-	dynamicBackends map[string]struct{}
+	dynamicBackends map[string]*viaDynamicBackend
 	mu              sync.Mutex
+}
+
+type viaDynamicBackend struct {
+	bridge *viaBackendBridge
 }
 
 func newViaManagedRunner(cfg *config.Config) *viaManagedRunner {
@@ -120,7 +125,7 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		return err
 	}
 	r.activeBackends = activeBackends
-	r.dynamicBackends = make(map[string]struct{})
+	r.dynamicBackends = make(map[string]*viaDynamicBackend)
 	return nil
 }
 
@@ -181,14 +186,23 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 		r.mu.Unlock()
 		return true, nil
 	}
-	backend := vialite.Backend{
-		Name:       info.Name(),
-		Address:    info.Addr().String(),
-		Forwarding: viaForwarding(r.cfg.Forwarding.Mode),
-	}
 	r.mu.Unlock()
 
+	backend, cleanup, err := r.dynamicBackend(info)
+	if err != nil {
+		return false, err
+	}
+	added := false
+	defer func() {
+		if !added && cleanup != nil {
+			_ = cleanup.Close()
+		}
+	}()
+
 	if _, err := server.AddBackend(ctx, backend); err != nil {
+		if errors.Is(err, vialite.ErrDynamicBackendsUnsupported) {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -202,12 +216,34 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 		r.activeBackends = make(map[string]struct{})
 	}
 	if r.dynamicBackends == nil {
-		r.dynamicBackends = make(map[string]struct{})
+		r.dynamicBackends = make(map[string]*viaDynamicBackend)
 	}
 	r.activeBackends[name] = struct{}{}
-	r.dynamicBackends[name] = struct{}{}
+	r.dynamicBackends[name] = &viaDynamicBackend{}
+	if cleanupBridge, ok := cleanup.(*viaBackendBridge); ok {
+		r.dynamicBackends[name].bridge = cleanupBridge
+	}
+	added = true
 	r.mu.Unlock()
 	return true, nil
+}
+
+func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, interface{ Close() error }, error) {
+	address := info.Addr().String()
+	var cleanup interface{ Close() error }
+	if dialer, ok := info.(ServerDialer); ok {
+		bridge, err := newViaBackendBridge(dialer)
+		if err != nil {
+			return vialite.Backend{}, nil, err
+		}
+		address = bridge.Addr().String()
+		cleanup = bridge
+	}
+	return vialite.Backend{
+		Name:       info.Name(),
+		Address:    address,
+		Forwarding: viaForwarding(r.cfg.Forwarding.Mode),
+	}, cleanup, nil
 }
 
 func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error {
@@ -225,6 +261,7 @@ func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error
 		r.mu.Unlock()
 		return nil
 	}
+	dynamic := r.dynamicBackends[key]
 	r.mu.Unlock()
 
 	err := server.RemoveBackend(ctx, name)
@@ -236,7 +273,23 @@ func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error
 	delete(r.dynamicBackends, key)
 	delete(r.activeBackends, key)
 	r.mu.Unlock()
+	if dynamic != nil && dynamic.bridge != nil {
+		_ = dynamic.bridge.Close()
+	}
 	return nil
+}
+
+func (r *viaManagedRunner) prepareBackendDial(ctx context.Context, name string, player Player) (func(), error) {
+	if r == nil {
+		return func() {}, nil
+	}
+	r.mu.Lock()
+	dynamic := r.dynamicBackends[strings.ToLower(name)]
+	r.mu.Unlock()
+	if dynamic == nil || dynamic.bridge == nil {
+		return func() {}, nil
+	}
+	return dynamic.bridge.Prepare(ctx, player)
 }
 
 func (r *viaManagedRunner) options() (vialite.Options, error) {
@@ -297,10 +350,119 @@ func newViaServerInfo(info ServerInfo, via *viaManagedRunner) ServerInfo {
 }
 
 func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, error) {
-	addr, err := i.via.BackendDialAddress(i.Name())
+	cancelBridge, err := i.via.prepareBackendDial(ctx, i.Name(), player)
 	if err != nil {
 		return nil, err
 	}
+	addr, err := i.via.BackendDialAddress(i.Name())
+	if err != nil {
+		cancelBridge()
+		return nil, err
+	}
 	var d net.Dialer
-	return d.DialContext(ctx, "tcp", addr)
+	conn, err := d.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		cancelBridge()
+		return nil, err
+	}
+	return conn, nil
+}
+
+type viaBridgeRequest struct {
+	ctx    context.Context
+	player Player
+}
+
+type viaBackendBridge struct {
+	ln       net.Listener
+	dialer   ServerDialer
+	requests chan viaBridgeRequest
+	done     chan struct{}
+	close    sync.Once
+}
+
+func newViaBackendBridge(dialer ServerDialer) (*viaBackendBridge, error) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, err
+	}
+	b := &viaBackendBridge{
+		ln:       ln,
+		dialer:   dialer,
+		requests: make(chan viaBridgeRequest, 1024),
+		done:     make(chan struct{}),
+	}
+	go b.accept()
+	return b, nil
+}
+
+func (b *viaBackendBridge) Addr() net.Addr {
+	return b.ln.Addr()
+}
+
+func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
+	ctx, cancel := context.WithCancel(ctx)
+	req := viaBridgeRequest{ctx: ctx, player: player}
+	select {
+	case b.requests <- req:
+		return cancel, nil
+	case <-b.done:
+		cancel()
+		return nil, net.ErrClosed
+	case <-ctx.Done():
+		cancel()
+		return nil, ctx.Err()
+	}
+}
+
+func (b *viaBackendBridge) Close() error {
+	var err error
+	b.close.Do(func() {
+		close(b.done)
+		err = b.ln.Close()
+	})
+	return err
+}
+
+func (b *viaBackendBridge) accept() {
+	for {
+		conn, err := b.ln.Accept()
+		if err != nil {
+			return
+		}
+		go b.handle(conn)
+	}
+}
+
+func (b *viaBackendBridge) handle(conn net.Conn) {
+	defer conn.Close()
+	var req viaBridgeRequest
+	select {
+	case req = <-b.requests:
+	case <-b.done:
+		return
+	}
+	if err := req.ctx.Err(); err != nil {
+		return
+	}
+	backend, err := b.dialer.Dial(req.ctx, req.player)
+	if err != nil {
+		return
+	}
+	defer backend.Close()
+
+	errCh := make(chan error, 2)
+	go func() {
+		_, err := io.Copy(backend, conn)
+		errCh <- err
+	}()
+	go func() {
+		_, err := io.Copy(conn, backend)
+		errCh <- err
+	}()
+	select {
+	case <-errCh:
+	case <-req.ctx.Done():
+	case <-b.done:
+	}
 }

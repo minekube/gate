@@ -517,8 +517,8 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	}
 
 	p.muS.Lock()
-	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
+		p.muS.Unlock()
 		if viaAdded {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
@@ -528,6 +528,7 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 		}
 		return exists, ErrServerAlreadyExists
 	}
+	defer p.muS.Unlock()
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 	// Note: We don't mark API-registered servers as config-managed
