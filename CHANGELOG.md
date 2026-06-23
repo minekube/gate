@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.67.0](https://github.com/minekube/gate/compare/v0.66.40...v0.67.0) (2026-06-23)
+
+
+### Features
+
+* use vialite auto latest subprocess runtime ([c174b31](https://github.com/minekube/gate/commit/c174b3153769c33873b25a27f2e8695b977f3cb6))
+
 ## [0.66.40](https://github.com/minekube/gate/compare/v0.66.39...v0.66.40) (2026-06-23)
 
 
