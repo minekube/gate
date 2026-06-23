@@ -1,4 +1,4 @@
-//go:build !musl && !windows
+//go:build !musl
 
 package proxy
 
@@ -213,6 +213,31 @@ func TestViaManagedRunnerOptionsMapConfig(t *testing.T) {
 		if backend.Address != address || backend.Forwarding != vialite.ForwardingVelocity {
 			t.Fatalf("unexpected backend %q: %#v", name, backend)
 		}
+	}
+}
+
+func TestViaModeDefaults(t *testing.T) {
+	tests := []struct {
+		name        string
+		mode        string
+		goos        string
+		libraryPath string
+		want        vialite.Mode
+	}{
+		{name: "linux empty defaults subprocess", mode: "", goos: "linux", want: vialite.ModeSubprocess},
+		{name: "linux explicit embedded", mode: "embedded", goos: "linux", want: vialite.ModeEmbedded},
+		{name: "linux subprocess", mode: "subprocess", goos: "linux", want: vialite.ModeSubprocess},
+		{name: "windows empty defaults subprocess", mode: "", goos: "windows", want: vialite.ModeSubprocess},
+		{name: "windows explicit embedded uses subprocess", mode: "embedded", goos: "windows", want: vialite.ModeSubprocess},
+		{name: "windows custom library explicit embedded", mode: "embedded", goos: "windows", libraryPath: "C:\\vialite\\libvialite.dll", want: vialite.ModeEmbedded},
+		{name: "windows subprocess", mode: "subprocess", goos: "windows", want: vialite.ModeSubprocess},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := viaMode(tt.mode, tt.goos, tt.libraryPath); got != tt.want {
+				t.Fatalf("viaMode(%q, %q, %q) = %v, want %v", tt.mode, tt.goos, tt.libraryPath, got, tt.want)
+			}
+		})
 	}
 }
 

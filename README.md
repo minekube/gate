@@ -60,6 +60,26 @@ graph LR
     style E fill:#a0526d,stroke:#222,stroke-width:2px
 ```
 
+## Java Version Compatibility
+
+Gate can start **Via-powered backend protocol translation** through managed
+vialite, so Java clients can join backend servers running different Minecraft
+versions without running a separate Via sidecar.
+
+Enable managed Via in classic proxy mode with:
+
+```yaml
+config:
+  via:
+    enabled: true
+```
+
+Gate starts the native vialite subprocess, resolves the latest stable vialite
+release automatically, downloads the checksummed artifact into the local cache,
+and routes backend connections through it. Exact release pins, offline mode, and
+local artifact paths remain available for controlled deployments, but no manual
+version setting is required for the default path.
+
 ## Gate Lite Mode
 
 Gate has a Lite Mode which is a lightweight version of Gate that can expose

@@ -1,4 +1,4 @@
-//go:build !musl && !windows
+//go:build !musl
 
 package proxy
 
@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -159,7 +160,7 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 
 func (r *viaManagedRunner) options() (vialite.Options, error) {
 	opts := vialite.Options{
-		Mode:        viaMode(r.cfg.Via.Mode),
+		Mode:        viaMode(r.cfg.Via.Mode, runtime.GOOS, r.cfg.Via.LibraryPath),
 		Bind:        r.cfg.Via.Bind,
 		LibraryPath: r.cfg.Via.LibraryPath,
 		BinaryPath:  r.cfg.Via.BinaryPath,
@@ -178,12 +179,18 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 	return opts, nil
 }
 
-func viaMode(mode string) vialite.Mode {
-	switch mode {
-	case "subprocess":
+func viaMode(mode, goos, libraryPath string) vialite.Mode {
+	if mode == "" {
 		return vialite.ModeSubprocess
-	default:
+	}
+	if goos == "windows" && libraryPath == "" && mode == "embedded" {
+		return vialite.ModeSubprocess
+	}
+	switch mode {
+	case "embedded":
 		return vialite.ModeEmbedded
+	default:
+		return vialite.ModeSubprocess
 	}
 }
 

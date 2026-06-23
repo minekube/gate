@@ -1,4 +1,4 @@
-//go:build musl || windows
+//go:build musl
 
 package proxy
 
