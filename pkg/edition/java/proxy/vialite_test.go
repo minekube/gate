@@ -378,6 +378,31 @@ func TestViaManagedRunnerStopClosesDynamicBridge(t *testing.T) {
 	eventuallyDialFails(t, bridgeAddr)
 }
 
+func TestViaBackendBridgePrepareHonorsCallerCancelWhenQueueFull(t *testing.T) {
+	bridge, err := newViaBackendBridge(&fakeDynamicDialer{
+		name:        "connect-session-1",
+		addr:        mustParseAddr("127.0.0.1:25566"),
+		connections: make(chan net.Conn, 1),
+		dialed:      make(chan Player, 1),
+	})
+	if err != nil {
+		t.Fatalf("newViaBackendBridge: %v", err)
+	}
+	defer bridge.Close()
+	for i := 0; i < cap(bridge.requests); i++ {
+		cancel, err := bridge.Prepare(context.Background(), nil)
+		if err != nil {
+			t.Fatalf("fill request %d: %v", i, err)
+		}
+		defer cancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := bridge.Prepare(ctx, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Prepare with full queue and canceled context = %v, want context.Canceled", err)
+	}
+}
+
 func eventuallyDialFails(t *testing.T, addr string) {
 	t.Helper()
 	deadline := time.After(time.Second)

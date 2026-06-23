@@ -407,8 +407,8 @@ func (b *viaBackendBridge) Addr() net.Addr {
 }
 
 func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
-	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	req := viaBridgeRequest{ctx: ctx, player: player}
+	streamCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	req := viaBridgeRequest{ctx: streamCtx, player: player}
 	select {
 	case b.requests <- req:
 		return cancel, nil
