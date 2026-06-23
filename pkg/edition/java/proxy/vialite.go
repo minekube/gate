@@ -4,6 +4,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"runtime"
@@ -21,16 +22,19 @@ type vialiteServer interface {
 	Stop(context.Context) error
 	Healthy() bool
 	BackendDialAddress(name string) (string, error)
+	AddBackend(context.Context, vialite.Backend) (string, error)
+	RemoveBackend(context.Context, string) error
 }
 
 type viaManagedRunner struct {
-	cfg            *config.Config
-	newServer      func(vialite.Options) (vialiteServer, error)
-	server         vialiteServer
-	cancel         context.CancelFunc
-	done           chan error
-	activeBackends map[string]struct{}
-	mu             sync.Mutex
+	cfg             *config.Config
+	newServer       func(vialite.Options) (vialiteServer, error)
+	server          vialiteServer
+	cancel          context.CancelFunc
+	done            chan error
+	activeBackends  map[string]struct{}
+	dynamicBackends map[string]struct{}
+	mu              sync.Mutex
 }
 
 func newViaManagedRunner(cfg *config.Config) *viaManagedRunner {
@@ -92,6 +96,7 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		r.cancel = nil
 		r.done = nil
 		r.activeBackends = nil
+		r.dynamicBackends = nil
 		if err != nil {
 			return err
 		}
@@ -111,9 +116,11 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		r.cancel = nil
 		r.done = nil
 		r.activeBackends = nil
+		r.dynamicBackends = nil
 		return err
 	}
 	r.activeBackends = activeBackends
+	r.dynamicBackends = make(map[string]struct{})
 	return nil
 }
 
@@ -126,6 +133,7 @@ func (r *viaManagedRunner) Stop() {
 	r.cancel = nil
 	r.done = nil
 	r.activeBackends = nil
+	r.dynamicBackends = nil
 	r.mu.Unlock()
 
 	if server == nil {
@@ -158,16 +166,90 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 	return server.BackendDialAddress(name)
 }
 
+func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (bool, error) {
+	if r == nil || info == nil {
+		return false, nil
+	}
+	r.mu.Lock()
+	server := r.server
+	if server == nil {
+		r.mu.Unlock()
+		return false, nil
+	}
+	name := strings.ToLower(info.Name())
+	if _, ok := r.activeBackends[name]; ok {
+		r.mu.Unlock()
+		return true, nil
+	}
+	backend := vialite.Backend{
+		Name:       info.Name(),
+		Address:    info.Addr().String(),
+		Forwarding: viaForwarding(r.cfg.Forwarding.Mode),
+	}
+	r.mu.Unlock()
+
+	if _, err := server.AddBackend(ctx, backend); err != nil {
+		return false, err
+	}
+
+	r.mu.Lock()
+	if r.server != server {
+		r.mu.Unlock()
+		_ = server.RemoveBackend(context.Background(), info.Name())
+		return false, vialite.ErrNotStarted
+	}
+	if r.activeBackends == nil {
+		r.activeBackends = make(map[string]struct{})
+	}
+	if r.dynamicBackends == nil {
+		r.dynamicBackends = make(map[string]struct{})
+	}
+	r.activeBackends[name] = struct{}{}
+	r.dynamicBackends[name] = struct{}{}
+	r.mu.Unlock()
+	return true, nil
+}
+
+func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error {
+	if r == nil {
+		return nil
+	}
+	key := strings.ToLower(name)
+	r.mu.Lock()
+	server := r.server
+	if server == nil {
+		r.mu.Unlock()
+		return nil
+	}
+	if _, ok := r.dynamicBackends[key]; !ok {
+		r.mu.Unlock()
+		return nil
+	}
+	r.mu.Unlock()
+
+	err := server.RemoveBackend(ctx, name)
+	if err != nil && !errors.Is(err, vialite.ErrBackendNotFound) {
+		return err
+	}
+
+	r.mu.Lock()
+	delete(r.dynamicBackends, key)
+	delete(r.activeBackends, key)
+	r.mu.Unlock()
+	return nil
+}
+
 func (r *viaManagedRunner) options() (vialite.Options, error) {
 	opts := vialite.Options{
-		Mode:        viaMode(r.cfg.Via.Mode, runtime.GOOS, r.cfg.Via.LibraryPath),
-		Bind:        r.cfg.Via.Bind,
-		LibraryPath: r.cfg.Via.LibraryPath,
-		BinaryPath:  r.cfg.Via.BinaryPath,
-		Version:     r.cfg.Via.Version,
-		Mirror:      r.cfg.Via.Mirror,
-		Offline:     r.cfg.Via.Offline,
-		Backends:    make([]vialite.Backend, 0, len(r.cfg.Servers)),
+		Mode:                 viaMode(r.cfg.Via.Mode, runtime.GOOS, r.cfg.Via.LibraryPath),
+		Bind:                 r.cfg.Via.Bind,
+		LibraryPath:          r.cfg.Via.LibraryPath,
+		BinaryPath:           r.cfg.Via.BinaryPath,
+		Version:              r.cfg.Via.Version,
+		Mirror:               r.cfg.Via.Mirror,
+		Offline:              r.cfg.Via.Offline,
+		AllowDynamicBackends: true,
+		Backends:             make([]vialite.Backend, 0, len(r.cfg.Servers)),
 	}
 	for name, addr := range r.cfg.Servers {
 		opts.Backends = append(opts.Backends, vialite.Backend{

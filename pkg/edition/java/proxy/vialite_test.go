@@ -166,6 +166,75 @@ func TestProxyInitDoesNotWrapViaEnabledAfterStartup(t *testing.T) {
 	}
 }
 
+func TestProxyRegisterAddsDynamicViaBackend(t *testing.T) {
+	cfg := &config.Config{
+		Forwarding: config.Forwarding{Mode: config.VelocityForwardingMode},
+		Via:        config.Via{Enabled: true},
+		Lite:       liteconfig.Config{Enabled: false},
+	}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          &fakeVialiteServer{backends: map[string]string{}},
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]struct{}{},
+		},
+	}
+
+	server, err := p.Register(NewServerInfo("connect-session-1", mustParseAddr("127.0.0.1:25566")))
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(ServerDialer); !ok {
+		t.Fatalf("ServerInfo = %T, want ServerDialer", server.ServerInfo())
+	}
+	fake := p.via.server.(*fakeVialiteServer)
+	added := fake.added["connect-session-1"]
+	if added.Address != "127.0.0.1:25566" || added.Forwarding != vialite.ForwardingVelocity {
+		t.Fatalf("unexpected added backend: %#v", added)
+	}
+}
+
+func TestProxyUnregisterRemovesDynamicViaBackend(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fake := &fakeVialiteServer{backends: map[string]string{}}
+	info := NewServerInfo("connect-session-1", mustParseAddr("127.0.0.1:25566"))
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fake,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]struct{}{},
+		},
+	}
+
+	if _, err := p.Register(info); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if !p.Unregister(info) {
+		t.Fatal("Unregister returned false")
+	}
+	if !fake.removed["connect-session-1"] {
+		t.Fatalf("dynamic backend was not removed: %#v", fake.removed)
+	}
+	if p.via.backendEnabled("connect-session-1") {
+		t.Fatal("dynamic backend remained active after unregister")
+	}
+}
+
 func TestViaManagedRunnerOptionsMapConfig(t *testing.T) {
 	cfg := &config.Config{
 		Servers: map[string]string{
@@ -213,6 +282,25 @@ func TestViaManagedRunnerOptionsMapConfig(t *testing.T) {
 		if backend.Address != address || backend.Forwarding != vialite.ForwardingVelocity {
 			t.Fatalf("unexpected backend %q: %#v", name, backend)
 		}
+	}
+}
+
+func TestViaManagedRunnerOptionsAllowDynamicBackendsWithoutConfiguredServers(t *testing.T) {
+	cfg := &config.Config{
+		Via: config.Via{
+			Enabled: true,
+		},
+	}
+
+	opts, err := newViaManagedRunner(cfg).options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	if !opts.AllowDynamicBackends {
+		t.Fatal("AllowDynamicBackends = false")
+	}
+	if len(opts.Backends) != 0 {
+		t.Fatalf("Backends len = %d, want 0", len(opts.Backends))
 	}
 }
 
@@ -266,6 +354,8 @@ func TestViaManagedRunnerOptionsUseConfiguredServerNames(t *testing.T) {
 
 type fakeVialiteServer struct {
 	backends map[string]string
+	added    map[string]vialite.Backend
+	removed  map[string]bool
 }
 
 func (f *fakeVialiteServer) Start(context.Context) error     { return nil }
@@ -279,4 +369,26 @@ func (f *fakeVialiteServer) BackendDialAddress(name string) (string, error) {
 		return "", errors.New("backend not found")
 	}
 	return addr, nil
+}
+
+func (f *fakeVialiteServer) AddBackend(ctx context.Context, backend vialite.Backend) (string, error) {
+	if f.backends == nil {
+		f.backends = map[string]string{}
+	}
+	if f.added == nil {
+		f.added = map[string]vialite.Backend{}
+	}
+	addr := "127.0.0.1:25590"
+	f.added[backend.Name] = backend
+	f.backends[backend.Name] = addr
+	return addr, nil
+}
+
+func (f *fakeVialiteServer) RemoveBackend(ctx context.Context, name string) error {
+	if f.removed == nil {
+		f.removed = map[string]bool{}
+	}
+	f.removed[name] = true
+	delete(f.backends, name)
+	return nil
 }
