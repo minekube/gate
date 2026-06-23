@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.0](https://github.com/minekube/gate/compare/v0.67.0...v0.68.0) (2026-06-23)
+
+
+### Features
+
+* route dynamic servers through managed Via ([d22711d](https://github.com/minekube/gate/commit/d22711dc53bb024bafa08b741f29454d332581c2))
+
 ## [0.67.0](https://github.com/minekube/gate/compare/v0.66.40...v0.67.0) (2026-06-23)
 
 
