@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.3.0
-	go.minekube.com/gate v0.66.36
+	go.minekube.com/gate v0.66.38
 )
 
 require (
@@ -70,7 +70,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.minekube.com/connect v0.6.2 // indirect
-	go.minekube.com/geyserlite v0.3.13 // indirect
+	go.minekube.com/geyserlite v0.3.14 // indirect
 	go.minekube.com/vialite v0.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.63.0 // indirect
