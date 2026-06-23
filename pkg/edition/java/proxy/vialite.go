@@ -134,6 +134,7 @@ func (r *viaManagedRunner) Stop() {
 	server := r.server
 	cancel := r.cancel
 	done := r.done
+	dynamicBackends := r.dynamicBackends
 	r.server = nil
 	r.cancel = nil
 	r.done = nil
@@ -141,6 +142,11 @@ func (r *viaManagedRunner) Stop() {
 	r.dynamicBackends = nil
 	r.mu.Unlock()
 
+	for _, dynamic := range dynamicBackends {
+		if dynamic != nil && dynamic.bridge != nil {
+			_ = dynamic.bridge.Close()
+		}
+	}
 	if server == nil {
 		return
 	}
@@ -401,7 +407,7 @@ func (b *viaBackendBridge) Addr() net.Addr {
 }
 
 func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	req := viaBridgeRequest{ctx: ctx, player: player}
 	select {
 	case b.requests <- req:

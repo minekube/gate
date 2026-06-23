@@ -293,12 +293,14 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 		_, _ = io.Copy(viaConn, bridgeConn)
 	}()
 
+	dialCtx, cancelDial := context.WithCancel(context.Background())
 	dialer := server.ServerInfo().(ServerDialer)
-	conn, err := dialer.Dial(context.Background(), nil)
+	conn, err := dialer.Dial(dialCtx, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
 	defer conn.Close()
+	cancelDial()
 	select {
 	case <-viaAccepted:
 	case <-time.After(time.Second):
@@ -334,6 +336,63 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	case <-original.dialed:
 	case <-time.After(time.Second):
 		t.Fatal("original ServerDialer did not receive player context")
+	}
+}
+
+func TestViaManagedRunnerStopClosesDynamicBridge(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:        "connect-session-1",
+		addr:        mustParseAddr("127.0.0.1:25566"),
+		connections: make(chan net.Conn, 1),
+		dialed:      make(chan Player, 1),
+	}
+
+	if _, err := p.Register(original); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	bridgeAddr := fakeVia.added["connect-session-1"].Address
+	preStopConn, err := net.DialTimeout("tcp", bridgeAddr, time.Second)
+	if err != nil {
+		t.Fatalf("bridge not dialable before Stop: %v", err)
+	}
+	_ = preStopConn.Close()
+	p.via.Stop()
+	eventuallyDialFails(t, bridgeAddr)
+}
+
+func eventuallyDialFails(t *testing.T, addr string) {
+	t.Helper()
+	deadline := time.After(time.Second)
+	for {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return
+		}
+		_ = conn.Close()
+		select {
+		case <-deadline:
+			t.Fatalf("address %s still dialable", addr)
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
 	}
 }
 
