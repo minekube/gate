@@ -256,6 +256,8 @@ go.minekube.com/geyserlite v0.3.14 h1:+cSN9o/b5jEOHeym/uXvt5MEoGnrYloJidrVe9K9pW
 go.minekube.com/geyserlite v0.3.14/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.minekube.com/vialite v0.1.0 h1:RMnNeDcDKchIs+N5KqxOzCK9tgkrVPjgUgjU5ARdn5o=
 go.minekube.com/vialite v0.1.0/go.mod h1:W9L1l8/b/GsLmkw1BW4wijaaPj/zV3OdrtYJgWdkhxE=
+go.minekube.com/vialite v0.2.6 h1:OQncFP9WjjnpbdSQAyBXTgn57jqeJlaU1ne4YT/AY7M=
+go.minekube.com/vialite v0.2.6/go.mod h1:W9L1l8/b/GsLmkw1BW4wijaaPj/zV3OdrtYJgWdkhxE=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=

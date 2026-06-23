@@ -35,7 +35,7 @@ require (
 	go.minekube.com/common v0.3.0
 	go.minekube.com/connect v0.6.2
 	go.minekube.com/geyserlite v0.3.14
-	go.minekube.com/vialite v0.1.0
+	go.minekube.com/vialite v0.2.6
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/metric v1.41.0
