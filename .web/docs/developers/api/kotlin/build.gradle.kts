@@ -11,7 +11,7 @@ repositories {
     }
 }
 
-val grpcVersion = "1.82.0"
+val grpcVersion = "1.82.1"
 val grpcKotlinVersion = "1.5.0"
 val connectVersion = "0.7.1"
 val protobufVersion = "4.33.4"
