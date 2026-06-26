@@ -309,6 +309,12 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 		}
 
 		ash := player.ActiveSessionHandler()
+		if csh, ok := ash.(*clientConfigSessionHandler); ok {
+			if err = csh.flushQueuedPluginMessagesTo(b.serverConn); err != nil {
+				fail(err)
+				return
+			}
+		}
 		csh, ok := ash.(*clientPlaySessionHandler)
 		if ok {
 			serverMc.SetAutoReading(false)

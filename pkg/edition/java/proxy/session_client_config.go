@@ -2,9 +2,13 @@ package proxy
 
 import (
 	"bytes"
+	"fmt"
+	"sync"
 
+	"github.com/gammazero/deque"
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
@@ -22,9 +26,16 @@ type clientConfigSessionHandler struct {
 	player *connectedPlayer
 	log    logr.Logger
 
-	brandChannel string
-
 	configSwitchDone future.Future[any]
+
+	mu struct {
+		sync.Mutex
+		pluginMessages           deque.Deque[*plugin.Message]
+		pluginMessagesBytes      int
+		pluginMessagesOverflowed bool
+		brandChannel             string
+		readyServer              *serverConnection
+	}
 
 	nopSessionHandler
 }
@@ -85,15 +96,10 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 		return nil
 	}
 	brand := serverConn.player.ClientBrand()
-	if brand == "" && h.brandChannel != "" {
-		buf := new(bytes.Buffer)
-		_ = util.WriteString(buf, brand)
-
-		brandPacket := &plugin.Message{
-			Channel: h.brandChannel,
-			Data:    buf.Bytes(),
+	if brand != "" {
+		if brandPacket := h.brandPacket(brand); brandPacket != nil {
+			_ = smc.WritePacket(brandPacket)
 		}
-		_ = smc.WritePacket(brandPacket)
 	}
 
 	if err := h.player.WritePacket(p); err != nil {
@@ -115,23 +121,33 @@ func handleResourcePackResponse(p *packet.ResourcePackResponse, handler resource
 }
 
 func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
-	serverConn := h.player.connectionInFlight()
-	if serverConn == nil {
-		return
-	}
-
 	if plugin.McBrand(p) {
 		brand := plugin.ReadBrandMessage(p.Data)
-		h.brandChannel = p.Channel
+		h.player.setClientBrand(brand)
+		readyServer := h.setBrandChannel(p.Channel)
 		h.event().FireParallel(&PlayerClientBrandEvent{
 			player: h.player,
 			brand:  brand,
 		})
 		// Client sends `minecraft:brand` packet immediately after Login,
 		// but at this time the backend server may not be ready
+		if readyServer != nil {
+			if brandPacket := h.brandPacket(brand); brandPacket != nil {
+				if smc, ok := readyServer.ensureConnected(); ok {
+					_ = smc.WritePacket(brandPacket)
+				}
+			}
+		}
+		return
 	} else if bungeecord.IsBungeeCordMessage(p) {
 		return
+	} else if h.enqueuePluginMessage(h.player.connectionInFlightOrConnectedServer(), p) {
+		return
 	} else {
+		serverConn := h.player.connectionInFlightOrConnectedServer()
+		if serverConn == nil {
+			return
+		}
 		id, ok := h.player.proxy.ChannelRegistrar().FromID(p.Channel)
 		if !ok {
 			smc, ok := serverConn.ensureConnected()
@@ -164,8 +180,102 @@ func (h *clientConfigSessionHandler) handlePluginMessage(p *plugin.Message) {
 	}
 }
 
+func (h *clientConfigSessionHandler) setBrandChannel(channel string) *serverConnection {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.mu.brandChannel = channel
+	return h.mu.readyServer
+}
+
+func (h *clientConfigSessionHandler) brandPacket(brand string) *plugin.Message {
+	h.mu.Lock()
+	channel := h.mu.brandChannel
+	h.mu.Unlock()
+	if channel == "" {
+		return nil
+	}
+	buf := new(bytes.Buffer)
+	_ = util.WriteString(buf, brand)
+	return &plugin.Message{
+		Channel: channel,
+		Data:    buf.Bytes(),
+	}
+}
+
+// enqueuePluginMessage returns true when the message was handled by the queue
+// path, including overflow rejection. It returns false only once the backend is
+// ready for direct config plugin messages.
+func (h *clientConfigSessionHandler) enqueuePluginMessage(target *serverConnection, msg *plugin.Message) bool {
+	h.mu.Lock()
+	if target != nil && h.mu.readyServer == target {
+		h.mu.Unlock()
+		return false
+	}
+	if h.mu.pluginMessagesOverflowed {
+		h.mu.Unlock()
+		return true
+	}
+	newBytes := h.mu.pluginMessagesBytes + len(msg.Data)
+	newCount := h.mu.pluginMessages.Len() + 1
+	if newBytes > maxQueuedLoginPluginMessageBytes || newCount > maxQueuedLoginPluginMessages {
+		h.mu.pluginMessagesOverflowed = true
+		h.mu.pluginMessages.Clear()
+		h.mu.pluginMessagesBytes = 0
+		h.mu.Unlock()
+		h.log.Info("disconnecting player: pre-backend config plugin message queue exceeded its limits",
+			"messages", newCount, "bytes", newBytes)
+		h.player.Disconnect(&component.Text{
+			Content: "Too many plugin messages were sent before joining a server",
+		})
+		return true
+	}
+	h.mu.pluginMessages.PushBack(&plugin.Message{
+		Channel: msg.Channel,
+		Data:    append([]byte(nil), msg.Data...),
+	})
+	h.mu.pluginMessagesBytes = newBytes
+	h.mu.Unlock()
+	return true
+}
+
+func (h *clientConfigSessionHandler) flushQueuedPluginMessagesTo(serverConn *serverConnection) error {
+	smc, ok := serverConn.ensureConnected()
+	if !ok {
+		return netmc.ErrClosedConn
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.mu.readyServer == serverConn {
+		return nil
+	}
+
+	h.mu.pluginMessagesBytes = 0
+	n := h.mu.pluginMessages.Len()
+	msgs := make([]*plugin.Message, 0, n)
+	for h.mu.pluginMessages.Len() != 0 {
+		msgs = append(msgs, h.mu.pluginMessages.PopFront())
+	}
+	for _, pm := range msgs {
+		if err := smc.BufferPacket(pm); err != nil {
+			return fmt.Errorf("error buffering queued config plugin message %q: %w", pm.Channel, err)
+		}
+	}
+	if n != 0 {
+		if err := smc.Flush(); err != nil {
+			return err
+		}
+	}
+	h.mu.readyServer = serverConn
+	return nil
+}
+
 func (h *clientConfigSessionHandler) handleKnownPacks(p *config.KnownPacks, pc *proto.PacketContext) {
-	smc, ok := h.player.connectionInFlightOrConnectedServer().ensureConnected()
+	serverConn := h.player.connectionInFlightOrConnectedServer()
+	if serverConn == nil {
+		return
+	}
+	smc, ok := serverConn.ensureConnected()
 	if ok {
 		_ = smc.WritePacket(p)
 	}
