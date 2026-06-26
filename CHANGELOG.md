@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.5](https://github.com/minekube/gate/compare/v0.68.4...v0.68.5) (2026-06-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.google.protobuf:protobuf-java to v4.35.1 ([#842](https://github.com/minekube/gate/issues/842)) ([a236e18](https://github.com/minekube/gate/commit/a236e18e69e6144717c93b9bf1eca82a10c62ec0))
+
 ## [0.68.4](https://github.com/minekube/gate/compare/v0.68.3...v0.68.4) (2026-06-26)
 
 
