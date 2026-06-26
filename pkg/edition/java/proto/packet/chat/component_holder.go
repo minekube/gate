@@ -118,7 +118,9 @@ func (c *ComponentHolder) AsComponent() (component.Component, error) {
 // AsJson returns the component as a JSON raw message.
 func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 	if len(c.JSON) != 0 {
-		return c.JSON, nil
+		var err error
+		c.JSON, err = componentObjectJSON(c.JSON)
+		return c.JSON, err
 	}
 	if len(c.BinaryTag.Data) != 0 {
 		var err error
@@ -130,7 +132,24 @@ func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 		return nil, err
 	}
 	c.JSON, err = util.Marshal(c.Protocol, comp)
+	if err != nil {
+		return c.JSON, err
+	}
+	c.JSON, err = componentObjectJSON(c.JSON)
 	return c.JSON, err
+}
+
+func componentObjectJSON(j json.RawMessage) (json.RawMessage, error) {
+	if len(j) == 0 || j[0] != '"' {
+		return j, nil
+	}
+	var text string
+	if err := json.Unmarshal(j, &text); err != nil {
+		return nil, err
+	}
+	return json.Marshal(struct {
+		Text string `json:"text"`
+	}{Text: text})
 }
 
 func (c *ComponentHolder) AsJsonOrNil() json.RawMessage {

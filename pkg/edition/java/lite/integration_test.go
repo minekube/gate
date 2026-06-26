@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/ping"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
@@ -102,9 +103,7 @@ func TestFallbackResponseWithRealRoute(t *testing.T) {
 				Host:    []string{"test.com"},
 				Backend: []string{"server:25565"},
 				Fallback: &config.Status{
-					MOTD: &configutil.TextComponent{
-						Content: "Maintenance Mode",
-					},
+					MOTD: &configutil.Component{Value: &component.Text{Content: "Maintenance Mode"}},
 					Version: ping.Version{
 						Name:     "Gate Lite",
 						Protocol: 765,
