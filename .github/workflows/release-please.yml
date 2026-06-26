@@ -59,3 +59,30 @@ jobs:
           gh workflow run ci.yml \
             --repo "${{ github.repository }}" \
             --ref "${{ needs.release-please.outputs.tag_name }}"
+
+  dispatch-moxy-bump:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release cascade token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RELEASE_CASCADE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_CASCADE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: moxy
+          permission-actions: write
+
+      - name: Dispatch Moxy Gate bump
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          gh workflow run bump-gate.yml \
+            --repo "${{ github.repository_owner }}/moxy" \
+            --ref main \
+            -f version="${TAG_NAME}" \
+            -f source_repository="${{ github.repository }}" \
+            -f source_release_url="${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG_NAME}"
