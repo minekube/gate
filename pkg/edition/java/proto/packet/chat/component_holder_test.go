@@ -27,3 +27,25 @@ func TestComponentHolderAsComponentAcceptsNBTStyleByteBooleans(t *testing.T) {
 	require.Equal(t, component.False, text.S.Italic)
 	require.Equal(t, component.True, text.S.Bold)
 }
+
+func TestComponentHolderAsJsonExpandsCompactTextComponent(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol:  version.Minecraft_1_21_11.Protocol,
+		Component: &component.Text{Content: "hi"},
+	}
+
+	got, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"text":"hi"}`, string(got))
+}
+
+func TestComponentHolderAsJsonExpandsCachedCompactTextComponent(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_1_21_11.Protocol,
+		JSON:     []byte(`"hi"`),
+	}
+
+	got, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"text":"hi"}`, string(got))
+}

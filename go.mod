@@ -32,7 +32,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.2
-	go.minekube.com/common v0.3.0
+	go.minekube.com/common v0.4.0
 	go.minekube.com/connect v0.6.2
 	go.minekube.com/geyserlite v0.3.14
 	go.minekube.com/vialite v0.2.8
@@ -69,7 +69,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250827001030-24949be3fa54 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

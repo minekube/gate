@@ -80,8 +80,8 @@ var DefaultConfig = Config{
 	Bedrock:                             bconfig.DefaultBedrockConfig,
 }
 
-func defaultMotd() *configutil.TextComponent {
-	return text("§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
+func defaultMotd() *configutil.Component {
+	return componentText("§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
 }
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
@@ -138,10 +138,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 type (
 	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
-		ShowMaxPlayers  int                       `yaml:"showMaxPlayers"`
-		Motd            *configutil.TextComponent `yaml:"motd"`
-		Favicon         favicon.Favicon           `yaml:"favicon"`
-		LogPingRequests bool                      `yaml:"logPingRequests"`
+		ShowMaxPlayers  int                   `yaml:"showMaxPlayers"`
+		Motd            *configutil.Component `yaml:"motd"`
+		Favicon         favicon.Favicon       `yaml:"favicon"`
+		LogPingRequests bool                  `yaml:"logPingRequests"`
 	}
 	Query struct {
 		Enabled     bool `yaml:"enabled"`
@@ -326,6 +326,11 @@ func validateVia(c *Config, e func(string, ...any)) {
 func text(s string) *configutil.TextComponent {
 	return (*configutil.TextComponent)(must(componentutil.ParseTextComponent(
 		version.MinimumVersion.Protocol, s)))
+}
+
+func componentText(s string) *configutil.Component {
+	return &configutil.Component{Value: must(componentutil.ParseComponent(
+		version.MaximumVersion.Protocol, s))}
 }
 
 func must[T any](t T, err error) T {

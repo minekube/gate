@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.minekube.com/common/minecraft/component"
 	"gopkg.in/yaml.v3"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
@@ -15,6 +16,16 @@ import (
 func Test_texts(t *testing.T) {
 	require.NotNil(t, defaultMotd())
 	require.NotNil(t, defaultShutdownReason())
+}
+
+func TestStatusMotdAcceptsObjectRootComponent(t *testing.T) {
+	var cfg Config
+	require.NoError(t, yaml.Unmarshal([]byte(`
+status:
+  motd: '{"fallback":"diamond","sprite":"minecraft:item/diamond"}'
+`), &cfg))
+
+	require.IsType(t, &component.Object{}, cfg.Status.Motd.C())
 }
 
 func TestViaConfigValidate(t *testing.T) {
