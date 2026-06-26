@@ -1,12 +1,9 @@
 all: fmt vet mod lint
+export PATH := $(PATH):/usr/local/go/bin
 
 # Sync embedded config files from root directory
 sync-configs:
 	cp config.yml pkg/configs/config.yml
-	cp config-simple.yml pkg/configs/config-simple.yml
-	cp config-lite.yml pkg/configs/config-lite.yml
-	cp config-bedrock.yml pkg/configs/config-bedrock.yml
-	# Note: config-minimal.yml is maintained directly in pkg/configs, not synced from root
 
 # Build Gate with version information
 build: sync-configs

@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
-	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 )
 
 func Test_texts(t *testing.T) {
@@ -74,23 +73,6 @@ func TestViaConfigRejectsInvalidBind(t *testing.T) {
 
 	_, errs := cfg.Validate()
 	require.NotEmpty(t, errs)
-}
-
-func TestViaConfigIgnoredInLiteMode(t *testing.T) {
-	cfg := DefaultConfig
-	cfg.Lite = liteconfig.Config{
-		Enabled: true,
-		Routes: []liteconfig.Route{{
-			Host:    []string{"example.com"},
-			Backend: []string{"127.0.0.1:25566"},
-		}},
-	}
-	cfg.Via = Via{
-		Enabled: true,
-	}
-
-	_, errs := cfg.Validate()
-	require.Empty(t, errs)
 }
 
 func TestBedrockConfig_ManagedShorthand(t *testing.T) {

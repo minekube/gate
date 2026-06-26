@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -163,7 +162,6 @@ func createTestProxyWithForcedHosts(t *testing.T, servers map[string]string, for
 		Servers:     servers,
 		ForcedHosts: forcedHosts,
 		Try:         tryList,
-		Lite:        liteconfig.Config{Enabled: false}, // Disable lite mode for server registration
 	}
 
 	// Create a minimal authenticator for testing

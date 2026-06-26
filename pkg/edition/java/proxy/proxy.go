@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
@@ -70,7 +69,6 @@ type Proxy struct {
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
-	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
 
 	globalHandshakeAddresser HandshakeAddresser
@@ -120,7 +118,6 @@ func New(options Options) (p *Proxy, err error) {
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
-		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
 	}
 
@@ -197,9 +194,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 		if p.cfg.Debug {
 			p.log.Info("running in debug mode")
 		}
-		if p.cfg.Lite.Enabled {
-			p.log.Info("running in lite mode")
-		}
 		if p.cfg.ProxyProtocol {
 			p.log.Info("proxy protocol enabled")
 		}
@@ -237,26 +231,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 		if err := p.init(); err != nil {
 			p.log.Error(err, "re-initialization error")
-		}
-		if e.Config.Lite.Enabled {
-			// reset whole cache if routes have changed because
-			// backend addrs might have moved to another route or a cacheTTL changed
-			if func() bool {
-				if len(e.Config.Lite.Routes) != len(e.PrevConfig.Lite.Routes) {
-					return true
-				}
-				for i, route := range e.Config.Lite.Routes {
-					if !route.Equal(&e.PrevConfig.Lite.Routes[i]) {
-						return true
-					}
-				}
-				return false
-			}() {
-				lite.ResetPingCache()
-				p.log.Info("lite ping cache was reset")
-			}
-		} else {
-			lite.ResetPingCache()
 		}
 		logInfo()
 	})()
@@ -317,7 +291,6 @@ func (p *Proxy) init() (err error) {
 	// No need to check, nil default to mojang's session server
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
 
-	if !c.Lite.Enabled {
 		// Sync servers: register new/updated servers and unregister removed servers
 		if len(c.Servers) != 0 {
 			p.log.Info("syncing servers...", "count", len(c.Servers))
@@ -390,7 +363,6 @@ func (p *Proxy) init() (err error) {
 			names := p.registerBuiltinCommands()
 			p.log.Info("registered builtin commands", "count", len(names), "cmds", names)
 		}
-	}
 
 	return nil
 }
@@ -424,11 +396,6 @@ func (p *Proxy) Config() config.Config {
 
 func (p *Proxy) config() *config.Config {
 	return p.cfg
-}
-
-// Lite returns the proxy's lite mode functionality.
-func (p *Proxy) Lite() *lite.Lite {
-	return p.lite
 }
 
 // SetGlobalHandshakeAddresser sets the global HandshakeAddresser that will be used

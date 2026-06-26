@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
@@ -16,7 +15,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
-	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -95,21 +93,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
-	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
-	if h.config().Lite.Enabled {
-		h.conn.SetState(nextState)
-		dialTimeout := time.Duration(h.config().ConnectionTimeout)
-		if nextState == state.Login {
-			// Lite mode enabled, pipe the connection.
-			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
-			return
-		}
-		// Resolve ping response for lite mode.
-		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
-			return lite.ResolveStatusResponse(dialTimeout, h.config().Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
-		}
-	}
 
 	vHost := netutil.NewAddr(
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),

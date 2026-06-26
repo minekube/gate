@@ -18,7 +18,7 @@ func newViaManagedRunner(cfg *config.Config) *viaManagedRunner {
 }
 
 func (r *viaManagedRunner) enabled() bool {
-	return r != nil && r.cfg != nil && r.cfg.Via.Enabled && !r.cfg.Lite.Enabled
+	return r != nil && r.cfg != nil && r.cfg.Via.Enabled
 }
 
 func (r *viaManagedRunner) backendEnabled(string) bool {

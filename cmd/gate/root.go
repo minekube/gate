@@ -12,6 +12,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
+	"go.minekube.com/gate/pkg/configs"
 	"go.minekube.com/gate/pkg/gate"
 	"go.minekube.com/gate/pkg/version"
 	"go.uber.org/zap"
@@ -112,11 +113,19 @@ Visit the website https://gate.minekube.com/ for more information.`
 		cfg, err := gate.LoadConfig(v)
 		if err != nil {
 			// A config file is only required to exist when explicit config flag was specified.
-			// Otherwise, we just use the default config.
+			// Otherwise, we generate the default config.
 			if !(errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err)) || c.IsSet("config") {
 				err = fmt.Errorf("error reading config file %q: %w", v.ConfigFileUsed(), err)
 				return cli.Exit(err, 2)
 			}
+			outputFile := "config.yml"
+			if v.ConfigFileUsed() != "" {
+				outputFile = v.ConfigFileUsed()
+			}
+			if err := os.WriteFile(outputFile, configs.DefaultConfigBytes, 0644); err != nil {
+				return cli.Exit(fmt.Errorf("error writing default config: %w", err), 2)
+			}
+			v.SetConfigFile(outputFile)
 		}
 
 		// Flags overwrite config
@@ -194,12 +203,15 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 		cfg = zap.NewDevelopmentConfig()
 	} else {
 		cfg = zap.NewProductionConfig()
+		cfg.DisableCaller = true
+		cfg.DisableStacktrace = true
 	}
 	cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(-v))
 
 	cfg.Encoding = "console"
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05")
+	cfg.EncoderConfig.ConsoleSeparator = "  "
 
 	zl, err := cfg.Build()
 	if err != nil {

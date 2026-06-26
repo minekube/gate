@@ -17,7 +17,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser/floodgate"
 	"go.minekube.com/gate/pkg/edition/bedrock/geyser/managed"
-	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/util/errs"
@@ -391,7 +390,7 @@ func cleanedVirtualHost(current net.Addr, originalHost string) net.Addr {
 	if port == 0 {
 		port = currentPort
 	}
-	host = lite.ClearVirtualHost(host)
+	host = clearVirtualHost(host)
 	if port == 0 {
 		return netutil.NewAddr(host, network)
 	}
@@ -431,6 +430,13 @@ func splitOriginalHostPort(originalHost string) (string, uint16) {
 		return strings.TrimSuffix(strings.TrimPrefix(originalHost, "["), "]"), 0
 	}
 	return originalHost, 0
+}
+
+func clearVirtualHost(name string) string {
+	name = strings.Split(name, "\x00")[0]           // Remove forge separator
+	name = strings.Split(name, "///")[0]            // Remove real ip separator
+	name = strings.Trim(name, ".")
+	return name
 }
 
 // HandshakeAddr implements the proxy.HandshakeAddresser interface.

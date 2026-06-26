@@ -6,7 +6,6 @@ import (
 	"time"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
-	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
@@ -76,7 +75,6 @@ var DefaultConfig = Config{
 	Debug:                               false,
 	ShutdownReason:                      defaultShutdownReason(),
 	ForceKeyAuthentication:              true,
-	Lite:                                liteconfig.DefaultConfig,
 	Bedrock:                             bconfig.DefaultBedrockConfig,
 }
 
@@ -128,7 +126,6 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
 
-	Lite liteconfig.Config `yaml:"lite,omitempty" json:"lite,omitempty"` // Lite mode settings
 	Via  Via               `yaml:"via,omitempty" json:"via,omitempty"`   // Via backend compatibility settings
 
 	// Bedrock edition configuration
@@ -242,10 +239,6 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	if pl := c.PacketLimiter; (pl.PacketsPerSecond > 0 || pl.BytesPerSecond > 0) && pl.Interval <= 0 {
 		w("Packet limiter has a rate set but interval <= 0; the limiter is disabled. Set packetLimiter.interval > 0 to enable it.")
-	}
-
-	if c.Lite.Enabled {
-		return c.Lite.Validate()
 	}
 
 	validateVia(c, e)

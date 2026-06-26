@@ -5,6 +5,13 @@ cross-platform compatibility & excellent server version support -
 _written in Go and ready for the cloud!_
 
 
+## Why Gate-debloated?
+
+This is a debloated fork of the original Gate project. The changes include:
+- **Removal of Freemium Features**: Cleaned up code related to premium services.
+- **Removed Connect Integration**: The `Connect` tunneling features have been completely removed.
+- **Simplified Configuration**: Refactored the project to exclusively use a full configuration, removing the `lite`, `minimal`, and `simple` configuration variations.
+
 ## Quick Start
 
 Follow the [quick start guide](https://need-to-be-done) on creating a simple Minecraft network!
@@ -14,7 +21,7 @@ Follow the [quick start guide](https://need-to-be-done) on creating a simple Min
 
 Gate-Debloated includes built-in **Bedrock Edition support** through Geyser enabling cross-play between
 Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows) players
-through integrated Geyser & Floodgate technology - **Floodgate required on the backend**!
+through integrated Geyser & Floodgate technology (**Floodgate required on the backend**)!
 
 Enable managed Bedrock support with one config line:
 
@@ -55,7 +62,7 @@ config:
 Gate starts the native vialite subprocess, resolves the latest stable vialite
 release automatically, downloads the checksummed artifact into the local cache,
 and routes backend connections through it. Dynamic backends registered through
-Gate's Go API are added to vialite at runtime, which lets Connect-style session
+Gate's Go API are added to vialite at runtime, which lets session
 backends use the same version compatibility path as static config servers. Exact
 release pins, offline mode, and local artifact paths remain available for
 controlled deployments, but no manual version setting is required for the

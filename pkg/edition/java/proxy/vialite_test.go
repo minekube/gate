@@ -15,7 +15,6 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -61,7 +60,6 @@ func TestProxyInitWrapsViaConfigServer(t *testing.T) {
 		Via: config.Via{
 			Enabled: true,
 		},
-		Lite: liteconfig.Config{Enabled: false},
 	}
 	authenticator, err := auth.New(auth.Options{})
 	if err != nil {
@@ -93,53 +91,12 @@ func TestProxyInitWrapsViaConfigServer(t *testing.T) {
 	}
 }
 
-func TestProxyInitDoesNotWrapViaInLiteMode(t *testing.T) {
-	cfg := &config.Config{
-		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
-		Via: config.Via{
-			Enabled: true,
-		},
-		Lite: liteconfig.Config{
-			Enabled: true,
-			Routes: []liteconfig.Route{{
-				Host:    []string{"example.com"},
-				Backend: []string{"127.0.0.1:25566"},
-			}},
-		},
-	}
-	authenticator, err := auth.New(auth.Options{})
-	if err != nil {
-		t.Fatalf("auth.New: %v", err)
-	}
-	p := &Proxy{
-		log:           logr.Discard(),
-		cfg:           cfg,
-		event:         event.Nop,
-		servers:       make(map[string]*registeredServer),
-		configServers: make(map[string]bool),
-		authenticator: authenticator,
-		via: &viaManagedRunner{
-			cfg:            cfg,
-			server:         &fakeVialiteServer{backends: map[string]string{"lobby": "127.0.0.1:25590"}},
-			activeBackends: map[string]struct{}{"lobby": {}},
-		},
-	}
-
-	if err := p.init(); err != nil {
-		t.Fatalf("init: %v", err)
-	}
-	if server := p.Server("lobby"); server != nil {
-		t.Fatalf("Lite mode registered classic server: %v", server)
-	}
-}
-
 func TestProxyInitDoesNotWrapViaEnabledAfterStartup(t *testing.T) {
 	cfg := &config.Config{
 		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
 		Via: config.Via{
 			Enabled: true,
 		},
-		Lite: liteconfig.Config{Enabled: false},
 	}
 	authenticator, err := auth.New(auth.Options{})
 	if err != nil {
@@ -171,7 +128,6 @@ func TestProxyRegisterAddsDynamicViaBackend(t *testing.T) {
 	cfg := &config.Config{
 		Forwarding: config.Forwarding{Mode: config.VelocityForwardingMode},
 		Via:        config.Via{Enabled: true},
-		Lite:       liteconfig.Config{Enabled: false},
 	}
 	p := &Proxy{
 		log:           logr.Discard(),
@@ -204,7 +160,6 @@ func TestProxyRegisterAddsDynamicViaBackend(t *testing.T) {
 func TestProxyUnregisterRemovesDynamicViaBackend(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
-		Lite: liteconfig.Config{Enabled: false},
 	}
 	fake := &fakeVialiteServer{backends: map[string]string{}}
 	info := NewServerInfo("connect-session-1", mustParseAddr("127.0.0.1:25566"))
@@ -239,7 +194,6 @@ func TestProxyUnregisterRemovesDynamicViaBackend(t *testing.T) {
 func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
-		Lite: liteconfig.Config{Enabled: false},
 	}
 	viaLn, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -342,7 +296,6 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 func TestViaManagedRunnerStopClosesDynamicBridge(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
-		Lite: liteconfig.Config{Enabled: false},
 	}
 	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
 	p := &Proxy{
@@ -423,8 +376,10 @@ func eventuallyDialFails(t *testing.T, addr string) {
 
 func TestProxyRegisterFallsBackWhenDynamicViaUnsupported(t *testing.T) {
 	cfg := &config.Config{
-		Via:  config.Via{Enabled: true, Mode: "embedded"},
-		Lite: liteconfig.Config{Enabled: false},
+		Via: config.Via{
+			Enabled: true,
+			Mode:    "embedded",
+		},
 	}
 	info := NewServerInfo("connect-session-1", mustParseAddr("127.0.0.1:25566"))
 	p := &Proxy{

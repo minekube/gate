@@ -10,7 +10,6 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
-	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -261,7 +260,6 @@ func TestServerSyncWithAddressChange(t *testing.T) {
 func createTestProxy(t *testing.T, servers map[string]string) *Proxy {
 	cfg := &config.Config{
 		Servers: servers,
-		Lite:    liteconfig.Config{Enabled: false}, // Disable lite mode for server registration
 	}
 
 	// Create a minimal authenticator for testing
@@ -351,7 +349,6 @@ func TestServerRegistrationEvents(t *testing.T) {
 	// Create proxy with event manager
 	cfg := &config.Config{
 		Servers: map[string]string{},
-		Lite:    liteconfig.Config{Enabled: false},
 	}
 
 	authenticator, err := auth.New(auth.Options{})
@@ -423,7 +420,6 @@ func TestServerRegistrationEventsMultiple(t *testing.T) {
 	// Create proxy with event manager
 	cfg := &config.Config{
 		Servers: map[string]string{},
-		Lite:    liteconfig.Config{Enabled: false},
 	}
 
 	authenticator, err := auth.New(auth.Options{})

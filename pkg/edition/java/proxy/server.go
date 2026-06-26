@@ -370,7 +370,7 @@ type HandshakeAddresser interface {
 func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool
-	if ha = s.proxy.globalHandshakeAddresser; ha == nil {
+	if ha = s.player.proxy.globalHandshakeAddresser; ha == nil {
 		if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 			if ha, ok = s.Server().(HandshakeAddresser); !ok {
 				switch s.config().Forwarding.Mode {

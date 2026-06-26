@@ -20,7 +20,7 @@ type statusSessionHandler struct {
 	conn                netmc.MinecraftConn
 	inbound             Inbound
 	log                 logr.Logger
-	resolvePingResponse pingResolveFunc // used in lite mode
+	resolvePingResponse pingResolveFunc
 
 	receivedRequest bool
 

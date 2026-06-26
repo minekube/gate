@@ -25,37 +25,15 @@ Generate configuration files using the `gate config` command, or create them man
 ```sh console
 # Write to config.yml
 $ gate config --write
-$ gate config --type <type> --write
 
 # Write to custom file using pipe redirection
 $ gate config > my-config.yml
-$ gate config --type <type> > my-config.yml
 ```
 
-You can also create the `config.yml` file manually using any of the templates below as a starting point.
+You can also create the `config.yml` file manually using the template below as a starting point.
 
-::: code-group
-
-```yaml [Full (default)]
+```yaml [Full]
 <!--@include: ../../../../config.yml -->
 ```
-
-```yaml [Simple]
-<!--@include: ../../../../config-simple.yml -->
-```
-
-```yaml [Lite]
-<!--@include: ../../../../config-lite.yml -->
-```
-
-```yaml [Bedrock]
-<!--@include: ../../../../config-bedrock.yml -->
-```
-
-```yaml [Minimal]
-<!--@include: ../../../../pkg/configs/config-minimal.yml -->
-```
-
-:::
 
 For most users, the full configuration is recommended. You can generate it and then edit the `servers` section to point to your backend Minecraft servers.

@@ -3,10 +3,6 @@
 package configs
 
 //go:generate cp ../../config.yml config.yml
-//go:generate cp ../../config-simple.yml config-simple.yml
-//go:generate cp ../../config-lite.yml config-lite.yml
-//go:generate cp ../../config-bedrock.yml config-bedrock.yml
-// Note: config-minimal.yml is maintained directly in this directory, not synced from root
 
 import _ "embed"
 
@@ -15,15 +11,3 @@ import _ "embed"
 
 //go:embed config.yml
 var DefaultConfigBytes []byte
-
-//go:embed config-simple.yml
-var SimpleConfigBytes []byte
-
-//go:embed config-lite.yml
-var LiteConfigBytes []byte
-
-//go:embed config-bedrock.yml
-var BedrockConfigBytes []byte
-
-//go:embed config-minimal.yml
-var MinimalConfigBytes []byte

@@ -92,7 +92,7 @@ func (f *Floodgate) WriteHostname(originalHostname string, d *BedrockData) (stri
 		d.Version,
 		d.Username,
 		strconv.FormatInt(d.Xuid, 10),	
-		strconv.Itoa(int(d.DeviceOS)),
+		strconv.Itoa(d.DeviceOS.ID),
 		d.Language,
 		strconv.Itoa(d.UIProfile),
 		strconv.Itoa(d.InputMode),

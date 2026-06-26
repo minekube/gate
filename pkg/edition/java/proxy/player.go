@@ -29,7 +29,6 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
-	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -544,7 +543,7 @@ func (p *connectedPlayer) getVirtualHostname() string {
 	// 2. Extract hostname (removes port)
 	// 3. Convert to lowercase for consistent matching
 	virtualHostStr := p.virtualHost.String()
-	cleanedHost := lite.ClearVirtualHost(virtualHostStr)
+	cleanedHost := clearVirtualHost(virtualHostStr)
 	hostname := netutil.HostStr(cleanedHost)
 
 	return strings.ToLower(hostname)
@@ -835,4 +834,11 @@ func (p *connectedPlayer) CheckServerMatch(other interface{ CurrentServerEntityI
 
 	// Fallback: just check both are connected
 	return thisEntityID != 0 && otherEntityID != 0
+}
+
+func clearVirtualHost(name string) string {
+	name = strings.Split(name, "\x00")[0]           // Remove forge separator
+	name = strings.Split(name, "///")[0]            // Remove real ip separator
+	name = strings.Trim(name, ".")
+	return name
 }
