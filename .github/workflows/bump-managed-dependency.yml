@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: bump-managed-dependency-${{ inputs.dependency }}
@@ -32,208 +33,15 @@ concurrency:
 
 jobs:
   bump:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Validate input
-        id: dependency
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          case "${{ inputs.dependency }}" in
-            geyserlite)
-              echo "module=go.minekube.com/geyserlite" >> "$GITHUB_OUTPUT"
-              ;;
-            vialite)
-              echo "module=go.minekube.com/vialite" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "::error::Unsupported dependency: ${{ inputs.dependency }}"
-              exit 1
-              ;;
-          esac
-
-          if [[ ! "${{ inputs.version }}" =~ ^v[0-9] ]]; then
-            echo "::error::Version must be a Go module tag, for example v0.3.15"
-            exit 1
-          fi
-
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ vars.RELEASE_CASCADE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_CASCADE_APP_PRIVATE_KEY }}
-          permission-actions: write
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          cache: true
-          go-version-file: go.mod
-
-      - name: Configure Git
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
-        run: |
-          set -euo pipefail
-
-          APP_USER_ID="$(gh api "/users/${APP_SLUG}[bot]" --jq '.id')"
-          git config user.name "${APP_SLUG}[bot]"
-          git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
-
-      - name: Update dependency
-        id: update
-        env:
-          MODULE: ${{ steps.dependency.outputs.module }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          set -euo pipefail
-
-          go env -w GOTOOLCHAIN=local
-          CURRENT_VERSION="$(go list -m -f '{{ .Version }}' "${MODULE}")"
-          if [ "$CURRENT_VERSION" = "$VERSION" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "${MODULE} is already at ${VERSION}."
-            exit 0
-          fi
-
-          go list -m "${MODULE}@${VERSION}" >/dev/null
-          go get "${MODULE}@${VERSION}"
-          go mod tidy
-
-          if git diff --quiet -- go.mod go.sum; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No dependency changes needed."
-            exit 0
-          fi
-
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Test
-        if: steps.update.outputs.changed == 'true'
-        run: go test ./...
-
-      - name: Create pull request
-        if: steps.update.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          DEPENDENCY: ${{ inputs.dependency }}
-          MODULE: ${{ steps.dependency.outputs.module }}
-          VERSION: ${{ inputs.version }}
-          SOURCE_REPOSITORY: ${{ inputs.source_repository }}
-          SOURCE_RELEASE_URL: ${{ inputs.source_release_url }}
-        run: |
-          set -euo pipefail
-
-          BRANCH="automation/update-${DEPENDENCY}"
-          git checkout -B "$BRANCH"
-          git add go.mod go.sum
-          git commit -m "fix(deps): update ${DEPENDENCY} to ${VERSION}"
-          REMOTE_SHA="$(git ls-remote --heads origin "$BRANCH" | awk '{print $1}')"
-          if [ -n "$REMOTE_SHA" ]; then
-            git push --force-with-lease="refs/heads/${BRANCH}:${REMOTE_SHA}" origin "HEAD:refs/heads/${BRANCH}"
-          else
-            git push origin "HEAD:refs/heads/${BRANCH}"
-          fi
-          HEAD_SHA="$(git rev-parse HEAD)"
-
-          gh workflow run ci.yml \
-            --repo "${GITHUB_REPOSITORY}" \
-            --ref "$BRANCH"
-
-          RUN_ID=""
-          for _ in $(seq 1 60); do
-            RUN_ID="$(gh run list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --workflow ci.yml \
-              --branch "$BRANCH" \
-              --event workflow_dispatch \
-              --json databaseId,headSha \
-              --jq "map(select(.headSha == \"${HEAD_SHA}\")) | .[0].databaseId // \"\"")"
-            if [ -n "$RUN_ID" ]; then
-              break
-            fi
-            sleep 5
-          done
-
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::Timed out waiting for dispatched ci.yml run to appear"
-            exit 1
-          fi
-
-          for _ in $(seq 1 180); do
-            RUN_JSON="$(gh run view "$RUN_ID" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --json status,conclusion,url)"
-            STATUS="$(echo "$RUN_JSON" | jq -r '.status')"
-            CONCLUSION="$(echo "$RUN_JSON" | jq -r '.conclusion // ""')"
-            RUN_URL="$(echo "$RUN_JSON" | jq -r '.url')"
-            if [ "$STATUS" = "completed" ]; then
-              break
-            fi
-            sleep 10
-          done
-
-          if [ "$STATUS" != "completed" ]; then
-            echo "::error::Timed out waiting for ci.yml run ${RUN_ID}"
-            exit 1
-          fi
-
-          if [ "$CONCLUSION" != "success" ]; then
-            echo "::error::ci.yml run ${RUN_ID} concluded ${CONCLUSION}: ${RUN_URL}"
-            exit 1
-          fi
-
-          BODY="Updates \`${MODULE}\` to \`${VERSION}\`.
-
-          Triggered by release cascade from \`${SOURCE_REPOSITORY:-unknown}\`.
-
-          Validated by ci.yml workflow_dispatch run: ${RUN_URL}"
-          if [ -n "${SOURCE_RELEASE_URL}" ]; then
-            BODY="${BODY}
-
-          Source release: ${SOURCE_RELEASE_URL}"
-          fi
-
-          PR_NUMBER="$(gh pr list \
-            --repo "${GITHUB_REPOSITORY}" \
-            --head "$BRANCH" \
-            --state open \
-            --json number \
-            --jq '.[0].number // empty')"
-
-          if [ -z "$PR_NUMBER" ]; then
-            gh pr create \
-              --repo "${GITHUB_REPOSITORY}" \
-              --base master \
-              --head "$BRANCH" \
-              --title "fix(deps): update ${DEPENDENCY} to ${VERSION}" \
-              --body "$BODY"
-            PR_NUMBER="$(gh pr list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --head "$BRANCH" \
-              --state open \
-              --json number \
-              --jq '.[0].number')"
-          else
-            gh pr edit "$PR_NUMBER" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "fix(deps): update ${DEPENDENCY} to ${VERSION}" \
-              --body "$BODY"
-          fi
-
-          if ! gh pr merge "$PR_NUMBER" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --squash \
-            --auto; then
-            echo "::warning::Created PR #${PR_NUMBER}, but auto-merge could not be enabled."
-          fi
+    uses: minekube/actions/.github/workflows/bump-go-module.yml@v1
+    with:
+      module: ${{ inputs.dependency == 'geyserlite' && 'go.minekube.com/geyserlite' || inputs.dependency == 'vialite' && 'go.minekube.com/vialite' || '' }}
+      version: ${{ inputs.version }}
+      base-ref: master
+      branch: automation/update-${{ inputs.dependency }}
+      pr-title: "fix(deps): update ${{ inputs.dependency }} to ${{ inputs.version }}"
+      commit-message: "fix(deps): update ${{ inputs.dependency }} to ${{ inputs.version }}"
+      ci-workflow: ci.yml
+      source-repository: ${{ inputs.source_repository }}
+      source-release-url: ${{ inputs.source_release_url }}
+    secrets: inherit
