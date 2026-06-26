@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.2](https://github.com/minekube/gate/compare/v0.68.1...v0.68.2) (2026-06-26)
+
+
+### Bug Fixes
+
+* adopt modern Common text components ([4f2debc](https://github.com/minekube/gate/commit/4f2debcde3c083df814c078b97a590e22edcd287))
+
 ## [0.68.1](https://github.com/minekube/gate/compare/v0.68.0...v0.68.1) (2026-06-26)
 
 
