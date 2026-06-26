@@ -5,7 +5,6 @@ import (
 
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/internal/api"
-	connect "go.minekube.com/gate/pkg/util/connectutil/config"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -16,7 +15,6 @@ var DefaultConfig = Config{
 		Enabled: false,
 		Bind:    "0.0.0.0:9090",
 	},
-	Connect: connect.DefaultConfig,
 	API: API{
 		Enabled: false,
 		Config:  api.DefaultConfig,
@@ -29,8 +27,6 @@ type Config struct {
 	Config jconfig.Config `yaml:"config,omitempty"`
 	// See HealthService struct.
 	HealthService HealthService `json:"healthService,omitempty" yaml:"healthService,omitempty"`
-	// See Connect struct.
-	Connect connect.Config `json:"connect,omitempty" yaml:"connect,omitempty"`
 	// See API struct.
 	API API `json:"api,omitempty" yaml:"api,omitempty"`
 	// NoAutoReload disables automatic config file reloading.

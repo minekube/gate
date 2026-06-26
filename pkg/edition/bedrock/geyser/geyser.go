@@ -159,6 +159,9 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 func (i *Integration) Start() error {
 	eventMgr := i.proxy.Event()
 
+	// Set ourselves as the global handshake addresser
+	i.proxy.SetGlobalHandshakeAddresser(i)
+
 	// Subscribe to proxy events
 	// High priority to ensure that we handle Bedrock players before other handlers.
 	const priority = math.MaxInt - 100
@@ -428,4 +431,23 @@ func splitOriginalHostPort(originalHost string) (string, uint16) {
 		return strings.TrimSuffix(strings.TrimPrefix(originalHost, "["), "]"), 0
 	}
 	return originalHost, 0
+}
+
+// HandshakeAddr implements the proxy.HandshakeAddresser interface.
+// It adds the Floodgate data back to the virtual host when forwarding to backend servers.
+func (i *Integration) HandshakeAddr(vHost string, player proxy.Player) string {
+	geyserConn, ok := FromContext(player.Context())
+	if !ok || geyserConn.BedrockData == nil {
+		// Not a Geyser connection, return original
+		return vHost
+	}
+
+	// Encode the original host and bedrock data back into the virtual host
+	encoded, err := i.floodgate.WriteHostname(geyserConn.OriginalHost, geyserConn.BedrockData)
+	if err != nil {
+		i.log.Error(err, "failed to encode floodgate hostname for backend connection")
+		return vHost
+	}
+
+	return encoded
 }

@@ -72,6 +72,8 @@ type Proxy struct {
 
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
+
+	globalHandshakeAddresser HandshakeAddresser
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -427,6 +429,12 @@ func (p *Proxy) config() *config.Config {
 // Lite returns the proxy's lite mode functionality.
 func (p *Proxy) Lite() *lite.Lite {
 	return p.lite
+}
+
+// SetGlobalHandshakeAddresser sets the global HandshakeAddresser that will be used
+// for all backend server connections, overriding any per-server HandshakeAddresser.
+func (p *Proxy) SetGlobalHandshakeAddresser(ha HandshakeAddresser) {
+	p.globalHandshakeAddresser = ha
 }
 
 // Server gets a backend server registered with the proxy by name.

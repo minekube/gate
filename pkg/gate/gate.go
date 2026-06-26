@@ -26,7 +26,6 @@ import (
 	"go.minekube.com/gate/pkg/internal/otelutil"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/runtime/process"
-	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errorsutil "go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/interrupt"
 )
@@ -61,9 +60,6 @@ func New(options Options) (gate *Gate, err error) {
 	}
 	reload.Map(eventMgr, func(c *config.Config) *jconfig.Config {
 		return &c.Config
-	})
-	reload.Map(eventMgr, func(c *config.Config) *connectcfg.Config {
-		return &c.Connect
 	})
 	// Map Bedrock config reload events
 	reload.Map(eventMgr, func(c *config.Config) *bconfig.Config {
@@ -113,9 +109,7 @@ func New(options Options) (gate *Gate, err error) {
 		}
 	}
 
-	if err = setupConnect(gate.proc, c, eventMgr, gate.Java()); err != nil {
-		return nil, err
-	}
+
 
 	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java())); err != nil {
 		return nil, err

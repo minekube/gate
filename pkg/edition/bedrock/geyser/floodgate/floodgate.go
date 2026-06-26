@@ -85,6 +85,37 @@ func (f *Floodgate) ReadHostname(hostname string) (string, *BedrockData, error) 
 	return originalHostname, bedrockData, nil
 }
 
+// WriteHostname creates a hostname string with the given original hostname and bedrock data.
+// The hostname format is: original_hostname\x00encrypted_data
+func (f *Floodgate) WriteHostname(originalHostname string, d *BedrockData) (string, error) {
+	data := strings.Join([]string{
+		d.Version,
+		d.Username,
+		strconv.FormatInt(d.Xuid, 10),	
+		strconv.Itoa(int(d.DeviceOS)),
+		d.Language,
+		strconv.Itoa(d.UIProfile),
+		strconv.Itoa(d.InputMode),
+		d.IP,
+		d.LinkedPlayer,
+		func() string {
+			if d.Proxy {
+				return "1"
+			}
+			return "0"
+		}(),
+		d.SubscribeID,
+		d.VerifyCode,
+	}, "\u0000")
+
+	encrypted, err := f.Encrypt([]byte(data))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s\x00%s", originalHostname, string(encrypted)), nil
+}
+
 // ReadBedrockData parses the decrypted Bedrock data string.
 // The format follows Floodgate's protocol: 12 null-separated fields.
 func ReadBedrockData(data string) (*BedrockData, error) {

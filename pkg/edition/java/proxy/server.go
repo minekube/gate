@@ -370,14 +370,16 @@ type HandshakeAddresser interface {
 func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool
-	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
-		if ha, ok = s.Server().(HandshakeAddresser); !ok {
-			switch s.config().Forwarding.Mode {
-			case config.LegacyForwardingMode:
-				return s.createLegacyForwardingAddress()
-			case config.BungeeGuardForwardingMode:
-				secret := s.config().Forwarding.BungeeGuardSecret
-				return s.createBungeeGuardForwardingAddress(secret)
+	if ha = s.proxy.globalHandshakeAddresser; ha == nil {
+		if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
+			if ha, ok = s.Server().(HandshakeAddresser); !ok {
+				switch s.config().Forwarding.Mode {
+				case config.LegacyForwardingMode:
+					return s.createLegacyForwardingAddress()
+				case config.BungeeGuardForwardingMode:
+					secret := s.config().Forwarding.BungeeGuardSecret
+					return s.createBungeeGuardForwardingAddress(secret)
+				}
 			}
 		}
 	}
