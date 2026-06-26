@@ -1,0 +1,24 @@
+Debloat and Cleanup Goals for Gate Codebase
+
+1. Remove the Connect integration
+   - Files to modify/remove:
+     - pkg/gate/connect.go: setupConnect function
+     - pkg/util/connectutil/: entire directory
+     - pkg/gate/config/config.go: Remove Connect field and related imports
+     - pkg/gate/gate.go: Remove setupConnect call and related imports
+     - .web/docs/guide/connect.md: Remove documentation
+
+2. Only generate the full config
+   - Files to modify/remove:
+     - pkg/configs/: Remove config-lite.yml, config-minimal.yml, config-simple.yml, config-bedrock.yml
+     - pkg/configs/configs.go: Remove SimpleConfigBytes, LiteConfigBytes, BedrockConfigBytes, MinimalConfigBytes, and their embed comments
+     - cmd/gate/config.go: Remove --type flag and only keep "full" config
+     - Root directory: Remove config-lite.yml, config-minimal.yml, config-simple.yml, config-bedrock.yml
+     - .web/docs/guide/lite.md: Remove documentation
+
+3. Clean and update documentation
+   - Directory: .web/docs/
+   - Tasks:
+     - Remove Connect and Lite mode documentation
+     - Update README.md to reflect debloated features
+     - Update config documentation to only mention full config
