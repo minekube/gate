@@ -236,6 +236,10 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 
 func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, interface{ Close() error }, error) {
 	address := info.Addr().String()
+	forwarding := viaForwarding(r.cfg.Forwarding.Mode)
+	if provider, ok := info.(ForwardingModeProvider); ok {
+		forwarding = viaForwarding(provider.ForwardingMode())
+	}
 	var cleanup interface{ Close() error }
 	if dialer, ok := info.(ServerDialer); ok {
 		bridge, err := newViaBackendBridge(dialer)
@@ -248,7 +252,7 @@ func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, int
 	return vialite.Backend{
 		Name:       info.Name(),
 		Address:    address,
-		Forwarding: viaForwarding(r.cfg.Forwarding.Mode),
+		Forwarding: forwarding,
 	}, cleanup, nil
 }
 
