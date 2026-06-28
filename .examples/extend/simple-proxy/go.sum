@@ -351,6 +351,8 @@ go.minekube.com/geyserlite v0.3.14 h1:+cSN9o/b5jEOHeym/uXvt5MEoGnrYloJidrVe9K9pW
 go.minekube.com/geyserlite v0.3.14/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.minekube.com/geyserlite v0.3.15 h1:1HOPV7RJSmiqJJO4/1hD39x739S0CRMc0iC1/L7NXm0=
 go.minekube.com/geyserlite v0.3.15/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
+go.minekube.com/geyserlite v0.3.16 h1:g2iB/V4NtQ8C8GluhocCzaeOLfgjEVWrMGUU3re4OYA=
+go.minekube.com/geyserlite v0.3.16/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.minekube.com/vialite v0.1.0 h1:RMnNeDcDKchIs+N5KqxOzCK9tgkrVPjgUgjU5ARdn5o=
 go.minekube.com/vialite v0.1.0/go.mod h1:W9L1l8/b/GsLmkw1BW4wijaaPj/zV3OdrtYJgWdkhxE=
 go.minekube.com/vialite v0.3.0 h1:IeJLHnaw8tBa0ZQVW4SYwzR0eXxG+j3u2KI805J8F4w=
