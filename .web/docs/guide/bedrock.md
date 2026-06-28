@@ -55,8 +55,8 @@ Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with buil
 
 1. **Bedrock Players** connect to Geyser on UDP port 19132 (default, customizable)
 2. **Geyser** translates Bedrock protocol to Java Edition and forwards to Gate
-3. **Gate** receives translated connections, handles Floodgate authentication internally, and presents them as regular Java players to backend servers
-4. **Backend servers** see all players as normal Java Edition connections - no plugins required!
+3. **Gate** receives translated connections, handles Floodgate authentication internally, and presents them as regular Java players to backend servers by default
+4. **Backend servers** see normal Java Edition connections - no plugins required unless you explicitly enable backend Floodgate compatibility for specific servers
 
 If [ViaLite](/vialite/) is enabled, it runs behind Gate after GeyserLite has
 already translated Bedrock traffic to Java protocol. That can help with Java
@@ -116,6 +116,7 @@ bedrock:
 | `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `".%s"`              |
 | `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
+| `backendFloodgate` | Optional allowlist for backend Floodgate plugin compatibility | disabled             |
 
 ::: tip geyserListenAddr Network Configuration
 
@@ -140,6 +141,54 @@ Note: All connections are authenticated via Floodgate keys regardless of the bin
 | `javaPath`   | Path to Java executable            | `java`    |
 | `dataDir`    | Directory for Geyser files         | `.geyser` |
 | `extraArgs`  | Additional JVM arguments           | `[]`      |
+
+### Backend Floodgate Compatibility
+
+Gate handles Floodgate authentication itself, so most servers do not need a backend Floodgate plugin. Some backend plugins still call the Floodgate API directly to check whether a player is from Bedrock Edition, read linked-account data, or apply platform-specific behavior. For those servers, enable backend Floodgate compatibility explicitly per backend.
+
+:::: code-group
+
+```yaml [config.yml]
+config:
+  forwarding:
+    # backendFloodgate supports none and velocity.
+    # legacy and bungeeguard are not compatible because they also use
+    # hostname-based forwarding.
+    mode: velocity
+
+  servers:
+    lobby: localhost:25566
+    survival: localhost:25567
+    auth: localhost:25568
+  try:
+    - lobby
+
+  bedrock:
+    enabled: true
+    managed: true
+    floodgateKeyPath: floodgate.pem
+
+    backendFloodgate:
+      enabled: true
+      allowedServers:
+        - lobby
+        - survival
+```
+
+::::
+
+When enabled, Gate re-attaches freshly encrypted Floodgate player data only for verified Bedrock players and only when they connect to a listed backend. Java clients cannot spoof this data through the hostname, and unlisted backends continue to receive the normal clean Java hostname.
+
+::: warning Trust boundary
+Only allow backends that you operate and trust with the same Floodgate key. Do not enable this for third-party, shared, or untrusted backend servers.
+:::
+
+Requirements:
+
+- `bedrock.enabled` must be `true`.
+- `backendFloodgate.allowedServers` must list existing `config.servers` names.
+- `floodgateKeyPath` must point to the key shared with the backend Floodgate plugin, unless managed mode will generate it.
+- `forwarding.mode` must be `none` or `velocity`.
 
 ### Configuration Modes
 
