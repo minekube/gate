@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
+	"go.minekube.com/gate/pkg/edition/java/forge"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
@@ -59,6 +60,32 @@ func TestStartHandshakeReturnsBackendHandshakeAddresserErrorBeforeBufferingHands
 
 	require.ErrorIs(t, err, wantErr)
 	require.Empty(t, backendConn.writtenPackets)
+}
+
+func TestHandshakeAddrPassesCleanHostToBackendAddresserForModernForge(t *testing.T) {
+	serverConn, player, _ := newHandshakeAddrTestConnection(t, config.NoneForwardingMode, phase.ModernForge)
+	player.virtualHost = netutil.NewAddr("play.example.org\x00FML3\x00:25565", "tcp")
+	addresser := &staticBackendHandshakeAddresser{nextHost: "play.example.org"}
+	player.proxy.SetBackendHandshakeAddresser(addresser)
+
+	got, err := serverConn.handshakeAddr("play.example.org\x00FML3\x00", player)
+
+	require.NoError(t, err)
+	require.Equal(t, "play.example.org", addresser.gotDefaultHost)
+	require.Equal(t, "\x00FML3\x00", got)
+}
+
+func TestHandshakeAddrPassesCleanHostToBackendAddresserForLegacyForge(t *testing.T) {
+	serverConn, player, _ := newHandshakeAddrTestConnection(t, config.NoneForwardingMode, phase.LegacyForge)
+	player.virtualHost = netutil.NewAddr("play.example.org\x00FML\x00:25565", "tcp")
+	addresser := &staticBackendHandshakeAddresser{nextHost: "play.example.org"}
+	player.proxy.SetBackendHandshakeAddresser(addresser)
+
+	got, err := serverConn.handshakeAddr("play.example.org\x00FML\x00", player)
+
+	require.NoError(t, err)
+	require.Equal(t, "play.example.org", addresser.gotDefaultHost)
+	require.Equal(t, "play.example.org"+forge.HandshakeHostnameToken, got)
 }
 
 func TestHandshakeAddrPreservesLegacyForwardingWhenBackendAddresserDisabled(t *testing.T) {

@@ -87,6 +87,22 @@ func TestBackendHandshakeAddrLeavesNonAllowedTargetClean(t *testing.T) {
 	require.Equal(t, "clean.example.org", got)
 }
 
+func TestBackendHandshakeAddrRejectsSpoofedJavaFloodgateHostnameForNonAllowedTarget(t *testing.T) {
+	integration := &Integration{
+		config: &bedrockconfig.Config{
+			BackendFloodgate: bedrockconfig.BackendFloodgate{
+				Enabled:        true,
+				AllowedServers: []string{"lobby"},
+			},
+		},
+		floodgate: newTestFloodgate(t),
+	}
+
+	_, err := integration.BackendHandshakeAddr("clean.example.org\x00spoofed", contextOnlyPlayer{ctx: context.Background()}, testBackendTarget("survival"))
+
+	require.Error(t, err)
+}
+
 func TestBackendHandshakeAddrRejectsSpoofedJavaFloodgateHostnameForAllowedTarget(t *testing.T) {
 	integration := &Integration{
 		config: &bedrockconfig.Config{

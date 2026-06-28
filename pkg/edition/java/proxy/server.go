@@ -393,10 +393,11 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) (string, e
 	if ha != nil {
 		vHost = ha.HandshakeAddr(vHost, player)
 	}
+	forgeTokenSource := vHost
 	if !usedForwarding {
 		if backendAddresser := s.player.proxy.backendHandshakeAddresserSnapshot(); backendAddresser != nil {
 			var err error
-			vHost, err = backendAddresser.BackendHandshakeAddr(vHost, player, s.Server())
+			vHost, err = backendAddresser.BackendHandshakeAddr(backendHandshakeBaseHost(vHost, s.player.Type()), player, s.Server())
 			if err != nil {
 				return "", err
 			}
@@ -408,9 +409,16 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) (string, e
 	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
 	} else if s.player.Type() == phase.ModernForge {
-		vHost = modernforge.ModernToken(vHost)
+		vHost = modernforge.ModernToken(forgeTokenSource)
 	}
 	return vHost, nil
+}
+
+func backendHandshakeBaseHost(vHost string, connType phase.ConnectionType) string {
+	if connType == phase.LegacyForge || connType == phase.ModernForge {
+		return strings.SplitN(vHost, "\x00", 2)[0]
+	}
+	return vHost
 }
 
 func (s *serverConnection) connect(ctx context.Context) (result *connectionResult, err error) {

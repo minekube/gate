@@ -444,11 +444,11 @@ func (i *Integration) BackendHandshakeAddr(defaultServerAddress string, player p
 	if i == nil || i.config == nil || !i.config.BackendFloodgate.Enabled {
 		return defaultServerAddress, nil
 	}
-	if !i.backendFloodgateAllowed(target) {
-		return defaultServerAddress, nil
-	}
 	if strings.ContainsRune(defaultServerAddress, '\x00') {
 		return "", fmt.Errorf("refusing backend Floodgate hostname prefix containing NUL")
+	}
+	if !i.backendFloodgateAllowed(target) {
+		return defaultServerAddress, nil
 	}
 
 	geyserConn, ok := FromContext(player.Context())
