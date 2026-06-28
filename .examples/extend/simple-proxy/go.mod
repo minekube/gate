@@ -7,7 +7,7 @@ replace go.minekube.com/gate => ../../../
 require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.2
-	go.minekube.com/common v0.3.0
+	go.minekube.com/common v0.4.0
 	go.minekube.com/gate v0.66.39
 )
 
@@ -42,7 +42,7 @@ require (
 	github.com/honeycombio/otel-config-go v1.17.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.4.1 // indirect
 	github.com/knadh/koanf/providers/file v1.2.1 // indirect
-	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250827001030-24949be3fa54 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4 // indirect
@@ -70,8 +70,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.minekube.com/connect v0.6.2 // indirect
-	go.minekube.com/geyserlite v0.3.14 // indirect
-	go.minekube.com/vialite v0.1.0 // indirect
+	go.minekube.com/geyserlite v0.3.15 // indirect
+	go.minekube.com/vialite v0.3.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.63.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0 // indirect
