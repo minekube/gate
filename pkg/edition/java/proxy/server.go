@@ -373,6 +373,12 @@ type ForwardingModeProvider interface {
 	ForwardingMode() config.ForwardingMode
 }
 
+// BackendVersionProvider lets dynamic ServerInfo implementations select the
+// backend Minecraft version used by protocol translation.
+type BackendVersionProvider interface {
+	BackendVersion() string
+}
+
 func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool
