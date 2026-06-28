@@ -33,6 +33,18 @@
       ],
       "matchCurrentVersion": "!/^0/",
       "automerge": true
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchFileNames": [
+        ".examples/**/go.mod"
+      ],
+      "matchPackageNames": [
+        "go.minekube.com/gate"
+      ],
+      "enabled": false
     }
   ]
 }
