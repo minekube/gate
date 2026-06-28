@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.11](https://github.com/minekube/gate/compare/v0.68.10...v0.68.11) (2026-06-28)
+
+
+### Bug Fixes
+
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp to v0.69.0 ([#861](https://github.com/minekube/gate/issues/861)) ([8033c48](https://github.com/minekube/gate/commit/8033c4898a2150dc03f1a02035f6dda9e0e7118b))
+
 ## [0.68.10](https://github.com/minekube/gate/compare/v0.68.9...v0.68.10) (2026-06-28)
 
 
