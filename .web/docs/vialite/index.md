@@ -9,16 +9,8 @@ ViaLite is Minekube's managed Via runtime for Gate classic. It lets Gate route
 backend connections through Via-powered Java protocol translation while Gate
 keeps ownership of authentication, events, routing, Connect, and backend login.
 
-Enable it with:
-
-```yaml
-config:
-  via:
-    enabled: true
-```
-
-Gate starts ViaLite and automatically routes configured and API-registered
-classic backend servers through it.
+For user-facing setup, start with [Multi-Version Support](/guide/multi-version).
+This page covers the runtime shape behind that feature.
 
 ## Topology
 
@@ -45,33 +37,15 @@ then raw-pipes bytes so backend servers keep authentication ownership. ViaLite
 must decode and rewrite packets after login, so it belongs to Gate classic
 backend connections instead.
 
-## Config
+## Runtime Configuration
 
-The default path uses the latest stable ViaLite release:
-
-```yaml
-config:
-  via:
-    enabled: true
-```
-
-Operators can pin or override the runtime when they need controlled rollout or
-offline deployment:
-
-```yaml
-config:
-  via:
-    enabled: true
-    mode: subprocess
-    version: v0.3.0
-    # mirror: https://example.com/vialite/releases
-    # binaryPath: /opt/vialite/vialite
-    # libraryPath: /opt/vialite/libvialite.so
-    # offline: true
-```
+By default, Gate uses the latest stable ViaLite release for managed
+multi-version support. Operators can still pin or override the runtime when
+they need controlled rollout or offline deployment.
 
 Subprocess mode is the portable default. Embedded mode is available where the
-native shared library is supported.
+native shared library is supported. See
+[Multi-Version Support](/guide/multi-version) for the basic enablement config.
 
 ## Early Backend Upgrades
 
@@ -104,6 +78,7 @@ the stable ViaLite release channel.
 
 ## Links
 
+- [Multi-Version Support](/guide/multi-version)
 - [Gate compatibility guide](/guide/compatibility)
 - [GeyserLite docs](/geyserlite/)
 - [ViaLite repository](https://github.com/minekube/vialite)
