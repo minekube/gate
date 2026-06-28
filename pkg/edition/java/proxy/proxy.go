@@ -67,6 +67,10 @@ type Proxy struct {
 	sessionIDMu      sync.Mutex
 	currentSessionID uuid.UUID
 
+	backendHandshakeAddresserMu sync.RWMutex
+	backendHandshakeAddresser   BackendHandshakeAddresser
+	backendHandshakeAddresserID uint64
+
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
@@ -427,6 +431,30 @@ func (p *Proxy) config() *config.Config {
 // Lite returns the proxy's lite mode functionality.
 func (p *Proxy) Lite() *lite.Lite {
 	return p.lite
+}
+
+// SetBackendHandshakeAddresser sets a low-level hook applied to backend handshakes.
+// It returns an unregister function that only clears this registration.
+func (p *Proxy) SetBackendHandshakeAddresser(ha BackendHandshakeAddresser) func() {
+	p.backendHandshakeAddresserMu.Lock()
+	p.backendHandshakeAddresserID++
+	id := p.backendHandshakeAddresserID
+	p.backendHandshakeAddresser = ha
+	p.backendHandshakeAddresserMu.Unlock()
+
+	return func() {
+		p.backendHandshakeAddresserMu.Lock()
+		defer p.backendHandshakeAddresserMu.Unlock()
+		if p.backendHandshakeAddresserID == id {
+			p.backendHandshakeAddresser = nil
+		}
+	}
+}
+
+func (p *Proxy) backendHandshakeAddresserSnapshot() BackendHandshakeAddresser {
+	p.backendHandshakeAddresserMu.RLock()
+	defer p.backendHandshakeAddresserMu.RUnlock()
+	return p.backendHandshakeAddresser
 }
 
 // Server gets a backend server registered with the proxy by name.

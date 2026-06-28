@@ -282,6 +282,17 @@ config:
     # Default: "floodgate.pem"
     #floodgateKeyPath: "floodgate.pem"
 
+    # Backend Floodgate compatibility.
+    # Re-emits verified Bedrock identity data only to the listed Java backends.
+    # Enable this only for backend servers you operate and trust with the same Floodgate key.
+    # Incompatible with forwarding.mode: legacy and bungeeguard.
+    # Default: disabled
+    #backendFloodgate:
+    #  enabled: false
+    #  allowedServers:
+    #    - lobby
+    #    - survival
+
     # Managed Geyser mode: Gate automatically handles the Geyser process.
     # This is the recommended setup for most users.
     managed:

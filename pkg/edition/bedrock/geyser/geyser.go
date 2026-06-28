@@ -83,6 +83,7 @@ type Integration struct {
 	connections    map[net.Addr]*GeyserConnection
 	mu             sync.RWMutex
 	unsubs         []func()
+	unregisterHook func()
 	manager        managedRunner
 }
 
@@ -151,6 +152,9 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 		return nil, fmt.Errorf("failed to initialize floodgate: %w", err)
 	}
 	integration.floodgate = fg
+	if cfg.BackendFloodgate.Enabled {
+		integration.unregisterHook = p.SetBackendHandshakeAddresser(integration)
+	}
 
 	return integration, nil
 }
@@ -211,6 +215,10 @@ func (i *Integration) Stop() {
 	// Stop managed process if running
 	if i.manager != nil {
 		i.manager.Stop()
+	}
+	if i.unregisterHook != nil {
+		i.unregisterHook()
+		i.unregisterHook = nil
 	}
 }
 
@@ -428,4 +436,45 @@ func splitOriginalHostPort(originalHost string) (string, uint16) {
 		return strings.TrimSuffix(strings.TrimPrefix(originalHost, "["), "]"), 0
 	}
 	return originalHost, 0
+}
+
+// BackendHandshakeAddr re-attaches verified Floodgate hostname data for
+// allowlisted backend Floodgate plugins.
+func (i *Integration) BackendHandshakeAddr(defaultServerAddress string, player proxy.Player, target proxy.RegisteredServer) (string, error) {
+	if i == nil || i.config == nil || !i.config.BackendFloodgate.Enabled {
+		return defaultServerAddress, nil
+	}
+	if !i.backendFloodgateAllowed(target) {
+		return defaultServerAddress, nil
+	}
+	if strings.ContainsRune(defaultServerAddress, '\x00') {
+		return "", fmt.Errorf("refusing backend Floodgate hostname prefix containing NUL")
+	}
+
+	geyserConn, ok := FromContext(player.Context())
+	if !ok || geyserConn.BedrockData == nil {
+		return defaultServerAddress, nil
+	}
+	if i.floodgate == nil {
+		return "", fmt.Errorf("backend Floodgate is enabled but Floodgate is not initialized")
+	}
+
+	encoded, err := i.floodgate.WriteHostname(defaultServerAddress, geyserConn.BedrockData)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode backend Floodgate hostname: %w", err)
+	}
+	return encoded, nil
+}
+
+func (i *Integration) backendFloodgateAllowed(target proxy.RegisteredServer) bool {
+	if target == nil || target.ServerInfo() == nil {
+		return false
+	}
+	targetName := strings.ToLower(target.ServerInfo().Name())
+	for _, name := range i.config.BackendFloodgate.AllowedServers {
+		if strings.ToLower(name) == targetName {
+			return true
+		}
+	}
+	return false
 }
