@@ -352,6 +352,7 @@ func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
 		connections:    make(chan net.Conn, 1),
 		dialed:         make(chan Player, 1),
 		forwardingMode: config.LegacyForwardingMode,
+		backendVersion: "1.21.6",
 	}
 
 	backend, cleanup, err := runner.dynamicBackend(info)
@@ -363,6 +364,12 @@ func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
 	}
 	if backend.Forwarding != vialite.ForwardingLegacy {
 		t.Fatalf("backend Forwarding = %q, want %q", backend.Forwarding, vialite.ForwardingLegacy)
+	}
+	if backend.Version != "1.21.6" {
+		t.Fatalf("backend Version = %q, want 1.21.6", backend.Version)
+	}
+	if backend.Detect {
+		t.Fatal("backend Detect = true, want false for explicit dynamic backend version")
 	}
 }
 
@@ -649,6 +656,7 @@ type fakeDynamicDialer struct {
 	connections    chan net.Conn
 	dialed         chan Player
 	forwardingMode config.ForwardingMode
+	backendVersion string
 }
 
 func (f *fakeDynamicDialer) Name() string   { return f.name }
@@ -656,6 +664,10 @@ func (f *fakeDynamicDialer) Addr() net.Addr { return f.addr }
 
 func (f *fakeDynamicDialer) ForwardingMode() config.ForwardingMode {
 	return f.forwardingMode
+}
+
+func (f *fakeDynamicDialer) BackendVersion() string {
+	return f.backendVersion
 }
 
 func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, error) {

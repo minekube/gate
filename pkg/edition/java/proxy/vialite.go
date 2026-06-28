@@ -236,7 +236,11 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 
 func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, interface{ Close() error }, error) {
 	address := info.Addr().String()
+	version := ""
 	forwarding := viaForwarding(r.cfg.Forwarding.Mode)
+	if provider, ok := info.(BackendVersionProvider); ok {
+		version = provider.BackendVersion()
+	}
 	if provider, ok := info.(ForwardingModeProvider); ok {
 		forwarding = viaForwarding(provider.ForwardingMode())
 	}
@@ -252,6 +256,7 @@ func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, int
 	return vialite.Backend{
 		Name:       info.Name(),
 		Address:    address,
+		Version:    version,
 		Forwarding: forwarding,
 	}, cleanup, nil
 }
