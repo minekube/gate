@@ -367,6 +367,12 @@ type HandshakeAddresser interface {
 	HandshakeAddr(defaultPlayerVirtualHost string, player Player) (newPlayerVirtualHost string)
 }
 
+// ForwardingModeProvider lets dynamic ServerInfo implementations select the
+// backend forwarding mode for this specific server registration.
+type ForwardingModeProvider interface {
+	ForwardingMode() config.ForwardingMode
+}
+
 func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool

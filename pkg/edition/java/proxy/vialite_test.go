@@ -339,6 +339,33 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	}
 }
 
+func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
+	cfg := &config.Config{
+		Forwarding: config.Forwarding{Mode: config.NoneForwardingMode},
+		Via:        config.Via{Enabled: true},
+		Lite:       liteconfig.Config{Enabled: false},
+	}
+	runner := &viaManagedRunner{cfg: cfg}
+	info := &fakeDynamicDialer{
+		name:           "connect-session-legacy",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		forwardingMode: config.LegacyForwardingMode,
+	}
+
+	backend, cleanup, err := runner.dynamicBackend(info)
+	if err != nil {
+		t.Fatalf("dynamicBackend: %v", err)
+	}
+	if cleanup != nil {
+		defer cleanup.Close()
+	}
+	if backend.Forwarding != vialite.ForwardingLegacy {
+		t.Fatalf("backend Forwarding = %q, want %q", backend.Forwarding, vialite.ForwardingLegacy)
+	}
+}
+
 func TestViaManagedRunnerStopClosesDynamicBridge(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
@@ -617,14 +644,19 @@ func (f *fakeVialiteServer) RemoveBackend(ctx context.Context, name string) erro
 }
 
 type fakeDynamicDialer struct {
-	name        string
-	addr        net.Addr
-	connections chan net.Conn
-	dialed      chan Player
+	name           string
+	addr           net.Addr
+	connections    chan net.Conn
+	dialed         chan Player
+	forwardingMode config.ForwardingMode
 }
 
 func (f *fakeDynamicDialer) Name() string   { return f.name }
 func (f *fakeDynamicDialer) Addr() net.Addr { return f.addr }
+
+func (f *fakeDynamicDialer) ForwardingMode() config.ForwardingMode {
+	return f.forwardingMode
+}
 
 func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, error) {
 	client, server := net.Pipe()
