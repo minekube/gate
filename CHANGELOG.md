@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.7](https://github.com/minekube/gate/compare/v0.68.6...v0.68.7) (2026-06-28)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/common to v0.4.0 ([#848](https://github.com/minekube/gate/issues/848)) ([87d0c2b](https://github.com/minekube/gate/commit/87d0c2b5a2335709c868dff8f95b8df67aa9f576))
+
 ## [0.68.6](https://github.com/minekube/gate/compare/v0.68.5...v0.68.6) (2026-06-27)
 
 
