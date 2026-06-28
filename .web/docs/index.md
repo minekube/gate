@@ -56,6 +56,6 @@ features:
     details:
       Gate supports Minecraft server versions 1.8 to latest and is constantly updated to support
       new versions.
-    link: /guide/compatibility
-    linkText: Compatibility
+    link: /guide/multi-version
+    linkText: Multi-Version Support
 ---
