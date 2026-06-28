@@ -42,7 +42,8 @@ gate --config config.yml
 Gate automatically generates encryption keys, downloads Geyser, creates optimized configs, and manages everything for you. The `bedrock: true` shorthand enables both Bedrock support and managed mode in one line.
 :::
 
-
+Managed Bedrock support is powered by [GeyserLite](/geyserlite/), Minekube's
+native runtime packaging of GeyserMC for Gate.
 
 ## How It Works
 
@@ -56,6 +57,11 @@ Gate's Bedrock support uses a **proxy-in-front-of-proxy** architecture with buil
 2. **Geyser** translates Bedrock protocol to Java Edition and forwards to Gate
 3. **Gate** receives translated connections, handles Floodgate authentication internally, and presents them as regular Java players to backend servers
 4. **Backend servers** see all players as normal Java Edition connections - no plugins required!
+
+If [ViaLite](/vialite/) is enabled, it runs behind Gate after GeyserLite has
+already translated Bedrock traffic to Java protocol. That can help with Java
+backend version differences, but it does not replace Geyser's Bedrock protocol
+support.
 
 ### Key Benefits
 

@@ -116,6 +116,8 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'Bedrock', link: '/guide/bedrock' },
+      { text: 'GeyserLite', link: '/geyserlite/' },
+      { text: 'ViaLite', link: '/vialite/' },
       { text: 'Lite Mode', link: '/guide/lite' },
       { text: 'API & SDKs', link: '/developers/api/' },
       { text: 'Config', link: '/guide/config/' },
@@ -384,6 +386,44 @@ export default defineConfig({
         {
           text: '← Back to Guides',
           link: '/guide/',
+        },
+      ],
+      '/geyserlite/': [
+        {
+          text: 'GeyserLite',
+          items: [
+            {
+              text: 'Overview',
+              link: '/geyserlite/',
+            },
+            {
+              text: 'Gate Bedrock Guide',
+              link: '/guide/bedrock',
+            },
+            {
+              text: 'ViaLite',
+              link: '/vialite/',
+            },
+          ],
+        },
+      ],
+      '/vialite/': [
+        {
+          text: 'ViaLite',
+          items: [
+            {
+              text: 'Overview',
+              link: '/vialite/',
+            },
+            {
+              text: 'Compatibility Guide',
+              link: '/guide/compatibility',
+            },
+            {
+              text: 'GeyserLite',
+              link: '/geyserlite/',
+            },
+          ],
         },
       ],
       // '/config/': [
