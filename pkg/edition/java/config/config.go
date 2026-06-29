@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -244,8 +245,12 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		w("Packet limiter has a rate set but interval <= 0; the limiter is disabled. Set packetLimiter.interval > 0 to enable it.")
 	}
 
+	validateBackendFloodgate(c, e)
 	if c.Lite.Enabled {
-		return c.Lite.Validate()
+		warns2, errs2 := c.Lite.Validate()
+		warns = append(warns, warns2...)
+		errs = append(errs, errs2...)
+		return
 	}
 
 	validateVia(c, e)
@@ -305,6 +310,61 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	return
+}
+
+func validateBackendFloodgate(c *Config, e func(string, ...any)) {
+	backendFloodgate := c.Bedrock.BackendFloodgate
+	if !backendFloodgate.Enabled {
+		return
+	}
+	if !c.Bedrock.Enabled {
+		e("bedrock.backendFloodgate requires bedrock.enabled")
+	}
+	if len(backendFloodgate.AllowedServers) == 0 {
+		e("bedrock.backendFloodgate.allowedServers must not be empty")
+	}
+
+	servers := make(map[string]struct{}, len(c.Servers))
+	for name := range c.Servers {
+		servers[strings.ToLower(name)] = struct{}{}
+	}
+	seen := make(map[string]struct{}, len(backendFloodgate.AllowedServers))
+	for _, name := range backendFloodgate.AllowedServers {
+		if !validation.ValidServerName(name) {
+			e("Invalid bedrock.backendFloodgate.allowedServers server name %q: %s and length be 1-%d", name,
+				validation.QualifiedNameErrMsg, validation.QualifiedNameMaxLength)
+			continue
+		}
+		normalized := strings.ToLower(name)
+		if _, ok := seen[normalized]; ok {
+			e("Duplicate bedrock.backendFloodgate.allowedServers server %q", name)
+			continue
+		}
+		seen[normalized] = struct{}{}
+		if _, ok := servers[normalized]; !ok {
+			e("bedrock.backendFloodgate.allowedServers server %q must be registered under servers", name)
+		}
+	}
+
+	switch c.Forwarding.Mode {
+	case NoneForwardingMode, VelocityForwardingMode:
+	case LegacyForwardingMode, BungeeGuardForwardingMode:
+		e("bedrock.backendFloodgate is incompatible with forwarding.mode %q", c.Forwarding.Mode)
+	default:
+		e("bedrock.backendFloodgate requires forwarding.mode none or velocity, got %q", c.Forwarding.Mode)
+	}
+
+	bedrockConfig := c.Bedrock.ToConfig()
+	if bedrockConfig.FloodgateKeyPath == "" {
+		e("bedrock.backendFloodgate requires readable floodgateKeyPath")
+		return
+	}
+	if _, err := os.ReadFile(bedrockConfig.FloodgateKeyPath); err != nil {
+		if os.IsNotExist(err) && bedrockConfig.GetManaged().Enabled {
+			return
+		}
+		e("bedrock.backendFloodgate requires readable floodgateKeyPath %q: %v", bedrockConfig.FloodgateKeyPath, err)
+	}
 }
 
 func validateVia(c *Config, e func(string, ...any)) {

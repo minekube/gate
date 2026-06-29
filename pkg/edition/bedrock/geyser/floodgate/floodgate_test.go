@@ -52,6 +52,79 @@ func TestReadHostnameAndData(t *testing.T) {
 	}
 }
 
+func TestWriteHostnameRoundTripsBedrockData(t *testing.T) {
+	key := bytes.Repeat([]byte{0x42}, 16)
+	fg, err := NewFloodgate(key)
+	if err != nil {
+		t.Fatalf("NewFloodgate: %v", err)
+	}
+
+	want := &BedrockData{
+		Version:      "1",
+		Username:     "Fox",
+		Xuid:         123456789,
+		DeviceOS:     DeviceOSWindowsUWP,
+		Language:     "en_US",
+		UIProfile:    1,
+		InputMode:    2,
+		IP:           "203.0.113.10",
+		LinkedPlayer: "LinkedJava",
+		Proxy:        true,
+		SubscribeID:  "sub-id",
+		VerifyCode:   "verify-code",
+	}
+
+	host, err := fg.WriteHostname("play.example.org:19132", want)
+	if err != nil {
+		t.Fatalf("WriteHostname: %v", err)
+	}
+
+	original, got, err := fg.ReadHostname(host)
+	if err != nil {
+		t.Fatalf("ReadHostname: %v", err)
+	}
+
+	if original != "play.example.org:19132" {
+		t.Fatalf("original host = %q, want %q", original, "play.example.org:19132")
+	}
+	if *got != *want {
+		t.Fatalf("bedrock data = %#v, want %#v", got, want)
+	}
+}
+
+func TestWriteHostnameRejectsAmbiguousData(t *testing.T) {
+	key := bytes.Repeat([]byte{0x42}, 16)
+	fg, err := NewFloodgate(key)
+	if err != nil {
+		t.Fatalf("NewFloodgate: %v", err)
+	}
+
+	valid := &BedrockData{
+		Version:   "1",
+		Username:  "Fox",
+		Xuid:      123456789,
+		DeviceOS:  DeviceOSWindowsUWP,
+		Language:  "en_US",
+		UIProfile: 1,
+		InputMode: 2,
+		IP:        "203.0.113.10",
+	}
+
+	if _, err := fg.WriteHostname("play.example.org\x00spoof", valid); err == nil {
+		t.Fatal("WriteHostname accepted original hostname containing NUL")
+	}
+
+	withNUL := *valid
+	withNUL.Username = "Fox\x00Admin"
+	if _, err := fg.WriteHostname("play.example.org", &withNUL); err == nil {
+		t.Fatal("WriteHostname accepted Bedrock data containing NUL")
+	}
+
+	if _, err := fg.WriteHostname("play.example.org", nil); err == nil {
+		t.Fatal("WriteHostname accepted nil Bedrock data")
+	}
+}
+
 func TestGenerateKey(t *testing.T) {
 	key, err := GenerateKey()
 	if err != nil {

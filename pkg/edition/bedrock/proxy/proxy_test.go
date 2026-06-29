@@ -1,9 +1,19 @@
 package proxy
 
 import (
+	"bytes"
+	"context"
+	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/robinbraemer/event"
+
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
+	"go.minekube.com/gate/pkg/edition/bedrock/geyser"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 )
 
 func TestRequiresRestart(t *testing.T) {
@@ -92,6 +102,32 @@ func TestRequiresRestart(t *testing.T) {
 			},
 			shouldRestart: true,
 			description:   "Floodgate key path change should trigger restart",
+		},
+		{
+			name: "backend floodgate enabled change",
+			modifyConfig: func(cfg *config.Config) *config.Config {
+				modified := *cfg
+				modified.BackendFloodgate = config.BackendFloodgate{
+					Enabled:        true,
+					AllowedServers: []string{"lobby"},
+				}
+				return &modified
+			},
+			shouldRestart: true,
+			description:   "Enabling backend Floodgate compatibility should trigger restart",
+		},
+		{
+			name: "backend floodgate allowed server change",
+			modifyConfig: func(cfg *config.Config) *config.Config {
+				modified := *cfg
+				modified.BackendFloodgate = config.BackendFloodgate{
+					Enabled:        false,
+					AllowedServers: []string{"lobby"},
+				}
+				return &modified
+			},
+			shouldRestart: true,
+			description:   "Changing backend Floodgate allowed servers should trigger restart",
 		},
 		{
 			name: "managed enabled toggle",
@@ -267,6 +303,94 @@ func TestRequiresRestart(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStartClearsBackendHandshakeHookWhenIntegrationStartFails(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	if err := os.WriteFile(keyPath, bytes.Repeat([]byte{0x24}, 16), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	javaProxy, err := jproxy.New(jproxy.Options{
+		Config:   &jconfig.DefaultConfig,
+		EventMgr: event.Nop,
+	})
+	if err != nil {
+		t.Fatalf("jproxy.New() error = %v", err)
+	}
+	p, err := New(Options{
+		Config: &config.Config{
+			FloodgateKeyPath: keyPath,
+			GeyserListenAddr: "127.0.0.1",
+			BackendFloodgate: config.BackendFloodgate{
+				Enabled:        true,
+				AllowedServers: []string{"lobby"},
+			},
+		},
+		JavaProxy: javaProxy,
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	if err := p.Start(context.Background()); err == nil {
+		t.Fatal("Start() returned nil error for invalid listen address")
+	}
+	if backendHandshakeAddresserRegistered(javaProxy) {
+		t.Fatal("backend handshake addresser remains registered after failed start")
+	}
+}
+
+func TestConfigUpdateNilCurrentStopsIntegrationAndClearsHook(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	if err := os.WriteFile(keyPath, bytes.Repeat([]byte{0x24}, 16), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	javaProxy, err := jproxy.New(jproxy.Options{
+		Config:   &jconfig.DefaultConfig,
+		EventMgr: event.Nop,
+	})
+	if err != nil {
+		t.Fatalf("jproxy.New() error = %v", err)
+	}
+	cfg := &config.Config{
+		FloodgateKeyPath: keyPath,
+		GeyserListenAddr: "127.0.0.1:0",
+		BackendFloodgate: config.BackendFloodgate{
+			Enabled:        true,
+			AllowedServers: []string{"lobby"},
+		},
+	}
+	integration, err := geyser.NewIntegration(context.Background(), javaProxy, cfg)
+	if err != nil {
+		t.Fatalf("geyser.NewIntegration() error = %v", err)
+	}
+	if !backendHandshakeAddresserRegistered(javaProxy) {
+		t.Fatal("backend handshake addresser was not registered")
+	}
+
+	p := &Proxy{
+		config:            cfg,
+		javaProxy:         javaProxy,
+		geyserIntegration: integration,
+	}
+	p.handleConfigUpdate(context.Background(), &bedrockConfigUpdateEvent{
+		PrevConfig: cfg,
+		Config:     nil,
+	})
+
+	if p.geyserIntegration != nil {
+		t.Fatal("geyserIntegration remains set after disabled Bedrock config update")
+	}
+	if backendHandshakeAddresserRegistered(javaProxy) {
+		t.Fatal("backend handshake addresser remains registered after disabled Bedrock config update")
+	}
+}
+
+func backendHandshakeAddresserRegistered(p *jproxy.Proxy) bool {
+	field := reflect.ValueOf(p).Elem().FieldByName("backendHandshakeAddresser")
+	return !field.IsNil()
 }
 
 // TestRequiresRestart_EdgeCases tests edge cases for the restart logic

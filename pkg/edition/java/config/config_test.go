@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,6 +13,7 @@ import (
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/util/configutil"
 )
 
 func Test_texts(t *testing.T) {
@@ -91,6 +94,141 @@ func TestViaConfigIgnoredInLiteMode(t *testing.T) {
 
 	_, errs := cfg.Validate()
 	require.Empty(t, errs)
+}
+
+func TestBackendFloodgateValidation(t *testing.T) {
+	t.Run("disabled by default", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.Forwarding.Mode = NoneForwardingMode
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+
+		_, errs := cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("enabled requires bedrock", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.Enabled = false
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires bedrock.enabled")
+	})
+
+	t.Run("enabled requires bedrock in lite mode", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		cfg.Bedrock.Enabled = false
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires bedrock.enabled")
+	})
+
+	t.Run("enabled requires allowed servers", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = nil
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate.allowedServers must not be empty")
+	})
+
+	t.Run("allowed servers must exist", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = []string{"missing"}
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, `bedrock.backendFloodgate.allowedServers server "missing" must be registered under servers`)
+	})
+
+	t.Run("allowed servers are case-normalized", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = []string{"Lobby"}
+
+		_, errs := cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("enabled requires floodgate key unless managed can generate it", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.FloodgateKeyPath = filepath.Join(t.TempDir(), "missing.key")
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires readable floodgateKeyPath")
+
+		cfg.Bedrock.Managed = bconfig.BoolOrManagedGeyser{}
+		cfg.Bedrock.Managed = configutil.NewBoolOrStructBool[bconfig.ManagedGeyser](true)
+		_, errs = cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("forwarding mode compatibility", func(t *testing.T) {
+		for _, mode := range []ForwardingMode{NoneForwardingMode, VelocityForwardingMode} {
+			cfg := validBackendFloodgateConfig(t)
+			cfg.Forwarding.Mode = mode
+			_, errs := cfg.Validate()
+			require.Empty(t, errs, "mode %q should be allowed", mode)
+		}
+
+		for _, mode := range []ForwardingMode{LegacyForwardingMode, BungeeGuardForwardingMode} {
+			cfg := validBackendFloodgateConfig(t)
+			cfg.Forwarding.Mode = mode
+			_, errs := cfg.Validate()
+			requireErrorContains(t, errs, "bedrock.backendFloodgate is incompatible with forwarding.mode")
+		}
+	})
+
+	t.Run("unknown forwarding mode is rejected in lite mode", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		cfg.Forwarding.Mode = "typo"
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires forwarding.mode none or velocity")
+	})
+}
+
+func validBackendFloodgateConfig(t *testing.T) Config {
+	t.Helper()
+
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	require.NoError(t, os.WriteFile(keyPath, []byte("0123456789abcdef"), 0o600))
+
+	cfg := DefaultConfig
+	cfg.Forwarding.Mode = NoneForwardingMode
+	cfg.Servers = map[string]string{
+		"lobby":    "127.0.0.1:25566",
+		"survival": "127.0.0.1:25567",
+	}
+	cfg.Try = []string{"lobby"}
+	cfg.Bedrock.Enabled = true
+	cfg.Bedrock.FloodgateKeyPath = keyPath
+	cfg.Bedrock.BackendFloodgate = bconfig.BackendFloodgate{
+		Enabled:        true,
+		AllowedServers: []string{"lobby"},
+	}
+	return cfg
+}
+
+func requireErrorContains(t *testing.T, errs []error, want string) {
+	t.Helper()
+	for _, err := range errs {
+		if strings.Contains(err.Error(), want) {
+			return
+		}
+	}
+	t.Fatalf("expected error containing %q, got %v", want, errs)
 }
 
 func TestBedrockConfig_ManagedShorthand(t *testing.T) {

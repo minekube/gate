@@ -385,27 +385,56 @@ type ClientProtocolProvider interface {
 	ClientProtocol() proto.Protocol
 }
 
-func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
+// BackendHandshakeAddresser provides the ServerAddress sent with the packet.Handshake
+// for integrations that need the target backend server context.
+type BackendHandshakeAddresser interface {
+	BackendHandshakeAddr(defaultServerAddress string, player Player, target RegisteredServer) (newServerAddress string, err error)
+}
+
+func (s *serverConnection) handshakeAddr(vHost string, player Player) (string, error) {
 	var ha HandshakeAddresser
 	var ok bool
+	usedForwarding := false
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 		if ha, ok = s.Server().(HandshakeAddresser); !ok {
 			switch s.config().Forwarding.Mode {
 			case config.LegacyForwardingMode:
-				return s.createLegacyForwardingAddress()
+				vHost = s.createLegacyForwardingAddress()
+				usedForwarding = true
 			case config.BungeeGuardForwardingMode:
 				secret := s.config().Forwarding.BungeeGuardSecret
-				return s.createBungeeGuardForwardingAddress(secret)
+				vHost = s.createBungeeGuardForwardingAddress(secret)
+				usedForwarding = true
 			}
 		}
 	}
 	if ha != nil {
 		vHost = ha.HandshakeAddr(vHost, player)
 	}
+	forgeTokenSource := vHost
+	if !usedForwarding {
+		if backendAddresser := s.player.proxy.backendHandshakeAddresserSnapshot(); backendAddresser != nil {
+			var err error
+			vHost, err = backendAddresser.BackendHandshakeAddr(backendHandshakeBaseHost(vHost, s.player.Type()), player, s.Server())
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	if usedForwarding {
+		return vHost, nil
+	}
 	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
 	} else if s.player.Type() == phase.ModernForge {
-		vHost = modernforge.ModernToken(vHost)
+		vHost = modernforge.ModernToken(forgeTokenSource)
+	}
+	return vHost, nil
+}
+
+func backendHandshakeBaseHost(vHost string, connType phase.ConnectionType) string {
+	if connType == phase.LegacyForge || connType == phase.ModernForge {
+		return strings.SplitN(vHost, "\x00", 2)[0]
 	}
 	return vHost
 }
@@ -497,7 +526,11 @@ func (s *serverConnection) startHandshake(
 		if playerVHost == "" {
 			playerVHost = netutil.Host(s.server.ServerInfo().Addr())
 		}
-		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
+		serverAddress, err := s.handshakeAddr(playerVHost, s.player)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving backend handshake address: %w", err)
+		}
+		handshake.ServerAddress = serverAddress
 	}
 	if err := serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)

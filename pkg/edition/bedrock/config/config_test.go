@@ -291,6 +291,38 @@ managed:
 	}
 }
 
+func TestBedrockConfig_BackendFloodgate(t *testing.T) {
+	yamlConfig := `
+enabled: true
+floodgateKeyPath: floodgate.pem
+backendFloodgate:
+  enabled: true
+  allowedServers:
+    - lobby
+    - survival
+`
+
+	var cfg BedrockConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+
+	if !cfg.BackendFloodgate.Enabled {
+		t.Fatal("BackendFloodgate.Enabled = false, want true")
+	}
+	if got := strings.Join(cfg.BackendFloodgate.AllowedServers, ","); got != "lobby,survival" {
+		t.Fatalf("BackendFloodgate.AllowedServers = %q, want lobby,survival", got)
+	}
+
+	resolved := cfg.ToConfig()
+	if !resolved.BackendFloodgate.Enabled {
+		t.Fatal("resolved BackendFloodgate.Enabled = false, want true")
+	}
+	if got := strings.Join(resolved.BackendFloodgate.AllowedServers, ","); got != "lobby,survival" {
+		t.Fatalf("resolved BackendFloodgate.AllowedServers = %q, want lobby,survival", got)
+	}
+}
+
 func TestManagedNestedJavaConfig(t *testing.T) {
 	yamlConfig := `
 managed:
