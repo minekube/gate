@@ -16,6 +16,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -339,6 +341,46 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	}
 }
 
+func TestProxyRegisterSkipsDynamicViaBackendForMatchingClientProtocol(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:           "connect-session-1",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		backendVersion: javaversion.Minecraft_1_21_6.FirstName(),
+		clientProtocol: javaversion.Minecraft_1_21_6.Protocol,
+	}
+
+	server, err := p.Register(original)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(*viaServerInfo); ok {
+		t.Fatalf("ServerInfo = %T, did not want via wrapper for matching client/backend protocol", server.ServerInfo())
+	}
+	if _, ok := fakeVia.added["connect-session-1"]; ok {
+		t.Fatalf("matching client/backend protocol unexpectedly registered Via backend: %#v", fakeVia.added)
+	}
+}
+
 func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
 	cfg := &config.Config{
 		Forwarding: config.Forwarding{Mode: config.NoneForwardingMode},
@@ -657,6 +699,7 @@ type fakeDynamicDialer struct {
 	dialed         chan Player
 	forwardingMode config.ForwardingMode
 	backendVersion string
+	clientProtocol proto.Protocol
 }
 
 func (f *fakeDynamicDialer) Name() string   { return f.name }
@@ -668,6 +711,10 @@ func (f *fakeDynamicDialer) ForwardingMode() config.ForwardingMode {
 
 func (f *fakeDynamicDialer) BackendVersion() string {
 	return f.backendVersion
+}
+
+func (f *fakeDynamicDialer) ClientProtocol() proto.Protocol {
+	return f.clientProtocol
 }
 
 func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, error) {

@@ -379,6 +379,12 @@ type BackendVersionProvider interface {
 	BackendVersion() string
 }
 
+// ClientProtocolProvider lets dynamic ServerInfo implementations expose the
+// already-connected client protocol for per-player backend registration.
+type ClientProtocolProvider interface {
+	ClientProtocol() proto.Protocol
+}
+
 func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
 	var ha HandshakeAddresser
 	var ok bool

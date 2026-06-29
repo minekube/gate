@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
+	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -193,6 +194,9 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 		return true, nil
 	}
 	r.mu.Unlock()
+	if r.shouldSkipDynamicBackend(info) {
+		return false, nil
+	}
 
 	backend, cleanup, err := r.dynamicBackend(info)
 	if err != nil {
@@ -232,6 +236,31 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 	added = true
 	r.mu.Unlock()
 	return true, nil
+}
+
+func (r *viaManagedRunner) shouldSkipDynamicBackend(info ServerInfo) bool {
+	if info == nil {
+		return false
+	}
+	versionProvider, hasBackendVersion := info.(BackendVersionProvider)
+	clientProvider, hasClientProtocol := info.(ClientProtocolProvider)
+	if !hasBackendVersion || !hasClientProtocol {
+		return false
+	}
+	backendVersion := versionProvider.BackendVersion()
+	if backendVersion == "" {
+		return false
+	}
+	clientVersion := javaversion.Protocol(clientProvider.ClientProtocol()).Version()
+	if clientVersion == nil || clientVersion == javaversion.Unknown || clientVersion == javaversion.Legacy {
+		return false
+	}
+	for _, name := range clientVersion.Names {
+		if name == backendVersion {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, interface{ Close() error }, error) {
