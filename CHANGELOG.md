@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.14](https://github.com/minekube/gate/compare/v0.68.13...v0.68.14) (2026-06-29)
+
+
+### Bug Fixes
+
+* skip ViaLite for matching dynamic backend protocol ([27db687](https://github.com/minekube/gate/commit/27db687c010383013ea106111a32340ae7a5e4ad))
+
 ## [0.68.13](https://github.com/minekube/gate/compare/v0.68.12...v0.68.13) (2026-06-29)
 
 
