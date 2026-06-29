@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -140,16 +141,42 @@ func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 }
 
 func componentObjectJSON(j json.RawMessage) (json.RawMessage, error) {
-	if len(j) == 0 || j[0] != '"' {
+	if len(j) == 0 {
 		return j, nil
 	}
-	var text string
-	if err := json.Unmarshal(j, &text); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(j))
+	dec.UseNumber()
+	var value any
+	if err := dec.Decode(&value); err != nil {
 		return nil, err
 	}
-	return json.Marshal(struct {
-		Text string `json:"text"`
-	}{Text: text})
+	return json.Marshal(componentObjectValue(value))
+}
+
+func componentObjectValue(value any) any {
+	switch v := value.(type) {
+	case string:
+		return map[string]any{"text": v}
+	case []any:
+		for i, item := range v {
+			v[i] = componentObjectValue(item)
+		}
+		return v
+	case map[string]any:
+		for _, key := range []string{"extra", "with"} {
+			if item, ok := v[key]; ok {
+				v[key] = componentObjectValue(item)
+			}
+		}
+		for _, key := range []string{"separator"} {
+			if item, ok := v[key]; ok && item != nil {
+				v[key] = componentObjectValue(item)
+			}
+		}
+		return v
+	default:
+		return value
+	}
 }
 
 func (c *ComponentHolder) AsJsonOrNil() json.RawMessage {

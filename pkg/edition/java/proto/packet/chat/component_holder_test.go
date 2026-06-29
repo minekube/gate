@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.minekube.com/common/minecraft/color"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/nbtconv"
@@ -48,4 +49,59 @@ func TestComponentHolderAsJsonExpandsCachedCompactTextComponent(t *testing.T) {
 	got, err := holder.AsJson()
 	require.NoError(t, err)
 	require.JSONEq(t, `{"text":"hi"}`, string(got))
+}
+
+func TestComponentHolderAsBinaryTagHandlesEmptyModernTextComponent(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol:  version.Minecraft_1_21_6.Protocol,
+		Component: &component.Text{},
+	}
+
+	j, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"text":""}`, string(j))
+
+	_, err = holder.AsBinaryTag()
+	require.NoError(t, err)
+}
+
+func TestComponentHolderAsBinaryTagHandlesEmptyModernTranslationComponent(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol:  version.Minecraft_1_21_6.Protocol,
+		Component: &component.Translation{},
+	}
+
+	j, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"translate":""}`, string(j))
+
+	_, err = holder.AsBinaryTag()
+	require.NoError(t, err)
+}
+
+func TestComponentHolderAsBinaryTagHandlesModernStyledTextWithChildren(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_1_21_6.Protocol,
+		Component: &component.Text{
+			S: component.Style{Color: color.Gray},
+			Extra: []component.Component{
+				&component.Text{Content: " \nConnect Network\n\n", S: component.Style{Color: color.Gold, Bold: component.True}},
+				&component.Text{Content: "Browse localhost & public servers!\n"},
+			},
+		},
+	}
+
+	j, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"color":"#aaaaaa",
+		"extra":[
+			{"bold":true,"color":"#ffaa00","text":" \nConnect Network\n\n"},
+			{"text":"Browse localhost & public servers!\n"}
+		],
+		"text":""
+	}`, string(j))
+
+	_, err = holder.AsBinaryTag()
+	require.NoError(t, err)
 }

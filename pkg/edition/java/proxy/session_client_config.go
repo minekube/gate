@@ -99,7 +99,7 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 	if err := h.player.WritePacket(p); err != nil {
 		return nil
 	}
-	h.player.Writer().SetState(state.Play)
+	h.player.SetOutboundState(state.Play)
 
 	return &h.configSwitchDone
 }
