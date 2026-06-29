@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
-	go.minekube.com/gate v0.68.11
+	go.minekube.com/gate v0.68.14
 )
 
 require (
@@ -95,7 +95,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
