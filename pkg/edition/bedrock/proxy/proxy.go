@@ -78,34 +78,13 @@ func (p *Proxy) Start(ctx context.Context) error {
 
 	if err := integration.Start(); err != nil {
 		p.log.Error(err, "failed to start geyser integration")
+		integration.Stop()
 		return err
 	}
 
 	// Listen for config reloads and restart Geyser integration when relevant fields change
 	unsubReload := reload.Subscribe(p.event, func(e *bedrockConfigUpdateEvent) {
-		prev := e.PrevConfig
-		curr := e.Config
-		// Replace config for future use
-		*p.config = *curr
-
-		// Check if restart is required
-		if requiresRestart(prev, curr) {
-			p.log.Info("restarting geyser integration due to bedrock config change")
-			if p.geyserIntegration != nil {
-				p.geyserIntegration.Stop()
-			}
-			integ, err := geyser.NewIntegration(ctx, p.javaProxy, p.config)
-			if err != nil {
-				p.log.Error(err, "failed to re-initialize geyser integration")
-				return
-			}
-			p.geyserIntegration = integ
-			if err := integ.Start(); err != nil {
-				p.log.Error(err, "failed to restart geyser integration")
-				return
-			}
-			p.log.Info("geyser integration reloaded")
-		}
+		p.handleConfigUpdate(ctx, e)
 	})
 
 	p.log.Info("bedrock proxy started with geyser integration")
@@ -125,6 +104,46 @@ func (p *Proxy) Start(ctx context.Context) error {
 	return nil
 }
 
+func (p *Proxy) handleConfigUpdate(ctx context.Context, e *bedrockConfigUpdateEvent) {
+	if e == nil {
+		return
+	}
+	prev := e.PrevConfig
+	curr := e.Config
+	if curr == nil {
+		if p.geyserIntegration != nil {
+			p.geyserIntegration.Stop()
+			p.geyserIntegration = nil
+		}
+		return
+	}
+
+	if prev == nil || requiresRestart(prev, curr) {
+		p.log.Info("restarting geyser integration due to bedrock config change")
+		if p.geyserIntegration != nil {
+			p.geyserIntegration.Stop()
+			p.geyserIntegration = nil
+		}
+		p.config = curr
+		integ, err := geyser.NewIntegration(ctx, p.javaProxy, p.config)
+		if err != nil {
+			p.log.Error(err, "failed to re-initialize geyser integration")
+			return
+		}
+		p.geyserIntegration = integ
+		if err := integ.Start(); err != nil {
+			p.log.Error(err, "failed to restart geyser integration")
+			integ.Stop()
+			p.geyserIntegration = nil
+			return
+		}
+		p.log.Info("geyser integration reloaded")
+		return
+	}
+
+	p.config = curr
+}
+
 // requiresRestart determines if a Geyser integration restart is needed based on config changes.
 // Returns true if any critical configuration has changed that requires restarting Geyser.
 func requiresRestart(prev, curr *config.Config) bool {
@@ -132,6 +151,9 @@ func requiresRestart(prev, curr *config.Config) bool {
 	if prev.GeyserListenAddr != curr.GeyserListenAddr ||
 		prev.UsernameFormat != curr.UsernameFormat ||
 		prev.FloodgateKeyPath != curr.FloodgateKeyPath {
+		return true
+	}
+	if !reflect.DeepEqual(prev.BackendFloodgate, curr.BackendFloodgate) {
 		return true
 	}
 

@@ -66,6 +66,16 @@ type Config struct {
 
 	// Managed Geyser (recommended): Gate automatically handles Geyser process
 	Managed *ManagedGeyser `yaml:"managed,omitempty" json:"managed,omitempty"` // Automatic Geyser management and process control
+
+	// Backend Floodgate compatibility re-emits verified Bedrock identity data to explicitly allowed Java backends.
+	BackendFloodgate BackendFloodgate `yaml:"backendFloodgate,omitempty" json:"backendFloodgate,omitempty"`
+}
+
+// BackendFloodgate controls whether verified Bedrock identity data is forwarded
+// to backend servers that run Floodgate-aware plugins.
+type BackendFloodgate struct {
+	Enabled        bool     `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+	AllowedServers []string `yaml:"allowedServers,omitempty" json:"allowedServers,omitempty"`
 }
 
 // ManagedGeyser configures automatic Geyser management.
@@ -151,6 +161,9 @@ type BedrockConfig struct {
 	// Managed Geyser (recommended): Gate automatically handles Geyser process
 	// Can be either bool (true) or ManagedGeyser struct for advanced config
 	Managed BoolOrManagedGeyser `yaml:"managed,omitempty" json:"managed,omitempty"`
+
+	// Backend Floodgate compatibility re-emits verified Bedrock identity data to explicitly allowed Java backends.
+	BackendFloodgate BackendFloodgate `yaml:"backendFloodgate,omitempty" json:"backendFloodgate,omitempty"`
 }
 
 // BoolOrManagedGeyser represents a field that can be either:
@@ -169,6 +182,7 @@ func (bc *BedrockConfig) ToConfig() Config {
 		GeyserListenAddr: bc.GeyserListenAddr,
 		UsernameFormat:   bc.UsernameFormat,
 		FloodgateKeyPath: bc.FloodgateKeyPath,
+		BackendFloodgate: bc.BackendFloodgate,
 	}
 
 	// Apply defaults if empty

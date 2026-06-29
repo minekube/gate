@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"go.minekube.com/gate/pkg/util/validation"
 )
 
 // Validate validates the Bedrock edition configuration.
@@ -34,6 +36,26 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	// Validate username format
 	if c.UsernameFormat != "" && !strings.Contains(c.UsernameFormat, "%s") {
 		e("Username format must contain %%s placeholder")
+	}
+
+	if c.BackendFloodgate.Enabled {
+		if len(c.BackendFloodgate.AllowedServers) == 0 {
+			e("backendFloodgate.allowedServers must not be empty when backendFloodgate is enabled")
+		}
+		seen := make(map[string]struct{}, len(c.BackendFloodgate.AllowedServers))
+		for _, name := range c.BackendFloodgate.AllowedServers {
+			if !validation.ValidServerName(name) {
+				e("Invalid backendFloodgate allowed server name %q: %s and length be 1-%d", name,
+					validation.QualifiedNameErrMsg, validation.QualifiedNameMaxLength)
+				continue
+			}
+			normalized := strings.ToLower(name)
+			if _, ok := seen[normalized]; ok {
+				e("Duplicate backendFloodgate allowed server %q", name)
+				continue
+			}
+			seen[normalized] = struct{}{}
+		}
 	}
 
 	// Validate managed mode options
