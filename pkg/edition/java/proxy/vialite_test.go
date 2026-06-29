@@ -381,6 +381,46 @@ func TestProxyRegisterSkipsDynamicViaBackendForMatchingClientProtocol(t *testing
 	}
 }
 
+func TestProxyRegisterDoesNotSkipDynamicViaBackendForMismatchedClientProtocol(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:           "connect-session-1",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		backendVersion: javaversion.Minecraft_1_21_5.FirstName(),
+		clientProtocol: javaversion.Minecraft_1_21_6.Protocol,
+	}
+
+	server, err := p.Register(original)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(*viaServerInfo); !ok {
+		t.Fatalf("ServerInfo = %T, want via wrapper for mismatched client/backend protocol", server.ServerInfo())
+	}
+	if _, ok := fakeVia.added["connect-session-1"]; !ok {
+		t.Fatalf("mismatched client/backend protocol did not register Via backend: %#v", fakeVia.added)
+	}
+}
+
 func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
 	cfg := &config.Config{
 		Forwarding: config.Forwarding{Mode: config.NoneForwardingMode},

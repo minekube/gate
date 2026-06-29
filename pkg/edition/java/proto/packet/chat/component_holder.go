@@ -150,6 +150,12 @@ func componentObjectJSON(j json.RawMessage) (json.RawMessage, error) {
 	if err := dec.Decode(&value); err != nil {
 		return nil, err
 	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("invalid component JSON: trailing value")
+		}
+		return nil, err
+	}
 	return json.Marshal(componentObjectValue(value))
 }
 

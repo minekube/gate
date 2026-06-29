@@ -51,6 +51,16 @@ func TestComponentHolderAsJsonExpandsCachedCompactTextComponent(t *testing.T) {
 	require.JSONEq(t, `{"text":"hi"}`, string(got))
 }
 
+func TestComponentHolderAsJsonRejectsTrailingJSONValue(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_1_21_11.Protocol,
+		JSON:     []byte(`{"text":"hi"} {"text":"bye"}`),
+	}
+
+	_, err := holder.AsJson()
+	require.Error(t, err)
+}
+
 func TestComponentHolderAsBinaryTagHandlesEmptyModernTextComponent(t *testing.T) {
 	holder := &ComponentHolder{
 		Protocol:  version.Minecraft_1_21_6.Protocol,
