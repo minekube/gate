@@ -37,8 +37,27 @@ Google, Microsoft, Meta, Amazon, Twitter, PayPal, Twitch, Netflix, Dropbox, Uber
 
 Ready to jump in? Choose your path:
 
-- **Server Owners**: Head to the [Quick Start](quick-start) guide
-- **Developers**: Check out the [Developer Guide](/developers/)
+<div class="path-cards">
+  <a href="/guide/quick-start" class="path-card">
+    <span class="path-card-media">
+      <img src="/images/choose-path-server-owner.webp" alt="Minecraft server worlds connected through Gate proxy" />
+    </span>
+    <span class="path-card-content">
+      <span class="path-card-title">Server Owners</span>
+      <span class="path-card-text">Set up Gate and connect your Minecraft network.</span>
+    </span>
+  </a>
+
+  <a href="/developers/" class="path-card">
+    <span class="path-card-media">
+      <img src="/images/choose-path-developer.webp" alt="Gate developer API modules connected to a proxy core" />
+    </span>
+    <span class="path-card-content">
+      <span class="path-card-title">Developers</span>
+      <span class="path-card-text">Build integrations, events, commands, and API clients.</span>
+    </span>
+  </a>
+</div>
 
 ## Why Use a Minecraft Proxy?
 
@@ -160,6 +179,83 @@ This architecture enables powerful features like load balancing, server maintena
 .feature-card li {
   margin: 8px 0;
   color: var(--vp-c-text-2);
+}
+
+.path-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0 32px;
+}
+
+.path-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.vp-doc .path-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+.path-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 12px 0 var(--vp-c-divider);
+  border-color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+
+.path-card:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
+}
+
+.path-card-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: var(--vp-c-bg-alt);
+}
+
+.path-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.path-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 20px;
+}
+
+.path-card-title {
+  color: var(--vp-c-brand-1);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.path-card-text {
+  color: var(--vp-c-text-2);
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .path-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .feature-image {
