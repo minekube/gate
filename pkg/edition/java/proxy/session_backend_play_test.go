@@ -79,6 +79,7 @@ func (t *testMinecraftConn) AddSessionHandler(*state.Registry, netmc.SessionHand
 func (t *testMinecraftConn) SetAutoReading(bool)               {}
 func (t *testMinecraftConn) SetProtocol(proto.Protocol)        {}
 func (t *testMinecraftConn) SetState(*state.Registry)          {}
+func (t *testMinecraftConn) SetOutboundState(*state.Registry)  {}
 func (t *testMinecraftConn) SetCompressionThreshold(int) error { return nil }
 func (t *testMinecraftConn) EnableEncryption([]byte) error     { return nil }
 func (t *testMinecraftConn) WritePacket(packet proto.Packet) error {

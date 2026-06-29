@@ -367,6 +367,24 @@ type HandshakeAddresser interface {
 	HandshakeAddr(defaultPlayerVirtualHost string, player Player) (newPlayerVirtualHost string)
 }
 
+// ForwardingModeProvider lets dynamic ServerInfo implementations select the
+// backend forwarding mode for this specific server registration.
+type ForwardingModeProvider interface {
+	ForwardingMode() config.ForwardingMode
+}
+
+// BackendVersionProvider lets dynamic ServerInfo implementations select the
+// backend Minecraft version used by protocol translation.
+type BackendVersionProvider interface {
+	BackendVersion() string
+}
+
+// ClientProtocolProvider lets dynamic ServerInfo implementations expose the
+// already-connected client protocol for per-player backend registration.
+type ClientProtocolProvider interface {
+	ClientProtocol() proto.Protocol
+}
+
 // BackendHandshakeAddresser provides the ServerAddress sent with the packet.Handshake
 // for integrations that need the target backend server context.
 type BackendHandshakeAddresser interface {

@@ -16,6 +16,8 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/gate/proto"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -339,6 +341,120 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	}
 }
 
+func TestProxyRegisterSkipsDynamicViaBackendForMatchingClientProtocol(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:           "connect-session-1",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		backendVersion: javaversion.Minecraft_1_21_6.FirstName(),
+		clientProtocol: javaversion.Minecraft_1_21_6.Protocol,
+	}
+
+	server, err := p.Register(original)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(*viaServerInfo); ok {
+		t.Fatalf("ServerInfo = %T, did not want via wrapper for matching client/backend protocol", server.ServerInfo())
+	}
+	if _, ok := fakeVia.added["connect-session-1"]; ok {
+		t.Fatalf("matching client/backend protocol unexpectedly registered Via backend: %#v", fakeVia.added)
+	}
+}
+
+func TestProxyRegisterDoesNotSkipDynamicViaBackendForMismatchedClientProtocol(t *testing.T) {
+	cfg := &config.Config{
+		Via:  config.Via{Enabled: true},
+		Lite: liteconfig.Config{Enabled: false},
+	}
+	fakeVia := &fakeVialiteServer{backends: map[string]string{}}
+	p := &Proxy{
+		log:           logr.Discard(),
+		cfg:           cfg,
+		event:         event.Nop,
+		servers:       make(map[string]*registeredServer),
+		configServers: make(map[string]bool),
+		via: &viaManagedRunner{
+			cfg:             cfg,
+			server:          fakeVia,
+			activeBackends:  map[string]struct{}{},
+			dynamicBackends: map[string]*viaDynamicBackend{},
+		},
+	}
+	original := &fakeDynamicDialer{
+		name:           "connect-session-1",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		backendVersion: javaversion.Minecraft_1_21_5.FirstName(),
+		clientProtocol: javaversion.Minecraft_1_21_6.Protocol,
+	}
+
+	server, err := p.Register(original)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if _, ok := server.ServerInfo().(*viaServerInfo); !ok {
+		t.Fatalf("ServerInfo = %T, want via wrapper for mismatched client/backend protocol", server.ServerInfo())
+	}
+	if _, ok := fakeVia.added["connect-session-1"]; !ok {
+		t.Fatalf("mismatched client/backend protocol did not register Via backend: %#v", fakeVia.added)
+	}
+}
+
+func TestViaDynamicBackendUsesServerForwardingMode(t *testing.T) {
+	cfg := &config.Config{
+		Forwarding: config.Forwarding{Mode: config.NoneForwardingMode},
+		Via:        config.Via{Enabled: true},
+		Lite:       liteconfig.Config{Enabled: false},
+	}
+	runner := &viaManagedRunner{cfg: cfg}
+	info := &fakeDynamicDialer{
+		name:           "connect-session-legacy",
+		addr:           mustParseAddr("127.0.0.1:25566"),
+		connections:    make(chan net.Conn, 1),
+		dialed:         make(chan Player, 1),
+		forwardingMode: config.LegacyForwardingMode,
+		backendVersion: "1.21.6",
+	}
+
+	backend, cleanup, err := runner.dynamicBackend(info)
+	if err != nil {
+		t.Fatalf("dynamicBackend: %v", err)
+	}
+	if cleanup != nil {
+		defer cleanup.Close()
+	}
+	if backend.Forwarding != vialite.ForwardingLegacy {
+		t.Fatalf("backend Forwarding = %q, want %q", backend.Forwarding, vialite.ForwardingLegacy)
+	}
+	if backend.Version != "1.21.6" {
+		t.Fatalf("backend Version = %q, want 1.21.6", backend.Version)
+	}
+	if backend.Detect {
+		t.Fatal("backend Detect = true, want false for explicit dynamic backend version")
+	}
+}
+
 func TestViaManagedRunnerStopClosesDynamicBridge(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
@@ -617,14 +733,29 @@ func (f *fakeVialiteServer) RemoveBackend(ctx context.Context, name string) erro
 }
 
 type fakeDynamicDialer struct {
-	name        string
-	addr        net.Addr
-	connections chan net.Conn
-	dialed      chan Player
+	name           string
+	addr           net.Addr
+	connections    chan net.Conn
+	dialed         chan Player
+	forwardingMode config.ForwardingMode
+	backendVersion string
+	clientProtocol proto.Protocol
 }
 
 func (f *fakeDynamicDialer) Name() string   { return f.name }
 func (f *fakeDynamicDialer) Addr() net.Addr { return f.addr }
+
+func (f *fakeDynamicDialer) ForwardingMode() config.ForwardingMode {
+	return f.forwardingMode
+}
+
+func (f *fakeDynamicDialer) BackendVersion() string {
+	return f.backendVersion
+}
+
+func (f *fakeDynamicDialer) ClientProtocol() proto.Protocol {
+	return f.clientProtocol
+}
 
 func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, error) {
 	client, server := net.Pipe()

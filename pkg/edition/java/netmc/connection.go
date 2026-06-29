@@ -76,6 +76,11 @@ type MinecraftConn interface { // TODO convert to exported struct as this interf
 	// Default is true.
 	SetAutoReading(bool)
 
+	// SetOutboundState switches only the connection's outbound writer state.
+	// Use this for protocol phases where the local reader must remain in its
+	// current state until the peer confirms its transition.
+	SetOutboundState(state *state.Registry)
+
 	StateChanger
 	PacketWriter
 
@@ -527,6 +532,15 @@ func (c *minecraftConn) SetState(s *state.Registry) {
 	if prevState != s {
 		c.log.V(1).Info("update state", "previous", prevState, "new", s)
 	}
+}
+
+func (c *minecraftConn) SetOutboundState(s *state.Registry) {
+	c.mu.Lock()
+	c.wr.SetState(s)
+	c.ensurePlayPacketQueue(s.State)
+	c.mu.Unlock()
+
+	c.log.V(1).Info("update outbound state", "new", s)
 }
 
 func (c *minecraftConn) EnablePlayPacketQueue() {
