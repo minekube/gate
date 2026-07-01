@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.68.19](https://github.com/minekube/gate/compare/v0.68.18...v0.68.19) (2026-07-01)
+
+
+### Bug Fixes
+
+* **java:** ignore untracked modern resource pack responses ([a653b71](https://github.com/minekube/gate/commit/a653b7124298b0b7c36f06efd5c3e1d7224938b0))
+* **java:** ignore untracked modern resource pack responses ([95cb756](https://github.com/minekube/gate/commit/95cb75688e051be9b090c354c64c2a094bd08d5a))
+
 ## [0.68.18](https://github.com/minekube/gate/compare/v0.68.17...v0.68.18) (2026-07-01)
 
 
