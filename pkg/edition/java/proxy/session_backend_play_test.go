@@ -55,6 +55,8 @@ func TestBackendPlayRegisterForwardsToPlayer(t *testing.T) {
 type testMinecraftConn struct {
 	writtenPackets []proto.Packet
 	connType       phase.ConnectionType
+	activeHandler  netmc.SessionHandler
+	writer         netmc.Writer
 }
 
 func (t *testMinecraftConn) Context() context.Context { return context.Background() }
@@ -70,8 +72,9 @@ func (t *testMinecraftConn) Type() phase.ConnectionType {
 	return phase.Vanilla
 }
 func (t *testMinecraftConn) SetType(ct phase.ConnectionType)            { t.connType = ct }
-func (t *testMinecraftConn) ActiveSessionHandler() netmc.SessionHandler { return nil }
-func (t *testMinecraftConn) SetActiveSessionHandler(*state.Registry, netmc.SessionHandler) {
+func (t *testMinecraftConn) ActiveSessionHandler() netmc.SessionHandler { return t.activeHandler }
+func (t *testMinecraftConn) SetActiveSessionHandler(_ *state.Registry, handler netmc.SessionHandler) {
+	t.activeHandler = handler
 }
 func (t *testMinecraftConn) SwitchSessionHandler(*state.Registry) bool { return true }
 func (t *testMinecraftConn) AddSessionHandler(*state.Registry, netmc.SessionHandler) {
@@ -94,7 +97,23 @@ func (t *testMinecraftConn) BufferPacket(packet proto.Packet) error {
 func (t *testMinecraftConn) BufferPayload([]byte) error { return nil }
 func (t *testMinecraftConn) Flush() error               { return nil }
 func (t *testMinecraftConn) Reader() netmc.Reader       { return nil }
-func (t *testMinecraftConn) Writer() netmc.Writer       { return nil }
-func (t *testMinecraftConn) EnablePlayPacketQueue()     {}
+func (t *testMinecraftConn) Writer() netmc.Writer {
+	if t.writer == nil {
+		t.writer = &testWriter{}
+	}
+	return t.writer
+}
+func (t *testMinecraftConn) EnablePlayPacketQueue() {}
 
 var _ netmc.MinecraftConn = (*testMinecraftConn)(nil)
+
+type testWriter struct{}
+
+func (t *testWriter) WritePacket(proto.Packet) (int, error) { return 0, nil }
+func (t *testWriter) Write([]byte) (int, error)             { return 0, nil }
+func (t *testWriter) Flush() error                          { return nil }
+func (t *testWriter) SetProtocol(proto.Protocol)            {}
+func (t *testWriter) SetState(*state.Registry)              {}
+func (t *testWriter) SetCompressionThreshold(int) error     { return nil }
+func (t *testWriter) EnableEncryption([]byte) error         { return nil }
+func (t *testWriter) Direction() proto.Direction            { return proto.ClientBound }
