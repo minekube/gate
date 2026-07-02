@@ -8,7 +8,7 @@ require (
 	github.com/robinbraemer/event v0.1.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
-	go.minekube.com/gate v0.68.17
+	go.minekube.com/gate v0.68.20
 )
 
 require (
@@ -48,7 +48,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/pires/go-proxyproto v0.12.0 // indirect
+	github.com/pires/go-proxyproto v0.13.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
