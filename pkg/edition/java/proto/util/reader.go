@@ -437,7 +437,19 @@ func ReadUnixMilli(rd io.Reader) (time.Time, error) {
 //
 //
 
-const defaultKeySeparator = ":"
+// ValidateKey verifies that a key is a valid Minecraft resource location.
+func ValidateKey(k key.Key) error {
+	if k == nil {
+		return errors.New("key is nil")
+	}
+	if k.Namespace() == ".." {
+		return fmt.Errorf("invalid key %q: namespace must not be ..", k.String())
+	}
+	if !key.NamespaceValid(k.Namespace()) || !key.ValueValid(k.Value()) {
+		return fmt.Errorf("invalid key %q", k.String())
+	}
+	return nil
+}
 
 // ReadKey reads a standard Mojang Text namespaced:key from the reader.
 func ReadKey(rd io.Reader) (key.Key, error) {
@@ -445,15 +457,30 @@ func ReadKey(rd io.Reader) (key.Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	parts := strings.SplitN(str, defaultKeySeparator, 2)
-	if len(parts) != 2 {
-		return nil, errors.New("invalid key format")
+	k := parseIdentifierKey(str)
+	if err := ValidateKey(k); err != nil {
+		return nil, err
 	}
-	return key.New(parts[0], parts[1]), nil
+	return k, nil
+}
+
+func parseIdentifierKey(str string) key.Key {
+	namespace := key.MinecraftNamespace
+	value := str
+	if separatorIndex := strings.IndexByte(str, ':'); separatorIndex >= 0 {
+		value = str[separatorIndex+1:]
+		if separatorIndex != 0 {
+			namespace = str[:separatorIndex]
+		}
+	}
+	return key.New(namespace, value)
 }
 
 // WriteKey writes a standard Mojang Text namespaced:key to the writer.
 func WriteKey(wr io.Writer, k key.Key) error {
+	if err := ValidateKey(k); err != nil {
+		return err
+	}
 	return WriteString(wr, k.String())
 }
 
