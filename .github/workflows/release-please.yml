@@ -24,7 +24,7 @@ jobs:
       tag_name: ${{ steps.rp.outputs.tag_name }}
       pr_number: ${{ steps.rp.outputs.pr }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         id: rp
         with:
           config-file: .release-please-config.json
