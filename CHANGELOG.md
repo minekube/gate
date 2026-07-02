@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.22](https://github.com/minekube/gate/compare/v0.68.21...v0.68.22) (2026-07-02)
+
+
+### Bug Fixes
+
+* queue config plugin messages during backend login ([ccc6212](https://github.com/minekube/gate/commit/ccc62121c3bb1b084148e65341d8d69a3a34320c))
+
 ## [0.68.21](https://github.com/minekube/gate/compare/v0.68.20...v0.68.21) (2026-07-02)
 
 
