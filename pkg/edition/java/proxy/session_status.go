@@ -127,7 +127,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		}
 		if !h.eventMgr.HasSubscriber(e) {
 			// Fast path: No event handler, just send response
-			_ = h.conn.WritePacket(res)
+			h.writeStatusResponse(log, res)
 			return
 		}
 		// Need to unmarshal status response to ping struct for event handlers
@@ -147,6 +147,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		return
 	}
 	if !h.inbound.Active() {
+		log.Info("status response not sent because inbound is inactive")
 		return
 	}
 
@@ -156,9 +157,17 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		log.Error(err, "error marshaling ping response to json")
 		return
 	}
-	_ = h.conn.WritePacket(&packet.StatusResponse{
+	h.writeStatusResponse(log, &packet.StatusResponse{
 		Status: string(response),
 	})
+}
+
+func (h *statusSessionHandler) writeStatusResponse(log logr.Logger, response *packet.StatusResponse) {
+	if err := h.conn.WritePacket(response); err != nil {
+		log.Info("error writing status response", "error", err)
+		return
+	}
+	log.V(1).Info("sent status response")
 }
 
 func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {
