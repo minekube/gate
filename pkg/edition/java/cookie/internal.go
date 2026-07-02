@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/robinbraemer/event"
@@ -12,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/internal/methods"
 	pkt "go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
+	protoutils "go.minekube.com/gate/pkg/edition/java/proto/util"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
@@ -25,13 +25,7 @@ func validate(c *Cookie, cli Client) error {
 }
 
 func validateKey(key key.Key) error {
-	if key == nil {
-		return errors.New("key is nil")
-	}
-	if strings.TrimSpace(key.String()) == "" {
-		return errors.New("empty key")
-	}
-	return nil
+	return protoutils.ValidateKey(key)
 }
 
 func validateCookie(c *Cookie) error {
