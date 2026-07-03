@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.24](https://github.com/minekube/gate/compare/v0.68.23...v0.68.24) (2026-07-03)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/gate to v0.68.23 ([#899](https://github.com/minekube/gate/issues/899)) ([6e2db65](https://github.com/minekube/gate/commit/6e2db65602851fc1c745938768821b9fe828bb78))
+
 ## [0.68.23](https://github.com/minekube/gate/compare/v0.68.22...v0.68.23) (2026-07-02)
 
 
