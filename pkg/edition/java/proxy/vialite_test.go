@@ -449,7 +449,7 @@ func TestViaBackendBridgeClaimSurvivesRequestContextCancellation(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("bridge did not claim the request")
 	}
-	cancelRequest()
+	cancelBridge()
 
 	if err := bridgeFrontend.SetDeadline(time.Now().Add(time.Second)); err != nil {
 		t.Fatal(err)
