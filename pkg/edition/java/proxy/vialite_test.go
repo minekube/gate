@@ -341,6 +341,134 @@ func TestProxyRegisterDynamicViaBackendPreservesServerDialer(t *testing.T) {
 	}
 }
 
+func TestViaServerInfoDialCloseSkipsUnclaimedRequestOnRetry(t *testing.T) {
+	viaLn, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer viaLn.Close()
+
+	original := &fakeDynamicDialer{
+		name:        "connect-session-1",
+		addr:        mustParseAddr("127.0.0.1:25566"),
+		connections: make(chan net.Conn, 2),
+		dialed:      make(chan Player, 2),
+	}
+	bridge, err := newViaBackendBridge(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close()
+
+	runner := &viaManagedRunner{
+		server: &fakeVialiteServer{backends: map[string]string{original.Name(): viaLn.Addr().String()}},
+		dynamicBackends: map[string]*viaDynamicBackend{
+			original.Name(): {bridge: bridge},
+		},
+	}
+	dialer := newViaServerInfo(original, runner).(ServerDialer)
+
+	accepted := make(chan net.Conn, 2)
+	go func() {
+		for range 2 {
+			conn, err := viaLn.Accept()
+			if err != nil {
+				return
+			}
+			accepted <- conn
+		}
+	}()
+
+	firstPlayer := &connectedPlayer{}
+	firstCtx, cancelFirst := context.WithCancel(context.Background())
+	firstFrontend, err := dialer.Dial(firstCtx, firstPlayer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstVia := <-accepted
+	cancelFirst()
+	_ = firstFrontend.Close()
+	_ = firstVia.Close()
+
+	secondPlayer := &connectedPlayer{}
+	secondFrontend, err := dialer.Dial(context.Background(), secondPlayer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer secondFrontend.Close()
+	secondVia := <-accepted
+	defer secondVia.Close()
+
+	bridgeFrontend, err := net.Dial("tcp", bridge.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridgeFrontend.Close()
+
+	select {
+	case got := <-original.dialed:
+		if got != secondPlayer {
+			t.Fatalf("retry bridge dial used player %p, want current retry player %p", got, secondPlayer)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("bridge did not invoke supplied ServerDialer")
+	}
+}
+
+func TestViaBackendBridgeClaimSurvivesRequestContextCancellation(t *testing.T) {
+	original := &fakeDynamicDialer{
+		name:        "connect-session-1",
+		addr:        mustParseAddr("127.0.0.1:25566"),
+		connections: make(chan net.Conn, 1),
+		dialed:      make(chan Player, 1),
+	}
+	bridge, err := newViaBackendBridge(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close()
+
+	requestCtx, cancelRequest := context.WithCancel(context.Background())
+	defer cancelRequest()
+	cancelBridge, err := bridge.Prepare(requestCtx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancelBridge()
+
+	bridgeFrontend, err := net.Dial("tcp", bridge.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridgeFrontend.Close()
+
+	var backendConn net.Conn
+	select {
+	case backendConn = <-original.connections:
+		defer backendConn.Close()
+	case <-time.After(time.Second):
+		t.Fatal("bridge did not claim the request")
+	}
+	cancelRequest()
+
+	if err := bridgeFrontend.SetDeadline(time.Now().Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err := backendConn.SetDeadline(time.Now().Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := bridgeFrontend.Write([]byte("x")); err != nil {
+		t.Fatalf("write after request cancellation: %v", err)
+	}
+	buf := make([]byte, 1)
+	if _, err := backendConn.Read(buf); err != nil {
+		t.Fatalf("read after request cancellation: %v", err)
+	}
+	if string(buf) != "x" {
+		t.Fatalf("backend read %q, want x", string(buf))
+	}
+}
+
 func TestProxyRegisterSkipsDynamicViaBackendForMatchingClientProtocol(t *testing.T) {
 	cfg := &config.Config{
 		Via:  config.Via{Enabled: true},
