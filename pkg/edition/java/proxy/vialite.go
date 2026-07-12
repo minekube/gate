@@ -409,18 +409,53 @@ func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, erro
 		cancelBridge()
 		return nil, err
 	}
-	return conn, nil
+	return &viaBridgeDialConn{Conn: conn, cancelBridge: cancelBridge}, nil
+}
+
+// viaBridgeDialConn cancels an unclaimed bridge request when the corresponding
+// frontend connection closes. It intentionally does not watch the dial context:
+// connection-request contexts can end after a backend bridge is claimed.
+type viaBridgeDialConn struct {
+	net.Conn
+	cancelBridge context.CancelFunc
+}
+
+func (c *viaBridgeDialConn) Close() error {
+	c.cancelBridge()
+	return c.Conn.Close()
 }
 
 type viaBridgeRequest struct {
 	ctx    context.Context
 	player Player
+	cancel context.CancelFunc
+
+	mu      sync.Mutex
+	claimed bool
+}
+
+func (r *viaBridgeRequest) cancelIfUnclaimed() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.claimed {
+		r.cancel()
+	}
+}
+
+func (r *viaBridgeRequest) claim() bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.ctx.Err() != nil {
+		return false
+	}
+	r.claimed = true
+	return true
 }
 
 type viaBackendBridge struct {
 	ln       net.Listener
 	dialer   ServerDialer
-	requests chan viaBridgeRequest
+	requests chan *viaBridgeRequest
 	done     chan struct{}
 	close    sync.Once
 }
@@ -433,7 +468,7 @@ func newViaBackendBridge(dialer ServerDialer) (*viaBackendBridge, error) {
 	b := &viaBackendBridge{
 		ln:       ln,
 		dialer:   dialer,
-		requests: make(chan viaBridgeRequest, 1024),
+		requests: make(chan *viaBridgeRequest, 1024),
 		done:     make(chan struct{}),
 	}
 	go b.accept()
@@ -446,10 +481,10 @@ func (b *viaBackendBridge) Addr() net.Addr {
 
 func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
 	streamCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	req := viaBridgeRequest{ctx: streamCtx, player: player}
+	req := &viaBridgeRequest{ctx: streamCtx, player: player, cancel: cancel}
 	select {
 	case b.requests <- req:
-		return cancel, nil
+		return req.cancelIfUnclaimed, nil
 	case <-b.done:
 		cancel()
 		return nil, net.ErrClosed
@@ -480,14 +515,16 @@ func (b *viaBackendBridge) accept() {
 
 func (b *viaBackendBridge) handle(conn net.Conn) {
 	defer conn.Close()
-	var req viaBridgeRequest
-	select {
-	case req = <-b.requests:
-	case <-b.done:
-		return
-	}
-	if err := req.ctx.Err(); err != nil {
-		return
+	var req *viaBridgeRequest
+	for {
+		select {
+		case req = <-b.requests:
+		case <-b.done:
+			return
+		}
+		if req.claim() {
+			break
+		}
 	}
 	backend, err := b.dialer.Dial(req.ctx, req.player)
 	if err != nil {
