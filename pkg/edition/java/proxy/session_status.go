@@ -2,7 +2,11 @@ package proxy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"net"
+	"syscall"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
@@ -147,7 +151,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		return
 	}
 	if !h.inbound.Active() {
-		log.Info("status response not sent because inbound is inactive")
+		log.V(1).Info("status response not sent because inbound is inactive")
 		return
 	}
 
@@ -164,10 +168,19 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 
 func (h *statusSessionHandler) writeStatusResponse(log logr.Logger, response *packet.StatusResponse) {
 	if err := h.conn.WritePacket(response); err != nil {
-		log.Info("error writing status response", "error", err)
+		statusResponseWriteErrorLog(log, err).Info("error writing status response", "error", err)
 		return
 	}
 	log.V(1).Info("sent status response")
+}
+
+func statusResponseWriteErrorLog(log logr.Logger, err error) logr.Logger {
+	var netErr net.Error
+	if errors.Is(err, netmc.ErrClosedConn) || errors.Is(err, io.ErrClosedPipe) ||
+		errs.IsConnClosedErr(err) || errors.Is(err, syscall.EPIPE) || errors.As(err, &netErr) {
+		return log.V(1)
+	}
+	return log
 }
 
 func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {
