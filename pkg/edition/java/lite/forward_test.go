@@ -42,7 +42,9 @@ func TestPingCacheRefreshesAfterInsertionBasedExpiry(t *testing.T) {
 	})
 
 	require.Same(t, refreshed, result)
-	require.Same(t, refreshed, cache.get(key))
+	refreshedItem := cache.cache.Get(key)
+	require.NotNil(t, refreshedItem)
+	require.Same(t, refreshed, refreshedItem.Value())
 	require.Equal(t, int32(2), loads.Load())
 }
 

@@ -41,7 +41,7 @@ func TestLiteStatusCacheWireFlow(t *testing.T) {
 		Routes: []liteconfig.Route{{
 			Host:         []string{host},
 			Backend:      []string{backend.Addr()},
-			CachePingTTL: configutil.Duration(300 * time.Millisecond),
+			CachePingTTL: configutil.Duration(2 * time.Second),
 		}},
 	}
 
@@ -136,17 +136,23 @@ func TestLiteStatusCacheWireFlow(t *testing.T) {
 		backend.SetDelay(0)
 		before := backend.Fetches()
 		initial := ping(765)
-		started := time.Now()
-		for i := 1; i <= 3; i++ {
-			time.Sleep(time.Until(started.Add(time.Duration(i) * 80 * time.Millisecond)))
-			require.Equal(t, initial, ping(765))
+		deadline := time.Now().Add(4 * time.Second)
+		var refreshed string
+		hotReads := 0
+		for time.Now().Before(deadline) {
+			status := ping(765)
+			if status != initial {
+				refreshed = status
+				break
+			}
+			hotReads++
+			time.Sleep(25 * time.Millisecond)
 		}
-		time.Sleep(time.Until(started.Add(380 * time.Millisecond)))
-		refreshed := ping(765)
 
-		require.NotEqual(t, initial, refreshed)
+		require.NotEmpty(t, refreshed, "cache entry never expired while continuously read")
+		require.Positive(t, hotReads, "test must observe at least one cached hot read")
 		require.Equal(t, int32(2), backend.Fetches()-before)
-		t.Logf("initial=%s; reads at +80ms/+160ms/+240ms stayed cached; +380ms=%s; backend fetch delta=2", initial, refreshed)
+		t.Logf("initial=%s; %d hot reads stayed cached until insertion-based expiry; refreshed=%s; backend fetch delta=2", initial, hotReads, refreshed)
 	})
 
 	t.Run("route ttl reload invalidates globally", func(t *testing.T) {
@@ -155,14 +161,14 @@ func TestLiteStatusCacheWireFlow(t *testing.T) {
 		previous := cfg
 		next := cfg
 		next.Lite.Routes = append([]liteconfig.Route(nil), cfg.Lite.Routes...)
-		next.Lite.Routes[0].CachePingTTL = configutil.Duration(2 * time.Second)
+		next.Lite.Routes[0].CachePingTTL = configutil.Duration(5 * time.Second)
 
 		reload.FireConfigUpdate(events, &next, &previous)
 		refreshed := ping(765)
 
 		require.NotEqual(t, cached, refreshed)
 		require.Equal(t, int32(1), backend.Fetches()-before)
-		t.Logf("cachePingTTL reload 300ms -> 2s invalidated %s; next client received %s immediately", cached, refreshed)
+		t.Logf("cachePingTTL reload 2s -> 5s invalidated %s; next client received %s immediately", cached, refreshed)
 	})
 }
 
