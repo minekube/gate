@@ -7,67 +7,82 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/stretchr/testify/require"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"golang.org/x/sync/singleflight"
 )
 
-func TestPingCacheDoesNotExtendExpiryOnHotGet(t *testing.T) {
-	ResetPingCache()
-	t.Cleanup(ResetPingCache)
-
+func TestPingCacheRefreshesAfterInsertionBasedExpiry(t *testing.T) {
+	now := time.Now()
+	cache := newPingStatusCache(func() time.Time { return now }, new(singleflight.Group))
 	key := pingKey{backendAddr: "backend.example:25565", protocol: proto.Protocol(765)}
-	item := pingCache.Set(key, &pingResult{}, time.Hour)
+	initial := &pingResult{res: &packet.StatusResponse{Status: "initial"}}
+	refreshed := &pingResult{res: &packet.StatusResponse{Status: "refreshed"}}
+	var loads atomic.Int32
+
+	result := cache.load(key, time.Hour, func() *pingResult {
+		loads.Add(1)
+		return initial
+	})
+	require.Same(t, initial, result)
+	item := cache.cache.Get(key)
+	require.NotNil(t, item)
 	expiresAt := item.ExpiresAt()
 
 	for range 100 {
-		require.Same(t, item, pingCache.Get(key))
+		require.Same(t, initial, cache.get(key))
 	}
-
 	require.Equal(t, expiresAt, item.ExpiresAt(), "status reads must not extend cache expiry")
+
+	now = expiresAt
+	result = cache.load(key, time.Hour, func() *pingResult {
+		loads.Add(1)
+		return refreshed
+	})
+
+	require.Same(t, refreshed, result)
+	require.Same(t, refreshed, cache.get(key))
+	require.Equal(t, int32(2), loads.Load())
 }
 
 func TestPingCacheLoaderSuppressesConcurrentMisses(t *testing.T) {
-	cache := ttlcache.New[pingKey, *pingResult]()
+	group := &observedFlightGroup{entered: make(chan struct{}, 33)}
+	cache := newPingStatusCache(time.Now, group)
 	key := pingKey{backendAddr: "backend.example:25565", protocol: proto.Protocol(765)}
 
 	var loads atomic.Int32
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var startOnce sync.Once
-	loader := withLoader(new(singleflight.Group), time.Hour, func(pingKey) *pingResult {
+	loader := func() *pingResult {
 		loads.Add(1)
 		startOnce.Do(func() { close(started) })
 		<-release
 		return &pingResult{}
-	})
+	}
 
 	const requests = 32
-	results := make(chan *ttlcache.Item[pingKey, *pingResult], requests+1)
+	results := make(chan *pingResult, requests+1)
 	firstDone := make(chan struct{})
 	go func() {
 		defer close(firstDone)
-		results <- cache.Get(key, loader)
+		results <- cache.load(key, time.Hour, loader)
 	}()
-	<-started
+	receiveSignal(t, started)
+	receiveSignal(t, group.entered)
 
-	var ready sync.WaitGroup
-	ready.Add(requests)
 	var done sync.WaitGroup
 	done.Add(requests)
-	start := make(chan struct{})
 	for range requests {
 		go func() {
 			defer done.Done()
-			ready.Done()
-			<-start
-			results <- cache.Get(key, loader)
+			results <- cache.load(key, time.Hour, loader)
 		}()
 	}
-	ready.Wait()
-	close(start)
+	for range requests {
+		receiveSignal(t, group.entered)
+	}
 	close(release)
 	<-firstDone
 	done.Wait()
@@ -79,16 +94,18 @@ func TestPingCacheLoaderSuppressesConcurrentMisses(t *testing.T) {
 }
 
 func TestPingCacheSeparatesProtocols(t *testing.T) {
-	cache := ttlcache.New[pingKey, *pingResult]()
+	cache := newPingStatusCache(time.Now, new(singleflight.Group))
 	backendAddr := "backend.example:25565"
 	legacy := &pingResult{res: &packet.StatusResponse{Status: "legacy"}}
 	modern := &pingResult{res: &packet.StatusResponse{Status: "modern"}}
 
-	cache.Set(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(47)}, legacy, time.Hour)
-	cache.Set(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(765)}, modern, time.Hour)
+	legacyKey := pingKey{backendAddr: backendAddr, protocol: proto.Protocol(47)}
+	modernKey := pingKey{backendAddr: backendAddr, protocol: proto.Protocol(765)}
+	cache.load(legacyKey, time.Hour, func() *pingResult { return legacy })
+	cache.load(modernKey, time.Hour, func() *pingResult { return modern })
 
-	require.Same(t, legacy, cache.Get(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(47)}).Value())
-	require.Same(t, modern, cache.Get(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(765)}).Value())
+	require.Same(t, legacy, cache.get(legacyKey))
+	require.Same(t, modern, cache.get(modernKey))
 }
 
 func TestResetPingCacheInvalidatesAllBackendsAndProtocols(t *testing.T) {
@@ -101,13 +118,70 @@ func TestResetPingCacheInvalidatesAllBackendsAndProtocols(t *testing.T) {
 		{backendAddr: "two.example:25565", protocol: proto.Protocol(765)},
 	}
 	for _, key := range keys {
-		pingCache.Set(key, &pingResult{}, time.Hour)
+		pingCache.load(key, time.Hour, func() *pingResult { return &pingResult{} })
 	}
 
 	ResetPingCache()
 
 	for _, key := range keys {
-		require.Nil(t, pingCache.Get(key))
+		require.Nil(t, pingCache.get(key))
+	}
+}
+
+func TestResetPingCacheRejectsInFlightLoad(t *testing.T) {
+	cache := newPingStatusCache(time.Now, new(singleflight.Group))
+	key := pingKey{backendAddr: "backend.example:25565", protocol: proto.Protocol(765)}
+	stale := &pingResult{res: &packet.StatusResponse{Status: "stale"}}
+	fresh := &pingResult{res: &packet.StatusResponse{Status: "fresh"}}
+	started := make(chan struct{})
+	release := make(chan struct{})
+	staleResult := make(chan *pingResult, 1)
+
+	go func() {
+		staleResult <- cache.load(key, time.Hour, func() *pingResult {
+			close(started)
+			<-release
+			return stale
+		})
+	}()
+	receiveSignal(t, started)
+
+	cache.reset()
+	freshResultCh := make(chan *pingResult, 1)
+	go func() {
+		freshResultCh <- cache.load(key, time.Hour, func() *pingResult { return fresh })
+	}()
+	var freshResult *pingResult
+	select {
+	case freshResult = <-freshResultCh:
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("post-reset load joined stale in-flight work")
+	}
+	close(release)
+
+	require.Same(t, fresh, freshResult)
+	require.Same(t, stale, <-staleResult)
+	require.Same(t, fresh, cache.get(key))
+}
+
+type observedFlightGroup struct {
+	group   singleflight.Group
+	entered chan struct{}
+}
+
+func (g *observedFlightGroup) DoChan(key string, fn func() (any, error)) <-chan singleflight.Result {
+	result := g.group.DoChan(key, fn)
+	g.entered <- struct{}{}
+	return result
+}
+
+func receiveSignal(t *testing.T, ch <-chan struct{}) {
+	t.Helper()
+	select {
+	case <-ch:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for concurrent cache operation")
 	}
 }
 
