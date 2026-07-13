@@ -27,6 +27,7 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -243,17 +244,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 		if e.Config.Lite.Enabled {
 			// reset whole cache if routes have changed because
 			// backend addrs might have moved to another route or a cacheTTL changed
-			if func() bool {
-				if len(e.Config.Lite.Routes) != len(e.PrevConfig.Lite.Routes) {
-					return true
-				}
-				for i, route := range e.Config.Lite.Routes {
-					if !route.Equal(&e.PrevConfig.Lite.Routes[i]) {
-						return true
-					}
-				}
-				return false
-			}() {
+			if liteRoutesChanged(e.Config.Lite.Routes, e.PrevConfig.Lite.Routes) {
 				lite.ResetPingCache()
 				p.log.Info("lite ping cache was reset")
 			}
@@ -267,6 +258,18 @@ func (p *Proxy) Start(ctx context.Context) error {
 }
 
 type javaConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]
+
+func liteRoutesChanged(current, previous []liteconfig.Route) bool {
+	if len(current) != len(previous) {
+		return true
+	}
+	for i, route := range current {
+		if !route.Equal(&previous[i]) {
+			return true
+		}
+	}
+	return false
+}
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //

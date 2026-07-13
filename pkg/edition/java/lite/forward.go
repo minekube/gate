@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -408,19 +409,16 @@ func handleFallbackResponse(log logr.Logger, route *config.Route, protocol proto
 	return nil, log
 }
 
-var (
-	pingCache = ttlcache.New[pingKey, *pingResult]()
-	sfg       = new(singleflight.Group)
-)
+var pingCache = newPingStatusCache(time.Now, new(singleflight.Group))
 
-// ResetPingCache resets the ping cache.
+// ResetPingCache clears cached ping results and prevents in-flight loads from repopulating them.
 func ResetPingCache() {
-	pingCache.DeleteAll()
+	pingCache.reset()
 	compiledRegexCache.DeleteAll()
 }
 
 func init() {
-	go pingCache.Start() // start ttl eviction once
+	go pingCache.cache.Start() // start ttl eviction once
 }
 
 type pingKey struct {
@@ -431,6 +429,83 @@ type pingKey struct {
 type pingResult struct {
 	res *packet.StatusResponse
 	err error
+}
+
+type flightGroup interface {
+	DoChan(string, func() (any, error)) <-chan singleflight.Result
+}
+
+type pingStatusCache struct {
+	mu         sync.Mutex
+	cache      *ttlcache.Cache[pingKey, *pingResult]
+	group      flightGroup
+	now        func() time.Time
+	generation uint64
+}
+
+func newPingStatusCache(now func() time.Time, group flightGroup) *pingStatusCache {
+	return &pingStatusCache{
+		cache: ttlcache.New[pingKey, *pingResult](ttlcache.WithDisableTouchOnHit[pingKey, *pingResult]()),
+		group: group,
+		now:   now,
+	}
+}
+
+func (c *pingStatusCache) get(key pingKey) *pingResult {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.getLocked(key)
+}
+
+func (c *pingStatusCache) getLocked(key pingKey) *pingResult {
+	item := c.cache.Get(key)
+	if item == nil {
+		return nil
+	}
+	expiresAt := item.ExpiresAt()
+	if !expiresAt.IsZero() && !c.now().Before(expiresAt) {
+		c.cache.Delete(key)
+		return nil
+	}
+	return item.Value()
+}
+
+func (c *pingStatusCache) load(key pingKey, ttl time.Duration, load func() *pingResult) *pingResult {
+	c.mu.Lock()
+	generation := c.generation
+	if result := c.getLocked(key); result != nil {
+		c.mu.Unlock()
+		return result
+	}
+	c.mu.Unlock()
+
+	flightKey := fmt.Sprintf("%d:%s:%d", generation, key.backendAddr, key.protocol)
+	result := <-c.group.DoChan(flightKey, func() (any, error) {
+		c.mu.Lock()
+		if generation == c.generation {
+			if cached := c.getLocked(key); cached != nil {
+				c.mu.Unlock()
+				return cached, nil
+			}
+		}
+		c.mu.Unlock()
+
+		loaded := load()
+		c.mu.Lock()
+		if generation == c.generation {
+			c.cache.Set(key, loaded, ttl)
+		}
+		c.mu.Unlock()
+		return loaded, nil
+	})
+	return result.Val.(*pingResult)
+}
+
+func (c *pingStatusCache) reset() {
+	c.mu.Lock()
+	c.generation++
+	c.cache.DeleteAll()
+	c.mu.Unlock()
 }
 
 func resolveStatusResponse(
@@ -448,10 +523,9 @@ func resolveStatusResponse(
 
 	// fast path: use cache without loader
 	if route.CachePingEnabled() {
-		item := pingCache.Get(key)
-		if item != nil {
+		val := pingCache.get(key)
+		if val != nil {
 			log.V(1).Info("returning cached status result")
-			val := item.Value()
 			return log, val.res, val.err
 		}
 	}
@@ -483,13 +557,13 @@ func resolveStatusResponse(
 		return log, res, err
 	}
 
-	opt := withLoader(sfg, route.GetCachePingTTL(), func(key pingKey) *pingResult {
+	loadResult := func() *pingResult {
 		res, err := load(context.Background())
 		return &pingResult{res: res, err: err}
-	})
+	}
 
 	resultChan := make(chan *pingResult, 1)
-	go func() { resultChan <- pingCache.Get(key, opt).Value() }()
+	go func() { resultChan <- pingCache.load(key, route.GetCachePingTTL(), loadResult) }()
 
 	select {
 	case result := <-resultChan:
@@ -543,18 +617,4 @@ func decodeStatusResponse(dec statusDecoder) (*packet.StatusResponse, error) {
 	}
 
 	return res, nil
-}
-
-// withLoader returns a ttlcache option that uses the given load function to load a value for a key
-// if it is not already cached.
-func withLoader[K comparable, V any](group *singleflight.Group, ttl time.Duration, load func(key K) V) ttlcache.Option[K, V] {
-	loader := ttlcache.LoaderFunc[K, V](
-		func(c *ttlcache.Cache[K, V], key K) *ttlcache.Item[K, V] {
-			v := load(key)
-			return c.Set(key, v, ttl)
-		},
-	)
-	return ttlcache.WithLoader[K, V](
-		ttlcache.NewSuppressedLoader[K, V](loader, group),
-	)
 }
