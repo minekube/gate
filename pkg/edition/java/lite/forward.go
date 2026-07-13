@@ -411,7 +411,7 @@ func handleFallbackResponse(log logr.Logger, route *config.Route, protocol proto
 
 var pingCache = newPingStatusCache(time.Now, new(singleflight.Group))
 
-// ResetPingCache resets the ping cache.
+// ResetPingCache clears cached ping results and prevents in-flight loads from repopulating them.
 func ResetPingCache() {
 	pingCache.reset()
 	compiledRegexCache.DeleteAll()

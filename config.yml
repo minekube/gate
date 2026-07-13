@@ -224,7 +224,7 @@ config:
         # Options: random, round-robin, least-connections, lowest-latency
         # Default: random
         strategy: random
-        # Ping responses are cached per backend address by default.
+        # See https://gate.minekube.com/guide/lite#ping-response-caching for cache semantics.
         # To disable motd caching set it to -1.
         # Default: 10s
         cachePingTTL: 60s
