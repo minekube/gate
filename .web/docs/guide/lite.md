@@ -242,9 +242,9 @@ config:
         cachePingTTL: 3m # or 180s [!code ++]
 ```
 
-_TTL - the Time-to-live before evicting the response data from the in-memory cache_
+_TTL - the Time-to-live before evicting the response data from the in-memory cache. The TTL starts when Gate fetches or refreshes a backend status response; later status requests return the cached response without extending its expiry._
 
-Note that routes can configure multiple random backends and each backend has its own TTL.
+Note that routes can configure multiple random backends and each backend-address and protocol pair has its own TTL.
 
 ### Disabling the cache
 

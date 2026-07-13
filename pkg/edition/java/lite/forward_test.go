@@ -2,12 +2,114 @@ package lite
 
 import (
 	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/stretchr/testify/require"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"golang.org/x/sync/singleflight"
 )
+
+func TestPingCacheDoesNotExtendExpiryOnHotGet(t *testing.T) {
+	ResetPingCache()
+	t.Cleanup(ResetPingCache)
+
+	key := pingKey{backendAddr: "backend.example:25565", protocol: proto.Protocol(765)}
+	item := pingCache.Set(key, &pingResult{}, time.Hour)
+	expiresAt := item.ExpiresAt()
+
+	for range 100 {
+		require.Same(t, item, pingCache.Get(key))
+	}
+
+	require.Equal(t, expiresAt, item.ExpiresAt(), "status reads must not extend cache expiry")
+}
+
+func TestPingCacheLoaderSuppressesConcurrentMisses(t *testing.T) {
+	cache := ttlcache.New[pingKey, *pingResult]()
+	key := pingKey{backendAddr: "backend.example:25565", protocol: proto.Protocol(765)}
+
+	var loads atomic.Int32
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var startOnce sync.Once
+	loader := withLoader(new(singleflight.Group), time.Hour, func(pingKey) *pingResult {
+		loads.Add(1)
+		startOnce.Do(func() { close(started) })
+		<-release
+		return &pingResult{}
+	})
+
+	const requests = 32
+	results := make(chan *ttlcache.Item[pingKey, *pingResult], requests+1)
+	firstDone := make(chan struct{})
+	go func() {
+		defer close(firstDone)
+		results <- cache.Get(key, loader)
+	}()
+	<-started
+
+	var ready sync.WaitGroup
+	ready.Add(requests)
+	var done sync.WaitGroup
+	done.Add(requests)
+	start := make(chan struct{})
+	for range requests {
+		go func() {
+			defer done.Done()
+			ready.Done()
+			<-start
+			results <- cache.Get(key, loader)
+		}()
+	}
+	ready.Wait()
+	close(start)
+	close(release)
+	<-firstDone
+	done.Wait()
+
+	for range requests + 1 {
+		require.NotNil(t, <-results)
+	}
+	require.Equal(t, int32(1), loads.Load())
+}
+
+func TestPingCacheSeparatesProtocols(t *testing.T) {
+	cache := ttlcache.New[pingKey, *pingResult]()
+	backendAddr := "backend.example:25565"
+	legacy := &pingResult{res: &packet.StatusResponse{Status: "legacy"}}
+	modern := &pingResult{res: &packet.StatusResponse{Status: "modern"}}
+
+	cache.Set(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(47)}, legacy, time.Hour)
+	cache.Set(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(765)}, modern, time.Hour)
+
+	require.Same(t, legacy, cache.Get(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(47)}).Value())
+	require.Same(t, modern, cache.Get(pingKey{backendAddr: backendAddr, protocol: proto.Protocol(765)}).Value())
+}
+
+func TestResetPingCacheInvalidatesAllBackendsAndProtocols(t *testing.T) {
+	ResetPingCache()
+	t.Cleanup(ResetPingCache)
+
+	keys := []pingKey{
+		{backendAddr: "one.example:25565", protocol: proto.Protocol(47)},
+		{backendAddr: "one.example:25565", protocol: proto.Protocol(765)},
+		{backendAddr: "two.example:25565", protocol: proto.Protocol(765)},
+	}
+	for _, key := range keys {
+		pingCache.Set(key, &pingResult{}, time.Hour)
+	}
+
+	ResetPingCache()
+
+	for _, key := range keys {
+		require.Nil(t, pingCache.Get(key))
+	}
+}
 
 // TestDecodeStatusResponse_WithErrDecoderLeftBytes tests that decodeStatusResponse
 // properly handles ErrDecoderLeftBytes error (from BetterCompatibilityChecker mod)

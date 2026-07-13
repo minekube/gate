@@ -409,7 +409,7 @@ func handleFallbackResponse(log logr.Logger, route *config.Route, protocol proto
 }
 
 var (
-	pingCache = ttlcache.New[pingKey, *pingResult]()
+	pingCache = ttlcache.New[pingKey, *pingResult](ttlcache.WithDisableTouchOnHit[pingKey, *pingResult]())
 	sfg       = new(singleflight.Group)
 )
 
