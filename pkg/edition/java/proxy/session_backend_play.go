@@ -119,7 +119,7 @@ func (b *backendPlaySessionHandler) shouldHandle() bool {
 
 func (b *backendPlaySessionHandler) Activated() {
 	b.serverConn.server.players.add(b.serverConn.player)
-	if b.proxy().cfg.BungeePluginChannelEnabled {
+	if b.proxy().config().BungeePluginChannelEnabled {
 		serverMc, ok := b.serverConn.ensureConnected()
 		if ok {
 			protocol := serverMc.Protocol()
@@ -444,7 +444,7 @@ func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove,
 
 func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
 	rootNode := p.RootNode
-	if b.proxy().cfg.AnnounceProxyCommands {
+	if b.proxy().config().AnnounceProxyCommands {
 		// Inject commands from the proxy.
 		dispatcherRootNode := filterNode(&b.proxy().command.Root, b.serverConn.player)
 		if dispatcherRootNode == nil {

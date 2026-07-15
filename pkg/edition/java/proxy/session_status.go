@@ -87,7 +87,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		protocol = version.MaximumVersion.Protocol
 	}
 	var modInfo *modinfo.ModInfo
-	if p.cfg.AnnounceForge {
+	if p.config().AnnounceForge {
 		modInfo = modinfo.Default
 	}
 	return &ping.ServerPing{
@@ -97,10 +97,10 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		},
 		Players: &ping.Players{
 			Online: p.PlayerCount(),
-			Max:    p.cfg.Status.ShowMaxPlayers,
+			Max:    p.config().Status.ShowMaxPlayers,
 		},
-		Description: p.cfg.Status.Motd.C(),
-		Favicon:     p.cfg.Status.Favicon,
+		Description: p.config().Status.Motd.C(),
+		Favicon:     p.config().Status.Favicon,
 		ModInfo:     modInfo,
 	}
 }

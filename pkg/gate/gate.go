@@ -9,7 +9,10 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -79,6 +82,7 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	c := options.Config
+	gate.currentConfig.Store(c)
 	// Java proxy is always created (embedded config)
 	gate.javaProxy, err = jproxy.New(jproxy.Options{
 		Config:   &c.Config,
@@ -129,6 +133,63 @@ type Gate struct {
 	javaProxy    *jproxy.Proxy      // The Java edition proxy.
 	bedrockProxy *bproxy.Proxy      // The Bedrock edition proxy.
 	proc         process.Collection // Parallel running proc.
+
+	// currentConfig is an immutable, atomically published runtime snapshot.
+	// reloadMu serializes validate/prepare/commit so readers only observe whole snapshots.
+	currentConfig atomic.Pointer[config.Config]
+	reloadMu      sync.Mutex
+}
+
+// LiveConfigResult is the redacted outcome of a file-driven live configuration attempt.
+// Code is intentionally a stable category rather than an error detail that could reveal
+// configuration contents.
+type LiveConfigResult struct {
+	Applied          bool
+	Unchanged        bool
+	CacheInvalidated bool
+	Code             string
+}
+
+// ApplyLiveConfig validates and atomically publishes the narrow set of source-proven
+// live-safe changes: routes in an already-enabled Java Lite configuration. All other
+// settings are rejected before any runtime component is changed.
+func (g *Gate) ApplyLiveConfig(candidate *config.Config) LiveConfigResult {
+	g.reloadMu.Lock()
+	defer g.reloadMu.Unlock()
+
+	current := g.currentConfig.Load()
+	if candidate == nil {
+		return LiveConfigResult{Code: "invalid"}
+	}
+	if reflect.DeepEqual(current, candidate) {
+		return LiveConfigResult{Unchanged: true, Code: "unchanged"}
+	}
+	if _, errs := candidate.Validate(); len(errs) != 0 {
+		return LiveConfigResult{Code: "invalid"}
+	}
+	if !onlyLiveLiteRoutesChanged(current, candidate) {
+		return LiveConfigResult{Code: "unsupported"}
+	}
+	if err := g.javaProxy.ApplyLiveConfig(&candidate.Config); err != nil {
+		return LiveConfigResult{Code: "prepare_failed"}
+	}
+	g.currentConfig.Store(candidate)
+	return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied"}
+}
+
+func onlyLiveLiteRoutesChanged(current, candidate *config.Config) bool {
+	if current == nil || candidate == nil || !current.Config.Lite.Enabled || !candidate.Config.Lite.Enabled {
+		return false
+	}
+	currentWithoutRoutes := *current
+	candidateWithoutRoutes := *candidate
+	currentJava := current.Config
+	candidateJava := candidate.Config
+	currentJava.Lite.Routes = nil
+	candidateJava.Lite.Routes = nil
+	currentWithoutRoutes.Config = currentJava
+	candidateWithoutRoutes.Config = candidateJava
+	return reflect.DeepEqual(currentWithoutRoutes, candidateWithoutRoutes)
 }
 
 // Java returns the Java edition proxy, or nil if none.
@@ -257,7 +318,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(
-		ctx, configLog, eventMgr,
+		ctx, configLog, gate,
 		c.autoConfigReloadWatchPath, c.conf,
 	)
 	if err != nil {
@@ -272,7 +333,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 func setupAutoConfigReload(
 	ctx context.Context,
 	log logr.Logger,
-	mgr event.Manager,
+	gate *Gate,
 	path string,
 	initialCfg *config.Config,
 ) error {
@@ -280,20 +341,50 @@ func setupAutoConfigReload(
 		return nil // No auto config reload
 	}
 	log.Info("auto config reload enabled", "path", path)
-	prevCfg := initialCfg
+	_ = initialCfg // Gate owns the immutable initial snapshot.
 	// Watch config file for changes
 	return reload.Watch(ctx, path, func() error {
+		if err := validateConfigFileSyntax(path); err != nil {
+			return reload.Reject("parse_failed")
+		}
 		cfg, err := LoadConfig(Viper)
 		if err != nil {
-			return err
+			return reload.Reject("read_failed")
 		}
-		if err = validateConfig(log, cfg); err != nil {
-			return err
+		if _, errs := cfg.Validate(); len(errs) != 0 {
+			return reload.Reject("invalid")
 		}
-		reload.FireConfigUpdate(mgr, cfg, prevCfg)
-		prevCfg = cfg
-		return nil
+		result := gate.ApplyLiveConfig(cfg)
+		switch result.Code {
+		case "applied", "unchanged":
+			return nil
+		default:
+			return reload.Reject(result.Code)
+		}
 	})
+}
+
+// validateConfigFileSyntax rejects incomplete and unknown configuration before
+// Viper applies defaults or environment overrides. Errors never leave this
+// function so reload diagnostics cannot disclose config contents.
+func validateConfigFileSyntax(configPath string) error {
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+	var candidate config.Config
+	switch path.Ext(configPath) {
+	case ".yaml", ".yml":
+		decoder := yaml.NewDecoder(bytes.NewReader(b))
+		decoder.KnownFields(true)
+		return decoder.Decode(&candidate)
+	case ".json":
+		decoder := json.NewDecoder(bytes.NewReader(b))
+		decoder.DisallowUnknownFields()
+		return decoder.Decode(&candidate)
+	default:
+		return fmt.Errorf("unsupported config format")
+	}
 }
 
 // validateConfig validates the provided config.Config
