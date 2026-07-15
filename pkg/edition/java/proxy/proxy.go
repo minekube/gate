@@ -43,8 +43,11 @@ import (
 
 // Proxy is Gate's Java edition Minecraft proxy.
 type Proxy struct {
-	log              logr.Logger
+	log logr.Logger
+	// cfg remains the construction-time configuration for compatibility with
+	// package-local setup code; all runtime readers use currentCfg via config().
 	cfg              *config.Config
+	currentCfg       atomic.Pointer[config.Config]
 	event            event.Manager
 	command          command.Manager
 	channelRegistrar *message.ChannelRegistrar
@@ -114,8 +117,8 @@ func New(options Options) (p *Proxy, err error) {
 	}
 
 	p = &Proxy{
-		log:              logr.Discard(), // updated by Proxy.Start
 		cfg:              options.Config,
+		log:              logr.Discard(), // updated by Proxy.Start
 		event:            eventMgr,
 		channelRegistrar: message.NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
@@ -126,6 +129,7 @@ func New(options Options) (p *Proxy, err error) {
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
 	}
+	p.currentCfg.Store(options.Config)
 
 	// Connection & login rate limiters
 	p.initQuota(&options.Config.Quota)
@@ -197,17 +201,17 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 
 	logInfo := func() {
-		if p.cfg.Debug {
+		if p.config().Debug {
 			p.log.Info("running in debug mode")
 		}
-		if p.cfg.Lite.Enabled {
+		if p.config().Lite.Enabled {
 			p.log.Info("running in lite mode")
 		}
-		if p.cfg.ProxyProtocol {
+		if p.config().ProxyProtocol {
 			p.log.Info("proxy protocol enabled")
 		}
-		if p.cfg.Auth.SessionServerURL != nil {
-			p.log.Info("using custom authentication server", "url", p.cfg.Auth.SessionServerURL)
+		if p.config().Auth.SessionServerURL != nil {
+			p.log.Info("using custom authentication server", "url", p.config().Auth.SessionServerURL)
 		}
 	}
 	logInfo()
@@ -226,32 +230,16 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return stop
 	}
 
-	stopLn := listen(p.cfg.Bind)
+	_ = listen(p.config().Bind)
 
 	// Listen for config reloads until we exit
 	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
-		*p.cfg = *e.Config
-		p.initQuota(&e.Config.Quota)
-		if e.PrevConfig.Bind != e.Config.Bind {
-			p.closeMu.Lock()
-			stopLn()
-			stopLn = listen(e.Config.Bind)
-			p.closeMu.Unlock()
+		if e == nil || e.Config == nil {
+			return
 		}
-		if err := p.init(); err != nil {
-			p.log.Error(err, "re-initialization error")
+		if err := p.ApplyLiveConfig(e.Config); err != nil {
+			p.log.V(1).Info("rejected legacy config update", "reason", "unsupported")
 		}
-		if e.Config.Lite.Enabled {
-			// reset whole cache if routes have changed because
-			// backend addrs might have moved to another route or a cacheTTL changed
-			if liteRoutesChanged(e.Config.Lite.Routes, e.PrevConfig.Lite.Routes) {
-				lite.ResetPingCache()
-				p.log.Info("lite ping cache was reset")
-			}
-		} else {
-			lite.ResetPingCache()
-		}
-		logInfo()
 	})()
 
 	return eg.Wait()
@@ -269,6 +257,35 @@ func liteRoutesChanged(current, previous []liteconfig.Route) bool {
 		}
 	}
 	return false
+}
+
+// ApplyLiveConfig atomically publishes a new immutable Java configuration when it
+// changes Lite routes only. Existing Lite connections are direct pipes and retain
+// their already-selected backend; subsequent handshakes read the new snapshot.
+func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
+	current := p.config()
+	if candidate == nil || !current.Lite.Enabled || !candidate.Lite.Enabled {
+		return errors.New("unsupported live configuration")
+	}
+	if reflect.DeepEqual(current, candidate) {
+		return nil
+	}
+	currentWithoutRoutes := *current
+	candidateWithoutRoutes := *candidate
+	currentWithoutRoutes.Lite.Routes = nil
+	candidateWithoutRoutes.Lite.Routes = nil
+	if !reflect.DeepEqual(currentWithoutRoutes, candidateWithoutRoutes) {
+		return errors.New("unsupported live configuration")
+	}
+	if _, errs := candidate.Validate(); len(errs) != 0 {
+		return errors.New("invalid live configuration")
+	}
+	p.currentCfg.Store(candidate)
+	if liteRoutesChanged(candidate.Lite.Routes, current.Lite.Routes) {
+		lite.ResetPingCache()
+		p.log.Info("lite ping cache was reset")
+	}
+	return nil
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
@@ -317,7 +334,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 
 // called before starting to actually run the proxy
 func (p *Proxy) init() (err error) {
-	c := p.cfg
+	c := p.config()
 
 	// No need to check, nil default to mojang's session server
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
@@ -424,10 +441,13 @@ func (p *Proxy) Command() *command.Manager {
 
 // Config returns the cfg used by the Proxy.
 func (p *Proxy) Config() config.Config {
-	return *p.cfg
+	return *p.config()
 }
 
 func (p *Proxy) config() *config.Config {
+	if current := p.currentCfg.Load(); current != nil {
+		return current
+	}
 	return p.cfg
 }
 
@@ -656,7 +676,7 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
 
-		if p.cfg.ProxyProtocol {
+		if p.config().ProxyProtocol {
 			conn = proxyproto.NewConn(conn)
 		}
 
@@ -706,13 +726,13 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 
 	// Create client connection. Client connections are serverbound (untrusted),
 	// so apply the configured per-connection packet rate limiter.
-	pl := p.cfg.PacketLimiter
+	pl := p.config().PacketLimiter
 	limiter := packetlimiter.New(pl.PacketsPerSecond, pl.BytesPerSecond, time.Duration(pl.Interval))
 	conn, readLoop := netmc.NewMinecraftConn(
 		ctx, raw, proto.ServerBound,
-		time.Duration(p.cfg.ReadTimeout)*time.Millisecond,
-		time.Duration(p.cfg.ConnectionTimeout)*time.Millisecond,
-		p.cfg.Compression.Level,
+		time.Duration(p.config().ReadTimeout)*time.Millisecond,
+		time.Duration(p.config().ConnectionTimeout)*time.Millisecond,
+		p.config().Compression.Level,
 		limiter,
 	)
 	conn.SetActiveSessionHandler(state.Handshake, newHandshakeSessionHandler(conn, &sessionHandlerDeps{
@@ -777,7 +797,7 @@ func (p *Proxy) playerByName(username string) *connectedPlayer {
 }
 
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
-	c := p.cfg
+	c := p.config()
 	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
 		return true
 	}
@@ -790,7 +810,7 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 // Attempts to register the connection with the proxy.
 func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
-	c := p.cfg
+	c := p.config()
 
 retry:
 	p.muP.Lock()
