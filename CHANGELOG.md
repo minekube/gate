@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.68.27](https://github.com/minekube/gate/compare/v0.68.26...v0.68.27) (2026-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update golang.org/x/exp digest to c48552f ([#695](https://github.com/minekube/gate/issues/695)) ([e04e3da](https://github.com/minekube/gate/commit/e04e3da44608a814cead64be42bee6b555517b5a))
+* **java:** log status response write failures ([#886](https://github.com/minekube/gate/issues/886)) ([2e999bb](https://github.com/minekube/gate/commit/2e999bb7de6f173d20e0972cb861757712ed8e5e))
+* **java:** preserve Lite status cache expiry ([#916](https://github.com/minekube/gate/issues/916)) ([e9fa009](https://github.com/minekube/gate/commit/e9fa009e243dc71b190b410bba602a29b4ccdac5))
+* **java:** reduce status response log churn ([#910](https://github.com/minekube/gate/issues/910)) ([aa50f2a](https://github.com/minekube/gate/commit/aa50f2aced06b36a8faed479aa093c2b43960cfc))
+* **java:** skip stale Via bridge requests on retry ([#911](https://github.com/minekube/gate/issues/911)) ([a5fbfbb](https://github.com/minekube/gate/commit/a5fbfbb59eb8e0bee5a138c4bf7abd23f79d4aeb))
+
 ## [0.68.26](https://github.com/minekube/gate/compare/v0.68.25...v0.68.26) (2026-07-05)
 
 
