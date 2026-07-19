@@ -63,7 +63,7 @@ jobs:
   dispatch-moxy-bump:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    uses: minekube/actions/.github/workflows/dispatch-workflow.yml@v1
+    uses: minekube/actions/.github/workflows/dispatch-workflow.yml@1965ed6ae602a602f9f98edcb31fe177403e8d77
     permissions:
       contents: read
       id-token: write
