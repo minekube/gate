@@ -18,6 +18,16 @@ config:
     # If enabled, the proxy will act as a lightweight reverse proxy to support new types of deployment architecture.
     # Default: false
     enabled: true
+    # The message to send to the player when no route is found for the host they connected with.
+    # Supports legacy '§' and JSON text component format.
+    # Default: "Could not find a route to connect to."
+    noRouteMessage: "§cNo route found for this address."
+    #
+    # The default message to send to the player when all backends for a route are offline.
+    # This can be overridden on a per-route basis.
+    # Supports legacy '§' and JSON text component format.
+    # Default: "Could not connect to a backend server."
+    noBackendMessage: "§cThis server is currently offline."
     # The routes that the proxy redirects player connections to based on matching the virtual host address.
     # The routes are matched in order of appearance.
     # Examples:
@@ -26,6 +36,10 @@ config:
       - host: localhost
         # The backend server to connect to if matched.
         backend: localhost:25566
+        # The message to send to the player when all backends for this route are offline.
+        # Overrides the global noBackendMessage.
+        # Supports legacy '§' and JSON text component format.
+        noBackendMessage: "§cThis server is currently offline.\nTry again later"
         # The optional fallback status response when all backends of this route are offline.
         fallback:
           motd: |
