@@ -95,7 +95,12 @@ func denyEvent(e *CommandExecuteEvent)    { e.SetAllowed(false) }
 //
 // This test fails against the pre-fix code.
 func TestUnsignedCommandPreservesHeldAcknowledgements(t *testing.T) {
-	_, backend, h := newChatCmdFixture(version.Minecraft_1_21_5.Protocol, forwardEvent)
+	player, backend, chatHandler := newChatCmdFixture(version.Minecraft_1_21_5.Protocol, forwardEvent)
+	h := &clientPlaySessionHandler{
+		log:         logr.Discard(),
+		player:      player,
+		chatHandler: chatHandler,
+	}
 	cq := h.player.chatQueue
 
 	// The client acknowledged 3 messages via ChatAcknowledgement packets that the
@@ -104,9 +109,12 @@ func TestUnsignedCommandPreservesHeldAcknowledgements(t *testing.T) {
 
 	// A 1.20.5+ client runs a plain command (no signable args): an
 	// UnsignedPlayerCommand carrying no last-seen update.
-	require.NoError(t, h.handleCommand(&chat.UnsignedPlayerCommand{
-		SessionPlayerCommand: chat.SessionPlayerCommand{Command: "spawn"},
-	}))
+	h.HandlePacket(&proto.PacketContext{
+		Protocol: version.Minecraft_1_21_5.Protocol,
+		Packet: &chat.UnsignedPlayerCommand{
+			SessionPlayerCommand: chat.SessionPlayerCommand{Command: "spawn"},
+		},
+	})
 
 	// Wait for the command to reach the backend.
 	require.Eventually(t, func() bool { return len(backend.written()) == 1 },
