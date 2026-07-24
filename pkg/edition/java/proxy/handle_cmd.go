@@ -183,8 +183,11 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand, un
 		}
 
 		// An unsigned command with a 'last seen' update will not happen as of 1.20.5+, but for earlier versions - we still
-		// need to pass through the acknowledgement
-		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && !packet.LastSeenMessages.Empty() {
+		// need to pass through the acknowledgement. A ChatAcknowledgement only carries an offset, so we must gate on the
+		// offset (the number of messages to advance the backend's window), not on the acknowledged bitset: a consumed
+		// command with a non-zero offset but an empty bitset still has to advance the window, otherwise the backend
+		// desyncs and rejects the next message. This matches Velocity's SessionCommandHandler.consumeCommand.
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_19_3) && packet.LastSeenMessages.Offset != 0 {
 			return &chat.ChatAcknowledgement{
 				Offset: packet.LastSeenMessages.Offset,
 			}
@@ -207,13 +210,30 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand, un
 
 	forwardCommand := func(packet *chat.SessionPlayerCommand, newCommand string) proto.Packet {
 		if newCommand == packet.Command {
+			if unsigned {
+				// An UnsignedPlayerCommand (1.20.5+) carries no 'last seen' update. Forward it as-is
+				// (command only) instead of re-encoding it as a signed session command with an empty
+				// acknowledgement, which the backend would validate against its last-seen window and
+				// reject. This mirrors Velocity's UnsignedPlayerCommandPacket.withLastSeenMessages,
+				// which returns the unmodified command-only packet.
+				return &chat.UnsignedPlayerCommand{SessionPlayerCommand: *packet}
+			}
 			return packet
 		}
 		return modifyCommand(packet, newCommand)
 	}
 
-	c.queueCommandResult(packet.Command, packet.Timestamp, &packet.LastSeenMessages, func(e *CommandExecuteEvent, newLastSeenMessages *chat.LastSeenMessages) proto.Packet {
-		if newLastSeenMessages != nil && !unsigned {
+	// Unsigned commands (1.20.5+) carry no 'last seen' update, so we must not feed one into the chat queue.
+	// Doing so flushes the player's held acknowledgements (delayedAckCount) and then discards them, desyncing
+	// the backend's last-seen window and causing "message acknowledgement" kicks (gate#915, gate#921). This
+	// mirrors Velocity, whose UnsignedPlayerCommandPacket has a null lastSeenMessages.
+	var lastSeenMessages *chat.LastSeenMessages
+	if !unsigned {
+		lastSeenMessages = &packet.LastSeenMessages
+	}
+
+	c.queueCommandResult(packet.Command, packet.Timestamp, lastSeenMessages, func(e *CommandExecuteEvent, newLastSeenMessages *chat.LastSeenMessages) proto.Packet {
+		if newLastSeenMessages != nil {
 			packet.LastSeenMessages = *newLastSeenMessages // fixed packet
 		}
 
