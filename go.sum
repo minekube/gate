@@ -41,6 +41,8 @@ github.com/dboslee/lru v0.0.1/go.mod h1:vDIFJHUqr1vdYKAdG9x3r+zFWP0i9uJqQWpB6nSu
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/ebitengine/purego v0.10.1 h1:dewVBCBT2GaMu1SrNTYxQhgQBethzfhiwvZiLGP/qyY=
 github.com/ebitengine/purego v0.10.1/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/ebitengine/purego v0.10.2 h1:W809HbnvzAxgdm+aOvlSekrM16wGCdT/e76+9tS7gzE=
+github.com/ebitengine/purego v0.10.2/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/edwingeng/deque/v2 v2.1.1 h1:+xjC3TnaeMPLZMi7QQf9jN2K00MZmTwruApqplbL9IY=
 github.com/edwingeng/deque/v2 v2.1.1/go.mod h1:HukI8CQe9KDmZCcURPZRYVYjH79Zy2tIjTF9sN3Bgb0=
 github.com/emirpasic/gods v1.12.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
@@ -258,6 +260,8 @@ go.minekube.com/geyserlite v0.3.16 h1:g2iB/V4NtQ8C8GluhocCzaeOLfgjEVWrMGUU3re4OY
 go.minekube.com/geyserlite v0.3.16/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
 go.minekube.com/geyserlite v0.3.17 h1:vYkZCCOb43/yWSbsGRyUAmpl+NARNq4V0sejg4yFr30=
 go.minekube.com/geyserlite v0.3.17/go.mod h1:yy0/M0zSD6X3FoQMwtmf5Jn+7YFM7AZWamKw0E8fnOE=
+go.minekube.com/geyserlite v0.4.7 h1:ywxJOQ8saGXYve798hAbGU7FCZk4vABSLN94+OdCg7g=
+go.minekube.com/geyserlite v0.4.7/go.mod h1:S1pvrQQnYBrAu5AfoMMthb2Pprmd/wxGccM0Wd2dzKY=
 go.minekube.com/vialite v0.3.0 h1:IeJLHnaw8tBa0ZQVW4SYwzR0eXxG+j3u2KI805J8F4w=
 go.minekube.com/vialite v0.3.0/go.mod h1:W9L1l8/b/GsLmkw1BW4wijaaPj/zV3OdrtYJgWdkhxE=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
