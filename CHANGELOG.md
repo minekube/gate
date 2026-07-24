@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.28](https://github.com/minekube/gate/compare/v0.68.27...v0.68.28) (2026-07-24)
+
+
+### Bug Fixes
+
+* **java:** prevent chat acknowledgement desync across commands ([#922](https://github.com/minekube/gate/issues/922)) ([40dd8a9](https://github.com/minekube/gate/commit/40dd8a97fc3da9eebea5d01906ccf779de1d2e47))
+
 ## [0.68.27](https://github.com/minekube/gate/compare/v0.68.26...v0.68.27) (2026-07-19)
 
 
