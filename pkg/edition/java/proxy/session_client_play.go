@@ -156,9 +156,9 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *chat.KeyedPlayerCommand:
 		c.handleKeyedPlayerCommand(p)
 	case *chat.SessionPlayerCommand:
-		c.handleSessionPlayerCommand(p)
+		c.handleSessionPlayerCommand(p, p)
 	case *chat.UnsignedPlayerCommand:
-		c.handleSessionPlayerCommand(&p.SessionPlayerCommand)
+		c.handleSessionPlayerCommand(&p.SessionPlayerCommand, p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
@@ -712,7 +712,7 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *chat.LegacyChat) {
 	}
 }
 
-func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPlayerCommand) {
+func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPlayerCommand, original proto.Packet) {
 	_, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return
@@ -724,7 +724,7 @@ func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPla
 		return
 	}
 
-	err := c.chatHandler.handleCommand(p)
+	err := c.chatHandler.handleCommand(original)
 	if err != nil {
 		c.log.Error(err, "error handling session player command")
 	}
