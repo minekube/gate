@@ -22,7 +22,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pires/go-proxyproto v0.13.0
+	github.com/pires/go-proxyproto v0.15.0
 	github.com/robinbraemer/event v0.1.1
 	github.com/rs/xid v1.6.0
 	github.com/sandertv/go-raknet v1.13.0
@@ -43,7 +43,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
-	golang.org/x/net v0.49.0
+	golang.org/x/net v0.55.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/text v0.38.0
 	golang.org/x/time v0.14.0
