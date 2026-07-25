@@ -80,6 +80,10 @@ func TestStartupShippedConfigs(t *testing.T) {
 // Start creates its own event manager, so readiness is observed by dialing the
 // proxy listener instead of subscribing to jproxy.ReadyEvent.
 func TestStartupTopLevelStart(t *testing.T) {
+	// Keep otelutil.Init from exporting to an inherited OTLP endpoint.
+	t.Setenv("OTEL_TRACES_ENABLED", "false")
+	t.Setenv("OTEL_METRICS_ENABLED", "false")
+
 	configFile := writeConfigFile(t, configs.SimpleConfigBytes)
 	v := viper.New()
 	v.SetConfigFile(configFile)
