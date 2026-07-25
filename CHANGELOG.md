@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.29](https://github.com/minekube/gate/compare/v0.68.28...v0.68.29) (2026-07-25)
+
+
+### Bug Fixes
+
+* **deps:** update module google.golang.org/grpc to v1.82.1 [security] ([#924](https://github.com/minekube/gate/issues/924)) ([b106015](https://github.com/minekube/gate/commit/b10601557ffffa9768fe3132375e0301af68f814))
+
 ## [0.68.28](https://github.com/minekube/gate/compare/v0.68.27...v0.68.28) (2026-07-24)
 
 
