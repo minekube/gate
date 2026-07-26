@@ -49,7 +49,10 @@ func Forward(
 
 	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
-		errs.V(log, err).Info("failed to find route", "error", err)
+		// A player connection that matches no route is silently dropped, so log it at
+		// the default verbosity: it is always an operator-actionable misconfiguration,
+		// unlike the status pings that findRoute marks as debug-only.
+		log.Info("failed to find route", "error", err)
 		return
 	}
 
@@ -185,7 +188,12 @@ func findRoute(
 
 	host, route, groups := FindRouteWithGroups(clearedHost, routes...)
 	if route == nil {
-		return log.V(1), src, nil, nil, fmt.Errorf("no route configured for host %s", clearedHost)
+		// Status pings hit unknown hosts constantly, so they keep this out of the
+		// default log via errs.V. Forward logs it unconditionally for players.
+		return log, src, nil, nil, &errs.VerbosityError{
+			Err:       fmt.Errorf("no route configured for host %s", clearedHost),
+			Verbosity: 1,
+		}
 	}
 	log = log.WithValues("route", host)
 

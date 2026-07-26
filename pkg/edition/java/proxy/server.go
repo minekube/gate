@@ -427,7 +427,11 @@ func (s *serverConnection) handshakeAddr(vHost string, player Player) (string, e
 	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
 	} else if s.player.Type() == phase.ModernForge {
-		vHost = modernforge.ModernToken(forgeTokenSource)
+		// Forge joins the hostname and the token (String.join("\0", hostName, MARKER)),
+		// so the token must be appended, never replace the host. Assigning it drops the
+		// virtual host, which breaks forced hosts and, behind another proxy, leaves the
+		// next hop with an empty virtual host that matches no route.
+		vHost = backendHandshakeBaseHost(vHost, phase.ModernForge) + modernforge.ModernToken(forgeTokenSource)
 	}
 	return vHost, nil
 }

@@ -31,6 +31,22 @@ func TestHandshakeConnectionType(t *testing.T) {
 			wantType: phase.ModernForge,
 		},
 		{
+			name: "vanilla client on a host containing the FORGE marker",
+			h: &packet.Handshake{
+				ServerAddress:   "FORGE.example.com",
+				ProtocolVersion: int(version.Minecraft_1_20_2.Protocol),
+			},
+			wantType: phase.Vanilla,
+		},
+		{
+			name: "modern forge behind another proxy (host already consumed)",
+			h: &packet.Handshake{
+				ServerAddress:   "\000FORGE",
+				ProtocolVersion: int(version.Minecraft_1_20_2.Protocol),
+			},
+			wantType: phase.ModernForge,
+		},
+		{
 			name: "FML2 forge 1.13 client",
 			h: &packet.Handshake{
 				ServerAddress:   "server.example.com\000FML2\000",

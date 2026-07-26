@@ -10,6 +10,8 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/forge"
+	"go.minekube.com/gate/pkg/edition/java/lite"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
@@ -72,7 +74,42 @@ func TestHandshakeAddrPassesCleanHostToBackendAddresserForModernForge(t *testing
 
 	require.NoError(t, err)
 	require.Equal(t, "play.example.org", addresser.gotDefaultHost)
-	require.Equal(t, "\x00FML3\x00", got)
+	require.Equal(t, "play.example.org\x00FML3\x00", got)
+}
+
+// TestHandshakeAddrAppendsModernForgeTokenToHost guards the default setup without a
+// BackendHandshakeAddresser: the Forge token must be appended to the host, never
+// replace it, or the backend (and any proxy behind Gate) loses the virtual host.
+func TestHandshakeAddrAppendsModernForgeTokenToHost(t *testing.T) {
+	serverConn, player, _ := newHandshakeAddrTestConnection(t, config.NoneForwardingMode, phase.ModernForge)
+	player.virtualHost = netutil.NewAddr("play.example.org\x00FORGE:25565", "tcp")
+
+	got, err := serverConn.handshakeAddr("play.example.org\x00FORGE", player)
+
+	require.NoError(t, err)
+	require.Equal(t, "play.example.org\x00FORGE", got)
+}
+
+// TestHandshakeAddrKeepsModernForgeHostRoutableForLite covers the proxy-behind-proxy
+// topology: the address Gate writes into the backend handshake is the virtual host
+// the next proxy routes on, so dropping the host leaves Gate Lite with nothing to
+// match and every Forge player is silently dropped.
+func TestHandshakeAddrKeepsModernForgeHostRoutableForLite(t *testing.T) {
+	serverConn, player, _ := newHandshakeAddrTestConnection(t, config.NoneForwardingMode, phase.ModernForge)
+	player.virtualHost = netutil.NewAddr("play.example.org\x00FORGE:25565", "tcp")
+
+	got, err := serverConn.handshakeAddr("play.example.org\x00FORGE", player)
+	require.NoError(t, err)
+
+	clearedHost := lite.ClearVirtualHost(got)
+	require.Equal(t, "play.example.org", clearedHost)
+
+	host, route := lite.FindRoute(clearedHost, liteconfig.Route{
+		Host:    []string{"play.example.org"},
+		Backend: []string{"127.0.0.1:25566"},
+	})
+	require.NotNil(t, route, "forge handshake must match the host route")
+	require.Equal(t, "play.example.org", host)
 }
 
 func TestHandshakeAddrPassesCleanHostToBackendAddresserForLegacyForge(t *testing.T) {

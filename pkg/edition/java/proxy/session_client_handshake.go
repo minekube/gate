@@ -185,7 +185,7 @@ func stateForProtocol(status int) *state.Registry {
 
 func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 	// Modern Forge 1.20.2+ uses the FORGE token.
-	if strings.Contains(h.ServerAddress, modernforge.Token) &&
+	if modernforge.HasToken(h.ServerAddress) &&
 		h.ProtocolVersion >= int(version.Minecraft_1_20_2.Protocol) {
 		return phase.ModernForge
 	}
