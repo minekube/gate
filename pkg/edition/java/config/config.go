@@ -247,6 +247,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	validateBackendFloodgate(c, e)
 	if c.Lite.Enabled {
+		warnLiteIgnoredSettings(c, w)
 		warns2, errs2 := c.Lite.Validate()
 		warns = append(warns, warns2...)
 		errs = append(errs, errs2...)
@@ -310,6 +311,54 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	return
+}
+
+// warnLiteIgnoredSettings warns about full proxy settings that Lite mode ignores.
+//
+// Lite pipes the player connection through to the backend unchanged, so Gate never takes
+// part in login, player info forwarding, compression or answering status requests. Accepting
+// these settings without a word is the cause of https://github.com/minekube/gate/issues/929.
+// Settings left at their default are not reported, only ones an operator deliberately set.
+func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
+	f := c.Forwarding
+	forwardingConfigured := f.VelocitySecret != "" || f.BungeeGuardSecret != ""
+	switch f.Mode {
+	case "", NoneForwardingMode, LegacyForwardingMode:
+		// legacy is the default mode, so staying quiet keeps every Lite config warning-free.
+	default:
+		// velocity, bungeeguard and typos alike: all of them are inert in Lite mode.
+		forwardingConfigured = true
+	}
+	if forwardingConfigured {
+		w("Lite mode ignores player info forwarding (forwarding.mode %q, velocitySecret, "+
+			"bungeeGuardSecret): Lite pipes the connection through unchanged, so Gate never "+
+			"sends player info to the backend. Backends that require it, such as modded servers "+
+			"with FabricProxy-Lite or Proxy-Compatible-Forge, reject players with "+
+			`"you need to be running velocity, or a velocity proxy with modern forwarding". `+
+			"Either configure the backend to not require proxy forwarding, or disable "+
+			"lite.enabled and route with servers/try instead. "+
+			"See https://gate.minekube.com/guide/modded-servers", f.Mode)
+	}
+
+	if len(c.Servers) != 0 || len(c.Try) != 0 || len(c.ForcedHosts) != 0 {
+		w("Lite mode ignores servers, try and forcedHosts: use lite.routes to route " +
+			"connections. See https://gate.minekube.com/guide/lite")
+	}
+
+	if !c.OnlineMode {
+		w("Lite mode ignores onlineMode: Lite forwards the login to the backend, which " +
+			"authenticates players itself, so set online-mode in the backend's server.properties.")
+	}
+
+	if c.Compression != DefaultConfig.Compression {
+		w("Lite mode ignores compression: Gate does not decode packets in Lite mode, " +
+			"the client and the backend negotiate compression between themselves.")
+	}
+
+	if c.AnnounceForge {
+		w("Lite mode ignores announceForge: status responses are proxied from the backend, " +
+			"which announces its own mods.")
+	}
 }
 
 func validateBackendFloodgate(c *Config, e func(string, ...any)) {
