@@ -95,7 +95,8 @@ config:
   # The upstreams (IP addresses or CIDR blocks) whose proxy protocol header is trusted
   # to carry the real client address. A header from any other peer is rejected, so a
   # player connecting to Gate directly cannot claim to come from somebody else's IP.
-  # Only used when proxyProtocol is enabled. Defaults to the loopback, private and
+  # Used for client connections when proxyProtocol is enabled. Entries are still
+  # validated while it is disabled. Defaults to the loopback, private and
   # link-local networks a proxy protocol sender is normally deployed in:
   #   127.0.0.0/8, ::1/128, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
   #   169.254.0.0/16, fc00::/7, fe80::/10

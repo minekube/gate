@@ -155,7 +155,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	// address. A header sent by any other peer is rejected, so a client that can
 	// reach the proxy directly cannot claim to connect from somebody else's IP.
 	// When empty, DefaultProxyProtocolTrustedProxies is used.
-	// Only used when ProxyProtocol is enabled.
+	// Used for client connections when ProxyProtocol is enabled; entries are still
+	// validated while it is disabled.
 	ProxyProtocolTrustedProxies []string `yaml:"proxyProtocolTrustedProxies,omitempty" json:"proxyProtocolTrustedProxies,omitempty"`
 
 	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections" json:"shouldPreventClientProxyConnections,omitempty"` // Sends player IP to Mojang on login
