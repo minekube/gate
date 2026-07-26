@@ -165,6 +165,19 @@ func (d *Decoder) readPayload() (payload []byte, n int, err error) {
 	return payload, n, nil
 }
 
+// FrameTooLargeError is returned when a peer announces a packet frame longer
+// than MaximumFrameLength. It carries the announced length so callers can decide
+// how loudly to report it: an oversized frame from an untrusted client is noise,
+// while one from a backend server is operator-actionable.
+type FrameTooLargeError struct {
+	Length int // the frame length the peer announced
+	Max    int // the maximum length Gate accepts
+}
+
+func (e *FrameTooLargeError) Error() string {
+	return fmt.Sprintf("received invalid packet length %d (maximum is %d)", e.Length, e.Max)
+}
+
 func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
 	length, n, err := util.ReadVarIntReturnN(rd)
 	if err != nil {
@@ -173,8 +186,8 @@ func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
 	if length == 0 {
 		return // function caller should skip over empty packet
 	}
-	if length < 0 || length > 1048576 { // 2^(21-1)
-		return nil, n, fmt.Errorf("received invalid packet length %d", length)
+	if length < 0 || length > MaximumFrameLength {
+		return nil, n, &FrameTooLargeError{Length: length, Max: MaximumFrameLength}
 	}
 
 	payload = make([]byte, length)

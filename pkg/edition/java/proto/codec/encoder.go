@@ -26,6 +26,19 @@ const (
 	// data comes from the (untrusted) client, limiting how much memory a client
 	// can force the proxy to allocate. Clientbound data keeps UncompressedCap.
 	ServerboundUncompressedCap = 2 * 1024 * 1024 // 2MiB
+	// MaximumFrameLength is the largest packet frame Gate accepts off the wire,
+	// matching vanilla's Varint21FrameDecoder: its length prefix is a VarInt of at
+	// most 21 bits, so a frame can announce up to 2^21-1 bytes.
+	//
+	// This bounds the frame as it arrives, before decompression, so it also caps
+	// compressed frames. The decompressed size is capped separately and higher by
+	// UncompressedCap / ServerboundUncompressedCap.
+	//
+	// Modded backends (Forge/NeoForge) legitimately send config-phase frames well
+	// past 1MiB, e.g. registry sync and mod network queries, so a tighter-than-
+	// vanilla cap here kills those connections. See
+	// https://github.com/minekube/gate/issues/930.
+	MaximumFrameLength = 1<<21 - 1 // 2097151
 )
 
 // Encoder is a synchronized packet encoder.

@@ -36,6 +36,7 @@ func NewReader(conn net.Conn, direction proto.Direction, readTimeout time.Durati
 	readBuf := bufio.NewReader(conn)
 	return &reader{
 		c:           conn,
+		direction:   direction,
 		readTimeout: readTimeout,
 		log:         log.WithName("reader"),
 		readBuf:     readBuf,
@@ -47,7 +48,10 @@ type reader struct {
 	log         logr.Logger
 	readTimeout time.Duration
 	c           net.Conn // underlying connection
-	readBuf     *bufio.Reader
+	// direction of the packets being read: ClientBound means this reader reads
+	// from a backend server, ServerBound means it reads from a client.
+	direction proto.Direction
+	readBuf   *bufio.Reader
 	*codec.Decoder
 }
 
@@ -61,10 +65,32 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 			r.log.V(1).Info("error reading packet, recovered", "error", err)
 			return nil, ErrReadPacketRetry
 		}
-		r.log.V(1).Info("error reading packet, closing connection", "error", err)
+		r.logCloseErr(err)
 		return nil, err
 	}
 	return packetCtx, nil
+}
+
+// logCloseErr logs the error that is about to close the connection.
+//
+// Read errors are debug-only by default: most of them are untrusted clients
+// sending garbage, and logging those at INFO would let anyone spam the log.
+// An oversized frame from a backend server is the exception worth surfacing:
+// Gate just closes the socket, so the backend's own log stays empty and the
+// player only sees "unable to connect", leaving the operator with no path from
+// symptom to cause. It is also actionable, since the operator runs that server.
+// This fires at most once per connection, immediately before it is closed, so a
+// misbehaving backend cannot flood the log with it either.
+func (r *reader) logCloseErr(err error) {
+	var frameErr *codec.FrameTooLargeError
+	if r.direction == proto.ClientBound && errors.As(err, &frameErr) {
+		r.log.Error(err, "backend server sent a packet frame larger than the maximum allowed, closing connection",
+			"peer", r.c.RemoteAddr().String(),
+			"frameLength", frameErr.Length,
+			"maxFrameLength", frameErr.Max)
+		return
+	}
+	r.log.V(1).Info("error reading packet, closing connection", "error", err)
 }
 
 // handles error when read the next packet
