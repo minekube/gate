@@ -12,6 +12,7 @@ import (
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
+	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -88,6 +89,39 @@ func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 }
 
+// ResolveProxyProtocolTrustedProxies returns the configured trusted upstreams,
+// falling back to DefaultProxyProtocolTrustedProxies when none are configured.
+func ResolveProxyProtocolTrustedProxies(configured []string) []string {
+	if len(configured) == 0 {
+		return DefaultProxyProtocolTrustedProxies()
+	}
+	return configured
+}
+
+// DefaultProxyProtocolTrustedProxies returns the upstreams whose PROXY protocol
+// header is trusted when Config.ProxyProtocolTrustedProxies is empty.
+//
+// It covers the loopback, private and link-local networks a PROXY protocol
+// sender is normally deployed in (a load balancer sidecar, a Kubernetes
+// ingress, a cloud platform's internal network), but never the public internet:
+// anybody able to open a TCP connection to the proxy from a public address must
+// not be able to assert an arbitrary client IP. Operators fronting Gate with a
+// proxy that has a public address must list it explicitly.
+//
+// A new slice is returned on every call so callers cannot mutate the defaults.
+func DefaultProxyProtocolTrustedProxies() []string {
+	return []string{
+		"127.0.0.0/8",    // IPv4 loopback
+		"::1/128",        // IPv6 loopback
+		"10.0.0.0/8",     // RFC 1918 private
+		"172.16.0.0/12",  // RFC 1918 private
+		"192.168.0.0/16", // RFC 1918 private
+		"169.254.0.0/16", // IPv4 link-local
+		"fc00::/7",       // IPv6 unique local (includes Fly.io 6PN fdaa::/16)
+		"fe80::/10",      // IPv6 link-local
+	}
+}
+
 // Config is the configuration of the proxy.
 type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go for generating output yaml and markdown for the docs
 	Bind string `yaml:"bind"` // The address to listen for connections.
@@ -116,6 +150,13 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Compression          Compression   `yaml:"compression,omitempty" json:"compression,omitempty"`
 	ProxyProtocol        bool          `yaml:"proxyProtocol,omitempty" json:"proxyProtocol,omitempty"`     // Enable HA-Proxy protocol mode
 	ProxyProtocolBackend bool          `yaml:"proxyProtocolBackend" json:"proxyProtocolBackend,omitempty"` // Enable HA-Proxy protocol mode for backend servers
+	// ProxyProtocolTrustedProxies lists the upstreams (IP addresses or CIDR
+	// blocks) whose PROXY protocol header is trusted to carry the real client
+	// address. A header sent by any other peer is rejected, so a client that can
+	// reach the proxy directly cannot claim to connect from somebody else's IP.
+	// When empty, DefaultProxyProtocolTrustedProxies is used.
+	// Only used when ProxyProtocol is enabled.
+	ProxyProtocolTrustedProxies []string `yaml:"proxyProtocolTrustedProxies,omitempty" json:"proxyProtocolTrustedProxies,omitempty"`
 
 	ShouldPreventClientProxyConnections bool `yaml:"shouldPreventClientProxyConnections" json:"shouldPreventClientProxyConnections,omitempty"` // Sends player IP to Mojang on login
 
@@ -245,6 +286,8 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		w("Packet limiter has a rate set but interval <= 0; the limiter is disabled. Set packetLimiter.interval > 0 to enable it.")
 	}
 
+	validateProxyProtocol(c, e, w)
+
 	validateBackendFloodgate(c, e)
 	if c.Lite.Enabled {
 		warnLiteIgnoredSettings(c, w)
@@ -358,6 +401,27 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if c.AnnounceForge {
 		w("Lite mode ignores announceForge: status responses are proxied from the backend, " +
 			"which announces its own mods.")
+	}
+}
+
+// validateProxyProtocol validates the trusted upstreams allowed to send a PROXY
+// protocol header. The list is always validated, even while proxyProtocol is
+// disabled, so a typo is not only discovered once the feature is turned on.
+func validateProxyProtocol(c *Config, e, w func(string, ...any)) {
+	trusted, err := netutil.ParseTrustedNetworks(ResolveProxyProtocolTrustedProxies(c.ProxyProtocolTrustedProxies))
+	if err != nil {
+		e("Invalid proxyProtocolTrustedProxies: %v", err)
+		return
+	}
+	if !c.ProxyProtocol {
+		return
+	}
+	for _, prefix := range trusted {
+		if prefix.Bits() == 0 {
+			w("proxyProtocolTrustedProxies contains %s which trusts every upstream: "+
+				"anyone able to connect to %s can then claim to be any IP address. "+
+				"List only the proxies in front of Gate.", prefix, c.Bind)
+		}
 	}
 }
 

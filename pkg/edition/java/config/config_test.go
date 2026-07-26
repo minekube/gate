@@ -608,3 +608,66 @@ bedrock:
 		t.Errorf("Expected default GeyserListenAddr to be applied")
 	}
 }
+
+func TestProxyProtocolTrustedProxiesValidate(t *testing.T) {
+	base := func() Config {
+		cfg := DefaultConfig
+		cfg.Servers = map[string]string{"Lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"Lobby"}
+		return cfg
+	}
+
+	t.Run("defaults are valid", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocol = true
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		require.Empty(t, warnsContaining(warns, "proxyProtocolTrustedProxies"))
+	})
+
+	t.Run("malformed entries are rejected even while disabled", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocolTrustedProxies = []string{"10.0.0.0/8", "not-an-ip"}
+		_, errs := cfg.Validate()
+		require.Len(t, errsContaining(errs, "proxyProtocolTrustedProxies"), 1)
+	})
+
+	t.Run("trusting every upstream warns", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocol = true
+		cfg.ProxyProtocolTrustedProxies = []string{"0.0.0.0/0"}
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		require.Len(t, warnsContaining(warns, "proxyProtocolTrustedProxies"), 1)
+	})
+
+	t.Run("trusting every upstream while disabled does not warn", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocolTrustedProxies = []string{"::/0"}
+		warns, _ := cfg.Validate()
+		require.Empty(t, warnsContaining(warns, "proxyProtocolTrustedProxies"))
+	})
+}
+
+func TestResolveProxyProtocolTrustedProxies(t *testing.T) {
+	require.Equal(t, DefaultProxyProtocolTrustedProxies(), ResolveProxyProtocolTrustedProxies(nil))
+	require.Equal(t, DefaultProxyProtocolTrustedProxies(), ResolveProxyProtocolTrustedProxies([]string{}))
+	require.Equal(t, []string{"10.0.0.0/8"}, ResolveProxyProtocolTrustedProxies([]string{"10.0.0.0/8"}))
+
+	// The defaults must never be shared, so a caller cannot widen them for everyone.
+	defaults := DefaultProxyProtocolTrustedProxies()
+	defaults[0] = "0.0.0.0/0"
+	require.NotContains(t, DefaultProxyProtocolTrustedProxies(), "0.0.0.0/0")
+}
+
+func warnsContaining(warns []error, substr string) []error { return errsContaining(warns, substr) }
+
+func errsContaining(errs []error, substr string) []error {
+	var found []error
+	for _, err := range errs {
+		if strings.Contains(err.Error(), substr) {
+			found = append(found, err)
+		}
+	}
+	return found
+}
