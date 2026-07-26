@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.68.30](https://github.com/minekube/gate/compare/v0.68.29...v0.68.30) (2026-07-26)
+
+
+### Bug Fixes
+
+* **codec:** raise packet frame cap to vanilla's 2^21-1 ([#931](https://github.com/minekube/gate/issues/931)) ([0b71907](https://github.com/minekube/gate/commit/0b71907c08b75930581ccc816ca5d9f7f149bdaf)), closes [#930](https://github.com/minekube/gate/issues/930) [#587](https://github.com/minekube/gate/issues/587)
+* **config:** warn about ignored Lite mode settings ([#933](https://github.com/minekube/gate/issues/933)) ([19aa236](https://github.com/minekube/gate/commit/19aa2360436feb485271078f141dcf4d427de1c2))
+* **deps:** Update geyserlite to v0.4.9 ([#909](https://github.com/minekube/gate/issues/909)) ([2a25453](https://github.com/minekube/gate/commit/2a25453eb96413460a3dbde9ce773409f52989d8))
+* **forge:** append modern forge token to backend handshake host ([#934](https://github.com/minekube/gate/issues/934)) ([88c0ac0](https://github.com/minekube/gate/commit/88c0ac08f6664b891c75fe22f262d004742573e6)), closes [#928](https://github.com/minekube/gate/issues/928)
+
 ## [0.68.29](https://github.com/minekube/gate/compare/v0.68.28...v0.68.29) (2026-07-25)
 
 
