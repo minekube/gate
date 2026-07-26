@@ -33,11 +33,17 @@ func parseNetwork(network string) (netip.Prefix, error) {
 		if err != nil {
 			return netip.Prefix{}, fmt.Errorf("%q is not a valid IP network: %w", network, err)
 		}
+		if prefix.Addr().Is4In6() {
+			return netip.Prefix{}, fmt.Errorf("%q is not a valid IP network: IPv4-mapped IPv6 CIDRs are not supported; use plain IPv4 CIDR form instead (e.g. %q)", network, "10.0.0.0/8")
+		}
 		return netip.PrefixFrom(prefix.Addr().Unmap(), prefix.Bits()).Masked(), nil
 	}
 	addr, err := netip.ParseAddr(network)
 	if err != nil {
 		return netip.Prefix{}, fmt.Errorf("%q is not a valid IP address or network: %w", network, err)
+	}
+	if addr.Is4In6() {
+		return netip.Prefix{}, fmt.Errorf("%q is not a valid IP address or network: IPv4-mapped IPv6 addresses are not supported; use the plain IPv4 form instead (e.g. %q)", network, "10.0.0.1")
 	}
 	addr = addr.Unmap()
 	return netip.PrefixFrom(addr, addr.BitLen()), nil

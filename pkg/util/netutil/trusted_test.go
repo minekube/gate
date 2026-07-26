@@ -17,7 +17,15 @@ func TestParseTrustedNetworks(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "127.0.0.0/8,10.1.2.3/32,fc00::/7,2001:db8::1/128", trusted.String())
 
-	for _, invalid := range []string{"", "not-an-ip", "10.0.0.0/33", "10.0.0.0/", "10.0.0.256"} {
+	for _, invalid := range []string{
+		"",
+		"not-an-ip",
+		"10.0.0.0/33",
+		"10.0.0.0/",
+		"10.0.0.256",
+		"::ffff:10.0.0.0/104",
+		"::ffff:10.0.0.1",
+	} {
 		_, err := ParseTrustedNetworks([]string{invalid})
 		require.Errorf(t, err, "expected %q to be rejected", invalid)
 	}
