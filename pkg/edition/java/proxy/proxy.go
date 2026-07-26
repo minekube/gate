@@ -18,7 +18,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
@@ -75,6 +74,8 @@ type Proxy struct {
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
+	proxyProtocol atomic.Pointer[proxyProtocol] // PROXY protocol wrapper for accepted connections
+
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
 }
@@ -129,6 +130,12 @@ func New(options Options) (p *Proxy, err error) {
 
 	// Connection & login rate limiters
 	p.initQuota(&options.Config.Quota)
+
+	pp, err := newProxyProtocol(options.Config)
+	if err != nil {
+		return nil, err
+	}
+	p.proxyProtocol.Store(pp)
 
 	if err = p.initMeter(); err != nil {
 		return nil, fmt.Errorf("error initializing meter: %w", err)
@@ -204,7 +211,8 @@ func (p *Proxy) Start(ctx context.Context) error {
 			p.log.Info("running in lite mode")
 		}
 		if p.cfg.ProxyProtocol {
-			p.log.Info("proxy protocol enabled")
+			p.log.Info("proxy protocol enabled",
+				"trustedProxies", p.proxyProtocol.Load().trustedNetworks())
 		}
 		if p.cfg.Auth.SessionServerURL != nil {
 			p.log.Info("using custom authentication server", "url", p.cfg.Auth.SessionServerURL)
@@ -232,6 +240,12 @@ func (p *Proxy) Start(ctx context.Context) error {
 	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
 		*p.cfg = *e.Config
 		p.initQuota(&e.Config.Quota)
+		if pp, err := newProxyProtocol(e.Config); err != nil {
+			// Keep the previous trusted upstreams rather than widening them.
+			p.log.Error(err, "keeping previous proxy protocol trusted upstreams")
+		} else {
+			p.proxyProtocol.Store(pp)
+		}
 		if e.PrevConfig.Bind != e.Config.Bind {
 			p.closeMu.Lock()
 			stopLn()
@@ -657,7 +671,7 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 		}
 
 		if p.cfg.ProxyProtocol {
-			conn = proxyproto.NewConn(conn)
+			conn = p.proxyProtocol.Load().wrapConn(conn)
 		}
 
 		go p.HandleConn(conn)

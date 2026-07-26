@@ -112,6 +112,18 @@ config:
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.
   proxyProtocol: false
+  # The upstreams (IP addresses or CIDR blocks) whose proxy protocol header is trusted
+  # to carry the real client address. A header from any other peer is rejected, so a
+  # player connecting to Gate directly cannot claim to come from somebody else's IP.
+  # Used for client connections when proxyProtocol is enabled. Entries are still
+  # validated while it is disabled. Defaults to the loopback, private and
+  # link-local networks a proxy protocol sender is normally deployed in:
+  #   127.0.0.0/8, ::1/128, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
+  #   169.254.0.0/16, fc00::/7, fe80::/10
+  # Set this to the address of your load balancer if it has a public IP.
+  #proxyProtocolTrustedProxies:
+  #  - 203.0.113.7
+  #  - 198.51.100.0/24
   # ForcedHosts routes players to specific servers based on the hostname they connect with.
   # This allows you to have multiple domains pointing to the same Gate proxy but route players
   # to different servers based on which domain they used to connect.
