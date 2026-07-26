@@ -21,7 +21,8 @@ Gate provides comprehensive support for modded Minecraft servers, implementing t
 ::: danger Player info forwarding requires full proxy mode, not Lite mode
 [Gate Lite](/guide/lite) **cannot do velocity/modern (or BungeeCord/BungeeGuard) forwarding**. Lite
 pipes the player connection through to the backend unchanged, so Gate never sends player info and
-`forwarding.mode` / `velocitySecret` are ignored — Gate warns about them at startup.
+`forwarding.mode`, `velocitySecret`, and `bungeeGuardSecret` are ignored. Gate warns at startup when
+a forwarding mode other than `none`/`legacy` or either secret is set.
 
 A backend behind Lite must therefore **not require proxy forwarding**: leave the forwarding mod
 disabled (or uninstalled) and keep `online-mode=true` in `server.properties`. Otherwise the mod
