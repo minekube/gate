@@ -96,6 +96,135 @@ func TestViaConfigIgnoredInLiteMode(t *testing.T) {
 	require.Empty(t, errs)
 }
 
+// TestLiteIgnoredSettingsWarn covers https://github.com/minekube/gate/issues/929: Lite mode
+// pipes the connection through unchanged, so full proxy settings are inert and Gate must say
+// so instead of silently accepting them.
+func TestLiteIgnoredSettingsWarn(t *testing.T) {
+	liteConfig := func() Config {
+		cfg := DefaultConfig
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		return cfg
+	}
+
+	t.Run("velocity forwarding warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = VelocityForwardingMode
+		cfg.Forwarding.VelocitySecret = "secret"
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+		requireWarnContains(t, warns, `"you need to be running velocity, or a velocity proxy with modern forwarding"`)
+	})
+
+	t.Run("bungeeguard forwarding warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = BungeeGuardForwardingMode
+		cfg.Forwarding.BungeeGuardSecret = "secret"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("unknown forwarding mode warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = "modern"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("velocity secret alone warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.VelocitySecret = "secret"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("servers try and forcedHosts warn", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+		cfg.ForcedHosts = ForcedHosts{"example.com": []string{"lobby"}}
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores servers, try and forcedHosts")
+	})
+
+	t.Run("offline mode warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.OnlineMode = false
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores onlineMode")
+	})
+
+	t.Run("compression warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Compression.Threshold = 0
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores compression")
+	})
+
+	t.Run("announceForge warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.AnnounceForge = true
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores announceForge")
+	})
+
+	t.Run("lite defaults do not warn", func(t *testing.T) {
+		cfg := liteConfig()
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireNoWarnContains(t, warns, "Lite mode ignores")
+	})
+
+	t.Run("full mode is unaffected", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.Forwarding.Mode = VelocityForwardingMode
+		cfg.Forwarding.VelocitySecret = "secret"
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+		cfg.ForcedHosts = ForcedHosts{"example.com": []string{"lobby"}}
+		cfg.AnnounceForge = true
+		cfg.OnlineMode = false
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireNoWarnContains(t, warns, "Lite mode ignores")
+	})
+}
+
+func requireWarnContains(t *testing.T, warns []error, want string) {
+	t.Helper()
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), want) {
+			return
+		}
+	}
+	t.Fatalf("expected warning containing %q, got %v", want, warns)
+}
+
+func requireNoWarnContains(t *testing.T, warns []error, unwanted string) {
+	t.Helper()
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), unwanted) {
+			t.Fatalf("unexpected warning containing %q: %v", unwanted, warn)
+		}
+	}
+}
+
 func TestBackendFloodgateValidation(t *testing.T) {
 	t.Run("disabled by default", func(t *testing.T) {
 		cfg := DefaultConfig

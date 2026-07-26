@@ -18,6 +18,29 @@ Gate provides comprehensive support for modded Minecraft servers, implementing t
 - **BungeeGuard forwarding** - Enhanced security over legacy forwarding
 - **No forwarding** - Basic proxy functionality without player data forwarding
 
+::: danger Player info forwarding requires full proxy mode, not Lite mode
+[Gate Lite](/guide/lite) **cannot do velocity/modern (or BungeeCord/BungeeGuard) forwarding**. Lite
+pipes the player connection through to the backend unchanged, so Gate never sends player info and
+`forwarding.mode`, `velocitySecret`, and `bungeeGuardSecret` are ignored. Gate warns at startup when
+a forwarding mode other than `none`/`legacy` or either secret is set.
+
+A backend behind Lite must therefore **not require proxy forwarding**: leave the forwarding mod
+disabled (or uninstalled) and keep `online-mode=true` in `server.properties`. Otherwise the mod
+rejects every player with its own message:
+
+> You need to be running velocity, or a velocity proxy with modern forwarding.
+
+To use forwarding, run Gate in full proxy mode instead: set `lite.enabled: false` and route with
+`servers` + `try` as shown in the configs below.
+:::
+
+::: tip A different MOTD after switching from Lite to full mode is expected
+In Lite mode the server list ping is proxied from the backend, so players see the **backend's**
+MOTD and player count. In full proxy mode Gate answers the ping itself with `status.motd` and
+`status.showMaxPlayers`. The change is expected, not a bug — configure `status` in your Gate
+config to get the MOTD you want.
+:::
+
 ## Fabric Server Setup
 
 Gate works with Fabric out of the box, but you should add support for player info forwarding using a mod like [FabricProxy-Lite](https://modrinth.com/mod/fabricproxy-lite) (which supports Velocity modern forwarding).
@@ -232,6 +255,11 @@ config:
 
 #### Forwarding Issues
 
+- **Lite mode** - `"You need to be running velocity, or a velocity proxy with modern forwarding"`
+  most often means Gate runs in [Lite mode](/guide/lite), which cannot forward player info at all.
+  Check Gate's startup log for a `config validation warn` about `forwarding.mode`, then either set
+  `lite.enabled: false` (and route with `servers` + `try`), or stop the backend mod from requiring
+  forwarding
 - **Secret mismatch** - ensure `velocitySecret` matches in both Gate and mod configs
 - **Online mode** - must be `false` on backend servers when using forwarding
 - **Mod compatibility** - verify the forwarding mod supports your server version
