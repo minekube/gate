@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.31](https://github.com/minekube/gate/compare/v0.68.30...v0.68.31) (2026-07-26)
+
+
+### Bug Fixes
+
+* **proxy:** restrict PROXY protocol headers to trusted upstreams ([#936](https://github.com/minekube/gate/issues/936)) ([25c2680](https://github.com/minekube/gate/commit/25c2680008cf96008d8e42e8670ce73ec0861b87))
+
 ## [0.68.30](https://github.com/minekube/gate/compare/v0.68.29...v0.68.30) (2026-07-26)
 
 
