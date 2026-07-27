@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.33](https://github.com/minekube/gate/compare/v0.68.32...v0.68.33) (2026-07-27)
+
+
+### Bug Fixes
+
+* repair asset-less releases safely ([#941](https://github.com/minekube/gate/issues/941)) ([00b11db](https://github.com/minekube/gate/commit/00b11dbdc1dea88b9de10b1ffaa99317324b7f28))
+
 ## [0.68.32](https://github.com/minekube/gate/compare/v0.68.31...v0.68.32) (2026-07-27)
 
 
