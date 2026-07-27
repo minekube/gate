@@ -8,8 +8,8 @@ import (
 )
 
 // Quota implements a simple IP-based rate limiter.
-// Each set of incoming IP addresses with the same
-// low-order byte gets events per second.
+// Incoming addresses are bucketed by network prefix (IPv4 /24, IPv6 /64,
+// see ipKey) and each bucket gets the configured events per second.
 // Information is kept in an LRU cache of size maxEntries.
 type Quota struct {
 	eps   float32    // allowed events per second
@@ -42,12 +42,20 @@ func NewQuota(eventsPerSecond float32, burst, maxEntries int) *Quota {
 	}
 }
 
+// ipKey derives the quota bucket key for an IP address.
+//
+// IPv4 addresses (including IPv4-mapped IPv6 addresses) are bucketed by their
+// /24 prefix. IPv6 addresses are bucketed by their /64 prefix: a /64 is the
+// standard allocation handed to a single end user, so bucketing any narrower
+// would let one subscriber rotate through its own addresses and evade the
+// limiter entirely.
 func ipKey(ipStr string) string {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return ""
 	}
-	// Zero out last byte, to cover ranges.
-	ip[len(ip)-1] = 0
-	return ip.String()
+	if v4 := ip.To4(); v4 != nil {
+		return v4.Mask(net.CIDRMask(24, 32)).String()
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String()
 }
