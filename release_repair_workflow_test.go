@@ -396,6 +396,26 @@ func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 	if !strings.Contains(upload, "unexpected file") {
 		t.Error("publish upload must fail on artifact files outside the checksums allowlist")
 	}
+	nameCheck := strings.Index(upload, `name_base="$(basename -- "$name")"`)
+	pathUse := strings.Index(upload, `file="$STAGED/$name"`)
+	if nameCheck < 0 || pathUse < 0 || nameCheck > pathUse {
+		t.Error("publish upload must validate manifest names before constructing staged paths")
+	}
+	for _, want := range []string{
+		`[ -z "$name" ]`,
+		`[ "$name" = "." ]`,
+		`[ "$name" = ".." ]`,
+		`[[ "$name" == *\\* ]]`,
+		`[[ "$name" == -* ]]`,
+		"invalid asset name",
+	} {
+		if !strings.Contains(upload, want) {
+			t.Errorf("publish upload does not reject manifest name case %q", want)
+		}
+	}
+	if !strings.Contains(upload, `gh release upload "$RELEASE_TAG" --clobber --repo "$GITHUB_REPOSITORY" --`) {
+		t.Error("gh release upload must terminate options before the validated file list")
+	}
 
 	// --clobber is a blunt instrument. It may only ever be handed names that
 	// are holes, so an asset already published, uploaded and non-empty is

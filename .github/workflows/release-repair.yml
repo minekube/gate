@@ -321,7 +321,16 @@ jobs:
 
           UPLOAD_FILES=()
           while read -r _ name; do
-            [ -n "$name" ] || continue
+            if [ -z "$name" ]; then
+              echo "::error::checksums.txt contains invalid asset name '<empty>'; expected a plain basename."
+              exit 1
+            fi
+            name_base="$(basename -- "$name")"
+            if [ "$name" != "$name_base" ] || [ "$name" = "." ] || [ "$name" = ".." ] \
+              || [[ "$name" == *\\* ]] || [[ "$name" == -* ]]; then
+              echo "::error::checksums.txt contains invalid asset name '$name'; expected a plain basename."
+              exit 1
+            fi
             file="$STAGED/$name"
             if [ ! -f "$file" ] || [ -L "$file" ]; then
               echo "::error::checksums.txt names $name but the downloaded artifact has no such file."
@@ -397,7 +406,7 @@ jobs:
           fi
 
           echo "Uploading missing assets: ${UPLOAD_LIST[*]}"
-          gh release upload "$RELEASE_TAG" "${UPLOAD_LIST[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" --clobber --repo "$GITHUB_REPOSITORY" -- "${UPLOAD_LIST[@]}"
 
       # A release that publishes nothing downloadable is indistinguishable from
       # a healthy one: green run, release page exists, and the hole only
