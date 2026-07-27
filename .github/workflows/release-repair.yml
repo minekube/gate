@@ -50,12 +50,12 @@ jobs:
     timeout-minutes: 60
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout the release tag
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
           ref: ${{ inputs.release_tag }}
 
       # Provenance: a repair must build the tag, not a branch that merely
@@ -90,6 +90,8 @@ jobs:
       # assets" step uses: a positive asset count is not a build, so an asset
       # list of pure metadata still counts as a hole worth repairing.
       - name: Refuse to repair a release that already has a build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -183,8 +185,6 @@ jobs:
         with:
           version: "~> v2"
           args: release --clean --skip=publish,announce
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Which of GoReleaser's outputs are release assets is answered by
       # GoReleaser itself: checksums.txt lists exactly the artifacts the
@@ -229,6 +229,8 @@ jobs:
           ls -la upload/
 
       - name: Upload the missing assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -302,6 +304,8 @@ jobs:
       # a repaired release is held to the release path's standard rather than a
       # weaker one, and it is the LAST step so nothing can run after it.
       - name: Verify published release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 

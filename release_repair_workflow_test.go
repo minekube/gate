@@ -48,15 +48,17 @@ type repairTriggers struct {
 
 type repairWorkflowJob struct {
 	Permissions map[string]string    `yaml:"permissions"`
+	Env         map[string]string    `yaml:"env"`
 	Steps       []repairWorkflowStep `yaml:"steps"`
 }
 
 type repairWorkflowStep struct {
-	Name string         `yaml:"name"`
-	Uses string         `yaml:"uses"`
-	If   string         `yaml:"if"`
-	Run  string         `yaml:"run"`
-	With map[string]any `yaml:"with"`
+	Name string            `yaml:"name"`
+	Uses string            `yaml:"uses"`
+	If   string            `yaml:"if"`
+	Run  string            `yaml:"run"`
+	With map[string]any    `yaml:"with"`
+	Env  map[string]string `yaml:"env"`
 }
 
 func readRepairWorkflow(t *testing.T) (repairWorkflow, string) {
@@ -218,6 +220,55 @@ func TestReleaseRepairRebuildsTheTagOnItsOwnToolchain(t *testing.T) {
 	} {
 		if bypass.MatchString(raw) {
 			t.Errorf("release-repair.yml contains a test-bypass affordance matching %s", bypass)
+		}
+	}
+}
+
+func TestReleaseRepairScopesGitHubTokenToAPISteps(t *testing.T) {
+	workflow, _ := readRepairWorkflow(t)
+	job := repairJob(t, workflow)
+	steps := job.Steps
+
+	for _, name := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
+		if _, ok := job.Env[name]; ok {
+			t.Errorf("repair job exposes %s to every step; the token must be scoped to API steps", name)
+		}
+	}
+
+	checkoutAt := repairStepIndex(steps, "Checkout the release tag")
+	if checkoutAt < 0 {
+		t.Fatal("repair job has no checkout step")
+	}
+	if got := fmt.Sprint(steps[checkoutAt].With["persist-credentials"]); got != "false" {
+		t.Errorf("checkout persist-credentials is %q; tagged code must not inherit git credentials", got)
+	}
+
+	for _, name := range []string{"Verify", "Build the tag's release artifacts"} {
+		at := repairStepIndex(steps, name)
+		if at < 0 {
+			t.Fatalf("repair job has no %q step", name)
+		}
+		for _, token := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
+			if _, ok := steps[at].Env[token]; ok {
+				t.Errorf("tag-authored step %q exposes %s", name, token)
+			}
+		}
+	}
+
+	for _, name := range []string{
+		"Refuse to repair a release that already has a build",
+		"Upload the missing assets",
+		"Verify published release assets",
+	} {
+		at := repairStepIndex(steps, name)
+		if at < 0 {
+			t.Fatalf("repair job has no %q step", name)
+		}
+		if got := steps[at].Env["GH_TOKEN"]; got != "${{ secrets.GITHUB_TOKEN }}" {
+			t.Errorf("API step %q has GH_TOKEN %q; it must use the scoped GITHUB_TOKEN secret", name, got)
+		}
+		if _, ok := steps[at].Env["GITHUB_TOKEN"]; ok {
+			t.Errorf("API step %q exposes GITHUB_TOKEN instead of step-scoped GH_TOKEN", name)
 		}
 	}
 }
