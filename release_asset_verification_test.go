@@ -173,8 +173,8 @@ func TestReleaseVerificationRequiresRealBuildArtifact(t *testing.T) {
 }
 
 // TestReleaseVerificationRunsAfterUpload pins the ordering. The guard is
-// meaningless before the upload, and nothing that advertises the release may
-// precede it.
+// meaningless before the upload; it must be final so no later workflow step
+// can bypass it.
 func TestReleaseVerificationRunsAfterUpload(t *testing.T) {
 	steps := readReleaseJobSteps(t)
 
