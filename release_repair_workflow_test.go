@@ -355,7 +355,7 @@ func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 		t.Fatal("build job has no artifact staging step")
 	}
 	stage := buildSteps[stageAt].Run
-	if strings.Index(stage, "rm -rf upload") < 0 || strings.Index(stage, "mkdir -p upload") < 0 ||
+	if !strings.Contains(stage, "rm -rf upload") || !strings.Contains(stage, "mkdir -p upload") ||
 		strings.Index(stage, "rm -rf upload") > strings.Index(stage, "mkdir -p upload") {
 		t.Error("artifact staging must clear upload before recreating it")
 	}
