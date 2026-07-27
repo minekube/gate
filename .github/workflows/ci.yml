@@ -240,3 +240,169 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify published release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # Asset visibility is eventually consistent right after upload, so
+          # poll briefly before declaring the release empty.
+          ASSET_COUNT=0
+          BUILD_COUNT=0
+          BUILD_NAMES=""
+          CHECKSUMS_ID=""
+          CHECKSUMS_READ=false
+          MISSING=""
+          MANIFEST_BUILDS=0
+          PROBE=""
+          PROBE_URL=""
+          PROBE_CODE=""
+          CHECKSUMS_FILE=/tmp/published-checksums.txt
+
+          # A non-empty asset list is NOT proof of a usable release. A release
+          # carrying only a checksums.txt, a signature bundle, an SBOM or a
+          # stray text/header file has a positive asset count and still offers
+          # nothing anyone can run. Counting assets is the same defect as
+          # trusting a green run without checking what it produced, so
+          # classify by name/type and require a real downloadable BUILD.
+          # Gate's builds are extensionless binaries (gate_<ver>_<os>_<arch>,
+          # plus the _musl variants) or .exe on Windows, so none of them are
+          # caught by these metadata patterns.
+          BUILD_FILTER='[.assets[]
+            | select(.state == "uploaded")
+            | select(.name | test(
+                "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
+                + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
+                + "\\.h$|\\.hpp$|\\.md$|\\.txt$"
+              ) | not)
+            | select(.size > 0)]'
+
+          for attempt in $(seq 1 12); do
+            RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+            ASSET_COUNT=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.state == "uploaded")] | length')
+            BUILD_COUNT=$(echo "$RELEASE_JSON" | jq "$BUILD_FILTER | length")
+            BUILD_NAMES=$(echo "$RELEASE_JSON" | jq -r "$BUILD_FILTER | .[].name")
+            CHECKSUMS_ID=$(echo "$RELEASE_JSON" \
+              | jq -r '.assets[] | select(.name == "checksums.txt" and .state == "uploaded") | .id' \
+              | head -n1)
+            CHECKSUMS_READ=false
+            MISSING=""
+            : > "$CHECKSUMS_FILE"
+
+            if [ -n "$CHECKSUMS_ID" ] && gh api "/repos/$GITHUB_REPOSITORY/releases/assets/$CHECKSUMS_ID" \
+              -H 'Accept: application/octet-stream' > "$CHECKSUMS_FILE"; then
+              CHECKSUMS_READ=true
+
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                present=$(echo "$RELEASE_JSON" \
+                  | jq -r --arg n "$name" \
+                    '[.assets[] | select(.name == $n and .state == "uploaded")] | length')
+                if [ "$present" -eq 0 ]; then
+                  MISSING="$MISSING $name"
+                fi
+              done < "$CHECKSUMS_FILE"
+            fi
+
+            MANIFEST_BUILDS=0
+            PROBE=""
+            PROBE_URL=""
+            PROBE_CODE=""
+            if [ "$BUILD_COUNT" -gt 0 ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ]; then
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                if echo "$BUILD_NAMES" | grep -Fxq "$name"; then
+                  MANIFEST_BUILDS=$((MANIFEST_BUILDS + 1))
+                fi
+              done < "$CHECKSUMS_FILE"
+
+              PROBE=$(echo "$BUILD_NAMES" | head -n1)
+              PROBE_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$PROBE"
+              if ! PROBE_CODE=$(curl -sSL -o /dev/null -w '%{http_code}' -r 0-0 "$PROBE_URL"); then
+                PROBE_CODE="000"
+              fi
+            fi
+
+            if [ "$ASSET_COUNT" -gt 0 ] && [ "$BUILD_COUNT" -gt 0 ] \
+              && [ -n "$CHECKSUMS_ID" ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ] && [ "$MANIFEST_BUILDS" -gt 0 ]; then
+              case "$PROBE_CODE" in
+                200|206) break ;;
+              esac
+            fi
+
+            echo "Published assets are incomplete on $RELEASE_TAG (attempt $attempt); waiting..."
+            sleep 10
+          done
+
+          echo "$RELEASE_JSON" | jq -r '.assets[] | "\(.name)\t\(.size)\t\(.state)"'
+          if [ "$CHECKSUMS_READ" = true ]; then
+            cat "$CHECKSUMS_FILE"
+          else
+            echo "checksums.txt contents unavailable."
+          fi
+
+          echo "Real build artifacts published ($BUILD_COUNT):"
+          echo "${BUILD_NAMES:-  (none)}"
+
+          if [ "$ASSET_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG published with ZERO downloadable assets."
+            echo "::error::A release with no artifact silently did not happen. Failing loudly."
+            exit 1
+          fi
+
+          # Wrong-artifact-type is its own failure mode, distinct from empty.
+          # It is the more dangerous one because the release looks populated.
+          if [ "$BUILD_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG has $ASSET_COUNT asset(s) but NO real build artifact."
+            echo "::error::Only checksums/signatures/SBOMs/headers were published - nothing runnable."
+            echo "::error::A positive asset count is not a release; a downloadable build is."
+            exit 1
+          fi
+
+          # checksums.txt is the manifest every download path verifies against
+          # (docs and install instructions point at <tag>/checksums.txt), so a
+          # release without it is unusable even if other assets are present.
+          if [ -z "$CHECKSUMS_ID" ]; then
+            echo "::error::Release $RELEASE_TAG has $ASSET_COUNT asset(s) but no uploaded checksums.txt; the manifest is unresolvable."
+            echo "::error::Anything resolving <tag>/checksums.txt first will 404."
+            exit 1
+          fi
+
+          if [ "$CHECKSUMS_READ" != true ]; then
+            echo "::error::Uploaded checksums.txt on $RELEASE_TAG could not be downloaded; the manifest is unresolvable."
+            exit 1
+          fi
+
+          # Every artifact the manifest promises must actually be downloadable.
+          # A checksums.txt that references missing assets 404s just as hard as
+          # no release at all, only later and less visibly.
+          if [ -n "$MISSING" ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references assets that are not published; the manifest is unresolvable:$MISSING"
+            exit 1
+          fi
+
+          # The manifest must promise a real build too. A checksums.txt that
+          # lists only metadata resolves perfectly and still leaves every
+          # consumer without a binary.
+          if [ "$MANIFEST_BUILDS" -eq 0 ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references no real build artifact; the manifest is unresolvable."
+            exit 1
+          fi
+
+          # Finally prove one build is actually served, not merely listed by
+          # the API. Range-request the first byte: a released asset that 404s
+          # or is empty fails here rather than in a user's download.
+          if [ "$PROBE_CODE" != "200" ] && [ "$PROBE_CODE" != "206" ]; then
+            echo "::error::Build artifact $PROBE is listed on $RELEASE_TAG but not downloadable (HTTP $PROBE_CODE); the build is undownloadable."
+            echo "::error::$PROBE_URL"
+            exit 1
+          fi
+
+          echo "OK: $RELEASE_TAG publishes $BUILD_COUNT real build artifact(s) of $ASSET_COUNT assets;"
+          echo "OK: checksums.txt resolves to all of them and $PROBE downloads (HTTP $PROBE_CODE)."
