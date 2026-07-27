@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.32](https://github.com/minekube/gate/compare/v0.68.31...v0.68.32) (2026-07-27)
+
+
+### Bug Fixes
+
+* **addrquota:** bucket IPv6 rate limits at /64 ([#938](https://github.com/minekube/gate/issues/938)) ([81996b9](https://github.com/minekube/gate/commit/81996b9b3fa210f5443e31f02d8945ea812fe24d))
+
 ## [0.68.31](https://github.com/minekube/gate/compare/v0.68.30...v0.68.31) (2026-07-26)
 
 
