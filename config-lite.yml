@@ -104,7 +104,9 @@ config:
   #proxyProtocolTrustedProxies:
   #  - 203.0.113.7
   #  - 198.51.100.0/24
-  # The quota settings allows rate-limiting IP (last block cut off) for certain operations.
+  # The quota settings allow rate-limiting IP address ranges for certain operations.
+  # IPv4 addresses share a /24 bucket; IPv6 addresses share a /64 bucket.
+  # IPv4-mapped IPv6 addresses use the IPv4 /24 bucket.
   # ops: The allowed operations per second.
   # burst: The maximum operations per second (queue like). One burst unit per seconds is refilled.
   # maxEntries: The maximum IPs to keep track of in cache for rate-limiting (if full, deletes oldest).

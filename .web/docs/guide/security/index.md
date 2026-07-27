@@ -87,9 +87,7 @@ To address the identified threats, that Minekube Gate has implemented a range of
     - The use of an LRU cache for storing rate limiters per IP address ensures efficient memory usage by retaining only
       the most recently accessed limiters, automatically purging the least active ones when the cache reaches its
       maximum capacity. This approach balances the need for active quota management with system resource constraints.
-    - By grouping IP addresses with similar low-order bytes, the system can manage quotas for a range of IPs, reducing
-      the granularity of control but improving performance and memory usage. This trade-off is often acceptable in
-      scenarios where strict per-IP rate limiting is not required.
+    - Quota bucket granularity and configuration details are documented in the [Rate limiting guide](/guide/rate-limiting).
 
 - **Authentication**: Ensuring secure client verification for online mode
   connections. ([ref](https://github.com/minekube/gate/blob/0b3b733dc3bdede11873fce5f52704ef2ec519cf/pkg/edition/java/auth/authenticator.go#L28))
