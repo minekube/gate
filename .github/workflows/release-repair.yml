@@ -1,0 +1,451 @@
+name: release-repair
+
+# Repairs the assets of an EXISTING published release, rebuilt from that
+# release's own tagged source, on CI runners.
+#
+# Why this is a separate workflow on the default branch, and not an input on
+# ci.yml:
+#
+#   1. GitHub compiles a workflow_dispatch run from the workflow file AT THE
+#      DISPATCHED REF. A "repair" input added to ci.yml would simply not exist
+#      when ci.yml is dispatched at an old tag - the old file is the one that
+#      runs. Dispatching THIS workflow (which lives on the default branch) and
+#      checking out the tag is the only shape that works for every tag,
+#      including tags cut before this file existed.
+#
+#   2. ci.yml's `build` job pushes `ghcr.io/minekube/gate:latest` (and
+#      `.../jre:latest`). Re-running it at an OLD tag would drag `:latest`
+#      backwards and silently downgrade everyone pulling it. This workflow
+#      holds NO registry credential and requests no registry scope, so a
+#      backward retag is not "guarded against" here - it is unrepresentable.
+#      The safety is a capability boundary, not an `if:` somebody can get
+#      wrong.
+#
+# This workflow publishes GitHub Release assets only. Moving the container
+# image for a historical tag would require a separately authorized capability
+# that is deliberately not built here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to repair (e.g. v0.48.0).
+        required: true
+        type: string
+
+permissions:
+  contents: write # GitHub Release asset upload. The ONLY permission.
+  # The registry write scope is deliberately absent and must stay absent.
+  # Without it a backward `:latest` retag is not forbidden here, it is
+  # unrepresentable. release_repair_workflow_test.go asserts this file grants
+  # no registry scope - including that the word does not reappear as a key.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.release_tag }}
+
+      # Provenance: a repair must build the tag, not a branch that merely
+      # happens to be named like one. A moving ref would produce assets that do
+      # not correspond to the release they are attached to.
+      - name: Confirm the checkout is the tagged commit
+        run: |
+          set -euo pipefail
+
+          TAG_SHA=$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" || true)
+          HEAD_SHA=$(git rev-parse HEAD)
+
+          if [ -z "$TAG_SHA" ]; then
+            echo "::error::${RELEASE_TAG} is not a tag in this repository."
+            echo "::error::Repair rebuilds tagged source; it does not build branches."
+            exit 1
+          fi
+          if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+            echo "::error::Checked-out HEAD ($HEAD_SHA) is not tag ${RELEASE_TAG} ($TAG_SHA)."
+            exit 1
+          fi
+
+          echo "Repairing ${RELEASE_TAG} from tagged commit ${TAG_SHA}."
+
+      # GUARD 1, before the build rather than after it: repair fills holes. A
+      # release that already carries a real downloadable build is complete, and
+      # re-uploading over it would replace exactly the bytes consumers have
+      # already checksummed. Failing here costs seconds instead of a full
+      # rebuild.
+      #
+      # The classifier is the same one ci.yml's "Verify published release
+      # assets" step uses: a positive asset count is not a build, so an asset
+      # list of pure metadata still counts as a hole worth repairing.
+      - name: Refuse to repair a release that already has a build
+        run: |
+          set -euo pipefail
+
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::No published release exists for $RELEASE_TAG to repair."
+            echo "::error::Repair fills holes in an existing release; it does not create one."
+            exit 1
+          fi
+
+          RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+
+          EXISTING_BUILDS=$(printf '%s' "$RELEASE_JSON" | jq '
+            [.assets[]
+              | select(.state == "uploaded")
+              | select(.name | test(
+                  "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                  + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
+                  + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
+                  + "\\.h$|\\.hpp$|\\.md$|\\.txt$"
+                ) | not)
+              | select(.size > 0)] | length')
+
+          echo "$RELEASE_TAG currently publishes:"
+          printf '%s' "$RELEASE_JSON" | jq -r '.assets[] | "  \(.name)\t\(.size)\t\(.state)"'
+
+          if [ "$EXISTING_BUILDS" -gt 0 ]; then
+            echo "::error::Release $RELEASE_TAG already publishes $EXISTING_BUILDS real build artifact(s)."
+            echo "::error::Refusing to modify a release that is already usable. Repair fills holes only."
+            exit 1
+          fi
+
+      # THE TOOLCHAIN PIN, and the reason this workflow checks out the tag
+      # rather than reusing the default branch's build: `go-version-file`
+      # resolves against the go.mod OF THE TAG, so the rebuild runs on the
+      # tag's own clock.
+      #
+      # A newer Go is not a neutral substitute. Its `go vet` reports printf
+      # diagnostics the tag's own toolchain never emitted (v0.48.0 picks up two
+      # in code that shipped, and `make test` runs vet), so building an old tag
+      # on today's Go turns a healthy release red for reasons that have nothing
+      # to do with the release. A repair reproduces a tag; it does not
+      # re-litigate its lint surface.
+      - name: Setup Go from the tag's own go.mod
+        uses: actions/setup-go@v6
+        with:
+          cache: true
+          go-version-file: go.mod
+
+      # The same gate the tag itself had to pass. A repaired release must not
+      # carry weaker provenance than one published on the normal path, and
+      # there is deliberately no input that can turn this off: a mechanism that
+      # skips a tag's own tests is a durable supply-chain capability that will
+      # be reached for again, by someone with less context, on a tag whose
+      # failing test does test software.
+      - name: Verify
+        run: make test
+
+      # `make test` runs `go fmt ./...`, which WRITES. If the tag's Go and the
+      # runner's Go disagree about formatting, the tree is now dirty and
+      # GoReleaser's own validation would fail several minutes later with a
+      # message about git state rather than about the real cause. Fail here,
+      # naming it.
+      - name: Confirm verification left the tagged tree unmodified
+        run: |
+          set -euo pipefail
+
+          DIRTY=$(git status --porcelain)
+          if [ -n "$DIRTY" ]; then
+            echo "::error::Verification modified the tagged tree of $RELEASE_TAG:"
+            printf '%s\n' "$DIRTY"
+            echo "::error::The rebuild would no longer correspond to the tagged commit. Refusing to continue."
+            exit 1
+          fi
+
+      # `--skip=publish` is load-bearing, not a detail:
+      #
+      #   * GoReleaser's release pipe would rewrite the historical release's
+      #     notes. These releases are years old; their bodies are the record.
+      #   * Older tags predate `release: mode: keep-existing`, so letting
+      #     GoReleaser publish would DELETE and recreate the release, changing
+      #     its id and its published-at date.
+      #   * Uploading separately keeps the credential surface at exactly
+      #     `contents: write`.
+      #
+      # The version constraint pins the GoReleaser MAJOR that the repairable
+      # tags' configs declare (`version: 2`). `latest` would silently become v3
+      # one day and refuse every tag here - a false red on unchanged source,
+      # the same failure mode the Go pin above exists to prevent.
+      - name: Build the tag's release artifacts
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --clean --skip=publish,announce
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Which of GoReleaser's outputs are release assets is answered by
+      # GoReleaser itself: checksums.txt lists exactly the artifacts the
+      # release pipe would have uploaded. Deriving the upload set from it
+      # (rather than from a hand-written glob over dist/, which would miss the
+      # per-target subdirectories `format: binary` leaves binaries in, or from
+      # artifact type strings, where UploadableBinary and Binary are both
+      # spelled "Binary") makes "what we upload" and "what the manifest
+      # promises" the same list by construction.
+      - name: Stage the artifacts the manifest describes
+        run: |
+          set -euo pipefail
+
+          if [ ! -f dist/checksums.txt ]; then
+            echo "::error::GoReleaser produced no dist/checksums.txt for $RELEASE_TAG."
+            echo "::error::Without the manifest there is no authoritative list of release assets."
+            exit 1
+          fi
+
+          mkdir -p upload
+          COUNT=0
+          while read -r _ name; do
+            [ -n "$name" ] || continue
+            path=$(jq -r --arg n "$name" \
+              'map(select(.name == $n and (.path // "") != "")) | first | .path // empty' \
+              dist/artifacts.json)
+            if [ -z "$path" ] || [ ! -f "$path" ]; then
+              echo "::error::checksums.txt names $name but GoReleaser produced no such file."
+              exit 1
+            fi
+            cp "$path" "upload/$name"
+            COUNT=$((COUNT + 1))
+          done < dist/checksums.txt
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::dist/checksums.txt for $RELEASE_TAG describes no artifacts."
+            exit 1
+          fi
+
+          cp dist/checksums.txt upload/checksums.txt
+          echo "Staged $COUNT build artifact(s) plus checksums.txt:"
+          ls -la upload/
+
+      - name: Upload the missing assets
+        run: |
+          set -euo pipefail
+
+          RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+
+          # GUARD 2: `--clobber` is a blunt instrument, so it is only ever
+          # handed names that are holes. An asset that is already present,
+          # uploaded and non-empty is kept; only absent or failed-upload
+          # (missing / non-uploaded / zero-byte) names are eligible.
+          #
+          # GUARD 3: for a name we are KEEPING, the published bytes must match
+          # what we just built. Otherwise the checksums.txt we are about to
+          # upload would describe bytes that were never published - a manifest
+          # that resolves to a lie is worse than a missing one.
+          UPLOAD_LIST=""
+          SKIPPED=""
+          for f in upload/*; do
+            [ -f "$f" ] || continue
+            base="$(basename "$f")"
+            good=$(printf '%s' "$RELEASE_JSON" | jq -r --arg n "$base" \
+              '[.assets[] | select(.name == $n and .state == "uploaded" and .size > 0)] | length')
+            if [ "$good" -gt 0 ]; then
+              asset_url=$(printf '%s' "$RELEASE_JSON" | jq -r --arg n "$base" \
+                '[.assets[] | select(.name == $n and .state == "uploaded" and .size > 0)] | first | .url // empty')
+              if [ -z "$asset_url" ]; then
+                echo "::error::Could not resolve the published asset endpoint for $base."
+                exit 1
+              fi
+              remote_tmp=$(mktemp)
+              if ! gh api -H "Accept: application/octet-stream" "$asset_url" >"$remote_tmp"; then
+                rm -f "$remote_tmp"
+                echo "::error::Could not download the published asset $base for reconciliation."
+                exit 1
+              fi
+              local_hash=$(sha256sum "$f" | awk '{print $1}')
+              remote_hash=$(sha256sum "$remote_tmp" | awk '{print $1}')
+              rm -f "$remote_tmp"
+              if [ "$local_hash" != "$remote_hash" ]; then
+                echo "::error::Asset $base differs from the local rebuild of $RELEASE_TAG."
+                echo "::error::$base local SHA-256:     $local_hash"
+                echo "::error::$base published SHA-256: $remote_hash"
+                echo "::error::Refusing to publish a checksums.txt that does not describe the published bytes."
+                exit 1
+              fi
+              SKIPPED="$SKIPPED $base"
+            else
+              UPLOAD_LIST="$UPLOAD_LIST $f"
+            fi
+          done
+
+          if [ -n "$SKIPPED" ]; then
+            echo "Keeping existing good assets (not clobbered):$SKIPPED"
+          fi
+
+          if [ -z "$UPLOAD_LIST" ]; then
+            echo "::error::Nothing to upload for $RELEASE_TAG: every rebuilt file is already published."
+            exit 1
+          fi
+
+          echo "Uploading missing assets:$UPLOAD_LIST"
+          # shellcheck disable=SC2086
+          gh release upload "$RELEASE_TAG" $UPLOAD_LIST --clobber --repo "$GITHUB_REPOSITORY"
+
+      # A release that publishes nothing downloadable is indistinguishable from
+      # a healthy one: green run, release page exists, and the hole only
+      # surfaces when a user's download 404s. Trusting the upload step we just
+      # ran would rebuild that same defect one layer up, so re-read the
+      # PUBLISHED release from the API and assert on the landed fact.
+      #
+      # This is deliberately the same assertion ci.yml's releaser job makes, so
+      # a repaired release is held to the release path's standard rather than a
+      # weaker one, and it is the LAST step so nothing can run after it.
+      - name: Verify published release assets
+        run: |
+          set -euo pipefail
+
+          # Asset visibility is eventually consistent right after upload, so
+          # poll briefly before declaring the release empty.
+          ASSET_COUNT=0
+          BUILD_COUNT=0
+          BUILD_NAMES=""
+          CHECKSUMS_ID=""
+          CHECKSUMS_READ=false
+          MISSING=""
+          MANIFEST_BUILDS=0
+          PROBE=""
+          PROBE_URL=""
+          PROBE_CODE=""
+          RELEASE_JSON=""
+          CHECKSUMS_FILE=/tmp/published-checksums.txt
+
+          # A non-empty asset list is NOT proof of a usable release. A release
+          # carrying only a checksums.txt, a signature bundle, an SBOM or a
+          # stray text/header file has a positive asset count and still offers
+          # nothing anyone can run. Gate's builds are extensionless binaries
+          # (gate_<ver>_<os>_<arch>, plus the _musl variants) or .exe on
+          # Windows, so none of them are caught by these metadata patterns.
+          BUILD_FILTER='[.assets[]
+            | select(.state == "uploaded")
+            | select(.name | test(
+                "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
+                + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
+                + "\\.h$|\\.hpp$|\\.md$|\\.txt$"
+              ) | not)
+            | select(.size > 0)]'
+
+          for attempt in $(seq 1 12); do
+            RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+            ASSET_COUNT=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.state == "uploaded")] | length')
+            BUILD_COUNT=$(echo "$RELEASE_JSON" | jq "$BUILD_FILTER | length")
+            BUILD_NAMES=$(echo "$RELEASE_JSON" | jq -r "$BUILD_FILTER | .[].name")
+            CHECKSUMS_ID=$(echo "$RELEASE_JSON" \
+              | jq -r '.assets[] | select(.name == "checksums.txt" and .state == "uploaded") | .id' \
+              | head -n1)
+            CHECKSUMS_READ=false
+            MISSING=""
+            : > "$CHECKSUMS_FILE"
+
+            if [ -n "$CHECKSUMS_ID" ] && gh api "/repos/$GITHUB_REPOSITORY/releases/assets/$CHECKSUMS_ID" \
+              -H 'Accept: application/octet-stream' > "$CHECKSUMS_FILE"; then
+              CHECKSUMS_READ=true
+
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                present=$(echo "$RELEASE_JSON" \
+                  | jq -r --arg n "$name" \
+                    '[.assets[] | select(.name == $n and .state == "uploaded")] | length')
+                if [ "$present" -eq 0 ]; then
+                  MISSING="$MISSING $name"
+                fi
+              done < "$CHECKSUMS_FILE"
+            fi
+
+            MANIFEST_BUILDS=0
+            PROBE=""
+            PROBE_URL=""
+            PROBE_CODE=""
+            if [ "$BUILD_COUNT" -gt 0 ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ]; then
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                if echo "$BUILD_NAMES" | grep -Fxq "$name"; then
+                  MANIFEST_BUILDS=$((MANIFEST_BUILDS + 1))
+                fi
+              done < "$CHECKSUMS_FILE"
+
+              PROBE=$(echo "$BUILD_NAMES" | head -n1)
+              PROBE_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$PROBE"
+              if ! PROBE_CODE=$(curl -sSL -o /dev/null -w '%{http_code}' -r 0-0 "$PROBE_URL"); then
+                PROBE_CODE="000"
+              fi
+            fi
+
+            if [ "$ASSET_COUNT" -gt 0 ] && [ "$BUILD_COUNT" -gt 0 ] \
+              && [ -n "$CHECKSUMS_ID" ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ] && [ "$MANIFEST_BUILDS" -gt 0 ]; then
+              case "$PROBE_CODE" in
+                200|206) break ;;
+              esac
+            fi
+
+            echo "Published assets are incomplete on $RELEASE_TAG (attempt $attempt); waiting..."
+            sleep 10
+          done
+
+          echo "$RELEASE_JSON" | jq -r '.assets[] | "\(.name)\t\(.size)\t\(.state)"'
+          if [ "$CHECKSUMS_READ" = true ]; then
+            cat "$CHECKSUMS_FILE"
+          else
+            echo "checksums.txt contents unavailable."
+          fi
+
+          echo "Real build artifacts published ($BUILD_COUNT):"
+          echo "${BUILD_NAMES:-  (none)}"
+
+          if [ "$ASSET_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG still publishes ZERO downloadable assets."
+            echo "::error::A release with no artifact silently did not happen. Failing loudly."
+            exit 1
+          fi
+
+          if [ "$BUILD_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG has $ASSET_COUNT asset(s) but NO real build artifact."
+            echo "::error::Only checksums/signatures/SBOMs/headers were published - nothing runnable."
+            echo "::error::A positive asset count is not a release; a downloadable build is."
+            exit 1
+          fi
+
+          if [ -z "$CHECKSUMS_ID" ]; then
+            echo "::error::Release $RELEASE_TAG has $ASSET_COUNT asset(s) but no uploaded checksums.txt; the manifest is unresolvable."
+            exit 1
+          fi
+
+          if [ "$CHECKSUMS_READ" != true ]; then
+            echo "::error::Uploaded checksums.txt on $RELEASE_TAG could not be downloaded; the manifest is unresolvable."
+            exit 1
+          fi
+
+          if [ -n "$MISSING" ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references assets that are not published; the manifest is unresolvable:$MISSING"
+            exit 1
+          fi
+
+          if [ "$MANIFEST_BUILDS" -eq 0 ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references no real build artifact; the manifest is unresolvable."
+            exit 1
+          fi
+
+          if [ "$PROBE_CODE" != "200" ] && [ "$PROBE_CODE" != "206" ]; then
+            echo "::error::Build artifact $PROBE is listed on $RELEASE_TAG but not downloadable (HTTP $PROBE_CODE); the build is undownloadable."
+            echo "::error::$PROBE_URL"
+            exit 1
+          fi
+
+          echo "OK: $RELEASE_TAG publishes $BUILD_COUNT real build artifact(s) of $ASSET_COUNT assets;"
+          echo "OK: checksums.txt resolves to all of them and $PROBE downloads (HTTP $PROBE_CODE)."
+          echo "NOTE: no container image was touched. This workflow holds no registry"
+          echo "NOTE: credential, so it could not have moved ghcr.io/minekube/gate:latest"
+          echo "NOTE: even if asked to; that requires a separately authorized capability."
