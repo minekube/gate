@@ -16,10 +16,14 @@ name: release-repair
 #   2. ci.yml's `build` job pushes `ghcr.io/minekube/gate:latest` (and
 #      `.../jre:latest`). Re-running it at an OLD tag would drag `:latest`
 #      backwards and silently downgrade everyone pulling it. This workflow
-#      holds NO registry credential and requests no registry scope, so a
-#      backward retag is not "guarded against" here - it is unrepresentable.
-#      The safety is a capability boundary, not an `if:` somebody can get
-#      wrong.
+#      requests no registry scope, so a backward retag is not "guarded
+#      against" here - it is unrepresentable.
+#
+#   3. The `build` job is the only job that checks out or runs the tagged
+#      source, and it has `contents: read` only. The `publish` job starts on a
+#      fresh runner, checks out nothing, and is the only job with `contents:
+#      write`; it can consume only the allowlisted artifact from `build`.
+#      The safety is a job boundary, not an `if:` somebody can get wrong.
 #
 # This workflow publishes GitHub Release assets only. Moving the container
 # image for a historical tag would require a separately authorized capability
@@ -33,21 +37,20 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write # GitHub Release asset upload. The ONLY permission.
-  # The registry write scope is deliberately absent and must stay absent.
-  # Without it a backward `:latest` retag is not forbidden here, it is
-  # unrepresentable. release_repair_workflow_test.go asserts this file grants
-  # no registry scope - including that the word does not reappear as a key.
+permissions: {}
+  # Permissions are granted per job below. The registry write scope is
+  # deliberately absent and must stay absent.
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
-  repair:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
@@ -204,6 +207,7 @@ jobs:
             exit 1
           fi
 
+          rm -rf upload
           mkdir -p upload
           COUNT=0
           while read -r _ name; do
@@ -228,11 +232,113 @@ jobs:
           echo "Staged $COUNT build artifact(s) plus checksums.txt:"
           ls -la upload/
 
+      - name: Upload staged release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-repair-assets
+          path: |
+            upload
+            dist/checksums.txt
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Download staged release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-repair-assets
+
+      - name: Refuse to repair a release that already has a build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::No published release exists for $RELEASE_TAG to repair."
+            echo "::error::Repair fills holes in an existing release; it does not create one."
+            exit 1
+          fi
+
+          RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+
+          EXISTING_BUILDS=$(printf '%s' "$RELEASE_JSON" | jq '
+            [.assets[]
+              | select(.state == "uploaded")
+              | select(.name | test(
+                  "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                  + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
+                  + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
+                  + "\\.h$|\\.hpp$|\\.md$|\\.txt$"
+                ) | not)
+              | select(.size > 0)] | length')
+
+          echo "$RELEASE_TAG currently publishes:"
+          printf '%s' "$RELEASE_JSON" | jq -r '.assets[] | "  \(.name)\t\(.size)\t\(.state)"'
+
+          if [ "$EXISTING_BUILDS" -gt 0 ]; then
+            echo "::error::Release $RELEASE_TAG already publishes $EXISTING_BUILDS real build artifact(s)."
+            echo "::error::Refusing to modify a release that is already usable. Repair fills holes only."
+            exit 1
+          fi
+
       - name: Upload the missing assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+
+          MANIFEST=dist/checksums.txt
+          STAGED=upload
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::Downloaded artifact has no dist/checksums.txt allowlist."
+            exit 1
+          fi
+          if [ ! -d "$STAGED" ]; then
+            echo "::error::Downloaded artifact has no upload directory."
+            exit 1
+          fi
+
+          while IFS= read -r -d '' f; do
+            if [ ! -f "$f" ] || [ -L "$f" ]; then
+              echo "::error::unexpected file $f in release artifact; it is not a regular staged asset."
+              exit 1
+            fi
+            base="$(basename "$f")"
+            if [ "$base" != "checksums.txt" ] && ! awk -v n="$base" \
+              'NF >= 2 && $2 == n { found = 1 } END { exit !found }' "$MANIFEST"; then
+              echo "::error::unexpected file $f in release artifact; checksums.txt does not name it."
+              exit 1
+            fi
+          done < <(find "$STAGED" -mindepth 1 -maxdepth 1 -print0)
+
+          UPLOAD_FILES=()
+          while read -r _ name; do
+            [ -n "$name" ] || continue
+            file="$STAGED/$name"
+            if [ ! -f "$file" ] || [ -L "$file" ]; then
+              echo "::error::checksums.txt names $name but the downloaded artifact has no such file."
+              exit 1
+            fi
+            UPLOAD_FILES+=("$file")
+          done < "$MANIFEST"
+
+          if [ "${#UPLOAD_FILES[@]}" -eq 0 ]; then
+            echo "::error::$MANIFEST describes no build artifacts."
+            exit 1
+          fi
+          if [ ! -f "$STAGED/checksums.txt" ] || [ -L "$STAGED/checksums.txt" ]; then
+            echo "::error::Downloaded artifact has no checksums.txt asset."
+            exit 1
+          fi
+          UPLOAD_FILES+=("$STAGED/checksums.txt")
 
           RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
 
@@ -245,9 +351,9 @@ jobs:
           # what we just built. Otherwise the checksums.txt we are about to
           # upload would describe bytes that were never published - a manifest
           # that resolves to a lie is worse than a missing one.
-          UPLOAD_LIST=""
+          UPLOAD_LIST=()
           SKIPPED=""
-          for f in upload/*; do
+          for f in "${UPLOAD_FILES[@]}"; do
             [ -f "$f" ] || continue
             base="$(basename "$f")"
             good=$(printf '%s' "$RELEASE_JSON" | jq -r --arg n "$base" \
@@ -277,7 +383,7 @@ jobs:
               fi
               SKIPPED="$SKIPPED $base"
             else
-              UPLOAD_LIST="$UPLOAD_LIST $f"
+              UPLOAD_LIST+=("$f")
             fi
           done
 
@@ -285,14 +391,13 @@ jobs:
             echo "Keeping existing good assets (not clobbered):$SKIPPED"
           fi
 
-          if [ -z "$UPLOAD_LIST" ]; then
+          if [ "${#UPLOAD_LIST[@]}" -eq 0 ]; then
             echo "::error::Nothing to upload for $RELEASE_TAG: every rebuilt file is already published."
             exit 1
           fi
 
-          echo "Uploading missing assets:$UPLOAD_LIST"
-          # shellcheck disable=SC2086
-          gh release upload "$RELEASE_TAG" $UPLOAD_LIST --clobber --repo "$GITHUB_REPOSITORY"
+          echo "Uploading missing assets: ${UPLOAD_LIST[*]}"
+          gh release upload "$RELEASE_TAG" "${UPLOAD_LIST[@]}" --clobber --repo "$GITHUB_REPOSITORY"
 
       # A release that publishes nothing downloadable is indistinguishable from
       # a healthy one: green run, release page exists, and the hole only
@@ -450,6 +555,6 @@ jobs:
 
           echo "OK: $RELEASE_TAG publishes $BUILD_COUNT real build artifact(s) of $ASSET_COUNT assets;"
           echo "OK: checksums.txt resolves to all of them and $PROBE downloads (HTTP $PROBE_CODE)."
-          echo "NOTE: no container image was touched. This workflow holds no registry"
+          echo "NOTE: no container image was touched. The publish job holds no registry"
           echo "NOTE: credential, so it could not have moved ghcr.io/minekube/gate:latest"
           echo "NOTE: even if asked to; that requires a separately authorized capability."

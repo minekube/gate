@@ -47,6 +47,7 @@ type repairTriggers struct {
 }
 
 type repairWorkflowJob struct {
+	Needs       string               `yaml:"needs"`
 	Permissions map[string]string    `yaml:"permissions"`
 	Env         map[string]string    `yaml:"env"`
 	Steps       []repairWorkflowStep `yaml:"steps"`
@@ -78,15 +79,15 @@ func readRepairWorkflow(t *testing.T) (repairWorkflow, string) {
 	return workflow, string(raw)
 }
 
-func repairJob(t *testing.T, workflow repairWorkflow) repairWorkflowJob {
+func repairJob(t *testing.T, workflow repairWorkflow, name string) repairWorkflowJob {
 	t.Helper()
 
-	job, ok := workflow.Jobs["repair"]
+	job, ok := workflow.Jobs[name]
 	if !ok {
-		t.Fatal("release-repair.yml has no repair job")
+		t.Fatalf("release-repair.yml has no %s job", name)
 	}
 	if len(job.Steps) == 0 {
-		t.Fatal("repair job has no steps")
+		t.Fatalf("%s job has no steps", name)
 	}
 	return job
 }
@@ -106,15 +107,21 @@ func repairStepIndex(steps []repairWorkflowStep, name string) int {
 func TestReleaseRepairGrantsNoRegistryScope(t *testing.T) {
 	workflow, raw := readRepairWorkflow(t)
 
-	// `contents: write` uploads release assets and nothing else. Any second
-	// permission is a widened blast radius that has to be argued for.
-	if got := workflow.Permissions; len(got) != 1 || got["contents"] != "write" {
-		t.Errorf("workflow permissions are %v; the repair path must grant exactly "+
-			"contents: write so a registry push is unrepresentable", got)
+	if len(workflow.Permissions) != 0 {
+		t.Errorf("workflow permissions are %v; the repair path must have no ambient grant", workflow.Permissions)
 	}
-	if perms := repairJob(t, workflow).Permissions; perms != nil {
-		t.Errorf("repair job declares its own permissions %v; the single workflow-level "+
-			"grant must be the whole story", perms)
+
+	build := repairJob(t, workflow, "build")
+	if got := build.Permissions; len(got) != 1 || got["contents"] != "read" {
+		t.Errorf("build job permissions are %v; tagged code must have contents: read only", got)
+	}
+
+	publish := repairJob(t, workflow, "publish")
+	if got := publish.Permissions; len(got) != 1 || got["contents"] != "write" {
+		t.Errorf("publish job permissions are %v; only the trusted publisher may upload release assets", got)
+	}
+	if publish.Needs != "build" {
+		t.Errorf("publish job needs %q; it must consume the unprivileged build job", publish.Needs)
 	}
 
 	// packages: write is the specific grant that would make a ghcr push - and
@@ -124,20 +131,22 @@ func TestReleaseRepairGrantsNoRegistryScope(t *testing.T) {
 	}
 
 	// No credential can be smuggled in through an action either.
-	for _, step := range repairJob(t, workflow).Steps {
-		for _, forbidden := range []string{
-			"docker/login-action",
-			"docker/build-push-action",
-			"docker/setup-buildx-action",
-		} {
-			if strings.HasPrefix(step.Uses, forbidden) {
-				t.Errorf("step %q uses %s; the repair path must not build or push images",
-					step.Name, step.Uses)
+	for _, job := range []repairWorkflowJob{build, publish} {
+		for _, step := range job.Steps {
+			for _, forbidden := range []string{
+				"docker/login-action",
+				"docker/build-push-action",
+				"docker/setup-buildx-action",
+			} {
+				if strings.HasPrefix(step.Uses, forbidden) {
+					t.Errorf("step %q uses %s; the repair path must not build or push images",
+						step.Name, step.Uses)
+				}
 			}
-		}
-		if strings.Contains(step.Run, "imagetools") || strings.Contains(step.Run, "docker push") {
-			t.Errorf("step %q retags or pushes a container image; that capability is "+
-				"deliberately not built here", step.Name)
+			if strings.Contains(step.Run, "imagetools") || strings.Contains(step.Run, "docker push") {
+				t.Errorf("step %q retags or pushes a container image; that capability is "+
+					"deliberately not built here", step.Name)
+			}
 		}
 	}
 
@@ -156,7 +165,27 @@ func TestReleaseRepairGrantsNoRegistryScope(t *testing.T) {
 // tag declares.
 func TestReleaseRepairRebuildsTheTagOnItsOwnToolchain(t *testing.T) {
 	workflow, raw := readRepairWorkflow(t)
-	steps := repairJob(t, workflow).Steps
+	build := repairJob(t, workflow, "build")
+	steps := build.Steps
+	wantBuildSteps := []string{
+		"Checkout the release tag",
+		"Confirm the checkout is the tagged commit",
+		"Refuse to repair a release that already has a build",
+		"Setup Go from the tag's own go.mod",
+		"Verify",
+		"Confirm verification left the tagged tree unmodified",
+		"Build the tag's release artifacts",
+		"Stage the artifacts the manifest describes",
+		"Upload staged release artifacts",
+	}
+	if len(steps) != len(wantBuildSteps) {
+		t.Fatalf("build job has %d steps; expected %d", len(steps), len(wantBuildSteps))
+	}
+	for i, want := range wantBuildSteps {
+		if steps[i].Name != want {
+			t.Errorf("build step %d is %q; expected %q", i+1, steps[i].Name, want)
+		}
+	}
 
 	// A repair is dispatched by a human at an existing tag. It must not have a
 	// push/schedule trigger that could fire it at anything else.
@@ -222,53 +251,68 @@ func TestReleaseRepairRebuildsTheTagOnItsOwnToolchain(t *testing.T) {
 			t.Errorf("release-repair.yml contains a test-bypass affordance matching %s", bypass)
 		}
 	}
+
+	for _, step := range repairJob(t, workflow, "publish").Steps {
+		if strings.HasPrefix(step.Uses, "actions/checkout") {
+			t.Errorf("publish step %q checks out the repository; it must run without tag-authored code", step.Name)
+		}
+		if strings.Contains(step.Run, "make test") || strings.HasPrefix(step.Uses, "goreleaser/") {
+			t.Errorf("publish step %q executes tag-authored build code", step.Name)
+		}
+	}
 }
 
 func TestReleaseRepairScopesGitHubTokenToAPISteps(t *testing.T) {
 	workflow, _ := readRepairWorkflow(t)
-	job := repairJob(t, workflow)
-	steps := job.Steps
+	build := repairJob(t, workflow, "build")
+	publish := repairJob(t, workflow, "publish")
 
-	for _, name := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
-		if _, ok := job.Env[name]; ok {
-			t.Errorf("repair job exposes %s to every step; the token must be scoped to API steps", name)
+	for jobName, job := range map[string]repairWorkflowJob{"build": build, "publish": publish} {
+		for _, name := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
+			if _, ok := job.Env[name]; ok {
+				t.Errorf("%s job exposes %s to every step; the token must be scoped to API steps", jobName, name)
+			}
 		}
 	}
 
-	checkoutAt := repairStepIndex(steps, "Checkout the release tag")
+	checkoutAt := repairStepIndex(build.Steps, "Checkout the release tag")
 	if checkoutAt < 0 {
-		t.Fatal("repair job has no checkout step")
+		t.Fatal("build job has no checkout step")
 	}
-	if got := fmt.Sprint(steps[checkoutAt].With["persist-credentials"]); got != "false" {
+	if got := fmt.Sprint(build.Steps[checkoutAt].With["persist-credentials"]); got != "false" {
 		t.Errorf("checkout persist-credentials is %q; tagged code must not inherit git credentials", got)
 	}
 
 	for _, name := range []string{"Verify", "Build the tag's release artifacts"} {
-		at := repairStepIndex(steps, name)
+		at := repairStepIndex(build.Steps, name)
 		if at < 0 {
-			t.Fatalf("repair job has no %q step", name)
+			t.Fatalf("build job has no %q step", name)
 		}
 		for _, token := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
-			if _, ok := steps[at].Env[token]; ok {
+			if _, ok := build.Steps[at].Env[token]; ok {
 				t.Errorf("tag-authored step %q exposes %s", name, token)
 			}
 		}
 	}
 
-	for _, name := range []string{
-		"Refuse to repair a release that already has a build",
-		"Upload the missing assets",
-		"Verify published release assets",
+	for _, target := range []struct {
+		job  repairWorkflowJob
+		name string
+	}{
+		{build, "Refuse to repair a release that already has a build"},
+		{publish, "Refuse to repair a release that already has a build"},
+		{publish, "Upload the missing assets"},
+		{publish, "Verify published release assets"},
 	} {
-		at := repairStepIndex(steps, name)
+		at := repairStepIndex(target.job.Steps, target.name)
 		if at < 0 {
-			t.Fatalf("repair job has no %q step", name)
+			t.Fatalf("job has no %q step", target.name)
 		}
-		if got := steps[at].Env["GH_TOKEN"]; got != "${{ secrets.GITHUB_TOKEN }}" {
-			t.Errorf("API step %q has GH_TOKEN %q; it must use the scoped GITHUB_TOKEN secret", name, got)
+		if got := target.job.Steps[at].Env["GH_TOKEN"]; got != "${{ secrets.GITHUB_TOKEN }}" {
+			t.Errorf("API step %q has GH_TOKEN %q; it must use the scoped GITHUB_TOKEN secret", target.name, got)
 		}
-		if _, ok := steps[at].Env["GITHUB_TOKEN"]; ok {
-			t.Errorf("API step %q exposes GITHUB_TOKEN instead of step-scoped GH_TOKEN", name)
+		if _, ok := target.job.Steps[at].Env["GITHUB_TOKEN"]; ok {
+			t.Errorf("API step %q exposes GITHUB_TOKEN instead of step-scoped GH_TOKEN", target.name)
 		}
 	}
 }
@@ -278,14 +322,17 @@ func TestReleaseRepairScopesGitHubTokenToAPISteps(t *testing.T) {
 // date are the historical record and a repair must leave them untouched.
 func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 	workflow, raw := readRepairWorkflow(t)
-	steps := repairJob(t, workflow).Steps
+	build := repairJob(t, workflow, "build")
+	publish := repairJob(t, workflow, "publish")
+	buildSteps := build.Steps
+	publishSteps := publish.Steps
 
 	// GoReleaser's own release pipe would rewrite the release body, and on
 	// tags predating `mode: keep-existing` it deletes and recreates the
 	// release outright. Skipping publish keeps this workflow's only write to
 	// the release the asset upload itself.
 	goreleaserAt := -1
-	for i, step := range steps {
+	for i, step := range buildSteps {
 		if strings.HasPrefix(step.Uses, "goreleaser/goreleaser-action") {
 			goreleaserAt = i
 			args := fmt.Sprint(step.With["args"])
@@ -300,7 +347,30 @@ func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 		}
 	}
 	if goreleaserAt < 0 {
-		t.Fatal("repair job never runs GoReleaser; there would be nothing to upload")
+		t.Fatal("build job never runs GoReleaser; there would be nothing to upload")
+	}
+
+	stageAt := repairStepIndex(buildSteps, "Stage the artifacts the manifest describes")
+	if stageAt < 0 {
+		t.Fatal("build job has no artifact staging step")
+	}
+	stage := buildSteps[stageAt].Run
+	if strings.Index(stage, "rm -rf upload") < 0 || strings.Index(stage, "mkdir -p upload") < 0 ||
+		strings.Index(stage, "rm -rf upload") > strings.Index(stage, "mkdir -p upload") {
+		t.Error("artifact staging must clear upload before recreating it")
+	}
+
+	artifactAt := repairStepIndex(buildSteps, "Upload staged release artifacts")
+	if artifactAt < 0 {
+		t.Fatal("build job never uploads the staged artifacts for the publish job")
+	}
+	artifact := buildSteps[artifactAt]
+	if !strings.HasPrefix(artifact.Uses, "actions/upload-artifact@") {
+		t.Errorf("staged artifact step uses %q; it must use actions/upload-artifact", artifact.Uses)
+	}
+	artifactPath := fmt.Sprint(artifact.With["path"])
+	if !strings.Contains(artifactPath, "upload") || !strings.Contains(artifactPath, "dist/checksums.txt") {
+		t.Errorf("staged artifact path is %q; it must include upload and dist/checksums.txt", artifactPath)
 	}
 
 	// softprops/action-gh-release PATCHes /releases/{id} to sync metadata
@@ -311,16 +381,20 @@ func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 			"before uploading; use gh release upload")
 	}
 
-	uploadAt := repairStepIndex(steps, "Upload the missing assets")
+	uploadAt := repairStepIndex(publishSteps, "Upload the missing assets")
 	if uploadAt < 0 {
-		t.Fatal("repair job has no upload step")
+		t.Fatal("publish job has no upload step")
 	}
-	upload := steps[uploadAt].Run
+	upload := publishSteps[uploadAt].Run
 	if !strings.Contains(upload, "gh release upload") || !strings.Contains(upload, "--clobber") {
 		t.Error("upload step must call gh release upload ... --clobber")
 	}
-	if uploadAt < goreleaserAt {
-		t.Error("assets are uploaded before they are built")
+	if strings.Contains(upload, "for f in upload/*") || !strings.Contains(upload, "MANIFEST") ||
+		!strings.Contains(upload, "while read -r _ name") {
+		t.Error("publish upload must derive its allowlist from checksums.txt, not glob the staged directory")
+	}
+	if !strings.Contains(upload, "unexpected file") {
+		t.Error("publish upload must fail on artifact files outside the checksums allowlist")
 	}
 
 	// --clobber is a blunt instrument. It may only ever be handed names that
@@ -337,44 +411,66 @@ func TestReleaseRepairPublishesAssetsWithoutRewritingTheRelease(t *testing.T) {
 // trusts its own upload step.
 func TestReleaseRepairRefusesCompleteReleasesAndVerifiesTheLandedResult(t *testing.T) {
 	workflow, _ := readRepairWorkflow(t)
-	steps := repairJob(t, workflow).Steps
+	buildSteps := repairJob(t, workflow, "build").Steps
+	publishSteps := repairJob(t, workflow, "publish").Steps
 
 	const (
 		refuseStep = "Refuse to repair a release that already has a build"
 		verifyStep = "Verify published release assets"
 	)
 
-	refuseAt := repairStepIndex(steps, refuseStep)
-	if refuseAt < 0 {
-		t.Fatalf("repair job is missing the %q guard; it could overwrite the bytes "+
+	buildRefuseAt := repairStepIndex(buildSteps, refuseStep)
+	if buildRefuseAt < 0 {
+		t.Fatalf("build job is missing the %q guard; it could waste a full rebuild "+
 			"consumers have already checksummed", refuseStep)
 	}
-	refuse := steps[refuseAt].Run
-	if steps[refuseAt].If != "" {
-		t.Errorf("%q is conditional (if: %q); the guard must always run", refuseStep, steps[refuseAt].If)
+	buildRefuse := buildSteps[buildRefuseAt].Run
+	if buildSteps[buildRefuseAt].If != "" {
+		t.Errorf("%q is conditional (if: %q); the guard must always run", refuseStep, buildSteps[buildRefuseAt].If)
 	}
 	// It must gate on real BUILD artifacts, not on the asset count: a release
 	// carrying only a stray checksums.txt is still a hole worth repairing, and
 	// one carrying a binary is not.
-	if !strings.Contains(refuse, "EXISTING_BUILDS") || !regexp.MustCompile(`EXISTING_BUILDS"\s*-gt\s*0`).MatchString(refuse) {
+	if !strings.Contains(buildRefuse, "EXISTING_BUILDS") || !regexp.MustCompile(`EXISTING_BUILDS"\s*-gt\s*0`).MatchString(buildRefuse) {
 		t.Errorf("%q does not refuse on a positive real-build count", refuseStep)
 	}
-	if !strings.Contains(refuse, `^checksums\\.txt$`) {
+	if !strings.Contains(buildRefuse, `^checksums\\.txt$`) {
 		t.Errorf("%q does not classify metadata out of the build count", refuseStep)
 	}
 
-	verifyAt := repairStepIndex(steps, verifyStep)
-	if verifyAt < 0 {
-		t.Fatalf("repair job is missing the %q step; a repair that uploaded nothing "+
+	publishRefuseAt := repairStepIndex(publishSteps, refuseStep)
+	if publishRefuseAt < 0 {
+		t.Fatalf("publish job is missing the %q guard; it could overwrite the bytes "+
 			"would report success", verifyStep)
 	}
-	if steps[verifyAt].If != "" {
-		t.Errorf("%q is conditional (if: %q); the guard must always run", verifyStep, steps[verifyAt].If)
+	publishRefuse := publishSteps[publishRefuseAt].Run
+	if publishSteps[publishRefuseAt].If != "" {
+		t.Errorf("%q is conditional (if: %q); the guard must always run", refuseStep, publishSteps[publishRefuseAt].If)
+	}
+	if !strings.Contains(publishRefuse, "EXISTING_BUILDS") || !regexp.MustCompile(`EXISTING_BUILDS"\s*-gt\s*0`).MatchString(publishRefuse) {
+		t.Errorf("%q does not refuse on a positive real-build count", refuseStep)
+	}
+	if !strings.Contains(publishRefuse, `^checksums\\.txt$`) {
+		t.Errorf("%q does not classify metadata out of the build count", refuseStep)
+	}
+
+	uploadAt := repairStepIndex(publishSteps, "Upload the missing assets")
+	if uploadAt < 0 || uploadAt != publishRefuseAt+1 {
+		t.Errorf("publish guard must run immediately before upload (guard=%d, upload=%d)", publishRefuseAt, uploadAt)
+	}
+
+	verifyAt := repairStepIndex(publishSteps, verifyStep)
+	if verifyAt < 0 {
+		t.Fatalf("publish job is missing the %q step; a repair that uploaded nothing "+
+			"would report success", verifyStep)
+	}
+	if publishSteps[verifyAt].If != "" {
+		t.Errorf("%q is conditional (if: %q); the guard must always run", verifyStep, publishSteps[verifyAt].If)
 	}
 
 	// Same assertion ci.yml's releaser job makes, so a repaired release is
 	// held to the release path's standard rather than a weaker one.
-	verify := steps[verifyAt].Run
+	verify := publishSteps[verifyAt].Run
 	for _, want := range []string{
 		"/releases/tags/",    // re-reads the PUBLISHED release, not local dist/
 		"gh api",             // ... over the API
@@ -392,12 +488,12 @@ func TestReleaseRepairRefusesCompleteReleasesAndVerifiesTheLandedResult(t *testi
 			"would pass", verifyStep)
 	}
 
-	if refuseAt > verifyAt {
+	if publishRefuseAt > verifyAt {
 		t.Error("the complete-release refusal runs after the landed-result verification")
 	}
 	// Last, so no later step can bypass it.
-	if verifyAt != len(steps)-1 {
+	if verifyAt != len(publishSteps)-1 {
 		t.Errorf("%q is step %d of %d; it must be last so nothing can run after the guard",
-			verifyStep, verifyAt+1, len(steps))
+			verifyStep, verifyAt+1, len(publishSteps))
 	}
 }
