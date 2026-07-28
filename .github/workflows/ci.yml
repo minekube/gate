@@ -55,7 +55,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - platform: ubuntu-latest
+            rust_toolchain: "1.94.0"
+          - platform: macos-latest
+            rust_toolchain: "1.94.0"
+          - platform: windows-latest
+            rust_toolchain: "1.94.0-x86_64-pc-windows-gnu"
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout
@@ -68,7 +74,12 @@ jobs:
           go-version-file: go.mod
 
       - name: Setup pinned Rust toolchain
-        run: rustup toolchain install 1.94.0 --profile minimal --component clippy --component rustfmt --target wasm32-unknown-unknown
+        run: rustup toolchain install ${{ matrix.rust_toolchain }} --profile minimal --component clippy --component rustfmt --target wasm32-unknown-unknown
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: internal/wasm/runtime/native -> target
 
       - name: Verify statically linked Wasm component runtime
         run: make wasm-native-test

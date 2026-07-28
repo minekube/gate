@@ -11,6 +11,15 @@ the production plugin loader or generated Gate API.
 - A platform C toolchain supported by CGO is required.
 - No global `cargo-component`, `wasm-tools`, or `wit-bindgen` CLI is required.
 
+On Windows, Go's CGO toolchain uses MinGW, so the matching pinned Rust GNU
+toolchain must also be installed:
+
+```powershell
+rustup toolchain install 1.94.0-x86_64-pc-windows-gnu --profile minimal --target wasm32-unknown-unknown
+```
+
+The Make target selects that toolchain automatically on Windows.
+
 Run the complete local spike check from the repository root:
 
 ```sh

@@ -2,16 +2,22 @@ WASM_NATIVE_DIR := internal/wasm/runtime/native
 WASM_SPIKE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm
 WASM_SPIKE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_spike.component.wasm
 
+ifeq ($(OS),Windows_NT)
+WASM_CARGO := rustup run 1.94.0-x86_64-pc-windows-gnu cargo
+else
+WASM_CARGO := cargo
+endif
+
 all: fmt vet mod lint
 
 wasm-spike-component:
-	cd $(WASM_NATIVE_DIR) && cargo build -p gate-wasm-spike-guest --release --target wasm32-unknown-unknown
-	cd $(WASM_NATIVE_DIR) && cargo run -p gate-wasm-componentize --release -- \
+	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-spike-guest --release --target wasm32-unknown-unknown
+	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) run -p gate-wasm-componentize --release -- \
 		target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm \
 		artifacts/gate_wasm_spike.component.wasm
 
 wasm-native-lib:
-	cd $(WASM_NATIVE_DIR) && cargo build -p gate-wasm-native --release
+	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-native --release
 
 wasm-native-test: wasm-spike-component wasm-native-lib
 	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
