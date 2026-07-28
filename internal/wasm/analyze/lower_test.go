@@ -48,7 +48,10 @@ func TestLowerRepresentativeGoTypes(t *testing.T) {
 			})
 		}},
 		{name: "Hidden", kind: model.TypeResource, lifetime: model.LifetimeGateOwned},
-		{name: "Pointer", kind: model.TypeResource, nullable: true, lifetime: model.LifetimeGateOwned},
+		{name: "Pointer", kind: model.TypeResource, nullable: true, lifetime: model.LifetimeGateOwned, check: func(t *testing.T, typ model.Type) {
+			require.Equal(t, "example.com/fixture/pkg/shapes.Value#pointer", typ.Identity)
+			require.Equal(t, "value-pointer", typ.WITName)
+		}},
 		{name: "Interface", kind: model.TypeResource, nullable: true, lifetime: model.LifetimeGateOwned},
 		{name: "Any", kind: model.TypeDynamic, nullable: true},
 		{name: "Channel", kind: model.TypeResource, nullable: true, lifetime: model.LifetimePlugin, check: func(t *testing.T, typ model.Type) {
@@ -79,6 +82,7 @@ func TestLowerRepresentativeGoTypes(t *testing.T) {
 		{name: "Unsafe", kind: model.TypeResource, lifetime: model.LifetimeGateOwned},
 		{name: "Recursive", kind: model.TypeRecord, check: func(t *testing.T, typ model.Type) {
 			require.Equal(t, model.TypeResource, typ.Fields[1].Type.Kind)
+			require.Equal(t, "example.com/fixture/pkg/shapes.Recursive#pointer", typ.Fields[1].Type.Identity)
 		}},
 		{name: "GenericValue", kind: model.TypeRecord, check: func(t *testing.T, typ model.Type) {
 			require.Equal(t, model.TypeString, typ.Fields[0].Type.Kind)

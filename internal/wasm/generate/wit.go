@@ -369,13 +369,14 @@ func renderPackageInterface(
 		operations = append(operations, declaration)
 		collectDeclarationUses(declaration, registry, used)
 	}
-	renderUse(output, used)
+	localNames := localTypeNames(used, operationNames(operations))
+	renderUse(output, used, localNames)
 	if len(used) > 0 && len(operations) > 0 {
 		fmt.Fprintln(output)
 	}
 	for index, declaration := range operations {
 		renderDocumentation(output, "  ", declaration.Documentation)
-		registry.renderOperation(output, declaration)
+		registry.renderOperation(output, declaration, localNames)
 		if index+1 < len(operations) {
 			// Operations are intentionally compact; documentation remains
 			// attached to the declaration immediately below it.
@@ -387,6 +388,7 @@ func renderPackageInterface(
 func (r *witRegistry) renderOperation(
 	output *bytes.Buffer,
 	declaration model.Declaration,
+	localNames map[string]string,
 ) {
 	switch declaration.Kind {
 	case model.DeclarationConstant:
@@ -394,21 +396,21 @@ func (r *witRegistry) renderOperation(
 			output,
 			"  get-%s: func() -> %s;\n",
 			declaration.WITName,
-			r.typeExpression(*declaration.Type, witOutput, nil, ""),
+			r.typeExpression(*declaration.Type, witOutput, localNames, ""),
 		)
 	case model.DeclarationVariable:
 		fmt.Fprintf(
 			output,
 			"  get-%s: func() -> %s;\n",
 			declaration.WITName,
-			r.typeExpression(*declaration.Type, witOutput, nil, ""),
+			r.typeExpression(*declaration.Type, witOutput, localNames, ""),
 		)
 		if declaration.Variable != nil && declaration.Variable.Writable {
 			fmt.Fprintf(
 				output,
 				"  set-%s: func(value: %s);\n",
 				declaration.WITName,
-				r.typeExpression(*declaration.Type, witInput, nil, ""),
+				r.typeExpression(*declaration.Type, witInput, localNames, ""),
 			)
 		}
 	default:
@@ -416,12 +418,15 @@ func (r *witRegistry) renderOperation(
 			output,
 			"  %s: %s;\n",
 			declaration.WITName,
-			r.callableExpression(declaration),
+			r.callableExpression(declaration, localNames),
 		)
 	}
 }
 
-func (r *witRegistry) callableExpression(declaration model.Declaration) string {
+func (r *witRegistry) callableExpression(
+	declaration model.Declaration,
+	localNames map[string]string,
+) string {
 	callable := *declaration.Callable
 	var parameters []string
 	if declaration.Receiver != nil {
@@ -446,30 +451,44 @@ func (r *witRegistry) callableExpression(declaration model.Declaration) string {
 		}
 		parameters = append(
 			parameters,
-			"self: "+r.typeExpression(receiver, witInput, nil, ""),
+			"self: "+r.typeExpression(receiver, witInput, localNames, ""),
 		)
 	}
 	for _, parameter := range callable.Parameters {
 		parameters = append(
 			parameters,
-			parameter.WITName+": "+r.typeExpression(parameter.Type, witInput, nil, ""),
+			parameter.WITName+": "+
+				r.typeExpression(parameter.Type, witInput, localNames, ""),
 		)
 	}
 	return "func(" + strings.Join(parameters, ", ") + ")" +
-		r.resultExpression(callable)
+		r.resultExpression(callable, localNames)
 }
 
-func (r *witRegistry) resultExpression(callable model.Callable) string {
+func (r *witRegistry) resultExpression(
+	callable model.Callable,
+	localNames map[string]string,
+) string {
 	var success string
 	switch len(callable.Results) {
 	case 0:
 		success = "_"
 	case 1:
-		success = r.typeExpression(callable.Results[0].Type, witOutput, nil, "")
+		success = r.typeExpression(
+			callable.Results[0].Type,
+			witOutput,
+			localNames,
+			"",
+		)
 	default:
 		results := make([]string, len(callable.Results))
 		for index, result := range callable.Results {
-			results[index] = r.typeExpression(result.Type, witOutput, nil, "")
+			results[index] = r.typeExpression(
+				result.Type,
+				witOutput,
+				localNames,
+				"",
+			)
 		}
 		success = "tuple<" + strings.Join(results, ", ") + ">"
 	}
@@ -509,8 +528,17 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 		return strings.Compare(left.name, right.name)
 	})
 
+	reserved := map[string]struct{}{
+		"metadata": {},
+		"init":     {},
+	}
+	for _, callback := range callbacks {
+		reserved["invoke-"+callback.name] = struct{}{}
+	}
+	localNames := localTypeNames(used, reserved)
+
 	fmt.Fprintln(output, "interface plugin {")
-	renderUse(output, used)
+	renderUse(output, used, localNames)
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "  record plugin-metadata {")
 	fmt.Fprintln(output, "    name: string,")
@@ -533,7 +561,12 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 			parameters = append(
 				parameters,
 				parameter.WITName+": "+
-					registry.typeExpression(parameter.Type, witInput, nil, ""),
+					registry.typeExpression(
+						parameter.Type,
+						witInput,
+						localNames,
+						"",
+					),
 			)
 		}
 		fmt.Fprintf(
@@ -541,23 +574,30 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 			"  invoke-%s: func(%s)%s;\n",
 			callback.name,
 			strings.Join(parameters, ", "),
-			registry.resultExpression(callable),
+			registry.resultExpression(callable, localNames),
 		)
 	}
 	fmt.Fprintln(output, "}")
 }
 
-func renderUse(output *bytes.Buffer, used map[string]struct{}) {
+func renderUse(
+	output *bytes.Buffer,
+	used map[string]struct{},
+	localNames map[string]string,
+) {
 	var names []string
 	for identity := range used {
 		if identity == "gate-error" {
-			names = append(names, "gate-error")
+			names = append(names, renderUseName("gate-error", localNames))
 			continue
 		}
 		// The caller has already collected canonical identities; the registry
 		// name is injected by collect helpers as a "name:" pseudo identity.
 		if strings.HasPrefix(identity, "name:") {
-			names = append(names, strings.TrimPrefix(identity, "name:"))
+			names = append(
+				names,
+				renderUseName(strings.TrimPrefix(identity, "name:"), localNames),
+			)
 		}
 	}
 	slices.Sort(names)
@@ -565,6 +605,65 @@ func renderUse(output *bytes.Buffer, used map[string]struct{}) {
 	if len(names) > 0 {
 		fmt.Fprintf(output, "  use gate-types.{%s};\n", strings.Join(names, ", "))
 	}
+}
+
+func renderUseName(name string, localNames map[string]string) string {
+	if local := localNames[name]; local != "" && local != name {
+		return name + " as " + local
+	}
+	return name
+}
+
+func operationNames(declarations []model.Declaration) map[string]struct{} {
+	names := make(map[string]struct{}, len(declarations))
+	for _, declaration := range declarations {
+		switch declaration.Kind {
+		case model.DeclarationConstant:
+			names["get-"+declaration.WITName] = struct{}{}
+		case model.DeclarationVariable:
+			names["get-"+declaration.WITName] = struct{}{}
+			if declaration.Variable != nil && declaration.Variable.Writable {
+				names["set-"+declaration.WITName] = struct{}{}
+			}
+		default:
+			names[declaration.WITName] = struct{}{}
+		}
+	}
+	return names
+}
+
+func localTypeNames(
+	used map[string]struct{},
+	reserved map[string]struct{},
+) map[string]string {
+	names := make(map[string]string)
+	occupied := make(map[string]struct{}, len(reserved)+len(used))
+	for name := range reserved {
+		occupied[name] = struct{}{}
+	}
+	var imported []string
+	for identity := range used {
+		switch {
+		case identity == "gate-error":
+			imported = append(imported, identity)
+		case strings.HasPrefix(identity, "name:"):
+			imported = append(imported, strings.TrimPrefix(identity, "name:"))
+		}
+	}
+	slices.Sort(imported)
+	imported = slices.Compact(imported)
+	for _, name := range imported {
+		local := name
+		if _, collision := occupied[local]; collision {
+			local = "type-" + name
+			if _, collision := occupied[local]; collision {
+				local += "-" + shortHash(name)
+			}
+		}
+		names[name] = local
+		occupied[local] = struct{}{}
+	}
+	return names
 }
 
 func collectDeclarationUses(
@@ -638,7 +737,7 @@ func collectDefinitionUse(
 func (r *witRegistry) typeExpression(
 	typ model.Type,
 	position witPosition,
-	used map[string]struct{},
+	localNames map[string]string,
 	skipIdentity string,
 ) string {
 	var expression string
@@ -646,8 +745,8 @@ func (r *witRegistry) typeExpression(
 	if identity != "" && identity != skipIdentity {
 		if definition := r.definitions[identity]; definition != nil {
 			expression = definition.name
-			if used != nil {
-				used["name:"+definition.name] = struct{}{}
+			if local := localNames[definition.name]; local != "" {
+				expression = local
 			}
 			if typ.Kind == model.TypeResource ||
 				typ.Kind == model.TypeCallback ||
@@ -686,33 +785,33 @@ func (r *witRegistry) typeExpression(
 		case model.TypeU64:
 			expression = "u64"
 		case model.TypeF32:
-			expression = "float32"
+			expression = "f32"
 		case model.TypeF64:
-			expression = "float64"
+			expression = "f64"
 		case model.TypeChar:
 			expression = "char"
 		case model.TypeString:
 			expression = "string"
 		case model.TypeList:
 			expression = "list<" +
-				r.typeExpression(*typ.Element, witNested, used, "") + ">"
+				r.typeExpression(*typ.Element, witNested, localNames, "") + ">"
 		case model.TypeTuple:
 			items := make([]string, len(typ.Tuple))
 			for index, item := range typ.Tuple {
-				items[index] = r.typeExpression(item, witNested, used, "")
+				items[index] = r.typeExpression(item, witNested, localNames, "")
 			}
 			expression = "tuple<" + strings.Join(items, ", ") + ">"
 		case model.TypeOption:
 			expression = "option<" +
-				r.typeExpression(*typ.Element, witNested, used, "") + ">"
+				r.typeExpression(*typ.Element, witNested, localNames, "") + ">"
 		case model.TypeResult:
 			okType := "_"
 			errorType := "_"
 			if typ.Element != nil {
-				okType = r.typeExpression(*typ.Element, witNested, used, "")
+				okType = r.typeExpression(*typ.Element, witNested, localNames, "")
 			}
 			if typ.Key != nil {
-				errorType = r.typeExpression(*typ.Key, witNested, used, "")
+				errorType = r.typeExpression(*typ.Key, witNested, localNames, "")
 			}
 			expression = "result<" + okType + ", " + errorType + ">"
 		default:

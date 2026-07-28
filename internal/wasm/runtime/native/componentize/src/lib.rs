@@ -85,4 +85,14 @@ mod tests {
             panic!("generated WIT {} is invalid: {error:#}", path.display())
         });
     }
+
+    #[test]
+    fn generated_gate_wit_is_valid() {
+        let path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../api/gate.wit");
+
+        validate_wit(&path).unwrap_or_else(|error| {
+            panic!("generated WIT {} is invalid: {error:#}", path.display())
+        });
+    }
 }

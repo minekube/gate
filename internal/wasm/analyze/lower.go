@@ -166,7 +166,17 @@ func (s *lowerState) lower(goType types.Type) (model.Type, error) {
 			Element:   &entry,
 		}, nil
 	case *types.Pointer:
-		return s.resource(goType, typeIdentity(goType.Elem()), true, model.LifetimeGateOwned), nil
+		identity, err := s.pointerIdentity(goType.Elem())
+		if err != nil {
+			return model.Type{}, err
+		}
+		typ := s.resource(goType, identity, true, model.LifetimeGateOwned)
+		if strings.HasSuffix(identity, "#pointer") {
+			typ.WITName = WITIdentifier(
+				shortIdentity(strings.TrimSuffix(identity, "#pointer")),
+			) + "-pointer"
+		}
+		return typ, nil
 	case *types.Interface:
 		if goType.Empty() {
 			return model.Type{
@@ -224,6 +234,30 @@ func (s *lowerState) lower(goType types.Type) (model.Type, error) {
 		}, nil
 	default:
 		return s.resource(goType, "", false, model.LifetimeGateOwned), nil
+	}
+}
+
+func (s *lowerState) pointerIdentity(element types.Type) (string, error) {
+	identity := typeIdentity(element)
+	if identity == "" {
+		return "", nil
+	}
+	// A pointer to a copied WIT value needs its own resource identity. Reusing
+	// the value identity would make the renderer apply own/borrow handles to a
+	// record, which WIT rejects. Opaque Go values are already resources, so
+	// their pointer form intentionally shares the same handle identity.
+	if s.visiting[identity] {
+		return identity + "#pointer", nil
+	}
+	lowered, err := s.lower(element)
+	if err != nil {
+		return "", fmt.Errorf("classify pointer element %s: %w", identity, err)
+	}
+	switch lowered.Kind {
+	case model.TypeResource, model.TypeCallback, model.TypeDynamic:
+		return identity, nil
+	default:
+		return identity + "#pointer", nil
 	}
 }
 
@@ -427,19 +461,25 @@ func (s *lowerState) lowerTuplePrefix(
 	limit int,
 ) ([]model.Parameter, error) {
 	parameters := make([]model.Parameter, limit)
+	usedNames := make(map[string]struct{}, limit)
 	for index := range limit {
 		variable := tuple.At(index)
 		name := variable.Name()
-		if name == "" {
+		if name == "" || name == "_" {
 			name = fallback + strconv.Itoa(index)
 		}
+		witName := WITIdentifier(name)
+		if _, duplicate := usedNames[witName]; duplicate {
+			witName += "-" + strconv.Itoa(index)
+		}
+		usedNames[witName] = struct{}{}
 		parameterType, err := s.lower(variable.Type())
 		if err != nil {
 			return nil, fmt.Errorf("%s %s: %w", fallback, name, err)
 		}
 		parameters[index] = model.Parameter{
 			GoName:  name,
-			WITName: WITIdentifier(name),
+			WITName: witName,
 			Type:    parameterType,
 		}
 	}
