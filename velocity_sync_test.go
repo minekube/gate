@@ -89,7 +89,7 @@ type velocitySyncLog struct {
 var (
 	fullSHAPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 	isoDatePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	yamlBlock      = regexp.MustCompile("(?s)```yaml\n(.*?)\n```")
+	yamlBlock      = regexp.MustCompile("(?s)```yaml\r?\n(.*?)\r?\n```")
 )
 
 func readVelocitySyncFile(t *testing.T) string {
@@ -100,6 +100,13 @@ func readVelocitySyncFile(t *testing.T) string {
 		t.Fatalf("%s must exist at the repo root: %v", velocitySyncPath, err)
 	}
 	return string(body)
+}
+
+func TestVelocitySyncYAMLBlockAcceptsCRLF(t *testing.T) {
+	const body = "```yaml\r\nverified_sync_point:\r\n  gate_pr: 781\r\nlog: []\r\n```\r\n"
+	if !yamlBlock.MatchString(body) {
+		t.Fatal("YAML block matcher must accept Windows CRLF line endings")
+	}
 }
 
 func readVelocitySyncRecord(t *testing.T) velocitySyncRecord {
