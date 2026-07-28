@@ -14,7 +14,7 @@ func TestLoadDiscoversOnlyPublicScopedDeclarations(t *testing.T) {
 	result, err := Load(context.Background(), Options{
 		Dir:        filepath.Join("testdata", "module"),
 		ModulePath: "example.com/fixture",
-		Patterns:   []string{"./api/...", "./pkg/..."},
+		Patterns:   fixtureDiscoveryPatterns,
 		Exclusions: []Exclusion{{
 			Identity: "example.com/fixture/pkg/public.Excluded",
 			Reason:   "fixture exclusion",
@@ -86,7 +86,7 @@ func TestLoadRejectsStaleAndInvalidExclusions(t *testing.T) {
 			_, err := Load(context.Background(), Options{
 				Dir:        filepath.Join("testdata", "module"),
 				ModulePath: "example.com/fixture",
-				Patterns:   []string{"./api/...", "./pkg/..."},
+				Patterns:   fixtureDiscoveryPatterns,
 				Exclusions: []Exclusion{tt.exclusion},
 			})
 			require.ErrorContains(t, err, tt.want)
@@ -119,6 +119,12 @@ func TestLoadGateRepositoryScopeAndBootstrapPolicy(t *testing.T) {
 		"go.minekube.com/gate/pkg/edition/java/proxy.Plugin",
 		"go.minekube.com/gate/pkg/edition/java/proxy.Plugins",
 	}, excludedIdentities(result.Excluded))
+}
+
+var fixtureDiscoveryPatterns = []string{
+	"./api/...",
+	"./pkg/public",
+	"./pkg/internal/...",
 }
 
 func declarationIdentities(declarations []Declaration) []string {

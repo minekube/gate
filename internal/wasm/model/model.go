@@ -51,20 +51,22 @@ type Receiver struct {
 
 // Type is a recursively lowered language-neutral type.
 type Type struct {
-	Identity     string    `json:"identity,omitempty"`
-	WITName      string    `json:"witName,omitempty"`
-	GoType       string    `json:"goType"`
-	Kind         TypeKind  `json:"kind"`
-	Ownership    Ownership `json:"ownership"`
-	Lifetime     Lifetime  `json:"lifetime"`
-	Nullable     bool      `json:"nullable"`
-	Element      *Type     `json:"element,omitempty"`
-	Key          *Type     `json:"key,omitempty"`
-	Fields       []Field   `json:"fields,omitempty"`
-	Cases        []Case    `json:"cases,omitempty"`
-	Tuple        []Type    `json:"tuple,omitempty"`
-	Callback     *Callback `json:"callback,omitempty"`
-	ResourceType string    `json:"resourceType,omitempty"`
+	Identity         string           `json:"identity,omitempty"`
+	WITName          string           `json:"witName,omitempty"`
+	GoType           string           `json:"goType"`
+	Kind             TypeKind         `json:"kind"`
+	Ownership        Ownership        `json:"ownership"`
+	Lifetime         Lifetime         `json:"lifetime"`
+	Nullable         bool             `json:"nullable"`
+	Element          *Type            `json:"element,omitempty"`
+	Key              *Type            `json:"key,omitempty"`
+	Fields           []Field          `json:"fields,omitempty"`
+	Cases            []Case           `json:"cases,omitempty"`
+	Tuple            []Type           `json:"tuple,omitempty"`
+	Callback         *Callback        `json:"callback,omitempty"`
+	ResourceType     string           `json:"resourceType,omitempty"`
+	ArrayLength      int64            `json:"arrayLength,omitempty"`
+	ChannelDirection ChannelDirection `json:"channelDirection,omitempty"`
 }
 
 // Field is a copied record field.

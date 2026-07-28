@@ -71,6 +71,15 @@ const (
 	CallbackHostToGuest CallbackDirection = "host-to-guest"
 )
 
+// ChannelDirection preserves a Go channel's allowed operations.
+type ChannelDirection string
+
+const (
+	ChannelBidirectional ChannelDirection = "send-receive"
+	ChannelSend          ChannelDirection = "send"
+	ChannelReceive       ChannelDirection = "receive"
+)
+
 // CoverageState records the fail-closed representation decision.
 type CoverageState string
 
