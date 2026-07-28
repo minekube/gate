@@ -68,6 +68,14 @@ func deadlineNanos(limits Limits) C.uint64_t {
 	return C.uint64_t(limits.Deadline)
 }
 
+func nativeRuntimeVersion() string {
+	version, err := copySlice(C.gate_wasm_runtime_version())
+	if err != nil {
+		panic(err)
+	}
+	return string(version)
+}
+
 func (r *nativeRuntime) Init(contextID, proxyID uint64) (Sample, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

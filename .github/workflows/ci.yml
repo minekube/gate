@@ -51,6 +51,27 @@ jobs:
       - name: Smoke test - Geyserlite Windows auto-download starts
         if: matrix.platform == 'windows-latest'
         run: go test ./pkg/edition/bedrock/geyser -tags=geyserlite_smoke -run TestLiteManagedRunnerWindowsAutoDownloadSmoke -count=1 -timeout 6m -v
+  wasm-native-feasibility:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go with cache
+        uses: actions/setup-go@v6
+        with:
+          cache: true
+          go-version-file: go.mod
+
+      - name: Setup pinned Rust toolchain
+        run: rustup toolchain install 1.94.0 --profile minimal --component clippy --component rustfmt --target wasm32-unknown-unknown
+
+      - name: Verify statically linked Wasm component runtime
+        run: make wasm-native-test
   # Regression test for https://github.com/minekube/gate/issues/697:
   # The published images crashed with "exec /gate: no such file or directory"
   # because the gate binary is dynamically linked (the geyserlite dependency

@@ -58,6 +58,7 @@ typedef enum gate_wasm_status {
   GATE_WASM_STATUS_TRANSFER = 6,
 } gate_wasm_status;
 
+gate_wasm_slice gate_wasm_runtime_version(void);
 gate_wasm_runtime *gate_wasm_runtime_new(
     gate_wasm_slice component, uintptr_t go_host, gate_wasm_limits limits,
     gate_wasm_owned_bytes *error);

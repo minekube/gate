@@ -308,6 +308,15 @@ unsafe fn ffi_status(
     }
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn gate_wasm_runtime_version() -> Slice {
+    const VERSION: &[u8] = b"wasmtime-47.0.2";
+    Slice {
+        ptr: VERSION.as_ptr(),
+        len: VERSION.len(),
+    }
+}
+
 /// Creates a runtime. A null return indicates failure and `error` owns the
 /// diagnostic buffer.
 ///

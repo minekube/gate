@@ -161,6 +161,10 @@ func TestRuntime_CloseAfterFailedCall(t *testing.T) {
 	require.ErrorIs(t, runtime.Spin(), ErrClosed)
 }
 
+func TestNativeLibraryIsLinked(t *testing.T) {
+	require.Equal(t, "wasmtime-47.0.2", nativeRuntimeVersion())
+}
+
 func newIntegrationRuntime(t *testing.T, limits Limits) *Runtime {
 	t.Helper()
 	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
