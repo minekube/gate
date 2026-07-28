@@ -7,9 +7,11 @@ import (
 )
 
 const (
-	WITFile      = "gate.wit"
-	ManifestFile = "manifest.json"
-	ContractFile = "contract.json"
+	WITFile        = "gate.wit"
+	ManifestFile   = "manifest.json"
+	ContractFile   = "contract.json"
+	GoValuesFile   = "values_gen.go"
+	RustValuesFile = "values.rs"
 )
 
 // Artifacts renders every synchronized contract artifact.
@@ -26,9 +28,23 @@ func Artifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", ContractFile, err)
 	}
+	values, err := RenderGoValues(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", GoValuesFile, err)
+	}
 	return map[string][]byte{
 		WITFile:      wit,
 		ManifestFile: manifest,
 		ContractFile: contract,
+		GoValuesFile: values,
 	}, nil
+}
+
+// NativeArtifacts renders synchronized Rust host sources.
+func NativeArtifacts(api *model.API) (map[string][]byte, error) {
+	values, err := RenderRustValues(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", RustValuesFile, err)
+	}
+	return map[string][]byte{RustValuesFile: values}, nil
 }

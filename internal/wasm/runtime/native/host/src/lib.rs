@@ -1,5 +1,6 @@
-mod abi;
+pub mod abi;
 mod engine;
+pub mod generated;
 pub mod reentry;
 
 use std::any::Any;

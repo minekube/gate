@@ -15,29 +15,36 @@ func TestRunGenerateAndCheck(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("..", "..", "..", ".."))
 	require.NoError(t, err)
 	output := t.TempDir()
+	nativeOutput := t.TempDir()
 
 	var stdout bytes.Buffer
 	require.NoError(t, run([]string{
 		"generate",
 		"-repo", root,
 		"-out", output,
+		"-native-out", nativeOutput,
 	}, &stdout, &stdout))
-	require.Contains(t, stdout.String(), "generated 3 WebAssembly API artifacts")
+	require.Contains(t, stdout.String(), "generated 5 WebAssembly API artifacts")
 	for _, name := range []string{
 		generate.WITFile,
 		generate.ManifestFile,
 		generate.ContractFile,
+		generate.GoValuesFile,
 	} {
 		info, err := os.Stat(filepath.Join(output, name))
 		require.NoError(t, err)
 		require.Positive(t, info.Size())
 	}
+	info, err := os.Stat(filepath.Join(nativeOutput, generate.RustValuesFile))
+	require.NoError(t, err)
+	require.Positive(t, info.Size())
 
 	stdout.Reset()
 	require.NoError(t, run([]string{
 		"check",
 		"-repo", root,
 		"-out", output,
+		"-native-out", nativeOutput,
 	}, &stdout, &stdout))
 	require.Contains(t, stdout.String(), "WebAssembly API artifacts are current")
 
@@ -48,6 +55,7 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"check",
 		"-repo", root,
 		"-out", output,
+		"-native-out", nativeOutput,
 	}, &stdout, &stdout)
 	require.ErrorContains(t, err, "gate.wit differs")
 	contents, readErr := os.ReadFile(witPath)

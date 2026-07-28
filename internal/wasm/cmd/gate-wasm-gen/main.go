@@ -31,6 +31,11 @@ func run(args []string, stdout, stderr io.Writer) error {
 	flags.SetOutput(stderr)
 	repo := flags.String("repo", "", "Gate repository root (defaults to nearest go.mod)")
 	output := flags.String("out", "", "generated artifact directory")
+	nativeOutput := flags.String(
+		"native-out",
+		"",
+		"generated Rust host source directory",
+	)
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -58,6 +63,12 @@ func run(args []string, stdout, stderr io.Writer) error {
 			return fmt.Errorf("resolve output path: %w", err)
 		}
 	}
+	if *nativeOutput != "" {
+		*nativeOutput, err = filepath.Abs(*nativeOutput)
+		if err != nil {
+			return fmt.Errorf("resolve native output path: %w", err)
+		}
+	}
 	if _, err := os.Stat(filepath.Join(*repo, "go.mod")); err != nil {
 		return fmt.Errorf("%s is not a Gate repository root: %w", *repo, err)
 	}
@@ -70,22 +81,39 @@ func run(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	var nativeArtifacts map[string][]byte
+	if *nativeOutput != "" {
+		nativeArtifacts, err = generate.NativeArtifacts(api)
+		if err != nil {
+			return err
+		}
+	}
 
 	switch command {
 	case "generate":
 		if err := writeArtifacts(*output, artifacts); err != nil {
 			return err
 		}
+		if *nativeOutput != "" {
+			if err := writeArtifacts(*nativeOutput, nativeArtifacts); err != nil {
+				return err
+			}
+		}
 		_, err = fmt.Fprintf(
 			stdout,
 			"generated %d WebAssembly API artifacts in %s\n",
-			len(artifacts),
+			len(artifacts)+len(nativeArtifacts),
 			*output,
 		)
 		return err
 	case "check":
 		if err := checkArtifacts(*output, artifacts); err != nil {
 			return err
+		}
+		if *nativeOutput != "" {
+			if err := checkArtifacts(*nativeOutput, nativeArtifacts); err != nil {
+				return err
+			}
 		}
 		_, err = fmt.Fprintln(stdout, "WebAssembly API artifacts are current")
 		return err
@@ -96,7 +124,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 
 func usageError() error {
 	return fmt.Errorf(
-		"usage: gate-wasm-gen <generate|check> [-repo path] [-out path]",
+		"usage: gate-wasm-gen <generate|check> [-repo path] [-out path] [-native-out path]",
 	)
 }
 

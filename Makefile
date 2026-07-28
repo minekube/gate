@@ -23,10 +23,10 @@ wasm-native-test: wasm-spike-component wasm-native-lib
 	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
 
 wasm-api-generate:
-	go run ./internal/wasm/cmd/gate-wasm-gen generate -repo . -out internal/wasm/api
+	go run ./internal/wasm/cmd/gate-wasm-gen generate -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated
 
 wasm-api-check:
-	go run ./internal/wasm/cmd/gate-wasm-gen check -repo . -out internal/wasm/api
+	go run ./internal/wasm/cmd/gate-wasm-gen check -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated
 
 # Sync embedded config files from root directory
 sync-configs:
