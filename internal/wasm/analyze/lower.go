@@ -38,6 +38,7 @@ type lowerState struct {
 type genericInstance struct {
 	OriginIdentity   string
 	InstanceIdentity string
+	Object           types.Object
 	Type             types.Type
 	TypeArguments    []types.Type
 }
@@ -84,6 +85,7 @@ func collectGenericInstances(pkgs []*packages.Package) ([]genericInstance, error
 			instances[identity] = genericInstance{
 				OriginIdentity:   origin,
 				InstanceIdentity: identity,
+				Object:           object,
 				Type:             instance.Type,
 				TypeArguments:    arguments,
 			}

@@ -31,6 +31,7 @@ type Declaration struct {
 	Callable      *Callable       `json:"callable,omitempty"`
 	Constant      *Constant       `json:"constant,omitempty"`
 	Variable      *Variable       `json:"variable,omitempty"`
+	Event         bool            `json:"event"`
 	Coverage      Coverage        `json:"coverage"`
 	Dependencies  []string        `json:"dependencies,omitempty"`
 }

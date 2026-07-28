@@ -49,6 +49,43 @@ type Declaration struct {
 
 // Load discovers the complete public declaration inventory.
 func Load(ctx context.Context, options Options) (*Result, error) {
+	loaded, err := loadPublicPackages(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &Result{}
+	seenDeclarations := make(map[string]struct{})
+	for _, pkg := range loaded {
+		result.Packages = append(result.Packages, pkg.PkgPath)
+		declarations, err := packageDeclarations(pkg)
+		if err != nil {
+			return nil, err
+		}
+		for _, declaration := range declarations {
+			if _, exists := seenDeclarations[declaration.Identity]; exists {
+				return nil, fmt.Errorf(
+					"duplicate public declaration identity %q",
+					declaration.Identity,
+				)
+			}
+			seenDeclarations[declaration.Identity] = struct{}{}
+			result.Declarations = append(result.Declarations, declaration)
+		}
+	}
+	slices.Sort(result.Packages)
+	slices.SortFunc(result.Declarations, compareDeclarations)
+
+	if err := applyExclusions(result, options.Exclusions); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func loadPublicPackages(
+	ctx context.Context,
+	options Options,
+) ([]*packages.Package, error) {
 	if options.Dir == "" {
 		return nil, fmt.Errorf("analysis directory is required")
 	}
@@ -83,9 +120,8 @@ func Load(ctx context.Context, options Options) (*Result, error) {
 		return nil, err
 	}
 
-	result := &Result{}
 	seenPackages := make(map[string]struct{})
-	seenDeclarations := make(map[string]struct{})
+	publicPackages := make([]*packages.Package, 0, len(loaded))
 	for _, pkg := range loaded {
 		if !inPublicScope(pkg.PkgPath, options.ModulePath) {
 			continue
@@ -94,30 +130,12 @@ func Load(ctx context.Context, options Options) (*Result, error) {
 			continue
 		}
 		seenPackages[pkg.PkgPath] = struct{}{}
-		result.Packages = append(result.Packages, pkg.PkgPath)
-
-		declarations, err := packageDeclarations(pkg)
-		if err != nil {
-			return nil, err
-		}
-		for _, declaration := range declarations {
-			if _, exists := seenDeclarations[declaration.Identity]; exists {
-				return nil, fmt.Errorf(
-					"duplicate public declaration identity %q",
-					declaration.Identity,
-				)
-			}
-			seenDeclarations[declaration.Identity] = struct{}{}
-			result.Declarations = append(result.Declarations, declaration)
-		}
+		publicPackages = append(publicPackages, pkg)
 	}
-	slices.Sort(result.Packages)
-	slices.SortFunc(result.Declarations, compareDeclarations)
-
-	if err := applyExclusions(result, options.Exclusions); err != nil {
-		return nil, err
-	}
-	return result, nil
+	slices.SortFunc(publicPackages, func(left, right *packages.Package) int {
+		return strings.Compare(left.PkgPath, right.PkgPath)
+	})
+	return publicPackages, nil
 }
 
 // GateOptions returns the production Gate API discovery options.

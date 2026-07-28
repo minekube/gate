@@ -9,6 +9,25 @@ import (
 )
 
 func packageDeclarations(pkg *packages.Package) ([]Declaration, error) {
+	entries, err := packageDeclarationEntries(pkg)
+	if err != nil {
+		return nil, err
+	}
+	declarations := make([]Declaration, len(entries))
+	for index, entry := range entries {
+		declarations[index] = entry.Declaration
+	}
+	return declarations, nil
+}
+
+type declarationEntry struct {
+	Declaration Declaration
+	Object      types.Object
+	Selection   *types.Selection
+	Type        types.Type
+}
+
+func packageDeclarationEntries(pkg *packages.Package) ([]declarationEntry, error) {
 	if pkg.Types == nil {
 		return nil, fmt.Errorf("package %q has no type information", pkg.PkgPath)
 	}
@@ -16,7 +35,7 @@ func packageDeclarations(pkg *packages.Package) ([]Declaration, error) {
 	names := scope.Names()
 	slices.Sort(names)
 
-	var declarations []Declaration
+	var entries []declarationEntry
 	for _, name := range names {
 		object := scope.Lookup(name)
 		if object == nil || !object.Exported() {
@@ -26,7 +45,11 @@ func packageDeclarations(pkg *packages.Package) ([]Declaration, error) {
 		if !ok {
 			continue
 		}
-		declarations = append(declarations, declaration)
+		entries = append(entries, declarationEntry{
+			Declaration: declaration,
+			Object:      object,
+			Type:        object.Type(),
+		})
 
 		typeName, ok := object.(*types.TypeName)
 		if !ok || typeName.IsAlias() {
@@ -36,13 +59,15 @@ func packageDeclarations(pkg *packages.Package) ([]Declaration, error) {
 		if !ok {
 			continue
 		}
-		declarations = append(
-			declarations,
-			methodDeclarations(pkg.PkgPath, typeName.Name(), named)...,
+		entries = append(
+			entries,
+			methodDeclarationEntries(pkg.PkgPath, typeName.Name(), named)...,
 		)
 	}
-	slices.SortFunc(declarations, compareDeclarations)
-	return declarations, nil
+	slices.SortFunc(entries, func(left, right declarationEntry) int {
+		return compareDeclarations(left.Declaration, right.Declaration)
+	})
+	return entries, nil
 }
 
 func objectDeclaration(packagePath string, object types.Object) (Declaration, bool) {
@@ -81,7 +106,20 @@ func methodDeclarations(
 	receiver string,
 	named *types.Named,
 ) []Declaration {
-	declarations := make(map[string]Declaration)
+	entries := methodDeclarationEntries(packagePath, receiver, named)
+	declarations := make([]Declaration, len(entries))
+	for index, entry := range entries {
+		declarations[index] = entry.Declaration
+	}
+	return declarations
+}
+
+func methodDeclarationEntries(
+	packagePath string,
+	receiver string,
+	named *types.Named,
+) []declarationEntry {
+	entries := make(map[string]declarationEntry)
 	add := func(methodSet *types.MethodSet, pointerReceiver bool) {
 		for index := range methodSet.Len() {
 			selection := methodSet.At(index)
@@ -90,26 +128,33 @@ func methodDeclarations(
 				continue
 			}
 			identity := packagePath + "." + receiver + "." + method.Name()
-			if _, exists := declarations[identity]; exists {
+			if _, exists := entries[identity]; exists {
 				continue
 			}
-			declarations[identity] = Declaration{
-				Identity:        identity,
-				PackagePath:     packagePath,
-				Name:            method.Name(),
-				Receiver:        receiver,
-				PointerReceiver: pointerReceiver,
-				Kind:            DeclarationMethod,
+			entries[identity] = declarationEntry{
+				Declaration: Declaration{
+					Identity:        identity,
+					PackagePath:     packagePath,
+					Name:            method.Name(),
+					Receiver:        receiver,
+					PointerReceiver: pointerReceiver,
+					Kind:            DeclarationMethod,
+				},
+				Object:    method,
+				Selection: selection,
+				Type:      method.Type(),
 			}
 		}
 	}
 	add(types.NewMethodSet(named), false)
 	add(types.NewMethodSet(types.NewPointer(named)), true)
 
-	result := make([]Declaration, 0, len(declarations))
-	for _, declaration := range declarations {
-		result = append(result, declaration)
+	result := make([]declarationEntry, 0, len(entries))
+	for _, entry := range entries {
+		result = append(result, entry)
 	}
-	slices.SortFunc(result, compareDeclarations)
+	slices.SortFunc(result, func(left, right declarationEntry) int {
+		return compareDeclarations(left.Declaration, right.Declaration)
+	})
 	return result
 }

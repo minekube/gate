@@ -35,9 +35,44 @@ type Generic[T any] struct {
 	Value T
 }
 
+type Embedded struct{}
+
+func (Embedded) Promoted() {}
+
+type WithEmbedded struct {
+	Embedded
+}
+
+type ExampleEvent struct {
+	Value string
+}
+
 func Identity[T any](value T) T {
 	return value
 }
+
+func Variadic(prefix string, values ...int32) (string, error) {
+	return prefix, nil
+}
+
+func Multiple() (int32, string) {
+	return 0, ""
+}
+
+func UseCallback(callback Callback) error {
+	_, err := callback("")
+	return err
+}
+
+func (value Value) Echo(input string) string {
+	return value.Text + input
+}
+
+func (value *Value) SetText(text string) {
+	value.Text = text
+}
+
+const TypedConstant NamedScalar = 7
 
 var Bool bool
 var Int int
@@ -57,3 +92,4 @@ var Unsafe unsafe.Pointer
 var GenericValue Generic[string]
 var GenericDefinition Generic[any]
 var GenericFunctionValue = Identity[int32](1)
+var WritableValue Value
