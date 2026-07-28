@@ -47,7 +47,7 @@ func (r *nativeReentry) OnEvent(proxyID uint64, input string) (string, error) {
 	)
 	runtime.KeepAlive(input)
 	if status != 0 {
-		return "", takeRustError(cError)
+		return "", takeRustStatus(status, cError)
 	}
 	bytes, err := takeRustBytes(output)
 	return string(bytes), err

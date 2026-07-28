@@ -9,6 +9,10 @@ var (
 	ErrUnavailable    = errors.New("wasm native runtime unavailable")
 	ErrClosed         = errors.New("wasm runtime closed")
 	ErrExpiredReentry = errors.New("wasm reentry token expired")
+	ErrFuelExhausted  = errors.New("wasm fuel exhausted")
+	ErrDeadline       = errors.New("wasm call deadline exceeded")
+	ErrMemoryLimit    = errors.New("wasm memory limit exceeded")
+	ErrTransferLimit  = errors.New("wasm transfer limit exceeded")
 )
 
 type Sample struct {

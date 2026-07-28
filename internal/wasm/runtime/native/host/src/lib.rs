@@ -6,6 +6,7 @@ use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{Context as _, anyhow};
 
@@ -25,6 +26,7 @@ pub struct Limits {
     pub memory_bytes: usize,
     pub transfer_bytes: usize,
     pub fuel: u64,
+    pub deadline: Duration,
 }
 
 impl Default for Limits {
@@ -33,9 +35,32 @@ impl Default for Limits {
             memory_bytes: 128 * 1024 * 1024,
             transfer_bytes: 16 * 1024 * 1024,
             fuel: 10_000_000,
+            deadline: Duration::from_millis(100),
         }
     }
 }
+
+#[derive(Debug)]
+pub(crate) struct MemoryLimitError;
+
+impl std::fmt::Display for MemoryLimitError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("component exceeded its memory limit")
+    }
+}
+
+impl std::error::Error for MemoryLimitError {}
+
+#[derive(Debug)]
+pub(crate) struct TransferLimitError;
+
+impl std::fmt::Display for TransferLimitError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("component call exceeded its transfer limit")
+    }
+}
+
+impl std::error::Error for TransferLimitError {}
 
 pub trait Host: Send + Sync + 'static {
     fn context_is_cancelled(&self, context: u64) -> anyhow::Result<bool>;
@@ -208,6 +233,11 @@ fn limits_from_abi(limits: AbiLimits) -> anyhow::Result<Limits> {
         } else {
             limits.fuel
         },
+        deadline: if limits.deadline_nanos == 0 {
+            defaults.deadline
+        } else {
+            Duration::from_nanos(limits.deadline_nanos)
+        },
     })
 }
 
@@ -219,6 +249,23 @@ fn panic_message(payload: Box<dyn Any + Send>) -> String {
     } else {
         "Rust panic crossed the Wasm runtime boundary".to_owned()
     }
+}
+
+fn error_status(failure: &anyhow::Error) -> i32 {
+    if let Some(trap) = failure.downcast_ref::<wasmtime::Trap>() {
+        match trap {
+            wasmtime::Trap::OutOfFuel => return 3,
+            wasmtime::Trap::Interrupt => return 4,
+            _ => {}
+        }
+    }
+    if failure.downcast_ref::<MemoryLimitError>().is_some() {
+        return 5;
+    }
+    if failure.downcast_ref::<TransferLimitError>().is_some() {
+        return 6;
+    }
+    1
 }
 
 unsafe fn set_owned<T>(output: *mut T, value: T) -> anyhow::Result<()> {
@@ -248,9 +295,10 @@ unsafe fn ffi_status(
     match catch_unwind(AssertUnwindSafe(operation)) {
         Ok(Ok(())) => 0,
         Ok(Err(failure)) => {
+            let status = error_status(&failure);
             // SAFETY: The caller owns the returned Rust buffer.
             unsafe { set_error(error, format!("{failure:#}")) };
-            1
+            status
         }
         Err(payload) => {
             // SAFETY: The caller owns the returned Rust buffer.
@@ -346,6 +394,7 @@ pub unsafe extern "C" fn gate_wasm_runtime_on_event(
             let runtime = runtime
                 .as_mut()
                 .ok_or_else(|| anyhow!("wasm runtime is null"))?;
+            runtime.engine.ensure_transfer(input.len)?;
             let input = String::from_utf8(input.copy()?).context("event input is not UTF-8")?;
             let result = runtime.engine.on_event(proxy_id, &input)?;
             set_owned(output, OwnedBytes::from_string(result))
@@ -415,6 +464,7 @@ pub unsafe extern "C" fn gate_wasm_reentry_on_event(
                 .cast::<ActiveCall<'static>>()
                 .as_mut()
                 .ok_or_else(|| anyhow!("wasm reentry token is null"))?;
+            reentry.ensure_transfer(input.len)?;
             let input = String::from_utf8(input.copy()?).context("event input is not UTF-8")?;
             let result = reentry.on_event(proxy_id, &input)?;
             set_owned(output, OwnedBytes::from_string(result))

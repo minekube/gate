@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -56,7 +57,7 @@ func (h *integrationHost) EmitNested(
 	return result, err
 }
 
-func TestRuntimeNestedComponentCall(t *testing.T) {
+func TestRuntime_NestedComponentCall(t *testing.T) {
 	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
 	require.NoError(t, err)
 	host := &integrationHost{}
@@ -88,4 +89,83 @@ func TestRuntimeNestedComponentCall(t *testing.T) {
 	require.ErrorIs(t, err, ErrExpiredReentry)
 	require.NoError(t, runtime.Close())
 	require.NoError(t, runtime.Close())
+}
+
+func TestRuntime_LimitsFuel(t *testing.T) {
+	runtime := newIntegrationRuntime(t, Limits{
+		Fuel:     1_000,
+		Deadline: time.Second,
+	})
+	defer func() { require.NoError(t, runtime.Close()) }()
+
+	started := time.Now()
+	err := runtime.Spin()
+
+	require.ErrorIs(t, err, ErrFuelExhausted)
+	require.Less(t, time.Since(started), time.Second)
+}
+
+func TestRuntime_LimitsDeadline(t *testing.T) {
+	runtime := newIntegrationRuntime(t, Limits{
+		Fuel:     ^uint64(0),
+		Deadline: 25 * time.Millisecond,
+	})
+	defer func() { require.NoError(t, runtime.Close()) }()
+
+	started := time.Now()
+	err := runtime.Spin()
+
+	require.ErrorIs(t, err, ErrDeadline)
+	require.Less(t, time.Since(started), time.Second)
+}
+
+func TestRuntime_LimitsMemory(t *testing.T) {
+	runtime := newIntegrationRuntime(t, Limits{
+		MemoryBytes: 2 << 20,
+		Deadline:    time.Second,
+	})
+	defer func() { require.NoError(t, runtime.Close()) }()
+
+	_, err := runtime.Allocate(8 << 20)
+
+	require.ErrorIs(t, err, ErrMemoryLimit)
+}
+
+func TestRuntime_LimitsTransfer(t *testing.T) {
+	runtime := newIntegrationRuntime(t, Limits{
+		TransferBytes: 64,
+		Deadline:      time.Second,
+	})
+	defer func() { require.NoError(t, runtime.Close()) }()
+
+	_, err := runtime.OnEvent(2, "large")
+
+	require.ErrorIs(t, err, ErrTransferLimit)
+
+	_, err = runtime.OnEvent(2, strings.Repeat("x", 65))
+	require.ErrorIs(t, err, ErrTransferLimit)
+}
+
+func TestRuntime_CloseAfterFailedCall(t *testing.T) {
+	before := liveHostHandles.Load()
+	runtime := newIntegrationRuntime(t, Limits{
+		Fuel:     1_000,
+		Deadline: 25 * time.Millisecond,
+	})
+	require.Equal(t, before+1, liveHostHandles.Load())
+
+	require.Error(t, runtime.Spin())
+	require.NoError(t, runtime.Close())
+	require.NoError(t, runtime.Close())
+	require.Equal(t, before, liveHostHandles.Load())
+	require.ErrorIs(t, runtime.Spin(), ErrClosed)
+}
+
+func newIntegrationRuntime(t *testing.T, limits Limits) *Runtime {
+	t.Helper()
+	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
+	require.NoError(t, err)
+	runtime, err := New(component, &integrationHost{}, limits)
+	require.NoError(t, err)
+	return runtime
 }

@@ -38,6 +38,9 @@ impl exports::minekube::gate_spike::plugin::Guest for Spike {
         if input == "trap" {
             panic!("nested guest trap");
         }
+        if input == "large" {
+            return Ok("x".repeat(1024));
+        }
         Ok(format!("guest:{input}"))
     }
 

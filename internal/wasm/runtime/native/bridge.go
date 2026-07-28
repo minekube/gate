@@ -19,8 +19,11 @@ import (
 	"runtime"
 	"runtime/cgo"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 )
+
+var liveHostHandles atomic.Int64
 
 type nativeRuntime struct {
 	mu     sync.Mutex
@@ -51,6 +54,7 @@ func New(component []byte, host Host, limits Limits) (*Runtime, error) {
 		handle.Delete()
 		return nil, takeRustError(cError)
 	}
+	liveHostHandles.Add(1)
 	return &Runtime{impl: &nativeRuntime{
 		ptr:    ptr,
 		handle: handle,
@@ -80,7 +84,7 @@ func (r *nativeRuntime) Init(contextID, proxyID uint64) (Sample, error) {
 		&cError,
 	)
 	if status != 0 {
-		return Sample{}, takeRustError(cError)
+		return Sample{}, takeRustStatus(status, cError)
 	}
 	return takeRustSample(output)
 }
@@ -102,7 +106,7 @@ func (r *nativeRuntime) OnEvent(proxyID uint64, input string) (string, error) {
 	)
 	runtime.KeepAlive(input)
 	if status != 0 {
-		return "", takeRustError(cError)
+		return "", takeRustStatus(status, cError)
 	}
 	bytes, err := takeRustBytes(output)
 	return string(bytes), err
@@ -123,7 +127,7 @@ func (r *nativeRuntime) Allocate(bytes uint64) (uint64, error) {
 		&cError,
 	)
 	if status != 0 {
-		return 0, takeRustError(cError)
+		return 0, takeRustStatus(status, cError)
 	}
 	return uint64(output), nil
 }
@@ -135,8 +139,9 @@ func (r *nativeRuntime) Spin() error {
 		return ErrClosed
 	}
 	var cError C.gate_wasm_owned_bytes
-	if C.gate_wasm_runtime_spin(r.ptr, &cError) != 0 {
-		return takeRustError(cError)
+	status := C.gate_wasm_runtime_spin(r.ptr, &cError)
+	if status != 0 {
+		return takeRustStatus(status, cError)
 	}
 	return nil
 }
@@ -151,6 +156,7 @@ func (r *nativeRuntime) Close() error {
 	C.gate_wasm_runtime_free(r.ptr)
 	r.ptr = nil
 	r.handle.Delete()
+	liveHostHandles.Add(-1)
 	return nil
 }
 
@@ -193,6 +199,24 @@ func takeRustError(value C.gate_wasm_owned_bytes) error {
 		return errors.New("wasm runtime failed without an error message")
 	}
 	return errors.New(string(bytes))
+}
+
+func takeRustStatus(status C.int32_t, value C.gate_wasm_owned_bytes) error {
+	detail := takeRustError(value)
+	var kind error
+	switch status {
+	case C.GATE_WASM_STATUS_FUEL:
+		kind = ErrFuelExhausted
+	case C.GATE_WASM_STATUS_DEADLINE:
+		kind = ErrDeadline
+	case C.GATE_WASM_STATUS_MEMORY:
+		kind = ErrMemoryLimit
+	case C.GATE_WASM_STATUS_TRANSFER:
+		kind = ErrTransferLimit
+	default:
+		return detail
+	}
+	return errors.Join(kind, detail)
 }
 
 func takeRustSample(value C.gate_wasm_owned_sample) (Sample, error) {

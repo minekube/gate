@@ -48,6 +48,16 @@ typedef struct gate_wasm_limits {
 typedef struct gate_wasm_runtime gate_wasm_runtime;
 typedef struct gate_wasm_reentry gate_wasm_reentry;
 
+typedef enum gate_wasm_status {
+  GATE_WASM_STATUS_OK = 0,
+  GATE_WASM_STATUS_ERROR = 1,
+  GATE_WASM_STATUS_PANIC = 2,
+  GATE_WASM_STATUS_FUEL = 3,
+  GATE_WASM_STATUS_DEADLINE = 4,
+  GATE_WASM_STATUS_MEMORY = 5,
+  GATE_WASM_STATUS_TRANSFER = 6,
+} gate_wasm_status;
+
 gate_wasm_runtime *gate_wasm_runtime_new(
     gate_wasm_slice component, uintptr_t go_host, gate_wasm_limits limits,
     gate_wasm_owned_bytes *error);

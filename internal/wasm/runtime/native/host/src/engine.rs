@@ -1,11 +1,14 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::mpsc::{SyncSender, sync_channel};
+use std::sync::{Arc, mpsc};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use anyhow::{Context as _, anyhow};
 use wasmtime::component::{Access, Component, HasSelf, Instance, Linker, Resource};
-use wasmtime::{Config, Store};
+use wasmtime::{Config, Store, StoreLimits, StoreLimitsBuilder};
 
-use crate::{ActiveCall, Host as GateHost, Limits, Sample};
+use crate::{ActiveCall, Host as GateHost, Limits, MemoryLimitError, Sample, TransferLimitError};
 
 pub(crate) mod bindings {
     wasmtime::component::bindgen!({
@@ -27,6 +30,8 @@ pub(crate) struct StoreData {
     proxies: HashMap<u32, u64>,
     next_resource: u32,
     instance: Option<Instance>,
+    store_limits: StoreLimits,
+    transfer_bytes: usize,
 }
 
 impl StoreData {
@@ -66,6 +71,27 @@ impl StoreData {
     pub(crate) fn proxy_for_rep(&self, rep: u32) -> Option<u64> {
         self.proxies.get(&rep).copied()
     }
+
+    pub(crate) fn ensure_transfer(&self, bytes: usize) -> anyhow::Result<()> {
+        if bytes > self.transfer_bytes {
+            return Err(anyhow!(TransferLimitError).context(format!(
+                "transfer is {bytes} bytes, limit is {} bytes",
+                self.transfer_bytes
+            )));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn ensure_sample_transfer(&self, sample: &Sample) -> anyhow::Result<()> {
+        let bytes = sample
+            .tags
+            .iter()
+            .try_fold(sample.text.len(), |size, tag| {
+                size.checked_add(tag.len())
+                    .ok_or_else(|| anyhow!(TransferLimitError).context("sample size overflowed"))
+            })?;
+        self.ensure_transfer(bytes)
+    }
 }
 
 impl HostContextWithStore<StoreData> for HasSelf<StoreData> {
@@ -98,10 +124,19 @@ impl HostProxyWithStore<StoreData> for HasSelf<StoreData> {
     ) -> wasmtime::Result<Result<WitSample, String>> {
         let state = access.get();
         let id = state.proxy_id(&resource)?;
+        let input: Sample = input.into();
+        state
+            .ensure_sample_transfer(&input)
+            .map_err(wasmtime::Error::from_anyhow)?;
         let output = state
             .host
-            .proxy_transform(id, input.into())
+            .proxy_transform(id, input)
             .map_err(wasmtime::Error::from_anyhow)?;
+        if let Ok(sample) = &output {
+            state
+                .ensure_sample_transfer(sample)
+                .map_err(wasmtime::Error::from_anyhow)?;
+        }
         Ok(output.map(Into::into))
     }
 
@@ -111,7 +146,11 @@ impl HostProxyWithStore<StoreData> for HasSelf<StoreData> {
         input: String,
     ) -> wasmtime::Result<Result<String, String>> {
         let proxy_rep = resource.rep();
-        let proxy_id = access.get().proxy_id(&resource)?;
+        let state = access.get();
+        let proxy_id = state.proxy_id(&resource)?;
+        state
+            .ensure_transfer(input.len())
+            .map_err(wasmtime::Error::from_anyhow)?;
         let instance = access
             .get()
             .instance
@@ -122,8 +161,17 @@ impl HostProxyWithStore<StoreData> for HasSelf<StoreData> {
         let host = Arc::clone(&access.get().host);
         let mut active = ActiveCall::new(access, plugin, proxy_rep);
 
-        host.proxy_emit_nested(&mut active, proxy_id, input)
-            .map_err(wasmtime::Error::from_anyhow)
+        let output = host
+            .proxy_emit_nested(&mut active, proxy_id, input)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        active
+            .ensure_transfer(
+                output
+                    .as_ref()
+                    .map_or_else(|error| error.len(), String::len),
+            )
+            .map_err(wasmtime::Error::from_anyhow)?;
+        Ok(output)
     }
 
     fn drop(
@@ -162,6 +210,10 @@ impl From<Sample> for WitSample {
 pub struct Engine {
     store: Store<StoreData>,
     plugin: Guest,
+    engine: wasmtime::Engine,
+    fuel: u64,
+    deadline: Duration,
+    memory_bytes: usize,
 }
 
 impl Engine {
@@ -189,12 +241,18 @@ impl Engine {
                 proxies: HashMap::new(),
                 next_resource: 1,
                 instance: None,
+                store_limits: StoreLimitsBuilder::new()
+                    .memory_size(limits.memory_bytes)
+                    .trap_on_grow_failure(true)
+                    .build(),
+                transfer_bytes: limits.transfer_bytes,
             },
         );
+        store.limiter(|state| &mut state.store_limits);
         store
-            .set_fuel(limits.fuel)
+            .set_fuel(u64::MAX)
             .map_err(anyhow::Error::from)
-            .context("failed to configure component fuel")?;
+            .context("failed to configure component instantiation fuel")?;
         store.set_epoch_deadline(u64::MAX);
         let instance = linker
             .instantiate(&mut store, &component)
@@ -207,10 +265,18 @@ impl Engine {
             .clone();
         store.data_mut().instance = Some(instance);
 
-        Ok(Self { store, plugin })
+        Ok(Self {
+            store,
+            plugin,
+            engine,
+            fuel: limits.fuel,
+            deadline: limits.deadline,
+            memory_bytes: limits.memory_bytes,
+        })
     }
 
     pub fn init(&mut self, context: u64, proxy: u64) -> anyhow::Result<Sample> {
+        let _deadline = self.prepare_call()?;
         let context_resource = self.store.data_mut().insert_context(context)?;
         let context_rep = context_resource.rep();
         let proxy_resource = self.store.data_mut().insert_proxy(proxy)?;
@@ -225,12 +291,16 @@ impl Engine {
         self.store.data_mut().contexts.remove(&context_rep);
         self.store.data_mut().proxies.remove(&proxy_rep);
 
-        result?
+        let output: Sample = result?
             .map(Into::into)
-            .map_err(|message| anyhow!("component init failed: {message}"))
+            .map_err(|message| anyhow!("component init failed: {message}"))?;
+        self.store.data().ensure_sample_transfer(&output)?;
+        Ok(output)
     }
 
     pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {
+        self.store.data().ensure_transfer(input.len())?;
+        let _deadline = self.prepare_call()?;
         let proxy_resource = self.store.data_mut().insert_proxy(proxy)?;
         let proxy_rep = proxy_resource.rep();
 
@@ -242,20 +312,89 @@ impl Engine {
 
         self.store.data_mut().proxies.remove(&proxy_rep);
 
-        result?.map_err(|message| anyhow!("component event callback failed: {message}"))
+        let output =
+            result?.map_err(|message| anyhow!("component event callback failed: {message}"))?;
+        self.store.data().ensure_transfer(output.len())?;
+        Ok(output)
     }
 
     pub fn allocate(&mut self, bytes: u64) -> anyhow::Result<u64> {
+        if bytes > u64::try_from(self.memory_bytes).unwrap_or(u64::MAX) {
+            return Err(anyhow!(MemoryLimitError).context(format!(
+                "requested allocation is {bytes} bytes, limit is {} bytes",
+                self.memory_bytes
+            )));
+        }
+        let _deadline = self.prepare_call()?;
         self.plugin
             .call_allocate(&mut self.store, bytes)
             .map_err(anyhow::Error::from)
-            .context("component allocation trapped")
+            .context(MemoryLimitError)
     }
 
     pub fn spin(&mut self) -> anyhow::Result<()> {
+        let _deadline = self.prepare_call()?;
         self.plugin
             .call_spin(&mut self.store)
             .map_err(anyhow::Error::from)
             .context("component spin trapped")
+    }
+
+    pub(crate) fn ensure_transfer(&self, bytes: usize) -> anyhow::Result<()> {
+        self.store.data().ensure_transfer(bytes)
+    }
+
+    fn prepare_call(&mut self) -> anyhow::Result<DeadlineGuard> {
+        self.store
+            .set_fuel(self.fuel)
+            .map_err(anyhow::Error::from)
+            .context("failed to reset component fuel")?;
+        if self.deadline.is_zero() {
+            self.store.set_epoch_deadline(u64::MAX);
+            return Ok(DeadlineGuard::disabled());
+        }
+        self.store.set_epoch_deadline(1);
+        DeadlineGuard::new(self.engine.clone(), self.deadline)
+    }
+}
+
+struct DeadlineGuard {
+    cancel: Option<SyncSender<()>>,
+    thread: Option<JoinHandle<()>>,
+}
+
+impl DeadlineGuard {
+    fn disabled() -> Self {
+        Self {
+            cancel: None,
+            thread: None,
+        }
+    }
+
+    fn new(engine: wasmtime::Engine, deadline: Duration) -> anyhow::Result<Self> {
+        let (cancel, receiver) = sync_channel(1);
+        let thread = thread::Builder::new()
+            .name("gate-wasm-deadline".into())
+            .spawn(move || {
+                if receiver.recv_timeout(deadline) == Err(mpsc::RecvTimeoutError::Timeout) {
+                    engine.increment_epoch();
+                }
+            })
+            .context("failed to start component deadline watchdog")?;
+        Ok(Self {
+            cancel: Some(cancel),
+            thread: Some(thread),
+        })
+    }
+}
+
+impl Drop for DeadlineGuard {
+    fn drop(&mut self) {
+        if let Some(cancel) = self.cancel.take() {
+            let _ = cancel.send(());
+        }
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
     }
 }

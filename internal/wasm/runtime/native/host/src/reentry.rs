@@ -41,6 +41,7 @@ impl<'a> ActiveCall<'a> {
     }
 
     pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {
+        self.access.data_mut().ensure_transfer(input.len())?;
         let active_proxy = self
             .access
             .data_mut()
@@ -54,9 +55,16 @@ impl<'a> ActiveCall<'a> {
 
         let resource =
             Resource::<bindings::minekube::gate_spike::host::Proxy>::new_borrow(self.proxy_rep);
-        self.plugin
+        let output = self
+            .plugin
             .call_on_event(&mut self.access, resource, input)
             .map_err(anyhow::Error::from)?
-            .map_err(|message| anyhow!("nested component event failed: {message}"))
+            .map_err(|message| anyhow!("nested component event failed: {message}"))?;
+        self.access.data_mut().ensure_transfer(output.len())?;
+        Ok(output)
+    }
+
+    pub(crate) fn ensure_transfer(&mut self, bytes: usize) -> anyhow::Result<()> {
+        self.access.data_mut().ensure_transfer(bytes)
     }
 }
