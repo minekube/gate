@@ -75,14 +75,15 @@ type velocitySyncPoint struct {
 }
 
 type velocitySyncLog struct {
-	Date           string `yaml:"date"`
-	Kind           string `yaml:"kind"`
-	Summary        string `yaml:"summary"`
-	UpstreamCommit string `yaml:"upstream_commit"`
-	GateCommit     string `yaml:"gate_commit"`
-	GatePR         int    `yaml:"gate_pr"`
-	UpstreamRange  string `yaml:"upstream_range"`
-	Ported         string `yaml:"ported"`
+	Date                string `yaml:"date"`
+	Kind                string `yaml:"kind"`
+	Summary             string `yaml:"summary"`
+	UpstreamCommit      string `yaml:"upstream_commit"`
+	GateCommit          string `yaml:"gate_commit"`
+	GatePR              int    `yaml:"gate_pr"`
+	UpstreamRange       string `yaml:"upstream_range"`
+	UpstreamCommitCount int    `yaml:"upstream_commit_count"`
+	Ported              string `yaml:"ported"`
 }
 
 var (
@@ -191,6 +192,9 @@ func TestVelocitySyncLogIsWellFormed(t *testing.T) {
 			if strings.TrimSpace(entry.UpstreamRange) == "" {
 				t.Errorf("log[%d].upstream_range is empty; a review entry must say what it reviewed", i)
 			}
+			if entry.UpstreamCommitCount <= 0 {
+				t.Errorf("log[%d].upstream_commit_count = %d; a review entry must count the commits it reviewed", i, entry.UpstreamCommitCount)
+			}
 			if strings.TrimSpace(entry.Ported) == "" {
 				t.Errorf("log[%d].ported is empty; a review entry must say what it took, or 'none'", i)
 			}
@@ -279,7 +283,9 @@ func TestVelocitySyncRecordedGateCommitsResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reading %s: %v", point.GateMergeCommit, err)
 	}
-	if want := "#" + strconv.Itoa(point.GatePR); !strings.Contains(string(subject), want) {
+	want := "#" + strconv.Itoa(point.GatePR)
+	prToken := regexp.MustCompile(regexp.QuoteMeta(want) + `(?:[^0-9]|$)`)
+	if !prToken.Match(subject) {
 		t.Errorf("merge commit %s subject %q does not reference the recorded PR %s",
 			point.GateMergeCommit, strings.TrimSpace(string(subject)), want)
 	}
