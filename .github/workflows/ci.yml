@@ -24,6 +24,18 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Verify generated WebAssembly API contract
+        run: make wasm-api-check
+
+      - name: Upload WebAssembly API contract
+        uses: actions/upload-artifact@v6
+        with:
+          name: gate-wasm-api-contract
+          path: |
+            internal/wasm/api/contract.json
+            internal/wasm/api/manifest.json
+            internal/wasm/api/gate.wit
+
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 
