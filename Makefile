@@ -1,4 +1,14 @@
+WASM_NATIVE_DIR := internal/wasm/runtime/native
+WASM_SPIKE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm
+WASM_SPIKE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_spike.component.wasm
+
 all: fmt vet mod lint
+
+wasm-spike-component:
+	cd $(WASM_NATIVE_DIR) && cargo build -p gate-wasm-spike-guest --release --target wasm32-unknown-unknown
+	cd $(WASM_NATIVE_DIR) && cargo run -p gate-wasm-componentize --release -- \
+		target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm \
+		artifacts/gate_wasm_spike.component.wasm
 
 # Sync embedded config files from root directory
 sync-configs:

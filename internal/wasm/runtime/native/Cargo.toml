@@ -1,0 +1,13 @@
+[workspace]
+members = ["componentize", "guest-spike"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.94.0"
+
+[workspace.dependencies]
+anyhow = "=1.0.104"
+wit-component = "=0.254.0"
+wit-bindgen = "=0.60.0"

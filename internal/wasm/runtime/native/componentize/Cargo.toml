@@ -1,0 +1,10 @@
+[package]
+name = "gate-wasm-componentize"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+wit-component.workspace = true
