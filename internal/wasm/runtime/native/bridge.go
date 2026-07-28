@@ -6,7 +6,7 @@ package native
 #cgo CFLAGS: -I${SRCDIR}
 #cgo darwin LDFLAGS: ${SRCDIR}/target/release/libgate_wasm_native.a -liconv -lm
 #cgo linux LDFLAGS: ${SRCDIR}/target/release/libgate_wasm_native.a -ldl -lpthread -lm
-#cgo windows LDFLAGS: ${SRCDIR}/target/release/gate_wasm_native.lib -lws2_32 -luserenv -lbcrypt -lntdll
+#cgo windows LDFLAGS: -L${SRCDIR}/target/release -l:gate_wasm_native.lib -lws2_32 -luserenv -lbcrypt -lntdll
 #include <stdlib.h>
 #include "bridge.h"
 */
