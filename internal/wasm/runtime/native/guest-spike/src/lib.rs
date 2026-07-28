@@ -24,8 +24,19 @@ impl exports::minekube::gate_spike::plugin::Guest for Spike {
         proxy: &minekube::gate_spike::host::Proxy,
         input: String,
     ) -> Result<String, String> {
+        proxy.transform(&minekube::gate_spike::host::Sample {
+            text: format!("event:{input}"),
+            factor: 1,
+            tags: Vec::new(),
+        })?;
         if input == "outer" {
             return Ok(format!("outer:{}", proxy.emit_nested("inner")?));
+        }
+        if input == "outer-trap" {
+            return Ok(format!("outer:{}", proxy.emit_nested("trap")?));
+        }
+        if input == "trap" {
+            panic!("nested guest trap");
         }
         Ok(format!("guest:{input}"))
     }

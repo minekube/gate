@@ -2,25 +2,26 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{Context as _, anyhow};
-use wasmtime::component::{Component, HasSelf, Instance, Linker, Resource};
+use wasmtime::component::{Access, Component, HasSelf, Instance, Linker, Resource};
 use wasmtime::{Config, Store};
 
-use crate::{Host as GateHost, Limits, Sample};
+use crate::{ActiveCall, Host as GateHost, Limits, Sample};
 
 pub(crate) mod bindings {
     wasmtime::component::bindgen!({
         path: "../wit",
         world: "gate-plugin",
-        imports: { default: trappable },
+        imports: { default: trappable | store },
     });
 }
 
 use bindings::exports::minekube::gate_spike::plugin::Guest;
 use bindings::minekube::gate_spike::host::{
-    Context, HostContext, HostProxy, Proxy, Sample as WitSample,
+    Context, HostContext, HostContextWithStore, HostProxy, HostProxyWithStore, Proxy,
+    Sample as WitSample,
 };
 
-struct StoreData {
+pub(crate) struct StoreData {
     host: Arc<dyn GateHost>,
     contexts: HashMap<u32, u64>,
     proxies: HashMap<u32, u64>,
@@ -61,30 +62,43 @@ impl StoreData {
             wasmtime::Error::msg(format!("unknown proxy resource {}", resource.rep()))
         })
     }
+
+    pub(crate) fn proxy_for_rep(&self, rep: u32) -> Option<u64> {
+        self.proxies.get(&rep).copied()
+    }
 }
 
-impl HostContext for StoreData {
-    fn is_cancelled(&mut self, resource: Resource<Context>) -> wasmtime::Result<bool> {
-        let id = self.context_id(&resource)?;
-        self.host
+impl HostContextWithStore<StoreData> for HasSelf<StoreData> {
+    fn is_cancelled(
+        mut access: Access<StoreData, Self>,
+        resource: Resource<Context>,
+    ) -> wasmtime::Result<bool> {
+        let state = access.get();
+        let id = state.context_id(&resource)?;
+        state
+            .host
             .context_is_cancelled(id)
             .map_err(wasmtime::Error::from_anyhow)
     }
 
-    fn drop(&mut self, resource: Resource<Context>) -> wasmtime::Result<()> {
-        self.contexts.remove(&resource.rep());
+    fn drop(
+        mut access: Access<StoreData, Self>,
+        resource: Resource<Context>,
+    ) -> wasmtime::Result<()> {
+        access.get().contexts.remove(&resource.rep());
         Ok(())
     }
 }
 
-impl HostProxy for StoreData {
+impl HostProxyWithStore<StoreData> for HasSelf<StoreData> {
     fn transform(
-        &mut self,
+        mut access: Access<StoreData, Self>,
         resource: Resource<Proxy>,
         input: WitSample,
     ) -> wasmtime::Result<Result<WitSample, String>> {
-        let id = self.proxy_id(&resource)?;
-        let output = self
+        let state = access.get();
+        let id = state.proxy_id(&resource)?;
+        let output = state
             .host
             .proxy_transform(id, input.into())
             .map_err(wasmtime::Error::from_anyhow)?;
@@ -92,21 +106,37 @@ impl HostProxy for StoreData {
     }
 
     fn emit_nested(
-        &mut self,
-        _resource: Resource<Proxy>,
-        _input: String,
+        mut access: Access<StoreData, Self>,
+        resource: Resource<Proxy>,
+        input: String,
     ) -> wasmtime::Result<Result<String, String>> {
-        Err(wasmtime::Error::msg(
-            "nested component re-entry is not active",
-        ))
+        let proxy_rep = resource.rep();
+        let proxy_id = access.get().proxy_id(&resource)?;
+        let instance = access
+            .get()
+            .instance
+            .ok_or_else(|| wasmtime::Error::msg("component instance is not active"))?;
+        let plugin = bindings::GatePlugin::new(&mut access, &instance)?
+            .minekube_gate_spike_plugin()
+            .clone();
+        let host = Arc::clone(&access.get().host);
+        let mut active = ActiveCall::new(access, plugin, proxy_rep);
+
+        host.proxy_emit_nested(&mut active, proxy_id, input)
+            .map_err(wasmtime::Error::from_anyhow)
     }
 
-    fn drop(&mut self, resource: Resource<Proxy>) -> wasmtime::Result<()> {
-        self.proxies.remove(&resource.rep());
+    fn drop(
+        mut access: Access<StoreData, Self>,
+        resource: Resource<Proxy>,
+    ) -> wasmtime::Result<()> {
+        access.get().proxies.remove(&resource.rep());
         Ok(())
     }
 }
 
+impl HostContext for StoreData {}
+impl HostProxy for StoreData {}
 impl bindings::minekube::gate_spike::host::Host for StoreData {}
 
 impl From<WitSample> for Sample {
@@ -138,6 +168,7 @@ impl Engine {
     pub fn new(component: &[u8], host: Arc<dyn GateHost>, limits: Limits) -> anyhow::Result<Self> {
         let mut config = Config::new();
         config.wasm_component_model(true);
+        config.concurrency_support(false);
         config.consume_fuel(true);
         config.epoch_interruption(true);
         let engine = wasmtime::Engine::new(&config)
@@ -197,5 +228,20 @@ impl Engine {
         result?
             .map(Into::into)
             .map_err(|message| anyhow!("component init failed: {message}"))
+    }
+
+    pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {
+        let proxy_resource = self.store.data_mut().insert_proxy(proxy)?;
+        let proxy_rep = proxy_resource.rep();
+
+        let result = self
+            .plugin
+            .call_on_event(&mut self.store, proxy_resource, input)
+            .map_err(anyhow::Error::from)
+            .context("component event callback trapped");
+
+        self.store.data_mut().proxies.remove(&proxy_rep);
+
+        result?.map_err(|message| anyhow!("component event callback failed: {message}"))
     }
 }
