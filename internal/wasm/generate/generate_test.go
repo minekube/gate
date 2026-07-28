@@ -53,6 +53,8 @@ func TestManifestAndContractHashesAreDeterministic(t *testing.T) {
 	var contract Contract
 	require.NoError(t, json.Unmarshal(contractBytes, &contract))
 	require.EqualValues(t, 1, contract.GeneratorFormat)
+	require.EqualValues(t, 1, contract.ABISchemaVersion)
+	require.Len(t, contract.ABILayoutHash, 64)
 	require.Len(t, contract.CanonicalHash, 64)
 	require.Len(t, contract.WITHash, 64)
 	require.Equal(t, len(api.Packages), contract.PackageCount)
