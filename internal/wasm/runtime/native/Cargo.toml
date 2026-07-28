@@ -1,5 +1,5 @@
 [workspace]
-members = ["componentize", "guest-spike"]
+members = ["componentize", "guest-spike", "host"]
 resolver = "3"
 
 [workspace.package]
@@ -11,3 +11,10 @@ rust-version = "1.94.0"
 anyhow = "=1.0.104"
 wit-component = "=0.254.0"
 wit-bindgen = "=0.60.0"
+wasmtime = { version = "=47.0.2", default-features = false, features = [
+  "anyhow",
+  "component-model",
+  "cranelift",
+  "runtime",
+  "std",
+] }
