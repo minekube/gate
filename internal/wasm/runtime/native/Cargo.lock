@@ -413,6 +413,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "wit-component",
+ "wit-parser 0.254.0",
 ]
 
 [[package]]
