@@ -398,3 +398,108 @@ impl Drop for DeadlineGuard {
         }
     }
 }
+
+#[cfg(test)]
+mod measurements {
+    use std::time::Instant;
+
+    use super::*;
+
+    const COMPONENT: &[u8] = include_bytes!("../../artifacts/gate_wasm_spike.component.wasm");
+
+    struct MeasurementHost;
+
+    impl GateHost for MeasurementHost {
+        fn context_is_cancelled(&self, _context: u64) -> anyhow::Result<bool> {
+            Ok(false)
+        }
+
+        fn proxy_transform(
+            &self,
+            _proxy: u64,
+            input: Sample,
+        ) -> anyhow::Result<Result<Sample, String>> {
+            Ok(Ok(input))
+        }
+
+        fn proxy_emit_nested(
+            &self,
+            active: &mut ActiveCall<'_>,
+            proxy: u64,
+            input: String,
+        ) -> anyhow::Result<Result<String, String>> {
+            Ok(Ok(active.on_event(proxy, &input)?))
+        }
+    }
+
+    #[test]
+    #[ignore = "run explicitly to record feasibility measurements"]
+    fn measure_cold_compilation_and_instantiation() -> anyhow::Result<()> {
+        const COMPILE_ITERATIONS: u32 = 20;
+        let compile_started = Instant::now();
+        for _ in 0..COMPILE_ITERATIONS {
+            let (engine, component, _) = compile_component()?;
+            std::hint::black_box((engine, component));
+        }
+        let compile_ns = compile_started.elapsed().as_nanos() / u128::from(COMPILE_ITERATIONS);
+
+        let (engine, component, linker) = compile_component()?;
+        const INSTANTIATE_ITERATIONS: u32 = 100;
+        let instantiate_started = Instant::now();
+        for _ in 0..INSTANTIATE_ITERATIONS {
+            let instance = instantiate_component(&engine, &component, &linker)?;
+            std::hint::black_box(instance);
+        }
+        let instantiate_ns =
+            instantiate_started.elapsed().as_nanos() / u128::from(INSTANTIATE_ITERATIONS);
+
+        eprintln!("measurement:cold-compilation-ns={compile_ns}");
+        eprintln!("measurement:instantiation-ns={instantiate_ns}");
+        Ok(())
+    }
+
+    fn compile_component() -> anyhow::Result<(wasmtime::Engine, Component, Linker<StoreData>)> {
+        let mut config = Config::new();
+        config.wasm_component_model(true);
+        config.concurrency_support(false);
+        config.consume_fuel(true);
+        config.epoch_interruption(true);
+        let engine = wasmtime::Engine::new(&config)?;
+        let component = Component::new(&engine, COMPONENT)?;
+        let mut linker = Linker::new(&engine);
+        bindings::GatePlugin::add_to_linker::<_, HasSelf<StoreData>>(&mut linker, |state| state)?;
+        Ok((engine, component, linker))
+    }
+
+    fn instantiate_component(
+        engine: &wasmtime::Engine,
+        component: &Component,
+        linker: &Linker<StoreData>,
+    ) -> anyhow::Result<Store<StoreData>> {
+        let limits = Limits::default();
+        let mut store = Store::new(
+            engine,
+            StoreData {
+                host: Arc::new(MeasurementHost),
+                contexts: HashMap::new(),
+                proxies: HashMap::new(),
+                next_resource: 1,
+                instance: None,
+                store_limits: StoreLimitsBuilder::new()
+                    .memory_size(limits.memory_bytes)
+                    .trap_on_grow_failure(true)
+                    .build(),
+                transfer_bytes: limits.transfer_bytes,
+            },
+        );
+        store.limiter(|state| &mut state.store_limits);
+        store.set_fuel(u64::MAX)?;
+        store.set_epoch_deadline(u64::MAX);
+        let instance = linker.instantiate(&mut store, component)?;
+        let _plugin = bindings::GatePlugin::new(&mut store, &instance)?
+            .minekube_gate_spike_plugin()
+            .clone();
+        store.data_mut().instance = Some(instance);
+        Ok(store)
+    }
+}

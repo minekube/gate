@@ -18,6 +18,24 @@ type integrationHost struct {
 	retained Reentry
 }
 
+type benchmarkHost struct{}
+
+func (benchmarkHost) ContextCancelled(uint64) (bool, error) {
+	return false, nil
+}
+
+func (benchmarkHost) Transform(_ uint64, input Sample) (Sample, error) {
+	return input, nil
+}
+
+func (benchmarkHost) EmitNested(
+	reentry Reentry,
+	proxyID uint64,
+	input string,
+) (string, error) {
+	return reentry.OnEvent(proxyID, input)
+}
+
 func (h *integrationHost) ContextCancelled(contextID uint64) (bool, error) {
 	if contextID != 1 {
 		panic("unexpected context ID")
@@ -171,5 +189,71 @@ func newIntegrationRuntime(t *testing.T, limits Limits) *Runtime {
 	require.NoError(t, err)
 	runtime, err := New(component, &integrationHost{}, limits)
 	require.NoError(t, err)
+	return runtime
+}
+
+func BenchmarkRuntimeColdCompileAndInstantiate(b *testing.B) {
+	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
+	require.NoError(b, err)
+	host := benchmarkHost{}
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for range b.N {
+		runtime, err := New(component, host, Limits{})
+		if err != nil {
+			b.Fatal(err)
+		}
+		if err := runtime.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkRuntimeScalarCall(b *testing.B) {
+	runtime := newBenchmarkRuntime(b)
+	defer func() { require.NoError(b, runtime.Close()) }()
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for range b.N {
+		if _, err := runtime.Allocate(0); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkRuntimeRecordListCall(b *testing.B) {
+	runtime := newBenchmarkRuntime(b)
+	defer func() { require.NoError(b, runtime.Close()) }()
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for range b.N {
+		if _, err := runtime.Init(1, 2); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkRuntimeNestedCallback(b *testing.B) {
+	runtime := newBenchmarkRuntime(b)
+	defer func() { require.NoError(b, runtime.Close()) }()
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for range b.N {
+		if _, err := runtime.OnEvent(2, "outer"); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func newBenchmarkRuntime(b *testing.B) *Runtime {
+	b.Helper()
+	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
+	require.NoError(b, err)
+	runtime, err := New(component, benchmarkHost{}, Limits{})
+	require.NoError(b, err)
 	return runtime
 }
