@@ -589,3 +589,10 @@ cost and guide fuel and deadline defaults without weakening isolation.
   <https://github.com/bytecodealliance/wasmtime-go/blob/v47.0.0/component_feat_component_model.go>
 - Go package loading:
   <https://pkg.go.dev/golang.org/x/tools/go/packages>
+
+## Feasibility gate
+
+The runtime feasibility gate passed on 2026-07-28. The measured evidence,
+cross-platform static-link results, safety review, and decision to proceed are
+recorded in
+[WebAssembly Runtime Feasibility Results](2026-07-28-wasm-runtime-feasibility-results.md).
