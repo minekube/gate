@@ -420,6 +420,7 @@ name = "gate-wasm-native"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "libc",
  "wasmtime",
 ]
 

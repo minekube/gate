@@ -244,4 +244,18 @@ impl Engine {
 
         result?.map_err(|message| anyhow!("component event callback failed: {message}"))
     }
+
+    pub fn allocate(&mut self, bytes: u64) -> anyhow::Result<u64> {
+        self.plugin
+            .call_allocate(&mut self.store, bytes)
+            .map_err(anyhow::Error::from)
+            .context("component allocation trapped")
+    }
+
+    pub fn spin(&mut self) -> anyhow::Result<()> {
+        self.plugin
+            .call_spin(&mut self.store)
+            .map_err(anyhow::Error::from)
+            .context("component spin trapped")
+    }
 }

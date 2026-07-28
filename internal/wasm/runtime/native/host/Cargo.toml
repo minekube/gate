@@ -10,4 +10,5 @@ crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 anyhow.workspace = true
+libc.workspace = true
 wasmtime.workspace = true

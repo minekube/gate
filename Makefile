@@ -10,6 +10,12 @@ wasm-spike-component:
 		target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm \
 		artifacts/gate_wasm_spike.component.wasm
 
+wasm-native-lib:
+	cd $(WASM_NATIVE_DIR) && cargo build -p gate-wasm-native --release
+
+wasm-native-test: wasm-spike-component wasm-native-lib
+	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
+
 # Sync embedded config files from root directory
 sync-configs:
 	cp config.yml pkg/configs/config.yml

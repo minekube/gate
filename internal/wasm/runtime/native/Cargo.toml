@@ -9,6 +9,7 @@ rust-version = "1.94.0"
 
 [workspace.dependencies]
 anyhow = "=1.0.104"
+libc = "=0.2.189"
 wit-component = "=0.254.0"
 wit-bindgen = "=0.60.0"
 wasmtime = { version = "=47.0.2", default-features = false, features = [
