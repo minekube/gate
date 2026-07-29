@@ -114,31 +114,26 @@ jobs:
             goarch: amd64
             rust_toolchain: "1.94.0"
             extension: ""
-            shell: bash
           - platform: ubuntu-24.04-arm
             goos: linux
             goarch: arm64
             rust_toolchain: "1.94.0"
             extension: ""
-            shell: bash
           - platform: macos-13
             goos: darwin
             goarch: amd64
             rust_toolchain: "1.94.0"
             extension: ""
-            shell: bash
           - platform: macos-14
             goos: darwin
             goarch: arm64
             rust_toolchain: "1.94.0"
             extension: ""
-            shell: bash
           - platform: windows-latest
             goos: windows
             goarch: amd64
             rust_toolchain: "1.94.0-x86_64-pc-windows-gnu"
             extension: ".exe"
-            shell: msys2 {0}
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout
@@ -164,11 +159,31 @@ jobs:
           path-type: inherit
 
       - name: Build static Wasmtime archive
-        shell: ${{ matrix.shell }}
+        if: runner.os != 'Windows'
+        shell: bash
+        run: make wasm-native-lib
+
+      - name: Build static Wasmtime archive on Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: make wasm-native-lib
 
       - name: Build Gate release binary
-        shell: ${{ matrix.shell }}
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          version="${GITHUB_REF_NAME#v}"
+          output="release/gate_${version}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.extension }}"
+          CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -tags=wasm_native \
+              -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${GITHUB_REF_NAME}'" \
+              -o "$output" gate.go
+
+      - name: Build Gate release binary on Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: |
           set -euo pipefail
           mkdir -p release
@@ -182,7 +197,7 @@ jobs:
       - name: Verify release binary starts
         if: runner.os != 'Windows'
         shell: bash
-        run: release/gate_* --version
+        run: '"release/gate_${GITHUB_REF_NAME#v}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.extension }}" --version'
 
       - name: Upload release binary
         uses: actions/upload-artifact@v6
