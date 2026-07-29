@@ -38,6 +38,8 @@ func TestReleaseAndContainerBuildsLinkTheNativeRuntime(t *testing.T) {
 	require.Contains(t, workflow, "go build -tags=wasm_native")
 	require.Contains(t, workflow, "- wasm-native-feasibility")
 	require.Contains(t, workflow, "msys2/setup-msys2@v2")
+	require.Contains(t, workflow, "gate_wasm_contract_${version}.tar.gz")
+	require.Contains(t, workflow, "make wasm-rust-example-test")
 
 	releaser := read(".goreleaser.yml")
 	require.Contains(t, releaser, "CGO_ENABLED=1")

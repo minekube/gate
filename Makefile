@@ -1,6 +1,9 @@
 WASM_NATIVE_DIR := internal/wasm/runtime/native
 WASM_FIXTURE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_fixture_guest.wasm
 WASM_FIXTURE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_fixture.component.wasm
+WASM_RUST_EXAMPLE_DIR := .examples/wasm/rust
+WASM_RUST_EXAMPLE_CORE := $(WASM_RUST_EXAMPLE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_rust_example.wasm
+WASM_RUST_EXAMPLE_COMPONENT := $(WASM_RUST_EXAMPLE_DIR)/gate-rust-example.component.wasm
 
 ifeq ($(OS),Windows_NT)
 WASM_CARGO := rustup run 1.94.0-x86_64-pc-windows-gnu cargo
@@ -22,11 +25,19 @@ wasm-native-lib:
 wasm-native-test: wasm-api-check wasm-fixture-component wasm-native-lib
 	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
 
+wasm-rust-example-test: wasm-api-check wasm-native-lib
+	$(WASM_CARGO) build --manifest-path $(WASM_RUST_EXAMPLE_DIR)/Cargo.toml --release --target wasm32-unknown-unknown
+	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) run -p gate-wasm-componentize --release -- \
+		../../../../$(WASM_RUST_EXAMPLE_CORE) \
+		../../../../$(WASM_RUST_EXAMPLE_COMPONENT)
+	CGO_ENABLED=1 go test -count=1 -tags='wasm_native wasm_example' \
+		./internal/wasm/runtime/native -run TestPublicRustExampleLoadsAndInitializes
+
 wasm-api-generate:
-	go run ./internal/wasm/cmd/gate-wasm-gen generate -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated
+	go run ./internal/wasm/cmd/gate-wasm-gen generate -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
 
 wasm-api-check:
-	go run ./internal/wasm/cmd/gate-wasm-gen check -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated
+	go run ./internal/wasm/cmd/gate-wasm-gen check -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
 
 # Sync embedded config files from root directory
 sync-configs:

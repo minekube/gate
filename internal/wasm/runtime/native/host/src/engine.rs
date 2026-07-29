@@ -448,19 +448,8 @@ impl Engine {
         }
         let version = record_string(fields, "version")?;
         let contract_hash = record_string(fields, "contract-hash")?;
-        if contract_hash != generated::dispatch::WIT_HASH {
-            bail!(
-                "component contract hash {contract_hash} does not match Gate {}",
-                generated::dispatch::WIT_HASH
-            );
-        }
         let generator_format = record_u32(fields, "generator-format")?;
-        if generator_format != generated::bindings::GENERATOR_FORMAT {
-            bail!(
-                "component generator format {generator_format} does not match Gate {}",
-                generated::bindings::GENERATOR_FORMAT
-            );
-        }
+        validate_metadata_contract(&contract_hash, generator_format)?;
         Ok(PluginMetadata {
             name,
             version,
@@ -530,6 +519,23 @@ impl Engine {
         self.store.set_epoch_deadline(1);
         DeadlineGuard::new(self.engine.clone(), self.deadline)
     }
+}
+
+fn validate_metadata_contract(contract_hash: &str, generator_format: u32) -> anyhow::Result<()> {
+    if contract_hash.len() != 64 || !contract_hash.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        bail!("component contract hash is not a 64-character hexadecimal WIT hash");
+    }
+    if generator_format != generated::bindings::GENERATOR_FORMAT {
+        bail!(
+            "component generator format {generator_format} does not match Gate {}",
+            generated::bindings::GENERATOR_FORMAT
+        );
+    }
+    // Wasmtime verifies the component's structural imports and exports during
+    // instantiation. Keeping the historical WIT hash as metadata, rather than
+    // demanding byte equality here, lets a component survive additive host
+    // API changes while structural breaking changes still fail before init.
+    Ok(())
 }
 
 fn record_string(fields: &[(String, Val)], name: &str) -> anyhow::Result<String> {
@@ -611,7 +617,7 @@ impl Drop for DeadlineGuard {
 
 #[cfg(test)]
 mod tests {
-    use super::{HostResource, release_borrowed_resources};
+    use super::{HostResource, release_borrowed_resources, validate_metadata_contract};
     use std::collections::HashMap;
 
     #[test]
@@ -648,5 +654,14 @@ mod tests {
         assert!(resources.contains_key(&3));
         assert!(!resources.contains_key(&4));
         assert!(resources.contains_key(&5));
+    }
+
+    #[test]
+    fn additive_contract_hashes_are_accepted_but_generator_drift_is_not() {
+        let previous_hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        validate_metadata_contract(previous_hash, 1)
+            .expect("an older structurally compatible component is accepted");
+        assert!(validate_metadata_contract("not-a-hash", 1).is_err());
+        assert!(validate_metadata_contract(previous_hash, 2).is_err());
     }
 }

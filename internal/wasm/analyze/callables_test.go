@@ -181,6 +181,16 @@ func TestAnalyzeGateRepositoryHasCompleteCoverage(t *testing.T) {
 		model.LifetimeBorrowedEvent,
 		subscription.Callable.Parameters[1].Type.Callback.Callable.Parameters[0].Type.Lifetime,
 	)
+	for _, identity := range []string{
+		"go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+		"go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+		"go.minekube.com/gate/pkg/gate#wasm-context-error",
+		"go.minekube.com/gate/pkg/gate#wasm-log",
+	} {
+		extension := findCanonicalDeclaration(t, api, identity)
+		require.NotNil(t, extension.Callable)
+		require.Equal(t, model.DeclarationFunction, extension.Kind)
+	}
 }
 
 func findCanonicalDeclaration(

@@ -105,6 +105,10 @@ const guideSidebar = [
         link: '/developers/commands',
       },
       {
+        text: 'WebAssembly Plugins',
+        link: '/developers/wasm-plugins',
+      },
+      {
         text: 'Examples',
         link: '/developers/examples/simple-proxy',
       },
@@ -319,6 +323,10 @@ export default defineConfig({
             {
               text: 'Commands',
               link: '/developers/commands',
+            },
+            {
+              text: 'WebAssembly Plugins',
+              link: '/developers/wasm-plugins',
             },
             {
               text: 'Sounds',

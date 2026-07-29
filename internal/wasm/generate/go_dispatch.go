@@ -24,12 +24,20 @@ const (
 	OperationCommandRegister OperationKind = "command-register"
 	OperationTimerAfter      OperationKind = "timer-after"
 	OperationTimerEvery      OperationKind = "timer-every"
+	OperationContextCanceled OperationKind = "context-cancelled"
+	OperationContextDeadline OperationKind = "context-deadline"
+	OperationContextError    OperationKind = "context-error"
+	OperationContextLog      OperationKind = "context-log"
 )
 
 const eventSubscriptionSuffix = "#wasm-subscribe"
 const commandRegistrationSuffix = "#wasm-register-command"
 const timerAfterSuffix = "#wasm-after"
 const timerEverySuffix = "#wasm-every"
+const contextCancelledSuffix = "#wasm-context-cancelled"
+const contextDeadlineSuffix = "#wasm-context-deadline"
+const contextErrorSuffix = "#wasm-context-error"
+const contextLogSuffix = "#wasm-log"
 
 type GeneratedOperation struct {
 	ID                  uint32        `json:"id"`
@@ -72,6 +80,14 @@ func Operations(api *model.API) ([]GeneratedOperation, error) {
 				kind = OperationTimerAfter
 			case strings.HasSuffix(declaration.Identity, timerEverySuffix):
 				kind = OperationTimerEvery
+			case strings.HasSuffix(declaration.Identity, contextCancelledSuffix):
+				kind = OperationContextCanceled
+			case strings.HasSuffix(declaration.Identity, contextDeadlineSuffix):
+				kind = OperationContextDeadline
+			case strings.HasSuffix(declaration.Identity, contextErrorSuffix):
+				kind = OperationContextError
+			case strings.HasSuffix(declaration.Identity, contextLogSuffix):
+				kind = OperationContextLog
 			}
 			add(
 				declaration,
@@ -450,6 +466,18 @@ func renderOperationHandler(
 			output,
 			"\treturn host.CallExtension(ctx, operation, signature, arguments)",
 		)
+	case OperationContextCanceled:
+		fmt.Fprintln(output, "\tsignature := func(context.Context) bool { return false }")
+		fmt.Fprintln(output, "\treturn host.CallExtension(ctx, operation, signature, arguments)")
+	case OperationContextDeadline:
+		fmt.Fprintln(output, "\tsignature := func(context.Context) (int64, bool) { return 0, false }")
+		fmt.Fprintln(output, "\treturn host.CallExtension(ctx, operation, signature, arguments)")
+	case OperationContextError:
+		fmt.Fprintln(output, "\tsignature := func(context.Context) string { return \"\" }")
+		fmt.Fprintln(output, "\treturn host.CallExtension(ctx, operation, signature, arguments)")
+	case OperationContextLog:
+		fmt.Fprintln(output, "\tsignature := func(context.Context, int64, string, []string) error { return nil }")
+		fmt.Fprintln(output, "\treturn host.CallExtension(ctx, operation, signature, arguments)")
 	}
 	fmt.Fprintln(output, "}")
 }

@@ -2201,7 +2201,11 @@
       "documentation": "Package gate is the main package for running one or more Minecraft proxy editions.",
       "declarations": [
         "go.minekube.com/gate/pkg/gate#wasm-after",
+        "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+        "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+        "go.minekube.com/gate/pkg/gate#wasm-context-error",
         "go.minekube.com/gate/pkg/gate#wasm-every",
+        "go.minekube.com/gate/pkg/gate#wasm-log",
         "go.minekube.com/gate/pkg/gate.Gate",
         "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
         "go.minekube.com/gate/pkg/gate.Gate.Java",
@@ -102877,6 +102881,173 @@
       ]
     },
     {
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+      "packagePath": "go.minekube.com/gate/pkg/gate",
+      "goName": "WasmContextCancelled",
+      "witName": "wasm-context-cancelled",
+      "kind": "function",
+      "documentation": "Reports whether the plugin context has been cancelled.",
+      "source": {
+        "file": "",
+        "line": 0,
+        "column": 0
+      },
+      "callable": {
+        "parameters": [
+          {
+            "goName": "ctx",
+            "witName": "ctx",
+            "type": {
+              "identity": "context.Context",
+              "witName": "context",
+              "goType": "context.Context",
+              "kind": "resource",
+              "ownership": "borrow",
+              "lifetime": "borrowed-call",
+              "nullable": false,
+              "resourceType": "context.Context"
+            }
+          }
+        ],
+        "results": [
+          {
+            "goName": "cancelled",
+            "witName": "cancelled",
+            "type": {
+              "goType": "bool",
+              "kind": "bool",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          }
+        ],
+        "variadic": false
+      },
+      "event": false,
+      "coverage": {
+        "state": "represented"
+      },
+      "dependencies": [
+        "context.Context"
+      ]
+    },
+    {
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+      "packagePath": "go.minekube.com/gate/pkg/gate",
+      "goName": "WasmContextDeadline",
+      "witName": "wasm-context-deadline",
+      "kind": "function",
+      "documentation": "Returns the plugin context deadline as Unix nanoseconds.",
+      "source": {
+        "file": "",
+        "line": 0,
+        "column": 0
+      },
+      "callable": {
+        "parameters": [
+          {
+            "goName": "ctx",
+            "witName": "ctx",
+            "type": {
+              "identity": "context.Context",
+              "witName": "context",
+              "goType": "context.Context",
+              "kind": "resource",
+              "ownership": "borrow",
+              "lifetime": "borrowed-call",
+              "nullable": false,
+              "resourceType": "context.Context"
+            }
+          }
+        ],
+        "results": [
+          {
+            "goName": "unixNanos",
+            "witName": "unix-nanos",
+            "type": {
+              "goType": "int64",
+              "kind": "s64",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          },
+          {
+            "goName": "ok",
+            "witName": "ok",
+            "type": {
+              "goType": "bool",
+              "kind": "bool",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          }
+        ],
+        "variadic": false
+      },
+      "event": false,
+      "coverage": {
+        "state": "represented"
+      },
+      "dependencies": [
+        "context.Context"
+      ]
+    },
+    {
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-error",
+      "packagePath": "go.minekube.com/gate/pkg/gate",
+      "goName": "WasmContextError",
+      "witName": "wasm-context-error",
+      "kind": "function",
+      "documentation": "Returns the plugin context error or an empty string.",
+      "source": {
+        "file": "",
+        "line": 0,
+        "column": 0
+      },
+      "callable": {
+        "parameters": [
+          {
+            "goName": "ctx",
+            "witName": "ctx",
+            "type": {
+              "identity": "context.Context",
+              "witName": "context",
+              "goType": "context.Context",
+              "kind": "resource",
+              "ownership": "borrow",
+              "lifetime": "borrowed-call",
+              "nullable": false,
+              "resourceType": "context.Context"
+            }
+          }
+        ],
+        "results": [
+          {
+            "goName": "message",
+            "witName": "message",
+            "type": {
+              "goType": "string",
+              "kind": "string",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          }
+        ],
+        "variadic": false
+      },
+      "event": false,
+      "coverage": {
+        "state": "represented"
+      },
+      "dependencies": [
+        "context.Context"
+      ]
+    },
+    {
       "identity": "go.minekube.com/gate/pkg/gate#wasm-every",
       "packagePath": "go.minekube.com/gate/pkg/gate",
       "goName": "WasmEvery",
@@ -102965,6 +103136,88 @@
       "dependencies": [
         "callback-0105467f2bef",
         "callback-9b79f3eb4945"
+      ]
+    },
+    {
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-log",
+      "packagePath": "go.minekube.com/gate/pkg/gate",
+      "goName": "WasmLog",
+      "witName": "wasm-log",
+      "kind": "function",
+      "documentation": "Logs through the logger carried by the plugin context. Fields are alternating key/value strings.",
+      "source": {
+        "file": "",
+        "line": 0,
+        "column": 0
+      },
+      "callable": {
+        "parameters": [
+          {
+            "goName": "ctx",
+            "witName": "ctx",
+            "type": {
+              "identity": "context.Context",
+              "witName": "context",
+              "goType": "context.Context",
+              "kind": "resource",
+              "ownership": "borrow",
+              "lifetime": "borrowed-call",
+              "nullable": false,
+              "resourceType": "context.Context"
+            }
+          },
+          {
+            "goName": "level",
+            "witName": "level",
+            "type": {
+              "goType": "int64",
+              "kind": "s64",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          },
+          {
+            "goName": "message",
+            "witName": "message",
+            "type": {
+              "goType": "string",
+              "kind": "string",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": false
+            }
+          },
+          {
+            "goName": "fields",
+            "witName": "fields",
+            "type": {
+              "goType": "[]string",
+              "kind": "list",
+              "ownership": "copy",
+              "lifetime": "value",
+              "nullable": true,
+              "element": {
+                "goType": "string",
+                "kind": "string",
+                "ownership": "copy",
+                "lifetime": "value",
+                "nullable": false
+              }
+            }
+          }
+        ],
+        "error": {
+          "fallback": true
+        },
+        "variadic": false
+      },
+      "event": false,
+      "coverage": {
+        "state": "represented"
+      },
+      "dependencies": [
+        "context.Context"
       ]
     },
     {
@@ -135202,1707 +135455,1735 @@
     },
     {
       "id": 1680,
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+      "declarationIdentity": "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+      "witName": "wasm-context-cancelled",
+      "kind": "context-cancelled"
+    },
+    {
+      "id": 1681,
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+      "declarationIdentity": "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+      "witName": "wasm-context-deadline",
+      "kind": "context-deadline"
+    },
+    {
+      "id": 1682,
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-context-error",
+      "declarationIdentity": "go.minekube.com/gate/pkg/gate#wasm-context-error",
+      "witName": "wasm-context-error",
+      "kind": "context-error"
+    },
+    {
+      "id": 1683,
       "identity": "go.minekube.com/gate/pkg/gate#wasm-every",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate#wasm-every",
       "witName": "wasm-every",
       "kind": "timer-every"
     },
     {
-      "id": 1681,
+      "id": 1684,
+      "identity": "go.minekube.com/gate/pkg/gate#wasm-log",
+      "declarationIdentity": "go.minekube.com/gate/pkg/gate#wasm-log",
+      "witName": "wasm-log",
+      "kind": "context-log"
+    },
+    {
+      "id": 1685,
       "identity": "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
       "witName": "gate-bedrock",
       "kind": "method"
     },
     {
-      "id": 1682,
+      "id": 1686,
       "identity": "go.minekube.com/gate/pkg/gate.Gate.Java",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Gate.Java",
       "witName": "gate-java",
       "kind": "method"
     },
     {
-      "id": 1683,
+      "id": 1687,
       "identity": "go.minekube.com/gate/pkg/gate.Gate.Start",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Gate.Start",
       "witName": "gate-start",
       "kind": "method"
     },
     {
-      "id": 1684,
+      "id": 1688,
       "identity": "go.minekube.com/gate/pkg/gate.LoadConfig",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.LoadConfig",
       "witName": "load-config",
       "kind": "function"
     },
     {
-      "id": 1685,
+      "id": 1689,
       "identity": "go.minekube.com/gate/pkg/gate.New",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.New",
       "witName": "new",
       "kind": "function"
     },
     {
-      "id": 1686,
+      "id": 1690,
       "identity": "go.minekube.com/gate/pkg/gate.Start",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Start",
       "witName": "start",
       "kind": "function"
     },
     {
-      "id": 1687,
+      "id": 1691,
       "identity": "go.minekube.com/gate/pkg/gate.Viper#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Viper",
       "witName": "get-viper",
       "kind": "variable-get"
     },
     {
-      "id": 1688,
+      "id": 1692,
       "identity": "go.minekube.com/gate/pkg/gate.Viper#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.Viper",
       "witName": "set-viper",
       "kind": "variable-set"
     },
     {
-      "id": 1689,
+      "id": 1693,
       "identity": "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
       "witName": "with-auto-config-reload",
       "kind": "function"
     },
     {
-      "id": 1690,
+      "id": 1694,
       "identity": "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
       "witName": "with-auto-shutdown-on-signal",
       "kind": "function"
     },
     {
-      "id": 1691,
+      "id": 1695,
       "identity": "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
       "witName": "with-component-plugins",
       "kind": "function"
     },
     {
-      "id": 1692,
+      "id": 1696,
       "identity": "go.minekube.com/gate/pkg/gate.WithConfig",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate.WithConfig",
       "witName": "with-config",
       "kind": "function"
     },
     {
-      "id": 1693,
+      "id": 1697,
       "identity": "go.minekube.com/gate/pkg/gate/config.Config.Validate",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/config.Config.Validate",
       "witName": "config-validate",
       "kind": "method"
     },
     {
-      "id": 1694,
+      "id": 1698,
       "identity": "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/config.DefaultConfig",
       "witName": "get-default-config",
       "kind": "variable-get"
     },
     {
-      "id": 1695,
+      "id": 1699,
       "identity": "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/config.DefaultConfig",
       "witName": "set-default-config",
       "kind": "variable-set"
     },
     {
-      "id": 1696,
+      "id": 1700,
       "identity": "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.ClientBound",
       "witName": "get-client-bound",
       "kind": "constant-get"
     },
     {
-      "id": 1697,
+      "id": 1701,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Direction.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Direction.String",
       "witName": "direction-string",
       "kind": "method"
     },
     {
-      "id": 1698,
+      "id": 1702,
       "identity": "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes",
       "witName": "get-err-decoder-left-bytes",
       "kind": "variable-get"
     },
     {
-      "id": 1699,
+      "id": 1703,
       "identity": "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes",
       "witName": "set-err-decoder-left-bytes",
       "kind": "variable-set"
     },
     {
-      "id": 1700,
+      "id": 1704,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
       "witName": "packet-decode",
       "kind": "method"
     },
     {
-      "id": 1701,
+      "id": 1705,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
       "witName": "packet-encode",
       "kind": "method"
     },
     {
-      "id": 1702,
+      "id": 1706,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
       "witName": "packet-context-known-packet",
       "kind": "method"
     },
     {
-      "id": 1703,
+      "id": 1707,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
       "witName": "packet-context-string",
       "kind": "method"
     },
     {
-      "id": 1704,
+      "id": 1708,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
       "witName": "packet-decoder-decode",
       "kind": "method"
     },
     {
-      "id": 1705,
+      "id": 1709,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
       "witName": "packet-encoder-encode",
       "kind": "method"
     },
     {
-      "id": 1706,
+      "id": 1710,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
       "witName": "packet-id-string",
       "kind": "method"
     },
     {
-      "id": 1707,
+      "id": 1711,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
       "witName": "packet-type-align",
       "kind": "method"
     },
     {
-      "id": 1708,
+      "id": 1712,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
       "witName": "packet-type-assignable-to",
       "kind": "method"
     },
     {
-      "id": 1709,
+      "id": 1713,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
       "witName": "packet-type-bits",
       "kind": "method"
     },
     {
-      "id": 1710,
+      "id": 1714,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
       "witName": "packet-type-can-seq",
       "kind": "method"
     },
     {
-      "id": 1711,
+      "id": 1715,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
       "witName": "packet-type-can-seq2",
       "kind": "method"
     },
     {
-      "id": 1712,
+      "id": 1716,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
       "witName": "packet-type-chan-dir",
       "kind": "method"
     },
     {
-      "id": 1713,
+      "id": 1717,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
       "witName": "packet-type-comparable",
       "kind": "method"
     },
     {
-      "id": 1714,
+      "id": 1718,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
       "witName": "packet-type-convertible-to",
       "kind": "method"
     },
     {
-      "id": 1715,
+      "id": 1719,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
       "witName": "packet-type-elem",
       "kind": "method"
     },
     {
-      "id": 1716,
+      "id": 1720,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
       "witName": "packet-type-field",
       "kind": "method"
     },
     {
-      "id": 1717,
+      "id": 1721,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
       "witName": "packet-type-field-align",
       "kind": "method"
     },
     {
-      "id": 1718,
+      "id": 1722,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
       "witName": "packet-type-field-by-index",
       "kind": "method"
     },
     {
-      "id": 1719,
+      "id": 1723,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
       "witName": "packet-type-field-by-name",
       "kind": "method"
     },
     {
-      "id": 1720,
+      "id": 1724,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
       "witName": "packet-type-field-by-name-func",
       "kind": "method"
     },
     {
-      "id": 1721,
+      "id": 1725,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
       "witName": "packet-type-fields",
       "kind": "method"
     },
     {
-      "id": 1722,
+      "id": 1726,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
       "witName": "packet-type-implements",
       "kind": "method"
     },
     {
-      "id": 1723,
+      "id": 1727,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
       "witName": "packet-type-in",
       "kind": "method"
     },
     {
-      "id": 1724,
+      "id": 1728,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
       "witName": "packet-type-ins",
       "kind": "method"
     },
     {
-      "id": 1725,
+      "id": 1729,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
       "witName": "packet-type-is-variadic",
       "kind": "method"
     },
     {
-      "id": 1726,
+      "id": 1730,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
       "witName": "packet-type-key",
       "kind": "method"
     },
     {
-      "id": 1727,
+      "id": 1731,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
       "witName": "packet-type-kind",
       "kind": "method"
     },
     {
-      "id": 1728,
+      "id": 1732,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
       "witName": "packet-type-len",
       "kind": "method"
     },
     {
-      "id": 1729,
+      "id": 1733,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
       "witName": "packet-type-method",
       "kind": "method"
     },
     {
-      "id": 1730,
+      "id": 1734,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
       "witName": "packet-type-method-by-name",
       "kind": "method"
     },
     {
-      "id": 1731,
+      "id": 1735,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
       "witName": "packet-type-methods",
       "kind": "method"
     },
     {
-      "id": 1732,
+      "id": 1736,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
       "witName": "packet-type-name",
       "kind": "method"
     },
     {
-      "id": 1733,
+      "id": 1737,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
       "witName": "packet-type-num-field",
       "kind": "method"
     },
     {
-      "id": 1734,
+      "id": 1738,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
       "witName": "packet-type-num-in",
       "kind": "method"
     },
     {
-      "id": 1735,
+      "id": 1739,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
       "witName": "packet-type-num-method",
       "kind": "method"
     },
     {
-      "id": 1736,
+      "id": 1740,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
       "witName": "packet-type-num-out",
       "kind": "method"
     },
     {
-      "id": 1737,
+      "id": 1741,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
       "witName": "packet-type-out",
       "kind": "method"
     },
     {
-      "id": 1738,
+      "id": 1742,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
       "witName": "packet-type-outs",
       "kind": "method"
     },
     {
-      "id": 1739,
+      "id": 1743,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
       "witName": "packet-type-overflow-complex",
       "kind": "method"
     },
     {
-      "id": 1740,
+      "id": 1744,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
       "witName": "packet-type-overflow-float",
       "kind": "method"
     },
     {
-      "id": 1741,
+      "id": 1745,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
       "witName": "packet-type-overflow-int",
       "kind": "method"
     },
     {
-      "id": 1742,
+      "id": 1746,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
       "witName": "packet-type-overflow-uint",
       "kind": "method"
     },
     {
-      "id": 1743,
+      "id": 1747,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
       "witName": "packet-type-pkg-path",
       "kind": "method"
     },
     {
-      "id": 1744,
+      "id": 1748,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
       "witName": "packet-type-size",
       "kind": "method"
     },
     {
-      "id": 1745,
+      "id": 1749,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
       "witName": "packet-type-string",
       "kind": "method"
     },
     {
-      "id": 1746,
+      "id": 1750,
       "identity": "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
       "witName": "packet-writer-write-packet",
       "kind": "method"
     },
     {
-      "id": 1747,
+      "id": 1751,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
       "witName": "protocol-greater",
       "kind": "method"
     },
     {
-      "id": 1748,
+      "id": 1752,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
       "witName": "protocol-greater-equal",
       "kind": "method"
     },
     {
-      "id": 1749,
+      "id": 1753,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
       "witName": "protocol-lower",
       "kind": "method"
     },
     {
-      "id": 1750,
+      "id": 1754,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
       "witName": "protocol-lower-equal",
       "kind": "method"
     },
     {
-      "id": 1751,
+      "id": 1755,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
       "witName": "protocol-string",
       "kind": "method"
     },
     {
-      "id": 1752,
+      "id": 1756,
       "identity": "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.ServerBound",
       "witName": "get-server-bound",
       "kind": "constant-get"
     },
     {
-      "id": 1753,
+      "id": 1757,
       "identity": "go.minekube.com/gate/pkg/gate/proto.TypeOf",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.TypeOf",
       "witName": "type-of",
       "kind": "function"
     },
     {
-      "id": 1754,
+      "id": 1758,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
       "witName": "version-first-name",
       "kind": "method"
     },
     {
-      "id": 1755,
+      "id": 1759,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
       "witName": "version-greater",
       "kind": "method"
     },
     {
-      "id": 1756,
+      "id": 1760,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
       "witName": "version-greater-equal",
       "kind": "method"
     },
     {
-      "id": 1757,
+      "id": 1761,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
       "witName": "version-last-name",
       "kind": "method"
     },
     {
-      "id": 1758,
+      "id": 1762,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
       "witName": "version-lower",
       "kind": "method"
     },
     {
-      "id": 1759,
+      "id": 1763,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
       "witName": "version-lower-equal",
       "kind": "method"
     },
     {
-      "id": 1760,
+      "id": 1764,
       "identity": "go.minekube.com/gate/pkg/gate/proto.Version.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/gate/proto.Version.String",
       "witName": "version-string",
       "kind": "method"
     },
     {
-      "id": 1761,
+      "id": 1765,
       "identity": "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
       "witName": "collection-add",
       "kind": "method"
     },
     {
-      "id": 1762,
+      "id": 1766,
       "identity": "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
       "witName": "collection-start",
       "kind": "method"
     },
     {
-      "id": 1763,
+      "id": 1767,
       "identity": "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod",
       "witName": "get-default-graceful-shutdown-period",
       "kind": "constant-get"
     },
     {
-      "id": 1764,
+      "id": 1768,
       "identity": "go.minekube.com/gate/pkg/runtime/process.New",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.New",
       "witName": "new",
       "kind": "function"
     },
     {
-      "id": 1765,
+      "id": 1769,
       "identity": "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
       "witName": "runnable-start",
       "kind": "method"
     },
     {
-      "id": 1766,
+      "id": 1770,
       "identity": "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
       "declarationIdentity": "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
       "witName": "runnable-func-start",
       "kind": "method"
     },
     {
-      "id": 1767,
+      "id": 1771,
       "identity": "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
       "witName": "parse-component",
       "kind": "function"
     },
     {
-      "id": 1768,
+      "id": 1772,
       "identity": "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
       "witName": "parse-text-component",
       "kind": "function"
     },
     {
-      "id": 1769,
+      "id": 1773,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
       "witName": "bool-or-struct-bool-value",
       "kind": "method"
     },
     {
-      "id": 1770,
+      "id": 1774,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
       "witName": "bool-or-struct-is-bool",
       "kind": "method"
     },
     {
-      "id": 1771,
+      "id": 1775,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
       "witName": "bool-or-struct-is-nil",
       "kind": "method"
     },
     {
-      "id": 1772,
+      "id": 1776,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
       "witName": "bool-or-struct-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1773,
+      "id": 1777,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
       "witName": "bool-or-struct-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1774,
+      "id": 1778,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
       "witName": "bool-or-struct-string",
       "kind": "method"
     },
     {
-      "id": 1775,
+      "id": 1779,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
       "witName": "bool-or-struct-struct-value",
       "kind": "method"
     },
     {
-      "id": 1776,
+      "id": 1780,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
       "witName": "bool-or-struct-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1777,
+      "id": 1781,
       "identity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
       "witName": "bool-or-struct-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1778,
+      "id": 1782,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Component.C",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Component.C",
       "witName": "component-c",
       "kind": "method"
     },
     {
-      "id": 1779,
+      "id": 1783,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
       "witName": "component-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1780,
+      "id": 1784,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
       "witName": "component-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1781,
+      "id": 1785,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
       "witName": "component-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1782,
+      "id": 1786,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
       "witName": "component-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1783,
+      "id": 1787,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
       "witName": "duration-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1784,
+      "id": 1788,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
       "witName": "duration-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1785,
+      "id": 1789,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
       "witName": "duration-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1786,
+      "id": 1790,
       "identity": "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
       "witName": "duration-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1787,
+      "id": 1791,
       "identity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
       "witName": "new-bool-or-struct-bool",
       "kind": "function"
     },
     {
-      "id": 1788,
+      "id": 1792,
       "identity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
       "witName": "new-bool-or-struct-bool-f2e5d90bc027",
       "kind": "function"
     },
     {
-      "id": 1789,
+      "id": 1793,
       "identity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
       "witName": "new-bool-or-struct-bool-891f9963de06",
       "kind": "function"
     },
     {
-      "id": 1790,
+      "id": 1794,
       "identity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
       "witName": "new-bool-or-struct-struct",
       "kind": "function"
     },
     {
-      "id": 1791,
+      "id": 1795,
       "identity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
       "witName": "new-bool-or-struct-struct-40ba03595584",
       "kind": "function"
     },
     {
-      "id": 1792,
+      "id": 1796,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
       "witName": "single-or-multi-copy",
       "kind": "method"
     },
     {
-      "id": 1793,
+      "id": 1797,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
       "witName": "single-or-multi-is-multi",
       "kind": "method"
     },
     {
-      "id": 1794,
+      "id": 1798,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
       "witName": "single-or-multi-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1795,
+      "id": 1799,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
       "witName": "single-or-multi-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1796,
+      "id": 1800,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
       "witName": "single-or-multi-multi",
       "kind": "method"
     },
     {
-      "id": 1797,
+      "id": 1801,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
       "witName": "single-or-multi-random",
       "kind": "method"
     },
     {
-      "id": 1798,
+      "id": 1802,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
       "witName": "single-or-multi-single",
       "kind": "method"
     },
     {
-      "id": 1799,
+      "id": 1803,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
       "witName": "single-or-multi-string",
       "kind": "method"
     },
     {
-      "id": 1800,
+      "id": 1804,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
       "witName": "single-or-multi-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1801,
+      "id": 1805,
       "identity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
       "witName": "single-or-multi-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1802,
+      "id": 1806,
       "identity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
       "witName": "text-component-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1803,
+      "id": 1807,
       "identity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
       "witName": "text-component-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1804,
+      "id": 1808,
       "identity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
       "witName": "text-component-t",
       "kind": "method"
     },
     {
-      "id": 1805,
+      "id": 1809,
       "identity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
       "witName": "text-component-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1806,
+      "id": 1810,
       "identity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
       "witName": "text-component-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1807,
+      "id": 1811,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
       "witName": "url-marshal-binary",
       "kind": "method"
     },
     {
-      "id": 1808,
+      "id": 1812,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
       "witName": "url-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1809,
+      "id": 1813,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
       "witName": "url-marshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1810,
+      "id": 1814,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.String",
       "witName": "url-string",
       "kind": "method"
     },
     {
-      "id": 1811,
+      "id": 1815,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.T",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.T",
       "witName": "url-t",
       "kind": "method"
     },
     {
-      "id": 1812,
+      "id": 1816,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
       "witName": "url-unmarshal-binary",
       "kind": "method"
     },
     {
-      "id": 1813,
+      "id": 1817,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
       "witName": "url-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1814,
+      "id": 1818,
       "identity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
       "witName": "url-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1815,
+      "id": 1819,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
       "witName": "endpoint-name",
       "kind": "method"
     },
     {
-      "id": 1816,
+      "id": 1820,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
       "witName": "endpoint-propose",
       "kind": "method"
     },
     {
-      "id": 1817,
+      "id": 1821,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
       "witName": "endpoint-rejections",
       "kind": "method"
     },
     {
-      "id": 1818,
+      "id": 1822,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
       "witName": "endpoint-listener-accept-endpoint",
       "kind": "method"
     },
     {
-      "id": 1819,
+      "id": 1823,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
       "witName": "inbound-tunnel-close",
       "kind": "method"
     },
     {
-      "id": 1820,
+      "id": 1824,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
       "witName": "inbound-tunnel-local-addr",
       "kind": "method"
     },
     {
-      "id": 1821,
+      "id": 1825,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
       "witName": "inbound-tunnel-read",
       "kind": "method"
     },
     {
-      "id": 1822,
+      "id": 1826,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
       "witName": "inbound-tunnel-remote-addr",
       "kind": "method"
     },
     {
-      "id": 1823,
+      "id": 1827,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
       "witName": "inbound-tunnel-session-id",
       "kind": "method"
     },
     {
-      "id": 1824,
+      "id": 1828,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
       "witName": "inbound-tunnel-set-deadline",
       "kind": "method"
     },
     {
-      "id": 1825,
+      "id": 1829,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
       "witName": "inbound-tunnel-set-read-deadline",
       "kind": "method"
     },
     {
-      "id": 1826,
+      "id": 1830,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
       "witName": "inbound-tunnel-set-write-deadline",
       "kind": "method"
     },
     {
-      "id": 1827,
+      "id": 1831,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
       "witName": "inbound-tunnel-write",
       "kind": "method"
     },
     {
-      "id": 1828,
+      "id": 1832,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
       "witName": "require-endpoint-name",
       "kind": "function"
     },
     {
-      "id": 1829,
+      "id": 1833,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
       "witName": "require-tunnel-session-id",
       "kind": "function"
     },
     {
-      "id": 1830,
+      "id": 1834,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
       "witName": "tunnel-listener-accept-tunnel",
       "kind": "method"
     },
     {
-      "id": 1831,
+      "id": 1835,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
       "witName": "tunnel-session-close",
       "kind": "method"
     },
     {
-      "id": 1832,
+      "id": 1836,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
       "witName": "tunnel-session-local-addr",
       "kind": "method"
     },
     {
-      "id": 1833,
+      "id": 1837,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
       "witName": "tunnel-session-read",
       "kind": "method"
     },
     {
-      "id": 1834,
+      "id": 1838,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
       "witName": "tunnel-session-remote-addr",
       "kind": "method"
     },
     {
-      "id": 1835,
+      "id": 1839,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
       "witName": "tunnel-session-session",
       "kind": "method"
     },
     {
-      "id": 1836,
+      "id": 1840,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
       "witName": "tunnel-session-set-deadline",
       "kind": "method"
     },
     {
-      "id": 1837,
+      "id": 1841,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
       "witName": "tunnel-session-set-read-deadline",
       "kind": "method"
     },
     {
-      "id": 1838,
+      "id": 1842,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
       "witName": "tunnel-session-set-write-deadline",
       "kind": "method"
     },
     {
-      "id": 1839,
+      "id": 1843,
       "identity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
       "witName": "tunnel-session-write",
       "kind": "method"
     },
     {
-      "id": 1840,
+      "id": 1844,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
       "witName": "conn-handler-handle-conn",
       "kind": "method"
     },
     {
-      "id": 1841,
+      "id": 1845,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig",
       "witName": "get-default-config",
       "kind": "variable-get"
     },
     {
-      "id": 1842,
+      "id": 1846,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig",
       "witName": "set-default-config",
       "kind": "variable-set"
     },
     {
-      "id": 1843,
+      "id": 1847,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr",
       "witName": "get-default-watch-service-addr",
       "kind": "constant-get"
     },
     {
-      "id": 1844,
+      "id": 1848,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
       "witName": "instance-handle-conn",
       "kind": "method"
     },
     {
-      "id": 1845,
+      "id": 1849,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
       "witName": "instance-register",
       "kind": "method"
     },
     {
-      "id": 1846,
+      "id": 1850,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
       "witName": "instance-server",
       "kind": "method"
     },
     {
-      "id": 1847,
+      "id": 1851,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
       "witName": "instance-unregister",
       "kind": "method"
     },
     {
-      "id": 1848,
+      "id": 1852,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/config.New",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/config.New",
       "witName": "new",
       "kind": "function"
     },
     {
-      "id": 1849,
+      "id": 1853,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
       "witName": "listener-accept-endpoint",
       "kind": "method"
     },
     {
-      "id": 1850,
+      "id": 1854,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
       "witName": "listener-accept-tunnel",
       "kind": "method"
     },
     {
-      "id": 1851,
+      "id": 1855,
       "identity": "go.minekube.com/gate/pkg/util/connectutil/single.New",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/connectutil/single.New",
       "witName": "new",
       "kind": "function"
     },
     {
-      "id": 1852,
+      "id": 1856,
       "identity": "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig",
       "witName": "get-err-missing-config",
       "kind": "variable-get"
     },
     {
-      "id": 1853,
+      "id": 1857,
       "identity": "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig",
       "witName": "set-err-missing-config",
       "kind": "variable-set"
     },
     {
-      "id": 1854,
+      "id": 1858,
       "identity": "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
       "witName": "is-conn-closed-err",
       "kind": "function"
     },
     {
-      "id": 1855,
+      "id": 1859,
       "identity": "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
       "witName": "new-silent-err",
       "kind": "function"
     },
     {
-      "id": 1856,
+      "id": 1860,
       "identity": "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
       "witName": "silent-error-error",
       "kind": "method"
     },
     {
-      "id": 1857,
+      "id": 1861,
       "identity": "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
       "witName": "silent-error-unwrap",
       "kind": "method"
     },
     {
-      "id": 1858,
+      "id": 1862,
       "identity": "go.minekube.com/gate/pkg/util/errs.V",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.V",
       "witName": "v",
       "kind": "function"
     },
     {
-      "id": 1859,
+      "id": 1863,
       "identity": "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
       "witName": "verbosity-error-error",
       "kind": "method"
     },
     {
-      "id": 1860,
+      "id": 1864,
       "identity": "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
       "witName": "verbosity-error-unwrap",
       "kind": "method"
     },
     {
-      "id": 1861,
+      "id": 1865,
       "identity": "go.minekube.com/gate/pkg/util/errs.WrapSilent",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/errs.WrapSilent",
       "witName": "wrap-silent",
       "kind": "function"
     },
     {
-      "id": 1862,
+      "id": 1866,
       "identity": "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
       "witName": "favicon-bytes",
       "kind": "method"
     },
     {
-      "id": 1863,
+      "id": 1867,
       "identity": "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
       "witName": "favicon-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1864,
+      "id": 1868,
       "identity": "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
       "witName": "favicon-unmarshal-yaml",
       "kind": "method"
     },
     {
-      "id": 1865,
+      "id": 1869,
       "identity": "go.minekube.com/gate/pkg/util/favicon.FromBytes",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.FromBytes",
       "witName": "from-bytes",
       "kind": "function"
     },
     {
-      "id": 1866,
+      "id": 1870,
       "identity": "go.minekube.com/gate/pkg/util/favicon.FromFile",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.FromFile",
       "witName": "from-file",
       "kind": "function"
     },
     {
-      "id": 1867,
+      "id": 1871,
       "identity": "go.minekube.com/gate/pkg/util/favicon.FromImage",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.FromImage",
       "witName": "from-image",
       "kind": "function"
     },
     {
-      "id": 1868,
+      "id": 1872,
       "identity": "go.minekube.com/gate/pkg/util/favicon.Parse",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/favicon.Parse",
       "witName": "parse",
       "kind": "function"
     },
     {
-      "id": 1869,
+      "id": 1873,
       "identity": "go.minekube.com/gate/pkg/util/interrupt.Notify",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/interrupt.Notify",
       "witName": "notify",
       "kind": "function"
     },
     {
-      "id": 1870,
+      "id": 1874,
       "identity": "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
       "witName": "termination-context",
       "kind": "function"
     },
     {
-      "id": 1871,
+      "id": 1875,
       "identity": "go.minekube.com/gate/pkg/util/netutil.Host",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.Host",
       "witName": "host",
       "kind": "function"
     },
     {
-      "id": 1872,
+      "id": 1876,
       "identity": "go.minekube.com/gate/pkg/util/netutil.HostPort",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.HostPort",
       "witName": "host-port",
       "kind": "function"
     },
     {
-      "id": 1873,
+      "id": 1877,
       "identity": "go.minekube.com/gate/pkg/util/netutil.HostStr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.HostStr",
       "witName": "host-str",
       "kind": "function"
     },
     {
-      "id": 1874,
+      "id": 1878,
       "identity": "go.minekube.com/gate/pkg/util/netutil.NewAddr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.NewAddr",
       "witName": "new-addr",
       "kind": "function"
     },
     {
-      "id": 1875,
+      "id": 1879,
       "identity": "go.minekube.com/gate/pkg/util/netutil.Parse",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.Parse",
       "witName": "parse",
       "kind": "function"
     },
     {
-      "id": 1876,
+      "id": 1880,
       "identity": "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
       "witName": "parse-trusted-networks",
       "kind": "function"
     },
     {
-      "id": 1877,
+      "id": 1881,
       "identity": "go.minekube.com/gate/pkg/util/netutil.Port",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.Port",
       "witName": "port",
       "kind": "function"
     },
     {
-      "id": 1878,
+      "id": 1882,
       "identity": "go.minekube.com/gate/pkg/util/netutil.PortStr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.PortStr",
       "witName": "port-str",
       "kind": "function"
     },
     {
-      "id": 1879,
+      "id": 1883,
       "identity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
       "witName": "trusted-networks-contains",
       "kind": "method"
     },
     {
-      "id": 1880,
+      "id": 1884,
       "identity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
       "witName": "trusted-networks-contains-str",
       "kind": "method"
     },
     {
-      "id": 1881,
+      "id": 1885,
       "identity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
       "witName": "trusted-networks-string",
       "kind": "method"
     },
     {
-      "id": 1882,
+      "id": 1886,
       "identity": "go.minekube.com/gate/pkg/util/permission.False#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.False",
       "witName": "get-false",
       "kind": "constant-get"
     },
     {
-      "id": 1883,
+      "id": 1887,
       "identity": "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
       "witName": "subject-has-permission",
       "kind": "method"
     },
     {
-      "id": 1884,
+      "id": 1888,
       "identity": "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
       "witName": "subject-permission-value",
       "kind": "method"
     },
     {
-      "id": 1885,
+      "id": 1889,
       "identity": "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
       "witName": "tri-state-bool",
       "kind": "method"
     },
     {
-      "id": 1886,
+      "id": 1890,
       "identity": "go.minekube.com/gate/pkg/util/permission.True#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.True",
       "witName": "get-true",
       "kind": "constant-get"
     },
     {
-      "id": 1887,
+      "id": 1891,
       "identity": "go.minekube.com/gate/pkg/util/permission.Undefined#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/permission.Undefined",
       "witName": "get-undefined",
       "kind": "constant-get"
     },
     {
-      "id": 1888,
+      "id": 1892,
       "identity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
       "witName": "capped-set-add",
       "kind": "method"
     },
     {
-      "id": 1889,
+      "id": 1893,
       "identity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
       "witName": "capped-set-len",
       "kind": "method"
     },
     {
-      "id": 1890,
+      "id": 1894,
       "identity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
       "witName": "capped-set-remove",
       "kind": "method"
     },
     {
-      "id": 1891,
+      "id": 1895,
       "identity": "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
       "witName": "capped-set-unsorted-list",
       "kind": "method"
     },
     {
-      "id": 1892,
+      "id": 1896,
       "identity": "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
       "witName": "new-capped-set",
       "kind": "function"
     },
     {
-      "id": 1893,
+      "id": 1897,
       "identity": "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
       "witName": "new-capped-set-0ec33fd43911",
       "kind": "function"
     },
     {
-      "id": 1894,
+      "id": 1898,
       "identity": "go.minekube.com/gate/pkg/util/sets.NewString",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.NewString",
       "witName": "new-string",
       "kind": "function"
     },
     {
-      "id": 1895,
+      "id": 1899,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.Delete",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.Delete",
       "witName": "string-delete",
       "kind": "method"
     },
     {
-      "id": 1896,
+      "id": 1900,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.Has",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.Has",
       "witName": "string-has",
       "kind": "method"
     },
     {
-      "id": 1897,
+      "id": 1901,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.HasAll",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.HasAll",
       "witName": "string-has-all",
       "kind": "method"
     },
     {
-      "id": 1898,
+      "id": 1902,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.Insert",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.Insert",
       "witName": "string-insert",
       "kind": "method"
     },
     {
-      "id": 1899,
+      "id": 1903,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
       "witName": "string-insert-set",
       "kind": "method"
     },
     {
-      "id": 1900,
+      "id": 1904,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.Len",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.Len",
       "witName": "string-len",
       "kind": "method"
     },
     {
-      "id": 1901,
+      "id": 1905,
       "identity": "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
       "witName": "string-unsorted-list",
       "kind": "method"
     },
     {
-      "id": 1902,
+      "id": 1906,
       "identity": "go.minekube.com/gate/pkg/util/uuid.FromBytes",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.FromBytes",
       "witName": "from-bytes",
       "kind": "function"
     },
     {
-      "id": 1903,
+      "id": 1907,
       "identity": "go.minekube.com/gate/pkg/util/uuid.New",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.New",
       "witName": "new",
       "kind": "function"
     },
     {
-      "id": 1904,
+      "id": 1908,
       "identity": "go.minekube.com/gate/pkg/util/uuid.Nil#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.Nil",
       "witName": "get-nil",
       "kind": "variable-get"
     },
     {
-      "id": 1905,
+      "id": 1909,
       "identity": "go.minekube.com/gate/pkg/util/uuid.Nil#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.Nil",
       "witName": "set-nil",
       "kind": "variable-set"
     },
     {
-      "id": 1906,
+      "id": 1910,
       "identity": "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
       "witName": "offline-player-uuid",
       "kind": "function"
     },
     {
-      "id": 1907,
+      "id": 1911,
       "identity": "go.minekube.com/gate/pkg/util/uuid.Parse",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.Parse",
       "witName": "parse",
       "kind": "function"
     },
     {
-      "id": 1908,
+      "id": 1912,
       "identity": "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
       "witName": "parse-bytes",
       "kind": "function"
     },
     {
-      "id": 1909,
+      "id": 1913,
       "identity": "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
       "witName": "uuid-marshal-json",
       "kind": "method"
     },
     {
-      "id": 1910,
+      "id": 1914,
       "identity": "go.minekube.com/gate/pkg/util/uuid.UUID.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.UUID.String",
       "witName": "uuid-string",
       "kind": "method"
     },
     {
-      "id": 1911,
+      "id": 1915,
       "identity": "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
       "witName": "uuid-undashed",
       "kind": "method"
     },
     {
-      "id": 1912,
+      "id": 1916,
       "identity": "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
       "witName": "uuid-unmarshal-json",
       "kind": "method"
     },
     {
-      "id": 1913,
+      "id": 1917,
       "identity": "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
       "witName": "contains-illegal-character",
       "kind": "function"
     },
     {
-      "id": 1914,
+      "id": 1918,
       "identity": "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
       "witName": "is-allowed-character",
       "kind": "function"
     },
     {
-      "id": 1915,
+      "id": 1919,
       "identity": "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg",
       "witName": "get-qualified-name-err-msg",
       "kind": "constant-get"
     },
     {
-      "id": 1916,
+      "id": 1920,
       "identity": "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength",
       "witName": "get-qualified-name-max-length",
       "kind": "constant-get"
     },
     {
-      "id": 1917,
+      "id": 1921,
       "identity": "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
       "witName": "valid-host-port",
       "kind": "function"
     },
     {
-      "id": 1918,
+      "id": 1922,
       "identity": "go.minekube.com/gate/pkg/util/validation.ValidServerName",
       "declarationIdentity": "go.minekube.com/gate/pkg/util/validation.ValidServerName",
       "witName": "valid-server-name",
       "kind": "function"
     },
     {
-      "id": 1919,
+      "id": 1923,
       "identity": "go.minekube.com/gate/pkg/version.String",
       "declarationIdentity": "go.minekube.com/gate/pkg/version.String",
       "witName": "gate-string",
       "kind": "function"
     },
     {
-      "id": 1920,
+      "id": 1924,
       "identity": "go.minekube.com/gate/pkg/version.UserAgent",
       "declarationIdentity": "go.minekube.com/gate/pkg/version.UserAgent",
       "witName": "user-agent",
       "kind": "function"
     },
     {
-      "id": 1921,
+      "id": 1925,
       "identity": "go.minekube.com/gate/pkg/version.UserAgentHeader",
       "declarationIdentity": "go.minekube.com/gate/pkg/version.UserAgentHeader",
       "witName": "user-agent-header",
       "kind": "function"
     },
     {
-      "id": 1922,
+      "id": 1926,
       "identity": "go.minekube.com/gate/pkg/version.Version#get",
       "declarationIdentity": "go.minekube.com/gate/pkg/version.Version",
       "witName": "get-version",
       "kind": "variable-get"
     },
     {
-      "id": 1923,
+      "id": 1927,
       "identity": "go.minekube.com/gate/pkg/version.Version#set",
       "declarationIdentity": "go.minekube.com/gate/pkg/version.Version",
       "witName": "set-version",

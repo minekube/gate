@@ -108,6 +108,21 @@ func TestManifestAndContractHashesAreDeterministic(t *testing.T) {
 	require.NotEqual(t, contract.WITHash, changedContract.WITHash)
 }
 
+func TestPublicArtifactsAreTheCanonicalLanguageNeutralContract(t *testing.T) {
+	t.Parallel()
+
+	api := simpleAPI()
+	internal, err := Artifacts(api)
+	require.NoError(t, err)
+	public, err := PublicArtifacts(api)
+	require.NoError(t, err)
+
+	require.Equal(t, map[string][]byte{
+		WITFile:      internal[WITFile],
+		ContractFile: internal[ContractFile],
+	}, public)
+}
+
 func TestStructuralCompatibilityAcceptsAdditionsAndRejectsBreakingPaths(t *testing.T) {
 	required := simpleAPI()
 	host := cloneAPI(t, required)

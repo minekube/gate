@@ -32,9 +32,9 @@ jobs:
         with:
           name: gate-wasm-api-contract
           path: |
-            internal/wasm/api/contract.json
+            wasm/wit/contract.json
+            wasm/wit/gate.wit
             internal/wasm/api/manifest.json
-            internal/wasm/api/gate.wit
 
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
@@ -95,6 +95,10 @@ jobs:
 
       - name: Verify statically linked Wasm component runtime
         run: make wasm-native-test
+
+      - name: Build public Rust component example
+        if: matrix.platform == 'ubuntu-latest'
+        run: make wasm-rust-example-test
   release-binaries:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
@@ -376,6 +380,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist/wasm-contract/wit
+          cp wasm/wit/contract.json wasm/wit/gate.wit dist/wasm-contract/wit/
+          cp internal/wasm/api/manifest.json dist/wasm-contract/wit/
+          cp -R .examples/wasm dist/wasm-contract/examples
+          tar -C dist/wasm-contract -czf \
+            "../release/gate_wasm_contract_${version}.tar.gz" wit examples
           cd dist/release
           sha256sum gate_* > checksums.txt
           cd ../..
@@ -417,6 +428,7 @@ jobs:
             | select(.state == "uploaded")
             | select(.name | test(
                 "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                + "^gate_wasm_contract_.*\\.tar\\.gz$|"
                 + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
                 + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
                 + "\\.h$|\\.hpp$|\\.md$|\\.txt$"

@@ -3,7 +3,7 @@
 use wasmtime::StoreContextMut;
 use wasmtime::component::{Linker, ResourceType, Val, types::ComponentFunc};
 
-pub const WIT_HASH: &str = "05844571b07f3e19787939aa5fa98328c13acef7ab49ba74bb3388ab713cd2c3";
+pub const WIT_HASH: &str = "e846a3825b9cc8d2a882189a5837108a4e53fa3f5da279e81661027b2fb6b6ba";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Operation {
@@ -11770,1707 +11770,1735 @@ pub static OPERATIONS: &[Operation] = &[
     },
     Operation {
         id: 1680,
+        identity: "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+        interface: "pkg-gate",
+        name: "wasm-context-cancelled",
+        kind: "context-cancelled",
+    },
+    Operation {
+        id: 1681,
+        identity: "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+        interface: "pkg-gate",
+        name: "wasm-context-deadline",
+        kind: "context-deadline",
+    },
+    Operation {
+        id: 1682,
+        identity: "go.minekube.com/gate/pkg/gate#wasm-context-error",
+        interface: "pkg-gate",
+        name: "wasm-context-error",
+        kind: "context-error",
+    },
+    Operation {
+        id: 1683,
         identity: "go.minekube.com/gate/pkg/gate#wasm-every",
         interface: "pkg-gate",
         name: "wasm-every",
         kind: "timer-every",
     },
     Operation {
-        id: 1681,
+        id: 1684,
+        identity: "go.minekube.com/gate/pkg/gate#wasm-log",
+        interface: "pkg-gate",
+        name: "wasm-log",
+        kind: "context-log",
+    },
+    Operation {
+        id: 1685,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
         interface: "pkg-gate",
         name: "gate-bedrock",
         kind: "method",
     },
     Operation {
-        id: 1682,
+        id: 1686,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
         interface: "pkg-gate",
         name: "gate-java",
         kind: "method",
     },
     Operation {
-        id: 1683,
+        id: 1687,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
         interface: "pkg-gate",
         name: "gate-start",
         kind: "method",
     },
     Operation {
-        id: 1684,
+        id: 1688,
         identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
         interface: "pkg-gate",
         name: "load-config",
         kind: "function",
     },
     Operation {
-        id: 1685,
+        id: 1689,
         identity: "go.minekube.com/gate/pkg/gate.New",
         interface: "pkg-gate",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1686,
+        id: 1690,
         identity: "go.minekube.com/gate/pkg/gate.Start",
         interface: "pkg-gate",
         name: "start",
         kind: "function",
     },
     Operation {
-        id: 1687,
+        id: 1691,
         identity: "go.minekube.com/gate/pkg/gate.Viper#get",
         interface: "pkg-gate",
         name: "get-viper",
         kind: "variable-get",
     },
     Operation {
-        id: 1688,
+        id: 1692,
         identity: "go.minekube.com/gate/pkg/gate.Viper#set",
         interface: "pkg-gate",
         name: "set-viper",
         kind: "variable-set",
     },
     Operation {
-        id: 1689,
+        id: 1693,
         identity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
         interface: "pkg-gate",
         name: "with-auto-config-reload",
         kind: "function",
     },
     Operation {
-        id: 1690,
+        id: 1694,
         identity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
         interface: "pkg-gate",
         name: "with-auto-shutdown-on-signal",
         kind: "function",
     },
     Operation {
-        id: 1691,
+        id: 1695,
         identity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
         interface: "pkg-gate",
         name: "with-component-plugins",
         kind: "function",
     },
     Operation {
-        id: 1692,
+        id: 1696,
         identity: "go.minekube.com/gate/pkg/gate.WithConfig",
         interface: "pkg-gate",
         name: "with-config",
         kind: "function",
     },
     Operation {
-        id: 1693,
+        id: 1697,
         identity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
         interface: "pkg-gate-config",
         name: "config-validate",
         kind: "method",
     },
     Operation {
-        id: 1694,
+        id: 1698,
         identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
         interface: "pkg-gate-config",
         name: "get-default-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1695,
+        id: 1699,
         identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
         interface: "pkg-gate-config",
         name: "set-default-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1696,
+        id: 1700,
         identity: "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
         interface: "pkg-gate-proto",
         name: "get-client-bound",
         kind: "constant-get",
     },
     Operation {
-        id: 1697,
+        id: 1701,
         identity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
         interface: "pkg-gate-proto",
         name: "direction-string",
         kind: "method",
     },
     Operation {
-        id: 1698,
+        id: 1702,
         identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
         interface: "pkg-gate-proto",
         name: "get-err-decoder-left-bytes",
         kind: "variable-get",
     },
     Operation {
-        id: 1699,
+        id: 1703,
         identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
         interface: "pkg-gate-proto",
         name: "set-err-decoder-left-bytes",
         kind: "variable-set",
     },
     Operation {
-        id: 1700,
+        id: 1704,
         identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
         interface: "pkg-gate-proto",
         name: "packet-decode",
         kind: "method",
     },
     Operation {
-        id: 1701,
+        id: 1705,
         identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
         interface: "pkg-gate-proto",
         name: "packet-encode",
         kind: "method",
     },
     Operation {
-        id: 1702,
+        id: 1706,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
         interface: "pkg-gate-proto",
         name: "packet-context-known-packet",
         kind: "method",
     },
     Operation {
-        id: 1703,
+        id: 1707,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
         interface: "pkg-gate-proto",
         name: "packet-context-string",
         kind: "method",
     },
     Operation {
-        id: 1704,
+        id: 1708,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
         interface: "pkg-gate-proto",
         name: "packet-decoder-decode",
         kind: "method",
     },
     Operation {
-        id: 1705,
+        id: 1709,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
         interface: "pkg-gate-proto",
         name: "packet-encoder-encode",
         kind: "method",
     },
     Operation {
-        id: 1706,
+        id: 1710,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
         interface: "pkg-gate-proto",
         name: "packet-id-string",
         kind: "method",
     },
     Operation {
-        id: 1707,
+        id: 1711,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
         interface: "pkg-gate-proto",
         name: "packet-type-align",
         kind: "method",
     },
     Operation {
-        id: 1708,
+        id: 1712,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
         interface: "pkg-gate-proto",
         name: "packet-type-assignable-to",
         kind: "method",
     },
     Operation {
-        id: 1709,
+        id: 1713,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
         interface: "pkg-gate-proto",
         name: "packet-type-bits",
         kind: "method",
     },
     Operation {
-        id: 1710,
+        id: 1714,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
         interface: "pkg-gate-proto",
         name: "packet-type-can-seq",
         kind: "method",
     },
     Operation {
-        id: 1711,
+        id: 1715,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
         interface: "pkg-gate-proto",
         name: "packet-type-can-seq2",
         kind: "method",
     },
     Operation {
-        id: 1712,
+        id: 1716,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
         interface: "pkg-gate-proto",
         name: "packet-type-chan-dir",
         kind: "method",
     },
     Operation {
-        id: 1713,
+        id: 1717,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
         interface: "pkg-gate-proto",
         name: "packet-type-comparable",
         kind: "method",
     },
     Operation {
-        id: 1714,
+        id: 1718,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
         interface: "pkg-gate-proto",
         name: "packet-type-convertible-to",
         kind: "method",
     },
     Operation {
-        id: 1715,
+        id: 1719,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
         interface: "pkg-gate-proto",
         name: "packet-type-elem",
         kind: "method",
     },
     Operation {
-        id: 1716,
+        id: 1720,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
         interface: "pkg-gate-proto",
         name: "packet-type-field",
         kind: "method",
     },
     Operation {
-        id: 1717,
+        id: 1721,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
         interface: "pkg-gate-proto",
         name: "packet-type-field-align",
         kind: "method",
     },
     Operation {
-        id: 1718,
+        id: 1722,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-index",
         kind: "method",
     },
     Operation {
-        id: 1719,
+        id: 1723,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-name",
         kind: "method",
     },
     Operation {
-        id: 1720,
+        id: 1724,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-name-func",
         kind: "method",
     },
     Operation {
-        id: 1721,
+        id: 1725,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
         interface: "pkg-gate-proto",
         name: "packet-type-fields",
         kind: "method",
     },
     Operation {
-        id: 1722,
+        id: 1726,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
         interface: "pkg-gate-proto",
         name: "packet-type-implements",
         kind: "method",
     },
     Operation {
-        id: 1723,
+        id: 1727,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
         interface: "pkg-gate-proto",
         name: "packet-type-in",
         kind: "method",
     },
     Operation {
-        id: 1724,
+        id: 1728,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
         interface: "pkg-gate-proto",
         name: "packet-type-ins",
         kind: "method",
     },
     Operation {
-        id: 1725,
+        id: 1729,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
         interface: "pkg-gate-proto",
         name: "packet-type-is-variadic",
         kind: "method",
     },
     Operation {
-        id: 1726,
+        id: 1730,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
         interface: "pkg-gate-proto",
         name: "packet-type-key",
         kind: "method",
     },
     Operation {
-        id: 1727,
+        id: 1731,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
         interface: "pkg-gate-proto",
         name: "packet-type-kind",
         kind: "method",
     },
     Operation {
-        id: 1728,
+        id: 1732,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
         interface: "pkg-gate-proto",
         name: "packet-type-len",
         kind: "method",
     },
     Operation {
-        id: 1729,
+        id: 1733,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
         interface: "pkg-gate-proto",
         name: "packet-type-method",
         kind: "method",
     },
     Operation {
-        id: 1730,
+        id: 1734,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
         interface: "pkg-gate-proto",
         name: "packet-type-method-by-name",
         kind: "method",
     },
     Operation {
-        id: 1731,
+        id: 1735,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
         interface: "pkg-gate-proto",
         name: "packet-type-methods",
         kind: "method",
     },
     Operation {
-        id: 1732,
+        id: 1736,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
         interface: "pkg-gate-proto",
         name: "packet-type-name",
         kind: "method",
     },
     Operation {
-        id: 1733,
+        id: 1737,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
         interface: "pkg-gate-proto",
         name: "packet-type-num-field",
         kind: "method",
     },
     Operation {
-        id: 1734,
+        id: 1738,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
         interface: "pkg-gate-proto",
         name: "packet-type-num-in",
         kind: "method",
     },
     Operation {
-        id: 1735,
+        id: 1739,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
         interface: "pkg-gate-proto",
         name: "packet-type-num-method",
         kind: "method",
     },
     Operation {
-        id: 1736,
+        id: 1740,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
         interface: "pkg-gate-proto",
         name: "packet-type-num-out",
         kind: "method",
     },
     Operation {
-        id: 1737,
+        id: 1741,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
         interface: "pkg-gate-proto",
         name: "packet-type-out",
         kind: "method",
     },
     Operation {
-        id: 1738,
+        id: 1742,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
         interface: "pkg-gate-proto",
         name: "packet-type-outs",
         kind: "method",
     },
     Operation {
-        id: 1739,
+        id: 1743,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-complex",
         kind: "method",
     },
     Operation {
-        id: 1740,
+        id: 1744,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-float",
         kind: "method",
     },
     Operation {
-        id: 1741,
+        id: 1745,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-int",
         kind: "method",
     },
     Operation {
-        id: 1742,
+        id: 1746,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-uint",
         kind: "method",
     },
     Operation {
-        id: 1743,
+        id: 1747,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
         interface: "pkg-gate-proto",
         name: "packet-type-pkg-path",
         kind: "method",
     },
     Operation {
-        id: 1744,
+        id: 1748,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
         interface: "pkg-gate-proto",
         name: "packet-type-size",
         kind: "method",
     },
     Operation {
-        id: 1745,
+        id: 1749,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
         interface: "pkg-gate-proto",
         name: "packet-type-string",
         kind: "method",
     },
     Operation {
-        id: 1746,
+        id: 1750,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
         interface: "pkg-gate-proto",
         name: "packet-writer-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1747,
+        id: 1751,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
         interface: "pkg-gate-proto",
         name: "protocol-greater",
         kind: "method",
     },
     Operation {
-        id: 1748,
+        id: 1752,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
         interface: "pkg-gate-proto",
         name: "protocol-greater-equal",
         kind: "method",
     },
     Operation {
-        id: 1749,
+        id: 1753,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
         interface: "pkg-gate-proto",
         name: "protocol-lower",
         kind: "method",
     },
     Operation {
-        id: 1750,
+        id: 1754,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
         interface: "pkg-gate-proto",
         name: "protocol-lower-equal",
         kind: "method",
     },
     Operation {
-        id: 1751,
+        id: 1755,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
         interface: "pkg-gate-proto",
         name: "protocol-string",
         kind: "method",
     },
     Operation {
-        id: 1752,
+        id: 1756,
         identity: "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
         interface: "pkg-gate-proto",
         name: "get-server-bound",
         kind: "constant-get",
     },
     Operation {
-        id: 1753,
+        id: 1757,
         identity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
         interface: "pkg-gate-proto",
         name: "type-of",
         kind: "function",
     },
     Operation {
-        id: 1754,
+        id: 1758,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
         interface: "pkg-gate-proto",
         name: "version-first-name",
         kind: "method",
     },
     Operation {
-        id: 1755,
+        id: 1759,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
         interface: "pkg-gate-proto",
         name: "version-greater",
         kind: "method",
     },
     Operation {
-        id: 1756,
+        id: 1760,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
         interface: "pkg-gate-proto",
         name: "version-greater-equal",
         kind: "method",
     },
     Operation {
-        id: 1757,
+        id: 1761,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
         interface: "pkg-gate-proto",
         name: "version-last-name",
         kind: "method",
     },
     Operation {
-        id: 1758,
+        id: 1762,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
         interface: "pkg-gate-proto",
         name: "version-lower",
         kind: "method",
     },
     Operation {
-        id: 1759,
+        id: 1763,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
         interface: "pkg-gate-proto",
         name: "version-lower-equal",
         kind: "method",
     },
     Operation {
-        id: 1760,
+        id: 1764,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
         interface: "pkg-gate-proto",
         name: "version-string",
         kind: "method",
     },
     Operation {
-        id: 1761,
+        id: 1765,
         identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
         interface: "pkg-runtime-process",
         name: "collection-add",
         kind: "method",
     },
     Operation {
-        id: 1762,
+        id: 1766,
         identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
         interface: "pkg-runtime-process",
         name: "collection-start",
         kind: "method",
     },
     Operation {
-        id: 1763,
+        id: 1767,
         identity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
         interface: "pkg-runtime-process",
         name: "get-default-graceful-shutdown-period",
         kind: "constant-get",
     },
     Operation {
-        id: 1764,
+        id: 1768,
         identity: "go.minekube.com/gate/pkg/runtime/process.New",
         interface: "pkg-runtime-process",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1765,
+        id: 1769,
         identity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
         interface: "pkg-runtime-process",
         name: "runnable-start",
         kind: "method",
     },
     Operation {
-        id: 1766,
+        id: 1770,
         identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
         interface: "pkg-runtime-process",
         name: "runnable-func-start",
         kind: "method",
     },
     Operation {
-        id: 1767,
+        id: 1771,
         identity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
         interface: "pkg-util-componentutil",
         name: "parse-component",
         kind: "function",
     },
     Operation {
-        id: 1768,
+        id: 1772,
         identity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
         interface: "pkg-util-componentutil",
         name: "parse-text-component",
         kind: "function",
     },
     Operation {
-        id: 1769,
+        id: 1773,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-bool-value",
         kind: "method",
     },
     Operation {
-        id: 1770,
+        id: 1774,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-is-bool",
         kind: "method",
     },
     Operation {
-        id: 1771,
+        id: 1775,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-is-nil",
         kind: "method",
     },
     Operation {
-        id: 1772,
+        id: 1776,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1773,
+        id: 1777,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1774,
+        id: 1778,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-string",
         kind: "method",
     },
     Operation {
-        id: 1775,
+        id: 1779,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-struct-value",
         kind: "method",
     },
     Operation {
-        id: 1776,
+        id: 1780,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1777,
+        id: 1781,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1778,
+        id: 1782,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
         interface: "pkg-util-configutil",
         name: "component-c",
         kind: "method",
     },
     Operation {
-        id: 1779,
+        id: 1783,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "component-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1780,
+        id: 1784,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "component-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1781,
+        id: 1785,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "component-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1782,
+        id: 1786,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "component-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1783,
+        id: 1787,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "duration-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1784,
+        id: 1788,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "duration-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1785,
+        id: 1789,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "duration-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1786,
+        id: 1790,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "duration-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1787,
+        id: 1791,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool",
         kind: "function",
     },
     Operation {
-        id: 1788,
+        id: 1792,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool-f2e5d90bc027",
         kind: "function",
     },
     Operation {
-        id: 1789,
+        id: 1793,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool-891f9963de06",
         kind: "function",
     },
     Operation {
-        id: 1790,
+        id: 1794,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-struct",
         kind: "function",
     },
     Operation {
-        id: 1791,
+        id: 1795,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-struct-40ba03595584",
         kind: "function",
     },
     Operation {
-        id: 1792,
+        id: 1796,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
         interface: "pkg-util-configutil",
         name: "single-or-multi-copy",
         kind: "method",
     },
     Operation {
-        id: 1793,
+        id: 1797,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
         interface: "pkg-util-configutil",
         name: "single-or-multi-is-multi",
         kind: "method",
     },
     Operation {
-        id: 1794,
+        id: 1798,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "single-or-multi-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1795,
+        id: 1799,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "single-or-multi-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1796,
+        id: 1800,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
         interface: "pkg-util-configutil",
         name: "single-or-multi-multi",
         kind: "method",
     },
     Operation {
-        id: 1797,
+        id: 1801,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
         interface: "pkg-util-configutil",
         name: "single-or-multi-random",
         kind: "method",
     },
     Operation {
-        id: 1798,
+        id: 1802,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
         interface: "pkg-util-configutil",
         name: "single-or-multi-single",
         kind: "method",
     },
     Operation {
-        id: 1799,
+        id: 1803,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
         interface: "pkg-util-configutil",
         name: "single-or-multi-string",
         kind: "method",
     },
     Operation {
-        id: 1800,
+        id: 1804,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "single-or-multi-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1801,
+        id: 1805,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "single-or-multi-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1802,
+        id: 1806,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "text-component-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1803,
+        id: 1807,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "text-component-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1804,
+        id: 1808,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
         interface: "pkg-util-configutil",
         name: "text-component-t",
         kind: "method",
     },
     Operation {
-        id: 1805,
+        id: 1809,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "text-component-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1806,
+        id: 1810,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "text-component-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1807,
+        id: 1811,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
         interface: "pkg-util-configutil",
         name: "url-marshal-binary",
         kind: "method",
     },
     Operation {
-        id: 1808,
+        id: 1812,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "url-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1809,
+        id: 1813,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "url-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1810,
+        id: 1814,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
         interface: "pkg-util-configutil",
         name: "url-string",
         kind: "method",
     },
     Operation {
-        id: 1811,
+        id: 1815,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
         interface: "pkg-util-configutil",
         name: "url-t",
         kind: "method",
     },
     Operation {
-        id: 1812,
+        id: 1816,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-binary",
         kind: "method",
     },
     Operation {
-        id: 1813,
+        id: 1817,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1814,
+        id: 1818,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1815,
+        id: 1819,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
         interface: "pkg-util-connectutil",
         name: "endpoint-name",
         kind: "method",
     },
     Operation {
-        id: 1816,
+        id: 1820,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
         interface: "pkg-util-connectutil",
         name: "endpoint-propose",
         kind: "method",
     },
     Operation {
-        id: 1817,
+        id: 1821,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
         interface: "pkg-util-connectutil",
         name: "endpoint-rejections",
         kind: "method",
     },
     Operation {
-        id: 1818,
+        id: 1822,
         identity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
         interface: "pkg-util-connectutil",
         name: "endpoint-listener-accept-endpoint",
         kind: "method",
     },
     Operation {
-        id: 1819,
+        id: 1823,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-close",
         kind: "method",
     },
     Operation {
-        id: 1820,
+        id: 1824,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-local-addr",
         kind: "method",
     },
     Operation {
-        id: 1821,
+        id: 1825,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-read",
         kind: "method",
     },
     Operation {
-        id: 1822,
+        id: 1826,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1823,
+        id: 1827,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-session-id",
         kind: "method",
     },
     Operation {
-        id: 1824,
+        id: 1828,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-deadline",
         kind: "method",
     },
     Operation {
-        id: 1825,
+        id: 1829,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-read-deadline",
         kind: "method",
     },
     Operation {
-        id: 1826,
+        id: 1830,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-write-deadline",
         kind: "method",
     },
     Operation {
-        id: 1827,
+        id: 1831,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-write",
         kind: "method",
     },
     Operation {
-        id: 1828,
+        id: 1832,
         identity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
         interface: "pkg-util-connectutil",
         name: "require-endpoint-name",
         kind: "function",
     },
     Operation {
-        id: 1829,
+        id: 1833,
         identity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
         interface: "pkg-util-connectutil",
         name: "require-tunnel-session-id",
         kind: "function",
     },
     Operation {
-        id: 1830,
+        id: 1834,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
         interface: "pkg-util-connectutil",
         name: "tunnel-listener-accept-tunnel",
         kind: "method",
     },
     Operation {
-        id: 1831,
+        id: 1835,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-close",
         kind: "method",
     },
     Operation {
-        id: 1832,
+        id: 1836,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-local-addr",
         kind: "method",
     },
     Operation {
-        id: 1833,
+        id: 1837,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-read",
         kind: "method",
     },
     Operation {
-        id: 1834,
+        id: 1838,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1835,
+        id: 1839,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-session",
         kind: "method",
     },
     Operation {
-        id: 1836,
+        id: 1840,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-deadline",
         kind: "method",
     },
     Operation {
-        id: 1837,
+        id: 1841,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-read-deadline",
         kind: "method",
     },
     Operation {
-        id: 1838,
+        id: 1842,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-write-deadline",
         kind: "method",
     },
     Operation {
-        id: 1839,
+        id: 1843,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-write",
         kind: "method",
     },
     Operation {
-        id: 1840,
+        id: 1844,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
         interface: "pkg-util-connectutil-config",
         name: "conn-handler-handle-conn",
         kind: "method",
     },
     Operation {
-        id: 1841,
+        id: 1845,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
         interface: "pkg-util-connectutil-config",
         name: "get-default-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1842,
+        id: 1846,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
         interface: "pkg-util-connectutil-config",
         name: "set-default-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1843,
+        id: 1847,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
         interface: "pkg-util-connectutil-config",
         name: "get-default-watch-service-addr",
         kind: "constant-get",
     },
     Operation {
-        id: 1844,
+        id: 1848,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
         interface: "pkg-util-connectutil-config",
         name: "instance-handle-conn",
         kind: "method",
     },
     Operation {
-        id: 1845,
+        id: 1849,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
         interface: "pkg-util-connectutil-config",
         name: "instance-register",
         kind: "method",
     },
     Operation {
-        id: 1846,
+        id: 1850,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
         interface: "pkg-util-connectutil-config",
         name: "instance-server",
         kind: "method",
     },
     Operation {
-        id: 1847,
+        id: 1851,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
         interface: "pkg-util-connectutil-config",
         name: "instance-unregister",
         kind: "method",
     },
     Operation {
-        id: 1848,
+        id: 1852,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
         interface: "pkg-util-connectutil-config",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1849,
+        id: 1853,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
         interface: "pkg-util-connectutil-single",
         name: "listener-accept-endpoint",
         kind: "method",
     },
     Operation {
-        id: 1850,
+        id: 1854,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
         interface: "pkg-util-connectutil-single",
         name: "listener-accept-tunnel",
         kind: "method",
     },
     Operation {
-        id: 1851,
+        id: 1855,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
         interface: "pkg-util-connectutil-single",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1852,
+        id: 1856,
         identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
         interface: "pkg-util-errs",
         name: "get-err-missing-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1853,
+        id: 1857,
         identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
         interface: "pkg-util-errs",
         name: "set-err-missing-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1854,
+        id: 1858,
         identity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
         interface: "pkg-util-errs",
         name: "is-conn-closed-err",
         kind: "function",
     },
     Operation {
-        id: 1855,
+        id: 1859,
         identity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
         interface: "pkg-util-errs",
         name: "new-silent-err",
         kind: "function",
     },
     Operation {
-        id: 1856,
+        id: 1860,
         identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
         interface: "pkg-util-errs",
         name: "silent-error-error",
         kind: "method",
     },
     Operation {
-        id: 1857,
+        id: 1861,
         identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
         interface: "pkg-util-errs",
         name: "silent-error-unwrap",
         kind: "method",
     },
     Operation {
-        id: 1858,
+        id: 1862,
         identity: "go.minekube.com/gate/pkg/util/errs.V",
         interface: "pkg-util-errs",
         name: "v",
         kind: "function",
     },
     Operation {
-        id: 1859,
+        id: 1863,
         identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
         interface: "pkg-util-errs",
         name: "verbosity-error-error",
         kind: "method",
     },
     Operation {
-        id: 1860,
+        id: 1864,
         identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
         interface: "pkg-util-errs",
         name: "verbosity-error-unwrap",
         kind: "method",
     },
     Operation {
-        id: 1861,
+        id: 1865,
         identity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
         interface: "pkg-util-errs",
         name: "wrap-silent",
         kind: "function",
     },
     Operation {
-        id: 1862,
+        id: 1866,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
         interface: "pkg-util-favicon",
         name: "favicon-bytes",
         kind: "method",
     },
     Operation {
-        id: 1863,
+        id: 1867,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
         interface: "pkg-util-favicon",
         name: "favicon-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1864,
+        id: 1868,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
         interface: "pkg-util-favicon",
         name: "favicon-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1865,
+        id: 1869,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
         interface: "pkg-util-favicon",
         name: "from-bytes",
         kind: "function",
     },
     Operation {
-        id: 1866,
+        id: 1870,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
         interface: "pkg-util-favicon",
         name: "from-file",
         kind: "function",
     },
     Operation {
-        id: 1867,
+        id: 1871,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
         interface: "pkg-util-favicon",
         name: "from-image",
         kind: "function",
     },
     Operation {
-        id: 1868,
+        id: 1872,
         identity: "go.minekube.com/gate/pkg/util/favicon.Parse",
         interface: "pkg-util-favicon",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1869,
+        id: 1873,
         identity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
         interface: "pkg-util-interrupt",
         name: "notify",
         kind: "function",
     },
     Operation {
-        id: 1870,
+        id: 1874,
         identity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
         interface: "pkg-util-interrupt",
         name: "termination-context",
         kind: "function",
     },
     Operation {
-        id: 1871,
+        id: 1875,
         identity: "go.minekube.com/gate/pkg/util/netutil.Host",
         interface: "pkg-util-netutil",
         name: "host",
         kind: "function",
     },
     Operation {
-        id: 1872,
+        id: 1876,
         identity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
         interface: "pkg-util-netutil",
         name: "host-port",
         kind: "function",
     },
     Operation {
-        id: 1873,
+        id: 1877,
         identity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
         interface: "pkg-util-netutil",
         name: "host-str",
         kind: "function",
     },
     Operation {
-        id: 1874,
+        id: 1878,
         identity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
         interface: "pkg-util-netutil",
         name: "new-addr",
         kind: "function",
     },
     Operation {
-        id: 1875,
+        id: 1879,
         identity: "go.minekube.com/gate/pkg/util/netutil.Parse",
         interface: "pkg-util-netutil",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1876,
+        id: 1880,
         identity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
         interface: "pkg-util-netutil",
         name: "parse-trusted-networks",
         kind: "function",
     },
     Operation {
-        id: 1877,
+        id: 1881,
         identity: "go.minekube.com/gate/pkg/util/netutil.Port",
         interface: "pkg-util-netutil",
         name: "port",
         kind: "function",
     },
     Operation {
-        id: 1878,
+        id: 1882,
         identity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
         interface: "pkg-util-netutil",
         name: "port-str",
         kind: "function",
     },
     Operation {
-        id: 1879,
+        id: 1883,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
         interface: "pkg-util-netutil",
         name: "trusted-networks-contains",
         kind: "method",
     },
     Operation {
-        id: 1880,
+        id: 1884,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
         interface: "pkg-util-netutil",
         name: "trusted-networks-contains-str",
         kind: "method",
     },
     Operation {
-        id: 1881,
+        id: 1885,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
         interface: "pkg-util-netutil",
         name: "trusted-networks-string",
         kind: "method",
     },
     Operation {
-        id: 1882,
+        id: 1886,
         identity: "go.minekube.com/gate/pkg/util/permission.False#get",
         interface: "pkg-util-permission",
         name: "get-false",
         kind: "constant-get",
     },
     Operation {
-        id: 1883,
+        id: 1887,
         identity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
         interface: "pkg-util-permission",
         name: "subject-has-permission",
         kind: "method",
     },
     Operation {
-        id: 1884,
+        id: 1888,
         identity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
         interface: "pkg-util-permission",
         name: "subject-permission-value",
         kind: "method",
     },
     Operation {
-        id: 1885,
+        id: 1889,
         identity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
         interface: "pkg-util-permission",
         name: "tri-state-bool",
         kind: "method",
     },
     Operation {
-        id: 1886,
+        id: 1890,
         identity: "go.minekube.com/gate/pkg/util/permission.True#get",
         interface: "pkg-util-permission",
         name: "get-true",
         kind: "constant-get",
     },
     Operation {
-        id: 1887,
+        id: 1891,
         identity: "go.minekube.com/gate/pkg/util/permission.Undefined#get",
         interface: "pkg-util-permission",
         name: "get-undefined",
         kind: "constant-get",
     },
     Operation {
-        id: 1888,
+        id: 1892,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
         interface: "pkg-util-sets",
         name: "capped-set-add",
         kind: "method",
     },
     Operation {
-        id: 1889,
+        id: 1893,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
         interface: "pkg-util-sets",
         name: "capped-set-len",
         kind: "method",
     },
     Operation {
-        id: 1890,
+        id: 1894,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
         interface: "pkg-util-sets",
         name: "capped-set-remove",
         kind: "method",
     },
     Operation {
-        id: 1891,
+        id: 1895,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
         interface: "pkg-util-sets",
         name: "capped-set-unsorted-list",
         kind: "method",
     },
     Operation {
-        id: 1892,
+        id: 1896,
         identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
         interface: "pkg-util-sets",
         name: "new-capped-set",
         kind: "function",
     },
     Operation {
-        id: 1893,
+        id: 1897,
         identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
         interface: "pkg-util-sets",
         name: "new-capped-set-0ec33fd43911",
         kind: "function",
     },
     Operation {
-        id: 1894,
+        id: 1898,
         identity: "go.minekube.com/gate/pkg/util/sets.NewString",
         interface: "pkg-util-sets",
         name: "new-string",
         kind: "function",
     },
     Operation {
-        id: 1895,
+        id: 1899,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
         interface: "pkg-util-sets",
         name: "string-delete",
         kind: "method",
     },
     Operation {
-        id: 1896,
+        id: 1900,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Has",
         interface: "pkg-util-sets",
         name: "string-has",
         kind: "method",
     },
     Operation {
-        id: 1897,
+        id: 1901,
         identity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
         interface: "pkg-util-sets",
         name: "string-has-all",
         kind: "method",
     },
     Operation {
-        id: 1898,
+        id: 1902,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
         interface: "pkg-util-sets",
         name: "string-insert",
         kind: "method",
     },
     Operation {
-        id: 1899,
+        id: 1903,
         identity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
         interface: "pkg-util-sets",
         name: "string-insert-set",
         kind: "method",
     },
     Operation {
-        id: 1900,
+        id: 1904,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Len",
         interface: "pkg-util-sets",
         name: "string-len",
         kind: "method",
     },
     Operation {
-        id: 1901,
+        id: 1905,
         identity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
         interface: "pkg-util-sets",
         name: "string-unsorted-list",
         kind: "method",
     },
     Operation {
-        id: 1902,
+        id: 1906,
         identity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
         interface: "pkg-util-uuid",
         name: "from-bytes",
         kind: "function",
     },
     Operation {
-        id: 1903,
+        id: 1907,
         identity: "go.minekube.com/gate/pkg/util/uuid.New",
         interface: "pkg-util-uuid",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1904,
+        id: 1908,
         identity: "go.minekube.com/gate/pkg/util/uuid.Nil#get",
         interface: "pkg-util-uuid",
         name: "get-nil",
         kind: "variable-get",
     },
     Operation {
-        id: 1905,
+        id: 1909,
         identity: "go.minekube.com/gate/pkg/util/uuid.Nil#set",
         interface: "pkg-util-uuid",
         name: "set-nil",
         kind: "variable-set",
     },
     Operation {
-        id: 1906,
+        id: 1910,
         identity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
         interface: "pkg-util-uuid",
         name: "offline-player-uuid",
         kind: "function",
     },
     Operation {
-        id: 1907,
+        id: 1911,
         identity: "go.minekube.com/gate/pkg/util/uuid.Parse",
         interface: "pkg-util-uuid",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1908,
+        id: 1912,
         identity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
         interface: "pkg-util-uuid",
         name: "parse-bytes",
         kind: "function",
     },
     Operation {
-        id: 1909,
+        id: 1913,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
         interface: "pkg-util-uuid",
         name: "uuid-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1910,
+        id: 1914,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
         interface: "pkg-util-uuid",
         name: "uuid-string",
         kind: "method",
     },
     Operation {
-        id: 1911,
+        id: 1915,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
         interface: "pkg-util-uuid",
         name: "uuid-undashed",
         kind: "method",
     },
     Operation {
-        id: 1912,
+        id: 1916,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
         interface: "pkg-util-uuid",
         name: "uuid-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1913,
+        id: 1917,
         identity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
         interface: "pkg-util-validation",
         name: "contains-illegal-character",
         kind: "function",
     },
     Operation {
-        id: 1914,
+        id: 1918,
         identity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
         interface: "pkg-util-validation",
         name: "is-allowed-character",
         kind: "function",
     },
     Operation {
-        id: 1915,
+        id: 1919,
         identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
         interface: "pkg-util-validation",
         name: "get-qualified-name-err-msg",
         kind: "constant-get",
     },
     Operation {
-        id: 1916,
+        id: 1920,
         identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
         interface: "pkg-util-validation",
         name: "get-qualified-name-max-length",
         kind: "constant-get",
     },
     Operation {
-        id: 1917,
+        id: 1921,
         identity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
         interface: "pkg-util-validation",
         name: "valid-host-port",
         kind: "function",
     },
     Operation {
-        id: 1918,
+        id: 1922,
         identity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
         interface: "pkg-util-validation",
         name: "valid-server-name",
         kind: "function",
     },
     Operation {
-        id: 1919,
+        id: 1923,
         identity: "go.minekube.com/gate/pkg/version.String",
         interface: "pkg-version",
         name: "gate-string",
         kind: "function",
     },
     Operation {
-        id: 1920,
+        id: 1924,
         identity: "go.minekube.com/gate/pkg/version.UserAgent",
         interface: "pkg-version",
         name: "user-agent",
         kind: "function",
     },
     Operation {
-        id: 1921,
+        id: 1925,
         identity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
         interface: "pkg-version",
         name: "user-agent-header",
         kind: "function",
     },
     Operation {
-        id: 1922,
+        id: 1926,
         identity: "go.minekube.com/gate/pkg/version.Version#get",
         interface: "pkg-version",
         name: "get-version",
         kind: "variable-get",
     },
     Operation {
-        id: 1923,
+        id: 1927,
         identity: "go.minekube.com/gate/pkg/version.Version#set",
         interface: "pkg-version",
         name: "set-version",
@@ -30414,10 +30442,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-gate-config", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1692];
         instance.func_new(
             operation.name,
@@ -30439,10 +30463,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-gate-proto", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1695];
         instance.func_new(
             operation.name,
@@ -30450,6 +30470,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-gate-config", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1696];
         instance.func_new(
             operation.name,
@@ -30471,6 +30495,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-gate-proto", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1699];
         instance.func_new(
             operation.name,
@@ -30898,10 +30926,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-runtime-process", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1760];
         instance.func_new(
             operation.name,
@@ -30930,6 +30954,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-runtime-process", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1764];
         instance.func_new(
             operation.name,
@@ -30944,10 +30972,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-componentutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1766];
         instance.func_new(
             operation.name,
@@ -30962,10 +30986,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-configutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1768];
         instance.func_new(
             operation.name,
@@ -30980,6 +31000,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-componentutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1770];
         instance.func_new(
             operation.name,
@@ -30994,6 +31018,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-configutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1772];
         instance.func_new(
             operation.name,
@@ -31288,10 +31316,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1814];
         instance.func_new(
             operation.name,
@@ -31320,6 +31344,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1818];
         instance.func_new(
             operation.name,
@@ -31467,10 +31495,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-config", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1839];
         instance.func_new(
             operation.name,
@@ -31499,6 +31523,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-config", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1843];
         instance.func_new(
             operation.name,
@@ -31534,10 +31562,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-single", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1848];
         instance.func_new(
             operation.name,
@@ -31559,10 +31583,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-errs", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1851];
         instance.func_new(
             operation.name,
@@ -31570,6 +31590,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-single", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1852];
         instance.func_new(
             operation.name,
@@ -31591,6 +31615,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-errs", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1855];
         instance.func_new(
             operation.name,
@@ -31633,10 +31661,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-favicon", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1861];
         instance.func_new(
             operation.name,
@@ -31665,6 +31689,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-favicon", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1865];
         instance.func_new(
             operation.name,
@@ -31686,10 +31714,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-interrupt", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1868];
         instance.func_new(
             operation.name,
@@ -31704,10 +31728,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-netutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1870];
         instance.func_new(
             operation.name,
@@ -31722,6 +31742,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-interrupt", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1872];
         instance.func_new(
             operation.name,
@@ -31736,6 +31760,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-netutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1874];
         instance.func_new(
             operation.name,
@@ -31785,10 +31813,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-permission", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1881];
         instance.func_new(
             operation.name,
@@ -31817,6 +31841,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-permission", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1885];
         instance.func_new(
             operation.name,
@@ -31831,10 +31859,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-sets", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1887];
         instance.func_new(
             operation.name,
@@ -31863,6 +31887,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-sets", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1891];
         instance.func_new(
             operation.name,
@@ -31933,10 +31961,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-uuid", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1901];
         instance.func_new(
             operation.name,
@@ -31965,6 +31989,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-uuid", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1905];
         instance.func_new(
             operation.name,
@@ -32014,10 +32042,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-validation", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1912];
         instance.func_new(
             operation.name,
@@ -32046,6 +32070,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-validation", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1916];
         instance.func_new(
             operation.name,
@@ -32060,10 +32088,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-version", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1918];
         instance.func_new(
             operation.name,
@@ -32092,7 +32116,39 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-version", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1922];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1923];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1924];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1925];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1926];
         instance.func_new(
             operation.name,
             move |store, function_type, parameters, results| {

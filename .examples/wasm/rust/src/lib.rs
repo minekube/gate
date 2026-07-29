@@ -1,13 +1,22 @@
+use std::cell::RefCell;
+
 wit_bindgen::generate!({
-    path: "../../../api",
+    path: "../../../wasm/wit",
     world: "gate-plugin",
 });
 
 include!(concat!(env!("OUT_DIR"), "/gate_contract.rs"));
 
-struct Fixture;
-
 use exports::minekube::gate::plugin::*;
+
+const READY_HANDLER: u64 = 1;
+
+thread_local! {
+    static REGISTRATIONS: RefCell<Vec<Callback0105467f2bef>> =
+        const { RefCell::new(Vec::new()) };
+}
+
+struct Example;
 
 macro_rules! ignore_event_handlers {
     ($($name:ident => $event:ty),+ $(,)?) => {
@@ -19,27 +28,40 @@ macro_rules! ignore_event_handlers {
     };
 }
 
-impl Guest for Fixture {
+impl Guest for Example {
     fn metadata() -> PluginMetadata {
         PluginMetadata {
-            name: "gate-wasm-fixture".into(),
-            version: "0.0.0".into(),
+            name: "gate-rust-example".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
             contract_hash: GATE_WIT_HASH.into(),
             generator_format: GATE_GENERATOR_FORMAT,
         }
     }
 
-    fn init(_context: &ContextE30d9213847b, proxy: &Proxy3cf24d6ad4bb) -> Result<(), GateError> {
-        let count = minekube::gate::pkg_edition_java_proxy::proxy_player_count(proxy);
-        if count != 0 {
+    fn init(context: &ContextE30d9213847b, proxy: &Proxy3cf24d6ad4bb) -> Result<(), GateError> {
+        let players = minekube::gate::pkg_edition_java_proxy::proxy_player_count(proxy);
+        minekube::gate::pkg_gate::wasm_log(
+            context,
+            0,
+            "Rust component initialized",
+            Some(&["players".into(), players.to_string()]),
+        )?;
+
+        let handler = minekube::gate::gate_callbacks::new_ready_event_handler(READY_HANDLER);
+        let unregister = minekube::gate::pkg_edition_java_proxy::subscribe_ready_event(0, handler)?;
+        REGISTRATIONS.with(|registrations| registrations.borrow_mut().push(unregister));
+        Ok(())
+    }
+
+    fn invoke_ready_event_handler(id: u64, _event: &ReadyEvent) -> Result<(), GateError> {
+        if id != READY_HANDLER {
             return Err(GateError {
-                kind: "fixture".into(),
-                message: format!("expected empty proxy, got {count} players"),
-                operation: "init".into(),
+                kind: "unknown-callback".into(),
+                message: format!("unknown ReadyEvent callback {id}"),
+                operation: "invoke-ready-event-handler".into(),
             });
         }
-        let callback = minekube::gate::gate_callbacks::new_callback_9b79f3eb4945(42);
-        minekube::gate::pkg_edition_java_proto_util::recover_func(Some(callback))?;
+        let _ = minekube::gate::pkg_version::gate_string();
         Ok(())
     }
 
@@ -67,16 +89,8 @@ impl Guest for Fixture {
     fn invoke_callback_8ce8588e75ea(_id: u64, _c: Option<&RequiresContextPointer>) -> bool {
         false
     }
-    fn invoke_callback_9b79f3eb4945(id: u64) -> Result<(), GateError> {
-        if id == 42 {
-            Ok(())
-        } else {
-            Err(GateError {
-                kind: "fixture".into(),
-                message: format!("unexpected callback ID {id}"),
-                operation: "invoke-callback-9b79f3eb4945".into(),
-            })
-        }
+    fn invoke_callback_9b79f3eb4945(_id: u64) -> Result<(), GateError> {
+        Ok(())
     }
     fn invoke_callback_a3de14505458(
         _id: u64,
@@ -160,7 +174,6 @@ impl Guest for Fixture {
         invoke_pre_login_event_handler => PreLoginEvent,
         invoke_pre_shutdown_event_handler => PreShutdownEvent,
         invoke_pre_transfer_event_handler => PreTransferEvent,
-        invoke_ready_event_handler => ReadyEvent,
         invoke_server_connected_event_handler => ServerConnectedEvent,
         invoke_server_login_plugin_message_event_handler => ServerLoginPluginMessageEvent,
         invoke_server_post_connect_event_handler => ServerPostConnectEvent,
@@ -174,4 +187,4 @@ impl Guest for Fixture {
     }
 }
 
-export!(Fixture);
+export!(Example);

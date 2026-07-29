@@ -77,7 +77,7 @@ import (
 	p068 "net"
 )
 
-const GeneratedDispatchWITHash = "05844571b07f3e19787939aa5fa98328c13acef7ab49ba74bb3388ab713cd2c3"
+const GeneratedDispatchWITHash = "e846a3825b9cc8d2a882189a5837108a4e53fa3f5da279e81661027b2fb6b6ba"
 
 type GeneratedOperationDescriptor struct {
 	ID                  uint32
@@ -11843,1707 +11843,1735 @@ var GeneratedOperations = [...]GeneratedOperationDescriptor{
 	},
 	{
 		ID:                  1680,
+		Identity:            "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+		DeclarationIdentity: "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
+		WITName:             "wasm-context-cancelled",
+		Kind:                "context-cancelled",
+	},
+	{
+		ID:                  1681,
+		Identity:            "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+		DeclarationIdentity: "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
+		WITName:             "wasm-context-deadline",
+		Kind:                "context-deadline",
+	},
+	{
+		ID:                  1682,
+		Identity:            "go.minekube.com/gate/pkg/gate#wasm-context-error",
+		DeclarationIdentity: "go.minekube.com/gate/pkg/gate#wasm-context-error",
+		WITName:             "wasm-context-error",
+		Kind:                "context-error",
+	},
+	{
+		ID:                  1683,
 		Identity:            "go.minekube.com/gate/pkg/gate#wasm-every",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate#wasm-every",
 		WITName:             "wasm-every",
 		Kind:                "timer-every",
 	},
 	{
-		ID:                  1681,
+		ID:                  1684,
+		Identity:            "go.minekube.com/gate/pkg/gate#wasm-log",
+		DeclarationIdentity: "go.minekube.com/gate/pkg/gate#wasm-log",
+		WITName:             "wasm-log",
+		Kind:                "context-log",
+	},
+	{
+		ID:                  1685,
 		Identity:            "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
 		WITName:             "gate-bedrock",
 		Kind:                "method",
 	},
 	{
-		ID:                  1682,
+		ID:                  1686,
 		Identity:            "go.minekube.com/gate/pkg/gate.Gate.Java",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Gate.Java",
 		WITName:             "gate-java",
 		Kind:                "method",
 	},
 	{
-		ID:                  1683,
+		ID:                  1687,
 		Identity:            "go.minekube.com/gate/pkg/gate.Gate.Start",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Gate.Start",
 		WITName:             "gate-start",
 		Kind:                "method",
 	},
 	{
-		ID:                  1684,
+		ID:                  1688,
 		Identity:            "go.minekube.com/gate/pkg/gate.LoadConfig",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.LoadConfig",
 		WITName:             "load-config",
 		Kind:                "function",
 	},
 	{
-		ID:                  1685,
+		ID:                  1689,
 		Identity:            "go.minekube.com/gate/pkg/gate.New",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.New",
 		WITName:             "new",
 		Kind:                "function",
 	},
 	{
-		ID:                  1686,
+		ID:                  1690,
 		Identity:            "go.minekube.com/gate/pkg/gate.Start",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Start",
 		WITName:             "start",
 		Kind:                "function",
 	},
 	{
-		ID:                  1687,
+		ID:                  1691,
 		Identity:            "go.minekube.com/gate/pkg/gate.Viper#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Viper",
 		WITName:             "get-viper",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1688,
+		ID:                  1692,
 		Identity:            "go.minekube.com/gate/pkg/gate.Viper#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.Viper",
 		WITName:             "set-viper",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1689,
+		ID:                  1693,
 		Identity:            "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
 		WITName:             "with-auto-config-reload",
 		Kind:                "function",
 	},
 	{
-		ID:                  1690,
+		ID:                  1694,
 		Identity:            "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
 		WITName:             "with-auto-shutdown-on-signal",
 		Kind:                "function",
 	},
 	{
-		ID:                  1691,
+		ID:                  1695,
 		Identity:            "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
 		WITName:             "with-component-plugins",
 		Kind:                "function",
 	},
 	{
-		ID:                  1692,
+		ID:                  1696,
 		Identity:            "go.minekube.com/gate/pkg/gate.WithConfig",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate.WithConfig",
 		WITName:             "with-config",
 		Kind:                "function",
 	},
 	{
-		ID:                  1693,
+		ID:                  1697,
 		Identity:            "go.minekube.com/gate/pkg/gate/config.Config.Validate",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
 		WITName:             "config-validate",
 		Kind:                "method",
 	},
 	{
-		ID:                  1694,
+		ID:                  1698,
 		Identity:            "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig",
 		WITName:             "get-default-config",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1695,
+		ID:                  1699,
 		Identity:            "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig",
 		WITName:             "set-default-config",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1696,
+		ID:                  1700,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.ClientBound",
 		WITName:             "get-client-bound",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1697,
+		ID:                  1701,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Direction.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
 		WITName:             "direction-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1698,
+		ID:                  1702,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes",
 		WITName:             "get-err-decoder-left-bytes",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1699,
+		ID:                  1703,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes",
 		WITName:             "set-err-decoder-left-bytes",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1700,
+		ID:                  1704,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
 		WITName:             "packet-decode",
 		Kind:                "method",
 	},
 	{
-		ID:                  1701,
+		ID:                  1705,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
 		WITName:             "packet-encode",
 		Kind:                "method",
 	},
 	{
-		ID:                  1702,
+		ID:                  1706,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
 		WITName:             "packet-context-known-packet",
 		Kind:                "method",
 	},
 	{
-		ID:                  1703,
+		ID:                  1707,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
 		WITName:             "packet-context-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1704,
+		ID:                  1708,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
 		WITName:             "packet-decoder-decode",
 		Kind:                "method",
 	},
 	{
-		ID:                  1705,
+		ID:                  1709,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
 		WITName:             "packet-encoder-encode",
 		Kind:                "method",
 	},
 	{
-		ID:                  1706,
+		ID:                  1710,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
 		WITName:             "packet-id-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1707,
+		ID:                  1711,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
 		WITName:             "packet-type-align",
 		Kind:                "method",
 	},
 	{
-		ID:                  1708,
+		ID:                  1712,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
 		WITName:             "packet-type-assignable-to",
 		Kind:                "method",
 	},
 	{
-		ID:                  1709,
+		ID:                  1713,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
 		WITName:             "packet-type-bits",
 		Kind:                "method",
 	},
 	{
-		ID:                  1710,
+		ID:                  1714,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
 		WITName:             "packet-type-can-seq",
 		Kind:                "method",
 	},
 	{
-		ID:                  1711,
+		ID:                  1715,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
 		WITName:             "packet-type-can-seq2",
 		Kind:                "method",
 	},
 	{
-		ID:                  1712,
+		ID:                  1716,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
 		WITName:             "packet-type-chan-dir",
 		Kind:                "method",
 	},
 	{
-		ID:                  1713,
+		ID:                  1717,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
 		WITName:             "packet-type-comparable",
 		Kind:                "method",
 	},
 	{
-		ID:                  1714,
+		ID:                  1718,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
 		WITName:             "packet-type-convertible-to",
 		Kind:                "method",
 	},
 	{
-		ID:                  1715,
+		ID:                  1719,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
 		WITName:             "packet-type-elem",
 		Kind:                "method",
 	},
 	{
-		ID:                  1716,
+		ID:                  1720,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
 		WITName:             "packet-type-field",
 		Kind:                "method",
 	},
 	{
-		ID:                  1717,
+		ID:                  1721,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
 		WITName:             "packet-type-field-align",
 		Kind:                "method",
 	},
 	{
-		ID:                  1718,
+		ID:                  1722,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
 		WITName:             "packet-type-field-by-index",
 		Kind:                "method",
 	},
 	{
-		ID:                  1719,
+		ID:                  1723,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
 		WITName:             "packet-type-field-by-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1720,
+		ID:                  1724,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
 		WITName:             "packet-type-field-by-name-func",
 		Kind:                "method",
 	},
 	{
-		ID:                  1721,
+		ID:                  1725,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
 		WITName:             "packet-type-fields",
 		Kind:                "method",
 	},
 	{
-		ID:                  1722,
+		ID:                  1726,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
 		WITName:             "packet-type-implements",
 		Kind:                "method",
 	},
 	{
-		ID:                  1723,
+		ID:                  1727,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
 		WITName:             "packet-type-in",
 		Kind:                "method",
 	},
 	{
-		ID:                  1724,
+		ID:                  1728,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
 		WITName:             "packet-type-ins",
 		Kind:                "method",
 	},
 	{
-		ID:                  1725,
+		ID:                  1729,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
 		WITName:             "packet-type-is-variadic",
 		Kind:                "method",
 	},
 	{
-		ID:                  1726,
+		ID:                  1730,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
 		WITName:             "packet-type-key",
 		Kind:                "method",
 	},
 	{
-		ID:                  1727,
+		ID:                  1731,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
 		WITName:             "packet-type-kind",
 		Kind:                "method",
 	},
 	{
-		ID:                  1728,
+		ID:                  1732,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
 		WITName:             "packet-type-len",
 		Kind:                "method",
 	},
 	{
-		ID:                  1729,
+		ID:                  1733,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
 		WITName:             "packet-type-method",
 		Kind:                "method",
 	},
 	{
-		ID:                  1730,
+		ID:                  1734,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
 		WITName:             "packet-type-method-by-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1731,
+		ID:                  1735,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
 		WITName:             "packet-type-methods",
 		Kind:                "method",
 	},
 	{
-		ID:                  1732,
+		ID:                  1736,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
 		WITName:             "packet-type-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1733,
+		ID:                  1737,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
 		WITName:             "packet-type-num-field",
 		Kind:                "method",
 	},
 	{
-		ID:                  1734,
+		ID:                  1738,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
 		WITName:             "packet-type-num-in",
 		Kind:                "method",
 	},
 	{
-		ID:                  1735,
+		ID:                  1739,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
 		WITName:             "packet-type-num-method",
 		Kind:                "method",
 	},
 	{
-		ID:                  1736,
+		ID:                  1740,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
 		WITName:             "packet-type-num-out",
 		Kind:                "method",
 	},
 	{
-		ID:                  1737,
+		ID:                  1741,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
 		WITName:             "packet-type-out",
 		Kind:                "method",
 	},
 	{
-		ID:                  1738,
+		ID:                  1742,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
 		WITName:             "packet-type-outs",
 		Kind:                "method",
 	},
 	{
-		ID:                  1739,
+		ID:                  1743,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
 		WITName:             "packet-type-overflow-complex",
 		Kind:                "method",
 	},
 	{
-		ID:                  1740,
+		ID:                  1744,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
 		WITName:             "packet-type-overflow-float",
 		Kind:                "method",
 	},
 	{
-		ID:                  1741,
+		ID:                  1745,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
 		WITName:             "packet-type-overflow-int",
 		Kind:                "method",
 	},
 	{
-		ID:                  1742,
+		ID:                  1746,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
 		WITName:             "packet-type-overflow-uint",
 		Kind:                "method",
 	},
 	{
-		ID:                  1743,
+		ID:                  1747,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
 		WITName:             "packet-type-pkg-path",
 		Kind:                "method",
 	},
 	{
-		ID:                  1744,
+		ID:                  1748,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
 		WITName:             "packet-type-size",
 		Kind:                "method",
 	},
 	{
-		ID:                  1745,
+		ID:                  1749,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
 		WITName:             "packet-type-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1746,
+		ID:                  1750,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
 		WITName:             "packet-writer-write-packet",
 		Kind:                "method",
 	},
 	{
-		ID:                  1747,
+		ID:                  1751,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
 		WITName:             "protocol-greater",
 		Kind:                "method",
 	},
 	{
-		ID:                  1748,
+		ID:                  1752,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
 		WITName:             "protocol-greater-equal",
 		Kind:                "method",
 	},
 	{
-		ID:                  1749,
+		ID:                  1753,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
 		WITName:             "protocol-lower",
 		Kind:                "method",
 	},
 	{
-		ID:                  1750,
+		ID:                  1754,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
 		WITName:             "protocol-lower-equal",
 		Kind:                "method",
 	},
 	{
-		ID:                  1751,
+		ID:                  1755,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
 		WITName:             "protocol-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1752,
+		ID:                  1756,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.ServerBound",
 		WITName:             "get-server-bound",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1753,
+		ID:                  1757,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.TypeOf",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
 		WITName:             "type-of",
 		Kind:                "function",
 	},
 	{
-		ID:                  1754,
+		ID:                  1758,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
 		WITName:             "version-first-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1755,
+		ID:                  1759,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
 		WITName:             "version-greater",
 		Kind:                "method",
 	},
 	{
-		ID:                  1756,
+		ID:                  1760,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
 		WITName:             "version-greater-equal",
 		Kind:                "method",
 	},
 	{
-		ID:                  1757,
+		ID:                  1761,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
 		WITName:             "version-last-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1758,
+		ID:                  1762,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
 		WITName:             "version-lower",
 		Kind:                "method",
 	},
 	{
-		ID:                  1759,
+		ID:                  1763,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
 		WITName:             "version-lower-equal",
 		Kind:                "method",
 	},
 	{
-		ID:                  1760,
+		ID:                  1764,
 		Identity:            "go.minekube.com/gate/pkg/gate/proto.Version.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
 		WITName:             "version-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1761,
+		ID:                  1765,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
 		WITName:             "collection-add",
 		Kind:                "method",
 	},
 	{
-		ID:                  1762,
+		ID:                  1766,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
 		WITName:             "collection-start",
 		Kind:                "method",
 	},
 	{
-		ID:                  1763,
+		ID:                  1767,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod",
 		WITName:             "get-default-graceful-shutdown-period",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1764,
+		ID:                  1768,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.New",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.New",
 		WITName:             "new",
 		Kind:                "function",
 	},
 	{
-		ID:                  1765,
+		ID:                  1769,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
 		WITName:             "runnable-start",
 		Kind:                "method",
 	},
 	{
-		ID:                  1766,
+		ID:                  1770,
 		Identity:            "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
 		WITName:             "runnable-func-start",
 		Kind:                "method",
 	},
 	{
-		ID:                  1767,
+		ID:                  1771,
 		Identity:            "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
 		WITName:             "parse-component",
 		Kind:                "function",
 	},
 	{
-		ID:                  1768,
+		ID:                  1772,
 		Identity:            "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
 		WITName:             "parse-text-component",
 		Kind:                "function",
 	},
 	{
-		ID:                  1769,
+		ID:                  1773,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
 		WITName:             "bool-or-struct-bool-value",
 		Kind:                "method",
 	},
 	{
-		ID:                  1770,
+		ID:                  1774,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
 		WITName:             "bool-or-struct-is-bool",
 		Kind:                "method",
 	},
 	{
-		ID:                  1771,
+		ID:                  1775,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
 		WITName:             "bool-or-struct-is-nil",
 		Kind:                "method",
 	},
 	{
-		ID:                  1772,
+		ID:                  1776,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
 		WITName:             "bool-or-struct-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1773,
+		ID:                  1777,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
 		WITName:             "bool-or-struct-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1774,
+		ID:                  1778,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
 		WITName:             "bool-or-struct-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1775,
+		ID:                  1779,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
 		WITName:             "bool-or-struct-struct-value",
 		Kind:                "method",
 	},
 	{
-		ID:                  1776,
+		ID:                  1780,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
 		WITName:             "bool-or-struct-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1777,
+		ID:                  1781,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
 		WITName:             "bool-or-struct-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1778,
+		ID:                  1782,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Component.C",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
 		WITName:             "component-c",
 		Kind:                "method",
 	},
 	{
-		ID:                  1779,
+		ID:                  1783,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
 		WITName:             "component-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1780,
+		ID:                  1784,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
 		WITName:             "component-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1781,
+		ID:                  1785,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
 		WITName:             "component-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1782,
+		ID:                  1786,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
 		WITName:             "component-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1783,
+		ID:                  1787,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
 		WITName:             "duration-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1784,
+		ID:                  1788,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
 		WITName:             "duration-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1785,
+		ID:                  1789,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
 		WITName:             "duration-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1786,
+		ID:                  1790,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
 		WITName:             "duration-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1787,
+		ID:                  1791,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
 		WITName:             "new-bool-or-struct-bool",
 		Kind:                "function",
 	},
 	{
-		ID:                  1788,
+		ID:                  1792,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
 		WITName:             "new-bool-or-struct-bool-f2e5d90bc027",
 		Kind:                "function",
 	},
 	{
-		ID:                  1789,
+		ID:                  1793,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
 		WITName:             "new-bool-or-struct-bool-891f9963de06",
 		Kind:                "function",
 	},
 	{
-		ID:                  1790,
+		ID:                  1794,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
 		WITName:             "new-bool-or-struct-struct",
 		Kind:                "function",
 	},
 	{
-		ID:                  1791,
+		ID:                  1795,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
 		WITName:             "new-bool-or-struct-struct-40ba03595584",
 		Kind:                "function",
 	},
 	{
-		ID:                  1792,
+		ID:                  1796,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
 		WITName:             "single-or-multi-copy",
 		Kind:                "method",
 	},
 	{
-		ID:                  1793,
+		ID:                  1797,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
 		WITName:             "single-or-multi-is-multi",
 		Kind:                "method",
 	},
 	{
-		ID:                  1794,
+		ID:                  1798,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
 		WITName:             "single-or-multi-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1795,
+		ID:                  1799,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
 		WITName:             "single-or-multi-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1796,
+		ID:                  1800,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
 		WITName:             "single-or-multi-multi",
 		Kind:                "method",
 	},
 	{
-		ID:                  1797,
+		ID:                  1801,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
 		WITName:             "single-or-multi-random",
 		Kind:                "method",
 	},
 	{
-		ID:                  1798,
+		ID:                  1802,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
 		WITName:             "single-or-multi-single",
 		Kind:                "method",
 	},
 	{
-		ID:                  1799,
+		ID:                  1803,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
 		WITName:             "single-or-multi-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1800,
+		ID:                  1804,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
 		WITName:             "single-or-multi-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1801,
+		ID:                  1805,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
 		WITName:             "single-or-multi-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1802,
+		ID:                  1806,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
 		WITName:             "text-component-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1803,
+		ID:                  1807,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
 		WITName:             "text-component-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1804,
+		ID:                  1808,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
 		WITName:             "text-component-t",
 		Kind:                "method",
 	},
 	{
-		ID:                  1805,
+		ID:                  1809,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
 		WITName:             "text-component-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1806,
+		ID:                  1810,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
 		WITName:             "text-component-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1807,
+		ID:                  1811,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
 		WITName:             "url-marshal-binary",
 		Kind:                "method",
 	},
 	{
-		ID:                  1808,
+		ID:                  1812,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
 		WITName:             "url-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1809,
+		ID:                  1813,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
 		WITName:             "url-marshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1810,
+		ID:                  1814,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
 		WITName:             "url-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1811,
+		ID:                  1815,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.T",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
 		WITName:             "url-t",
 		Kind:                "method",
 	},
 	{
-		ID:                  1812,
+		ID:                  1816,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
 		WITName:             "url-unmarshal-binary",
 		Kind:                "method",
 	},
 	{
-		ID:                  1813,
+		ID:                  1817,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
 		WITName:             "url-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1814,
+		ID:                  1818,
 		Identity:            "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
 		WITName:             "url-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1815,
+		ID:                  1819,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
 		WITName:             "endpoint-name",
 		Kind:                "method",
 	},
 	{
-		ID:                  1816,
+		ID:                  1820,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
 		WITName:             "endpoint-propose",
 		Kind:                "method",
 	},
 	{
-		ID:                  1817,
+		ID:                  1821,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
 		WITName:             "endpoint-rejections",
 		Kind:                "method",
 	},
 	{
-		ID:                  1818,
+		ID:                  1822,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
 		WITName:             "endpoint-listener-accept-endpoint",
 		Kind:                "method",
 	},
 	{
-		ID:                  1819,
+		ID:                  1823,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
 		WITName:             "inbound-tunnel-close",
 		Kind:                "method",
 	},
 	{
-		ID:                  1820,
+		ID:                  1824,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
 		WITName:             "inbound-tunnel-local-addr",
 		Kind:                "method",
 	},
 	{
-		ID:                  1821,
+		ID:                  1825,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
 		WITName:             "inbound-tunnel-read",
 		Kind:                "method",
 	},
 	{
-		ID:                  1822,
+		ID:                  1826,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
 		WITName:             "inbound-tunnel-remote-addr",
 		Kind:                "method",
 	},
 	{
-		ID:                  1823,
+		ID:                  1827,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
 		WITName:             "inbound-tunnel-session-id",
 		Kind:                "method",
 	},
 	{
-		ID:                  1824,
+		ID:                  1828,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
 		WITName:             "inbound-tunnel-set-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1825,
+		ID:                  1829,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
 		WITName:             "inbound-tunnel-set-read-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1826,
+		ID:                  1830,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
 		WITName:             "inbound-tunnel-set-write-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1827,
+		ID:                  1831,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
 		WITName:             "inbound-tunnel-write",
 		Kind:                "method",
 	},
 	{
-		ID:                  1828,
+		ID:                  1832,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
 		WITName:             "require-endpoint-name",
 		Kind:                "function",
 	},
 	{
-		ID:                  1829,
+		ID:                  1833,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
 		WITName:             "require-tunnel-session-id",
 		Kind:                "function",
 	},
 	{
-		ID:                  1830,
+		ID:                  1834,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
 		WITName:             "tunnel-listener-accept-tunnel",
 		Kind:                "method",
 	},
 	{
-		ID:                  1831,
+		ID:                  1835,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
 		WITName:             "tunnel-session-close",
 		Kind:                "method",
 	},
 	{
-		ID:                  1832,
+		ID:                  1836,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
 		WITName:             "tunnel-session-local-addr",
 		Kind:                "method",
 	},
 	{
-		ID:                  1833,
+		ID:                  1837,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
 		WITName:             "tunnel-session-read",
 		Kind:                "method",
 	},
 	{
-		ID:                  1834,
+		ID:                  1838,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
 		WITName:             "tunnel-session-remote-addr",
 		Kind:                "method",
 	},
 	{
-		ID:                  1835,
+		ID:                  1839,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
 		WITName:             "tunnel-session-session",
 		Kind:                "method",
 	},
 	{
-		ID:                  1836,
+		ID:                  1840,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
 		WITName:             "tunnel-session-set-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1837,
+		ID:                  1841,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
 		WITName:             "tunnel-session-set-read-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1838,
+		ID:                  1842,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
 		WITName:             "tunnel-session-set-write-deadline",
 		Kind:                "method",
 	},
 	{
-		ID:                  1839,
+		ID:                  1843,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
 		WITName:             "tunnel-session-write",
 		Kind:                "method",
 	},
 	{
-		ID:                  1840,
+		ID:                  1844,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
 		WITName:             "conn-handler-handle-conn",
 		Kind:                "method",
 	},
 	{
-		ID:                  1841,
+		ID:                  1845,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig",
 		WITName:             "get-default-config",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1842,
+		ID:                  1846,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig",
 		WITName:             "set-default-config",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1843,
+		ID:                  1847,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr",
 		WITName:             "get-default-watch-service-addr",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1844,
+		ID:                  1848,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
 		WITName:             "instance-handle-conn",
 		Kind:                "method",
 	},
 	{
-		ID:                  1845,
+		ID:                  1849,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
 		WITName:             "instance-register",
 		Kind:                "method",
 	},
 	{
-		ID:                  1846,
+		ID:                  1850,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
 		WITName:             "instance-server",
 		Kind:                "method",
 	},
 	{
-		ID:                  1847,
+		ID:                  1851,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
 		WITName:             "instance-unregister",
 		Kind:                "method",
 	},
 	{
-		ID:                  1848,
+		ID:                  1852,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/config.New",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
 		WITName:             "new",
 		Kind:                "function",
 	},
 	{
-		ID:                  1849,
+		ID:                  1853,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
 		WITName:             "listener-accept-endpoint",
 		Kind:                "method",
 	},
 	{
-		ID:                  1850,
+		ID:                  1854,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
 		WITName:             "listener-accept-tunnel",
 		Kind:                "method",
 	},
 	{
-		ID:                  1851,
+		ID:                  1855,
 		Identity:            "go.minekube.com/gate/pkg/util/connectutil/single.New",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
 		WITName:             "new",
 		Kind:                "function",
 	},
 	{
-		ID:                  1852,
+		ID:                  1856,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig",
 		WITName:             "get-err-missing-config",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1853,
+		ID:                  1857,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig",
 		WITName:             "set-err-missing-config",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1854,
+		ID:                  1858,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
 		WITName:             "is-conn-closed-err",
 		Kind:                "function",
 	},
 	{
-		ID:                  1855,
+		ID:                  1859,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
 		WITName:             "new-silent-err",
 		Kind:                "function",
 	},
 	{
-		ID:                  1856,
+		ID:                  1860,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
 		WITName:             "silent-error-error",
 		Kind:                "method",
 	},
 	{
-		ID:                  1857,
+		ID:                  1861,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
 		WITName:             "silent-error-unwrap",
 		Kind:                "method",
 	},
 	{
-		ID:                  1858,
+		ID:                  1862,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.V",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.V",
 		WITName:             "v",
 		Kind:                "function",
 	},
 	{
-		ID:                  1859,
+		ID:                  1863,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
 		WITName:             "verbosity-error-error",
 		Kind:                "method",
 	},
 	{
-		ID:                  1860,
+		ID:                  1864,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
 		WITName:             "verbosity-error-unwrap",
 		Kind:                "method",
 	},
 	{
-		ID:                  1861,
+		ID:                  1865,
 		Identity:            "go.minekube.com/gate/pkg/util/errs.WrapSilent",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
 		WITName:             "wrap-silent",
 		Kind:                "function",
 	},
 	{
-		ID:                  1862,
+		ID:                  1866,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
 		WITName:             "favicon-bytes",
 		Kind:                "method",
 	},
 	{
-		ID:                  1863,
+		ID:                  1867,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
 		WITName:             "favicon-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1864,
+		ID:                  1868,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
 		WITName:             "favicon-unmarshal-yaml",
 		Kind:                "method",
 	},
 	{
-		ID:                  1865,
+		ID:                  1869,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.FromBytes",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
 		WITName:             "from-bytes",
 		Kind:                "function",
 	},
 	{
-		ID:                  1866,
+		ID:                  1870,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.FromFile",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
 		WITName:             "from-file",
 		Kind:                "function",
 	},
 	{
-		ID:                  1867,
+		ID:                  1871,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.FromImage",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
 		WITName:             "from-image",
 		Kind:                "function",
 	},
 	{
-		ID:                  1868,
+		ID:                  1872,
 		Identity:            "go.minekube.com/gate/pkg/util/favicon.Parse",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/favicon.Parse",
 		WITName:             "parse",
 		Kind:                "function",
 	},
 	{
-		ID:                  1869,
+		ID:                  1873,
 		Identity:            "go.minekube.com/gate/pkg/util/interrupt.Notify",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
 		WITName:             "notify",
 		Kind:                "function",
 	},
 	{
-		ID:                  1870,
+		ID:                  1874,
 		Identity:            "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
 		WITName:             "termination-context",
 		Kind:                "function",
 	},
 	{
-		ID:                  1871,
+		ID:                  1875,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.Host",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.Host",
 		WITName:             "host",
 		Kind:                "function",
 	},
 	{
-		ID:                  1872,
+		ID:                  1876,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.HostPort",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
 		WITName:             "host-port",
 		Kind:                "function",
 	},
 	{
-		ID:                  1873,
+		ID:                  1877,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.HostStr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
 		WITName:             "host-str",
 		Kind:                "function",
 	},
 	{
-		ID:                  1874,
+		ID:                  1878,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.NewAddr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
 		WITName:             "new-addr",
 		Kind:                "function",
 	},
 	{
-		ID:                  1875,
+		ID:                  1879,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.Parse",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.Parse",
 		WITName:             "parse",
 		Kind:                "function",
 	},
 	{
-		ID:                  1876,
+		ID:                  1880,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
 		WITName:             "parse-trusted-networks",
 		Kind:                "function",
 	},
 	{
-		ID:                  1877,
+		ID:                  1881,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.Port",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.Port",
 		WITName:             "port",
 		Kind:                "function",
 	},
 	{
-		ID:                  1878,
+		ID:                  1882,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.PortStr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
 		WITName:             "port-str",
 		Kind:                "function",
 	},
 	{
-		ID:                  1879,
+		ID:                  1883,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
 		WITName:             "trusted-networks-contains",
 		Kind:                "method",
 	},
 	{
-		ID:                  1880,
+		ID:                  1884,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
 		WITName:             "trusted-networks-contains-str",
 		Kind:                "method",
 	},
 	{
-		ID:                  1881,
+		ID:                  1885,
 		Identity:            "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
 		WITName:             "trusted-networks-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1882,
+		ID:                  1886,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.False#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.False",
 		WITName:             "get-false",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1883,
+		ID:                  1887,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
 		WITName:             "subject-has-permission",
 		Kind:                "method",
 	},
 	{
-		ID:                  1884,
+		ID:                  1888,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
 		WITName:             "subject-permission-value",
 		Kind:                "method",
 	},
 	{
-		ID:                  1885,
+		ID:                  1889,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
 		WITName:             "tri-state-bool",
 		Kind:                "method",
 	},
 	{
-		ID:                  1886,
+		ID:                  1890,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.True#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.True",
 		WITName:             "get-true",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1887,
+		ID:                  1891,
 		Identity:            "go.minekube.com/gate/pkg/util/permission.Undefined#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/permission.Undefined",
 		WITName:             "get-undefined",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1888,
+		ID:                  1892,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
 		WITName:             "capped-set-add",
 		Kind:                "method",
 	},
 	{
-		ID:                  1889,
+		ID:                  1893,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
 		WITName:             "capped-set-len",
 		Kind:                "method",
 	},
 	{
-		ID:                  1890,
+		ID:                  1894,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
 		WITName:             "capped-set-remove",
 		Kind:                "method",
 	},
 	{
-		ID:                  1891,
+		ID:                  1895,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
 		WITName:             "capped-set-unsorted-list",
 		Kind:                "method",
 	},
 	{
-		ID:                  1892,
+		ID:                  1896,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
 		WITName:             "new-capped-set",
 		Kind:                "function",
 	},
 	{
-		ID:                  1893,
+		ID:                  1897,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
 		WITName:             "new-capped-set-0ec33fd43911",
 		Kind:                "function",
 	},
 	{
-		ID:                  1894,
+		ID:                  1898,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.NewString",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.NewString",
 		WITName:             "new-string",
 		Kind:                "function",
 	},
 	{
-		ID:                  1895,
+		ID:                  1899,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.Delete",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
 		WITName:             "string-delete",
 		Kind:                "method",
 	},
 	{
-		ID:                  1896,
+		ID:                  1900,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.Has",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.Has",
 		WITName:             "string-has",
 		Kind:                "method",
 	},
 	{
-		ID:                  1897,
+		ID:                  1901,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.HasAll",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
 		WITName:             "string-has-all",
 		Kind:                "method",
 	},
 	{
-		ID:                  1898,
+		ID:                  1902,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.Insert",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
 		WITName:             "string-insert",
 		Kind:                "method",
 	},
 	{
-		ID:                  1899,
+		ID:                  1903,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
 		WITName:             "string-insert-set",
 		Kind:                "method",
 	},
 	{
-		ID:                  1900,
+		ID:                  1904,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.Len",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.Len",
 		WITName:             "string-len",
 		Kind:                "method",
 	},
 	{
-		ID:                  1901,
+		ID:                  1905,
 		Identity:            "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
 		WITName:             "string-unsorted-list",
 		Kind:                "method",
 	},
 	{
-		ID:                  1902,
+		ID:                  1906,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.FromBytes",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
 		WITName:             "from-bytes",
 		Kind:                "function",
 	},
 	{
-		ID:                  1903,
+		ID:                  1907,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.New",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.New",
 		WITName:             "new",
 		Kind:                "function",
 	},
 	{
-		ID:                  1904,
+		ID:                  1908,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.Nil#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.Nil",
 		WITName:             "get-nil",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1905,
+		ID:                  1909,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.Nil#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.Nil",
 		WITName:             "set-nil",
 		Kind:                "variable-set",
 	},
 	{
-		ID:                  1906,
+		ID:                  1910,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
 		WITName:             "offline-player-uuid",
 		Kind:                "function",
 	},
 	{
-		ID:                  1907,
+		ID:                  1911,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.Parse",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.Parse",
 		WITName:             "parse",
 		Kind:                "function",
 	},
 	{
-		ID:                  1908,
+		ID:                  1912,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
 		WITName:             "parse-bytes",
 		Kind:                "function",
 	},
 	{
-		ID:                  1909,
+		ID:                  1913,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
 		WITName:             "uuid-marshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1910,
+		ID:                  1914,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.UUID.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
 		WITName:             "uuid-string",
 		Kind:                "method",
 	},
 	{
-		ID:                  1911,
+		ID:                  1915,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
 		WITName:             "uuid-undashed",
 		Kind:                "method",
 	},
 	{
-		ID:                  1912,
+		ID:                  1916,
 		Identity:            "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
 		WITName:             "uuid-unmarshal-json",
 		Kind:                "method",
 	},
 	{
-		ID:                  1913,
+		ID:                  1917,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
 		WITName:             "contains-illegal-character",
 		Kind:                "function",
 	},
 	{
-		ID:                  1914,
+		ID:                  1918,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
 		WITName:             "is-allowed-character",
 		Kind:                "function",
 	},
 	{
-		ID:                  1915,
+		ID:                  1919,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg",
 		WITName:             "get-qualified-name-err-msg",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1916,
+		ID:                  1920,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength",
 		WITName:             "get-qualified-name-max-length",
 		Kind:                "constant-get",
 	},
 	{
-		ID:                  1917,
+		ID:                  1921,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
 		WITName:             "valid-host-port",
 		Kind:                "function",
 	},
 	{
-		ID:                  1918,
+		ID:                  1922,
 		Identity:            "go.minekube.com/gate/pkg/util/validation.ValidServerName",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
 		WITName:             "valid-server-name",
 		Kind:                "function",
 	},
 	{
-		ID:                  1919,
+		ID:                  1923,
 		Identity:            "go.minekube.com/gate/pkg/version.String",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/version.String",
 		WITName:             "gate-string",
 		Kind:                "function",
 	},
 	{
-		ID:                  1920,
+		ID:                  1924,
 		Identity:            "go.minekube.com/gate/pkg/version.UserAgent",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/version.UserAgent",
 		WITName:             "user-agent",
 		Kind:                "function",
 	},
 	{
-		ID:                  1921,
+		ID:                  1925,
 		Identity:            "go.minekube.com/gate/pkg/version.UserAgentHeader",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
 		WITName:             "user-agent-header",
 		Kind:                "function",
 	},
 	{
-		ID:                  1922,
+		ID:                  1926,
 		Identity:            "go.minekube.com/gate/pkg/version.Version#get",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/version.Version",
 		WITName:             "get-version",
 		Kind:                "variable-get",
 	},
 	{
-		ID:                  1923,
+		ID:                  1927,
 		Identity:            "go.minekube.com/gate/pkg/version.Version#set",
 		DeclarationIdentity: "go.minekube.com/gate/pkg/version.Version",
 		WITName:             "set-version",
@@ -15890,386 +15918,386 @@ var generatedDeclarationReference1822 = p049.Viewer.Flush
 var generatedDeclarationReference1823 = p049.Viewer.Write
 var generatedDeclarationReference1824 = p049.Viewer.WritePacket
 
-func generatedDeclarationReference1827(_ p050.Gate) {}
-
-var generatedDeclarationReference1828 = (*p050.Gate).Bedrock
-var generatedDeclarationReference1829 = (*p050.Gate).Java
-var generatedDeclarationReference1830 = (*p050.Gate).Start
-var generatedDeclarationReference1831 = p050.LoadConfig
+func generatedDeclarationReference1831(_ p050.Gate) {}
+
+var generatedDeclarationReference1832 = (*p050.Gate).Bedrock
+var generatedDeclarationReference1833 = (*p050.Gate).Java
+var generatedDeclarationReference1834 = (*p050.Gate).Start
+var generatedDeclarationReference1835 = p050.LoadConfig
 
-func generatedDeclarationReference1832(_ p050.LoadConfigFunc) {}
+func generatedDeclarationReference1836(_ p050.LoadConfigFunc) {}
 
-var generatedDeclarationReference1833 = p050.New
+var generatedDeclarationReference1837 = p050.New
 
-func generatedDeclarationReference1834(_ p050.Options) {}
+func generatedDeclarationReference1838(_ p050.Options) {}
 
-var generatedDeclarationReference1835 = p050.Start
+var generatedDeclarationReference1839 = p050.Start
 
-func generatedDeclarationReference1836(_ p050.StartOption) {}
+func generatedDeclarationReference1840(_ p050.StartOption) {}
 
-var generatedDeclarationReference1837 = p050.Viper
-var generatedDeclarationReference1838 = p050.WithAutoConfigReload
-var generatedDeclarationReference1839 = p050.WithAutoShutdownOnSignal
-var generatedDeclarationReference1840 = p050.WithComponentPlugins
-var generatedDeclarationReference1841 = p050.WithConfig
+var generatedDeclarationReference1841 = p050.Viper
+var generatedDeclarationReference1842 = p050.WithAutoConfigReload
+var generatedDeclarationReference1843 = p050.WithAutoShutdownOnSignal
+var generatedDeclarationReference1844 = p050.WithComponentPlugins
+var generatedDeclarationReference1845 = p050.WithConfig
 
-func generatedDeclarationReference1842(_ p051.API)    {}
-func generatedDeclarationReference1843(_ p051.Config) {}
-
-var generatedDeclarationReference1844 = (*p051.Config).Validate
-var generatedDeclarationReference1845 = p051.DefaultConfig
+func generatedDeclarationReference1846(_ p051.API)    {}
+func generatedDeclarationReference1847(_ p051.Config) {}
+
+var generatedDeclarationReference1848 = (*p051.Config).Validate
+var generatedDeclarationReference1849 = p051.DefaultConfig
 
-func generatedDeclarationReference1846(_ p051.HealthService) {}
+func generatedDeclarationReference1850(_ p051.HealthService) {}
 
-var generatedDeclarationReference1847 = p052.ClientBound
+var generatedDeclarationReference1851 = p052.ClientBound
 
-func generatedDeclarationReference1848(_ p052.Direction) {}
+func generatedDeclarationReference1852(_ p052.Direction) {}
 
-var generatedDeclarationReference1849 = p052.Direction.String
-var generatedDeclarationReference1850 = p052.ErrDecoderLeftBytes
+var generatedDeclarationReference1853 = p052.Direction.String
+var generatedDeclarationReference1854 = p052.ErrDecoderLeftBytes
 
-func generatedDeclarationReference1851(_ p052.Packet) {}
+func generatedDeclarationReference1855(_ p052.Packet) {}
 
-var generatedDeclarationReference1852 = p052.Packet.Decode
-var generatedDeclarationReference1853 = p052.Packet.Encode
+var generatedDeclarationReference1856 = p052.Packet.Decode
+var generatedDeclarationReference1857 = p052.Packet.Encode
 
-func generatedDeclarationReference1854(_ p052.PacketContext) {}
+func generatedDeclarationReference1858(_ p052.PacketContext) {}
 
-var generatedDeclarationReference1855 = (*p052.PacketContext).KnownPacket
-var generatedDeclarationReference1856 = (*p052.PacketContext).String
+var generatedDeclarationReference1859 = (*p052.PacketContext).KnownPacket
+var generatedDeclarationReference1860 = (*p052.PacketContext).String
 
-func generatedDeclarationReference1857(_ p052.PacketDecoder) {}
+func generatedDeclarationReference1861(_ p052.PacketDecoder) {}
 
-var generatedDeclarationReference1858 = p052.PacketDecoder.Decode
+var generatedDeclarationReference1862 = p052.PacketDecoder.Decode
 
-func generatedDeclarationReference1859(_ p052.PacketEncoder) {}
+func generatedDeclarationReference1863(_ p052.PacketEncoder) {}
 
-var generatedDeclarationReference1860 = p052.PacketEncoder.Encode
+var generatedDeclarationReference1864 = p052.PacketEncoder.Encode
 
-func generatedDeclarationReference1861(_ p052.PacketID) {}
+func generatedDeclarationReference1865(_ p052.PacketID) {}
 
-var generatedDeclarationReference1862 = p052.PacketID.String
+var generatedDeclarationReference1866 = p052.PacketID.String
 
-func generatedDeclarationReference1863(_ p052.PacketType) {}
+func generatedDeclarationReference1867(_ p052.PacketType) {}
 
-var generatedDeclarationReference1864 = p052.PacketType.Align
-var generatedDeclarationReference1865 = p052.PacketType.AssignableTo
-var generatedDeclarationReference1866 = p052.PacketType.Bits
-var generatedDeclarationReference1867 = p052.PacketType.CanSeq
-var generatedDeclarationReference1868 = p052.PacketType.CanSeq2
-var generatedDeclarationReference1869 = p052.PacketType.ChanDir
-var generatedDeclarationReference1870 = p052.PacketType.Comparable
-var generatedDeclarationReference1871 = p052.PacketType.ConvertibleTo
-var generatedDeclarationReference1872 = p052.PacketType.Elem
-var generatedDeclarationReference1873 = p052.PacketType.Field
-var generatedDeclarationReference1874 = p052.PacketType.FieldAlign
-var generatedDeclarationReference1875 = p052.PacketType.FieldByIndex
-var generatedDeclarationReference1876 = p052.PacketType.FieldByName
-var generatedDeclarationReference1877 = p052.PacketType.FieldByNameFunc
-var generatedDeclarationReference1878 = p052.PacketType.Fields
-var generatedDeclarationReference1879 = p052.PacketType.Implements
-var generatedDeclarationReference1880 = p052.PacketType.In
-var generatedDeclarationReference1881 = p052.PacketType.Ins
-var generatedDeclarationReference1882 = p052.PacketType.IsVariadic
-var generatedDeclarationReference1883 = p052.PacketType.Key
-var generatedDeclarationReference1884 = p052.PacketType.Kind
-var generatedDeclarationReference1885 = p052.PacketType.Len
-var generatedDeclarationReference1886 = p052.PacketType.Method
-var generatedDeclarationReference1887 = p052.PacketType.MethodByName
-var generatedDeclarationReference1888 = p052.PacketType.Methods
-var generatedDeclarationReference1889 = p052.PacketType.Name
-var generatedDeclarationReference1890 = p052.PacketType.NumField
-var generatedDeclarationReference1891 = p052.PacketType.NumIn
-var generatedDeclarationReference1892 = p052.PacketType.NumMethod
-var generatedDeclarationReference1893 = p052.PacketType.NumOut
-var generatedDeclarationReference1894 = p052.PacketType.Out
-var generatedDeclarationReference1895 = p052.PacketType.Outs
-var generatedDeclarationReference1896 = p052.PacketType.OverflowComplex
-var generatedDeclarationReference1897 = p052.PacketType.OverflowFloat
-var generatedDeclarationReference1898 = p052.PacketType.OverflowInt
-var generatedDeclarationReference1899 = p052.PacketType.OverflowUint
-var generatedDeclarationReference1900 = p052.PacketType.PkgPath
-var generatedDeclarationReference1901 = p052.PacketType.Size
-var generatedDeclarationReference1902 = p052.PacketType.String
-
-func generatedDeclarationReference1903(_ p052.PacketWriter) {}
-
-var generatedDeclarationReference1904 = p052.PacketWriter.WritePacket
-
-func generatedDeclarationReference1905(_ p052.Protocol) {}
-
-var generatedDeclarationReference1906 = p052.Protocol.Greater
-var generatedDeclarationReference1907 = p052.Protocol.GreaterEqual
-var generatedDeclarationReference1908 = p052.Protocol.Lower
-var generatedDeclarationReference1909 = p052.Protocol.LowerEqual
-var generatedDeclarationReference1910 = p052.Protocol.String
-var generatedDeclarationReference1911 = p052.ServerBound
-var generatedDeclarationReference1912 = p052.TypeOf
-
-func generatedDeclarationReference1913(_ p052.Version) {}
-
-var generatedDeclarationReference1914 = (*p052.Version).FirstName
-var generatedDeclarationReference1915 = p052.Version.Greater
-var generatedDeclarationReference1916 = p052.Version.GreaterEqual
-var generatedDeclarationReference1917 = (*p052.Version).LastName
-var generatedDeclarationReference1918 = p052.Version.Lower
-var generatedDeclarationReference1919 = p052.Version.LowerEqual
-var generatedDeclarationReference1920 = p052.Version.String
-
-func generatedDeclarationReference1921(_ p053.Collection) {}
-
-var generatedDeclarationReference1922 = p053.Collection.Add
-var generatedDeclarationReference1923 = p053.Collection.Start
-var generatedDeclarationReference1924 = p053.DefaultGracefulShutdownPeriod
-var generatedDeclarationReference1925 = p053.New
-
-func generatedDeclarationReference1926(_ p053.Options)  {}
-func generatedDeclarationReference1927(_ p053.Runnable) {}
-
-var generatedDeclarationReference1928 = p053.Runnable.Start
-
-func generatedDeclarationReference1929(_ p053.RunnableFunc) {}
-
-var generatedDeclarationReference1930 = p053.RunnableFunc.Start
-var generatedDeclarationReference1931 = p054.ParseComponent
-var generatedDeclarationReference1932 = p054.ParseTextComponent
-
-func generatedDeclarationReference1933(_ p055.BoolOrStruct[any]) {}
-
-var generatedDeclarationReference1934 = p055.BoolOrStruct[any].BoolValue
-var generatedDeclarationReference1935 = p055.BoolOrStruct[any].IsBool
-var generatedDeclarationReference1936 = p055.BoolOrStruct[any].IsNil
-var generatedDeclarationReference1937 = p055.BoolOrStruct[any].MarshalJSON
-var generatedDeclarationReference1938 = p055.BoolOrStruct[any].MarshalYAML
-var generatedDeclarationReference1939 = p055.BoolOrStruct[any].String
-var generatedDeclarationReference1940 = p055.BoolOrStruct[any].StructValue
-var generatedDeclarationReference1941 = (*p055.BoolOrStruct[any]).UnmarshalJSON
-var generatedDeclarationReference1942 = (*p055.BoolOrStruct[any]).UnmarshalYAML
-
-func generatedDeclarationReference1943(_ p055.BoolOrStruct[any])                {}
-func generatedDeclarationReference1944(_ p055.BoolOrStruct[any])                {}
-func generatedDeclarationReference1945(_ p055.BoolOrStruct[p004.ManagedGeyser]) {}
-func generatedDeclarationReference1946(_ p055.Component)                        {}
-
-var generatedDeclarationReference1947 = (*p055.Component).C
-var generatedDeclarationReference1948 = (*p055.Component).MarshalJSON
-var generatedDeclarationReference1949 = (*p055.Component).MarshalYAML
-var generatedDeclarationReference1950 = (*p055.Component).UnmarshalJSON
-var generatedDeclarationReference1951 = (*p055.Component).UnmarshalYAML
-
-func generatedDeclarationReference1952(_ p055.Duration) {}
-
-var generatedDeclarationReference1953 = (*p055.Duration).MarshalJSON
-var generatedDeclarationReference1954 = (*p055.Duration).MarshalYAML
-var generatedDeclarationReference1955 = (*p055.Duration).UnmarshalJSON
-var generatedDeclarationReference1956 = (*p055.Duration).UnmarshalYAML
-var generatedDeclarationReference1957 = p055.NewBoolOrStructBool[any]
-var generatedDeclarationReference1958 = p055.NewBoolOrStructBool[any]
-var generatedDeclarationReference1959 = p055.NewBoolOrStructBool[p004.ManagedGeyser]
-var generatedDeclarationReference1960 = p055.NewBoolOrStructStruct[any]
-var generatedDeclarationReference1961 = p055.NewBoolOrStructStruct[any]
-
-func generatedDeclarationReference1962(_ p055.SingleOrMulti[any]) {}
-
-var generatedDeclarationReference1963 = p055.SingleOrMulti[any].Copy
-var generatedDeclarationReference1964 = p055.SingleOrMulti[any].IsMulti
-var generatedDeclarationReference1965 = p055.SingleOrMulti[any].MarshalJSON
-var generatedDeclarationReference1966 = p055.SingleOrMulti[any].MarshalYAML
-var generatedDeclarationReference1967 = p055.SingleOrMulti[any].Multi
-var generatedDeclarationReference1968 = p055.SingleOrMulti[any].Random
-var generatedDeclarationReference1969 = p055.SingleOrMulti[any].Single
-var generatedDeclarationReference1970 = p055.SingleOrMulti[any].String
-var generatedDeclarationReference1971 = (*p055.SingleOrMulti[any]).UnmarshalJSON
-var generatedDeclarationReference1972 = (*p055.SingleOrMulti[any]).UnmarshalYAML
-
-func generatedDeclarationReference1973(_ p055.SingleOrMulti[any])    {}
-func generatedDeclarationReference1974(_ p055.SingleOrMulti[any])    {}
-func generatedDeclarationReference1975(_ p055.SingleOrMulti[string]) {}
-func generatedDeclarationReference1976(_ p055.TextComponent)         {}
-
-var generatedDeclarationReference1977 = (*p055.TextComponent).MarshalJSON
-var generatedDeclarationReference1978 = (*p055.TextComponent).MarshalYAML
-var generatedDeclarationReference1979 = (*p055.TextComponent).T
-var generatedDeclarationReference1980 = (*p055.TextComponent).UnmarshalJSON
-var generatedDeclarationReference1981 = (*p055.TextComponent).UnmarshalYAML
-
-func generatedDeclarationReference1982(_ p055.URL) {}
-
-var generatedDeclarationReference1983 = (*p055.URL).MarshalBinary
-var generatedDeclarationReference1984 = (*p055.URL).MarshalJSON
-var generatedDeclarationReference1985 = (*p055.URL).MarshalYAML
-var generatedDeclarationReference1986 = (*p055.URL).String
-var generatedDeclarationReference1987 = (*p055.URL).T
-var generatedDeclarationReference1988 = (*p055.URL).UnmarshalBinary
-var generatedDeclarationReference1989 = (*p055.URL).UnmarshalJSON
-var generatedDeclarationReference1990 = (*p055.URL).UnmarshalYAML
-
-func generatedDeclarationReference1991(_ p056.Endpoint) {}
-
-var generatedDeclarationReference1992 = p056.Endpoint.Name
-var generatedDeclarationReference1993 = p056.Endpoint.Propose
-var generatedDeclarationReference1994 = p056.Endpoint.Rejections
-
-func generatedDeclarationReference1995(_ p056.EndpointListener) {}
-
-var generatedDeclarationReference1996 = p056.EndpointListener.AcceptEndpoint
-
-func generatedDeclarationReference1997(_ p056.InboundTunnel) {}
-
-var generatedDeclarationReference1998 = p056.InboundTunnel.Close
-var generatedDeclarationReference1999 = p056.InboundTunnel.LocalAddr
-var generatedDeclarationReference2000 = p056.InboundTunnel.Read
-var generatedDeclarationReference2001 = p056.InboundTunnel.RemoteAddr
-var generatedDeclarationReference2002 = p056.InboundTunnel.SessionID
-var generatedDeclarationReference2003 = p056.InboundTunnel.SetDeadline
-var generatedDeclarationReference2004 = p056.InboundTunnel.SetReadDeadline
-var generatedDeclarationReference2005 = p056.InboundTunnel.SetWriteDeadline
-var generatedDeclarationReference2006 = p056.InboundTunnel.Write
-var generatedDeclarationReference2007 = p056.RequireEndpointName
-var generatedDeclarationReference2008 = p056.RequireTunnelSessionID
-
-func generatedDeclarationReference2009(_ p056.TunnelListener) {}
-
-var generatedDeclarationReference2010 = p056.TunnelListener.AcceptTunnel
-
-func generatedDeclarationReference2011(_ p056.TunnelSession) {}
-
-var generatedDeclarationReference2012 = p056.TunnelSession.Close
-var generatedDeclarationReference2013 = p056.TunnelSession.LocalAddr
-var generatedDeclarationReference2014 = p056.TunnelSession.Read
-var generatedDeclarationReference2015 = p056.TunnelSession.RemoteAddr
-var generatedDeclarationReference2016 = p056.TunnelSession.Session
-var generatedDeclarationReference2017 = p056.TunnelSession.SetDeadline
-var generatedDeclarationReference2018 = p056.TunnelSession.SetReadDeadline
-var generatedDeclarationReference2019 = p056.TunnelSession.SetWriteDeadline
-var generatedDeclarationReference2020 = p056.TunnelSession.Write
-
-func generatedDeclarationReference2021(_ p057.Config)      {}
-func generatedDeclarationReference2022(_ p057.ConnHandler) {}
-
-var generatedDeclarationReference2023 = p057.ConnHandler.HandleConn
-var generatedDeclarationReference2024 = p057.DefaultConfig
-var generatedDeclarationReference2025 = p057.DefaultWatchServiceAddr
-
-func generatedDeclarationReference2026(_ p057.Instance) {}
-
-var generatedDeclarationReference2027 = p057.Instance.HandleConn
-var generatedDeclarationReference2028 = p057.Instance.Register
-var generatedDeclarationReference2029 = p057.Instance.Server
-var generatedDeclarationReference2030 = p057.Instance.Unregister
-var generatedDeclarationReference2031 = p057.New
-
-func generatedDeclarationReference2032(_ p057.Service)  {}
-func generatedDeclarationReference2033(_ p058.Listener) {}
-
-var generatedDeclarationReference2034 = p058.Listener.AcceptEndpoint
-var generatedDeclarationReference2035 = p058.Listener.AcceptTunnel
-var generatedDeclarationReference2036 = p058.New
-
-func generatedDeclarationReference2037(_ p058.Options) {}
-
-var generatedDeclarationReference2038 = p059.ErrMissingConfig
-var generatedDeclarationReference2039 = p059.IsConnClosedErr
-var generatedDeclarationReference2040 = p059.NewSilentErr
-
-func generatedDeclarationReference2041(_ p059.SilentError) {}
-
-var generatedDeclarationReference2042 = (*p059.SilentError).Error
-var generatedDeclarationReference2043 = (*p059.SilentError).Unwrap
-var generatedDeclarationReference2044 = p059.V
-
-func generatedDeclarationReference2045(_ p059.VerbosityError) {}
-
-var generatedDeclarationReference2046 = (*p059.VerbosityError).Error
-var generatedDeclarationReference2047 = (*p059.VerbosityError).Unwrap
-var generatedDeclarationReference2048 = p059.WrapSilent
-
-func generatedDeclarationReference2049(_ p060.Favicon) {}
-
-var generatedDeclarationReference2050 = p060.Favicon.Bytes
-var generatedDeclarationReference2051 = (*p060.Favicon).UnmarshalJSON
-var generatedDeclarationReference2052 = (*p060.Favicon).UnmarshalYAML
-var generatedDeclarationReference2053 = p060.FromBytes
-var generatedDeclarationReference2054 = p060.FromFile
-var generatedDeclarationReference2055 = p060.FromImage
-var generatedDeclarationReference2056 = p060.Parse
-var generatedDeclarationReference2057 = p061.Notify
-var generatedDeclarationReference2058 = p061.TerminationContext
-var generatedDeclarationReference2059 = p062.Host
-var generatedDeclarationReference2060 = p062.HostPort
-var generatedDeclarationReference2061 = p062.HostStr
-var generatedDeclarationReference2062 = p062.NewAddr
-var generatedDeclarationReference2063 = p062.Parse
-var generatedDeclarationReference2064 = p062.ParseTrustedNetworks
-var generatedDeclarationReference2065 = p062.Port
-var generatedDeclarationReference2066 = p062.PortStr
-
-func generatedDeclarationReference2067(_ p062.TrustedNetworks) {}
-
-var generatedDeclarationReference2068 = p062.TrustedNetworks.Contains
-var generatedDeclarationReference2069 = p062.TrustedNetworks.ContainsStr
-var generatedDeclarationReference2070 = p062.TrustedNetworks.String
-var generatedDeclarationReference2071 = p063.False
-
-func generatedDeclarationReference2072(_ p063.Func)    {}
-func generatedDeclarationReference2073(_ p063.Subject) {}
-
-var generatedDeclarationReference2074 = p063.Subject.HasPermission
-var generatedDeclarationReference2075 = p063.Subject.PermissionValue
-
-func generatedDeclarationReference2076(_ p063.TriState) {}
-
-var generatedDeclarationReference2077 = p063.TriState.Bool
-var generatedDeclarationReference2078 = p063.True
-var generatedDeclarationReference2079 = p063.Undefined
-
-func generatedDeclarationReference2080(_ p064.CappedSet[any]) {}
-
-var generatedDeclarationReference2081 = (*p064.CappedSet[any]).Add
-var generatedDeclarationReference2082 = (*p064.CappedSet[any]).Len
-var generatedDeclarationReference2083 = (*p064.CappedSet[any]).Remove
-var generatedDeclarationReference2084 = (*p064.CappedSet[any]).UnsortedList
-
-func generatedDeclarationReference2085(_ p064.CappedSet[any])    {}
-func generatedDeclarationReference2086(_ p064.CappedSet[string]) {}
-func generatedDeclarationReference2087(_ p064.Empty)             {}
-
-var generatedDeclarationReference2088 = p064.NewCappedSet[any]
-var generatedDeclarationReference2089 = p064.NewCappedSet[string]
-var generatedDeclarationReference2090 = p064.NewString
-
-func generatedDeclarationReference2091(_ p064.String) {}
-
-var generatedDeclarationReference2092 = p064.String.Delete
-var generatedDeclarationReference2093 = p064.String.Has
-var generatedDeclarationReference2094 = p064.String.HasAll
-var generatedDeclarationReference2095 = p064.String.Insert
-var generatedDeclarationReference2096 = p064.String.InsertSet
-var generatedDeclarationReference2097 = p064.String.Len
-var generatedDeclarationReference2098 = p064.String.UnsortedList
-var generatedDeclarationReference2099 = p065.FromBytes
-var generatedDeclarationReference2100 = p065.New
-var generatedDeclarationReference2101 = p065.Nil
-var generatedDeclarationReference2102 = p065.OfflinePlayerUUID
-var generatedDeclarationReference2103 = p065.Parse
-var generatedDeclarationReference2104 = p065.ParseBytes
-
-func generatedDeclarationReference2105(_ p065.UUID) {}
-
-var generatedDeclarationReference2106 = p065.UUID.MarshalJSON
-var generatedDeclarationReference2107 = p065.UUID.String
-var generatedDeclarationReference2108 = p065.UUID.Undashed
-var generatedDeclarationReference2109 = (*p065.UUID).UnmarshalJSON
-var generatedDeclarationReference2110 = p066.ContainsIllegalCharacter
-var generatedDeclarationReference2111 = p066.IsAllowedCharacter
-var generatedDeclarationReference2112 = p066.QualifiedNameErrMsg
-var generatedDeclarationReference2113 = p066.QualifiedNameMaxLength
-var generatedDeclarationReference2114 = p066.ValidHostPort
-var generatedDeclarationReference2115 = p066.ValidServerName
-var generatedDeclarationReference2116 = p067.String
-var generatedDeclarationReference2117 = p067.UserAgent
-var generatedDeclarationReference2118 = p067.UserAgentHeader
-var generatedDeclarationReference2119 = p067.Version
+var generatedDeclarationReference1868 = p052.PacketType.Align
+var generatedDeclarationReference1869 = p052.PacketType.AssignableTo
+var generatedDeclarationReference1870 = p052.PacketType.Bits
+var generatedDeclarationReference1871 = p052.PacketType.CanSeq
+var generatedDeclarationReference1872 = p052.PacketType.CanSeq2
+var generatedDeclarationReference1873 = p052.PacketType.ChanDir
+var generatedDeclarationReference1874 = p052.PacketType.Comparable
+var generatedDeclarationReference1875 = p052.PacketType.ConvertibleTo
+var generatedDeclarationReference1876 = p052.PacketType.Elem
+var generatedDeclarationReference1877 = p052.PacketType.Field
+var generatedDeclarationReference1878 = p052.PacketType.FieldAlign
+var generatedDeclarationReference1879 = p052.PacketType.FieldByIndex
+var generatedDeclarationReference1880 = p052.PacketType.FieldByName
+var generatedDeclarationReference1881 = p052.PacketType.FieldByNameFunc
+var generatedDeclarationReference1882 = p052.PacketType.Fields
+var generatedDeclarationReference1883 = p052.PacketType.Implements
+var generatedDeclarationReference1884 = p052.PacketType.In
+var generatedDeclarationReference1885 = p052.PacketType.Ins
+var generatedDeclarationReference1886 = p052.PacketType.IsVariadic
+var generatedDeclarationReference1887 = p052.PacketType.Key
+var generatedDeclarationReference1888 = p052.PacketType.Kind
+var generatedDeclarationReference1889 = p052.PacketType.Len
+var generatedDeclarationReference1890 = p052.PacketType.Method
+var generatedDeclarationReference1891 = p052.PacketType.MethodByName
+var generatedDeclarationReference1892 = p052.PacketType.Methods
+var generatedDeclarationReference1893 = p052.PacketType.Name
+var generatedDeclarationReference1894 = p052.PacketType.NumField
+var generatedDeclarationReference1895 = p052.PacketType.NumIn
+var generatedDeclarationReference1896 = p052.PacketType.NumMethod
+var generatedDeclarationReference1897 = p052.PacketType.NumOut
+var generatedDeclarationReference1898 = p052.PacketType.Out
+var generatedDeclarationReference1899 = p052.PacketType.Outs
+var generatedDeclarationReference1900 = p052.PacketType.OverflowComplex
+var generatedDeclarationReference1901 = p052.PacketType.OverflowFloat
+var generatedDeclarationReference1902 = p052.PacketType.OverflowInt
+var generatedDeclarationReference1903 = p052.PacketType.OverflowUint
+var generatedDeclarationReference1904 = p052.PacketType.PkgPath
+var generatedDeclarationReference1905 = p052.PacketType.Size
+var generatedDeclarationReference1906 = p052.PacketType.String
+
+func generatedDeclarationReference1907(_ p052.PacketWriter) {}
+
+var generatedDeclarationReference1908 = p052.PacketWriter.WritePacket
+
+func generatedDeclarationReference1909(_ p052.Protocol) {}
+
+var generatedDeclarationReference1910 = p052.Protocol.Greater
+var generatedDeclarationReference1911 = p052.Protocol.GreaterEqual
+var generatedDeclarationReference1912 = p052.Protocol.Lower
+var generatedDeclarationReference1913 = p052.Protocol.LowerEqual
+var generatedDeclarationReference1914 = p052.Protocol.String
+var generatedDeclarationReference1915 = p052.ServerBound
+var generatedDeclarationReference1916 = p052.TypeOf
+
+func generatedDeclarationReference1917(_ p052.Version) {}
+
+var generatedDeclarationReference1918 = (*p052.Version).FirstName
+var generatedDeclarationReference1919 = p052.Version.Greater
+var generatedDeclarationReference1920 = p052.Version.GreaterEqual
+var generatedDeclarationReference1921 = (*p052.Version).LastName
+var generatedDeclarationReference1922 = p052.Version.Lower
+var generatedDeclarationReference1923 = p052.Version.LowerEqual
+var generatedDeclarationReference1924 = p052.Version.String
+
+func generatedDeclarationReference1925(_ p053.Collection) {}
+
+var generatedDeclarationReference1926 = p053.Collection.Add
+var generatedDeclarationReference1927 = p053.Collection.Start
+var generatedDeclarationReference1928 = p053.DefaultGracefulShutdownPeriod
+var generatedDeclarationReference1929 = p053.New
+
+func generatedDeclarationReference1930(_ p053.Options)  {}
+func generatedDeclarationReference1931(_ p053.Runnable) {}
+
+var generatedDeclarationReference1932 = p053.Runnable.Start
+
+func generatedDeclarationReference1933(_ p053.RunnableFunc) {}
+
+var generatedDeclarationReference1934 = p053.RunnableFunc.Start
+var generatedDeclarationReference1935 = p054.ParseComponent
+var generatedDeclarationReference1936 = p054.ParseTextComponent
+
+func generatedDeclarationReference1937(_ p055.BoolOrStruct[any]) {}
+
+var generatedDeclarationReference1938 = p055.BoolOrStruct[any].BoolValue
+var generatedDeclarationReference1939 = p055.BoolOrStruct[any].IsBool
+var generatedDeclarationReference1940 = p055.BoolOrStruct[any].IsNil
+var generatedDeclarationReference1941 = p055.BoolOrStruct[any].MarshalJSON
+var generatedDeclarationReference1942 = p055.BoolOrStruct[any].MarshalYAML
+var generatedDeclarationReference1943 = p055.BoolOrStruct[any].String
+var generatedDeclarationReference1944 = p055.BoolOrStruct[any].StructValue
+var generatedDeclarationReference1945 = (*p055.BoolOrStruct[any]).UnmarshalJSON
+var generatedDeclarationReference1946 = (*p055.BoolOrStruct[any]).UnmarshalYAML
+
+func generatedDeclarationReference1947(_ p055.BoolOrStruct[any])                {}
+func generatedDeclarationReference1948(_ p055.BoolOrStruct[any])                {}
+func generatedDeclarationReference1949(_ p055.BoolOrStruct[p004.ManagedGeyser]) {}
+func generatedDeclarationReference1950(_ p055.Component)                        {}
+
+var generatedDeclarationReference1951 = (*p055.Component).C
+var generatedDeclarationReference1952 = (*p055.Component).MarshalJSON
+var generatedDeclarationReference1953 = (*p055.Component).MarshalYAML
+var generatedDeclarationReference1954 = (*p055.Component).UnmarshalJSON
+var generatedDeclarationReference1955 = (*p055.Component).UnmarshalYAML
+
+func generatedDeclarationReference1956(_ p055.Duration) {}
+
+var generatedDeclarationReference1957 = (*p055.Duration).MarshalJSON
+var generatedDeclarationReference1958 = (*p055.Duration).MarshalYAML
+var generatedDeclarationReference1959 = (*p055.Duration).UnmarshalJSON
+var generatedDeclarationReference1960 = (*p055.Duration).UnmarshalYAML
+var generatedDeclarationReference1961 = p055.NewBoolOrStructBool[any]
+var generatedDeclarationReference1962 = p055.NewBoolOrStructBool[any]
+var generatedDeclarationReference1963 = p055.NewBoolOrStructBool[p004.ManagedGeyser]
+var generatedDeclarationReference1964 = p055.NewBoolOrStructStruct[any]
+var generatedDeclarationReference1965 = p055.NewBoolOrStructStruct[any]
+
+func generatedDeclarationReference1966(_ p055.SingleOrMulti[any]) {}
+
+var generatedDeclarationReference1967 = p055.SingleOrMulti[any].Copy
+var generatedDeclarationReference1968 = p055.SingleOrMulti[any].IsMulti
+var generatedDeclarationReference1969 = p055.SingleOrMulti[any].MarshalJSON
+var generatedDeclarationReference1970 = p055.SingleOrMulti[any].MarshalYAML
+var generatedDeclarationReference1971 = p055.SingleOrMulti[any].Multi
+var generatedDeclarationReference1972 = p055.SingleOrMulti[any].Random
+var generatedDeclarationReference1973 = p055.SingleOrMulti[any].Single
+var generatedDeclarationReference1974 = p055.SingleOrMulti[any].String
+var generatedDeclarationReference1975 = (*p055.SingleOrMulti[any]).UnmarshalJSON
+var generatedDeclarationReference1976 = (*p055.SingleOrMulti[any]).UnmarshalYAML
+
+func generatedDeclarationReference1977(_ p055.SingleOrMulti[any])    {}
+func generatedDeclarationReference1978(_ p055.SingleOrMulti[any])    {}
+func generatedDeclarationReference1979(_ p055.SingleOrMulti[string]) {}
+func generatedDeclarationReference1980(_ p055.TextComponent)         {}
+
+var generatedDeclarationReference1981 = (*p055.TextComponent).MarshalJSON
+var generatedDeclarationReference1982 = (*p055.TextComponent).MarshalYAML
+var generatedDeclarationReference1983 = (*p055.TextComponent).T
+var generatedDeclarationReference1984 = (*p055.TextComponent).UnmarshalJSON
+var generatedDeclarationReference1985 = (*p055.TextComponent).UnmarshalYAML
+
+func generatedDeclarationReference1986(_ p055.URL) {}
+
+var generatedDeclarationReference1987 = (*p055.URL).MarshalBinary
+var generatedDeclarationReference1988 = (*p055.URL).MarshalJSON
+var generatedDeclarationReference1989 = (*p055.URL).MarshalYAML
+var generatedDeclarationReference1990 = (*p055.URL).String
+var generatedDeclarationReference1991 = (*p055.URL).T
+var generatedDeclarationReference1992 = (*p055.URL).UnmarshalBinary
+var generatedDeclarationReference1993 = (*p055.URL).UnmarshalJSON
+var generatedDeclarationReference1994 = (*p055.URL).UnmarshalYAML
+
+func generatedDeclarationReference1995(_ p056.Endpoint) {}
+
+var generatedDeclarationReference1996 = p056.Endpoint.Name
+var generatedDeclarationReference1997 = p056.Endpoint.Propose
+var generatedDeclarationReference1998 = p056.Endpoint.Rejections
+
+func generatedDeclarationReference1999(_ p056.EndpointListener) {}
+
+var generatedDeclarationReference2000 = p056.EndpointListener.AcceptEndpoint
+
+func generatedDeclarationReference2001(_ p056.InboundTunnel) {}
+
+var generatedDeclarationReference2002 = p056.InboundTunnel.Close
+var generatedDeclarationReference2003 = p056.InboundTunnel.LocalAddr
+var generatedDeclarationReference2004 = p056.InboundTunnel.Read
+var generatedDeclarationReference2005 = p056.InboundTunnel.RemoteAddr
+var generatedDeclarationReference2006 = p056.InboundTunnel.SessionID
+var generatedDeclarationReference2007 = p056.InboundTunnel.SetDeadline
+var generatedDeclarationReference2008 = p056.InboundTunnel.SetReadDeadline
+var generatedDeclarationReference2009 = p056.InboundTunnel.SetWriteDeadline
+var generatedDeclarationReference2010 = p056.InboundTunnel.Write
+var generatedDeclarationReference2011 = p056.RequireEndpointName
+var generatedDeclarationReference2012 = p056.RequireTunnelSessionID
+
+func generatedDeclarationReference2013(_ p056.TunnelListener) {}
+
+var generatedDeclarationReference2014 = p056.TunnelListener.AcceptTunnel
+
+func generatedDeclarationReference2015(_ p056.TunnelSession) {}
+
+var generatedDeclarationReference2016 = p056.TunnelSession.Close
+var generatedDeclarationReference2017 = p056.TunnelSession.LocalAddr
+var generatedDeclarationReference2018 = p056.TunnelSession.Read
+var generatedDeclarationReference2019 = p056.TunnelSession.RemoteAddr
+var generatedDeclarationReference2020 = p056.TunnelSession.Session
+var generatedDeclarationReference2021 = p056.TunnelSession.SetDeadline
+var generatedDeclarationReference2022 = p056.TunnelSession.SetReadDeadline
+var generatedDeclarationReference2023 = p056.TunnelSession.SetWriteDeadline
+var generatedDeclarationReference2024 = p056.TunnelSession.Write
+
+func generatedDeclarationReference2025(_ p057.Config)      {}
+func generatedDeclarationReference2026(_ p057.ConnHandler) {}
+
+var generatedDeclarationReference2027 = p057.ConnHandler.HandleConn
+var generatedDeclarationReference2028 = p057.DefaultConfig
+var generatedDeclarationReference2029 = p057.DefaultWatchServiceAddr
+
+func generatedDeclarationReference2030(_ p057.Instance) {}
+
+var generatedDeclarationReference2031 = p057.Instance.HandleConn
+var generatedDeclarationReference2032 = p057.Instance.Register
+var generatedDeclarationReference2033 = p057.Instance.Server
+var generatedDeclarationReference2034 = p057.Instance.Unregister
+var generatedDeclarationReference2035 = p057.New
+
+func generatedDeclarationReference2036(_ p057.Service)  {}
+func generatedDeclarationReference2037(_ p058.Listener) {}
+
+var generatedDeclarationReference2038 = p058.Listener.AcceptEndpoint
+var generatedDeclarationReference2039 = p058.Listener.AcceptTunnel
+var generatedDeclarationReference2040 = p058.New
+
+func generatedDeclarationReference2041(_ p058.Options) {}
+
+var generatedDeclarationReference2042 = p059.ErrMissingConfig
+var generatedDeclarationReference2043 = p059.IsConnClosedErr
+var generatedDeclarationReference2044 = p059.NewSilentErr
+
+func generatedDeclarationReference2045(_ p059.SilentError) {}
+
+var generatedDeclarationReference2046 = (*p059.SilentError).Error
+var generatedDeclarationReference2047 = (*p059.SilentError).Unwrap
+var generatedDeclarationReference2048 = p059.V
+
+func generatedDeclarationReference2049(_ p059.VerbosityError) {}
+
+var generatedDeclarationReference2050 = (*p059.VerbosityError).Error
+var generatedDeclarationReference2051 = (*p059.VerbosityError).Unwrap
+var generatedDeclarationReference2052 = p059.WrapSilent
+
+func generatedDeclarationReference2053(_ p060.Favicon) {}
+
+var generatedDeclarationReference2054 = p060.Favicon.Bytes
+var generatedDeclarationReference2055 = (*p060.Favicon).UnmarshalJSON
+var generatedDeclarationReference2056 = (*p060.Favicon).UnmarshalYAML
+var generatedDeclarationReference2057 = p060.FromBytes
+var generatedDeclarationReference2058 = p060.FromFile
+var generatedDeclarationReference2059 = p060.FromImage
+var generatedDeclarationReference2060 = p060.Parse
+var generatedDeclarationReference2061 = p061.Notify
+var generatedDeclarationReference2062 = p061.TerminationContext
+var generatedDeclarationReference2063 = p062.Host
+var generatedDeclarationReference2064 = p062.HostPort
+var generatedDeclarationReference2065 = p062.HostStr
+var generatedDeclarationReference2066 = p062.NewAddr
+var generatedDeclarationReference2067 = p062.Parse
+var generatedDeclarationReference2068 = p062.ParseTrustedNetworks
+var generatedDeclarationReference2069 = p062.Port
+var generatedDeclarationReference2070 = p062.PortStr
+
+func generatedDeclarationReference2071(_ p062.TrustedNetworks) {}
+
+var generatedDeclarationReference2072 = p062.TrustedNetworks.Contains
+var generatedDeclarationReference2073 = p062.TrustedNetworks.ContainsStr
+var generatedDeclarationReference2074 = p062.TrustedNetworks.String
+var generatedDeclarationReference2075 = p063.False
+
+func generatedDeclarationReference2076(_ p063.Func)    {}
+func generatedDeclarationReference2077(_ p063.Subject) {}
+
+var generatedDeclarationReference2078 = p063.Subject.HasPermission
+var generatedDeclarationReference2079 = p063.Subject.PermissionValue
+
+func generatedDeclarationReference2080(_ p063.TriState) {}
+
+var generatedDeclarationReference2081 = p063.TriState.Bool
+var generatedDeclarationReference2082 = p063.True
+var generatedDeclarationReference2083 = p063.Undefined
+
+func generatedDeclarationReference2084(_ p064.CappedSet[any]) {}
+
+var generatedDeclarationReference2085 = (*p064.CappedSet[any]).Add
+var generatedDeclarationReference2086 = (*p064.CappedSet[any]).Len
+var generatedDeclarationReference2087 = (*p064.CappedSet[any]).Remove
+var generatedDeclarationReference2088 = (*p064.CappedSet[any]).UnsortedList
+
+func generatedDeclarationReference2089(_ p064.CappedSet[any])    {}
+func generatedDeclarationReference2090(_ p064.CappedSet[string]) {}
+func generatedDeclarationReference2091(_ p064.Empty)             {}
+
+var generatedDeclarationReference2092 = p064.NewCappedSet[any]
+var generatedDeclarationReference2093 = p064.NewCappedSet[string]
+var generatedDeclarationReference2094 = p064.NewString
+
+func generatedDeclarationReference2095(_ p064.String) {}
+
+var generatedDeclarationReference2096 = p064.String.Delete
+var generatedDeclarationReference2097 = p064.String.Has
+var generatedDeclarationReference2098 = p064.String.HasAll
+var generatedDeclarationReference2099 = p064.String.Insert
+var generatedDeclarationReference2100 = p064.String.InsertSet
+var generatedDeclarationReference2101 = p064.String.Len
+var generatedDeclarationReference2102 = p064.String.UnsortedList
+var generatedDeclarationReference2103 = p065.FromBytes
+var generatedDeclarationReference2104 = p065.New
+var generatedDeclarationReference2105 = p065.Nil
+var generatedDeclarationReference2106 = p065.OfflinePlayerUUID
+var generatedDeclarationReference2107 = p065.Parse
+var generatedDeclarationReference2108 = p065.ParseBytes
+
+func generatedDeclarationReference2109(_ p065.UUID) {}
+
+var generatedDeclarationReference2110 = p065.UUID.MarshalJSON
+var generatedDeclarationReference2111 = p065.UUID.String
+var generatedDeclarationReference2112 = p065.UUID.Undashed
+var generatedDeclarationReference2113 = (*p065.UUID).UnmarshalJSON
+var generatedDeclarationReference2114 = p066.ContainsIllegalCharacter
+var generatedDeclarationReference2115 = p066.IsAllowedCharacter
+var generatedDeclarationReference2116 = p066.QualifiedNameErrMsg
+var generatedDeclarationReference2117 = p066.QualifiedNameMaxLength
+var generatedDeclarationReference2118 = p066.ValidHostPort
+var generatedDeclarationReference2119 = p066.ValidServerName
+var generatedDeclarationReference2120 = p067.String
+var generatedDeclarationReference2121 = p067.UserAgent
+var generatedDeclarationReference2122 = p067.UserAgentHeader
+var generatedDeclarationReference2123 = p067.Version
 
 func RegisterGeneratedOperations(host *dispatch.Host) error {
 	if err := host.Register(dispatch.Operation{
@@ -28027,1709 +28055,1737 @@ func RegisterGeneratedOperations(host *dispatch.Host) error {
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1680,
-		Identity: "go.minekube.com/gate/pkg/gate#wasm-every",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
 		Handler:  generatedDispatch1680,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1681,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
 		Handler:  generatedDispatch1681,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1682,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-error",
 		Handler:  generatedDispatch1682,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1683,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-every",
 		Handler:  generatedDispatch1683,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1684,
-		Identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-log",
 		Handler:  generatedDispatch1684,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1685,
-		Identity: "go.minekube.com/gate/pkg/gate.New",
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
 		Handler:  generatedDispatch1685,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1686,
-		Identity: "go.minekube.com/gate/pkg/gate.Start",
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
 		Handler:  generatedDispatch1686,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1687,
-		Identity: "go.minekube.com/gate/pkg/gate.Viper#get",
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
 		Handler:  generatedDispatch1687,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1688,
-		Identity: "go.minekube.com/gate/pkg/gate.Viper#set",
+		Identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
 		Handler:  generatedDispatch1688,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1689,
-		Identity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
+		Identity: "go.minekube.com/gate/pkg/gate.New",
 		Handler:  generatedDispatch1689,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1690,
-		Identity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
+		Identity: "go.minekube.com/gate/pkg/gate.Start",
 		Handler:  generatedDispatch1690,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1691,
-		Identity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
+		Identity: "go.minekube.com/gate/pkg/gate.Viper#get",
 		Handler:  generatedDispatch1691,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1692,
-		Identity: "go.minekube.com/gate/pkg/gate.WithConfig",
+		Identity: "go.minekube.com/gate/pkg/gate.Viper#set",
 		Handler:  generatedDispatch1692,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1693,
-		Identity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
+		Identity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
 		Handler:  generatedDispatch1693,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1694,
-		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
+		Identity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
 		Handler:  generatedDispatch1694,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1695,
-		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
+		Identity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
 		Handler:  generatedDispatch1695,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1696,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
+		Identity: "go.minekube.com/gate/pkg/gate.WithConfig",
 		Handler:  generatedDispatch1696,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1697,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
+		Identity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
 		Handler:  generatedDispatch1697,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1698,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
+		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
 		Handler:  generatedDispatch1698,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1699,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
+		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
 		Handler:  generatedDispatch1699,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1700,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
 		Handler:  generatedDispatch1700,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1701,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
 		Handler:  generatedDispatch1701,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1702,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
 		Handler:  generatedDispatch1702,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1703,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
 		Handler:  generatedDispatch1703,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1704,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
 		Handler:  generatedDispatch1704,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1705,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
 		Handler:  generatedDispatch1705,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1706,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
 		Handler:  generatedDispatch1706,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1707,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
 		Handler:  generatedDispatch1707,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1708,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
 		Handler:  generatedDispatch1708,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1709,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
 		Handler:  generatedDispatch1709,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1710,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
 		Handler:  generatedDispatch1710,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1711,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
 		Handler:  generatedDispatch1711,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1712,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
 		Handler:  generatedDispatch1712,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1713,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
 		Handler:  generatedDispatch1713,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1714,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
 		Handler:  generatedDispatch1714,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1715,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
 		Handler:  generatedDispatch1715,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1716,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
 		Handler:  generatedDispatch1716,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1717,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
 		Handler:  generatedDispatch1717,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1718,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
 		Handler:  generatedDispatch1718,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1719,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
 		Handler:  generatedDispatch1719,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1720,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
 		Handler:  generatedDispatch1720,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1721,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
 		Handler:  generatedDispatch1721,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1722,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
 		Handler:  generatedDispatch1722,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1723,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
 		Handler:  generatedDispatch1723,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1724,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
 		Handler:  generatedDispatch1724,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1725,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
 		Handler:  generatedDispatch1725,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1726,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
 		Handler:  generatedDispatch1726,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1727,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
 		Handler:  generatedDispatch1727,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1728,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
 		Handler:  generatedDispatch1728,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1729,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
 		Handler:  generatedDispatch1729,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1730,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
 		Handler:  generatedDispatch1730,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1731,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
 		Handler:  generatedDispatch1731,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1732,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
 		Handler:  generatedDispatch1732,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1733,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
 		Handler:  generatedDispatch1733,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1734,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
 		Handler:  generatedDispatch1734,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1735,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
 		Handler:  generatedDispatch1735,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1736,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
 		Handler:  generatedDispatch1736,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1737,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
 		Handler:  generatedDispatch1737,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1738,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
 		Handler:  generatedDispatch1738,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1739,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
 		Handler:  generatedDispatch1739,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1740,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
 		Handler:  generatedDispatch1740,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1741,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
 		Handler:  generatedDispatch1741,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1742,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
 		Handler:  generatedDispatch1742,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1743,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
 		Handler:  generatedDispatch1743,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1744,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
 		Handler:  generatedDispatch1744,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1745,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
 		Handler:  generatedDispatch1745,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1746,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
 		Handler:  generatedDispatch1746,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1747,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
 		Handler:  generatedDispatch1747,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1748,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
 		Handler:  generatedDispatch1748,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1749,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
 		Handler:  generatedDispatch1749,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1750,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
 		Handler:  generatedDispatch1750,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1751,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
 		Handler:  generatedDispatch1751,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1752,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
 		Handler:  generatedDispatch1752,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1753,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
 		Handler:  generatedDispatch1753,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1754,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
 		Handler:  generatedDispatch1754,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1755,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
 		Handler:  generatedDispatch1755,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1756,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
 		Handler:  generatedDispatch1756,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1757,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
 		Handler:  generatedDispatch1757,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1758,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
 		Handler:  generatedDispatch1758,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1759,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
 		Handler:  generatedDispatch1759,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1760,
-		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
 		Handler:  generatedDispatch1760,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1761,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
 		Handler:  generatedDispatch1761,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1762,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
 		Handler:  generatedDispatch1762,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1763,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
 		Handler:  generatedDispatch1763,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1764,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.New",
+		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
 		Handler:  generatedDispatch1764,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1765,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
 		Handler:  generatedDispatch1765,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1766,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
 		Handler:  generatedDispatch1766,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1767,
-		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
 		Handler:  generatedDispatch1767,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1768,
-		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.New",
 		Handler:  generatedDispatch1768,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1769,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
 		Handler:  generatedDispatch1769,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1770,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
+		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
 		Handler:  generatedDispatch1770,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1771,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
+		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
 		Handler:  generatedDispatch1771,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1772,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
 		Handler:  generatedDispatch1772,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1773,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
 		Handler:  generatedDispatch1773,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1774,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
 		Handler:  generatedDispatch1774,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1775,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
 		Handler:  generatedDispatch1775,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1776,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
 		Handler:  generatedDispatch1776,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1777,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
 		Handler:  generatedDispatch1777,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1778,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
 		Handler:  generatedDispatch1778,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1779,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
 		Handler:  generatedDispatch1779,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1780,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
 		Handler:  generatedDispatch1780,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1781,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
 		Handler:  generatedDispatch1781,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1782,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
 		Handler:  generatedDispatch1782,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1783,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
 		Handler:  generatedDispatch1783,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1784,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
 		Handler:  generatedDispatch1784,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1785,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
 		Handler:  generatedDispatch1785,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1786,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
 		Handler:  generatedDispatch1786,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1787,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
 		Handler:  generatedDispatch1787,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1788,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
 		Handler:  generatedDispatch1788,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1789,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
 		Handler:  generatedDispatch1789,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1790,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
 		Handler:  generatedDispatch1790,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1791,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
 		Handler:  generatedDispatch1791,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1792,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
 		Handler:  generatedDispatch1792,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1793,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
 		Handler:  generatedDispatch1793,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1794,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
 		Handler:  generatedDispatch1794,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1795,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
 		Handler:  generatedDispatch1795,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1796,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
 		Handler:  generatedDispatch1796,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1797,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
 		Handler:  generatedDispatch1797,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1798,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
 		Handler:  generatedDispatch1798,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1799,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
 		Handler:  generatedDispatch1799,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1800,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
 		Handler:  generatedDispatch1800,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1801,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
 		Handler:  generatedDispatch1801,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1802,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
 		Handler:  generatedDispatch1802,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1803,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
 		Handler:  generatedDispatch1803,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1804,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
 		Handler:  generatedDispatch1804,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1805,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
 		Handler:  generatedDispatch1805,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1806,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
 		Handler:  generatedDispatch1806,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1807,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
 		Handler:  generatedDispatch1807,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1808,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
 		Handler:  generatedDispatch1808,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1809,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
 		Handler:  generatedDispatch1809,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1810,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
 		Handler:  generatedDispatch1810,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1811,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
 		Handler:  generatedDispatch1811,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1812,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
 		Handler:  generatedDispatch1812,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1813,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
 		Handler:  generatedDispatch1813,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1814,
-		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
 		Handler:  generatedDispatch1814,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1815,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
 		Handler:  generatedDispatch1815,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1816,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
 		Handler:  generatedDispatch1816,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1817,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
 		Handler:  generatedDispatch1817,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1818,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
+		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
 		Handler:  generatedDispatch1818,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1819,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
 		Handler:  generatedDispatch1819,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1820,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
 		Handler:  generatedDispatch1820,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1821,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
 		Handler:  generatedDispatch1821,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1822,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
 		Handler:  generatedDispatch1822,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1823,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
 		Handler:  generatedDispatch1823,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1824,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
 		Handler:  generatedDispatch1824,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1825,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
 		Handler:  generatedDispatch1825,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1826,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
 		Handler:  generatedDispatch1826,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1827,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
 		Handler:  generatedDispatch1827,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1828,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
 		Handler:  generatedDispatch1828,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1829,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
 		Handler:  generatedDispatch1829,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1830,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
 		Handler:  generatedDispatch1830,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1831,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
 		Handler:  generatedDispatch1831,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1832,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
 		Handler:  generatedDispatch1832,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1833,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
 		Handler:  generatedDispatch1833,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1834,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
 		Handler:  generatedDispatch1834,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1835,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
 		Handler:  generatedDispatch1835,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1836,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
 		Handler:  generatedDispatch1836,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1837,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
 		Handler:  generatedDispatch1837,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1838,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
 		Handler:  generatedDispatch1838,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1839,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
 		Handler:  generatedDispatch1839,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1840,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
 		Handler:  generatedDispatch1840,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1841,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
 		Handler:  generatedDispatch1841,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1842,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
 		Handler:  generatedDispatch1842,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1843,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
 		Handler:  generatedDispatch1843,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1844,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
 		Handler:  generatedDispatch1844,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1845,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
 		Handler:  generatedDispatch1845,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1846,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
 		Handler:  generatedDispatch1846,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1847,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
 		Handler:  generatedDispatch1847,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1848,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
 		Handler:  generatedDispatch1848,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1849,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
 		Handler:  generatedDispatch1849,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1850,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
 		Handler:  generatedDispatch1850,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1851,
-		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
 		Handler:  generatedDispatch1851,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1852,
-		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
 		Handler:  generatedDispatch1852,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1853,
-		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
 		Handler:  generatedDispatch1853,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1854,
-		Identity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
 		Handler:  generatedDispatch1854,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1855,
-		Identity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
+		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
 		Handler:  generatedDispatch1855,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1856,
-		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
+		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
 		Handler:  generatedDispatch1856,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1857,
-		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
+		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
 		Handler:  generatedDispatch1857,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1858,
-		Identity: "go.minekube.com/gate/pkg/util/errs.V",
+		Identity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
 		Handler:  generatedDispatch1858,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1859,
-		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
+		Identity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
 		Handler:  generatedDispatch1859,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1860,
-		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
+		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
 		Handler:  generatedDispatch1860,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1861,
-		Identity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
+		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
 		Handler:  generatedDispatch1861,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1862,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
+		Identity: "go.minekube.com/gate/pkg/util/errs.V",
 		Handler:  generatedDispatch1862,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1863,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
 		Handler:  generatedDispatch1863,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1864,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
+		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
 		Handler:  generatedDispatch1864,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1865,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
+		Identity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
 		Handler:  generatedDispatch1865,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1866,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
 		Handler:  generatedDispatch1866,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1867,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
 		Handler:  generatedDispatch1867,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1868,
-		Identity: "go.minekube.com/gate/pkg/util/favicon.Parse",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
 		Handler:  generatedDispatch1868,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1869,
-		Identity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
 		Handler:  generatedDispatch1869,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1870,
-		Identity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
 		Handler:  generatedDispatch1870,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1871,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.Host",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
 		Handler:  generatedDispatch1871,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1872,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
+		Identity: "go.minekube.com/gate/pkg/util/favicon.Parse",
 		Handler:  generatedDispatch1872,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1873,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
+		Identity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
 		Handler:  generatedDispatch1873,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1874,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
+		Identity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
 		Handler:  generatedDispatch1874,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1875,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.Parse",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.Host",
 		Handler:  generatedDispatch1875,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1876,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
 		Handler:  generatedDispatch1876,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1877,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.Port",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
 		Handler:  generatedDispatch1877,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1878,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
 		Handler:  generatedDispatch1878,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1879,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.Parse",
 		Handler:  generatedDispatch1879,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1880,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
 		Handler:  generatedDispatch1880,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1881,
-		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.Port",
 		Handler:  generatedDispatch1881,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1882,
-		Identity: "go.minekube.com/gate/pkg/util/permission.False#get",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
 		Handler:  generatedDispatch1882,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1883,
-		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
 		Handler:  generatedDispatch1883,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1884,
-		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
 		Handler:  generatedDispatch1884,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1885,
-		Identity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
+		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
 		Handler:  generatedDispatch1885,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1886,
-		Identity: "go.minekube.com/gate/pkg/util/permission.True#get",
+		Identity: "go.minekube.com/gate/pkg/util/permission.False#get",
 		Handler:  generatedDispatch1886,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1887,
-		Identity: "go.minekube.com/gate/pkg/util/permission.Undefined#get",
+		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
 		Handler:  generatedDispatch1887,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1888,
-		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
+		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
 		Handler:  generatedDispatch1888,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1889,
-		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
+		Identity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
 		Handler:  generatedDispatch1889,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1890,
-		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
+		Identity: "go.minekube.com/gate/pkg/util/permission.True#get",
 		Handler:  generatedDispatch1890,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1891,
-		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
+		Identity: "go.minekube.com/gate/pkg/util/permission.Undefined#get",
 		Handler:  generatedDispatch1891,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1892,
-		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
+		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
 		Handler:  generatedDispatch1892,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1893,
-		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
+		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
 		Handler:  generatedDispatch1893,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1894,
-		Identity: "go.minekube.com/gate/pkg/util/sets.NewString",
+		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
 		Handler:  generatedDispatch1894,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1895,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
+		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
 		Handler:  generatedDispatch1895,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1896,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.Has",
+		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
 		Handler:  generatedDispatch1896,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1897,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
+		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
 		Handler:  generatedDispatch1897,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1898,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
+		Identity: "go.minekube.com/gate/pkg/util/sets.NewString",
 		Handler:  generatedDispatch1898,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1899,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
 		Handler:  generatedDispatch1899,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1900,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.Len",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.Has",
 		Handler:  generatedDispatch1900,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1901,
-		Identity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
 		Handler:  generatedDispatch1901,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1902,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
 		Handler:  generatedDispatch1902,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1903,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.New",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
 		Handler:  generatedDispatch1903,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1904,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#get",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.Len",
 		Handler:  generatedDispatch1904,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1905,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#set",
+		Identity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
 		Handler:  generatedDispatch1905,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1906,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
 		Handler:  generatedDispatch1906,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1907,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.Parse",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.New",
 		Handler:  generatedDispatch1907,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1908,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#get",
 		Handler:  generatedDispatch1908,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1909,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#set",
 		Handler:  generatedDispatch1909,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1910,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
 		Handler:  generatedDispatch1910,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1911,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.Parse",
 		Handler:  generatedDispatch1911,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1912,
-		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
 		Handler:  generatedDispatch1912,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1913,
-		Identity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
 		Handler:  generatedDispatch1913,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1914,
-		Identity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
 		Handler:  generatedDispatch1914,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1915,
-		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
 		Handler:  generatedDispatch1915,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1916,
-		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
+		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
 		Handler:  generatedDispatch1916,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1917,
-		Identity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
+		Identity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
 		Handler:  generatedDispatch1917,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1918,
-		Identity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
+		Identity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
 		Handler:  generatedDispatch1918,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1919,
-		Identity: "go.minekube.com/gate/pkg/version.String",
+		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
 		Handler:  generatedDispatch1919,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1920,
-		Identity: "go.minekube.com/gate/pkg/version.UserAgent",
+		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
 		Handler:  generatedDispatch1920,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1921,
-		Identity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
+		Identity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
 		Handler:  generatedDispatch1921,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1922,
-		Identity: "go.minekube.com/gate/pkg/version.Version#get",
+		Identity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
 		Handler:  generatedDispatch1922,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       1923,
-		Identity: "go.minekube.com/gate/pkg/version.Version#set",
+		Identity: "go.minekube.com/gate/pkg/version.String",
 		Handler:  generatedDispatch1923,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       1924,
+		Identity: "go.minekube.com/gate/pkg/version.UserAgent",
+		Handler:  generatedDispatch1924,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       1925,
+		Identity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
+		Handler:  generatedDispatch1925,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       1926,
+		Identity: "go.minekube.com/gate/pkg/version.Version#get",
+		Handler:  generatedDispatch1926,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       1927,
+		Identity: "go.minekube.com/gate/pkg/version.Version#set",
+		Handler:  generatedDispatch1927,
 	}); err != nil {
 		return err
 	}
@@ -44603,72 +44659,108 @@ func generatedDispatch1679(ctx context.Context, host *dispatch.Host, arguments [
 func generatedDispatch1680(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1680,
-		Identity: "go.minekube.com/gate/pkg/gate#wasm-every",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-cancelled",
 	}
-	signature := func(int64, func() error) (func(), error) { return nil, nil }
+	signature := func(context.Context) bool { return false }
 	return host.CallExtension(ctx, operation, signature, arguments)
 }
 
 func generatedDispatch1681(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1681,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-deadline",
 	}
-	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Bedrock", arguments, false)
+	signature := func(context.Context) (int64, bool) { return 0, false }
+	return host.CallExtension(ctx, operation, signature, arguments)
 }
 
 func generatedDispatch1682(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1682,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-context-error",
 	}
-	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Java", arguments, false)
+	signature := func(context.Context) string { return "" }
+	return host.CallExtension(ctx, operation, signature, arguments)
 }
 
 func generatedDispatch1683(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1683,
-		Identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-every",
 	}
-	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Start", arguments, false)
+	signature := func(int64, func() error) (func(), error) { return nil, nil }
+	return host.CallExtension(ctx, operation, signature, arguments)
 }
 
 func generatedDispatch1684(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1684,
-		Identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
+		Identity: "go.minekube.com/gate/pkg/gate#wasm-log",
 	}
-	return host.Call(ctx, operation, p050.LoadConfig, arguments, false)
+	signature := func(context.Context, int64, string, []string) error { return nil }
+	return host.CallExtension(ctx, operation, signature, arguments)
 }
 
 func generatedDispatch1685(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1685,
-		Identity: "go.minekube.com/gate/pkg/gate.New",
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
 	}
-	return host.Call(ctx, operation, p050.New, arguments, false)
+	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Bedrock", arguments, false)
 }
 
 func generatedDispatch1686(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1686,
-		Identity: "go.minekube.com/gate/pkg/gate.Start",
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
 	}
-	return host.Call(ctx, operation, p050.Start, arguments, true)
+	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Java", arguments, false)
 }
 
 func generatedDispatch1687(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
 		ID:       1687,
+		Identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
+	}
+	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate.Gate", "Start", arguments, false)
+}
+
+func generatedDispatch1688(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	operation := dispatch.Operation{
+		ID:       1688,
+		Identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
+	}
+	return host.Call(ctx, operation, p050.LoadConfig, arguments, false)
+}
+
+func generatedDispatch1689(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	operation := dispatch.Operation{
+		ID:       1689,
+		Identity: "go.minekube.com/gate/pkg/gate.New",
+	}
+	return host.Call(ctx, operation, p050.New, arguments, false)
+}
+
+func generatedDispatch1690(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	operation := dispatch.Operation{
+		ID:       1690,
+		Identity: "go.minekube.com/gate/pkg/gate.Start",
+	}
+	return host.Call(ctx, operation, p050.Start, arguments, true)
+}
+
+func generatedDispatch1691(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	operation := dispatch.Operation{
+		ID:       1691,
 		Identity: "go.minekube.com/gate/pkg/gate.Viper#get",
 	}
 	_ = operation
 	return []any{p050.Viper}, nil
 }
 
-func generatedDispatch1688(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1692(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1688,
+		ID:       1692,
 		Identity: "go.minekube.com/gate/pkg/gate.Viper#set",
 	}
 	if len(arguments) != 1 {
@@ -44680,58 +44772,58 @@ func generatedDispatch1688(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1689(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1693(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1689,
+		ID:       1693,
 		Identity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
 	}
 	return host.Call(ctx, operation, p050.WithAutoConfigReload, arguments, false)
 }
 
-func generatedDispatch1690(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1694(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1690,
+		ID:       1694,
 		Identity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
 	}
 	return host.Call(ctx, operation, p050.WithAutoShutdownOnSignal, arguments, false)
 }
 
-func generatedDispatch1691(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1695(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1691,
+		ID:       1695,
 		Identity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
 	}
 	return host.Call(ctx, operation, p050.WithComponentPlugins, arguments, false)
 }
 
-func generatedDispatch1692(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1696(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1692,
+		ID:       1696,
 		Identity: "go.minekube.com/gate/pkg/gate.WithConfig",
 	}
 	return host.Call(ctx, operation, p050.WithConfig, arguments, false)
 }
 
-func generatedDispatch1693(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1697(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1693,
+		ID:       1697,
 		Identity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/config.Config", "Validate", arguments, false)
 }
 
-func generatedDispatch1694(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1698(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1694,
+		ID:       1698,
 		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
 	}
 	_ = operation
 	return []any{p051.DefaultConfig}, nil
 }
 
-func generatedDispatch1695(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1699(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1695,
+		ID:       1699,
 		Identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
 	}
 	if len(arguments) != 1 {
@@ -44743,35 +44835,35 @@ func generatedDispatch1695(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1696(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1700(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1696,
+		ID:       1700,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
 	}
 	_ = operation
 	return []any{p052.ClientBound}, nil
 }
 
-func generatedDispatch1697(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1701(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1697,
+		ID:       1701,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
 	}
 	return host.Call(ctx, operation, p052.Direction.String, arguments, false)
 }
 
-func generatedDispatch1698(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1702(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1698,
+		ID:       1702,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
 	}
 	_ = operation
 	return []any{p052.ErrDecoderLeftBytes}, nil
 }
 
-func generatedDispatch1699(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1703(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1699,
+		ID:       1703,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
 	}
 	if len(arguments) != 1 {
@@ -44783,1148 +44875,1148 @@ func generatedDispatch1699(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1700(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1704(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1700,
+		ID:       1704,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.Packet", "Decode", arguments, false)
 }
 
-func generatedDispatch1701(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1705(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1701,
+		ID:       1705,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.Packet", "Encode", arguments, false)
 }
 
-func generatedDispatch1702(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1706(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1702,
+		ID:       1706,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketContext", "KnownPacket", arguments, false)
 }
 
-func generatedDispatch1703(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1707(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1703,
+		ID:       1707,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketContext", "String", arguments, false)
 }
 
-func generatedDispatch1704(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1708(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1704,
+		ID:       1708,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketDecoder", "Decode", arguments, false)
 }
 
-func generatedDispatch1705(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1709(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1705,
+		ID:       1709,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketEncoder", "Encode", arguments, false)
 }
 
-func generatedDispatch1706(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1710(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1706,
+		ID:       1710,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
 	}
 	return host.Call(ctx, operation, p052.PacketID.String, arguments, false)
 }
 
-func generatedDispatch1707(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1711(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1707,
+		ID:       1711,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Align", arguments, false)
 }
 
-func generatedDispatch1708(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1712(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1708,
+		ID:       1712,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "AssignableTo", arguments, false)
 }
 
-func generatedDispatch1709(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1713(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1709,
+		ID:       1713,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Bits", arguments, false)
 }
 
-func generatedDispatch1710(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1714(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1710,
+		ID:       1714,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "CanSeq", arguments, false)
 }
 
-func generatedDispatch1711(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1715(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1711,
+		ID:       1715,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "CanSeq2", arguments, false)
 }
 
-func generatedDispatch1712(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1716(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1712,
+		ID:       1716,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "ChanDir", arguments, false)
 }
 
-func generatedDispatch1713(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1717(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1713,
+		ID:       1717,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Comparable", arguments, false)
 }
 
-func generatedDispatch1714(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1718(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1714,
+		ID:       1718,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "ConvertibleTo", arguments, false)
 }
 
-func generatedDispatch1715(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1719(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1715,
+		ID:       1719,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Elem", arguments, false)
 }
 
-func generatedDispatch1716(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1720(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1716,
+		ID:       1720,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Field", arguments, false)
 }
 
-func generatedDispatch1717(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1721(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1717,
+		ID:       1721,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "FieldAlign", arguments, false)
 }
 
-func generatedDispatch1718(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1722(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1718,
+		ID:       1722,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "FieldByIndex", arguments, false)
 }
 
-func generatedDispatch1719(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1723(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1719,
+		ID:       1723,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "FieldByName", arguments, false)
 }
 
-func generatedDispatch1720(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1724(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1720,
+		ID:       1724,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "FieldByNameFunc", arguments, false)
 }
 
-func generatedDispatch1721(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1725(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1721,
+		ID:       1725,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Fields", arguments, false)
 }
 
-func generatedDispatch1722(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1726(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1722,
+		ID:       1726,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Implements", arguments, false)
 }
 
-func generatedDispatch1723(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1727(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1723,
+		ID:       1727,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "In", arguments, false)
 }
 
-func generatedDispatch1724(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1728(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1724,
+		ID:       1728,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Ins", arguments, false)
 }
 
-func generatedDispatch1725(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1729(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1725,
+		ID:       1729,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "IsVariadic", arguments, false)
 }
 
-func generatedDispatch1726(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1730(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1726,
+		ID:       1730,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Key", arguments, false)
 }
 
-func generatedDispatch1727(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1731(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1727,
+		ID:       1731,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Kind", arguments, false)
 }
 
-func generatedDispatch1728(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1732(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1728,
+		ID:       1732,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Len", arguments, false)
 }
 
-func generatedDispatch1729(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1733(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1729,
+		ID:       1733,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Method", arguments, false)
 }
 
-func generatedDispatch1730(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1734(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1730,
+		ID:       1734,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "MethodByName", arguments, false)
 }
 
-func generatedDispatch1731(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1735(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1731,
+		ID:       1735,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Methods", arguments, false)
 }
 
-func generatedDispatch1732(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1736(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1732,
+		ID:       1736,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Name", arguments, false)
 }
 
-func generatedDispatch1733(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1737(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1733,
+		ID:       1737,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "NumField", arguments, false)
 }
 
-func generatedDispatch1734(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1738(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1734,
+		ID:       1738,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "NumIn", arguments, false)
 }
 
-func generatedDispatch1735(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1739(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1735,
+		ID:       1739,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "NumMethod", arguments, false)
 }
 
-func generatedDispatch1736(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1740(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1736,
+		ID:       1740,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "NumOut", arguments, false)
 }
 
-func generatedDispatch1737(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1741(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1737,
+		ID:       1741,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Out", arguments, false)
 }
 
-func generatedDispatch1738(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1742(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1738,
+		ID:       1742,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Outs", arguments, false)
 }
 
-func generatedDispatch1739(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1743(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1739,
+		ID:       1743,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "OverflowComplex", arguments, false)
 }
 
-func generatedDispatch1740(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1744(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1740,
+		ID:       1744,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "OverflowFloat", arguments, false)
 }
 
-func generatedDispatch1741(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1745(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1741,
+		ID:       1745,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "OverflowInt", arguments, false)
 }
 
-func generatedDispatch1742(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1746(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1742,
+		ID:       1746,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "OverflowUint", arguments, false)
 }
 
-func generatedDispatch1743(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1747(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1743,
+		ID:       1747,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "PkgPath", arguments, false)
 }
 
-func generatedDispatch1744(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1748(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1744,
+		ID:       1748,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "Size", arguments, false)
 }
 
-func generatedDispatch1745(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1749(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1745,
+		ID:       1749,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketType", "String", arguments, false)
 }
 
-func generatedDispatch1746(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1750(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1746,
+		ID:       1750,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.PacketWriter", "WritePacket", arguments, false)
 }
 
-func generatedDispatch1747(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1751(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1747,
+		ID:       1751,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
 	}
 	return host.Call(ctx, operation, p052.Protocol.Greater, arguments, false)
 }
 
-func generatedDispatch1748(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1752(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1748,
+		ID:       1752,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
 	}
 	return host.Call(ctx, operation, p052.Protocol.GreaterEqual, arguments, false)
 }
 
-func generatedDispatch1749(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1753(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1749,
+		ID:       1753,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
 	}
 	return host.Call(ctx, operation, p052.Protocol.Lower, arguments, false)
 }
 
-func generatedDispatch1750(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1754(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1750,
+		ID:       1754,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
 	}
 	return host.Call(ctx, operation, p052.Protocol.LowerEqual, arguments, false)
 }
 
-func generatedDispatch1751(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1755(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1751,
+		ID:       1755,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
 	}
 	return host.Call(ctx, operation, p052.Protocol.String, arguments, false)
 }
 
-func generatedDispatch1752(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1756(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1752,
+		ID:       1756,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
 	}
 	_ = operation
 	return []any{p052.ServerBound}, nil
 }
 
-func generatedDispatch1753(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1757(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1753,
+		ID:       1757,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
 	}
 	return host.Call(ctx, operation, p052.TypeOf, arguments, false)
 }
 
-func generatedDispatch1754(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1758(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1754,
+		ID:       1758,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.Version", "FirstName", arguments, false)
 }
 
-func generatedDispatch1755(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1759(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1755,
+		ID:       1759,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
 	}
 	return host.Call(ctx, operation, p052.Version.Greater, arguments, false)
 }
 
-func generatedDispatch1756(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1760(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1756,
+		ID:       1760,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
 	}
 	return host.Call(ctx, operation, p052.Version.GreaterEqual, arguments, false)
 }
 
-func generatedDispatch1757(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1761(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1757,
+		ID:       1761,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/gate/proto.Version", "LastName", arguments, false)
 }
 
-func generatedDispatch1758(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1762(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1758,
+		ID:       1762,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
 	}
 	return host.Call(ctx, operation, p052.Version.Lower, arguments, false)
 }
 
-func generatedDispatch1759(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1763(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1759,
+		ID:       1763,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
 	}
 	return host.Call(ctx, operation, p052.Version.LowerEqual, arguments, false)
 }
 
-func generatedDispatch1760(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1764(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1760,
+		ID:       1764,
 		Identity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
 	}
 	return host.Call(ctx, operation, p052.Version.String, arguments, false)
 }
 
-func generatedDispatch1761(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1765(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1761,
+		ID:       1765,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/runtime/process.Collection", "Add", arguments, false)
 }
 
-func generatedDispatch1762(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1766(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1762,
+		ID:       1766,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/runtime/process.Collection", "Start", arguments, false)
 }
 
-func generatedDispatch1763(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1767(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1763,
+		ID:       1767,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
 	}
 	_ = operation
 	return []any{p053.DefaultGracefulShutdownPeriod}, nil
 }
 
-func generatedDispatch1764(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1768(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1764,
+		ID:       1768,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.New",
 	}
 	return host.Call(ctx, operation, p053.New, arguments, true)
 }
 
-func generatedDispatch1765(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1769(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1765,
+		ID:       1769,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/runtime/process.Runnable", "Start", arguments, false)
 }
 
-func generatedDispatch1766(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1770(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1766,
+		ID:       1770,
 		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/runtime/process.RunnableFunc", "Start", arguments, false)
 }
 
-func generatedDispatch1767(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1771(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1767,
+		ID:       1771,
 		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
 	}
 	return host.Call(ctx, operation, p054.ParseComponent, arguments, false)
 }
 
-func generatedDispatch1768(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1772(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1768,
+		ID:       1772,
 		Identity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
 	}
 	return host.Call(ctx, operation, p054.ParseTextComponent, arguments, false)
 }
 
-func generatedDispatch1769(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1773(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1769,
+		ID:       1773,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "BoolValue", arguments, false)
 }
 
-func generatedDispatch1770(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1774(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1770,
+		ID:       1774,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "IsBool", arguments, false)
 }
 
-func generatedDispatch1771(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1775(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1771,
+		ID:       1775,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "IsNil", arguments, false)
 }
 
-func generatedDispatch1772(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1776(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1772,
+		ID:       1776,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "MarshalJSON", arguments, false)
 }
 
-func generatedDispatch1773(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1777(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1773,
+		ID:       1777,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "MarshalYAML", arguments, false)
 }
 
-func generatedDispatch1774(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1778(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1774,
+		ID:       1778,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "String", arguments, false)
 }
 
-func generatedDispatch1775(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1779(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1775,
+		ID:       1779,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "StructValue", arguments, false)
 }
 
-func generatedDispatch1776(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1780(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1776,
+		ID:       1780,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1777(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1781(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1777,
+		ID:       1781,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1778(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1782(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1778,
+		ID:       1782,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Component", "C", arguments, false)
 }
 
-func generatedDispatch1779(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1783(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1779,
+		ID:       1783,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Component", "MarshalJSON", arguments, false)
 }
 
-func generatedDispatch1780(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1784(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1780,
+		ID:       1784,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Component", "MarshalYAML", arguments, false)
 }
 
-func generatedDispatch1781(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1785(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1781,
+		ID:       1785,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Component", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1782(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1786(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1782,
+		ID:       1786,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Component", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1783(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1787(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1783,
+		ID:       1787,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Duration", "MarshalJSON", arguments, false)
 }
 
-func generatedDispatch1784(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1788(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1784,
+		ID:       1788,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Duration", "MarshalYAML", arguments, false)
 }
 
-func generatedDispatch1785(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1789(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1785,
+		ID:       1789,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Duration", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1786(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1790(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1786,
+		ID:       1790,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.Duration", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1787(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1791(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1787,
+		ID:       1791,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
 	}
 	return host.Call(ctx, operation, p055.NewBoolOrStructBool[any], arguments, false)
 }
 
-func generatedDispatch1788(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1792(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1788,
+		ID:       1792,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
 	}
 	return host.Call(ctx, operation, p055.NewBoolOrStructBool[any], arguments, false)
 }
 
-func generatedDispatch1789(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1793(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1789,
+		ID:       1793,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
 	}
 	return host.Call(ctx, operation, p055.NewBoolOrStructBool[p004.ManagedGeyser], arguments, false)
 }
 
-func generatedDispatch1790(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1794(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1790,
+		ID:       1794,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
 	}
 	return host.Call(ctx, operation, p055.NewBoolOrStructStruct[any], arguments, false)
 }
 
-func generatedDispatch1791(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1795(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1791,
+		ID:       1795,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
 	}
 	return host.Call(ctx, operation, p055.NewBoolOrStructStruct[any], arguments, false)
 }
 
-func generatedDispatch1792(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1796(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1792,
+		ID:       1796,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].Copy, arguments, false)
 }
 
-func generatedDispatch1793(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1797(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1793,
+		ID:       1797,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].IsMulti, arguments, false)
 }
 
-func generatedDispatch1794(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1798(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1794,
+		ID:       1798,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].MarshalJSON, arguments, false)
 }
 
-func generatedDispatch1795(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1799(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1795,
+		ID:       1799,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].MarshalYAML, arguments, false)
 }
 
-func generatedDispatch1796(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1800(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1796,
+		ID:       1800,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].Multi, arguments, false)
 }
 
-func generatedDispatch1797(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1801(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1797,
+		ID:       1801,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].Random, arguments, false)
 }
 
-func generatedDispatch1798(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1802(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1798,
+		ID:       1802,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].Single, arguments, false)
 }
 
-func generatedDispatch1799(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1803(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1799,
+		ID:       1803,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
 	}
 	return host.Call(ctx, operation, p055.SingleOrMulti[any].String, arguments, false)
 }
 
-func generatedDispatch1800(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1804(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1800,
+		ID:       1804,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1801(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1805(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1801,
+		ID:       1805,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1802(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1806(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1802,
+		ID:       1806,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.TextComponent", "MarshalJSON", arguments, false)
 }
 
-func generatedDispatch1803(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1807(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1803,
+		ID:       1807,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.TextComponent", "MarshalYAML", arguments, false)
 }
 
-func generatedDispatch1804(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1808(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1804,
+		ID:       1808,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.TextComponent", "T", arguments, false)
 }
 
-func generatedDispatch1805(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1809(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1805,
+		ID:       1809,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.TextComponent", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1806(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1810(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1806,
+		ID:       1810,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.TextComponent", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1807(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1811(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1807,
+		ID:       1811,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "MarshalBinary", arguments, false)
 }
 
-func generatedDispatch1808(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1812(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1808,
+		ID:       1812,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "MarshalJSON", arguments, false)
 }
 
-func generatedDispatch1809(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1813(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1809,
+		ID:       1813,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "MarshalYAML", arguments, false)
 }
 
-func generatedDispatch1810(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1814(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1810,
+		ID:       1814,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "String", arguments, false)
 }
 
-func generatedDispatch1811(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1815(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1811,
+		ID:       1815,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "T", arguments, false)
 }
 
-func generatedDispatch1812(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1816(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1812,
+		ID:       1816,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "UnmarshalBinary", arguments, false)
 }
 
-func generatedDispatch1813(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1817(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1813,
+		ID:       1817,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1814(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1818(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1814,
+		ID:       1818,
 		Identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/configutil.URL", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1815(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1819(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1815,
+		ID:       1819,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.Endpoint", "Name", arguments, false)
 }
 
-func generatedDispatch1816(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1820(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1816,
+		ID:       1820,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.Endpoint", "Propose", arguments, false)
 }
 
-func generatedDispatch1817(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1821(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1817,
+		ID:       1821,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.Endpoint", "Rejections", arguments, false)
 }
 
-func generatedDispatch1818(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1822(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1818,
+		ID:       1822,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.EndpointListener", "AcceptEndpoint", arguments, false)
 }
 
-func generatedDispatch1819(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1823(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1819,
+		ID:       1823,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "Close", arguments, false)
 }
 
-func generatedDispatch1820(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1824(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1820,
+		ID:       1824,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "LocalAddr", arguments, false)
 }
 
-func generatedDispatch1821(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1825(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1821,
+		ID:       1825,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "Read", arguments, false)
 }
 
-func generatedDispatch1822(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1826(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1822,
+		ID:       1826,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "RemoteAddr", arguments, false)
 }
 
-func generatedDispatch1823(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1827(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1823,
+		ID:       1827,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "SessionID", arguments, false)
 }
 
-func generatedDispatch1824(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1828(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1824,
+		ID:       1828,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "SetDeadline", arguments, false)
 }
 
-func generatedDispatch1825(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1829(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1825,
+		ID:       1829,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "SetReadDeadline", arguments, false)
 }
 
-func generatedDispatch1826(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1830(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1826,
+		ID:       1830,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "SetWriteDeadline", arguments, false)
 }
 
-func generatedDispatch1827(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1831(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1827,
+		ID:       1831,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel", "Write", arguments, false)
 }
 
-func generatedDispatch1828(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1832(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1828,
+		ID:       1832,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
 	}
 	return host.Call(ctx, operation, p056.RequireEndpointName, arguments, false)
 }
 
-func generatedDispatch1829(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1833(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1829,
+		ID:       1833,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
 	}
 	return host.Call(ctx, operation, p056.RequireTunnelSessionID, arguments, false)
 }
 
-func generatedDispatch1830(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1834(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1830,
+		ID:       1834,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelListener", "AcceptTunnel", arguments, false)
 }
 
-func generatedDispatch1831(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1835(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1831,
+		ID:       1835,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "Close", arguments, false)
 }
 
-func generatedDispatch1832(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1836(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1832,
+		ID:       1836,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "LocalAddr", arguments, false)
 }
 
-func generatedDispatch1833(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1837(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1833,
+		ID:       1837,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "Read", arguments, false)
 }
 
-func generatedDispatch1834(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1838(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1834,
+		ID:       1838,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "RemoteAddr", arguments, false)
 }
 
-func generatedDispatch1835(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1839(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1835,
+		ID:       1839,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "Session", arguments, false)
 }
 
-func generatedDispatch1836(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1840(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1836,
+		ID:       1840,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "SetDeadline", arguments, false)
 }
 
-func generatedDispatch1837(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1841(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1837,
+		ID:       1841,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "SetReadDeadline", arguments, false)
 }
 
-func generatedDispatch1838(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1842(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1838,
+		ID:       1842,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "SetWriteDeadline", arguments, false)
 }
 
-func generatedDispatch1839(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1843(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1839,
+		ID:       1843,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil.TunnelSession", "Write", arguments, false)
 }
 
-func generatedDispatch1840(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1844(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1840,
+		ID:       1844,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler", "HandleConn", arguments, false)
 }
 
-func generatedDispatch1841(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1845(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1841,
+		ID:       1845,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
 	}
 	_ = operation
 	return []any{p057.DefaultConfig}, nil
 }
 
-func generatedDispatch1842(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1846(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1842,
+		ID:       1846,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
 	}
 	if len(arguments) != 1 {
@@ -45936,91 +46028,91 @@ func generatedDispatch1842(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1843(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1847(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1843,
+		ID:       1847,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
 	}
 	_ = operation
 	return []any{p057.DefaultWatchServiceAddr}, nil
 }
 
-func generatedDispatch1844(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1848(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1844,
+		ID:       1848,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/config.Instance", "HandleConn", arguments, false)
 }
 
-func generatedDispatch1845(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1849(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1845,
+		ID:       1849,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/config.Instance", "Register", arguments, false)
 }
 
-func generatedDispatch1846(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1850(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1846,
+		ID:       1850,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/config.Instance", "Server", arguments, false)
 }
 
-func generatedDispatch1847(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1851(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1847,
+		ID:       1851,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/config.Instance", "Unregister", arguments, false)
 }
 
-func generatedDispatch1848(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1852(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1848,
+		ID:       1852,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
 	}
 	return host.Call(ctx, operation, p057.New, arguments, false)
 }
 
-func generatedDispatch1849(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1853(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1849,
+		ID:       1853,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/single.Listener", "AcceptEndpoint", arguments, false)
 }
 
-func generatedDispatch1850(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1854(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1850,
+		ID:       1854,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/connectutil/single.Listener", "AcceptTunnel", arguments, false)
 }
 
-func generatedDispatch1851(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1855(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1851,
+		ID:       1855,
 		Identity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
 	}
 	return host.Call(ctx, operation, p058.New, arguments, false)
 }
 
-func generatedDispatch1852(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1856(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1852,
+		ID:       1856,
 		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
 	}
 	_ = operation
 	return []any{p059.ErrMissingConfig}, nil
 }
 
-func generatedDispatch1853(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1857(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1853,
+		ID:       1857,
 		Identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
 	}
 	if len(arguments) != 1 {
@@ -46032,421 +46124,421 @@ func generatedDispatch1853(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1854(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1858(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1854,
+		ID:       1858,
 		Identity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
 	}
 	return host.Call(ctx, operation, p059.IsConnClosedErr, arguments, false)
 }
 
-func generatedDispatch1855(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1859(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1855,
+		ID:       1859,
 		Identity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
 	}
 	return host.Call(ctx, operation, p059.NewSilentErr, arguments, true)
 }
 
-func generatedDispatch1856(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1860(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1856,
+		ID:       1860,
 		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/errs.SilentError", "Error", arguments, false)
 }
 
-func generatedDispatch1857(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1861(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1857,
+		ID:       1861,
 		Identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/errs.SilentError", "Unwrap", arguments, false)
 }
 
-func generatedDispatch1858(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1862(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1858,
+		ID:       1862,
 		Identity: "go.minekube.com/gate/pkg/util/errs.V",
 	}
 	return host.Call(ctx, operation, p059.V, arguments, false)
 }
 
-func generatedDispatch1859(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1863(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1859,
+		ID:       1863,
 		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/errs.VerbosityError", "Error", arguments, false)
 }
 
-func generatedDispatch1860(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1864(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1860,
+		ID:       1864,
 		Identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/errs.VerbosityError", "Unwrap", arguments, false)
 }
 
-func generatedDispatch1861(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1865(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1861,
+		ID:       1865,
 		Identity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
 	}
 	return host.Call(ctx, operation, p059.WrapSilent, arguments, false)
 }
 
-func generatedDispatch1862(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1866(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1862,
+		ID:       1866,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
 	}
 	return host.Call(ctx, operation, p060.Favicon.Bytes, arguments, false)
 }
 
-func generatedDispatch1863(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1867(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1863,
+		ID:       1867,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/favicon.Favicon", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1864(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1868(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1864,
+		ID:       1868,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/favicon.Favicon", "UnmarshalYAML", arguments, false)
 }
 
-func generatedDispatch1865(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1869(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1865,
+		ID:       1869,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
 	}
 	return host.Call(ctx, operation, p060.FromBytes, arguments, false)
 }
 
-func generatedDispatch1866(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1870(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1866,
+		ID:       1870,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
 	}
 	return host.Call(ctx, operation, p060.FromFile, arguments, false)
 }
 
-func generatedDispatch1867(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1871(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1867,
+		ID:       1871,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
 	}
 	return host.Call(ctx, operation, p060.FromImage, arguments, false)
 }
 
-func generatedDispatch1868(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1872(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1868,
+		ID:       1872,
 		Identity: "go.minekube.com/gate/pkg/util/favicon.Parse",
 	}
 	return host.Call(ctx, operation, p060.Parse, arguments, false)
 }
 
-func generatedDispatch1869(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1873(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1869,
+		ID:       1873,
 		Identity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
 	}
 	return host.Call(ctx, operation, p061.Notify, arguments, false)
 }
 
-func generatedDispatch1870(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1874(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1870,
+		ID:       1874,
 		Identity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
 	}
 	return host.Call(ctx, operation, p061.TerminationContext, arguments, false)
 }
 
-func generatedDispatch1871(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1875(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1871,
+		ID:       1875,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.Host",
 	}
 	return host.Call(ctx, operation, p062.Host, arguments, false)
 }
 
-func generatedDispatch1872(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1876(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1872,
+		ID:       1876,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
 	}
 	return host.Call(ctx, operation, p062.HostPort, arguments, false)
 }
 
-func generatedDispatch1873(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1877(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1873,
+		ID:       1877,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
 	}
 	return host.Call(ctx, operation, p062.HostStr, arguments, false)
 }
 
-func generatedDispatch1874(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1878(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1874,
+		ID:       1878,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
 	}
 	return host.Call(ctx, operation, p062.NewAddr, arguments, false)
 }
 
-func generatedDispatch1875(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1879(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1875,
+		ID:       1879,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.Parse",
 	}
 	return host.Call(ctx, operation, p062.Parse, arguments, false)
 }
 
-func generatedDispatch1876(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1880(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1876,
+		ID:       1880,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
 	}
 	return host.Call(ctx, operation, p062.ParseTrustedNetworks, arguments, false)
 }
 
-func generatedDispatch1877(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1881(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1877,
+		ID:       1881,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.Port",
 	}
 	return host.Call(ctx, operation, p062.Port, arguments, false)
 }
 
-func generatedDispatch1878(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1882(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1878,
+		ID:       1882,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
 	}
 	return host.Call(ctx, operation, p062.PortStr, arguments, false)
 }
 
-func generatedDispatch1879(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1883(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1879,
+		ID:       1883,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
 	}
 	return host.Call(ctx, operation, p062.TrustedNetworks.Contains, arguments, false)
 }
 
-func generatedDispatch1880(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1884(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1880,
+		ID:       1884,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
 	}
 	return host.Call(ctx, operation, p062.TrustedNetworks.ContainsStr, arguments, false)
 }
 
-func generatedDispatch1881(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1885(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1881,
+		ID:       1885,
 		Identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
 	}
 	return host.Call(ctx, operation, p062.TrustedNetworks.String, arguments, false)
 }
 
-func generatedDispatch1882(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1886(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1882,
+		ID:       1886,
 		Identity: "go.minekube.com/gate/pkg/util/permission.False#get",
 	}
 	_ = operation
 	return []any{p063.False}, nil
 }
 
-func generatedDispatch1883(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1887(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1883,
+		ID:       1887,
 		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/permission.Subject", "HasPermission", arguments, false)
 }
 
-func generatedDispatch1884(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1888(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1884,
+		ID:       1888,
 		Identity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/permission.Subject", "PermissionValue", arguments, false)
 }
 
-func generatedDispatch1885(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1889(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1885,
+		ID:       1889,
 		Identity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
 	}
 	return host.Call(ctx, operation, p063.TriState.Bool, arguments, false)
 }
 
-func generatedDispatch1886(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1890(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1886,
+		ID:       1890,
 		Identity: "go.minekube.com/gate/pkg/util/permission.True#get",
 	}
 	_ = operation
 	return []any{p063.True}, nil
 }
 
-func generatedDispatch1887(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1891(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1887,
+		ID:       1891,
 		Identity: "go.minekube.com/gate/pkg/util/permission.Undefined#get",
 	}
 	_ = operation
 	return []any{p063.Undefined}, nil
 }
 
-func generatedDispatch1888(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1892(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1888,
+		ID:       1892,
 		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/sets.CappedSet", "Add", arguments, true)
 }
 
-func generatedDispatch1889(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1893(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1889,
+		ID:       1893,
 		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/sets.CappedSet", "Len", arguments, false)
 }
 
-func generatedDispatch1890(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1894(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1890,
+		ID:       1894,
 		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/sets.CappedSet", "Remove", arguments, true)
 }
 
-func generatedDispatch1891(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1895(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1891,
+		ID:       1895,
 		Identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/sets.CappedSet", "UnsortedList", arguments, false)
 }
 
-func generatedDispatch1892(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1896(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1892,
+		ID:       1896,
 		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
 	}
 	return host.Call(ctx, operation, p064.NewCappedSet[any], arguments, false)
 }
 
-func generatedDispatch1893(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1897(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1893,
+		ID:       1897,
 		Identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
 	}
 	return host.Call(ctx, operation, p064.NewCappedSet[string], arguments, false)
 }
 
-func generatedDispatch1894(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1898(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1894,
+		ID:       1898,
 		Identity: "go.minekube.com/gate/pkg/util/sets.NewString",
 	}
 	return host.Call(ctx, operation, p064.NewString, arguments, true)
 }
 
-func generatedDispatch1895(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1899(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1895,
+		ID:       1899,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
 	}
 	return host.Call(ctx, operation, p064.String.Delete, arguments, true)
 }
 
-func generatedDispatch1896(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1900(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1896,
+		ID:       1900,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.Has",
 	}
 	return host.Call(ctx, operation, p064.String.Has, arguments, false)
 }
 
-func generatedDispatch1897(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1901(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1897,
+		ID:       1901,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
 	}
 	return host.Call(ctx, operation, p064.String.HasAll, arguments, true)
 }
 
-func generatedDispatch1898(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1902(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1898,
+		ID:       1902,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
 	}
 	return host.Call(ctx, operation, p064.String.Insert, arguments, true)
 }
 
-func generatedDispatch1899(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1903(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1899,
+		ID:       1903,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
 	}
 	return host.Call(ctx, operation, p064.String.InsertSet, arguments, true)
 }
 
-func generatedDispatch1900(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1904(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1900,
+		ID:       1904,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.Len",
 	}
 	return host.Call(ctx, operation, p064.String.Len, arguments, false)
 }
 
-func generatedDispatch1901(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1905(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1901,
+		ID:       1905,
 		Identity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
 	}
 	return host.Call(ctx, operation, p064.String.UnsortedList, arguments, false)
 }
 
-func generatedDispatch1902(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1906(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1902,
+		ID:       1906,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
 	}
 	return host.Call(ctx, operation, p065.FromBytes, arguments, false)
 }
 
-func generatedDispatch1903(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1907(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1903,
+		ID:       1907,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.New",
 	}
 	return host.Call(ctx, operation, p065.New, arguments, false)
 }
 
-func generatedDispatch1904(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1908(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1904,
+		ID:       1908,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#get",
 	}
 	_ = operation
 	return []any{p065.Nil}, nil
 }
 
-func generatedDispatch1905(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1909(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1905,
+		ID:       1909,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.Nil#set",
 	}
 	if len(arguments) != 1 {
@@ -46458,148 +46550,148 @@ func generatedDispatch1905(ctx context.Context, host *dispatch.Host, arguments [
 	return nil, nil
 }
 
-func generatedDispatch1906(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1910(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1906,
+		ID:       1910,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
 	}
 	return host.Call(ctx, operation, p065.OfflinePlayerUUID, arguments, false)
 }
 
-func generatedDispatch1907(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1911(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1907,
+		ID:       1911,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.Parse",
 	}
 	return host.Call(ctx, operation, p065.Parse, arguments, false)
 }
 
-func generatedDispatch1908(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1912(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1908,
+		ID:       1912,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
 	}
 	return host.Call(ctx, operation, p065.ParseBytes, arguments, false)
 }
 
-func generatedDispatch1909(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1913(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1909,
+		ID:       1913,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
 	}
 	return host.Call(ctx, operation, p065.UUID.MarshalJSON, arguments, false)
 }
 
-func generatedDispatch1910(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1914(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1910,
+		ID:       1914,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
 	}
 	return host.Call(ctx, operation, p065.UUID.String, arguments, false)
 }
 
-func generatedDispatch1911(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1915(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1911,
+		ID:       1915,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
 	}
 	return host.Call(ctx, operation, p065.UUID.Undashed, arguments, false)
 }
 
-func generatedDispatch1912(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1916(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1912,
+		ID:       1916,
 		Identity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
 	}
 	return host.CallResourceMethod(ctx, operation, "go.minekube.com/gate/pkg/util/uuid.UUID", "UnmarshalJSON", arguments, false)
 }
 
-func generatedDispatch1913(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1917(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1913,
+		ID:       1917,
 		Identity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
 	}
 	return host.Call(ctx, operation, p066.ContainsIllegalCharacter, arguments, false)
 }
 
-func generatedDispatch1914(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1918(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1914,
+		ID:       1918,
 		Identity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
 	}
 	return host.Call(ctx, operation, p066.IsAllowedCharacter, arguments, false)
 }
 
-func generatedDispatch1915(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1919(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1915,
+		ID:       1919,
 		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
 	}
 	_ = operation
 	return []any{p066.QualifiedNameErrMsg}, nil
 }
 
-func generatedDispatch1916(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1920(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1916,
+		ID:       1920,
 		Identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
 	}
 	_ = operation
 	return []any{p066.QualifiedNameMaxLength}, nil
 }
 
-func generatedDispatch1917(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1921(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1917,
+		ID:       1921,
 		Identity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
 	}
 	return host.Call(ctx, operation, p066.ValidHostPort, arguments, false)
 }
 
-func generatedDispatch1918(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1922(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1918,
+		ID:       1922,
 		Identity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
 	}
 	return host.Call(ctx, operation, p066.ValidServerName, arguments, false)
 }
 
-func generatedDispatch1919(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1923(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1919,
+		ID:       1923,
 		Identity: "go.minekube.com/gate/pkg/version.String",
 	}
 	return host.Call(ctx, operation, p067.String, arguments, false)
 }
 
-func generatedDispatch1920(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1924(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1920,
+		ID:       1924,
 		Identity: "go.minekube.com/gate/pkg/version.UserAgent",
 	}
 	return host.Call(ctx, operation, p067.UserAgent, arguments, false)
 }
 
-func generatedDispatch1921(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1925(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1921,
+		ID:       1925,
 		Identity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
 	}
 	return host.Call(ctx, operation, p067.UserAgentHeader, arguments, false)
 }
 
-func generatedDispatch1922(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1926(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1922,
+		ID:       1926,
 		Identity: "go.minekube.com/gate/pkg/version.Version#get",
 	}
 	_ = operation
 	return []any{p067.Version}, nil
 }
 
-func generatedDispatch1923(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+func generatedDispatch1927(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	operation := dispatch.Operation{
-		ID:       1923,
+		ID:       1927,
 		Identity: "go.minekube.com/gate/pkg/version.Version#set",
 	}
 	if len(arguments) != 1 {

@@ -213,6 +213,16 @@ func addRuntimeExtensions(api *model.API) {
 		Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
 		Nullable: true, Element: &stringType,
 	}
+	contextType := model.Type{
+		Identity: "context.Context", WITName: "context",
+		GoType: "context.Context", Kind: model.TypeResource,
+		Ownership: model.OwnershipBorrow, Lifetime: model.LifetimeBorrowedCall,
+		ResourceType: "context.Context",
+	}
+	boolType := model.Type{
+		GoType: "bool", Kind: model.TypeBool,
+		Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
+	}
 	appendSyntheticDeclaration(api, model.Declaration{
 		Identity:    commandPackage + "#wasm-register-command",
 		PackagePath: commandPackage,
@@ -260,6 +270,68 @@ func addRuntimeExtensions(api *model.API) {
 			Coverage: model.Coverage{State: model.CoverageRepresented},
 		})
 	}
+	for _, extension := range []struct {
+		name, goName, documentation string
+		results                     []model.Parameter
+	}{
+		{
+			name: "context-cancelled", goName: "WasmContextCancelled",
+			documentation: "Reports whether the plugin context has been cancelled.",
+			results: []model.Parameter{{
+				GoName: "cancelled", WITName: "cancelled", Type: boolType,
+			}},
+		},
+		{
+			name: "context-deadline", goName: "WasmContextDeadline",
+			documentation: "Returns the plugin context deadline as Unix nanoseconds.",
+			results: []model.Parameter{
+				{GoName: "unixNanos", WITName: "unix-nanos", Type: s64Type},
+				{GoName: "ok", WITName: "ok", Type: boolType},
+			},
+		},
+		{
+			name: "context-error", goName: "WasmContextError",
+			documentation: "Returns the plugin context error or an empty string.",
+			results: []model.Parameter{{
+				GoName: "message", WITName: "message", Type: stringType,
+			}},
+		},
+	} {
+		appendSyntheticDeclaration(api, model.Declaration{
+			Identity:      gatePackage + "#wasm-" + extension.name,
+			PackagePath:   gatePackage,
+			GoName:        extension.goName,
+			WITName:       "wasm-" + extension.name,
+			Kind:          model.DeclarationFunction,
+			Documentation: extension.documentation,
+			Callable: &model.Callable{
+				Parameters: []model.Parameter{{
+					GoName: "ctx", WITName: "ctx", Type: contextType,
+				}},
+				Results: extension.results,
+			},
+			Coverage: model.Coverage{State: model.CoverageRepresented},
+		})
+	}
+	appendSyntheticDeclaration(api, model.Declaration{
+		Identity:    gatePackage + "#wasm-log",
+		PackagePath: gatePackage,
+		GoName:      "WasmLog",
+		WITName:     "wasm-log",
+		Kind:        model.DeclarationFunction,
+		Documentation: "Logs through the logger carried by the plugin context. " +
+			"Fields are alternating key/value strings.",
+		Callable: &model.Callable{
+			Parameters: []model.Parameter{
+				{GoName: "ctx", WITName: "ctx", Type: contextType},
+				{GoName: "level", WITName: "level", Type: s64Type},
+				{GoName: "message", WITName: "message", Type: stringType},
+				{GoName: "fields", WITName: "fields", Type: stringList},
+			},
+			Error: &model.ErrorBehavior{Fallback: true},
+		},
+		Coverage: model.Coverage{State: model.CoverageRepresented},
+	})
 }
 
 func hasCanonicalPackage(api *model.API, path string) bool {

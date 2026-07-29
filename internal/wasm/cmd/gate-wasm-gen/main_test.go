@@ -16,6 +16,7 @@ func TestRunGenerateAndCheck(t *testing.T) {
 	require.NoError(t, err)
 	output := t.TempDir()
 	nativeOutput := t.TempDir()
+	publicOutput := t.TempDir()
 
 	var stdout bytes.Buffer
 	require.NoError(t, run([]string{
@@ -23,8 +24,9 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"-repo", root,
 		"-out", output,
 		"-native-out", nativeOutput,
+		"-public-out", publicOutput,
 	}, &stdout, &stdout))
-	require.Contains(t, stdout.String(), "generated 10 WebAssembly API artifacts")
+	require.Contains(t, stdout.String(), "generated 12 WebAssembly API artifacts")
 	for _, name := range []string{
 		generate.WITFile,
 		generate.ManifestFile,
@@ -37,6 +39,18 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		require.NoError(t, err)
 		require.Positive(t, info.Size())
 	}
+	for _, name := range []string{
+		generate.WITFile,
+		generate.ContractFile,
+	} {
+		internal, err := os.ReadFile(filepath.Join(output, name))
+		require.NoError(t, err)
+		public, err := os.ReadFile(filepath.Join(publicOutput, name))
+		require.NoError(t, err)
+		require.Equal(t, internal, public)
+	}
+	_, err = os.Stat(filepath.Join(publicOutput, generate.GoValuesFile))
+	require.ErrorIs(t, err, os.ErrNotExist)
 	for _, name := range []string{
 		generate.RustValuesFile,
 		generate.RustBindingsFile,
@@ -53,6 +67,7 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"-repo", root,
 		"-out", output,
 		"-native-out", nativeOutput,
+		"-public-out", publicOutput,
 	}, &stdout, &stdout))
 	require.Contains(t, stdout.String(), "WebAssembly API artifacts are current")
 
@@ -64,6 +79,7 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"-repo", root,
 		"-out", output,
 		"-native-out", nativeOutput,
+		"-public-out", publicOutput,
 	}, &stdout, &stdout)
 	require.ErrorContains(t, err, "gate.wit differs")
 	contents, readErr := os.ReadFile(witPath)

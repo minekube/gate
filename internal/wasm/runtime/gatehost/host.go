@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/brigodier"
 
@@ -42,6 +43,7 @@ type Host struct {
 	timerLimit     uint32
 	closed         bool
 	stopOnce       sync.Once
+	plugin         string
 	contextHandle  resources.Handle
 	proxyHandle    resources.Handle
 }
@@ -60,6 +62,7 @@ func New(
 	}
 	table := resources.NewTable(plugin, resourceCapacity)
 	host := &Host{
+		plugin:         plugin,
 		context:        ctx,
 		table:          table,
 		dispatch:       dispatch.NewHost(table),
@@ -316,9 +319,99 @@ func (host *Host) invokeExtension(
 		return host.scheduleTimer(operation, arguments, false)
 	case strings.HasSuffix(operation.Identity, "#wasm-every"):
 		return host.scheduleTimer(operation, arguments, true)
+	case strings.HasSuffix(operation.Identity, "#wasm-context-cancelled"):
+		ctx, err := extensionContext(operation, arguments)
+		if err != nil {
+			return nil, err
+		}
+		return []any{ctx.Err() != nil}, nil
+	case strings.HasSuffix(operation.Identity, "#wasm-context-deadline"):
+		ctx, err := extensionContext(operation, arguments)
+		if err != nil {
+			return nil, err
+		}
+		deadline, ok := ctx.Deadline()
+		if !ok {
+			return []any{int64(0), false}, nil
+		}
+		return []any{deadline.UnixNano(), true}, nil
+	case strings.HasSuffix(operation.Identity, "#wasm-context-error"):
+		ctx, err := extensionContext(operation, arguments)
+		if err != nil {
+			return nil, err
+		}
+		if err := ctx.Err(); err != nil {
+			return []any{err.Error()}, nil
+		}
+		return []any{""}, nil
+	case strings.HasSuffix(operation.Identity, "#wasm-log"):
+		return host.log(operation, arguments)
 	default:
 		return nil, fmt.Errorf("unknown wasm runtime extension %s", operation.Identity)
 	}
+}
+
+func extensionContext(
+	operation dispatch.Operation,
+	arguments []any,
+) (context.Context, error) {
+	if len(arguments) != 1 {
+		return nil, fmt.Errorf(
+			"%s: expected one context argument, got %d",
+			operation.Identity,
+			len(arguments),
+		)
+	}
+	ctx, ok := arguments[0].(context.Context)
+	if !ok || ctx == nil {
+		return nil, fmt.Errorf(
+			"%s: context has type %T",
+			operation.Identity,
+			arguments[0],
+		)
+	}
+	return ctx, nil
+}
+
+func (host *Host) log(
+	operation dispatch.Operation,
+	arguments []any,
+) ([]any, error) {
+	if len(arguments) != 4 {
+		return nil, host.dispatch.ArgumentCount(operation, len(arguments), 4)
+	}
+	ctx, ok := arguments[0].(context.Context)
+	if !ok || ctx == nil {
+		return nil, fmt.Errorf("log context has type %T", arguments[0])
+	}
+	level, ok := arguments[1].(int64)
+	if !ok {
+		return nil, fmt.Errorf("log level has type %T", arguments[1])
+	}
+	if level < 0 || level > int64(^uint(0)>>1) {
+		return nil, fmt.Errorf("log level %d is invalid", level)
+	}
+	message, ok := arguments[2].(string)
+	if !ok {
+		return nil, fmt.Errorf("log message has type %T", arguments[2])
+	}
+	fields, ok := arguments[3].([]string)
+	if !ok && arguments[3] != nil {
+		return nil, fmt.Errorf("log fields have type %T", arguments[3])
+	}
+	if len(fields)%2 != 0 {
+		return nil, errors.New("log fields must contain key/value pairs")
+	}
+	values := make([]any, len(fields))
+	for index := range fields {
+		values[index] = fields[index]
+	}
+	logr.FromContextOrDiscard(ctx).
+		WithName("wasm").
+		WithValues("plugin", host.plugin).
+		V(int(level)).
+		Info(message, values...)
+	return nil, nil
 }
 
 func (host *Host) subscribeEvent(

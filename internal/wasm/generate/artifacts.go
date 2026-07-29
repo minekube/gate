@@ -21,17 +21,13 @@ const (
 
 // Artifacts renders every synchronized contract artifact.
 func Artifacts(api *model.API) (map[string][]byte, error) {
-	wit, err := RenderWIT(api)
+	artifacts, err := PublicArtifacts(api)
 	if err != nil {
-		return nil, fmt.Errorf("render %s: %w", WITFile, err)
+		return nil, err
 	}
 	manifest, err := RenderManifest(api)
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", ManifestFile, err)
-	}
-	contract, err := RenderContract(api, wit)
-	if err != nil {
-		return nil, fmt.Errorf("render %s: %w", ContractFile, err)
 	}
 	values, err := RenderGoValues(api)
 	if err != nil {
@@ -49,14 +45,29 @@ func Artifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", CHeaderFile, err)
 	}
+	artifacts[GoValuesFile] = values
+	artifacts[ManifestFile] = manifest
+	artifacts[GoDispatchFile] = dispatch
+	artifacts[GoCallbacksFile] = callbacks
+	artifacts[CHeaderFile] = header
+	return artifacts, nil
+}
+
+// PublicArtifacts renders the canonical language-neutral authoring contract.
+// The verbose Go-to-WIT manifest remains in the internal artifact directory
+// and is added to release bundles without duplicating it in the repository.
+func PublicArtifacts(api *model.API) (map[string][]byte, error) {
+	wit, err := RenderWIT(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", WITFile, err)
+	}
+	contract, err := RenderContract(api, wit)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", ContractFile, err)
+	}
 	return map[string][]byte{
-		WITFile:         wit,
-		ManifestFile:    manifest,
-		ContractFile:    contract,
-		GoValuesFile:    values,
-		GoDispatchFile:  dispatch,
-		GoCallbacksFile: callbacks,
-		CHeaderFile:     header,
+		WITFile:      wit,
+		ContractFile: contract,
 	}, nil
 }
 
