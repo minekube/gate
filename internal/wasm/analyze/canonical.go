@@ -147,6 +147,7 @@ func Analyze(ctx context.Context, options Options) (*model.API, error) {
 		}
 		api.Packages = append(api.Packages, canonicalPackage)
 	}
+	addEventSubscriptions(api)
 	for _, exclusion := range options.Exclusions {
 		if _, matched := matchedExclusions[exclusion.Identity]; !matched {
 			return nil, fmt.Errorf(
@@ -159,6 +160,108 @@ func Analyze(ctx context.Context, options Options) (*model.API, error) {
 		return nil, fmt.Errorf("normalize canonical Gate API: %w", err)
 	}
 	return api, nil
+}
+
+func addEventSubscriptions(api *model.API) {
+	packageIndex := make(map[string]int, len(api.Packages))
+	for index, pkg := range api.Packages {
+		packageIndex[pkg.Path] = index
+	}
+	events := slices.Clone(api.Declarations)
+	for _, event := range events {
+		if !event.Event ||
+			event.Coverage.State != model.CoverageRepresented ||
+			event.Type == nil {
+			continue
+		}
+		eventParameter := *event.Type
+		eventParameter.GoType = "*" + event.Identity
+		resourceIdentity := event.Identity
+		resourceWITName := event.WITName
+		if event.Type.Kind != model.TypeResource &&
+			event.Type.Kind != model.TypeCallback &&
+			event.Type.Kind != model.TypeDynamic {
+			resourceIdentity += "#pointer"
+			resourceWITName += "-pointer"
+		}
+		eventParameter.Identity = resourceIdentity
+		eventParameter.WITName = resourceWITName
+		eventParameter.Kind = model.TypeResource
+		eventParameter.Ownership = model.OwnershipBorrow
+		eventParameter.Lifetime = model.LifetimeBorrowedEvent
+		eventParameter.Nullable = false
+		eventParameter.ResourceType = resourceIdentity
+
+		handlerIdentity := event.Identity + "#wasm-handler"
+		handlerCallable := model.Callable{
+			Parameters: []model.Parameter{{
+				GoName: "event", WITName: "event", Type: eventParameter,
+			}},
+			Error: &model.ErrorBehavior{Fallback: true},
+		}
+		handler := model.Type{
+			Identity:     handlerIdentity,
+			WITName:      event.WITName + "-handler",
+			GoType:       "func(*" + event.Identity + ") error",
+			Kind:         model.TypeCallback,
+			Ownership:    model.OwnershipOwn,
+			Lifetime:     model.LifetimePlugin,
+			ResourceType: handlerIdentity,
+			Callback: &model.Callback{
+				Identity: handlerIdentity, Direction: model.CallbackHostToGuest,
+				Callable: handlerCallable, Retained: true, Reentrant: true,
+			},
+		}
+		unsubscribeIdentity := "callback-" + identityHash("func()")
+		unsubscribeCallable := model.Callable{}
+		unsubscribe := model.Type{
+			Identity:     unsubscribeIdentity,
+			WITName:      unsubscribeIdentity,
+			GoType:       "func()",
+			Kind:         model.TypeCallback,
+			Ownership:    model.OwnershipOwn,
+			Lifetime:     model.LifetimePlugin,
+			ResourceType: unsubscribeIdentity,
+			Callback: &model.Callback{
+				Identity: unsubscribeIdentity, Direction: model.CallbackHostToGuest,
+				Callable: unsubscribeCallable, Retained: true, Reentrant: true,
+			},
+		}
+		subscription := model.Declaration{
+			Identity:    event.Identity + "#wasm-subscribe",
+			PackagePath: event.PackagePath,
+			GoName:      "Subscribe" + event.GoName,
+			WITName:     "subscribe-" + event.WITName,
+			Kind:        model.DeclarationFunction,
+			Documentation: "Subscribes a component callback to " + event.GoName +
+				" with transactional event mutation.",
+			Source: event.Source,
+			Callable: &model.Callable{
+				Parameters: []model.Parameter{
+					{
+						GoName: "priority", WITName: "priority",
+						Type: model.Type{
+							GoType: "int", Kind: model.TypeS64,
+							Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
+						},
+					},
+					{GoName: "handler", WITName: "handler", Type: handler},
+				},
+				Results: []model.Parameter{{
+					GoName: "unsubscribe", WITName: "unsubscribe", Type: unsubscribe,
+				}},
+				Error: &model.ErrorBehavior{Fallback: true},
+			},
+			Coverage: model.Coverage{State: model.CoverageRepresented},
+		}
+		subscription.Dependencies = declarationDependencies(subscription)
+		api.Declarations = append(api.Declarations, subscription)
+		index := packageIndex[event.PackagePath]
+		api.Packages[index].Declarations = append(
+			api.Packages[index].Declarations,
+			subscription.Identity,
+		)
+	}
 }
 
 func lowerDeclaration(
@@ -179,7 +282,8 @@ func lowerDeclaration(
 		Kind:          canonicalDeclarationKind(entry.Declaration.Kind),
 		Documentation: documents[entry.Object],
 		Source:        objectSource(root, pkg, entry.Object),
-		Event: entry.Declaration.Kind == DeclarationType &&
+		Event: (entry.Declaration.Kind == DeclarationType ||
+			entry.Declaration.Kind == DeclarationAlias) &&
 			strings.HasSuffix(entry.Declaration.Name, "Event"),
 		Coverage: model.Coverage{State: model.CoverageRepresented},
 	}

@@ -7,12 +7,22 @@ struct Fixture;
 
 use exports::minekube::gate::plugin::*;
 
+macro_rules! ignore_event_handlers {
+    ($($name:ident => $event:ty),+ $(,)?) => {
+        $(
+            fn $name(_id: u64, _event: &$event) -> Result<(), GateError> {
+                Ok(())
+            }
+        )+
+    };
+}
+
 impl Guest for Fixture {
     fn metadata() -> PluginMetadata {
         PluginMetadata {
             name: "gate-wasm-fixture".into(),
             version: "0.0.0".into(),
-            contract_hash: "1a1698fe90dd0b309713427f3fa97187801b744d51589d588857dd6c35e0474b"
+            contract_hash: "3a0686b2c3efdd358afbb2cd1f78374009a6865140ce8d97adb6756bfa448907"
                 .into(),
             generator_format: 1,
         }
@@ -120,6 +130,46 @@ impl Guest for Fixture {
         _b: Option<&SuggestionsBuilderPointer>,
     ) -> Option<SuggestionsPointer> {
         None
+    }
+
+    ignore_event_handlers! {
+        invoke_command_execute_event_handler => CommandExecuteEvent,
+        invoke_connection_event_handler => ConnectionEvent,
+        invoke_connection_handshake_event_handler => ConnectionHandshakeEvent,
+        invoke_cookie_receive_event_handler => CookieReceiveEvent,
+        invoke_cookie_request_event_handler => CookieRequestEvent,
+        invoke_cookie_store_event_handler => CookieStoreEvent,
+        invoke_disconnect_event_handler => DisconnectEvent,
+        invoke_game_profile_request_event_handler => GameProfileRequestEvent,
+        invoke_kicked_from_server_event_handler => KickedFromServerEvent,
+        invoke_login_event_handler => LoginEvent,
+        invoke_permissions_setup_event_handler => PermissionsSetupEvent,
+        invoke_ping_event_handler => PingEvent,
+        invoke_player_available_commands_event_handler => PlayerAvailableCommandsEvent,
+        invoke_player_channel_register_event_handler => PlayerChannelRegisterEvent,
+        invoke_player_channel_unregister_event_handler => PlayerChannelUnregisterEvent,
+        invoke_player_chat_event_handler => PlayerChatEvent,
+        invoke_player_choose_initial_server_event_handler => PlayerChooseInitialServerEvent,
+        invoke_player_client_brand_event_handler => PlayerClientBrandEvent,
+        invoke_player_mod_info_event_handler => PlayerModInfoEvent,
+        invoke_player_resource_pack_status_event_handler => PlayerResourcePackStatusEvent6e0ee0072fce,
+        invoke_player_settings_changed_event_handler => PlayerSettingsChangedEvent,
+        invoke_plugin_message_event_handler => PluginMessageEvent,
+        invoke_post_login_event_handler => PostLoginEvent,
+        invoke_pre_login_event_handler => PreLoginEvent,
+        invoke_pre_shutdown_event_handler => PreShutdownEvent,
+        invoke_pre_transfer_event_handler => PreTransferEvent,
+        invoke_ready_event_handler => ReadyEvent,
+        invoke_server_connected_event_handler => ServerConnectedEvent,
+        invoke_server_login_plugin_message_event_handler => ServerLoginPluginMessageEvent,
+        invoke_server_post_connect_event_handler => ServerPostConnectEvent,
+        invoke_server_pre_connect_event_handler => ServerPreConnectEvent,
+        invoke_server_registered_event_handler => ServerRegisteredEvent,
+        invoke_server_resource_pack_remove_event_handler => ServerResourcePackRemoveEvent,
+        invoke_server_resource_pack_send_event_handler => ServerResourcePackSendEvent,
+        invoke_server_unregistered_event_handler => ServerUnregisteredEvent,
+        invoke_shutdown_event_handler => ShutdownEventPointer,
+        invoke_tab_complete_event_handler => TabCompleteEvent,
     }
 }
 

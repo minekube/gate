@@ -15,12 +15,15 @@ import (
 type OperationKind string
 
 const (
-	OperationFunction    OperationKind = "function"
-	OperationMethod      OperationKind = "method"
-	OperationConstantGet OperationKind = "constant-get"
-	OperationVariableGet OperationKind = "variable-get"
-	OperationVariableSet OperationKind = "variable-set"
+	OperationFunction       OperationKind = "function"
+	OperationMethod         OperationKind = "method"
+	OperationConstantGet    OperationKind = "constant-get"
+	OperationVariableGet    OperationKind = "variable-get"
+	OperationVariableSet    OperationKind = "variable-set"
+	OperationEventSubscribe OperationKind = "event-subscribe"
 )
+
+const eventSubscriptionSuffix = "#wasm-subscribe"
 
 type GeneratedOperation struct {
 	ID                  uint32        `json:"id"`
@@ -53,11 +56,15 @@ func Operations(api *model.API) ([]GeneratedOperation, error) {
 		}
 		switch declaration.Kind {
 		case model.DeclarationFunction:
+			kind := OperationFunction
+			if strings.HasSuffix(declaration.Identity, eventSubscriptionSuffix) {
+				kind = OperationEventSubscribe
+			}
 			add(
 				declaration,
 				declaration.Identity,
 				declaration.WITName,
-				OperationFunction,
+				kind,
 			)
 		case model.DeclarationMethod:
 			add(
@@ -245,6 +252,9 @@ func renderCompileReferences(
 		if declaration.Coverage.State != model.CoverageRepresented {
 			continue
 		}
+		if strings.HasSuffix(declaration.Identity, eventSubscriptionSuffix) {
+			continue
+		}
 		alias := aliases[declaration.PackagePath]
 		name := fmt.Sprintf("generatedDeclarationReference%04d", index)
 		switch declaration.Kind {
@@ -391,6 +401,22 @@ func renderOperationHandler(
 		fmt.Fprintln(output, "\t\treturn nil, err")
 		fmt.Fprintln(output, "\t}")
 		fmt.Fprintln(output, "\treturn nil, nil")
+	case OperationEventSubscribe:
+		eventIdentity := strings.TrimSuffix(
+			declaration.Identity,
+			eventSubscriptionSuffix,
+		)
+		event := declarations[eventIdentity]
+		eventAlias := aliases[event.PackagePath]
+		fmt.Fprintln(
+			output,
+			"\tsignature := func(int, func(*"+eventAlias+"."+event.GoName+
+				") error) (func(), error) { return nil, nil }",
+		)
+		fmt.Fprintln(
+			output,
+			"\treturn host.CallExtension(ctx, operation, signature, arguments)",
+		)
 	}
 	fmt.Fprintln(output, "}")
 }

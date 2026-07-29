@@ -16,6 +16,7 @@ import (
 type OperationID uint32
 
 type Handler func(context.Context, *Host, []any) ([]any, error)
+type ExtensionHandler func(context.Context, Operation, []any) ([]any, error)
 
 type Operation struct {
 	ID       OperationID
@@ -27,7 +28,24 @@ type Host struct {
 	mu         sync.RWMutex
 	resources  *resources.Table
 	operations map[OperationID]Operation
+	extension  ExtensionHandler
 	closed     bool
+}
+
+func (host *Host) SetExtension(handler ExtensionHandler) error {
+	if handler == nil {
+		return errors.New("dispatch extension handler is required")
+	}
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	if host.closed {
+		return errors.New("dispatch host is closed")
+	}
+	if host.extension != nil {
+		return errors.New("dispatch extension handler is already set")
+	}
+	host.extension = handler
+	return nil
 }
 
 func NewHost(table *resources.Table) *Host {
@@ -104,6 +122,47 @@ func (host *Host) Call(
 		returned = function.Call(values)
 	}
 	return unpackResults(operation, returned)
+}
+
+// CallExtension converts generated arguments using a statically generated Go
+// function signature, then delegates the operation to the runtime extension.
+func (host *Host) CallExtension(
+	ctx context.Context,
+	operation Operation,
+	signature any,
+	arguments []any,
+) ([]any, error) {
+	function := reflect.ValueOf(signature)
+	if !function.IsValid() || function.Kind() != reflect.Func {
+		return nil, &Error{
+			Kind: ErrorInvalidCallable, Operation: operation,
+			Detail: "extension signature is not callable",
+		}
+	}
+	values, err := callArguments(
+		operation,
+		function.Type(),
+		arguments,
+		false,
+		host.resources,
+	)
+	if err != nil {
+		return nil, err
+	}
+	converted := make([]any, len(values))
+	for index, value := range values {
+		converted[index] = value.Interface()
+	}
+	host.mu.RLock()
+	extension := host.extension
+	host.mu.RUnlock()
+	if extension == nil {
+		return nil, &Error{
+			Kind: ErrorInvalidCallable, Operation: operation,
+			Detail: "runtime extension handler is unavailable",
+		}
+	}
+	return extension(ctx, operation, converted)
 }
 
 func (host *Host) CallMethod(

@@ -7,11 +7,17 @@ use gate_wasm_native::wire::{
 use gate_wasm_native::{CallbackCall, Engine, Host, Limits};
 
 const COMPONENT: &[u8] = include_bytes!("../../artifacts/gate_wasm_fixture.component.wasm");
-const PROXY_PLAYER_COUNT: u32 = 1299;
-const RECOVER_FUNC: u32 = 909;
 const CALLBACK_ERROR_FUNC: u32 = 8;
 const CALLBACK_HANDLE: u64 = 3;
 const CALLBACK_GUEST_ID: u64 = 42;
+
+fn operation_id(identity: &str) -> u32 {
+    gate_wasm_native::generated::dispatch::OPERATIONS
+        .iter()
+        .find(|operation| operation.identity == identity)
+        .unwrap_or_else(|| panic!("generated operation {identity} is missing"))
+        .id
+}
 
 struct TestHost {
     invokes: Arc<AtomicUsize>,
@@ -25,30 +31,32 @@ impl Host for TestHost {
         request: &[u8],
     ) -> anyhow::Result<Vec<u8>> {
         self.invokes.fetch_add(1, Ordering::SeqCst);
-        match operation {
-            PROXY_PLAYER_COUNT => {
-                assert_eq!(decode_request(request)?, [WireValue::Resource(2)]);
-                let mut response = vec![1, 0, 1, 9];
-                response.extend_from_slice(&0_i64.to_le_bytes());
-                Ok(response)
-            }
-            RECOVER_FUNC => {
-                assert_eq!(
-                    decode_request(request)?,
-                    [WireValue::Resource(CALLBACK_HANDLE)]
-                );
-                let callback = active.invoke_callback(
-                    CALLBACK_ERROR_FUNC,
-                    CALLBACK_GUEST_ID,
-                    &encode_request(&[])?,
-                )?;
-                assert_eq!(decode_response(&callback)?.error, None);
-                encode_response(&Response {
-                    values: vec![],
-                    error: None,
-                })
-            }
-            other => anyhow::bail!("unexpected generated operation {other}"),
+        if operation
+            == operation_id("go.minekube.com/gate/pkg/edition/java/proxy.Proxy.PlayerCount")
+        {
+            assert_eq!(decode_request(request)?, [WireValue::Resource(2)]);
+            let mut response = vec![1, 0, 1, 9];
+            response.extend_from_slice(&0_i64.to_le_bytes());
+            Ok(response)
+        } else if operation
+            == operation_id("go.minekube.com/gate/pkg/edition/java/proto/util.RecoverFunc")
+        {
+            assert_eq!(
+                decode_request(request)?,
+                [WireValue::Resource(CALLBACK_HANDLE)]
+            );
+            let callback = active.invoke_callback(
+                CALLBACK_ERROR_FUNC,
+                CALLBACK_GUEST_ID,
+                &encode_request(&[])?,
+            )?;
+            assert_eq!(decode_response(&callback)?.error, None);
+            encode_response(&Response {
+                values: vec![],
+                error: None,
+            })
+        } else {
+            anyhow::bail!("unexpected generated operation {operation}")
         }
     }
 
@@ -90,27 +98,27 @@ impl Host for DropHost {
         operation: u32,
         request: &[u8],
     ) -> anyhow::Result<Vec<u8>> {
-        match operation {
-            PROXY_PLAYER_COUNT => {
-                let mut response = vec![1, 0, 1, 9];
-                response.extend_from_slice(&0_i64.to_le_bytes());
-                Ok(response)
-            }
-            RECOVER_FUNC => {
-                let callback = active.invoke_callback(
-                    CALLBACK_ERROR_FUNC,
-                    CALLBACK_GUEST_ID,
-                    &encode_request(&[])?,
-                )?;
-                assert_eq!(decode_response(&callback)?.error, None);
-                encode_response(&Response {
-                    values: vec![],
-                    error: None,
-                })
-            }
-            other => {
-                anyhow::bail!("unexpected generated operation {other} with request {request:?}")
-            }
+        if operation
+            == operation_id("go.minekube.com/gate/pkg/edition/java/proxy.Proxy.PlayerCount")
+        {
+            let mut response = vec![1, 0, 1, 9];
+            response.extend_from_slice(&0_i64.to_le_bytes());
+            Ok(response)
+        } else if operation
+            == operation_id("go.minekube.com/gate/pkg/edition/java/proto/util.RecoverFunc")
+        {
+            let callback = active.invoke_callback(
+                CALLBACK_ERROR_FUNC,
+                CALLBACK_GUEST_ID,
+                &encode_request(&[])?,
+            )?;
+            assert_eq!(decode_response(&callback)?.error, None);
+            encode_response(&Response {
+                values: vec![],
+                error: None,
+            })
+        } else {
+            anyhow::bail!("unexpected generated operation {operation} with request {request:?}")
         }
     }
 

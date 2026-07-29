@@ -3,7 +3,7 @@
 use wasmtime::StoreContextMut;
 use wasmtime::component::{Linker, ResourceType, Val, types::ComponentFunc};
 
-pub const WIT_HASH: &str = "1a1698fe90dd0b309713427f3fa97187801b744d51589d588857dd6c35e0474b";
+pub const WIT_HASH: &str = "3a0686b2c3efdd358afbb2cd1f78374009a6865140ce8d97adb6756bfa448907";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Operation {
@@ -7514,5683 +7514,5942 @@ pub static OPERATIONS: &[Operation] = &[
     },
     Operation {
         id: 1072,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-command-execute-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1073,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1073,
+        id: 1074,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.Command",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-command",
         kind: "method",
     },
     Operation {
-        id: 1074,
+        id: 1075,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.Forward",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-forward",
         kind: "method",
     },
     Operation {
-        id: 1075,
+        id: 1076,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.OriginalCommand",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-original-command",
         kind: "method",
     },
     Operation {
-        id: 1076,
+        id: 1077,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1077,
+        id: 1078,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.SetCommand",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-set-command",
         kind: "method",
     },
     Operation {
-        id: 1078,
+        id: 1079,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.SetForward",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-set-forward",
         kind: "method",
     },
     Operation {
-        id: 1079,
+        id: 1080,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent.Source",
         interface: "pkg-edition-java-proxy",
         name: "command-execute-event-source",
         kind: "method",
     },
     Operation {
-        id: 1080,
+        id: 1081,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ComponentPluginManager.Close",
         interface: "pkg-edition-java-proxy",
         name: "component-plugin-manager-close",
         kind: "method",
     },
     Operation {
-        id: 1081,
+        id: 1082,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ComponentPluginManager.Start",
         interface: "pkg-edition-java-proxy",
         name: "component-plugin-manager-start",
         kind: "method",
     },
     Operation {
-        id: 1082,
+        id: 1083,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConflictingLoginStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-conflicting-login-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1083,
+        id: 1084,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-connection-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1085,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent.Connection",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-connection",
         kind: "method",
     },
     Operation {
-        id: 1084,
+        id: 1086,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent.OriginalConnection",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-original-connection",
         kind: "method",
     },
     Operation {
-        id: 1085,
+        id: 1087,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent.SetConnection",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-set-connection",
         kind: "method",
     },
     Operation {
-        id: 1086,
+        id: 1088,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.Close",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-close",
         kind: "method",
     },
     Operation {
-        id: 1087,
+        id: 1089,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.Closed",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-closed",
         kind: "method",
     },
     Operation {
-        id: 1088,
+        id: 1090,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.LocalAddr",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-local-addr",
         kind: "method",
     },
     Operation {
-        id: 1089,
+        id: 1091,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.Read",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-read",
         kind: "method",
     },
     Operation {
-        id: 1090,
+        id: 1092,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.RemoteAddr",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1091,
+        id: 1093,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.SetDeadline",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-set-deadline",
         kind: "method",
     },
     Operation {
-        id: 1092,
+        id: 1094,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.SetReadDeadline",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-set-read-deadline",
         kind: "method",
     },
     Operation {
-        id: 1093,
+        id: 1095,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.SetWriteDeadline",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-set-write-deadline",
         kind: "method",
     },
     Operation {
-        id: 1094,
+        id: 1096,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEventConn.Write",
         interface: "pkg-edition-java-proxy",
         name: "connection-event-conn-write",
         kind: "method",
     },
     Operation {
-        id: 1095,
+        id: 1097,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-connection-handshake-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1098,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent.Connection",
         interface: "pkg-edition-java-proxy",
         name: "connection-handshake-event-connection",
         kind: "method",
     },
     Operation {
-        id: 1096,
+        id: 1099,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent.Intent",
         interface: "pkg-edition-java-proxy",
         name: "connection-handshake-event-intent",
         kind: "method",
     },
     Operation {
-        id: 1097,
+        id: 1100,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionRequest.Connect",
         interface: "pkg-edition-java-proxy",
         name: "connection-request-connect",
         kind: "method",
     },
     Operation {
-        id: 1098,
+        id: 1101,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionRequest.ConnectWithIndication",
         interface: "pkg-edition-java-proxy",
         name: "connection-request-connect-with-indication",
         kind: "method",
     },
     Operation {
-        id: 1099,
+        id: 1102,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionRequest.Server",
         interface: "pkg-edition-java-proxy",
         name: "connection-request-server",
         kind: "method",
     },
     Operation {
-        id: 1100,
+        id: 1103,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionResult.Reason",
         interface: "pkg-edition-java-proxy",
         name: "connection-result-reason",
         kind: "method",
     },
     Operation {
-        id: 1101,
+        id: 1104,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionResult.Status",
         interface: "pkg-edition-java-proxy",
         name: "connection-result-status",
         kind: "method",
     },
     Operation {
-        id: 1102,
+        id: 1105,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionStatus.AlreadyConnected",
         interface: "pkg-edition-java-proxy",
         name: "connection-status-already-connected",
         kind: "method",
     },
     Operation {
-        id: 1103,
+        id: 1106,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionStatus.Canceled",
         interface: "pkg-edition-java-proxy",
         name: "connection-status-canceled",
         kind: "method",
     },
     Operation {
-        id: 1104,
+        id: 1107,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionStatus.ConnectionInProgress",
         interface: "pkg-edition-java-proxy",
         name: "connection-status-connection-in-progress",
         kind: "method",
     },
     Operation {
-        id: 1105,
+        id: 1108,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionStatus.ServerDisconnected",
         interface: "pkg-edition-java-proxy",
         name: "connection-status-server-disconnected",
         kind: "method",
     },
     Operation {
-        id: 1106,
+        id: 1109,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionStatus.Successful",
         interface: "pkg-edition-java-proxy",
         name: "connection-status-successful",
         kind: "method",
     },
     Operation {
-        id: 1107,
+        id: 1110,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-cookie-receive-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1111,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1108,
+        id: 1112,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.Key",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-key",
         kind: "method",
     },
     Operation {
-        id: 1109,
+        id: 1113,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.OriginalKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-original-key",
         kind: "method",
     },
     Operation {
-        id: 1110,
+        id: 1114,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.OriginalPayload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-original-payload",
         kind: "method",
     },
     Operation {
-        id: 1111,
+        id: 1115,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.Payload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-payload",
         kind: "method",
     },
     Operation {
-        id: 1112,
+        id: 1116,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-player",
         kind: "method",
     },
     Operation {
-        id: 1113,
+        id: 1117,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1114,
+        id: 1118,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.SetKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-set-key",
         kind: "method",
     },
     Operation {
-        id: 1115,
+        id: 1119,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent.SetPayload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-receive-event-set-payload",
         kind: "method",
     },
     Operation {
-        id: 1116,
+        id: 1120,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-cookie-request-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1121,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1117,
+        id: 1122,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.Key",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-key",
         kind: "method",
     },
     Operation {
-        id: 1118,
+        id: 1123,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.OriginalKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-original-key",
         kind: "method",
     },
     Operation {
-        id: 1119,
+        id: 1124,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-player",
         kind: "method",
     },
     Operation {
-        id: 1120,
+        id: 1125,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1121,
+        id: 1126,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent.SetKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-request-event-set-key",
         kind: "method",
     },
     Operation {
-        id: 1122,
+        id: 1127,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-cookie-store-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1128,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1123,
+        id: 1129,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.Key",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-key",
         kind: "method",
     },
     Operation {
-        id: 1124,
+        id: 1130,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.OriginalKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-original-key",
         kind: "method",
     },
     Operation {
-        id: 1125,
+        id: 1131,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.OriginalPayload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-original-payload",
         kind: "method",
     },
     Operation {
-        id: 1126,
+        id: 1132,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.Payload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-payload",
         kind: "method",
     },
     Operation {
-        id: 1127,
+        id: 1133,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-player",
         kind: "method",
     },
     Operation {
-        id: 1128,
+        id: 1134,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1129,
+        id: 1135,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.SetKey",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-set-key",
         kind: "method",
     },
     Operation {
-        id: 1130,
+        id: 1136,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent.SetPayload",
         interface: "pkg-edition-java-proxy",
         name: "cookie-store-event-set-payload",
         kind: "method",
     },
     Operation {
-        id: 1131,
+        id: 1137,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DeclinedResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-declined-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1132,
+        id: 1138,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DeniedPreLogin#get",
         interface: "pkg-edition-java-proxy",
         name: "get-denied-pre-login",
         kind: "constant-get",
     },
     Operation {
-        id: 1133,
+        id: 1139,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DiscardedResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-discarded-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1134,
+        id: 1140,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-disconnect-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1141,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent.LoginStatus",
         interface: "pkg-edition-java-proxy",
         name: "disconnect-event-login-status",
         kind: "method",
     },
     Operation {
-        id: 1135,
+        id: 1142,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "disconnect-event-player",
         kind: "method",
     },
     Operation {
-        id: 1136,
+        id: 1143,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DownloadedResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-downloaded-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1137,
+        id: 1144,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.DownstreamServerResourcePackOrigin#get",
         interface: "pkg-edition-java-proxy",
         name: "get-downstream-server-resource-pack-origin",
         kind: "constant-get",
     },
     Operation {
-        id: 1138,
+        id: 1145,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrNoBackendConnection#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-no-backend-connection",
         kind: "variable-get",
     },
     Operation {
-        id: 1139,
+        id: 1146,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrNoBackendConnection#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-no-backend-connection",
         kind: "variable-set",
     },
     Operation {
-        id: 1140,
+        id: 1147,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrProxyAlreadyRun#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-proxy-already-run",
         kind: "variable-get",
     },
     Operation {
-        id: 1141,
+        id: 1148,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrProxyAlreadyRun#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-proxy-already-run",
         kind: "variable-set",
     },
     Operation {
-        id: 1142,
+        id: 1149,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrServerAlreadyExists#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-server-already-exists",
         kind: "variable-get",
     },
     Operation {
-        id: 1143,
+        id: 1150,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrServerAlreadyExists#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-server-already-exists",
         kind: "variable-set",
     },
     Operation {
-        id: 1144,
+        id: 1151,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrServerOnlineMode#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-server-online-mode",
         kind: "variable-get",
     },
     Operation {
-        id: 1145,
+        id: 1152,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrServerOnlineMode#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-server-online-mode",
         kind: "variable-set",
     },
     Operation {
-        id: 1146,
+        id: 1153,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrTooLongChatMessage#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-too-long-chat-message",
         kind: "variable-get",
     },
     Operation {
-        id: 1147,
+        id: 1154,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrTooLongChatMessage#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-too-long-chat-message",
         kind: "variable-set",
     },
     Operation {
-        id: 1148,
+        id: 1155,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrTransferUnsupportedClientProtocol#get",
         interface: "pkg-edition-java-proxy",
         name: "get-err-transfer-unsupported-client-protocol",
         kind: "variable-get",
     },
     Operation {
-        id: 1149,
+        id: 1156,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ErrTransferUnsupportedClientProtocol#set",
         interface: "pkg-edition-java-proxy",
         name: "set-err-transfer-unsupported-client-protocol",
         kind: "variable-set",
     },
     Operation {
-        id: 1150,
+        id: 1157,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.FailedDownloadResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-failed-download-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1151,
+        id: 1158,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.FailedToReloadResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-failed-to-reload-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1152,
+        id: 1159,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ForceOfflineModePreLogin#get",
         interface: "pkg-edition-java-proxy",
         name: "get-force-offline-mode-pre-login",
         kind: "constant-get",
     },
     Operation {
-        id: 1153,
+        id: 1160,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ForceOnlineModePreLogin#get",
         interface: "pkg-edition-java-proxy",
         name: "get-force-online-mode-pre-login",
         kind: "constant-get",
     },
     Operation {
-        id: 1154,
+        id: 1161,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ForgeLoginWrapperChannel#get",
         interface: "pkg-edition-java-proxy",
         name: "get-forge-login-wrapper-channel",
         kind: "constant-get",
     },
     Operation {
-        id: 1155,
+        id: 1162,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ForwardingModeProvider.ForwardingMode",
         interface: "pkg-edition-java-proxy",
         name: "forwarding-mode-provider-forwarding-mode",
         kind: "method",
     },
     Operation {
-        id: 1156,
+        id: 1163,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameInfoMessageType#get",
         interface: "pkg-edition-java-proxy",
         name: "get-game-info-message-type",
         kind: "constant-get",
     },
     Operation {
-        id: 1157,
+        id: 1164,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileProvider.GameProfile",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-provider-game-profile",
         kind: "method",
     },
     Operation {
-        id: 1158,
+        id: 1165,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-game-profile-request-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1166,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent.Conn",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-request-event-conn",
         kind: "method",
     },
     Operation {
-        id: 1159,
+        id: 1167,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent.GameProfile",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-request-event-game-profile",
         kind: "method",
     },
     Operation {
-        id: 1160,
+        id: 1168,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent.OnlineMode",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-request-event-online-mode",
         kind: "method",
     },
     Operation {
-        id: 1161,
+        id: 1169,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent.Original",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-request-event-original",
         kind: "method",
     },
     Operation {
-        id: 1162,
+        id: 1170,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent.SetGameProfile",
         interface: "pkg-edition-java-proxy",
         name: "game-profile-request-event-set-game-profile",
         kind: "method",
     },
     Operation {
-        id: 1163,
+        id: 1171,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.HandshakeAddresser.HandshakeAddr",
         interface: "pkg-edition-java-proxy",
         name: "handshake-addresser-handshake-addr",
         kind: "method",
     },
     Operation {
-        id: 1164,
+        id: 1172,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.InProgressConnectionStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-in-progress-connection-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1165,
+        id: 1173,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.Active",
         interface: "pkg-edition-java-proxy",
         name: "inbound-active",
         kind: "method",
     },
     Operation {
-        id: 1166,
+        id: 1174,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.Context",
         interface: "pkg-edition-java-proxy",
         name: "inbound-context",
         kind: "method",
     },
     Operation {
-        id: 1167,
+        id: 1175,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.HandshakeIntent",
         interface: "pkg-edition-java-proxy",
         name: "inbound-handshake-intent",
         kind: "method",
     },
     Operation {
-        id: 1168,
+        id: 1176,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.Protocol",
         interface: "pkg-edition-java-proxy",
         name: "inbound-protocol",
         kind: "method",
     },
     Operation {
-        id: 1169,
+        id: 1177,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.RemoteAddr",
         interface: "pkg-edition-java-proxy",
         name: "inbound-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1170,
+        id: 1178,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Inbound.VirtualHost",
         interface: "pkg-edition-java-proxy",
         name: "inbound-virtual-host",
         kind: "method",
     },
     Operation {
-        id: 1171,
+        id: 1179,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.InvalidURLResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-invalid-url-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1172,
+        id: 1180,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-kicked-from-server-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1181,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.KickedDuringServerConnect",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-kicked-during-server-connect",
         kind: "method",
     },
     Operation {
-        id: 1173,
+        id: 1182,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.OriginalReason",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-original-reason",
         kind: "method",
     },
     Operation {
-        id: 1174,
+        id: 1183,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-player",
         kind: "method",
     },
     Operation {
-        id: 1175,
+        id: 1184,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.Result",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-result",
         kind: "method",
     },
     Operation {
-        id: 1176,
+        id: 1185,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.Server",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-server",
         kind: "method",
     },
     Operation {
-        id: 1177,
+        id: 1186,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent.SetResult",
         interface: "pkg-edition-java-proxy",
         name: "kicked-from-server-event-set-result",
         kind: "method",
     },
     Operation {
-        id: 1178,
+        id: 1187,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-login-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1188,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.Allow",
         interface: "pkg-edition-java-proxy",
         name: "login-event-allow",
         kind: "method",
     },
     Operation {
-        id: 1179,
+        id: 1189,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "login-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1180,
+        id: 1190,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.Deny",
         interface: "pkg-edition-java-proxy",
         name: "login-event-deny",
         kind: "method",
     },
     Operation {
-        id: 1181,
+        id: 1191,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "login-event-player",
         kind: "method",
     },
     Operation {
-        id: 1182,
+        id: 1192,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.Reason",
         interface: "pkg-edition-java-proxy",
         name: "login-event-reason",
         kind: "method",
     },
     Operation {
-        id: 1183,
+        id: 1193,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent.ServerIDHash",
         interface: "pkg-edition-java-proxy",
         name: "login-event-server-id-hash",
         kind: "method",
     },
     Operation {
-        id: 1184,
+        id: 1194,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.Active",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-active",
         kind: "method",
     },
     Operation {
-        id: 1185,
+        id: 1195,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.Context",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-context",
         kind: "method",
     },
     Operation {
-        id: 1186,
+        id: 1196,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.HandshakeIntent",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-handshake-intent",
         kind: "method",
     },
     Operation {
-        id: 1187,
+        id: 1197,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.IdentifiedKey",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-identified-key",
         kind: "method",
     },
     Operation {
-        id: 1188,
+        id: 1198,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.Protocol",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-protocol",
         kind: "method",
     },
     Operation {
-        id: 1189,
+        id: 1199,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.RemoteAddr",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1190,
+        id: 1200,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.SendLoginPluginMessage",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-send-login-plugin-message",
         kind: "method",
     },
     Operation {
-        id: 1191,
+        id: 1201,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginPhaseConnection.VirtualHost",
         interface: "pkg-edition-java-proxy",
         name: "login-phase-connection-virtual-host",
         kind: "method",
     },
     Operation {
-        id: 1192,
+        id: 1202,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.MessageConsumer.OnMessageResponse",
         interface: "pkg-edition-java-proxy",
         name: "message-consumer-on-message-response",
         kind: "method",
     },
     Operation {
-        id: 1193,
+        id: 1203,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.MessageSink.SendMessage",
         interface: "pkg-edition-java-proxy",
         name: "message-sink-send-message",
         kind: "method",
     },
     Operation {
-        id: 1194,
+        id: 1204,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.New",
         interface: "pkg-edition-java-proxy",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1195,
+        id: 1205,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.NewGameProfileRequestEvent",
         interface: "pkg-edition-java-proxy",
         name: "new-game-profile-request-event",
         kind: "function",
     },
     Operation {
-        id: 1196,
+        id: 1206,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.NewServerInfo",
         interface: "pkg-edition-java-proxy",
         name: "new-server-info",
         kind: "function",
     },
     Operation {
-        id: 1197,
+        id: 1207,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-permissions-setup-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1208,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent.Func",
         interface: "pkg-edition-java-proxy",
         name: "permissions-setup-event-func",
         kind: "method",
     },
     Operation {
-        id: 1198,
+        id: 1209,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent.SetFunc",
         interface: "pkg-edition-java-proxy",
         name: "permissions-setup-event-set-func",
         kind: "method",
     },
     Operation {
-        id: 1199,
+        id: 1210,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent.Subject",
         interface: "pkg-edition-java-proxy",
         name: "permissions-setup-event-subject",
         kind: "method",
     },
     Operation {
-        id: 1200,
+        id: 1211,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-ping-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1212,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent.Connection",
         interface: "pkg-edition-java-proxy",
         name: "ping-event-connection",
         kind: "method",
     },
     Operation {
-        id: 1201,
+        id: 1213,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent.Ping",
         interface: "pkg-edition-java-proxy",
         name: "ping-event-ping",
         kind: "method",
     },
     Operation {
-        id: 1202,
+        id: 1214,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent.SetPing",
         interface: "pkg-edition-java-proxy",
         name: "ping-event-set-ping",
         kind: "method",
     },
     Operation {
-        id: 1203,
+        id: 1215,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Active",
         interface: "pkg-edition-java-proxy",
         name: "player-active",
         kind: "method",
     },
     Operation {
-        id: 1204,
+        id: 1216,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.AppliedResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "player-applied-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1205,
+        id: 1217,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.AppliedResourcePacks",
         interface: "pkg-edition-java-proxy",
         name: "player-applied-resource-packs",
         kind: "method",
     },
     Operation {
-        id: 1206,
+        id: 1218,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.BufferPacket",
         interface: "pkg-edition-java-proxy",
         name: "player-buffer-packet",
         kind: "method",
     },
     Operation {
-        id: 1207,
+        id: 1219,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.BufferPayload",
         interface: "pkg-edition-java-proxy",
         name: "player-buffer-payload",
         kind: "method",
     },
     Operation {
-        id: 1208,
+        id: 1220,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.ClientBrand",
         interface: "pkg-edition-java-proxy",
         name: "player-client-brand",
         kind: "method",
     },
     Operation {
-        id: 1209,
+        id: 1221,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Context",
         interface: "pkg-edition-java-proxy",
         name: "player-context",
         kind: "method",
     },
     Operation {
-        id: 1210,
+        id: 1222,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.CreateConnectionRequest",
         interface: "pkg-edition-java-proxy",
         name: "player-create-connection-request",
         kind: "method",
     },
     Operation {
-        id: 1211,
+        id: 1223,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.CurrentServer",
         interface: "pkg-edition-java-proxy",
         name: "player-current-server",
         kind: "method",
     },
     Operation {
-        id: 1212,
+        id: 1224,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Disconnect",
         interface: "pkg-edition-java-proxy",
         name: "player-disconnect",
         kind: "method",
     },
     Operation {
-        id: 1213,
+        id: 1225,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Flush",
         interface: "pkg-edition-java-proxy",
         name: "player-flush",
         kind: "method",
     },
     Operation {
-        id: 1214,
+        id: 1226,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.GameProfile",
         interface: "pkg-edition-java-proxy",
         name: "player-game-profile",
         kind: "method",
     },
     Operation {
-        id: 1215,
+        id: 1227,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.HandshakeIntent",
         interface: "pkg-edition-java-proxy",
         name: "player-handshake-intent",
         kind: "method",
     },
     Operation {
-        id: 1216,
+        id: 1228,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.HasPermission",
         interface: "pkg-edition-java-proxy",
         name: "player-has-permission",
         kind: "method",
     },
     Operation {
-        id: 1217,
+        id: 1229,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.ID",
         interface: "pkg-edition-java-proxy",
         name: "player-id",
         kind: "method",
     },
     Operation {
-        id: 1218,
+        id: 1230,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.IdentifiedKey",
         interface: "pkg-edition-java-proxy",
         name: "player-identified-key",
         kind: "method",
     },
     Operation {
-        id: 1219,
+        id: 1231,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.OnlineMode",
         interface: "pkg-edition-java-proxy",
         name: "player-online-mode",
         kind: "method",
     },
     Operation {
-        id: 1220,
+        id: 1232,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.PendingResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "player-pending-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1221,
+        id: 1233,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.PendingResourcePacks",
         interface: "pkg-edition-java-proxy",
         name: "player-pending-resource-packs",
         kind: "method",
     },
     Operation {
-        id: 1222,
+        id: 1234,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.PermissionValue",
         interface: "pkg-edition-java-proxy",
         name: "player-permission-value",
         kind: "method",
     },
     Operation {
-        id: 1223,
+        id: 1235,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Ping",
         interface: "pkg-edition-java-proxy",
         name: "player-ping",
         kind: "method",
     },
     Operation {
-        id: 1224,
+        id: 1236,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Protocol",
         interface: "pkg-edition-java-proxy",
         name: "player-protocol",
         kind: "method",
     },
     Operation {
-        id: 1225,
+        id: 1237,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.RemoteAddr",
         interface: "pkg-edition-java-proxy",
         name: "player-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1226,
+        id: 1238,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.SendActionBar",
         interface: "pkg-edition-java-proxy",
         name: "player-send-action-bar",
         kind: "method",
     },
     Operation {
-        id: 1227,
+        id: 1239,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.SendMessage",
         interface: "pkg-edition-java-proxy",
         name: "player-send-message",
         kind: "method",
     },
     Operation {
-        id: 1228,
+        id: 1240,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.SendPluginMessage",
         interface: "pkg-edition-java-proxy",
         name: "player-send-plugin-message",
         kind: "method",
     },
     Operation {
-        id: 1229,
+        id: 1241,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.SendResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "player-send-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1230,
+        id: 1242,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Settings",
         interface: "pkg-edition-java-proxy",
         name: "player-settings",
         kind: "method",
     },
     Operation {
-        id: 1231,
+        id: 1243,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.SpoofChatInput",
         interface: "pkg-edition-java-proxy",
         name: "player-spoof-chat-input",
         kind: "method",
     },
     Operation {
-        id: 1232,
+        id: 1244,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.TabList",
         interface: "pkg-edition-java-proxy",
         name: "player-tab-list",
         kind: "method",
     },
     Operation {
-        id: 1233,
+        id: 1245,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.TransferToHost",
         interface: "pkg-edition-java-proxy",
         name: "player-transfer-to-host",
         kind: "method",
     },
     Operation {
-        id: 1234,
+        id: 1246,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Username",
         interface: "pkg-edition-java-proxy",
         name: "player-username",
         kind: "method",
     },
     Operation {
-        id: 1235,
+        id: 1247,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.VirtualHost",
         interface: "pkg-edition-java-proxy",
         name: "player-virtual-host",
         kind: "method",
     },
     Operation {
-        id: 1236,
+        id: 1248,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.Write",
         interface: "pkg-edition-java-proxy",
         name: "player-write",
         kind: "method",
     },
     Operation {
-        id: 1237,
+        id: 1249,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Player.WritePacket",
         interface: "pkg-edition-java-proxy",
         name: "player-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1238,
+        id: 1250,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-available-commands-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1251,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-available-commands-event-player",
         kind: "method",
     },
     Operation {
-        id: 1239,
+        id: 1252,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent.RootNode",
         interface: "pkg-edition-java-proxy",
         name: "player-available-commands-event-root-node",
         kind: "method",
     },
     Operation {
-        id: 1240,
+        id: 1253,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-channel-register-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1254,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent.Channels",
         interface: "pkg-edition-java-proxy",
         name: "player-channel-register-event-channels",
         kind: "method",
     },
     Operation {
-        id: 1241,
+        id: 1255,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-channel-register-event-player",
         kind: "method",
     },
     Operation {
-        id: 1242,
+        id: 1256,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-channel-unregister-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1257,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent.Channels",
         interface: "pkg-edition-java-proxy",
         name: "player-channel-unregister-event-channels",
         kind: "method",
     },
     Operation {
-        id: 1243,
+        id: 1258,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-channel-unregister-event-player",
         kind: "method",
     },
     Operation {
-        id: 1244,
+        id: 1259,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-chat-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1260,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1245,
+        id: 1261,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.Message",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-message",
         kind: "method",
     },
     Operation {
-        id: 1246,
+        id: 1262,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.Original",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-original",
         kind: "method",
     },
     Operation {
-        id: 1247,
+        id: 1263,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-player",
         kind: "method",
     },
     Operation {
-        id: 1248,
+        id: 1264,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1249,
+        id: 1265,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent.SetMessage",
         interface: "pkg-edition-java-proxy",
         name: "player-chat-event-set-message",
         kind: "method",
     },
     Operation {
-        id: 1250,
+        id: 1266,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-choose-initial-server-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1267,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent.InitialServer",
         interface: "pkg-edition-java-proxy",
         name: "player-choose-initial-server-event-initial-server",
         kind: "method",
     },
     Operation {
-        id: 1251,
+        id: 1268,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-choose-initial-server-event-player",
         kind: "method",
     },
     Operation {
-        id: 1252,
+        id: 1269,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent.SetInitialServer",
         interface: "pkg-edition-java-proxy",
         name: "player-choose-initial-server-event-set-initial-server",
         kind: "method",
     },
     Operation {
-        id: 1253,
+        id: 1270,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-client-brand-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1271,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent.Brand",
         interface: "pkg-edition-java-proxy",
         name: "player-client-brand-event-brand",
         kind: "method",
     },
     Operation {
-        id: 1254,
+        id: 1272,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-client-brand-event-player",
         kind: "method",
     },
     Operation {
-        id: 1255,
+        id: 1273,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-mod-info-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1274,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent.ModInfo",
         interface: "pkg-edition-java-proxy",
         name: "player-mod-info-event-mod-info",
         kind: "method",
     },
     Operation {
-        id: 1256,
+        id: 1275,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-mod-info-event-player",
         kind: "method",
     },
     Operation {
-        id: 1257,
+        id: 1276,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerResourcePackStatusEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-resource-pack-status-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1277,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-player-settings-changed-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1278,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "player-settings-changed-event-player",
         kind: "method",
     },
     Operation {
-        id: 1258,
+        id: 1279,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent.Settings",
         interface: "pkg-edition-java-proxy",
         name: "player-settings-changed-event-settings",
         kind: "method",
     },
     Operation {
-        id: 1259,
+        id: 1280,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Players.Len",
         interface: "pkg-edition-java-proxy",
         name: "players-len",
         kind: "method",
     },
     Operation {
-        id: 1260,
+        id: 1281,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Players.Range",
         interface: "pkg-edition-java-proxy",
         name: "players-range",
         kind: "method",
     },
     Operation {
-        id: 1261,
+        id: 1282,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayersToSlice",
         interface: "pkg-edition-java-proxy",
         name: "players-to-slice",
         kind: "function",
     },
     Operation {
-        id: 1262,
+        id: 1283,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayersToSlice[go.minekube.com/gate/pkg/edition/java/proxy.MessageSink]",
         interface: "pkg-edition-java-proxy",
         name: "players-to-slice-a5e1caef662d",
         kind: "function",
     },
     Operation {
-        id: 1263,
+        id: 1284,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayersToSlice[go.minekube.com/gate/pkg/edition/java/proxy.Player]",
         interface: "pkg-edition-java-proxy",
         name: "players-to-slice-5c6ce5f1e2a3",
         kind: "function",
     },
     Operation {
-        id: 1264,
+        id: 1285,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayersToSlice[go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player]",
         interface: "pkg-edition-java-proxy",
         name: "players-to-slice-a905a666891c",
         kind: "function",
     },
     Operation {
-        id: 1265,
+        id: 1286,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayersToSlice[go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelMessageSink]",
         interface: "pkg-edition-java-proxy",
         name: "players-to-slice-c5365be0f6b1",
         kind: "function",
     },
     Operation {
-        id: 1266,
+        id: 1287,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-plugin-message-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1288,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1267,
+        id: 1289,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.Data",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-data",
         kind: "method",
     },
     Operation {
-        id: 1268,
+        id: 1290,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.Identifier",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-identifier",
         kind: "method",
     },
     Operation {
-        id: 1269,
+        id: 1291,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.SetForward",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-set-forward",
         kind: "method",
     },
     Operation {
-        id: 1270,
+        id: 1292,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.Source",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-source",
         kind: "method",
     },
     Operation {
-        id: 1271,
+        id: 1293,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent.Target",
         interface: "pkg-edition-java-proxy",
         name: "plugin-message-event-target",
         kind: "method",
     },
     Operation {
-        id: 1272,
+        id: 1294,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginOnProxyResourcePackOrigin#get",
         interface: "pkg-edition-java-proxy",
         name: "get-plugin-on-proxy-resource-pack-origin",
         kind: "constant-get",
     },
     Operation {
-        id: 1273,
+        id: 1295,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-post-login-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1296,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "post-login-event-player",
         kind: "method",
     },
     Operation {
-        id: 1274,
+        id: 1297,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-pre-login-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1298,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Allow",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-allow",
         kind: "method",
     },
     Operation {
-        id: 1275,
+        id: 1299,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Conn",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-conn",
         kind: "method",
     },
     Operation {
-        id: 1276,
+        id: 1300,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Deny",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-deny",
         kind: "method",
     },
     Operation {
-        id: 1277,
+        id: 1301,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.ForceOfflineMode",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-force-offline-mode",
         kind: "method",
     },
     Operation {
-        id: 1278,
+        id: 1302,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.ForceOnlineMode",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-force-online-mode",
         kind: "method",
     },
     Operation {
-        id: 1279,
+        id: 1303,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.ID",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-id",
         kind: "method",
     },
     Operation {
-        id: 1280,
+        id: 1304,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Reason",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-reason",
         kind: "method",
     },
     Operation {
-        id: 1281,
+        id: 1305,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Result",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-result",
         kind: "method",
     },
     Operation {
-        id: 1282,
+        id: 1306,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.SetVirtualHost",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-set-virtual-host",
         kind: "method",
     },
     Operation {
-        id: 1283,
+        id: 1307,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent.Username",
         interface: "pkg-edition-java-proxy",
         name: "pre-login-event-username",
         kind: "method",
     },
     Operation {
-        id: 1284,
+        id: 1308,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-pre-shutdown-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1309,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent.Reason",
         interface: "pkg-edition-java-proxy",
         name: "pre-shutdown-event-reason",
         kind: "method",
     },
     Operation {
-        id: 1285,
+        id: 1310,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent.SetReason",
         interface: "pkg-edition-java-proxy",
         name: "pre-shutdown-event-set-reason",
         kind: "method",
     },
     Operation {
-        id: 1286,
+        id: 1311,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-pre-transfer-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1312,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent.Addr",
         interface: "pkg-edition-java-proxy",
         name: "pre-transfer-event-addr",
         kind: "method",
     },
     Operation {
-        id: 1287,
+        id: 1313,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "pre-transfer-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1288,
+        id: 1314,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "pre-transfer-event-player",
         kind: "method",
     },
     Operation {
-        id: 1289,
+        id: 1315,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent.TransferTo",
         interface: "pkg-edition-java-proxy",
         name: "pre-transfer-event-transfer-to",
         kind: "method",
     },
     Operation {
-        id: 1290,
+        id: 1316,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.ChannelRegistrar",
         interface: "pkg-edition-java-proxy",
         name: "proxy-channel-registrar",
         kind: "method",
     },
     Operation {
-        id: 1291,
+        id: 1317,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Command",
         interface: "pkg-edition-java-proxy",
         name: "proxy-command",
         kind: "method",
     },
     Operation {
-        id: 1292,
+        id: 1318,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Config",
         interface: "pkg-edition-java-proxy",
         name: "proxy-config",
         kind: "method",
     },
     Operation {
-        id: 1293,
+        id: 1319,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.DisconnectAll",
         interface: "pkg-edition-java-proxy",
         name: "proxy-disconnect-all",
         kind: "method",
     },
     Operation {
-        id: 1294,
+        id: 1320,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Event",
         interface: "pkg-edition-java-proxy",
         name: "proxy-event",
         kind: "method",
     },
     Operation {
-        id: 1295,
+        id: 1321,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.HandleConn",
         interface: "pkg-edition-java-proxy",
         name: "proxy-handle-conn",
         kind: "method",
     },
     Operation {
-        id: 1296,
+        id: 1322,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Lite",
         interface: "pkg-edition-java-proxy",
         name: "proxy-lite",
         kind: "method",
     },
     Operation {
-        id: 1297,
+        id: 1323,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Player",
         interface: "pkg-edition-java-proxy",
         name: "proxy-player",
         kind: "method",
     },
     Operation {
-        id: 1298,
+        id: 1324,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.PlayerByName",
         interface: "pkg-edition-java-proxy",
         name: "proxy-player-by-name",
         kind: "method",
     },
     Operation {
-        id: 1299,
+        id: 1325,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.PlayerCount",
         interface: "pkg-edition-java-proxy",
         name: "proxy-player-count",
         kind: "method",
     },
     Operation {
-        id: 1300,
+        id: 1326,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Players",
         interface: "pkg-edition-java-proxy",
         name: "proxy-players",
         kind: "method",
     },
     Operation {
-        id: 1301,
+        id: 1327,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Register",
         interface: "pkg-edition-java-proxy",
         name: "proxy-register",
         kind: "method",
     },
     Operation {
-        id: 1302,
+        id: 1328,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Server",
         interface: "pkg-edition-java-proxy",
         name: "proxy-server",
         kind: "method",
     },
     Operation {
-        id: 1303,
+        id: 1329,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Servers",
         interface: "pkg-edition-java-proxy",
         name: "proxy-servers",
         kind: "method",
     },
     Operation {
-        id: 1304,
+        id: 1330,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.SetBackendHandshakeAddresser",
         interface: "pkg-edition-java-proxy",
         name: "proxy-set-backend-handshake-addresser",
         kind: "method",
     },
     Operation {
-        id: 1305,
+        id: 1331,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Shutdown",
         interface: "pkg-edition-java-proxy",
         name: "proxy-shutdown",
         kind: "method",
     },
     Operation {
-        id: 1306,
+        id: 1332,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Start",
         interface: "pkg-edition-java-proxy",
         name: "proxy-start",
         kind: "method",
     },
     Operation {
-        id: 1307,
+        id: 1333,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.Proxy.Unregister",
         interface: "pkg-edition-java-proxy",
         name: "proxy-unregister",
         kind: "method",
     },
     Operation {
-        id: 1308,
+        id: 1334,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-ready-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1335,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent.Addr",
         interface: "pkg-edition-java-proxy",
         name: "ready-event-addr",
         kind: "method",
     },
     Operation {
-        id: 1309,
+        id: 1336,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.RegisteredServer.Players",
         interface: "pkg-edition-java-proxy",
         name: "registered-server-players",
         kind: "method",
     },
     Operation {
-        id: 1310,
+        id: 1337,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.RegisteredServer.ServerInfo",
         interface: "pkg-edition-java-proxy",
         name: "registered-server-server-info",
         kind: "method",
     },
     Operation {
-        id: 1311,
+        id: 1338,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.RegisteredServerEqual",
         interface: "pkg-edition-java-proxy",
         name: "registered-server-equal",
         kind: "function",
     },
     Operation {
-        id: 1312,
+        id: 1339,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-connected-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1340,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent.EntityID",
         interface: "pkg-edition-java-proxy",
         name: "server-connected-event-entity-id",
         kind: "method",
     },
     Operation {
-        id: 1313,
+        id: 1341,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "server-connected-event-player",
         kind: "method",
     },
     Operation {
-        id: 1314,
+        id: 1342,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent.PreviousServer",
         interface: "pkg-edition-java-proxy",
         name: "server-connected-event-previous-server",
         kind: "method",
     },
     Operation {
-        id: 1315,
+        id: 1343,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent.Server",
         interface: "pkg-edition-java-proxy",
         name: "server-connected-event-server",
         kind: "method",
     },
     Operation {
-        id: 1316,
+        id: 1344,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnection.Player",
         interface: "pkg-edition-java-proxy",
         name: "server-connection-player",
         kind: "method",
     },
     Operation {
-        id: 1317,
+        id: 1345,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnection.SendPluginMessage",
         interface: "pkg-edition-java-proxy",
         name: "server-connection-send-plugin-message",
         kind: "method",
     },
     Operation {
-        id: 1318,
+        id: 1346,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnection.Server",
         interface: "pkg-edition-java-proxy",
         name: "server-connection-server",
         kind: "method",
     },
     Operation {
-        id: 1319,
+        id: 1347,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerDialer.Dial",
         interface: "pkg-edition-java-proxy",
         name: "server-dialer-dial",
         kind: "method",
     },
     Operation {
-        id: 1320,
+        id: 1348,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerDisconnectedConnectionStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-server-disconnected-connection-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1321,
+        id: 1349,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerInfo.Addr",
         interface: "pkg-edition-java-proxy",
         name: "server-info-addr",
         kind: "method",
     },
     Operation {
-        id: 1322,
+        id: 1350,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerInfo.Name",
         interface: "pkg-edition-java-proxy",
         name: "server-info-name",
         kind: "method",
     },
     Operation {
-        id: 1323,
+        id: 1351,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerInfoEqual",
         interface: "pkg-edition-java-proxy",
         name: "server-info-equal",
         kind: "function",
     },
     Operation {
-        id: 1324,
+        id: 1352,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-login-plugin-message-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1353,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent.Contents",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-event-contents",
         kind: "method",
     },
     Operation {
-        id: 1325,
+        id: 1354,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent.Result",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-event-result",
         kind: "method",
     },
     Operation {
-        id: 1326,
+        id: 1355,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent.SequenceID",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-event-sequence-id",
         kind: "method",
     },
     Operation {
-        id: 1327,
+        id: 1356,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent.ServerConnection",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-event-server-connection",
         kind: "method",
     },
     Operation {
-        id: 1328,
+        id: 1357,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageResult.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-result-allowed",
         kind: "method",
     },
     Operation {
-        id: 1329,
+        id: 1358,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageResult.Copy",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-result-copy",
         kind: "method",
     },
     Operation {
-        id: 1330,
+        id: 1359,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageResult.Reply",
         interface: "pkg-edition-java-proxy",
         name: "server-login-plugin-message-result-reply",
         kind: "method",
     },
     Operation {
-        id: 1331,
+        id: 1360,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-post-connect-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1361,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "server-post-connect-event-player",
         kind: "method",
     },
     Operation {
-        id: 1332,
+        id: 1362,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent.PreviousServer",
         interface: "pkg-edition-java-proxy",
         name: "server-post-connect-event-previous-server",
         kind: "method",
     },
     Operation {
-        id: 1333,
+        id: 1363,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-pre-connect-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1364,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.Allow",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-allow",
         kind: "method",
     },
     Operation {
-        id: 1334,
+        id: 1365,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1335,
+        id: 1366,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.Deny",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-deny",
         kind: "method",
     },
     Operation {
-        id: 1336,
+        id: 1367,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.OriginalServer",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-original-server",
         kind: "method",
     },
     Operation {
-        id: 1337,
+        id: 1368,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-player",
         kind: "method",
     },
     Operation {
-        id: 1338,
+        id: 1369,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.PreviousServer",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-previous-server",
         kind: "method",
     },
     Operation {
-        id: 1339,
+        id: 1370,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent.Server",
         interface: "pkg-edition-java-proxy",
         name: "server-pre-connect-event-server",
         kind: "method",
     },
     Operation {
-        id: 1340,
+        id: 1371,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-registered-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1372,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent.Server",
         interface: "pkg-edition-java-proxy",
         name: "server-registered-event-server",
         kind: "method",
     },
     Operation {
-        id: 1341,
+        id: 1373,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegistrar.Register",
         interface: "pkg-edition-java-proxy",
         name: "server-registrar-register",
         kind: "method",
     },
     Operation {
-        id: 1342,
+        id: 1374,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegistrar.Unregister",
         interface: "pkg-edition-java-proxy",
         name: "server-registrar-unregister",
         kind: "method",
     },
     Operation {
-        id: 1343,
+        id: 1375,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegistry.Register",
         interface: "pkg-edition-java-proxy",
         name: "server-registry-register",
         kind: "method",
     },
     Operation {
-        id: 1344,
+        id: 1376,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegistry.Server",
         interface: "pkg-edition-java-proxy",
         name: "server-registry-server",
         kind: "method",
     },
     Operation {
-        id: 1345,
+        id: 1377,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegistry.Unregister",
         interface: "pkg-edition-java-proxy",
         name: "server-registry-unregister",
         kind: "method",
     },
     Operation {
-        id: 1346,
+        id: 1378,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-resource-pack-remove-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1379,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-remove-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1347,
+        id: 1380,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent.PackID",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-remove-event-pack-id",
         kind: "method",
     },
     Operation {
-        id: 1348,
+        id: 1381,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent.ServerConnection",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-remove-event-server-connection",
         kind: "method",
     },
     Operation {
-        id: 1349,
+        id: 1382,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-remove-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1350,
+        id: 1383,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-resource-pack-send-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1384,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.Allowed",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-allowed",
         kind: "method",
     },
     Operation {
-        id: 1351,
+        id: 1385,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.ProvidedResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-provided-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1352,
+        id: 1386,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.ReceivedResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-received-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1353,
+        id: 1387,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.ServerConnection",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-server-connection",
         kind: "method",
     },
     Operation {
-        id: 1354,
+        id: 1388,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.SetAllowed",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-set-allowed",
         kind: "method",
     },
     Operation {
-        id: 1355,
+        id: 1389,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent.SetProvidedResourcePack",
         interface: "pkg-edition-java-proxy",
         name: "server-resource-pack-send-event-set-provided-resource-pack",
         kind: "method",
     },
     Operation {
-        id: 1356,
+        id: 1390,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-server-unregistered-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1391,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent.ServerInfo",
         interface: "pkg-edition-java-proxy",
         name: "server-unregistered-event-server-info",
         kind: "method",
     },
     Operation {
-        id: 1357,
+        id: 1392,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ShutdownEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-shutdown-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1393,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.SuccessConnectionStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-success-connection-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1358,
+        id: 1394,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.SuccessfulLoginStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-successful-login-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1359,
+        id: 1395,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.SuccessfulResourcePackResponseStatus#get",
         interface: "pkg-edition-java-proxy",
         name: "get-successful-resource-pack-response-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1360,
+        id: 1396,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.SystemMessageType#get",
         interface: "pkg-edition-java-proxy",
         name: "get-system-message-type",
         kind: "constant-get",
     },
     Operation {
-        id: 1361,
+        id: 1397,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent#wasm-subscribe",
+        interface: "pkg-edition-java-proxy",
+        name: "subscribe-tab-complete-event",
+        kind: "event-subscribe",
+    },
+    Operation {
+        id: 1398,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent.PartialMessage",
         interface: "pkg-edition-java-proxy",
         name: "tab-complete-event-partial-message",
         kind: "method",
     },
     Operation {
-        id: 1362,
+        id: 1399,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent.Player",
         interface: "pkg-edition-java-proxy",
         name: "tab-complete-event-player",
         kind: "method",
     },
     Operation {
-        id: 1363,
+        id: 1400,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent.SetSuggestions",
         interface: "pkg-edition-java-proxy",
         name: "tab-complete-event-set-suggestions",
         kind: "method",
     },
     Operation {
-        id: 1364,
+        id: 1401,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent.Suggestions",
         interface: "pkg-edition-java-proxy",
         name: "tab-complete-event-suggestions",
         kind: "method",
     },
     Operation {
-        id: 1365,
+        id: 1402,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.WithMessageSender",
         interface: "pkg-edition-java-proxy",
         name: "with-message-sender",
         kind: "function",
     },
     Operation {
-        id: 1366,
+        id: 1403,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy.WithMessageType",
         interface: "pkg-edition-java-proxy",
         name: "with-message-type",
         kind: "function",
     },
     Operation {
-        id: 1367,
+        id: 1404,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Channel",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "channel",
         kind: "function",
     },
     Operation {
-        id: 1368,
+        id: 1405,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.IsBungeeCordMessage",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "is-bungee-cord-message",
         kind: "function",
     },
     Operation {
-        id: 1369,
+        id: 1406,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.MessageResponder.Process",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "message-responder-process",
         kind: "method",
     },
     Operation {
-        id: 1370,
+        id: 1407,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.NewMessageResponder",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "new-message-responder",
         kind: "function",
     },
     Operation {
-        id: 1371,
+        id: 1408,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.NopMessageResponder#get",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "get-nop-message-responder",
         kind: "variable-get",
     },
     Operation {
-        id: 1372,
+        id: 1409,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.NopMessageResponder#set",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "set-nop-message-responder",
         kind: "variable-set",
     },
     Operation {
-        id: 1373,
+        id: 1410,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player.Disconnect",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-disconnect",
         kind: "method",
     },
     Operation {
-        id: 1374,
+        id: 1411,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player.ID",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-id",
         kind: "method",
     },
     Operation {
-        id: 1375,
+        id: 1412,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player.Protocol",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-protocol",
         kind: "method",
     },
     Operation {
-        id: 1376,
+        id: 1413,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player.RemoteAddr",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1377,
+        id: 1414,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Player.Username",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-username",
         kind: "method",
     },
     Operation {
-        id: 1378,
+        id: 1415,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.PlayerProvider.BroadcastMessage",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-provider-broadcast-message",
         kind: "method",
     },
     Operation {
-        id: 1379,
+        id: 1416,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.PlayerProvider.PlayerByName",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-provider-player-by-name",
         kind: "method",
     },
     Operation {
-        id: 1380,
+        id: 1417,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.PlayerProvider.PlayerCount",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-provider-player-count",
         kind: "method",
     },
     Operation {
-        id: 1381,
+        id: 1418,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.PlayerProvider.Players",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "player-provider-players",
         kind: "method",
     },
     Operation {
-        id: 1382,
+        id: 1419,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.BroadcastMessage",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-broadcast-message",
         kind: "method",
     },
     Operation {
-        id: 1383,
+        id: 1420,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.ConnectedServer",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-connected-server",
         kind: "method",
     },
     Operation {
-        id: 1384,
+        id: 1421,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.PlayerByName",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-player-by-name",
         kind: "method",
     },
     Operation {
-        id: 1385,
+        id: 1422,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.PlayerCount",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-player-count",
         kind: "method",
     },
     Operation {
-        id: 1386,
+        id: 1423,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.Players",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-players",
         kind: "method",
     },
     Operation {
-        id: 1387,
+        id: 1424,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.Server",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-server",
         kind: "method",
     },
     Operation {
-        id: 1388,
+        id: 1425,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Providers.Servers",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "providers-servers",
         kind: "method",
     },
     Operation {
-        id: 1389,
+        id: 1426,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.Addr",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-addr",
         kind: "method",
     },
     Operation {
-        id: 1390,
+        id: 1427,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.BroadcastMessage",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-broadcast-message",
         kind: "method",
     },
     Operation {
-        id: 1391,
+        id: 1428,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.BroadcastPluginMessage",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-broadcast-plugin-message",
         kind: "method",
     },
     Operation {
-        id: 1392,
+        id: 1429,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.Connect",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-connect",
         kind: "method",
     },
     Operation {
-        id: 1393,
+        id: 1430,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.Name",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-name",
         kind: "method",
     },
     Operation {
-        id: 1394,
+        id: 1431,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.PlayerCount",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-player-count",
         kind: "method",
     },
     Operation {
-        id: 1395,
+        id: 1432,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.Server.Players",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-players",
         kind: "method",
     },
     Operation {
-        id: 1396,
+        id: 1433,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerConnection.Name",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-connection-name",
         kind: "method",
     },
     Operation {
-        id: 1397,
+        id: 1434,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerConnection.Protocol",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-connection-protocol",
         kind: "method",
     },
     Operation {
-        id: 1398,
+        id: 1435,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerConnection.WritePacket",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-connection-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1399,
+        id: 1436,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerConnectionProvider.ConnectedServer",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-connection-provider-connected-server",
         kind: "method",
     },
     Operation {
-        id: 1400,
+        id: 1437,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerProvider.Server",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-provider-server",
         kind: "method",
     },
     Operation {
-        id: 1401,
+        id: 1438,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/bungeecord.ServerProvider.Servers",
         interface: "pkg-edition-java-proxy-bungeecord",
         name: "server-provider-servers",
         kind: "method",
     },
     Operation {
-        id: 1402,
+        id: 1439,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.CanSetHolder",
         interface: "pkg-edition-java-proxy-crypto",
         name: "can-set-holder",
         kind: "function",
     },
     Operation {
-        id: 1403,
+        id: 1440,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.Equal",
         interface: "pkg-edition-java-proxy-crypto",
         name: "equal",
         kind: "function",
     },
     Operation {
-        id: 1404,
+        id: 1441,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.Expired",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-expired",
         kind: "method",
     },
     Operation {
-        id: 1405,
+        id: 1442,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.ExpiryTemporal",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-expiry-temporal",
         kind: "method",
     },
     Operation {
-        id: 1406,
+        id: 1443,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.KeyRevision",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-key-revision",
         kind: "method",
     },
     Operation {
-        id: 1407,
+        id: 1444,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.Salt",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-salt",
         kind: "method",
     },
     Operation {
-        id: 1408,
+        id: 1445,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.Signature",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signature",
         kind: "method",
     },
     Operation {
-        id: 1409,
+        id: 1446,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.SignatureHolder",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signature-holder",
         kind: "method",
     },
     Operation {
-        id: 1410,
+        id: 1447,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.SignatureValid",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signature-valid",
         kind: "method",
     },
     Operation {
-        id: 1411,
+        id: 1448,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.SignedPublicKey",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signed-public-key",
         kind: "method",
     },
     Operation {
-        id: 1412,
+        id: 1449,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.SignedPublicKeyBytes",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signed-public-key-bytes",
         kind: "method",
     },
     Operation {
-        id: 1413,
+        id: 1450,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.Signer",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-signer",
         kind: "method",
     },
     Operation {
-        id: 1414,
+        id: 1451,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.IdentifiedKey.VerifyDataSignature",
         interface: "pkg-edition-java-proxy-crypto",
         name: "identified-key-verify-data-signature",
         kind: "method",
     },
     Operation {
-        id: 1415,
+        id: 1452,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeyIdentifiable.IdentifiedKey",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-identifiable-identified-key",
         kind: "method",
     },
     Operation {
-        id: 1416,
+        id: 1453,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.Expired",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-expired",
         kind: "method",
     },
     Operation {
-        id: 1417,
+        id: 1454,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.ExpiryTemporal",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-expiry-temporal",
         kind: "method",
     },
     Operation {
-        id: 1418,
+        id: 1455,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.Salt",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-salt",
         kind: "method",
     },
     Operation {
-        id: 1419,
+        id: 1456,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.Signature",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-signature",
         kind: "method",
     },
     Operation {
-        id: 1420,
+        id: 1457,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.SignatureValid",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-signature-valid",
         kind: "method",
     },
     Operation {
-        id: 1421,
+        id: 1458,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.KeySigned.Signer",
         interface: "pkg-edition-java-proxy-crypto",
         name: "key-signed-signer",
         kind: "method",
     },
     Operation {
-        id: 1422,
+        id: 1459,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.NewIdentifiedKey",
         interface: "pkg-edition-java-proxy-crypto",
         name: "new-identified-key",
         kind: "function",
     },
     Operation {
-        id: 1423,
+        id: 1460,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.ReadPlayerKey",
         interface: "pkg-edition-java-proxy-crypto",
         name: "read-player-key",
         kind: "function",
     },
     Operation {
-        id: 1424,
+        id: 1461,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SetHolder",
         interface: "pkg-edition-java-proxy-crypto",
         name: "set-holder",
         kind: "function",
     },
     Operation {
-        id: 1425,
+        id: 1462,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignaturePair.Decode",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signature-pair-decode",
         kind: "method",
     },
     Operation {
-        id: 1426,
+        id: 1463,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignaturePair.Encode",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signature-pair-encode",
         kind: "method",
     },
     Operation {
-        id: 1427,
+        id: 1464,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.Expired",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-expired",
         kind: "method",
     },
     Operation {
-        id: 1428,
+        id: 1465,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.ExpiryTemporal",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-expiry-temporal",
         kind: "method",
     },
     Operation {
-        id: 1429,
+        id: 1466,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.Message",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-message",
         kind: "method",
     },
     Operation {
-        id: 1430,
+        id: 1467,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.PreviewSigned",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-preview-signed",
         kind: "method",
     },
     Operation {
-        id: 1431,
+        id: 1468,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.Salt",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-salt",
         kind: "method",
     },
     Operation {
-        id: 1432,
+        id: 1469,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.Signature",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-signature",
         kind: "method",
     },
     Operation {
-        id: 1433,
+        id: 1470,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.SignatureValid",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-signature-valid",
         kind: "method",
     },
     Operation {
-        id: 1434,
+        id: 1471,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.Signer",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-signer",
         kind: "method",
     },
     Operation {
-        id: 1435,
+        id: 1472,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.SignedMessage.SignerUUID",
         interface: "pkg-edition-java-proxy-crypto",
         name: "signed-message-signer-uuid",
         kind: "method",
     },
     Operation {
-        id: 1436,
+        id: 1473,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto.WritePlayerKey",
         interface: "pkg-edition-java-proxy-crypto",
         name: "write-player-key",
         kind: "function",
     },
     Operation {
-        id: 1437,
+        id: 1474,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.Applicable",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "applicable",
         kind: "function",
     },
     Operation {
-        id: 1438,
+        id: 1475,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.GenericV1#get",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "get-generic-v1",
         kind: "variable-get",
     },
     Operation {
-        id: 1439,
+        id: 1476,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.GenericV1#set",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "set-generic-v1",
         kind: "variable-set",
     },
     Operation {
-        id: 1440,
+        id: 1477,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.LinkedV2#get",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "get-linked-v2",
         kind: "variable-get",
     },
     Operation {
-        id: 1441,
+        id: 1478,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.LinkedV2#set",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "set-linked-v2",
         kind: "variable-set",
     },
     Operation {
-        id: 1442,
+        id: 1479,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.Revision.ApplicableTo",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "revision-applicable-to",
         kind: "method",
     },
     Operation {
-        id: 1443,
+        id: 1480,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.RevisionIndex",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "revision-index",
         kind: "function",
     },
     Operation {
-        id: 1444,
+        id: 1481,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.Revisions#get",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "get-revisions",
         kind: "variable-get",
     },
     Operation {
-        id: 1445,
+        id: 1482,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/crypto/keyrevision.Revisions#set",
         interface: "pkg-edition-java-proxy-crypto-keyrevision",
         name: "set-revisions",
         kind: "variable-set",
     },
     Operation {
-        id: 1446,
+        id: 1483,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelIdentifier.ID",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-identifier-id",
         kind: "method",
     },
     Operation {
-        id: 1447,
+        id: 1484,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelIdentifierFrom",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-identifier-from",
         kind: "function",
     },
     Operation {
-        id: 1448,
+        id: 1485,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelMessageSink.SendPluginMessage",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-message-sink-send-plugin-message",
         kind: "method",
     },
     Operation {
-        id: 1449,
+        id: 1486,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.ChannelsForProtocol",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-channels-for-protocol",
         kind: "method",
     },
     Operation {
-        id: 1450,
+        id: 1487,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.FromID",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-from-id",
         kind: "method",
     },
     Operation {
-        id: 1451,
+        id: 1488,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.LegacyChannelIDs",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-legacy-channel-i-ds",
         kind: "method",
     },
     Operation {
-        id: 1452,
+        id: 1489,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.ModernChannelIDs",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-modern-channel-i-ds",
         kind: "method",
     },
     Operation {
-        id: 1453,
+        id: 1490,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.Register",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-register",
         kind: "method",
     },
     Operation {
-        id: 1454,
+        id: 1491,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ChannelRegistrar.Unregister",
         interface: "pkg-edition-java-proxy-message",
         name: "channel-registrar-unregister",
         kind: "method",
     },
     Operation {
-        id: 1455,
+        id: 1492,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.DefaultNamespace#get",
         interface: "pkg-edition-java-proxy-message",
         name: "get-default-namespace",
         kind: "constant-get",
     },
     Operation {
-        id: 1456,
+        id: 1493,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNameEmpty#get",
         interface: "pkg-edition-java-proxy-message",
         name: "get-err-name-empty",
         kind: "variable-get",
     },
     Operation {
-        id: 1457,
+        id: 1494,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNameEmpty#set",
         interface: "pkg-edition-java-proxy-message",
         name: "set-err-name-empty",
         kind: "variable-set",
     },
     Operation {
-        id: 1458,
+        id: 1495,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNameInvalid#get",
         interface: "pkg-edition-java-proxy-message",
         name: "get-err-name-invalid",
         kind: "variable-get",
     },
     Operation {
-        id: 1459,
+        id: 1496,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNameInvalid#set",
         interface: "pkg-edition-java-proxy-message",
         name: "set-err-name-invalid",
         kind: "variable-set",
     },
     Operation {
-        id: 1460,
+        id: 1497,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNamespaceEmpty#get",
         interface: "pkg-edition-java-proxy-message",
         name: "get-err-namespace-empty",
         kind: "variable-get",
     },
     Operation {
-        id: 1461,
+        id: 1498,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNamespaceEmpty#set",
         interface: "pkg-edition-java-proxy-message",
         name: "set-err-namespace-empty",
         kind: "variable-set",
     },
     Operation {
-        id: 1462,
+        id: 1499,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNamespaceInvalid#get",
         interface: "pkg-edition-java-proxy-message",
         name: "get-err-namespace-invalid",
         kind: "variable-get",
     },
     Operation {
-        id: 1463,
+        id: 1500,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.ErrNamespaceInvalid#set",
         interface: "pkg-edition-java-proxy-message",
         name: "set-err-namespace-invalid",
         kind: "variable-set",
     },
     Operation {
-        id: 1464,
+        id: 1501,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.LegacyChannelIdentifier.ID",
         interface: "pkg-edition-java-proxy-message",
         name: "legacy-channel-identifier-id",
         kind: "method",
     },
     Operation {
-        id: 1465,
+        id: 1502,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.MinecraftChannelIdentifier.ID",
         interface: "pkg-edition-java-proxy-message",
         name: "minecraft-channel-identifier-id",
         kind: "method",
     },
     Operation {
-        id: 1466,
+        id: 1503,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.MinecraftChannelIdentifier.Namespace",
         interface: "pkg-edition-java-proxy-message",
         name: "minecraft-channel-identifier-namespace",
         kind: "method",
     },
     Operation {
-        id: 1467,
+        id: 1504,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.MinecraftChannelIdentifier.String",
         interface: "pkg-edition-java-proxy-message",
         name: "minecraft-channel-identifier-string",
         kind: "method",
     },
     Operation {
-        id: 1468,
+        id: 1505,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.MinecraftChannelIdentifier.Value",
         interface: "pkg-edition-java-proxy-message",
         name: "minecraft-channel-identifier-value",
         kind: "method",
     },
     Operation {
-        id: 1469,
+        id: 1506,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.NewChannelIdentifier",
         interface: "pkg-edition-java-proxy-message",
         name: "new-channel-identifier",
         kind: "function",
     },
     Operation {
-        id: 1470,
+        id: 1507,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.NewChannelRegistrar",
         interface: "pkg-edition-java-proxy-message",
         name: "new-channel-registrar",
         kind: "function",
     },
     Operation {
-        id: 1471,
+        id: 1508,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.NewDefaultNamespace",
         interface: "pkg-edition-java-proxy-message",
         name: "new-default-namespace",
         kind: "function",
     },
     Operation {
-        id: 1472,
+        id: 1509,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/message.NewLegacyChannelIdentifier",
         interface: "pkg-edition-java-proxy-message",
         name: "new-legacy-channel-identifier",
         kind: "function",
     },
     Operation {
-        id: 1473,
+        id: 1510,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConn.FlushQueuedPluginMessages",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-conn-flush-queued-plugin-messages",
         kind: "method",
     },
     Operation {
-        id: 1474,
+        id: 1511,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConn.WritePacket",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-conn-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1475,
+        id: 1512,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConnectionPhase.ConsideredComplete",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-connection-phase-considered-complete",
         kind: "method",
     },
     Operation {
-        id: 1476,
+        id: 1513,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConnectionPhase.Handle",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-connection-phase-handle",
         kind: "method",
     },
     Operation {
-        id: 1477,
+        id: 1514,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConnectionPhase.OnDepartForNewServer",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-connection-phase-on-depart-for-new-server",
         kind: "method",
     },
     Operation {
-        id: 1478,
+        id: 1515,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.BackendConnectionPhaseSetter.SetPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "backend-connection-phase-setter-set-phase",
         kind: "method",
     },
     Operation {
-        id: 1479,
+        id: 1516,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ClientConnectionPhase.ConsideredComplete",
         interface: "pkg-edition-java-proxy-phase",
         name: "client-connection-phase-considered-complete",
         kind: "method",
     },
     Operation {
-        id: 1480,
+        id: 1517,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ClientConnectionPhase.Handle",
         interface: "pkg-edition-java-proxy-phase",
         name: "client-connection-phase-handle",
         kind: "method",
     },
     Operation {
-        id: 1481,
+        id: 1518,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ClientConnectionPhase.OnFirstJoin",
         interface: "pkg-edition-java-proxy-phase",
         name: "client-connection-phase-on-first-join",
         kind: "method",
     },
     Operation {
-        id: 1482,
+        id: 1519,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ClientConnectionPhase.ResetConnectionPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "client-connection-phase-reset-connection-phase",
         kind: "method",
     },
     Operation {
-        id: 1483,
+        id: 1520,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ClientConnectionPhaseSetter.SetPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "client-connection-phase-setter-set-phase",
         kind: "method",
     },
     Operation {
-        id: 1484,
+        id: 1521,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.CompleteLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-complete-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1485,
+        id: 1522,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.CompleteLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-complete-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1486,
+        id: 1523,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.CompleteLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-complete-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1487,
+        id: 1524,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.CompleteLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-complete-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1488,
+        id: 1525,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ConnectionType.AddGameProfileTokensIfRequired",
         interface: "pkg-edition-java-proxy-phase",
         name: "connection-type-add-game-profile-tokens-if-required",
         kind: "method",
     },
     Operation {
-        id: 1489,
+        id: 1526,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ConnectionType.InitialBackendPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "connection-type-initial-backend-phase",
         kind: "method",
     },
     Operation {
-        id: 1490,
+        id: 1527,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ConnectionType.InitialClientPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "connection-type-initial-client-phase",
         kind: "method",
     },
     Operation {
-        id: 1491,
+        id: 1528,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ConnectionTypeSetter.SetType",
         interface: "pkg-edition-java-proxy-phase",
         name: "connection-type-setter-set-type",
         kind: "method",
     },
     Operation {
-        id: 1492,
+        id: 1529,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.HelloLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-hello-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1493,
+        id: 1530,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.HelloLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-hello-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1494,
+        id: 1531,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.HelloLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-hello-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1495,
+        id: 1532,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.HelloLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-hello-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1496,
+        id: 1533,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.InTransitionBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-in-transition-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1497,
+        id: 1534,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.InTransitionBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-in-transition-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1498,
+        id: 1535,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.KeepAlive.SendKeepAlive",
         interface: "pkg-edition-java-proxy-phase",
         name: "keep-alive-send-keep-alive",
         kind: "method",
     },
     Operation {
-        id: 1499,
+        id: 1536,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.LegacyForge#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-legacy-forge",
         kind: "variable-get",
     },
     Operation {
-        id: 1500,
+        id: 1537,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.LegacyForge#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-legacy-forge",
         kind: "variable-set",
     },
     Operation {
-        id: 1501,
+        id: 1538,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.LegacyForgeHandshakeResetter.SendLegacyForgeHandshakeResetPacket",
         interface: "pkg-edition-java-proxy-phase",
         name: "legacy-forge-handshake-resetter-send-legacy-forge-handshake-reset-packet",
         kind: "method",
     },
     Operation {
-        id: 1502,
+        id: 1539,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModInfo.ModInfo",
         interface: "pkg-edition-java-proxy-phase",
         name: "mod-info-mod-info",
         kind: "method",
     },
     Operation {
-        id: 1503,
+        id: 1540,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModInfo.SetModInfo",
         interface: "pkg-edition-java-proxy-phase",
         name: "mod-info-set-mod-info",
         kind: "method",
     },
     Operation {
-        id: 1504,
+        id: 1541,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModListLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-mod-list-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1505,
+        id: 1542,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModListLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-mod-list-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1506,
+        id: 1543,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModernForge#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-modern-forge",
         kind: "variable-get",
     },
     Operation {
-        id: 1507,
+        id: 1544,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.ModernForge#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-modern-forge",
         kind: "variable-set",
     },
     Operation {
-        id: 1508,
+        id: 1545,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.NotStartedLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-not-started-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1509,
+        id: 1546,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.NotStartedLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-not-started-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1510,
+        id: 1547,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.NotStartedLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-not-started-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1511,
+        id: 1548,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.NotStartedLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-not-started-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1512,
+        id: 1549,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.PacketWriter.WritePacket",
         interface: "pkg-edition-java-proxy-phase",
         name: "packet-writer-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1513,
+        id: 1550,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.PendingCompleteLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-pending-complete-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1514,
+        id: 1551,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.PendingCompleteLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-pending-complete-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1515,
+        id: 1552,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Resetter.ResetConnectionPhase",
         interface: "pkg-edition-java-proxy-phase",
         name: "resetter-reset-connection-phase",
         kind: "method",
     },
     Operation {
-        id: 1516,
+        id: 1553,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.SentModListLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-sent-mod-list-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1517,
+        id: 1554,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.SentModListLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-sent-mod-list-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1518,
+        id: 1555,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.SentServerDataLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-sent-server-data-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1519,
+        id: 1556,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.SentServerDataLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-sent-server-data-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1520,
+        id: 1557,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Undetermined#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-undetermined",
         kind: "variable-get",
     },
     Operation {
-        id: 1521,
+        id: 1558,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Undetermined#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-undetermined",
         kind: "variable-set",
     },
     Operation {
-        id: 1522,
+        id: 1559,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Undetermined17#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-undetermined17",
         kind: "variable-get",
     },
     Operation {
-        id: 1523,
+        id: 1560,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Undetermined17#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-undetermined17",
         kind: "variable-set",
     },
     Operation {
-        id: 1524,
+        id: 1561,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.UnknownBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-unknown-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1525,
+        id: 1562,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.UnknownBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-unknown-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1526,
+        id: 1563,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Vanilla#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-vanilla",
         kind: "variable-get",
     },
     Operation {
-        id: 1527,
+        id: 1564,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.Vanilla#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-vanilla",
         kind: "variable-set",
     },
     Operation {
-        id: 1528,
+        id: 1565,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.VanillaBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-vanilla-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1529,
+        id: 1566,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.VanillaBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-vanilla-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1530,
+        id: 1567,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.VanillaClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-vanilla-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1531,
+        id: 1568,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.VanillaClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-vanilla-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1532,
+        id: 1569,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingAckLegacyForgeHandshakeBackendPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-waiting-ack-legacy-forge-handshake-backend-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1533,
+        id: 1570,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingAckLegacyForgeHandshakeBackendPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-waiting-ack-legacy-forge-handshake-backend-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1534,
+        id: 1571,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingServerCompleteLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-waiting-server-complete-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1535,
+        id: 1572,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingServerCompleteLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-waiting-server-complete-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1536,
+        id: 1573,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingServerDataLegacyForgeHandshakeClientPhase#get",
         interface: "pkg-edition-java-proxy-phase",
         name: "get-waiting-server-data-legacy-forge-handshake-client-phase",
         kind: "variable-get",
     },
     Operation {
-        id: 1537,
+        id: 1574,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/phase.WaitingServerDataLegacyForgeHandshakeClientPhase#set",
         interface: "pkg-edition-java-proxy-phase",
         name: "set-waiting-server-data-legacy-forge-handshake-client-phase",
         kind: "variable-set",
     },
     Operation {
-        id: 1538,
+        id: 1575,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.AllParticleStatus#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-all-particle-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1539,
+        id: 1576,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.AsHoverEntity",
         interface: "pkg-edition-java-proxy-player",
         name: "as-hover-entity",
         kind: "function",
     },
     Operation {
-        id: 1540,
+        id: 1577,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.ChatSession.IdentifiedKey",
         interface: "pkg-edition-java-proxy-player",
         name: "chat-session-identified-key",
         kind: "method",
     },
     Operation {
-        id: 1541,
+        id: 1578,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.ChatSession.SessionID",
         interface: "pkg-edition-java-proxy-player",
         name: "chat-session-session-id",
         kind: "method",
     },
     Operation {
-        id: 1542,
+        id: 1579,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.CommandsOnly#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-commands-only",
         kind: "constant-get",
     },
     Operation {
-        id: 1543,
+        id: 1580,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.DecreasedParticleStatus#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-decreased-particle-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1544,
+        id: 1581,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.DefaultSettings#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-default-settings",
         kind: "variable-get",
     },
     Operation {
-        id: 1545,
+        id: 1582,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.DefaultSettings#set",
         interface: "pkg-edition-java-proxy-player",
         name: "set-default-settings",
         kind: "variable-set",
     },
     Operation {
-        id: 1546,
+        id: 1583,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Hidden#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-hidden",
         kind: "constant-get",
     },
     Operation {
-        id: 1547,
+        id: 1584,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.LeftMainHand#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-left-main-hand",
         kind: "constant-get",
     },
     Operation {
-        id: 1548,
+        id: 1585,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.MinimalParticleStatus#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-minimal-particle-status",
         kind: "constant-get",
     },
     Operation {
-        id: 1549,
+        id: 1586,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.NewSettings",
         interface: "pkg-edition-java-proxy-player",
         name: "new-settings",
         kind: "function",
     },
     Operation {
-        id: 1550,
+        id: 1587,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.RightMainHand#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-right-main-hand",
         kind: "constant-get",
     },
     Operation {
-        id: 1551,
+        id: 1588,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.ChatColors",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-chat-colors",
         kind: "method",
     },
     Operation {
-        id: 1552,
+        id: 1589,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.ChatMode",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-chat-mode",
         kind: "method",
     },
     Operation {
-        id: 1553,
+        id: 1590,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.ClientListing",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-client-listing",
         kind: "method",
     },
     Operation {
-        id: 1554,
+        id: 1591,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.Locale",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-locale",
         kind: "method",
     },
     Operation {
-        id: 1555,
+        id: 1592,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.MainHand",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-main-hand",
         kind: "method",
     },
     Operation {
-        id: 1556,
+        id: 1593,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.ParticleStatus",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-particle-status",
         kind: "method",
     },
     Operation {
-        id: 1557,
+        id: 1594,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.SkinParts",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-skin-parts",
         kind: "method",
     },
     Operation {
-        id: 1558,
+        id: 1595,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.TextFiltering",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-text-filtering",
         kind: "method",
     },
     Operation {
-        id: 1559,
+        id: 1596,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.Settings.ViewDistance",
         interface: "pkg-edition-java-proxy-player",
         name: "settings-view-distance",
         kind: "method",
     },
     Operation {
-        id: 1560,
+        id: 1597,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.ShownChatMode#get",
         interface: "pkg-edition-java-proxy-player",
         name: "get-shown-chat-mode",
         kind: "constant-get",
     },
     Operation {
-        id: 1561,
+        id: 1598,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.Cape",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-cape",
         kind: "method",
     },
     Operation {
-        id: 1562,
+        id: 1599,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.Hat",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-hat",
         kind: "method",
     },
     Operation {
-        id: 1563,
+        id: 1600,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.Jacket",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-jacket",
         kind: "method",
     },
     Operation {
-        id: 1564,
+        id: 1601,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.LeftPants",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-left-pants",
         kind: "method",
     },
     Operation {
-        id: 1565,
+        id: 1602,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.LeftSleeve",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-left-sleeve",
         kind: "method",
     },
     Operation {
-        id: 1566,
+        id: 1603,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.RightPants",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-right-pants",
         kind: "method",
     },
     Operation {
-        id: 1567,
+        id: 1604,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/player.SkinParts.RightSleeve",
         interface: "pkg-edition-java-proxy-player",
         name: "skin-parts-right-sleeve",
         kind: "method",
     },
     Operation {
-        id: 1568,
+        id: 1605,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.ClearHeaderFooter",
         interface: "pkg-edition-java-proxy-tablist",
         name: "clear-header-footer",
         kind: "function",
     },
     Operation {
-        id: 1569,
+        id: 1606,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.ClearTabListHeaderFooter",
         interface: "pkg-edition-java-proxy-tablist",
         name: "clear-tab-list-header-footer",
         kind: "function",
     },
     Operation {
-        id: 1570,
+        id: 1607,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.ChatSession",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-chat-session",
         kind: "method",
     },
     Operation {
-        id: 1571,
+        id: 1608,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.DisplayName",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-display-name",
         kind: "method",
     },
     Operation {
-        id: 1572,
+        id: 1609,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.GameMode",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-game-mode",
         kind: "method",
     },
     Operation {
-        id: 1573,
+        id: 1610,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.Latency",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-latency",
         kind: "method",
     },
     Operation {
-        id: 1574,
+        id: 1611,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.ListOrder",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-list-order",
         kind: "method",
     },
     Operation {
-        id: 1575,
+        id: 1612,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.Listed",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-listed",
         kind: "method",
     },
     Operation {
-        id: 1576,
+        id: 1613,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.Profile",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-profile",
         kind: "method",
     },
     Operation {
-        id: 1577,
+        id: 1614,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetDisplayName",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-display-name",
         kind: "method",
     },
     Operation {
-        id: 1578,
+        id: 1615,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetGameMode",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-game-mode",
         kind: "method",
     },
     Operation {
-        id: 1579,
+        id: 1616,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetLatency",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-latency",
         kind: "method",
     },
     Operation {
-        id: 1580,
+        id: 1617,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetListOrder",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-list-order",
         kind: "method",
     },
     Operation {
-        id: 1581,
+        id: 1618,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetListed",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-listed",
         kind: "method",
     },
     Operation {
-        id: 1582,
+        id: 1619,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.SetShowHat",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-set-show-hat",
         kind: "method",
     },
     Operation {
-        id: 1583,
+        id: 1620,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.ShowHat",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-show-hat",
         kind: "method",
     },
     Operation {
-        id: 1584,
+        id: 1621,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Entry.TabList",
         interface: "pkg-edition-java-proxy-tablist",
         name: "entry-tab-list",
         kind: "method",
     },
     Operation {
-        id: 1585,
+        id: 1622,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.HasEntry",
         interface: "pkg-edition-java-proxy-tablist",
         name: "has-entry",
         kind: "function",
     },
     Operation {
-        id: 1586,
+        id: 1623,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.SendHeaderFooter",
         interface: "pkg-edition-java-proxy-tablist",
         name: "send-header-footer",
         kind: "function",
     },
     Operation {
-        id: 1587,
+        id: 1624,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.TabList.Add",
         interface: "pkg-edition-java-proxy-tablist",
         name: "tab-list-add",
         kind: "method",
     },
     Operation {
-        id: 1588,
+        id: 1625,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.TabList.Entries",
         interface: "pkg-edition-java-proxy-tablist",
         name: "tab-list-entries",
         kind: "method",
     },
     Operation {
-        id: 1589,
+        id: 1626,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.TabList.HeaderFooter",
         interface: "pkg-edition-java-proxy-tablist",
         name: "tab-list-header-footer",
         kind: "method",
     },
     Operation {
-        id: 1590,
+        id: 1627,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.TabList.RemoveAll",
         interface: "pkg-edition-java-proxy-tablist",
         name: "tab-list-remove-all",
         kind: "method",
     },
     Operation {
-        id: 1591,
+        id: 1628,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.TabList.SetHeaderFooter",
         interface: "pkg-edition-java-proxy-tablist",
         name: "tab-list-set-header-footer",
         kind: "method",
     },
     Operation {
-        id: 1592,
+        id: 1629,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Viewer.IdentifiedKey",
         interface: "pkg-edition-java-proxy-tablist",
         name: "viewer-identified-key",
         kind: "method",
     },
     Operation {
-        id: 1593,
+        id: 1630,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Viewer.Protocol",
         interface: "pkg-edition-java-proxy-tablist",
         name: "viewer-protocol",
         kind: "method",
     },
     Operation {
-        id: 1594,
+        id: 1631,
         identity: "go.minekube.com/gate/pkg/edition/java/proxy/tablist.Viewer.WritePacket",
         interface: "pkg-edition-java-proxy-tablist",
         name: "viewer-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1595,
+        id: 1632,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrDifferentServers#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-different-servers",
         kind: "variable-get",
     },
     Operation {
-        id: 1596,
+        id: 1633,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrDifferentServers#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-different-servers",
         kind: "variable-set",
     },
     Operation {
-        id: 1597,
+        id: 1634,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrEmitterNotConnected#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-emitter-not-connected",
         kind: "variable-get",
     },
     Operation {
-        id: 1598,
+        id: 1635,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrEmitterNotConnected#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-emitter-not-connected",
         kind: "variable-set",
     },
     Operation {
-        id: 1599,
+        id: 1636,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrInvalidEmitter#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-invalid-emitter",
         kind: "variable-get",
     },
     Operation {
-        id: 1600,
+        id: 1637,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrInvalidEmitter#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-invalid-emitter",
         kind: "variable-set",
     },
     Operation {
-        id: 1601,
+        id: 1638,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrNotConnected#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-not-connected",
         kind: "variable-get",
     },
     Operation {
-        id: 1602,
+        id: 1639,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrNotConnected#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-not-connected",
         kind: "variable-set",
     },
     Operation {
-        id: 1603,
+        id: 1640,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrUISourceUnsupported#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-ui-source-unsupported",
         kind: "variable-get",
     },
     Operation {
-        id: 1604,
+        id: 1641,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrUISourceUnsupported#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-ui-source-unsupported",
         kind: "variable-set",
     },
     Operation {
-        id: 1605,
+        id: 1642,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrUnsupportedClientProtocol#get",
         interface: "pkg-edition-java-sound",
         name: "get-err-unsupported-client-protocol",
         kind: "variable-get",
     },
     Operation {
-        id: 1606,
+        id: 1643,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ErrUnsupportedClientProtocol#set",
         interface: "pkg-edition-java-sound",
         name: "set-err-unsupported-client-protocol",
         kind: "variable-set",
     },
     Operation {
-        id: 1607,
+        id: 1644,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.NewSound",
         interface: "pkg-edition-java-sound",
         name: "new-sound",
         kind: "function",
     },
     Operation {
-        id: 1608,
+        id: 1645,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.ParseSource",
         interface: "pkg-edition-java-sound",
         name: "parse-source",
         kind: "function",
     },
     Operation {
-        id: 1609,
+        id: 1646,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Play",
         interface: "pkg-edition-java-sound",
         name: "play",
         kind: "function",
     },
     Operation {
-        id: 1610,
+        id: 1647,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Player.Protocol",
         interface: "pkg-edition-java-sound",
         name: "player-protocol",
         kind: "method",
     },
     Operation {
-        id: 1611,
+        id: 1648,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Player.WritePacket",
         interface: "pkg-edition-java-sound",
         name: "player-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1612,
+        id: 1649,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Sound.WithPitch",
         interface: "pkg-edition-java-sound",
         name: "sound-with-pitch",
         kind: "method",
     },
     Operation {
-        id: 1613,
+        id: 1650,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Sound.WithSeed",
         interface: "pkg-edition-java-sound",
         name: "sound-with-seed",
         kind: "method",
     },
     Operation {
-        id: 1614,
+        id: 1651,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Sound.WithVolume",
         interface: "pkg-edition-java-sound",
         name: "sound-with-volume",
         kind: "method",
     },
     Operation {
-        id: 1615,
+        id: 1652,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceAmbient#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-ambient",
         kind: "constant-get",
     },
     Operation {
-        id: 1616,
+        id: 1653,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceBlock#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-block",
         kind: "constant-get",
     },
     Operation {
-        id: 1617,
+        id: 1654,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceHostile#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-hostile",
         kind: "constant-get",
     },
     Operation {
-        id: 1618,
+        id: 1655,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceMaster#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-master",
         kind: "constant-get",
     },
     Operation {
-        id: 1619,
+        id: 1656,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceMusic#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-music",
         kind: "constant-get",
     },
     Operation {
-        id: 1620,
+        id: 1657,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceNeutral#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-neutral",
         kind: "constant-get",
     },
     Operation {
-        id: 1621,
+        id: 1658,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourcePlayer#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-player",
         kind: "constant-get",
     },
     Operation {
-        id: 1622,
+        id: 1659,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceRecord#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-record",
         kind: "constant-get",
     },
     Operation {
-        id: 1623,
+        id: 1660,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceUI#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-ui",
         kind: "constant-get",
     },
     Operation {
-        id: 1624,
+        id: 1661,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceVoice#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-voice",
         kind: "constant-get",
     },
     Operation {
-        id: 1625,
+        id: 1662,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.SourceWeather#get",
         interface: "pkg-edition-java-sound",
         name: "get-source-weather",
         kind: "constant-get",
     },
     Operation {
-        id: 1626,
+        id: 1663,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.Stop",
         interface: "pkg-edition-java-sound",
         name: "stop",
         kind: "function",
     },
     Operation {
-        id: 1627,
+        id: 1664,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.StopAll",
         interface: "pkg-edition-java-sound",
         name: "stop-all",
         kind: "function",
     },
     Operation {
-        id: 1628,
+        id: 1665,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.StopSound",
         interface: "pkg-edition-java-sound",
         name: "stop-sound",
         kind: "function",
     },
     Operation {
-        id: 1629,
+        id: 1666,
         identity: "go.minekube.com/gate/pkg/edition/java/sound.StopSource",
         interface: "pkg-edition-java-sound",
         name: "stop-source",
         kind: "function",
     },
     Operation {
-        id: 1630,
+        id: 1667,
         identity: "go.minekube.com/gate/pkg/edition/java/title.ClearTitle",
         interface: "pkg-edition-java-title",
         name: "clear-title",
         kind: "function",
     },
     Operation {
-        id: 1631,
+        id: 1668,
         identity: "go.minekube.com/gate/pkg/edition/java/title.HideTitle",
         interface: "pkg-edition-java-title",
         name: "hide-title",
         kind: "function",
     },
     Operation {
-        id: 1632,
+        id: 1669,
         identity: "go.minekube.com/gate/pkg/edition/java/title.ShowTitle",
         interface: "pkg-edition-java-title",
         name: "show-title",
         kind: "function",
     },
     Operation {
-        id: 1633,
+        id: 1670,
         identity: "go.minekube.com/gate/pkg/edition/java/title.SubtitlePart#get",
         interface: "pkg-edition-java-title",
         name: "get-subtitle-part",
         kind: "constant-get",
     },
     Operation {
-        id: 1634,
+        id: 1671,
         identity: "go.minekube.com/gate/pkg/edition/java/title.TimesPart#get",
         interface: "pkg-edition-java-title",
         name: "get-times-part",
         kind: "constant-get",
     },
     Operation {
-        id: 1635,
+        id: 1672,
         identity: "go.minekube.com/gate/pkg/edition/java/title.TitlePart#get",
         interface: "pkg-edition-java-title",
         name: "get-title-part",
         kind: "constant-get",
     },
     Operation {
-        id: 1636,
+        id: 1673,
         identity: "go.minekube.com/gate/pkg/edition/java/title.Viewer.BufferPacket",
         interface: "pkg-edition-java-title",
         name: "viewer-buffer-packet",
         kind: "method",
     },
     Operation {
-        id: 1637,
+        id: 1674,
         identity: "go.minekube.com/gate/pkg/edition/java/title.Viewer.BufferPayload",
         interface: "pkg-edition-java-title",
         name: "viewer-buffer-payload",
         kind: "method",
     },
     Operation {
-        id: 1638,
+        id: 1675,
         identity: "go.minekube.com/gate/pkg/edition/java/title.Viewer.Flush",
         interface: "pkg-edition-java-title",
         name: "viewer-flush",
         kind: "method",
     },
     Operation {
-        id: 1639,
+        id: 1676,
         identity: "go.minekube.com/gate/pkg/edition/java/title.Viewer.Write",
         interface: "pkg-edition-java-title",
         name: "viewer-write",
         kind: "method",
     },
     Operation {
-        id: 1640,
+        id: 1677,
         identity: "go.minekube.com/gate/pkg/edition/java/title.Viewer.WritePacket",
         interface: "pkg-edition-java-title",
         name: "viewer-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1641,
+        id: 1678,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Bedrock",
         interface: "pkg-gate",
         name: "gate-bedrock",
         kind: "method",
     },
     Operation {
-        id: 1642,
+        id: 1679,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Java",
         interface: "pkg-gate",
         name: "gate-java",
         kind: "method",
     },
     Operation {
-        id: 1643,
+        id: 1680,
         identity: "go.minekube.com/gate/pkg/gate.Gate.Start",
         interface: "pkg-gate",
         name: "gate-start",
         kind: "method",
     },
     Operation {
-        id: 1644,
+        id: 1681,
         identity: "go.minekube.com/gate/pkg/gate.LoadConfig",
         interface: "pkg-gate",
         name: "load-config",
         kind: "function",
     },
     Operation {
-        id: 1645,
+        id: 1682,
         identity: "go.minekube.com/gate/pkg/gate.New",
         interface: "pkg-gate",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1646,
+        id: 1683,
         identity: "go.minekube.com/gate/pkg/gate.Start",
         interface: "pkg-gate",
         name: "start",
         kind: "function",
     },
     Operation {
-        id: 1647,
+        id: 1684,
         identity: "go.minekube.com/gate/pkg/gate.Viper#get",
         interface: "pkg-gate",
         name: "get-viper",
         kind: "variable-get",
     },
     Operation {
-        id: 1648,
+        id: 1685,
         identity: "go.minekube.com/gate/pkg/gate.Viper#set",
         interface: "pkg-gate",
         name: "set-viper",
         kind: "variable-set",
     },
     Operation {
-        id: 1649,
+        id: 1686,
         identity: "go.minekube.com/gate/pkg/gate.WithAutoConfigReload",
         interface: "pkg-gate",
         name: "with-auto-config-reload",
         kind: "function",
     },
     Operation {
-        id: 1650,
+        id: 1687,
         identity: "go.minekube.com/gate/pkg/gate.WithAutoShutdownOnSignal",
         interface: "pkg-gate",
         name: "with-auto-shutdown-on-signal",
         kind: "function",
     },
     Operation {
-        id: 1651,
+        id: 1688,
         identity: "go.minekube.com/gate/pkg/gate.WithComponentPlugins",
         interface: "pkg-gate",
         name: "with-component-plugins",
         kind: "function",
     },
     Operation {
-        id: 1652,
+        id: 1689,
         identity: "go.minekube.com/gate/pkg/gate.WithConfig",
         interface: "pkg-gate",
         name: "with-config",
         kind: "function",
     },
     Operation {
-        id: 1653,
+        id: 1690,
         identity: "go.minekube.com/gate/pkg/gate/config.Config.Validate",
         interface: "pkg-gate-config",
         name: "config-validate",
         kind: "method",
     },
     Operation {
-        id: 1654,
+        id: 1691,
         identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#get",
         interface: "pkg-gate-config",
         name: "get-default-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1655,
+        id: 1692,
         identity: "go.minekube.com/gate/pkg/gate/config.DefaultConfig#set",
         interface: "pkg-gate-config",
         name: "set-default-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1656,
+        id: 1693,
         identity: "go.minekube.com/gate/pkg/gate/proto.ClientBound#get",
         interface: "pkg-gate-proto",
         name: "get-client-bound",
         kind: "constant-get",
     },
     Operation {
-        id: 1657,
+        id: 1694,
         identity: "go.minekube.com/gate/pkg/gate/proto.Direction.String",
         interface: "pkg-gate-proto",
         name: "direction-string",
         kind: "method",
     },
     Operation {
-        id: 1658,
+        id: 1695,
         identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#get",
         interface: "pkg-gate-proto",
         name: "get-err-decoder-left-bytes",
         kind: "variable-get",
     },
     Operation {
-        id: 1659,
+        id: 1696,
         identity: "go.minekube.com/gate/pkg/gate/proto.ErrDecoderLeftBytes#set",
         interface: "pkg-gate-proto",
         name: "set-err-decoder-left-bytes",
         kind: "variable-set",
     },
     Operation {
-        id: 1660,
+        id: 1697,
         identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Decode",
         interface: "pkg-gate-proto",
         name: "packet-decode",
         kind: "method",
     },
     Operation {
-        id: 1661,
+        id: 1698,
         identity: "go.minekube.com/gate/pkg/gate/proto.Packet.Encode",
         interface: "pkg-gate-proto",
         name: "packet-encode",
         kind: "method",
     },
     Operation {
-        id: 1662,
+        id: 1699,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.KnownPacket",
         interface: "pkg-gate-proto",
         name: "packet-context-known-packet",
         kind: "method",
     },
     Operation {
-        id: 1663,
+        id: 1700,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketContext.String",
         interface: "pkg-gate-proto",
         name: "packet-context-string",
         kind: "method",
     },
     Operation {
-        id: 1664,
+        id: 1701,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketDecoder.Decode",
         interface: "pkg-gate-proto",
         name: "packet-decoder-decode",
         kind: "method",
     },
     Operation {
-        id: 1665,
+        id: 1702,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketEncoder.Encode",
         interface: "pkg-gate-proto",
         name: "packet-encoder-encode",
         kind: "method",
     },
     Operation {
-        id: 1666,
+        id: 1703,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketID.String",
         interface: "pkg-gate-proto",
         name: "packet-id-string",
         kind: "method",
     },
     Operation {
-        id: 1667,
+        id: 1704,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Align",
         interface: "pkg-gate-proto",
         name: "packet-type-align",
         kind: "method",
     },
     Operation {
-        id: 1668,
+        id: 1705,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.AssignableTo",
         interface: "pkg-gate-proto",
         name: "packet-type-assignable-to",
         kind: "method",
     },
     Operation {
-        id: 1669,
+        id: 1706,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Bits",
         interface: "pkg-gate-proto",
         name: "packet-type-bits",
         kind: "method",
     },
     Operation {
-        id: 1670,
+        id: 1707,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq",
         interface: "pkg-gate-proto",
         name: "packet-type-can-seq",
         kind: "method",
     },
     Operation {
-        id: 1671,
+        id: 1708,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.CanSeq2",
         interface: "pkg-gate-proto",
         name: "packet-type-can-seq2",
         kind: "method",
     },
     Operation {
-        id: 1672,
+        id: 1709,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ChanDir",
         interface: "pkg-gate-proto",
         name: "packet-type-chan-dir",
         kind: "method",
     },
     Operation {
-        id: 1673,
+        id: 1710,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Comparable",
         interface: "pkg-gate-proto",
         name: "packet-type-comparable",
         kind: "method",
     },
     Operation {
-        id: 1674,
+        id: 1711,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.ConvertibleTo",
         interface: "pkg-gate-proto",
         name: "packet-type-convertible-to",
         kind: "method",
     },
     Operation {
-        id: 1675,
+        id: 1712,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Elem",
         interface: "pkg-gate-proto",
         name: "packet-type-elem",
         kind: "method",
     },
     Operation {
-        id: 1676,
+        id: 1713,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Field",
         interface: "pkg-gate-proto",
         name: "packet-type-field",
         kind: "method",
     },
     Operation {
-        id: 1677,
+        id: 1714,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldAlign",
         interface: "pkg-gate-proto",
         name: "packet-type-field-align",
         kind: "method",
     },
     Operation {
-        id: 1678,
+        id: 1715,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByIndex",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-index",
         kind: "method",
     },
     Operation {
-        id: 1679,
+        id: 1716,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByName",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-name",
         kind: "method",
     },
     Operation {
-        id: 1680,
+        id: 1717,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.FieldByNameFunc",
         interface: "pkg-gate-proto",
         name: "packet-type-field-by-name-func",
         kind: "method",
     },
     Operation {
-        id: 1681,
+        id: 1718,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Fields",
         interface: "pkg-gate-proto",
         name: "packet-type-fields",
         kind: "method",
     },
     Operation {
-        id: 1682,
+        id: 1719,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Implements",
         interface: "pkg-gate-proto",
         name: "packet-type-implements",
         kind: "method",
     },
     Operation {
-        id: 1683,
+        id: 1720,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.In",
         interface: "pkg-gate-proto",
         name: "packet-type-in",
         kind: "method",
     },
     Operation {
-        id: 1684,
+        id: 1721,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Ins",
         interface: "pkg-gate-proto",
         name: "packet-type-ins",
         kind: "method",
     },
     Operation {
-        id: 1685,
+        id: 1722,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.IsVariadic",
         interface: "pkg-gate-proto",
         name: "packet-type-is-variadic",
         kind: "method",
     },
     Operation {
-        id: 1686,
+        id: 1723,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Key",
         interface: "pkg-gate-proto",
         name: "packet-type-key",
         kind: "method",
     },
     Operation {
-        id: 1687,
+        id: 1724,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Kind",
         interface: "pkg-gate-proto",
         name: "packet-type-kind",
         kind: "method",
     },
     Operation {
-        id: 1688,
+        id: 1725,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Len",
         interface: "pkg-gate-proto",
         name: "packet-type-len",
         kind: "method",
     },
     Operation {
-        id: 1689,
+        id: 1726,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Method",
         interface: "pkg-gate-proto",
         name: "packet-type-method",
         kind: "method",
     },
     Operation {
-        id: 1690,
+        id: 1727,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.MethodByName",
         interface: "pkg-gate-proto",
         name: "packet-type-method-by-name",
         kind: "method",
     },
     Operation {
-        id: 1691,
+        id: 1728,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Methods",
         interface: "pkg-gate-proto",
         name: "packet-type-methods",
         kind: "method",
     },
     Operation {
-        id: 1692,
+        id: 1729,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Name",
         interface: "pkg-gate-proto",
         name: "packet-type-name",
         kind: "method",
     },
     Operation {
-        id: 1693,
+        id: 1730,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumField",
         interface: "pkg-gate-proto",
         name: "packet-type-num-field",
         kind: "method",
     },
     Operation {
-        id: 1694,
+        id: 1731,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumIn",
         interface: "pkg-gate-proto",
         name: "packet-type-num-in",
         kind: "method",
     },
     Operation {
-        id: 1695,
+        id: 1732,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumMethod",
         interface: "pkg-gate-proto",
         name: "packet-type-num-method",
         kind: "method",
     },
     Operation {
-        id: 1696,
+        id: 1733,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.NumOut",
         interface: "pkg-gate-proto",
         name: "packet-type-num-out",
         kind: "method",
     },
     Operation {
-        id: 1697,
+        id: 1734,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Out",
         interface: "pkg-gate-proto",
         name: "packet-type-out",
         kind: "method",
     },
     Operation {
-        id: 1698,
+        id: 1735,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Outs",
         interface: "pkg-gate-proto",
         name: "packet-type-outs",
         kind: "method",
     },
     Operation {
-        id: 1699,
+        id: 1736,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowComplex",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-complex",
         kind: "method",
     },
     Operation {
-        id: 1700,
+        id: 1737,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowFloat",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-float",
         kind: "method",
     },
     Operation {
-        id: 1701,
+        id: 1738,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowInt",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-int",
         kind: "method",
     },
     Operation {
-        id: 1702,
+        id: 1739,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.OverflowUint",
         interface: "pkg-gate-proto",
         name: "packet-type-overflow-uint",
         kind: "method",
     },
     Operation {
-        id: 1703,
+        id: 1740,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.PkgPath",
         interface: "pkg-gate-proto",
         name: "packet-type-pkg-path",
         kind: "method",
     },
     Operation {
-        id: 1704,
+        id: 1741,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.Size",
         interface: "pkg-gate-proto",
         name: "packet-type-size",
         kind: "method",
     },
     Operation {
-        id: 1705,
+        id: 1742,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketType.String",
         interface: "pkg-gate-proto",
         name: "packet-type-string",
         kind: "method",
     },
     Operation {
-        id: 1706,
+        id: 1743,
         identity: "go.minekube.com/gate/pkg/gate/proto.PacketWriter.WritePacket",
         interface: "pkg-gate-proto",
         name: "packet-writer-write-packet",
         kind: "method",
     },
     Operation {
-        id: 1707,
+        id: 1744,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Greater",
         interface: "pkg-gate-proto",
         name: "protocol-greater",
         kind: "method",
     },
     Operation {
-        id: 1708,
+        id: 1745,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.GreaterEqual",
         interface: "pkg-gate-proto",
         name: "protocol-greater-equal",
         kind: "method",
     },
     Operation {
-        id: 1709,
+        id: 1746,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.Lower",
         interface: "pkg-gate-proto",
         name: "protocol-lower",
         kind: "method",
     },
     Operation {
-        id: 1710,
+        id: 1747,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.LowerEqual",
         interface: "pkg-gate-proto",
         name: "protocol-lower-equal",
         kind: "method",
     },
     Operation {
-        id: 1711,
+        id: 1748,
         identity: "go.minekube.com/gate/pkg/gate/proto.Protocol.String",
         interface: "pkg-gate-proto",
         name: "protocol-string",
         kind: "method",
     },
     Operation {
-        id: 1712,
+        id: 1749,
         identity: "go.minekube.com/gate/pkg/gate/proto.ServerBound#get",
         interface: "pkg-gate-proto",
         name: "get-server-bound",
         kind: "constant-get",
     },
     Operation {
-        id: 1713,
+        id: 1750,
         identity: "go.minekube.com/gate/pkg/gate/proto.TypeOf",
         interface: "pkg-gate-proto",
         name: "type-of",
         kind: "function",
     },
     Operation {
-        id: 1714,
+        id: 1751,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.FirstName",
         interface: "pkg-gate-proto",
         name: "version-first-name",
         kind: "method",
     },
     Operation {
-        id: 1715,
+        id: 1752,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.Greater",
         interface: "pkg-gate-proto",
         name: "version-greater",
         kind: "method",
     },
     Operation {
-        id: 1716,
+        id: 1753,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.GreaterEqual",
         interface: "pkg-gate-proto",
         name: "version-greater-equal",
         kind: "method",
     },
     Operation {
-        id: 1717,
+        id: 1754,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.LastName",
         interface: "pkg-gate-proto",
         name: "version-last-name",
         kind: "method",
     },
     Operation {
-        id: 1718,
+        id: 1755,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.Lower",
         interface: "pkg-gate-proto",
         name: "version-lower",
         kind: "method",
     },
     Operation {
-        id: 1719,
+        id: 1756,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.LowerEqual",
         interface: "pkg-gate-proto",
         name: "version-lower-equal",
         kind: "method",
     },
     Operation {
-        id: 1720,
+        id: 1757,
         identity: "go.minekube.com/gate/pkg/gate/proto.Version.String",
         interface: "pkg-gate-proto",
         name: "version-string",
         kind: "method",
     },
     Operation {
-        id: 1721,
+        id: 1758,
         identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Add",
         interface: "pkg-runtime-process",
         name: "collection-add",
         kind: "method",
     },
     Operation {
-        id: 1722,
+        id: 1759,
         identity: "go.minekube.com/gate/pkg/runtime/process.Collection.Start",
         interface: "pkg-runtime-process",
         name: "collection-start",
         kind: "method",
     },
     Operation {
-        id: 1723,
+        id: 1760,
         identity: "go.minekube.com/gate/pkg/runtime/process.DefaultGracefulShutdownPeriod#get",
         interface: "pkg-runtime-process",
         name: "get-default-graceful-shutdown-period",
         kind: "constant-get",
     },
     Operation {
-        id: 1724,
+        id: 1761,
         identity: "go.minekube.com/gate/pkg/runtime/process.New",
         interface: "pkg-runtime-process",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1725,
+        id: 1762,
         identity: "go.minekube.com/gate/pkg/runtime/process.Runnable.Start",
         interface: "pkg-runtime-process",
         name: "runnable-start",
         kind: "method",
     },
     Operation {
-        id: 1726,
+        id: 1763,
         identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc.Start",
         interface: "pkg-runtime-process",
         name: "runnable-func-start",
         kind: "method",
     },
     Operation {
-        id: 1727,
+        id: 1764,
         identity: "go.minekube.com/gate/pkg/util/componentutil.ParseComponent",
         interface: "pkg-util-componentutil",
         name: "parse-component",
         kind: "function",
     },
     Operation {
-        id: 1728,
+        id: 1765,
         identity: "go.minekube.com/gate/pkg/util/componentutil.ParseTextComponent",
         interface: "pkg-util-componentutil",
         name: "parse-text-component",
         kind: "function",
     },
     Operation {
-        id: 1729,
+        id: 1766,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.BoolValue",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-bool-value",
         kind: "method",
     },
     Operation {
-        id: 1730,
+        id: 1767,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsBool",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-is-bool",
         kind: "method",
     },
     Operation {
-        id: 1731,
+        id: 1768,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.IsNil",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-is-nil",
         kind: "method",
     },
     Operation {
-        id: 1732,
+        id: 1769,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1733,
+        id: 1770,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1734,
+        id: 1771,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.String",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-string",
         kind: "method",
     },
     Operation {
-        id: 1735,
+        id: 1772,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.StructValue",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-struct-value",
         kind: "method",
     },
     Operation {
-        id: 1736,
+        id: 1773,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1737,
+        id: 1774,
         identity: "go.minekube.com/gate/pkg/util/configutil.BoolOrStruct.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "bool-or-struct-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1738,
+        id: 1775,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.C",
         interface: "pkg-util-configutil",
         name: "component-c",
         kind: "method",
     },
     Operation {
-        id: 1739,
+        id: 1776,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "component-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1740,
+        id: 1777,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "component-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1741,
+        id: 1778,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "component-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1742,
+        id: 1779,
         identity: "go.minekube.com/gate/pkg/util/configutil.Component.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "component-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1743,
+        id: 1780,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "duration-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1744,
+        id: 1781,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "duration-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1745,
+        id: 1782,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "duration-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1746,
+        id: 1783,
         identity: "go.minekube.com/gate/pkg/util/configutil.Duration.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "duration-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1747,
+        id: 1784,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool",
         kind: "function",
     },
     Operation {
-        id: 1748,
+        id: 1785,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[T]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool-f2e5d90bc027",
         kind: "function",
     },
     Operation {
-        id: 1749,
+        id: 1786,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructBool[go.minekube.com/gate/pkg/edition/bedrock/config.ManagedGeyser]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-bool-891f9963de06",
         kind: "function",
     },
     Operation {
-        id: 1750,
+        id: 1787,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-struct",
         kind: "function",
     },
     Operation {
-        id: 1751,
+        id: 1788,
         identity: "go.minekube.com/gate/pkg/util/configutil.NewBoolOrStructStruct[T]",
         interface: "pkg-util-configutil",
         name: "new-bool-or-struct-struct-40ba03595584",
         kind: "function",
     },
     Operation {
-        id: 1752,
+        id: 1789,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Copy",
         interface: "pkg-util-configutil",
         name: "single-or-multi-copy",
         kind: "method",
     },
     Operation {
-        id: 1753,
+        id: 1790,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.IsMulti",
         interface: "pkg-util-configutil",
         name: "single-or-multi-is-multi",
         kind: "method",
     },
     Operation {
-        id: 1754,
+        id: 1791,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "single-or-multi-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1755,
+        id: 1792,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "single-or-multi-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1756,
+        id: 1793,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Multi",
         interface: "pkg-util-configutil",
         name: "single-or-multi-multi",
         kind: "method",
     },
     Operation {
-        id: 1757,
+        id: 1794,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Random",
         interface: "pkg-util-configutil",
         name: "single-or-multi-random",
         kind: "method",
     },
     Operation {
-        id: 1758,
+        id: 1795,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.Single",
         interface: "pkg-util-configutil",
         name: "single-or-multi-single",
         kind: "method",
     },
     Operation {
-        id: 1759,
+        id: 1796,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.String",
         interface: "pkg-util-configutil",
         name: "single-or-multi-string",
         kind: "method",
     },
     Operation {
-        id: 1760,
+        id: 1797,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "single-or-multi-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1761,
+        id: 1798,
         identity: "go.minekube.com/gate/pkg/util/configutil.SingleOrMulti.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "single-or-multi-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1762,
+        id: 1799,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "text-component-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1763,
+        id: 1800,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "text-component-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1764,
+        id: 1801,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.T",
         interface: "pkg-util-configutil",
         name: "text-component-t",
         kind: "method",
     },
     Operation {
-        id: 1765,
+        id: 1802,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "text-component-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1766,
+        id: 1803,
         identity: "go.minekube.com/gate/pkg/util/configutil.TextComponent.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "text-component-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1767,
+        id: 1804,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalBinary",
         interface: "pkg-util-configutil",
         name: "url-marshal-binary",
         kind: "method",
     },
     Operation {
-        id: 1768,
+        id: 1805,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalJSON",
         interface: "pkg-util-configutil",
         name: "url-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1769,
+        id: 1806,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.MarshalYAML",
         interface: "pkg-util-configutil",
         name: "url-marshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1770,
+        id: 1807,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.String",
         interface: "pkg-util-configutil",
         name: "url-string",
         kind: "method",
     },
     Operation {
-        id: 1771,
+        id: 1808,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.T",
         interface: "pkg-util-configutil",
         name: "url-t",
         kind: "method",
     },
     Operation {
-        id: 1772,
+        id: 1809,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalBinary",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-binary",
         kind: "method",
     },
     Operation {
-        id: 1773,
+        id: 1810,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalJSON",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1774,
+        id: 1811,
         identity: "go.minekube.com/gate/pkg/util/configutil.URL.UnmarshalYAML",
         interface: "pkg-util-configutil",
         name: "url-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1775,
+        id: 1812,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Name",
         interface: "pkg-util-connectutil",
         name: "endpoint-name",
         kind: "method",
     },
     Operation {
-        id: 1776,
+        id: 1813,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Propose",
         interface: "pkg-util-connectutil",
         name: "endpoint-propose",
         kind: "method",
     },
     Operation {
-        id: 1777,
+        id: 1814,
         identity: "go.minekube.com/gate/pkg/util/connectutil.Endpoint.Rejections",
         interface: "pkg-util-connectutil",
         name: "endpoint-rejections",
         kind: "method",
     },
     Operation {
-        id: 1778,
+        id: 1815,
         identity: "go.minekube.com/gate/pkg/util/connectutil.EndpointListener.AcceptEndpoint",
         interface: "pkg-util-connectutil",
         name: "endpoint-listener-accept-endpoint",
         kind: "method",
     },
     Operation {
-        id: 1779,
+        id: 1816,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Close",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-close",
         kind: "method",
     },
     Operation {
-        id: 1780,
+        id: 1817,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.LocalAddr",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-local-addr",
         kind: "method",
     },
     Operation {
-        id: 1781,
+        id: 1818,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Read",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-read",
         kind: "method",
     },
     Operation {
-        id: 1782,
+        id: 1819,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.RemoteAddr",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1783,
+        id: 1820,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SessionID",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-session-id",
         kind: "method",
     },
     Operation {
-        id: 1784,
+        id: 1821,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-deadline",
         kind: "method",
     },
     Operation {
-        id: 1785,
+        id: 1822,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetReadDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-read-deadline",
         kind: "method",
     },
     Operation {
-        id: 1786,
+        id: 1823,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.SetWriteDeadline",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-set-write-deadline",
         kind: "method",
     },
     Operation {
-        id: 1787,
+        id: 1824,
         identity: "go.minekube.com/gate/pkg/util/connectutil.InboundTunnel.Write",
         interface: "pkg-util-connectutil",
         name: "inbound-tunnel-write",
         kind: "method",
     },
     Operation {
-        id: 1788,
+        id: 1825,
         identity: "go.minekube.com/gate/pkg/util/connectutil.RequireEndpointName",
         interface: "pkg-util-connectutil",
         name: "require-endpoint-name",
         kind: "function",
     },
     Operation {
-        id: 1789,
+        id: 1826,
         identity: "go.minekube.com/gate/pkg/util/connectutil.RequireTunnelSessionID",
         interface: "pkg-util-connectutil",
         name: "require-tunnel-session-id",
         kind: "function",
     },
     Operation {
-        id: 1790,
+        id: 1827,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelListener.AcceptTunnel",
         interface: "pkg-util-connectutil",
         name: "tunnel-listener-accept-tunnel",
         kind: "method",
     },
     Operation {
-        id: 1791,
+        id: 1828,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Close",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-close",
         kind: "method",
     },
     Operation {
-        id: 1792,
+        id: 1829,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.LocalAddr",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-local-addr",
         kind: "method",
     },
     Operation {
-        id: 1793,
+        id: 1830,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Read",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-read",
         kind: "method",
     },
     Operation {
-        id: 1794,
+        id: 1831,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.RemoteAddr",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-remote-addr",
         kind: "method",
     },
     Operation {
-        id: 1795,
+        id: 1832,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Session",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-session",
         kind: "method",
     },
     Operation {
-        id: 1796,
+        id: 1833,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-deadline",
         kind: "method",
     },
     Operation {
-        id: 1797,
+        id: 1834,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetReadDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-read-deadline",
         kind: "method",
     },
     Operation {
-        id: 1798,
+        id: 1835,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.SetWriteDeadline",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-set-write-deadline",
         kind: "method",
     },
     Operation {
-        id: 1799,
+        id: 1836,
         identity: "go.minekube.com/gate/pkg/util/connectutil.TunnelSession.Write",
         interface: "pkg-util-connectutil",
         name: "tunnel-session-write",
         kind: "method",
     },
     Operation {
-        id: 1800,
+        id: 1837,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.ConnHandler.HandleConn",
         interface: "pkg-util-connectutil-config",
         name: "conn-handler-handle-conn",
         kind: "method",
     },
     Operation {
-        id: 1801,
+        id: 1838,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#get",
         interface: "pkg-util-connectutil-config",
         name: "get-default-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1802,
+        id: 1839,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultConfig#set",
         interface: "pkg-util-connectutil-config",
         name: "set-default-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1803,
+        id: 1840,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.DefaultWatchServiceAddr#get",
         interface: "pkg-util-connectutil-config",
         name: "get-default-watch-service-addr",
         kind: "constant-get",
     },
     Operation {
-        id: 1804,
+        id: 1841,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.HandleConn",
         interface: "pkg-util-connectutil-config",
         name: "instance-handle-conn",
         kind: "method",
     },
     Operation {
-        id: 1805,
+        id: 1842,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Register",
         interface: "pkg-util-connectutil-config",
         name: "instance-register",
         kind: "method",
     },
     Operation {
-        id: 1806,
+        id: 1843,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Server",
         interface: "pkg-util-connectutil-config",
         name: "instance-server",
         kind: "method",
     },
     Operation {
-        id: 1807,
+        id: 1844,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.Instance.Unregister",
         interface: "pkg-util-connectutil-config",
         name: "instance-unregister",
         kind: "method",
     },
     Operation {
-        id: 1808,
+        id: 1845,
         identity: "go.minekube.com/gate/pkg/util/connectutil/config.New",
         interface: "pkg-util-connectutil-config",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1809,
+        id: 1846,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptEndpoint",
         interface: "pkg-util-connectutil-single",
         name: "listener-accept-endpoint",
         kind: "method",
     },
     Operation {
-        id: 1810,
+        id: 1847,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.Listener.AcceptTunnel",
         interface: "pkg-util-connectutil-single",
         name: "listener-accept-tunnel",
         kind: "method",
     },
     Operation {
-        id: 1811,
+        id: 1848,
         identity: "go.minekube.com/gate/pkg/util/connectutil/single.New",
         interface: "pkg-util-connectutil-single",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1812,
+        id: 1849,
         identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#get",
         interface: "pkg-util-errs",
         name: "get-err-missing-config",
         kind: "variable-get",
     },
     Operation {
-        id: 1813,
+        id: 1850,
         identity: "go.minekube.com/gate/pkg/util/errs.ErrMissingConfig#set",
         interface: "pkg-util-errs",
         name: "set-err-missing-config",
         kind: "variable-set",
     },
     Operation {
-        id: 1814,
+        id: 1851,
         identity: "go.minekube.com/gate/pkg/util/errs.IsConnClosedErr",
         interface: "pkg-util-errs",
         name: "is-conn-closed-err",
         kind: "function",
     },
     Operation {
-        id: 1815,
+        id: 1852,
         identity: "go.minekube.com/gate/pkg/util/errs.NewSilentErr",
         interface: "pkg-util-errs",
         name: "new-silent-err",
         kind: "function",
     },
     Operation {
-        id: 1816,
+        id: 1853,
         identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Error",
         interface: "pkg-util-errs",
         name: "silent-error-error",
         kind: "method",
     },
     Operation {
-        id: 1817,
+        id: 1854,
         identity: "go.minekube.com/gate/pkg/util/errs.SilentError.Unwrap",
         interface: "pkg-util-errs",
         name: "silent-error-unwrap",
         kind: "method",
     },
     Operation {
-        id: 1818,
+        id: 1855,
         identity: "go.minekube.com/gate/pkg/util/errs.V",
         interface: "pkg-util-errs",
         name: "v",
         kind: "function",
     },
     Operation {
-        id: 1819,
+        id: 1856,
         identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Error",
         interface: "pkg-util-errs",
         name: "verbosity-error-error",
         kind: "method",
     },
     Operation {
-        id: 1820,
+        id: 1857,
         identity: "go.minekube.com/gate/pkg/util/errs.VerbosityError.Unwrap",
         interface: "pkg-util-errs",
         name: "verbosity-error-unwrap",
         kind: "method",
     },
     Operation {
-        id: 1821,
+        id: 1858,
         identity: "go.minekube.com/gate/pkg/util/errs.WrapSilent",
         interface: "pkg-util-errs",
         name: "wrap-silent",
         kind: "function",
     },
     Operation {
-        id: 1822,
+        id: 1859,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.Bytes",
         interface: "pkg-util-favicon",
         name: "favicon-bytes",
         kind: "method",
     },
     Operation {
-        id: 1823,
+        id: 1860,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalJSON",
         interface: "pkg-util-favicon",
         name: "favicon-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1824,
+        id: 1861,
         identity: "go.minekube.com/gate/pkg/util/favicon.Favicon.UnmarshalYAML",
         interface: "pkg-util-favicon",
         name: "favicon-unmarshal-yaml",
         kind: "method",
     },
     Operation {
-        id: 1825,
+        id: 1862,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromBytes",
         interface: "pkg-util-favicon",
         name: "from-bytes",
         kind: "function",
     },
     Operation {
-        id: 1826,
+        id: 1863,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromFile",
         interface: "pkg-util-favicon",
         name: "from-file",
         kind: "function",
     },
     Operation {
-        id: 1827,
+        id: 1864,
         identity: "go.minekube.com/gate/pkg/util/favicon.FromImage",
         interface: "pkg-util-favicon",
         name: "from-image",
         kind: "function",
     },
     Operation {
-        id: 1828,
+        id: 1865,
         identity: "go.minekube.com/gate/pkg/util/favicon.Parse",
         interface: "pkg-util-favicon",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1829,
+        id: 1866,
         identity: "go.minekube.com/gate/pkg/util/interrupt.Notify",
         interface: "pkg-util-interrupt",
         name: "notify",
         kind: "function",
     },
     Operation {
-        id: 1830,
+        id: 1867,
         identity: "go.minekube.com/gate/pkg/util/interrupt.TerminationContext",
         interface: "pkg-util-interrupt",
         name: "termination-context",
         kind: "function",
     },
     Operation {
-        id: 1831,
+        id: 1868,
         identity: "go.minekube.com/gate/pkg/util/netutil.Host",
         interface: "pkg-util-netutil",
         name: "host",
         kind: "function",
     },
     Operation {
-        id: 1832,
+        id: 1869,
         identity: "go.minekube.com/gate/pkg/util/netutil.HostPort",
         interface: "pkg-util-netutil",
         name: "host-port",
         kind: "function",
     },
     Operation {
-        id: 1833,
+        id: 1870,
         identity: "go.minekube.com/gate/pkg/util/netutil.HostStr",
         interface: "pkg-util-netutil",
         name: "host-str",
         kind: "function",
     },
     Operation {
-        id: 1834,
+        id: 1871,
         identity: "go.minekube.com/gate/pkg/util/netutil.NewAddr",
         interface: "pkg-util-netutil",
         name: "new-addr",
         kind: "function",
     },
     Operation {
-        id: 1835,
+        id: 1872,
         identity: "go.minekube.com/gate/pkg/util/netutil.Parse",
         interface: "pkg-util-netutil",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1836,
+        id: 1873,
         identity: "go.minekube.com/gate/pkg/util/netutil.ParseTrustedNetworks",
         interface: "pkg-util-netutil",
         name: "parse-trusted-networks",
         kind: "function",
     },
     Operation {
-        id: 1837,
+        id: 1874,
         identity: "go.minekube.com/gate/pkg/util/netutil.Port",
         interface: "pkg-util-netutil",
         name: "port",
         kind: "function",
     },
     Operation {
-        id: 1838,
+        id: 1875,
         identity: "go.minekube.com/gate/pkg/util/netutil.PortStr",
         interface: "pkg-util-netutil",
         name: "port-str",
         kind: "function",
     },
     Operation {
-        id: 1839,
+        id: 1876,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.Contains",
         interface: "pkg-util-netutil",
         name: "trusted-networks-contains",
         kind: "method",
     },
     Operation {
-        id: 1840,
+        id: 1877,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.ContainsStr",
         interface: "pkg-util-netutil",
         name: "trusted-networks-contains-str",
         kind: "method",
     },
     Operation {
-        id: 1841,
+        id: 1878,
         identity: "go.minekube.com/gate/pkg/util/netutil.TrustedNetworks.String",
         interface: "pkg-util-netutil",
         name: "trusted-networks-string",
         kind: "method",
     },
     Operation {
-        id: 1842,
+        id: 1879,
         identity: "go.minekube.com/gate/pkg/util/permission.False#get",
         interface: "pkg-util-permission",
         name: "get-false",
         kind: "constant-get",
     },
     Operation {
-        id: 1843,
+        id: 1880,
         identity: "go.minekube.com/gate/pkg/util/permission.Subject.HasPermission",
         interface: "pkg-util-permission",
         name: "subject-has-permission",
         kind: "method",
     },
     Operation {
-        id: 1844,
+        id: 1881,
         identity: "go.minekube.com/gate/pkg/util/permission.Subject.PermissionValue",
         interface: "pkg-util-permission",
         name: "subject-permission-value",
         kind: "method",
     },
     Operation {
-        id: 1845,
+        id: 1882,
         identity: "go.minekube.com/gate/pkg/util/permission.TriState.Bool",
         interface: "pkg-util-permission",
         name: "tri-state-bool",
         kind: "method",
     },
     Operation {
-        id: 1846,
+        id: 1883,
         identity: "go.minekube.com/gate/pkg/util/permission.True#get",
         interface: "pkg-util-permission",
         name: "get-true",
         kind: "constant-get",
     },
     Operation {
-        id: 1847,
+        id: 1884,
         identity: "go.minekube.com/gate/pkg/util/permission.Undefined#get",
         interface: "pkg-util-permission",
         name: "get-undefined",
         kind: "constant-get",
     },
     Operation {
-        id: 1848,
+        id: 1885,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Add",
         interface: "pkg-util-sets",
         name: "capped-set-add",
         kind: "method",
     },
     Operation {
-        id: 1849,
+        id: 1886,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Len",
         interface: "pkg-util-sets",
         name: "capped-set-len",
         kind: "method",
     },
     Operation {
-        id: 1850,
+        id: 1887,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.Remove",
         interface: "pkg-util-sets",
         name: "capped-set-remove",
         kind: "method",
     },
     Operation {
-        id: 1851,
+        id: 1888,
         identity: "go.minekube.com/gate/pkg/util/sets.CappedSet.UnsortedList",
         interface: "pkg-util-sets",
         name: "capped-set-unsorted-list",
         kind: "method",
     },
     Operation {
-        id: 1852,
+        id: 1889,
         identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet",
         interface: "pkg-util-sets",
         name: "new-capped-set",
         kind: "function",
     },
     Operation {
-        id: 1853,
+        id: 1890,
         identity: "go.minekube.com/gate/pkg/util/sets.NewCappedSet[string]",
         interface: "pkg-util-sets",
         name: "new-capped-set-0ec33fd43911",
         kind: "function",
     },
     Operation {
-        id: 1854,
+        id: 1891,
         identity: "go.minekube.com/gate/pkg/util/sets.NewString",
         interface: "pkg-util-sets",
         name: "new-string",
         kind: "function",
     },
     Operation {
-        id: 1855,
+        id: 1892,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Delete",
         interface: "pkg-util-sets",
         name: "string-delete",
         kind: "method",
     },
     Operation {
-        id: 1856,
+        id: 1893,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Has",
         interface: "pkg-util-sets",
         name: "string-has",
         kind: "method",
     },
     Operation {
-        id: 1857,
+        id: 1894,
         identity: "go.minekube.com/gate/pkg/util/sets.String.HasAll",
         interface: "pkg-util-sets",
         name: "string-has-all",
         kind: "method",
     },
     Operation {
-        id: 1858,
+        id: 1895,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Insert",
         interface: "pkg-util-sets",
         name: "string-insert",
         kind: "method",
     },
     Operation {
-        id: 1859,
+        id: 1896,
         identity: "go.minekube.com/gate/pkg/util/sets.String.InsertSet",
         interface: "pkg-util-sets",
         name: "string-insert-set",
         kind: "method",
     },
     Operation {
-        id: 1860,
+        id: 1897,
         identity: "go.minekube.com/gate/pkg/util/sets.String.Len",
         interface: "pkg-util-sets",
         name: "string-len",
         kind: "method",
     },
     Operation {
-        id: 1861,
+        id: 1898,
         identity: "go.minekube.com/gate/pkg/util/sets.String.UnsortedList",
         interface: "pkg-util-sets",
         name: "string-unsorted-list",
         kind: "method",
     },
     Operation {
-        id: 1862,
+        id: 1899,
         identity: "go.minekube.com/gate/pkg/util/uuid.FromBytes",
         interface: "pkg-util-uuid",
         name: "from-bytes",
         kind: "function",
     },
     Operation {
-        id: 1863,
+        id: 1900,
         identity: "go.minekube.com/gate/pkg/util/uuid.New",
         interface: "pkg-util-uuid",
         name: "new",
         kind: "function",
     },
     Operation {
-        id: 1864,
+        id: 1901,
         identity: "go.minekube.com/gate/pkg/util/uuid.Nil#get",
         interface: "pkg-util-uuid",
         name: "get-nil",
         kind: "variable-get",
     },
     Operation {
-        id: 1865,
+        id: 1902,
         identity: "go.minekube.com/gate/pkg/util/uuid.Nil#set",
         interface: "pkg-util-uuid",
         name: "set-nil",
         kind: "variable-set",
     },
     Operation {
-        id: 1866,
+        id: 1903,
         identity: "go.minekube.com/gate/pkg/util/uuid.OfflinePlayerUUID",
         interface: "pkg-util-uuid",
         name: "offline-player-uuid",
         kind: "function",
     },
     Operation {
-        id: 1867,
+        id: 1904,
         identity: "go.minekube.com/gate/pkg/util/uuid.Parse",
         interface: "pkg-util-uuid",
         name: "parse",
         kind: "function",
     },
     Operation {
-        id: 1868,
+        id: 1905,
         identity: "go.minekube.com/gate/pkg/util/uuid.ParseBytes",
         interface: "pkg-util-uuid",
         name: "parse-bytes",
         kind: "function",
     },
     Operation {
-        id: 1869,
+        id: 1906,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.MarshalJSON",
         interface: "pkg-util-uuid",
         name: "uuid-marshal-json",
         kind: "method",
     },
     Operation {
-        id: 1870,
+        id: 1907,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.String",
         interface: "pkg-util-uuid",
         name: "uuid-string",
         kind: "method",
     },
     Operation {
-        id: 1871,
+        id: 1908,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.Undashed",
         interface: "pkg-util-uuid",
         name: "uuid-undashed",
         kind: "method",
     },
     Operation {
-        id: 1872,
+        id: 1909,
         identity: "go.minekube.com/gate/pkg/util/uuid.UUID.UnmarshalJSON",
         interface: "pkg-util-uuid",
         name: "uuid-unmarshal-json",
         kind: "method",
     },
     Operation {
-        id: 1873,
+        id: 1910,
         identity: "go.minekube.com/gate/pkg/util/validation.ContainsIllegalCharacter",
         interface: "pkg-util-validation",
         name: "contains-illegal-character",
         kind: "function",
     },
     Operation {
-        id: 1874,
+        id: 1911,
         identity: "go.minekube.com/gate/pkg/util/validation.IsAllowedCharacter",
         interface: "pkg-util-validation",
         name: "is-allowed-character",
         kind: "function",
     },
     Operation {
-        id: 1875,
+        id: 1912,
         identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameErrMsg#get",
         interface: "pkg-util-validation",
         name: "get-qualified-name-err-msg",
         kind: "constant-get",
     },
     Operation {
-        id: 1876,
+        id: 1913,
         identity: "go.minekube.com/gate/pkg/util/validation.QualifiedNameMaxLength#get",
         interface: "pkg-util-validation",
         name: "get-qualified-name-max-length",
         kind: "constant-get",
     },
     Operation {
-        id: 1877,
+        id: 1914,
         identity: "go.minekube.com/gate/pkg/util/validation.ValidHostPort",
         interface: "pkg-util-validation",
         name: "valid-host-port",
         kind: "function",
     },
     Operation {
-        id: 1878,
+        id: 1915,
         identity: "go.minekube.com/gate/pkg/util/validation.ValidServerName",
         interface: "pkg-util-validation",
         name: "valid-server-name",
         kind: "function",
     },
     Operation {
-        id: 1879,
+        id: 1916,
         identity: "go.minekube.com/gate/pkg/version.String",
         interface: "pkg-version",
         name: "gate-string",
         kind: "function",
     },
     Operation {
-        id: 1880,
+        id: 1917,
         identity: "go.minekube.com/gate/pkg/version.UserAgent",
         interface: "pkg-version",
         name: "user-agent",
         kind: "function",
     },
     Operation {
-        id: 1881,
+        id: 1918,
         identity: "go.minekube.com/gate/pkg/version.UserAgentHeader",
         interface: "pkg-version",
         name: "user-agent-header",
         kind: "function",
     },
     Operation {
-        id: 1882,
+        id: 1919,
         identity: "go.minekube.com/gate/pkg/version.Version#get",
         interface: "pkg-version",
         name: "get-version",
         kind: "variable-get",
     },
     Operation {
-        id: 1883,
+        id: 1920,
         identity: "go.minekube.com/gate/pkg/version.Version#set",
         interface: "pkg-version",
         name: "set-version",
@@ -13324,82 +13583,378 @@ pub static CALLBACKS: &[CallbackDescriptor] = &[
     CallbackDescriptor {
         id: 15,
         type_id: 76,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent#wasm-handler",
+        name: "command-execute-event-handler",
+        new_name: "new-command-execute-event-handler",
+        call_name: "call-command-execute-event-handler",
+    },
+    CallbackDescriptor {
+        id: 16,
+        type_id: 77,
         identity: "go.minekube.com/brigodier.CommandFunc",
         name: "command-func",
         new_name: "new-command-func",
         call_name: "call-command-func",
     },
     CallbackDescriptor {
-        id: 16,
-        type_id: 136,
+        id: 17,
+        type_id: 91,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent#wasm-handler",
+        name: "connection-event-handler",
+        new_name: "new-connection-event-handler",
+        call_name: "call-connection-event-handler",
+    },
+    CallbackDescriptor {
+        id: 18,
+        type_id: 93,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent#wasm-handler",
+        name: "connection-handshake-event-handler",
+        new_name: "new-connection-handshake-event-handler",
+        call_name: "call-connection-handshake-event-handler",
+    },
+    CallbackDescriptor {
+        id: 19,
+        type_id: 102,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent#wasm-handler",
+        name: "cookie-receive-event-handler",
+        new_name: "new-cookie-receive-event-handler",
+        call_name: "call-cookie-receive-event-handler",
+    },
+    CallbackDescriptor {
+        id: 20,
+        type_id: 104,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent#wasm-handler",
+        name: "cookie-request-event-handler",
+        new_name: "new-cookie-request-event-handler",
+        call_name: "call-cookie-request-event-handler",
+    },
+    CallbackDescriptor {
+        id: 21,
+        type_id: 106,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent#wasm-handler",
+        name: "cookie-store-event-handler",
+        new_name: "new-cookie-store-event-handler",
+        call_name: "call-cookie-store-event-handler",
+    },
+    CallbackDescriptor {
+        id: 22,
+        type_id: 119,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent#wasm-handler",
+        name: "disconnect-event-handler",
+        new_name: "new-disconnect-event-handler",
+        call_name: "call-disconnect-event-handler",
+    },
+    CallbackDescriptor {
+        id: 23,
+        type_id: 142,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent#wasm-handler",
+        name: "game-profile-request-event-handler",
+        new_name: "new-game-profile-request-event-handler",
+        call_name: "call-game-profile-request-event-handler",
+    },
+    CallbackDescriptor {
+        id: 24,
+        type_id: 144,
         identity: "go.minekube.com/gate/pkg/util/permission.Func",
         name: "gate-func",
         new_name: "new-gate-func",
         call_name: "call-gate-func",
     },
     CallbackDescriptor {
-        id: 17,
-        type_id: 142,
+        id: 25,
+        type_id: 150,
         identity: "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn",
         name: "has-joined-url-fn",
         new_name: "new-has-joined-url-fn",
         call_name: "call-has-joined-url-fn",
     },
     CallbackDescriptor {
-        id: 18,
-        type_id: 175,
+        id: 26,
+        type_id: 171,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent#wasm-handler",
+        name: "kicked-from-server-event-handler",
+        new_name: "new-kicked-from-server-event-handler",
+        call_name: "call-kicked-from-server-event-handler",
+    },
+    CallbackDescriptor {
+        id: 27,
+        type_id: 184,
         identity: "go.minekube.com/gate/pkg/gate.LoadConfigFunc",
         name: "load-config-func",
         new_name: "new-load-config-func",
         call_name: "call-load-config-func",
     },
     CallbackDescriptor {
-        id: 19,
-        type_id: 293,
+        id: 28,
+        type_id: 187,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent#wasm-handler",
+        name: "login-event-handler",
+        new_name: "new-login-event-handler",
+        call_name: "call-login-event-handler",
+    },
+    CallbackDescriptor {
+        id: 29,
+        type_id: 243,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent#wasm-handler",
+        name: "permissions-setup-event-handler",
+        new_name: "new-permissions-setup-event-handler",
+        call_name: "call-permissions-setup-event-handler",
+    },
+    CallbackDescriptor {
+        id: 30,
+        type_id: 245,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent#wasm-handler",
+        name: "ping-event-handler",
+        new_name: "new-ping-event-handler",
+        call_name: "call-ping-event-handler",
+    },
+    CallbackDescriptor {
+        id: 31,
+        type_id: 250,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent#wasm-handler",
+        name: "player-available-commands-event-handler",
+        new_name: "new-player-available-commands-event-handler",
+        call_name: "call-player-available-commands-event-handler",
+    },
+    CallbackDescriptor {
+        id: 32,
+        type_id: 254,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent#wasm-handler",
+        name: "player-channel-register-event-handler",
+        new_name: "new-player-channel-register-event-handler",
+        call_name: "call-player-channel-register-event-handler",
+    },
+    CallbackDescriptor {
+        id: 33,
+        type_id: 256,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent#wasm-handler",
+        name: "player-channel-unregister-event-handler",
+        new_name: "new-player-channel-unregister-event-handler",
+        call_name: "call-player-channel-unregister-event-handler",
+    },
+    CallbackDescriptor {
+        id: 34,
+        type_id: 258,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent#wasm-handler",
+        name: "player-chat-event-handler",
+        new_name: "new-player-chat-event-handler",
+        call_name: "call-player-chat-event-handler",
+    },
+    CallbackDescriptor {
+        id: 35,
+        type_id: 260,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent#wasm-handler",
+        name: "player-choose-initial-server-event-handler",
+        new_name: "new-player-choose-initial-server-event-handler",
+        call_name: "call-player-choose-initial-server-event-handler",
+    },
+    CallbackDescriptor {
+        id: 36,
+        type_id: 262,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent#wasm-handler",
+        name: "player-client-brand-event-handler",
+        new_name: "new-player-client-brand-event-handler",
+        call_name: "call-player-client-brand-event-handler",
+    },
+    CallbackDescriptor {
+        id: 37,
+        type_id: 264,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent#wasm-handler",
+        name: "player-mod-info-event-handler",
+        new_name: "new-player-mod-info-event-handler",
+        call_name: "call-player-mod-info-event-handler",
+    },
+    CallbackDescriptor {
+        id: 38,
+        type_id: 268,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerResourcePackStatusEvent#wasm-handler",
+        name: "player-resource-pack-status-event-handler",
+        new_name: "new-player-resource-pack-status-event-handler",
+        call_name: "call-player-resource-pack-status-event-handler",
+    },
+    CallbackDescriptor {
+        id: 39,
+        type_id: 270,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent#wasm-handler",
+        name: "player-settings-changed-event-handler",
+        new_name: "new-player-settings-changed-event-handler",
+        call_name: "call-player-settings-changed-event-handler",
+    },
+    CallbackDescriptor {
+        id: 40,
+        type_id: 276,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent#wasm-handler",
+        name: "plugin-message-event-handler",
+        new_name: "new-plugin-message-event-handler",
+        call_name: "call-plugin-message-event-handler",
+    },
+    CallbackDescriptor {
+        id: 41,
+        type_id: 278,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent#wasm-handler",
+        name: "post-login-event-handler",
+        new_name: "new-post-login-event-handler",
+        call_name: "call-post-login-event-handler",
+    },
+    CallbackDescriptor {
+        id: 42,
+        type_id: 280,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent#wasm-handler",
+        name: "pre-login-event-handler",
+        new_name: "new-pre-login-event-handler",
+        call_name: "call-pre-login-event-handler",
+    },
+    CallbackDescriptor {
+        id: 43,
+        type_id: 282,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent#wasm-handler",
+        name: "pre-shutdown-event-handler",
+        new_name: "new-pre-shutdown-event-handler",
+        call_name: "call-pre-shutdown-event-handler",
+    },
+    CallbackDescriptor {
+        id: 44,
+        type_id: 284,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent#wasm-handler",
+        name: "pre-transfer-event-handler",
+        new_name: "new-pre-transfer-event-handler",
+        call_name: "call-pre-transfer-event-handler",
+    },
+    CallbackDescriptor {
+        id: 45,
+        type_id: 298,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent#wasm-handler",
+        name: "ready-event-handler",
+        new_name: "new-ready-event-handler",
+        call_name: "call-ready-event-handler",
+    },
+    CallbackDescriptor {
+        id: 46,
+        type_id: 320,
         identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc",
         name: "runnable-func",
         new_name: "new-runnable-func",
         call_name: "call-runnable-func",
     },
     CallbackDescriptor {
-        id: 20,
-        type_id: 295,
+        id: 47,
+        type_id: 322,
         identity: "iter.Seq[reflect.Method]",
         name: "seq-4454e9c05542",
         new_name: "new-seq-4454e9c05542",
         call_name: "call-seq-4454e9c05542",
     },
     CallbackDescriptor {
-        id: 21,
-        type_id: 296,
+        id: 48,
+        type_id: 323,
         identity: "iter.Seq[reflect.Type]",
         name: "seq-56a88aa8d577",
         new_name: "new-seq-56a88aa8d577",
         call_name: "call-seq-56a88aa8d577",
     },
     CallbackDescriptor {
-        id: 22,
-        type_id: 297,
+        id: 49,
+        type_id: 324,
         identity: "iter.Seq[reflect.StructField]",
         name: "seq-b074101856aa",
         new_name: "new-seq-b074101856aa",
         call_name: "call-seq-b074101856aa",
     },
     CallbackDescriptor {
-        id: 23,
-        type_id: 342,
+        id: 50,
+        type_id: 327,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent#wasm-handler",
+        name: "server-connected-event-handler",
+        new_name: "new-server-connected-event-handler",
+        call_name: "call-server-connected-event-handler",
+    },
+    CallbackDescriptor {
+        id: 51,
+        type_id: 335,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent#wasm-handler",
+        name: "server-login-plugin-message-event-handler",
+        new_name: "new-server-login-plugin-message-event-handler",
+        call_name: "call-server-login-plugin-message-event-handler",
+    },
+    CallbackDescriptor {
+        id: 52,
+        type_id: 339,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent#wasm-handler",
+        name: "server-post-connect-event-handler",
+        new_name: "new-server-post-connect-event-handler",
+        call_name: "call-server-post-connect-event-handler",
+    },
+    CallbackDescriptor {
+        id: 53,
+        type_id: 341,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-handler",
+        name: "server-pre-connect-event-handler",
+        new_name: "new-server-pre-connect-event-handler",
+        call_name: "call-server-pre-connect-event-handler",
+    },
+    CallbackDescriptor {
+        id: 54,
+        type_id: 344,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent#wasm-handler",
+        name: "server-registered-event-handler",
+        new_name: "new-server-registered-event-handler",
+        call_name: "call-server-registered-event-handler",
+    },
+    CallbackDescriptor {
+        id: 55,
+        type_id: 348,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent#wasm-handler",
+        name: "server-resource-pack-remove-event-handler",
+        new_name: "new-server-resource-pack-remove-event-handler",
+        call_name: "call-server-resource-pack-remove-event-handler",
+    },
+    CallbackDescriptor {
+        id: 56,
+        type_id: 350,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent#wasm-handler",
+        name: "server-resource-pack-send-event-handler",
+        new_name: "new-server-resource-pack-send-event-handler",
+        call_name: "call-server-resource-pack-send-event-handler",
+    },
+    CallbackDescriptor {
+        id: 57,
+        type_id: 352,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent#wasm-handler",
+        name: "server-unregistered-event-handler",
+        new_name: "new-server-unregistered-event-handler",
+        call_name: "call-server-unregistered-event-handler",
+    },
+    CallbackDescriptor {
+        id: 58,
+        type_id: 367,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.ShutdownEvent#wasm-handler",
+        name: "shutdown-event-handler",
+        new_name: "new-shutdown-event-handler",
+        call_name: "call-shutdown-event-handler",
+    },
+    CallbackDescriptor {
+        id: 59,
+        type_id: 379,
         identity: "go.minekube.com/gate/pkg/gate.StartOption",
         name: "start-option",
         new_name: "new-start-option",
         call_name: "call-start-option",
     },
     CallbackDescriptor {
-        id: 24,
-        type_id: 354,
+        id: 60,
+        type_id: 391,
         identity: "go.minekube.com/gate/pkg/command.SuggestFunc",
         name: "suggest-func",
         new_name: "new-suggest-func",
         call_name: "call-suggest-func",
+    },
+    CallbackDescriptor {
+        id: 61,
+        type_id: 397,
+        identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent#wasm-handler",
+        name: "tab-complete-event-handler",
+        new_name: "new-tab-complete-event-handler",
+        call_name: "call-tab-complete-event-handler",
     },
 ];
 
@@ -13712,1262 +14267,1414 @@ pub static RESOURCE_TYPES: &[ResourceDescriptor] = &[
     },
     ResourceDescriptor {
         id: 76,
-        name: "command-func",
+        name: "command-execute-event-handler",
     },
     ResourceDescriptor {
         id: 77,
-        name: "command-node",
+        name: "command-func",
     },
     ResourceDescriptor {
         id: 78,
-        name: "command-node-string-map",
+        name: "command-node",
     },
     ResourceDescriptor {
         id: 79,
-        name: "component-8135a805e033",
+        name: "command-node-string-map",
     },
     ResourceDescriptor {
         id: 80,
-        name: "component-holder-pointer",
+        name: "component-8135a805e033",
     },
     ResourceDescriptor {
         id: 81,
-        name: "component-plugin-manager",
+        name: "component-holder-pointer",
     },
     ResourceDescriptor {
         id: 82,
-        name: "component-pointer",
+        name: "component-plugin-manager",
     },
     ResourceDescriptor {
         id: 83,
-        name: "config-pointer-37c11021fd63",
+        name: "component-pointer",
     },
     ResourceDescriptor {
         id: 84,
-        name: "config-pointer-b591ea6ab39b",
+        name: "config-pointer-37c11021fd63",
     },
     ResourceDescriptor {
         id: 85,
-        name: "config-pointer-d638d8d410fb",
+        name: "config-pointer-b591ea6ab39b",
     },
     ResourceDescriptor {
         id: 86,
-        name: "conn",
+        name: "config-pointer-d638d8d410fb",
     },
     ResourceDescriptor {
         id: 87,
-        name: "conn-handler",
+        name: "conn",
     },
     ResourceDescriptor {
         id: 88,
-        name: "connection-event",
+        name: "conn-handler",
     },
     ResourceDescriptor {
         id: 89,
-        name: "connection-event-conn",
+        name: "connection-event",
     },
     ResourceDescriptor {
         id: 90,
-        name: "connection-handshake-event",
+        name: "connection-event-conn",
     },
     ResourceDescriptor {
         id: 91,
-        name: "connection-request",
+        name: "connection-event-handler",
     },
     ResourceDescriptor {
         id: 92,
-        name: "connection-result",
+        name: "connection-handshake-event",
     },
     ResourceDescriptor {
         id: 93,
-        name: "connection-type",
+        name: "connection-handshake-event-handler",
     },
     ResourceDescriptor {
         id: 94,
-        name: "connection-type-setter",
+        name: "connection-request",
     },
     ResourceDescriptor {
         id: 95,
-        name: "context-e30d9213847b",
+        name: "connection-result",
     },
     ResourceDescriptor {
         id: 96,
-        name: "context-pointer",
+        name: "connection-type",
     },
     ResourceDescriptor {
         id: 97,
-        name: "cookie-pointer",
+        name: "connection-type-setter",
     },
     ResourceDescriptor {
         id: 98,
-        name: "cookie-receive-event",
+        name: "context-e30d9213847b",
     },
     ResourceDescriptor {
         id: 99,
-        name: "cookie-request-event",
+        name: "context-pointer",
     },
     ResourceDescriptor {
         id: 100,
-        name: "cookie-store-event",
+        name: "cookie-pointer",
     },
     ResourceDescriptor {
         id: 101,
-        name: "cookierequest-pointer",
+        name: "cookie-receive-event",
     },
     ResourceDescriptor {
         id: 102,
-        name: "cookieresponse-pointer",
+        name: "cookie-receive-event-handler",
     },
     ResourceDescriptor {
         id: 103,
-        name: "cookiestore-pointer",
+        name: "cookie-request-event",
     },
     ResourceDescriptor {
         id: 104,
-        name: "customclickactionpacket-pointer",
+        name: "cookie-request-event-handler",
     },
     ResourceDescriptor {
         id: 105,
-        name: "customreportdetails-pointer",
+        name: "cookie-store-event",
     },
     ResourceDescriptor {
         id: 106,
-        name: "deathposition-pointer",
+        name: "cookie-store-event-handler",
     },
     ResourceDescriptor {
         id: 107,
-        name: "decoder-4af631b72731",
+        name: "cookierequest-pointer",
     },
     ResourceDescriptor {
         id: 108,
-        name: "decoder-af822d8a3e8a",
+        name: "cookieresponse-pointer",
     },
     ResourceDescriptor {
         id: 109,
-        name: "dialogclear-pointer",
+        name: "cookiestore-pointer",
     },
     ResourceDescriptor {
         id: 110,
-        name: "dialogshow-pointer",
+        name: "customclickactionpacket-pointer",
     },
     ResourceDescriptor {
         id: 111,
-        name: "dimensioninfo-pointer",
+        name: "customreportdetails-pointer",
     },
     ResourceDescriptor {
         id: 112,
-        name: "disconnect-event",
+        name: "deathposition-pointer",
     },
     ResourceDescriptor {
         id: 113,
-        name: "disconnect-pointer",
+        name: "decoder-4af631b72731",
     },
     ResourceDescriptor {
         id: 114,
-        name: "duration-pointer-31a8427ee473",
+        name: "decoder-af822d8a3e8a",
     },
     ResourceDescriptor {
         id: 115,
-        name: "duration-pointer-aef1cb078c49",
+        name: "dialogclear-pointer",
     },
     ResourceDescriptor {
         id: 116,
-        name: "encoder-99da3d15dde2",
+        name: "dialogshow-pointer",
     },
     ResourceDescriptor {
         id: 117,
-        name: "encoder-b9e83d04a1cc",
+        name: "dimensioninfo-pointer",
     },
     ResourceDescriptor {
         id: 118,
-        name: "encryptionrequest-pointer",
+        name: "disconnect-event",
     },
     ResourceDescriptor {
         id: 119,
-        name: "encryptionresponse-pointer",
+        name: "disconnect-event-handler",
     },
     ResourceDescriptor {
         id: 120,
-        name: "endpoint",
+        name: "disconnect-pointer",
     },
     ResourceDescriptor {
         id: 121,
-        name: "endpoint-listener-b406f50010ba",
+        name: "duration-pointer-31a8427ee473",
     },
     ResourceDescriptor {
         id: 122,
-        name: "endpoint-listener-ffca25b7b0f6",
+        name: "duration-pointer-aef1cb078c49",
     },
     ResourceDescriptor {
         id: 123,
-        name: "entityargumenttype-pointer",
+        name: "encoder-99da3d15dde2",
     },
     ResourceDescriptor {
         id: 124,
-        name: "entry-54d128365b4d",
+        name: "encoder-b9e83d04a1cc",
     },
     ResourceDescriptor {
         id: 125,
-        name: "entry-pointer",
+        name: "encryptionrequest-pointer",
     },
     ResourceDescriptor {
         id: 126,
-        name: "error",
+        name: "encryptionresponse-pointer",
     },
     ResourceDescriptor {
         id: 127,
-        name: "favicon-pointer",
+        name: "endpoint",
     },
     ResourceDescriptor {
         id: 128,
-        name: "finishedupdate-pointer",
+        name: "endpoint-listener-b406f50010ba",
     },
     ResourceDescriptor {
         id: 129,
-        name: "floodgate",
+        name: "endpoint-listener-ffca25b7b0f6",
     },
     ResourceDescriptor {
         id: 130,
-        name: "forwarding-mode-provider",
+        name: "entityargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 131,
-        name: "frametoolargeerror-pointer",
+        name: "entry-54d128365b4d",
     },
     ResourceDescriptor {
         id: 132,
-        name: "game-profile-pointer",
+        name: "entry-pointer",
     },
     ResourceDescriptor {
         id: 133,
-        name: "game-profile-provider",
+        name: "error",
     },
     ResourceDescriptor {
         id: 134,
-        name: "game-profile-request-event",
+        name: "favicon-pointer",
     },
     ResourceDescriptor {
         id: 135,
-        name: "gate",
+        name: "finishedupdate-pointer",
     },
     ResourceDescriptor {
         id: 136,
-        name: "gate-func",
+        name: "floodgate",
     },
     ResourceDescriptor {
         id: 137,
-        name: "gate-type",
+        name: "forwarding-mode-provider",
     },
     ResourceDescriptor {
         id: 138,
-        name: "geyser-connection",
+        name: "frametoolargeerror-pointer",
     },
     ResourceDescriptor {
         id: 139,
-        name: "geyserlite-pointer",
+        name: "game-profile-pointer",
     },
     ResourceDescriptor {
         id: 140,
-        name: "handshake-addresser",
+        name: "game-profile-provider",
     },
     ResourceDescriptor {
         id: 141,
-        name: "handshake-pointer",
+        name: "game-profile-request-event",
     },
     ResourceDescriptor {
         id: 142,
-        name: "has-joined-url-fn",
+        name: "game-profile-request-event-handler",
     },
     ResourceDescriptor {
         id: 143,
-        name: "header-pointer",
+        name: "gate",
     },
     ResourceDescriptor {
         id: 144,
-        name: "headerandfooter-pointer",
+        name: "gate-func",
     },
     ResourceDescriptor {
         id: 145,
-        name: "hover-event",
+        name: "gate-type",
     },
     ResourceDescriptor {
         id: 146,
-        name: "identified-key",
+        name: "geyser-connection",
     },
     ResourceDescriptor {
         id: 147,
-        name: "image",
+        name: "geyserlite-pointer",
     },
     ResourceDescriptor {
         id: 148,
-        name: "inbound",
+        name: "handshake-addresser",
     },
     ResourceDescriptor {
         id: 149,
-        name: "inbound-tunnel",
+        name: "handshake-pointer",
     },
     ResourceDescriptor {
         id: 150,
-        name: "info-pointer",
+        name: "has-joined-url-fn",
     },
     ResourceDescriptor {
         id: 151,
-        name: "instance",
+        name: "header-pointer",
     },
     ResourceDescriptor {
         id: 152,
-        name: "integration",
+        name: "headerandfooter-pointer",
     },
     ResourceDescriptor {
         id: 153,
-        name: "java-geyser-pointer",
+        name: "hover-event",
     },
     ResourceDescriptor {
         id: 154,
-        name: "joingame-pointer",
+        name: "identified-key",
     },
     ResourceDescriptor {
         id: 155,
-        name: "keep-alive-4460f769324e",
+        name: "image",
     },
     ResourceDescriptor {
         id: 156,
-        name: "keepalive-pointer",
+        name: "inbound",
     },
     ResourceDescriptor {
         id: 157,
-        name: "key",
+        name: "inbound-tunnel",
     },
     ResourceDescriptor {
         id: 158,
-        name: "key-identifiable",
+        name: "info-pointer",
     },
     ResourceDescriptor {
         id: 159,
-        name: "key-signed",
+        name: "instance",
     },
     ResourceDescriptor {
         id: 160,
-        name: "keyedplayerchat-pointer",
+        name: "integration",
     },
     ResourceDescriptor {
         id: 161,
-        name: "keyedplayercommand-pointer",
+        name: "java-geyser-pointer",
     },
     ResourceDescriptor {
         id: 162,
-        name: "kicked-from-server-event",
+        name: "joingame-pointer",
     },
     ResourceDescriptor {
         id: 163,
-        name: "knownpack-pointer",
+        name: "keep-alive-4460f769324e",
     },
     ResourceDescriptor {
         id: 164,
-        name: "knownpacks-pointer",
+        name: "keepalive-pointer",
     },
     ResourceDescriptor {
         id: 165,
-        name: "lastseenmessages-pointer",
+        name: "key",
     },
     ResourceDescriptor {
         id: 166,
-        name: "legacy-forge-handshake-resetter",
+        name: "key-identifiable",
     },
     ResourceDescriptor {
         id: 167,
-        name: "legacy-pointer",
+        name: "key-signed",
     },
     ResourceDescriptor {
         id: 168,
-        name: "legacychat-pointer",
+        name: "keyedplayerchat-pointer",
     },
     ResourceDescriptor {
         id: 169,
-        name: "limiter",
+        name: "keyedplayercommand-pointer",
     },
     ResourceDescriptor {
         id: 170,
-        name: "linked-account-result-pointer",
+        name: "kicked-from-server-event",
     },
     ResourceDescriptor {
         id: 171,
-        name: "listener",
+        name: "kicked-from-server-event-handler",
     },
     ResourceDescriptor {
         id: 172,
-        name: "lite",
+        name: "knownpack-pointer",
     },
     ResourceDescriptor {
         id: 173,
-        name: "literal-command-node",
+        name: "knownpacks-pointer",
     },
     ResourceDescriptor {
         id: 174,
-        name: "literal-node-builder",
+        name: "lastseenmessages-pointer",
     },
     ResourceDescriptor {
         id: 175,
-        name: "load-config-func",
+        name: "legacy-forge-handshake-resetter",
     },
     ResourceDescriptor {
         id: 176,
-        name: "logger",
+        name: "legacy-pointer",
     },
     ResourceDescriptor {
         id: 177,
-        name: "login-event",
+        name: "legacychat-pointer",
     },
     ResourceDescriptor {
         id: 178,
-        name: "login-phase-connection",
+        name: "limiter",
     },
     ResourceDescriptor {
         id: 179,
-        name: "loginacknowledged-pointer",
+        name: "linked-account-result-pointer",
     },
     ResourceDescriptor {
         id: 180,
-        name: "loginpluginmessage-pointer",
+        name: "listener",
     },
     ResourceDescriptor {
         id: 181,
-        name: "loginpluginresponse-pointer",
+        name: "lite",
     },
     ResourceDescriptor {
         id: 182,
-        name: "managed-geyser-pointer",
+        name: "literal-command-node",
     },
     ResourceDescriptor {
         id: 183,
-        name: "managed-viewer",
+        name: "literal-node-builder",
     },
     ResourceDescriptor {
         id: 184,
-        name: "manager-d3469a289502",
+        name: "load-config-func",
     },
     ResourceDescriptor {
         id: 185,
-        name: "manager-pointer",
+        name: "logger",
     },
     ResourceDescriptor {
         id: 186,
-        name: "message-consumer",
+        name: "login-event",
     },
     ResourceDescriptor {
         id: 187,
-        name: "message-option",
+        name: "login-event-handler",
     },
     ResourceDescriptor {
         id: 188,
-        name: "message-pointer",
+        name: "login-phase-connection",
     },
     ResourceDescriptor {
         id: 189,
-        name: "message-responder",
+        name: "loginacknowledged-pointer",
     },
     ResourceDescriptor {
         id: 190,
-        name: "message-sink",
+        name: "loginpluginmessage-pointer",
     },
     ResourceDescriptor {
         id: 191,
-        name: "minecraft-conn",
+        name: "loginpluginresponse-pointer",
     },
     ResourceDescriptor {
         id: 192,
-        name: "minecraftchannelidentifier-pointer",
+        name: "managed-geyser-pointer",
     },
     ResourceDescriptor {
         id: 193,
-        name: "mod-info-674d23e965e3",
+        name: "managed-viewer",
     },
     ResourceDescriptor {
         id: 194,
-        name: "mod-info-pointer",
+        name: "manager-d3469a289502",
     },
     ResourceDescriptor {
         id: 195,
-        name: "mod-pointer",
+        name: "manager-pointer",
     },
     ResourceDescriptor {
         id: 196,
-        name: "modargumentproperty-pointer",
+        name: "message-consumer",
     },
     ResourceDescriptor {
         id: 197,
-        name: "node",
+        name: "message-option",
     },
     ResourceDescriptor {
         id: 198,
-        name: "node-builder",
+        name: "message-pointer",
     },
     ResourceDescriptor {
         id: 199,
-        name: "node-pointer",
+        name: "message-responder",
     },
     ResourceDescriptor {
         id: 200,
-        name: "opaque-03760b81836a",
+        name: "message-sink",
     },
     ResourceDescriptor {
         id: 201,
-        name: "opaque-0e0181856bcc",
+        name: "minecraft-conn",
     },
     ResourceDescriptor {
         id: 202,
-        name: "opaque-1ff24a0cc97d",
+        name: "minecraftchannelidentifier-pointer",
     },
     ResourceDescriptor {
         id: 203,
-        name: "opaque-2a388dbfee24",
+        name: "mod-info-674d23e965e3",
     },
     ResourceDescriptor {
         id: 204,
-        name: "opaque-31f02903a9b7",
+        name: "mod-info-pointer",
     },
     ResourceDescriptor {
         id: 205,
-        name: "opaque-3e89801b52bf",
+        name: "mod-pointer",
     },
     ResourceDescriptor {
         id: 206,
-        name: "opaque-4ea7cc146071",
+        name: "modargumentproperty-pointer",
     },
     ResourceDescriptor {
         id: 207,
-        name: "opaque-5a94dfe8c64e",
+        name: "node",
     },
     ResourceDescriptor {
         id: 208,
-        name: "opaque-61bd2f8625ec",
+        name: "node-builder",
     },
     ResourceDescriptor {
         id: 209,
-        name: "opaque-782709543008",
+        name: "node-pointer",
     },
     ResourceDescriptor {
         id: 210,
-        name: "opaque-8941972aede7",
+        name: "opaque-03760b81836a",
     },
     ResourceDescriptor {
         id: 211,
-        name: "opaque-959d2add1b82",
+        name: "opaque-0e0181856bcc",
     },
     ResourceDescriptor {
         id: 212,
-        name: "opaque-98a2a7450732",
+        name: "opaque-1ff24a0cc97d",
     },
     ResourceDescriptor {
         id: 213,
-        name: "opaque-c4f436a8cc27",
+        name: "opaque-2a388dbfee24",
     },
     ResourceDescriptor {
         id: 214,
-        name: "opaque-d091b41b8f44",
+        name: "opaque-31f02903a9b7",
     },
     ResourceDescriptor {
         id: 215,
-        name: "opaque-d42b8bd1d172",
+        name: "opaque-3e89801b52bf",
     },
     ResourceDescriptor {
         id: 216,
-        name: "options-pointer",
+        name: "opaque-4ea7cc146071",
     },
     ResourceDescriptor {
         id: 217,
-        name: "p-reader",
+        name: "opaque-5a94dfe8c64e",
     },
     ResourceDescriptor {
         id: 218,
-        name: "p-writer",
+        name: "opaque-61bd2f8625ec",
     },
     ResourceDescriptor {
         id: 219,
-        name: "packet",
+        name: "opaque-782709543008",
     },
     ResourceDescriptor {
         id: 220,
-        name: "packet-context-pointer",
+        name: "opaque-8941972aede7",
     },
     ResourceDescriptor {
         id: 221,
-        name: "packet-decoder",
+        name: "opaque-959d2add1b82",
     },
     ResourceDescriptor {
         id: 222,
-        name: "packet-encoder",
+        name: "opaque-98a2a7450732",
     },
     ResourceDescriptor {
         id: 223,
-        name: "packet-mapping-pointer",
+        name: "opaque-c4f436a8cc27",
     },
     ResourceDescriptor {
         id: 224,
-        name: "packet-registry-pointer",
+        name: "opaque-d091b41b8f44",
     },
     ResourceDescriptor {
         id: 225,
-        name: "packet-type",
+        name: "opaque-d42b8bd1d172",
     },
     ResourceDescriptor {
         id: 226,
-        name: "packet-writer-72100b33bb0a",
+        name: "options-pointer",
     },
     ResourceDescriptor {
         id: 227,
-        name: "packet-writer-75ace6a620cc",
+        name: "p-reader",
     },
     ResourceDescriptor {
         id: 228,
-        name: "packet-writer-ac4241cd6be8",
+        name: "p-writer",
     },
     ResourceDescriptor {
         id: 229,
-        name: "packetmeta-pointer",
+        name: "packet",
     },
     ResourceDescriptor {
         id: 230,
-        name: "parse-results-pointer-8958c798f310",
+        name: "packet-context-pointer",
     },
     ResourceDescriptor {
         id: 231,
-        name: "parse-results-pointer-a3ab65872fe4",
+        name: "packet-decoder",
     },
     ResourceDescriptor {
         id: 232,
-        name: "permissions-setup-event",
+        name: "packet-encoder",
     },
     ResourceDescriptor {
         id: 233,
-        name: "ping-event",
+        name: "packet-mapping-pointer",
     },
     ResourceDescriptor {
         id: 234,
-        name: "pingidentify-pointer",
+        name: "packet-registry-pointer",
     },
     ResourceDescriptor {
         id: 235,
-        name: "play-packet-queue",
+        name: "packet-type",
     },
     ResourceDescriptor {
         id: 236,
-        name: "player-9f25ee10b6eb",
+        name: "packet-writer-72100b33bb0a",
     },
     ResourceDescriptor {
         id: 237,
-        name: "player-available-commands-event",
+        name: "packet-writer-75ace6a620cc",
     },
     ResourceDescriptor {
         id: 238,
-        name: "player-b186caed0db5",
+        name: "packet-writer-ac4241cd6be8",
     },
     ResourceDescriptor {
         id: 239,
-        name: "player-baaf10cb00cf",
+        name: "packetmeta-pointer",
     },
     ResourceDescriptor {
         id: 240,
-        name: "player-channel-register-event",
+        name: "parse-results-pointer-8958c798f310",
     },
     ResourceDescriptor {
         id: 241,
-        name: "player-channel-unregister-event",
+        name: "parse-results-pointer-a3ab65872fe4",
     },
     ResourceDescriptor {
         id: 242,
-        name: "player-chat-event",
+        name: "permissions-setup-event",
     },
     ResourceDescriptor {
         id: 243,
-        name: "player-choose-initial-server-event",
+        name: "permissions-setup-event-handler",
     },
     ResourceDescriptor {
         id: 244,
-        name: "player-client-brand-event",
+        name: "ping-event",
     },
     ResourceDescriptor {
         id: 245,
-        name: "player-mod-info-event",
+        name: "ping-event-handler",
     },
     ResourceDescriptor {
         id: 246,
-        name: "player-provider",
+        name: "pingidentify-pointer",
     },
     ResourceDescriptor {
         id: 247,
-        name: "player-resource-pack-status-event-6e0ee0072fce",
+        name: "play-packet-queue",
     },
     ResourceDescriptor {
         id: 248,
-        name: "player-resource-pack-status-event-7973bc9f95c2",
+        name: "player-9f25ee10b6eb",
     },
     ResourceDescriptor {
         id: 249,
-        name: "player-settings-changed-event",
+        name: "player-available-commands-event",
     },
     ResourceDescriptor {
         id: 250,
-        name: "playerchatcompletion-pointer",
+        name: "player-available-commands-event-handler",
     },
     ResourceDescriptor {
         id: 251,
-        name: "playerlistitem-pointer",
+        name: "player-b186caed0db5",
     },
     ResourceDescriptor {
         id: 252,
-        name: "players-849b766b7567",
+        name: "player-baaf10cb00cf",
     },
     ResourceDescriptor {
         id: 253,
-        name: "players-pointer",
+        name: "player-channel-register-event",
     },
     ResourceDescriptor {
         id: 254,
-        name: "plugin-message-event",
+        name: "player-channel-register-event-handler",
     },
     ResourceDescriptor {
         id: 255,
-        name: "post-login-event",
+        name: "player-channel-unregister-event",
     },
     ResourceDescriptor {
         id: 256,
-        name: "pre-login-event",
+        name: "player-channel-unregister-event-handler",
     },
     ResourceDescriptor {
         id: 257,
-        name: "pre-shutdown-event",
+        name: "player-chat-event",
     },
     ResourceDescriptor {
         id: 258,
-        name: "pre-transfer-event",
+        name: "player-chat-event-handler",
     },
     ResourceDescriptor {
         id: 259,
-        name: "prefix",
+        name: "player-choose-initial-server-event",
     },
     ResourceDescriptor {
         id: 260,
-        name: "private-key-pointer",
+        name: "player-choose-initial-server-event-handler",
     },
     ResourceDescriptor {
         id: 261,
-        name: "profile-manager",
+        name: "player-client-brand-event",
     },
     ResourceDescriptor {
         id: 262,
-        name: "property-pointer",
+        name: "player-client-brand-event-handler",
     },
     ResourceDescriptor {
         id: 263,
-        name: "protocol-registry-pointer",
+        name: "player-mod-info-event",
     },
     ResourceDescriptor {
         id: 264,
-        name: "providers",
+        name: "player-mod-info-event-handler",
     },
     ResourceDescriptor {
         id: 265,
-        name: "proxy-3cf24d6ad4bb",
+        name: "player-provider",
     },
     ResourceDescriptor {
         id: 266,
-        name: "proxy-f9797141fae0",
+        name: "player-resource-pack-status-event-6e0ee0072fce",
     },
     ResourceDescriptor {
         id: 267,
-        name: "public-key-pointer",
+        name: "player-resource-pack-status-event-7973bc9f95c2",
     },
     ResourceDescriptor {
         id: 268,
-        name: "raw-message-pointer",
+        name: "player-resource-pack-status-event-handler",
     },
     ResourceDescriptor {
         id: 269,
-        name: "reader-4d25c51b00a6",
+        name: "player-settings-changed-event",
     },
     ResourceDescriptor {
         id: 270,
-        name: "reader-e9c6b228554a",
+        name: "player-settings-changed-event-handler",
     },
     ResourceDescriptor {
         id: 271,
-        name: "ready-event",
+        name: "playerchatcompletion-pointer",
     },
     ResourceDescriptor {
         id: 272,
-        name: "regexp",
+        name: "playerlistitem-pointer",
     },
     ResourceDescriptor {
         id: 273,
-        name: "registered-server",
+        name: "players-849b766b7567",
     },
     ResourceDescriptor {
         id: 274,
-        name: "registry-pointer",
+        name: "players-pointer",
     },
     ResourceDescriptor {
         id: 275,
-        name: "registrykeyargumenttype-pointer",
+        name: "plugin-message-event",
     },
     ResourceDescriptor {
         id: 276,
-        name: "registrysync-pointer",
+        name: "plugin-message-event-handler",
     },
     ResourceDescriptor {
         id: 277,
-        name: "remotechatsession-pointer",
+        name: "post-login-event",
     },
     ResourceDescriptor {
         id: 278,
-        name: "remove-pointer",
+        name: "post-login-event-handler",
     },
     ResourceDescriptor {
         id: 279,
-        name: "removeresourcepack-pointer",
+        name: "pre-login-event",
     },
     ResourceDescriptor {
         id: 280,
-        name: "requires-context-pointer",
+        name: "pre-login-event-handler",
     },
     ResourceDescriptor {
         id: 281,
-        name: "resetter",
+        name: "pre-shutdown-event",
     },
     ResourceDescriptor {
         id: 282,
-        name: "resourcekeyargumenttype-pointer",
+        name: "pre-shutdown-event-handler",
     },
     ResourceDescriptor {
         id: 283,
-        name: "resourceortagkeyargumenttype-pointer",
+        name: "pre-transfer-event",
     },
     ResourceDescriptor {
         id: 284,
-        name: "resourcepackrequest-pointer",
+        name: "pre-transfer-event-handler",
     },
     ResourceDescriptor {
         id: 285,
-        name: "resourcepackresponse-pointer",
+        name: "prefix",
     },
     ResourceDescriptor {
         id: 286,
-        name: "resourceselectorargumenttype-pointer",
+        name: "private-key-pointer",
     },
     ResourceDescriptor {
         id: 287,
-        name: "respawn-pointer",
+        name: "profile-manager",
     },
     ResourceDescriptor {
         id: 288,
-        name: "response",
+        name: "property-pointer",
     },
     ResourceDescriptor {
         id: 289,
-        name: "revision",
+        name: "protocol-registry-pointer",
     },
     ResourceDescriptor {
         id: 290,
-        name: "root-command-node-pointer",
+        name: "providers",
     },
     ResourceDescriptor {
         id: 291,
-        name: "route-pointer",
+        name: "proxy-3cf24d6ad4bb",
     },
     ResourceDescriptor {
         id: 292,
-        name: "runnable",
+        name: "proxy-f9797141fae0",
     },
     ResourceDescriptor {
         id: 293,
-        name: "runnable-func",
+        name: "public-key-pointer",
     },
     ResourceDescriptor {
         id: 294,
-        name: "runner",
+        name: "raw-message-pointer",
     },
     ResourceDescriptor {
         id: 295,
-        name: "seq-4454e9c05542",
+        name: "reader-4d25c51b00a6",
     },
     ResourceDescriptor {
         id: 296,
-        name: "seq-56a88aa8d577",
+        name: "reader-e9c6b228554a",
     },
     ResourceDescriptor {
         id: 297,
-        name: "seq-b074101856aa",
+        name: "ready-event",
     },
     ResourceDescriptor {
         id: 298,
-        name: "server",
+        name: "ready-event-handler",
     },
     ResourceDescriptor {
         id: 299,
-        name: "server-connected-event",
+        name: "regexp",
     },
     ResourceDescriptor {
         id: 300,
-        name: "server-connection-0c07c252c79d",
+        name: "registered-server",
     },
     ResourceDescriptor {
         id: 301,
-        name: "server-connection-4f41e3a0f548",
+        name: "registry-pointer",
     },
     ResourceDescriptor {
         id: 302,
-        name: "server-connection-provider",
+        name: "registrykeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 303,
-        name: "server-dialer",
+        name: "registrysync-pointer",
     },
     ResourceDescriptor {
         id: 304,
-        name: "server-info",
+        name: "remotechatsession-pointer",
     },
     ResourceDescriptor {
         id: 305,
-        name: "server-kick-result",
+        name: "remove-pointer",
     },
     ResourceDescriptor {
         id: 306,
-        name: "server-login-plugin-message-event",
+        name: "removeresourcepack-pointer",
     },
     ResourceDescriptor {
         id: 307,
-        name: "server-login-plugin-message-result-pointer",
+        name: "requires-context-pointer",
     },
     ResourceDescriptor {
         id: 308,
-        name: "server-ping-pointer",
+        name: "resetter",
     },
     ResourceDescriptor {
         id: 309,
-        name: "server-post-connect-event",
+        name: "resourcekeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 310,
-        name: "server-pre-connect-event",
+        name: "resourceortagkeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 311,
-        name: "server-provider",
+        name: "resourcepackrequest-pointer",
     },
     ResourceDescriptor {
         id: 312,
-        name: "server-registered-event",
+        name: "resourcepackresponse-pointer",
     },
     ResourceDescriptor {
         id: 313,
-        name: "server-registrar",
+        name: "resourceselectorargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 314,
-        name: "server-registry",
+        name: "respawn-pointer",
     },
     ResourceDescriptor {
         id: 315,
-        name: "server-resource-pack-remove-event",
+        name: "response",
     },
     ResourceDescriptor {
         id: 316,
-        name: "server-resource-pack-send-event",
+        name: "revision",
     },
     ResourceDescriptor {
         id: 317,
-        name: "server-unregistered-event",
+        name: "root-command-node-pointer",
     },
     ResourceDescriptor {
         id: 318,
-        name: "serverdata-pointer",
+        name: "route-pointer",
     },
     ResourceDescriptor {
         id: 319,
-        name: "serverlink-pointer",
+        name: "runnable",
     },
     ResourceDescriptor {
         id: 320,
-        name: "serverlinks-pointer",
+        name: "runnable-func",
     },
     ResourceDescriptor {
         id: 321,
-        name: "serverlogin-pointer",
+        name: "runner",
     },
     ResourceDescriptor {
         id: 322,
-        name: "serverloginsuccess-pointer",
+        name: "seq-4454e9c05542",
     },
     ResourceDescriptor {
         id: 323,
-        name: "session",
+        name: "seq-56a88aa8d577",
     },
     ResourceDescriptor {
         id: 324,
-        name: "session-handler",
+        name: "seq-b074101856aa",
     },
     ResourceDescriptor {
         id: 325,
-        name: "session-rejection",
+        name: "server",
     },
     ResourceDescriptor {
         id: 326,
-        name: "sessionplayerchat-pointer",
+        name: "server-connected-event",
     },
     ResourceDescriptor {
         id: 327,
-        name: "sessionplayercommand-pointer",
+        name: "server-connected-event-handler",
     },
     ResourceDescriptor {
         id: 328,
-        name: "setcompression-pointer",
+        name: "server-connection-0c07c252c79d",
     },
     ResourceDescriptor {
         id: 329,
-        name: "settings",
+        name: "server-connection-4f41e3a0f548",
     },
     ResourceDescriptor {
         id: 330,
-        name: "shadow-color-pointer",
+        name: "server-connection-provider",
     },
     ResourceDescriptor {
         id: 331,
-        name: "show-entity-hover-type-pointer",
+        name: "server-dialer",
     },
     ResourceDescriptor {
         id: 332,
-        name: "signal",
+        name: "server-info",
     },
     ResourceDescriptor {
         id: 333,
-        name: "signature-pair-pointer",
+        name: "server-kick-result",
     },
     ResourceDescriptor {
         id: 334,
-        name: "signed-message",
+        name: "server-login-plugin-message-event",
     },
     ResourceDescriptor {
         id: 335,
-        name: "silenterror-pointer",
+        name: "server-login-plugin-message-event-handler",
     },
     ResourceDescriptor {
         id: 336,
-        name: "singleormulti-pointer",
+        name: "server-login-plugin-message-result-pointer",
     },
     ResourceDescriptor {
         id: 337,
-        name: "skin-result-pointer",
+        name: "server-ping-pointer",
     },
     ResourceDescriptor {
         id: 338,
-        name: "sound-pointer",
+        name: "server-post-connect-event",
     },
     ResourceDescriptor {
         id: 339,
-        name: "soundentitypacket-pointer",
+        name: "server-post-connect-event-handler",
     },
     ResourceDescriptor {
         id: 340,
-        name: "soundsource-pointer",
+        name: "server-pre-connect-event",
     },
     ResourceDescriptor {
         id: 341,
-        name: "source",
+        name: "server-pre-connect-event-handler",
     },
     ResourceDescriptor {
         id: 342,
-        name: "start-option",
+        name: "server-provider",
     },
     ResourceDescriptor {
         id: 343,
-        name: "start-options",
+        name: "server-registered-event",
     },
     ResourceDescriptor {
         id: 344,
-        name: "startupdate-pointer",
+        name: "server-registered-event-handler",
     },
     ResourceDescriptor {
         id: 345,
-        name: "state-changer",
+        name: "server-registrar",
     },
     ResourceDescriptor {
         id: 346,
-        name: "status-pointer",
+        name: "server-registry",
     },
     ResourceDescriptor {
         id: 347,
-        name: "status-response-pointer",
+        name: "server-resource-pack-remove-event",
     },
     ResourceDescriptor {
         id: 348,
-        name: "statusping-pointer",
+        name: "server-resource-pack-remove-event-handler",
     },
     ResourceDescriptor {
         id: 349,
-        name: "stopsoundpacket-pointer",
+        name: "server-resource-pack-send-event",
     },
     ResourceDescriptor {
         id: 350,
-        name: "strategy-manager",
+        name: "server-resource-pack-send-event-handler",
     },
     ResourceDescriptor {
         id: 351,
-        name: "string-reader-pointer",
+        name: "server-unregistered-event",
     },
     ResourceDescriptor {
         id: 352,
-        name: "subject",
+        name: "server-unregistered-event-handler",
     },
     ResourceDescriptor {
         id: 353,
-        name: "subtitle-pointer",
+        name: "serverdata-pointer",
     },
     ResourceDescriptor {
         id: 354,
-        name: "suggest-func",
+        name: "serverlink-pointer",
     },
     ResourceDescriptor {
         id: 355,
-        name: "suggestion-context-pointer",
+        name: "serverlinks-pointer",
     },
     ResourceDescriptor {
         id: 356,
-        name: "suggestions-builder-pointer",
+        name: "serverlogin-pointer",
     },
     ResourceDescriptor {
         id: 357,
-        name: "suggestions-pointer",
+        name: "serverloginsuccess-pointer",
     },
     ResourceDescriptor {
         id: 358,
-        name: "systemchat-pointer",
+        name: "session",
     },
     ResourceDescriptor {
         id: 359,
-        name: "tab-complete-event",
+        name: "session-handler",
     },
     ResourceDescriptor {
         id: 360,
-        name: "tab-list",
+        name: "session-rejection",
     },
     ResourceDescriptor {
         id: 361,
-        name: "tabcompleterequest-pointer",
+        name: "sessionplayerchat-pointer",
     },
     ResourceDescriptor {
         id: 362,
-        name: "tabcompleteresponse-pointer",
+        name: "sessionplayercommand-pointer",
     },
     ResourceDescriptor {
         id: 363,
-        name: "tag",
+        name: "setcompression-pointer",
     },
     ResourceDescriptor {
         id: 364,
-        name: "tagsupdate-pointer",
+        name: "settings",
     },
     ResourceDescriptor {
         id: 365,
-        name: "text-component-pointer",
+        name: "shadow-color-pointer",
     },
     ResourceDescriptor {
         id: 366,
-        name: "text-pointer-803fc01755ae",
+        name: "show-entity-hover-type-pointer",
     },
     ResourceDescriptor {
         id: 367,
-        name: "text-pointer-d07344de8f54",
+        name: "shutdown-event-handler",
     },
     ResourceDescriptor {
         id: 368,
-        name: "time-pointer",
+        name: "shutdown-event-pointer",
     },
     ResourceDescriptor {
         id: 369,
-        name: "times-pointer",
+        name: "signal",
     },
     ResourceDescriptor {
         id: 370,
-        name: "transfer-pointer",
+        name: "signature-pair-pointer",
     },
     ResourceDescriptor {
         id: 371,
-        name: "tunnel-listener-272a61c33ee5",
+        name: "signed-message",
     },
     ResourceDescriptor {
         id: 372,
-        name: "tunnel-listener-7a63eaef28a0",
+        name: "silenterror-pointer",
     },
     ResourceDescriptor {
         id: 373,
-        name: "tunnel-session",
+        name: "singleormulti-pointer",
     },
     ResourceDescriptor {
         id: 374,
-        name: "uint32",
+        name: "skin-result-pointer",
     },
     ResourceDescriptor {
         id: 375,
-        name: "unsignedplayercommand-pointer",
+        name: "sound-pointer",
     },
     ResourceDescriptor {
         id: 376,
-        name: "upsert-action",
+        name: "soundentitypacket-pointer",
     },
     ResourceDescriptor {
         id: 377,
-        name: "upsert-pointer",
+        name: "soundsource-pointer",
     },
     ResourceDescriptor {
         id: 378,
-        name: "url-pointer-0703e7cbaa23",
+        name: "source",
     },
     ResourceDescriptor {
         id: 379,
-        name: "url-pointer-b3d2755ffd42",
+        name: "start-option",
     },
     ResourceDescriptor {
         id: 380,
-        name: "userinfo",
+        name: "start-options",
     },
     ResourceDescriptor {
         id: 381,
-        name: "uuid-pointer",
+        name: "startupdate-pointer",
     },
     ResourceDescriptor {
         id: 382,
-        name: "value",
+        name: "state-changer",
     },
     ResourceDescriptor {
         id: 383,
-        name: "verbosityerror-pointer",
+        name: "status-pointer",
     },
     ResourceDescriptor {
         id: 384,
-        name: "version-pointer",
+        name: "status-response-pointer",
     },
     ResourceDescriptor {
         id: 385,
-        name: "viewer-c56b661327c9",
+        name: "statusping-pointer",
     },
     ResourceDescriptor {
         id: 386,
-        name: "viewer-eecb8223a5fe",
+        name: "stopsoundpacket-pointer",
     },
     ResourceDescriptor {
         id: 387,
-        name: "viewer-f8624c46fe61",
+        name: "strategy-manager",
     },
     ResourceDescriptor {
         id: 388,
-        name: "viper",
+        name: "string-reader-pointer",
     },
     ResourceDescriptor {
         id: 389,
-        name: "writer-38b5996d575b",
+        name: "subject",
     },
     ResourceDescriptor {
         id: 390,
+        name: "subtitle-pointer",
+    },
+    ResourceDescriptor {
+        id: 391,
+        name: "suggest-func",
+    },
+    ResourceDescriptor {
+        id: 392,
+        name: "suggestion-context-pointer",
+    },
+    ResourceDescriptor {
+        id: 393,
+        name: "suggestions-builder-pointer",
+    },
+    ResourceDescriptor {
+        id: 394,
+        name: "suggestions-pointer",
+    },
+    ResourceDescriptor {
+        id: 395,
+        name: "systemchat-pointer",
+    },
+    ResourceDescriptor {
+        id: 396,
+        name: "tab-complete-event",
+    },
+    ResourceDescriptor {
+        id: 397,
+        name: "tab-complete-event-handler",
+    },
+    ResourceDescriptor {
+        id: 398,
+        name: "tab-list",
+    },
+    ResourceDescriptor {
+        id: 399,
+        name: "tabcompleterequest-pointer",
+    },
+    ResourceDescriptor {
+        id: 400,
+        name: "tabcompleteresponse-pointer",
+    },
+    ResourceDescriptor {
+        id: 401,
+        name: "tag",
+    },
+    ResourceDescriptor {
+        id: 402,
+        name: "tagsupdate-pointer",
+    },
+    ResourceDescriptor {
+        id: 403,
+        name: "text-component-pointer",
+    },
+    ResourceDescriptor {
+        id: 404,
+        name: "text-pointer-803fc01755ae",
+    },
+    ResourceDescriptor {
+        id: 405,
+        name: "text-pointer-d07344de8f54",
+    },
+    ResourceDescriptor {
+        id: 406,
+        name: "time-pointer",
+    },
+    ResourceDescriptor {
+        id: 407,
+        name: "times-pointer",
+    },
+    ResourceDescriptor {
+        id: 408,
+        name: "transfer-pointer",
+    },
+    ResourceDescriptor {
+        id: 409,
+        name: "tunnel-listener-272a61c33ee5",
+    },
+    ResourceDescriptor {
+        id: 410,
+        name: "tunnel-listener-7a63eaef28a0",
+    },
+    ResourceDescriptor {
+        id: 411,
+        name: "tunnel-session",
+    },
+    ResourceDescriptor {
+        id: 412,
+        name: "uint32",
+    },
+    ResourceDescriptor {
+        id: 413,
+        name: "unsignedplayercommand-pointer",
+    },
+    ResourceDescriptor {
+        id: 414,
+        name: "upsert-action",
+    },
+    ResourceDescriptor {
+        id: 415,
+        name: "upsert-pointer",
+    },
+    ResourceDescriptor {
+        id: 416,
+        name: "url-pointer-0703e7cbaa23",
+    },
+    ResourceDescriptor {
+        id: 417,
+        name: "url-pointer-b3d2755ffd42",
+    },
+    ResourceDescriptor {
+        id: 418,
+        name: "userinfo",
+    },
+    ResourceDescriptor {
+        id: 419,
+        name: "uuid-pointer",
+    },
+    ResourceDescriptor {
+        id: 420,
+        name: "value",
+    },
+    ResourceDescriptor {
+        id: 421,
+        name: "verbosityerror-pointer",
+    },
+    ResourceDescriptor {
+        id: 422,
+        name: "version-pointer",
+    },
+    ResourceDescriptor {
+        id: 423,
+        name: "viewer-c56b661327c9",
+    },
+    ResourceDescriptor {
+        id: 424,
+        name: "viewer-eecb8223a5fe",
+    },
+    ResourceDescriptor {
+        id: 425,
+        name: "viewer-f8624c46fe61",
+    },
+    ResourceDescriptor {
+        id: 426,
+        name: "viper",
+    },
+    ResourceDescriptor {
+        id: 427,
+        name: "writer-38b5996d575b",
+    },
+    ResourceDescriptor {
+        id: 428,
         name: "writer-ecd9b874f7be",
     },
 ];
@@ -17341,6 +18048,234 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
             move |store, representation| T::drop_resource(store, resource, representation),
         )?;
         let resource = &RESOURCE_TYPES[389];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[390];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[391];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[392];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[393];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[394];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[395];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[396];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[397];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[398];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[399];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[400];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[401];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[402];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[403];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[404];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[405];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[406];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[407];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[408];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[409];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[410];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[411];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[412];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[413];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[414];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[415];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[416];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[417];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[418];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[419];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[420];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[421];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[422];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[423];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[424];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[425];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[426];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[427];
         instance.resource(
             resource.name,
             ResourceType::host_dynamic(resource.id),
@@ -27128,14 +28063,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!(
-            "minekube:gate/",
-            "pkg-edition-java-proxy-bungeecord",
-            "@0.1.0",
-        );
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1366];
         instance.func_new(
             operation.name,
@@ -27381,10 +28308,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-crypto", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1401];
         instance.func_new(
             operation.name,
@@ -27399,6 +28322,14 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!(
+            "minekube:gate/",
+            "pkg-edition-java-proxy-bungeecord",
+            "@0.1.0",
+        );
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1403];
         instance.func_new(
             operation.name,
@@ -27630,14 +28561,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!(
-            "minekube:gate/",
-            "pkg-edition-java-proxy-crypto-keyrevision",
-            "@0.1.0",
-        );
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1436];
         instance.func_new(
             operation.name,
@@ -27652,6 +28575,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-crypto", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1438];
         instance.func_new(
             operation.name,
@@ -27701,10 +28628,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-message", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1445];
         instance.func_new(
             operation.name,
@@ -27894,10 +28817,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-phase", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1472];
         instance.func_new(
             operation.name,
@@ -27905,6 +28824,14 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!(
+            "minekube:gate/",
+            "pkg-edition-java-proxy-crypto-keyrevision",
+            "@0.1.0",
+        );
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1473];
         instance.func_new(
             operation.name,
@@ -27968,6 +28895,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-message", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1482];
         instance.func_new(
             operation.name,
@@ -28157,6 +29088,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-phase", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1509];
         instance.func_new(
             operation.name,
@@ -28353,10 +29288,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-player", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1537];
         instance.func_new(
             operation.name,
@@ -28567,10 +29498,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-tablist", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1567];
         instance.func_new(
             operation.name,
@@ -28620,6 +29547,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-player", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1574];
         instance.func_new(
             operation.name,
@@ -28760,10 +29691,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-sound", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1594];
         instance.func_new(
             operation.name,
@@ -28834,6 +29761,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-proxy-tablist", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1604];
         instance.func_new(
             operation.name,
@@ -29009,10 +29940,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-edition-java-title", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1629];
         instance.func_new(
             operation.name,
@@ -29027,6 +29954,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-sound", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1631];
         instance.func_new(
             operation.name,
@@ -29090,10 +30021,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-gate", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1640];
         instance.func_new(
             operation.name,
@@ -29178,10 +30105,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-gate-config", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1652];
         instance.func_new(
             operation.name,
@@ -29203,10 +30126,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-gate-proto", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1655];
         instance.func_new(
             operation.name,
@@ -29284,6 +30203,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-edition-java-title", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1666];
         instance.func_new(
             operation.name,
@@ -29361,6 +30284,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-gate", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1677];
         instance.func_new(
             operation.name,
@@ -29445,6 +30372,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-gate-config", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1689];
         instance.func_new(
             operation.name,
@@ -29466,6 +30397,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-gate-proto", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1692];
         instance.func_new(
             operation.name,
@@ -29662,10 +30597,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-runtime-process", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1720];
         instance.func_new(
             operation.name,
@@ -29708,10 +30639,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-componentutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1726];
         instance.func_new(
             operation.name,
@@ -29726,10 +30653,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-configutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1728];
         instance.func_new(
             operation.name,
@@ -29933,6 +30856,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-runtime-process", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1757];
         instance.func_new(
             operation.name,
@@ -29975,6 +30902,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-componentutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1763];
         instance.func_new(
             operation.name,
@@ -29989,6 +30920,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-configutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1765];
         instance.func_new(
             operation.name,
@@ -30052,10 +30987,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1774];
         instance.func_new(
             operation.name,
@@ -30231,10 +31162,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-config", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1799];
         instance.func_new(
             operation.name,
@@ -30298,10 +31225,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-single", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1808];
         instance.func_new(
             operation.name,
@@ -30325,7 +31248,7 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
         )?;
     }
     {
-        let interface_name = concat!("minekube:gate/", "pkg-util-errs", "@0.1.0",);
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil", "@0.1.0",);
         let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1811];
         instance.func_new(
@@ -30397,10 +31320,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-favicon", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1821];
         instance.func_new(
             operation.name,
@@ -30450,10 +31369,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-interrupt", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1828];
         instance.func_new(
             operation.name,
@@ -30468,10 +31383,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-netutil", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1830];
         instance.func_new(
             operation.name,
@@ -30514,6 +31425,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-config", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1836];
         instance.func_new(
             operation.name,
@@ -30549,10 +31464,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-permission", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1841];
         instance.func_new(
             operation.name,
@@ -30581,6 +31492,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-connectutil-single", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1845];
         instance.func_new(
             operation.name,
@@ -30595,10 +31510,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-sets", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1847];
         instance.func_new(
             operation.name,
@@ -30606,6 +31517,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-errs", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1848];
         instance.func_new(
             operation.name,
@@ -30676,6 +31591,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-favicon", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1858];
         instance.func_new(
             operation.name,
@@ -30697,10 +31616,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-uuid", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1861];
         instance.func_new(
             operation.name,
@@ -30729,6 +31644,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-interrupt", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1865];
         instance.func_new(
             operation.name,
@@ -30743,6 +31662,10 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-netutil", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1867];
         instance.func_new(
             operation.name,
@@ -30778,10 +31701,6 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
                 T::invoke(store, operation, function_type, parameters, results)
             },
         )?;
-    }
-    {
-        let interface_name = concat!("minekube:gate/", "pkg-util-validation", "@0.1.0",);
-        let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1872];
         instance.func_new(
             operation.name,
@@ -30826,7 +31745,7 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
         )?;
     }
     {
-        let interface_name = concat!("minekube:gate/", "pkg-version", "@0.1.0",);
+        let interface_name = concat!("minekube:gate/", "pkg-util-permission", "@0.1.0",);
         let mut instance = linker.instance(interface_name)?;
         let operation = &OPERATIONS[1878];
         instance.func_new(
@@ -30857,6 +31776,281 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
             },
         )?;
         let operation = &OPERATIONS[1882];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1883];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-sets", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
+        let operation = &OPERATIONS[1884];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1885];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1886];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1887];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1888];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1889];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1890];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1891];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1892];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1893];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1894];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1895];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1896];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1897];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-uuid", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
+        let operation = &OPERATIONS[1898];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1899];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1900];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1901];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1902];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1903];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1904];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1905];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1906];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1907];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1908];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-util-validation", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
+        let operation = &OPERATIONS[1909];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1910];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1911];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1912];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1913];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1914];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+    }
+    {
+        let interface_name = concat!("minekube:gate/", "pkg-version", "@0.1.0",);
+        let mut instance = linker.instance(interface_name)?;
+        let operation = &OPERATIONS[1915];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1916];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1917];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1918];
+        instance.func_new(
+            operation.name,
+            move |store, function_type, parameters, results| {
+                T::invoke(store, operation, function_type, parameters, results)
+            },
+        )?;
+        let operation = &OPERATIONS[1919];
         instance.func_new(
             operation.name,
             move |store, function_type, parameters, results| {
@@ -31281,6 +32475,672 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
             },
         )?;
         let callback = &CALLBACKS[23];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[24];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[25];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[26];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[27];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[28];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[29];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[30];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[31];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[32];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[33];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[34];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[35];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[36];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[37];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[38];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[39];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[40];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[41];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[42];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[43];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[44];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[45];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[46];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[47];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[48];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[49];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[50];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[51];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[52];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[53];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[54];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[55];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[56];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[57];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[58];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[59];
+        instance.func_new(
+            callback.new_name,
+            move |store, _function_type, parameters, results| {
+                let [Val::U64(guest_id)] = parameters else {
+                    return Err(wasmtime::Error::msg(
+                        "callback constructor expected one u64 ID",
+                    ));
+                };
+                T::register_callback(store, callback, *guest_id, results)
+            },
+        )?;
+        instance.func_new(
+            callback.call_name,
+            move |store, function_type, parameters, results| {
+                T::call_callback(store, callback, function_type, parameters, results)
+            },
+        )?;
+        let callback = &CALLBACKS[60];
         instance.func_new(
             callback.new_name,
             move |store, _function_type, parameters, results| {

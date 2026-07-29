@@ -102,63 +102,285 @@ var GeneratedCallbacks = [...]GeneratedCallbackDescriptor{
 	},
 	{
 		ID:              15,
-		Identity:        "go.minekube.com/brigodier.CommandFunc",
-		WITName:         "command-func",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent#wasm-handler",
+		WITName:         "command-execute-event-handler",
 		CallOperationID: 2147483663,
 	},
 	{
 		ID:              16,
-		Identity:        "go.minekube.com/gate/pkg/util/permission.Func",
-		WITName:         "gate-func",
+		Identity:        "go.minekube.com/brigodier.CommandFunc",
+		WITName:         "command-func",
 		CallOperationID: 2147483664,
 	},
 	{
 		ID:              17,
-		Identity:        "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn",
-		WITName:         "has-joined-url-fn",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent#wasm-handler",
+		WITName:         "connection-event-handler",
 		CallOperationID: 2147483665,
 	},
 	{
 		ID:              18,
-		Identity:        "go.minekube.com/gate/pkg/gate.LoadConfigFunc",
-		WITName:         "load-config-func",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent#wasm-handler",
+		WITName:         "connection-handshake-event-handler",
 		CallOperationID: 2147483666,
 	},
 	{
 		ID:              19,
-		Identity:        "go.minekube.com/gate/pkg/runtime/process.RunnableFunc",
-		WITName:         "runnable-func",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent#wasm-handler",
+		WITName:         "cookie-receive-event-handler",
 		CallOperationID: 2147483667,
 	},
 	{
 		ID:              20,
-		Identity:        "iter.Seq[reflect.Method]",
-		WITName:         "seq-4454e9c05542",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent#wasm-handler",
+		WITName:         "cookie-request-event-handler",
 		CallOperationID: 2147483668,
 	},
 	{
 		ID:              21,
-		Identity:        "iter.Seq[reflect.Type]",
-		WITName:         "seq-56a88aa8d577",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent#wasm-handler",
+		WITName:         "cookie-store-event-handler",
 		CallOperationID: 2147483669,
 	},
 	{
 		ID:              22,
-		Identity:        "iter.Seq[reflect.StructField]",
-		WITName:         "seq-b074101856aa",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent#wasm-handler",
+		WITName:         "disconnect-event-handler",
 		CallOperationID: 2147483670,
 	},
 	{
 		ID:              23,
-		Identity:        "go.minekube.com/gate/pkg/gate.StartOption",
-		WITName:         "start-option",
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent#wasm-handler",
+		WITName:         "game-profile-request-event-handler",
 		CallOperationID: 2147483671,
 	},
 	{
 		ID:              24,
+		Identity:        "go.minekube.com/gate/pkg/util/permission.Func",
+		WITName:         "gate-func",
+		CallOperationID: 2147483672,
+	},
+	{
+		ID:              25,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn",
+		WITName:         "has-joined-url-fn",
+		CallOperationID: 2147483673,
+	},
+	{
+		ID:              26,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent#wasm-handler",
+		WITName:         "kicked-from-server-event-handler",
+		CallOperationID: 2147483674,
+	},
+	{
+		ID:              27,
+		Identity:        "go.minekube.com/gate/pkg/gate.LoadConfigFunc",
+		WITName:         "load-config-func",
+		CallOperationID: 2147483675,
+	},
+	{
+		ID:              28,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent#wasm-handler",
+		WITName:         "login-event-handler",
+		CallOperationID: 2147483676,
+	},
+	{
+		ID:              29,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent#wasm-handler",
+		WITName:         "permissions-setup-event-handler",
+		CallOperationID: 2147483677,
+	},
+	{
+		ID:              30,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent#wasm-handler",
+		WITName:         "ping-event-handler",
+		CallOperationID: 2147483678,
+	},
+	{
+		ID:              31,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent#wasm-handler",
+		WITName:         "player-available-commands-event-handler",
+		CallOperationID: 2147483679,
+	},
+	{
+		ID:              32,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent#wasm-handler",
+		WITName:         "player-channel-register-event-handler",
+		CallOperationID: 2147483680,
+	},
+	{
+		ID:              33,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent#wasm-handler",
+		WITName:         "player-channel-unregister-event-handler",
+		CallOperationID: 2147483681,
+	},
+	{
+		ID:              34,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent#wasm-handler",
+		WITName:         "player-chat-event-handler",
+		CallOperationID: 2147483682,
+	},
+	{
+		ID:              35,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent#wasm-handler",
+		WITName:         "player-choose-initial-server-event-handler",
+		CallOperationID: 2147483683,
+	},
+	{
+		ID:              36,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent#wasm-handler",
+		WITName:         "player-client-brand-event-handler",
+		CallOperationID: 2147483684,
+	},
+	{
+		ID:              37,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent#wasm-handler",
+		WITName:         "player-mod-info-event-handler",
+		CallOperationID: 2147483685,
+	},
+	{
+		ID:              38,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerResourcePackStatusEvent#wasm-handler",
+		WITName:         "player-resource-pack-status-event-handler",
+		CallOperationID: 2147483686,
+	},
+	{
+		ID:              39,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent#wasm-handler",
+		WITName:         "player-settings-changed-event-handler",
+		CallOperationID: 2147483687,
+	},
+	{
+		ID:              40,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent#wasm-handler",
+		WITName:         "plugin-message-event-handler",
+		CallOperationID: 2147483688,
+	},
+	{
+		ID:              41,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent#wasm-handler",
+		WITName:         "post-login-event-handler",
+		CallOperationID: 2147483689,
+	},
+	{
+		ID:              42,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent#wasm-handler",
+		WITName:         "pre-login-event-handler",
+		CallOperationID: 2147483690,
+	},
+	{
+		ID:              43,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent#wasm-handler",
+		WITName:         "pre-shutdown-event-handler",
+		CallOperationID: 2147483691,
+	},
+	{
+		ID:              44,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent#wasm-handler",
+		WITName:         "pre-transfer-event-handler",
+		CallOperationID: 2147483692,
+	},
+	{
+		ID:              45,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent#wasm-handler",
+		WITName:         "ready-event-handler",
+		CallOperationID: 2147483693,
+	},
+	{
+		ID:              46,
+		Identity:        "go.minekube.com/gate/pkg/runtime/process.RunnableFunc",
+		WITName:         "runnable-func",
+		CallOperationID: 2147483694,
+	},
+	{
+		ID:              47,
+		Identity:        "iter.Seq[reflect.Method]",
+		WITName:         "seq-4454e9c05542",
+		CallOperationID: 2147483695,
+	},
+	{
+		ID:              48,
+		Identity:        "iter.Seq[reflect.Type]",
+		WITName:         "seq-56a88aa8d577",
+		CallOperationID: 2147483696,
+	},
+	{
+		ID:              49,
+		Identity:        "iter.Seq[reflect.StructField]",
+		WITName:         "seq-b074101856aa",
+		CallOperationID: 2147483697,
+	},
+	{
+		ID:              50,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent#wasm-handler",
+		WITName:         "server-connected-event-handler",
+		CallOperationID: 2147483698,
+	},
+	{
+		ID:              51,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent#wasm-handler",
+		WITName:         "server-login-plugin-message-event-handler",
+		CallOperationID: 2147483699,
+	},
+	{
+		ID:              52,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent#wasm-handler",
+		WITName:         "server-post-connect-event-handler",
+		CallOperationID: 2147483700,
+	},
+	{
+		ID:              53,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-handler",
+		WITName:         "server-pre-connect-event-handler",
+		CallOperationID: 2147483701,
+	},
+	{
+		ID:              54,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent#wasm-handler",
+		WITName:         "server-registered-event-handler",
+		CallOperationID: 2147483702,
+	},
+	{
+		ID:              55,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent#wasm-handler",
+		WITName:         "server-resource-pack-remove-event-handler",
+		CallOperationID: 2147483703,
+	},
+	{
+		ID:              56,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent#wasm-handler",
+		WITName:         "server-resource-pack-send-event-handler",
+		CallOperationID: 2147483704,
+	},
+	{
+		ID:              57,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent#wasm-handler",
+		WITName:         "server-unregistered-event-handler",
+		CallOperationID: 2147483705,
+	},
+	{
+		ID:              58,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.ShutdownEvent#wasm-handler",
+		WITName:         "shutdown-event-handler",
+		CallOperationID: 2147483706,
+	},
+	{
+		ID:              59,
+		Identity:        "go.minekube.com/gate/pkg/gate.StartOption",
+		WITName:         "start-option",
+		CallOperationID: 2147483707,
+	},
+	{
+		ID:              60,
 		Identity:        "go.minekube.com/gate/pkg/command.SuggestFunc",
 		WITName:         "suggest-func",
-		CallOperationID: 2147483672,
+		CallOperationID: 2147483708,
+	},
+	{
+		ID:              61,
+		Identity:        "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent#wasm-handler",
+		WITName:         "tab-complete-event-handler",
+		CallOperationID: 2147483709,
 	},
 }
 
@@ -263,71 +485,330 @@ func RegisterGeneratedCallbacks(host *dispatch.Host) error {
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483663,
-		Identity: "go.minekube.com/brigodier.CommandFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0015,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483664,
-		Identity: "go.minekube.com/gate/pkg/util/permission.Func#call",
+		Identity: "go.minekube.com/brigodier.CommandFunc#call",
 		Handler:  generatedCallbackDispatch0016,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483665,
-		Identity: "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0017,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483666,
-		Identity: "go.minekube.com/gate/pkg/gate.LoadConfigFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0018,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483667,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0019,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483668,
-		Identity: "iter.Seq[reflect.Method]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0020,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483669,
-		Identity: "iter.Seq[reflect.Type]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0021,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483670,
-		Identity: "iter.Seq[reflect.StructField]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0022,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483671,
-		Identity: "go.minekube.com/gate/pkg/gate.StartOption#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent#wasm-handler#call",
 		Handler:  generatedCallbackDispatch0023,
 	}); err != nil {
 		return err
 	}
 	if err := host.Register(dispatch.Operation{
 		ID:       2147483672,
-		Identity: "go.minekube.com/gate/pkg/command.SuggestFunc#call",
+		Identity: "go.minekube.com/gate/pkg/util/permission.Func#call",
 		Handler:  generatedCallbackDispatch0024,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483673,
+		Identity: "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn#call",
+		Handler:  generatedCallbackDispatch0025,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483674,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0026,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483675,
+		Identity: "go.minekube.com/gate/pkg/gate.LoadConfigFunc#call",
+		Handler:  generatedCallbackDispatch0027,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483676,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0028,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483677,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0029,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483678,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0030,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483679,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0031,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483680,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0032,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483681,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0033,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483682,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0034,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483683,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0035,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483684,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0036,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483685,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0037,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483686,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerResourcePackStatusEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0038,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483687,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0039,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483688,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0040,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483689,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0041,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483690,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0042,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483691,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0043,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483692,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0044,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483693,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0045,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483694,
+		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc#call",
+		Handler:  generatedCallbackDispatch0046,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483695,
+		Identity: "iter.Seq[reflect.Method]#call",
+		Handler:  generatedCallbackDispatch0047,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483696,
+		Identity: "iter.Seq[reflect.Type]#call",
+		Handler:  generatedCallbackDispatch0048,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483697,
+		Identity: "iter.Seq[reflect.StructField]#call",
+		Handler:  generatedCallbackDispatch0049,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483698,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0050,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483699,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0051,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483700,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0052,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483701,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0053,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483702,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0054,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483703,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0055,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483704,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0056,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483705,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0057,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483706,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ShutdownEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0058,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483707,
+		Identity: "go.minekube.com/gate/pkg/gate.StartOption#call",
+		Handler:  generatedCallbackDispatch0059,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483708,
+		Identity: "go.minekube.com/gate/pkg/command.SuggestFunc#call",
+		Handler:  generatedCallbackDispatch0060,
+	}); err != nil {
+		return err
+	}
+	if err := host.Register(dispatch.Operation{
+		ID:       2147483709,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent#wasm-handler#call",
+		Handler:  generatedCallbackDispatch0061,
 	}); err != nil {
 		return err
 	}
@@ -435,69 +916,328 @@ func generatedCallbackDispatch0014(ctx context.Context, host *dispatch.Host, arg
 func generatedCallbackDispatch0015(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483663,
-		Identity: "go.minekube.com/brigodier.CommandFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CommandExecuteEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0016(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483664,
-		Identity: "go.minekube.com/gate/pkg/util/permission.Func#call",
+		Identity: "go.minekube.com/brigodier.CommandFunc#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0017(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483665,
-		Identity: "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0018(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483666,
-		Identity: "go.minekube.com/gate/pkg/gate.LoadConfigFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ConnectionHandshakeEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0019(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483667,
-		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieReceiveEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0020(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483668,
-		Identity: "iter.Seq[reflect.Method]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieRequestEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0021(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483669,
-		Identity: "iter.Seq[reflect.Type]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.CookieStoreEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0022(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483670,
-		Identity: "iter.Seq[reflect.StructField]#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.DisconnectEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0023(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483671,
-		Identity: "go.minekube.com/gate/pkg/gate.StartOption#call",
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.GameProfileRequestEvent#wasm-handler#call",
 	}, arguments)
 }
 
 func generatedCallbackDispatch0024(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
 	return host.CallResource(ctx, dispatch.Operation{
 		ID:       2147483672,
+		Identity: "go.minekube.com/gate/pkg/util/permission.Func#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0025(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483673,
+		Identity: "go.minekube.com/gate/pkg/edition/java/auth.HasJoinedURLFn#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0026(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483674,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.KickedFromServerEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0027(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483675,
+		Identity: "go.minekube.com/gate/pkg/gate.LoadConfigFunc#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0028(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483676,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.LoginEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0029(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483677,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PermissionsSetupEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0030(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483678,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PingEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0031(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483679,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerAvailableCommandsEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0032(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483680,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelRegisterEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0033(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483681,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChannelUnregisterEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0034(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483682,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChatEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0035(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483683,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerChooseInitialServerEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0036(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483684,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerClientBrandEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0037(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483685,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerModInfoEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0038(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483686,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerResourcePackStatusEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0039(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483687,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PlayerSettingsChangedEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0040(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483688,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PluginMessageEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0041(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483689,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PostLoginEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0042(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483690,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreLoginEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0043(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483691,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreShutdownEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0044(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483692,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.PreTransferEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0045(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483693,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ReadyEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0046(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483694,
+		Identity: "go.minekube.com/gate/pkg/runtime/process.RunnableFunc#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0047(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483695,
+		Identity: "iter.Seq[reflect.Method]#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0048(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483696,
+		Identity: "iter.Seq[reflect.Type]#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0049(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483697,
+		Identity: "iter.Seq[reflect.StructField]#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0050(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483698,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerConnectedEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0051(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483699,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerLoginPluginMessageEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0052(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483700,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPostConnectEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0053(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483701,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0054(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483702,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerRegisteredEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0055(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483703,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackRemoveEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0056(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483704,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerResourcePackSendEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0057(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483705,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ServerUnregisteredEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0058(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483706,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.ShutdownEvent#wasm-handler#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0059(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483707,
+		Identity: "go.minekube.com/gate/pkg/gate.StartOption#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0060(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483708,
 		Identity: "go.minekube.com/gate/pkg/command.SuggestFunc#call",
+	}, arguments)
+}
+
+func generatedCallbackDispatch0061(ctx context.Context, host *dispatch.Host, arguments []any) ([]any, error) {
+	return host.CallResource(ctx, dispatch.Operation{
+		ID:       2147483709,
+		Identity: "go.minekube.com/gate/pkg/edition/java/proxy.TabCompleteEvent#wasm-handler#call",
 	}, arguments)
 }

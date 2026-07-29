@@ -6,7 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 	"sync"
+
+	"github.com/robinbraemer/event"
 
 	"go.minekube.com/gate/internal/wasm/api"
 	"go.minekube.com/gate/internal/wasm/runtime/dispatch"
@@ -28,6 +32,8 @@ type Host struct {
 	dispatch       *dispatch.Host
 	callbackRoot   native.CallbackInvoker
 	callbackActive native.CallbackInvoker
+	eventManager   event.Manager
+	subscriptions  []func()
 	contextHandle  resources.Handle
 	proxyHandle    resources.Handle
 }
@@ -46,9 +52,10 @@ func New(
 	}
 	table := resources.NewTable(plugin, resourceCapacity)
 	host := &Host{
-		context:  ctx,
-		table:    table,
-		dispatch: dispatch.NewHost(table),
+		context:      ctx,
+		table:        table,
+		dispatch:     dispatch.NewHost(table),
+		eventManager: gateProxy.Event(),
 	}
 	var err error
 	host.contextHandle, err = table.Insert(
@@ -78,6 +85,10 @@ func New(
 	if err := api.RegisterGeneratedCallbacks(host.dispatch); err != nil {
 		_ = host.Close()
 		return nil, fmt.Errorf("register generated Gate callbacks: %w", err)
+	}
+	if err := host.dispatch.SetExtension(host.invokeExtension); err != nil {
+		_ = host.Close()
+		return nil, fmt.Errorf("register Gate wasm runtime extensions: %w", err)
 	}
 	return host, nil
 }
@@ -226,7 +237,80 @@ func (host *Host) Close() error {
 	if host == nil || host.dispatch == nil {
 		return nil
 	}
+	host.mu.Lock()
+	subscriptions := host.subscriptions
+	host.subscriptions = nil
+	host.mu.Unlock()
+	for index := len(subscriptions) - 1; index >= 0; index-- {
+		subscriptions[index]()
+	}
 	return host.dispatch.Close()
+}
+
+func (host *Host) invokeExtension(
+	_ context.Context,
+	operation dispatch.Operation,
+	arguments []any,
+) ([]any, error) {
+	if !strings.HasSuffix(operation.Identity, "#wasm-subscribe") {
+		return nil, fmt.Errorf("unknown wasm runtime extension %s", operation.Identity)
+	}
+	if len(arguments) != 2 {
+		return nil, host.dispatch.ArgumentCount(operation, len(arguments), 2)
+	}
+	priority, ok := arguments[0].(int)
+	if !ok {
+		return nil, fmt.Errorf("event subscription priority has type %T", arguments[0])
+	}
+	handler := reflect.ValueOf(arguments[1])
+	if !handler.IsValid() || handler.Kind() != reflect.Func ||
+		handler.Type().NumIn() != 1 ||
+		handler.Type().NumOut() != 1 ||
+		!handler.Type().Out(0).Implements(reflect.TypeFor[error]()) {
+		return nil, fmt.Errorf("event subscription handler has invalid type %T", arguments[1])
+	}
+	eventType := handler.Type().In(0)
+	if eventType.Kind() != reflect.Pointer {
+		return nil, fmt.Errorf("event subscription requires a pointer event, got %s", eventType)
+	}
+	var once sync.Once
+	unsubscribe := host.eventManager.Subscribe(
+		reflect.Zero(eventType).Interface(),
+		priority,
+		func(fired event.Event) {
+			transaction, commit, ok := eventTransaction(fired, eventType)
+			if !ok {
+				return
+			}
+			returned := handler.Call([]reflect.Value{transaction})
+			if returned[0].IsNil() {
+				commit()
+			}
+		},
+	)
+	trackedUnsubscribe := func() {
+		once.Do(unsubscribe)
+	}
+	host.mu.Lock()
+	host.subscriptions = append(host.subscriptions, trackedUnsubscribe)
+	host.mu.Unlock()
+	return []any{trackedUnsubscribe}, nil
+}
+
+func eventTransaction(
+	fired event.Event,
+	expected reflect.Type,
+) (transaction reflect.Value, commit func(), ok bool) {
+	original := reflect.ValueOf(fired)
+	if !original.IsValid() || !original.Type().AssignableTo(expected) ||
+		original.Kind() != reflect.Pointer || original.IsNil() {
+		return reflect.Value{}, nil, false
+	}
+	copy := reflect.New(original.Elem().Type())
+	copy.Elem().Set(original.Elem())
+	return copy, func() {
+		original.Elem().Set(copy.Elem())
+	}, true
 }
 
 func encodeDispatchError(operationID uint32, err error) ([]byte, error) {

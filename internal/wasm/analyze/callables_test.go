@@ -167,6 +167,20 @@ func TestAnalyzeGateRepositoryHasCompleteCoverage(t *testing.T) {
 		"go.minekube.com/gate/pkg/edition/java/proxy.Plugin",
 		"go.minekube.com/gate/pkg/edition/java/proxy.Plugins",
 	}, excluded)
+
+	subscription := findCanonicalDeclaration(
+		t,
+		api,
+		"go.minekube.com/gate/pkg/edition/java/proxy.ServerPreConnectEvent#wasm-subscribe",
+	)
+	require.NotNil(t, subscription.Callable)
+	require.Len(t, subscription.Callable.Parameters, 2)
+	require.Equal(t, model.TypeCallback, subscription.Callable.Parameters[1].Type.Kind)
+	require.Equal(
+		t,
+		model.LifetimeBorrowedEvent,
+		subscription.Callable.Parameters[1].Type.Callback.Callable.Parameters[0].Type.Lifetime,
+	)
 }
 
 func findCanonicalDeclaration(

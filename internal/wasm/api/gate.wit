@@ -449,6 +449,8 @@ interface gate-types {
   /// CommandExecuteEvent is fired when someone wants to execute a command.
   resource command-execute-event;
 
+  resource command-execute-event-handler;
+
   resource command-func;
 
   resource command-node;
@@ -584,9 +586,13 @@ interface gate-types {
   /// ConnectionEventConn tracks whether Close was called on the connection.
   resource connection-event-conn;
 
+  resource connection-event-handler;
+
   /// ConnectionHandshakeEvent is fired when a handshake
   /// is established between a client and the proxy.
   resource connection-handshake-event;
+
+  resource connection-handshake-event-handler;
 
   /// ConnectionRequest can send a connection request to another server on the proxy.
   /// A connection request is created using Player.CreateConnectionRequest(RegisteredServer).
@@ -629,6 +635,8 @@ interface gate-types {
   /// cookie request (if handled) or forwarding it to the client.
   resource cookie-receive-event;
 
+  resource cookie-receive-event-handler;
+
   record cookie-request {
     key: option<own<key>>,
   }
@@ -637,6 +645,8 @@ interface gate-types {
   /// by a backend server. Gate will wait on this event to finish firing before discarding the
   /// cookie request (if handled) or forwarding it to the client.
   resource cookie-request-event;
+
+  resource cookie-request-event-handler;
 
   record cookie-response {
     key: option<own<key>>,
@@ -653,6 +663,8 @@ interface gate-types {
   /// to finish firing before discarding the cookie (if handled) or forwarding it to the client so
   /// that it can store the cookie.
   resource cookie-store-event;
+
+  resource cookie-store-event-handler;
 
   resource cookierequest-pointer;
 
@@ -727,6 +739,8 @@ interface gate-types {
   }
 
   resource disconnect-event;
+
+  resource disconnect-event-handler;
 
   /// DisconnectPlayerKickResult is a ServerKickResult and
   /// tells the proxy to disconnect the player with the specified reason.
@@ -882,6 +896,8 @@ interface gate-types {
   /// order to set up the game profile for the user.
   /// This can be used to configure a custom profile for a user, i.e. skin replacement.
   resource game-profile-request-event;
+
+  resource game-profile-request-event-handler;
 
   /// Gate is the root holder of various child processes.
   resource gate;
@@ -1082,6 +1098,8 @@ interface gate-types {
   /// (if they are not on a server and no other servers are available).
   resource kicked-from-server-event;
 
+  resource kicked-from-server-event-handler;
+
   type kind = u64;
 
   record known-pack {
@@ -1162,6 +1180,8 @@ interface gate-types {
   }
 
   resource login-event;
+
+  resource login-event-handler;
 
   /// LoginPhaseConnection allows the server to communicate with a
   /// client logging into the proxy using login plugin messages.
@@ -1518,12 +1538,16 @@ interface gate-types {
   /// permissions are being initialized.
   resource permissions-setup-event;
 
+  resource permissions-setup-event-handler;
+
   /// PingEvent is fired when a request for server information is sent by a remote client,
   /// or when the server sends the MOTD and favicon to the client after a successful login.
   /// The proxy will wait on this event to finish firing before delivering the results to
   /// the remote client, but you are urged to handle this event as quickly as possible when
   /// handling this event due to the amount of ping packets a client can send.
   resource ping-event;
+
+  resource ping-event-handler;
 
   record ping-identify {
     id: s64,
@@ -1548,6 +1572,8 @@ interface gate-types {
   /// indicating commands available on the server to a Minecraft 1.13+ client.
   resource player-available-commands-event;
 
+  resource player-available-commands-event-handler;
+
   /// Dependencies required by NewMessageResponder.
   resource player-b186caed0db5;
 
@@ -1563,9 +1589,13 @@ interface gate-types {
   /// register channel. The proxy will not wait on this event to finish firing.
   resource player-channel-register-event;
 
+  resource player-channel-register-event-handler;
+
   /// PlayerChannelUnregisterEvent is fired when a client Player sends a plugin message through the
   /// unregister channel. The proxy will not wait on this event to finish firing.
   resource player-channel-unregister-event;
+
+  resource player-channel-unregister-event-handler;
 
   record player-chat-completion {
     completions: option<list<string>>,
@@ -1576,6 +1606,8 @@ interface gate-types {
   /// Note that messages with a leading "/" do not trigger this event, but instead CommandExecuteEvent.
   resource player-chat-event;
 
+  resource player-chat-event-handler;
+
   /// PlayerChooseInitialServerEvent is fired when a player has finished the login process,
   /// and we need to choose the first server to connect to.
   /// The proxy will wait on this event to finish firing before initiating the connection
@@ -1583,9 +1615,13 @@ interface gate-types {
   /// Failures will be handled by KickedFromServerEvent as normal.
   resource player-choose-initial-server-event;
 
+  resource player-choose-initial-server-event-handler;
+
   /// PlayerClientBrandEvent is fired when a Player sends the `minecraft:brand` plugin message.
   /// The proxy will not wait on event handlers to finish firing.
   resource player-client-brand-event;
+
+  resource player-client-brand-event-handler;
 
   record player-list-item {
     action: player-list-item-action,
@@ -1609,6 +1645,8 @@ interface gate-types {
   /// mods to the proxy while connecting to a server.
   resource player-mod-info-event;
 
+  resource player-mod-info-event-handler;
+
   /// PlayerProvider provides a player by its name.
   resource player-provider;
 
@@ -1619,7 +1657,11 @@ interface gate-types {
 
   resource player-resource-pack-status-event-7973bc9f95c2;
 
+  resource player-resource-pack-status-event-handler;
+
   resource player-settings-changed-event;
+
+  resource player-settings-changed-event-handler;
 
   resource playerchatcompletion-pointer;
 
@@ -1640,12 +1682,18 @@ interface gate-types {
   /// either from a player or a server backend server.
   resource plugin-message-event;
 
+  resource plugin-message-event-handler;
+
   resource post-login-event;
+
+  resource post-login-event-handler;
 
   /// PreLoginEvent is fired when a player has initiated a connection with the proxy
   /// but before the proxy authenticates the player with Mojang or before the player's proxy connection
   /// is fully established (for offline mode).
   resource pre-login-event;
+
+  resource pre-login-event-handler;
 
   /// PreLoginResult is the result of a PreLoginEvent.
   type pre-login-result = u8;
@@ -1657,9 +1705,13 @@ interface gate-types {
   /// The proxy will wait for all event listeners to complete before disconnecting players.
   resource pre-shutdown-event;
 
+  resource pre-shutdown-event-handler;
+
   /// PreTransferEvent is fired before a player is transferred to another host,
   /// either by the backend server or by a plugin using the Player.TransferTo method.
   resource pre-transfer-event;
+
+  resource pre-transfer-event-handler;
 
   resource prefix;
 
@@ -1741,6 +1793,8 @@ interface gate-types {
   /// initialized and is ready to serve connections.
   /// May be triggered multiple times on config reloads.
   resource ready-event;
+
+  resource ready-event-handler;
 
   /// RedirectPlayerKickResult is a ServerKickResult and
   /// tells the proxy to redirect the player to another server.
@@ -1927,6 +1981,8 @@ interface gate-types {
   /// listen for ServerPostConnectEvent instead.
   resource server-connected-event;
 
+  resource server-connected-event-handler;
+
   /// ServerConnection represents a server connection for a player.
   resource server-connection-0c07c252c79d;
 
@@ -1980,6 +2036,8 @@ interface gate-types {
   /// is satisfied with any login plugin responses sent by proxy plugins (or messages indicating a lack of response).
   resource server-login-plugin-message-event;
 
+  resource server-login-plugin-message-event-handler;
+
   record server-login-plugin-message-result {
     response: option<list<u8>>,
   }
@@ -2008,8 +2066,12 @@ interface gate-types {
   /// The server the player is now connected to is available in Player().CurrentServer().
   resource server-post-connect-event;
 
+  resource server-post-connect-event-handler;
+
   /// ServerPreConnectEvent is fired before the player connects to a server.
   resource server-pre-connect-event;
+
+  resource server-pre-connect-event-handler;
 
   /// ServerProvider provides servers.
   resource server-provider;
@@ -2017,6 +2079,8 @@ interface gate-types {
   /// ServerRegisteredEvent is fired when a backend server is registered with the proxy.
   /// This allows plugins to react to dynamically added servers and perform necessary setup.
   resource server-registered-event;
+
+  resource server-registered-event-handler;
 
   /// ServerRegistrar is used to register servers.
   resource server-registrar;
@@ -2031,15 +2095,21 @@ interface gate-types {
   /// resource pack state unchanged.
   resource server-resource-pack-remove-event;
 
+  resource server-resource-pack-remove-event-handler;
+
   /// ServerResourcePackSendEvent is fired when the downstream server tries to send a player a ResourcePack packet.
   /// The proxy will wait on this event to finish before forwarding the resource pack to the user.
   /// If this event is denied, it will retroactively send a DENIED status to the downstream server in response.
   /// If the downstream server has it set to "forced" it will forcefully disconnect the user.
   resource server-resource-pack-send-event;
 
+  resource server-resource-pack-send-event-handler;
+
   /// ServerUnregisteredEvent is fired when a backend server is unregistered from the proxy.
   /// This allows plugins to react to removed servers and perform necessary cleanup.
   resource server-unregistered-event;
+
+  resource server-unregistered-event-handler;
 
   resource serverdata-pointer;
 
@@ -2111,6 +2181,10 @@ interface gate-types {
   record shutdown-event {
     gate-unit: u8,
   }
+
+  resource shutdown-event-handler;
+
+  resource shutdown-event-pointer;
 
   resource signal;
 
@@ -2320,6 +2394,8 @@ interface gate-types {
   /// for clients on1.12.2 and below. You have the opportunity to modify the response sent
   /// to the remote player.
   resource tab-complete-event;
+
+  resource tab-complete-event-handler;
 
   record tab-complete-offer {
     text: string,
@@ -2534,7 +2610,7 @@ interface gate-types {
 }
 
 interface gate-callbacks {
-  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, callback-0105467f2bef, callback-1178afb46377, callback-1f86eef915ce, callback-2053c44117ea, callback-2c1c5989286b, callback-4e5db8a68395, callback-8ce8588e75ea, callback-9b79f3eb4945, callback-a3de14505458, callback-a5d0afa3c957, callback-bf78377c58d5, callback-d4c80bbf993f, callback-f39d53d38ffd, cancel-func, command-context, command-func, config-pointer-37c11021fd63, context-e30d9213847b, context-pointer, gate-error, gate-func, gate-type, has-joined-url-fn, load-config-func, method, packet, player-9f25ee10b6eb, protocol-e8c68391e5ba, reader-4d25c51b00a6, requires-context-pointer, runnable-func, seq-4454e9c05542, seq-56a88aa8d577, seq-b074101856aa, start-option, start-options, struct-field, struct-tag, suggest-func, suggestions-builder-pointer, suggestions-pointer, tri-state, value, writer-38b5996d575b};
+  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, callback-0105467f2bef, callback-1178afb46377, callback-1f86eef915ce, callback-2053c44117ea, callback-2c1c5989286b, callback-4e5db8a68395, callback-8ce8588e75ea, callback-9b79f3eb4945, callback-a3de14505458, callback-a5d0afa3c957, callback-bf78377c58d5, callback-d4c80bbf993f, callback-f39d53d38ffd, cancel-func, command-context, command-execute-event, command-execute-event-handler, command-func, config-pointer-37c11021fd63, connection-event, connection-event-handler, connection-handshake-event, connection-handshake-event-handler, context-e30d9213847b, context-pointer, cookie-receive-event, cookie-receive-event-handler, cookie-request-event, cookie-request-event-handler, cookie-store-event, cookie-store-event-handler, disconnect-event, disconnect-event-handler, game-profile-request-event, game-profile-request-event-handler, gate-error, gate-func, gate-type, has-joined-url-fn, kicked-from-server-event, kicked-from-server-event-handler, load-config-func, login-event, login-event-handler, method, packet, permissions-setup-event, permissions-setup-event-handler, ping-event, ping-event-handler, player-9f25ee10b6eb, player-available-commands-event, player-available-commands-event-handler, player-channel-register-event, player-channel-register-event-handler, player-channel-unregister-event, player-channel-unregister-event-handler, player-chat-event, player-chat-event-handler, player-choose-initial-server-event, player-choose-initial-server-event-handler, player-client-brand-event, player-client-brand-event-handler, player-mod-info-event, player-mod-info-event-handler, player-resource-pack-status-event-6e0ee0072fce, player-resource-pack-status-event-handler, player-settings-changed-event, player-settings-changed-event-handler, plugin-message-event, plugin-message-event-handler, post-login-event, post-login-event-handler, pre-login-event, pre-login-event-handler, pre-shutdown-event, pre-shutdown-event-handler, pre-transfer-event, pre-transfer-event-handler, protocol-e8c68391e5ba, reader-4d25c51b00a6, ready-event, ready-event-handler, requires-context-pointer, runnable-func, seq-4454e9c05542, seq-56a88aa8d577, seq-b074101856aa, server-connected-event, server-connected-event-handler, server-login-plugin-message-event, server-login-plugin-message-event-handler, server-post-connect-event, server-post-connect-event-handler, server-pre-connect-event, server-pre-connect-event-handler, server-registered-event, server-registered-event-handler, server-resource-pack-remove-event, server-resource-pack-remove-event-handler, server-resource-pack-send-event, server-resource-pack-send-event-handler, server-unregistered-event, server-unregistered-event-handler, shutdown-event-handler, shutdown-event-pointer, start-option, start-options, struct-field, struct-tag, suggest-func, suggestions-builder-pointer, suggestions-pointer, tab-complete-event, tab-complete-event-handler, tri-state, value, writer-38b5996d575b};
 
   new-callback-0105467f2bef: func(id: u64) -> own<callback-0105467f2bef>;
   call-callback-0105467f2bef: func(callback: borrow<callback-0105467f2bef>);
@@ -2564,14 +2640,68 @@ interface gate-callbacks {
   call-callback-f39d53d38ffd: func(callback: borrow<callback-f39d53d38ffd>, arg0: option<borrow<packet>>) -> result<_, gate-error>;
   new-cancel-func: func(id: u64) -> own<cancel-func>;
   call-cancel-func: func(callback: borrow<cancel-func>);
+  new-command-execute-event-handler: func(id: u64) -> own<command-execute-event-handler>;
+  call-command-execute-event-handler: func(callback: borrow<command-execute-event-handler>, event: borrow<command-execute-event>) -> result<_, gate-error>;
   new-command-func: func(id: u64) -> own<command-func>;
   call-command-func: func(callback: borrow<command-func>, c: option<borrow<command-context>>) -> result<_, gate-error>;
+  new-connection-event-handler: func(id: u64) -> own<connection-event-handler>;
+  call-connection-event-handler: func(callback: borrow<connection-event-handler>, event: borrow<connection-event>) -> result<_, gate-error>;
+  new-connection-handshake-event-handler: func(id: u64) -> own<connection-handshake-event-handler>;
+  call-connection-handshake-event-handler: func(callback: borrow<connection-handshake-event-handler>, event: borrow<connection-handshake-event>) -> result<_, gate-error>;
+  new-cookie-receive-event-handler: func(id: u64) -> own<cookie-receive-event-handler>;
+  call-cookie-receive-event-handler: func(callback: borrow<cookie-receive-event-handler>, event: borrow<cookie-receive-event>) -> result<_, gate-error>;
+  new-cookie-request-event-handler: func(id: u64) -> own<cookie-request-event-handler>;
+  call-cookie-request-event-handler: func(callback: borrow<cookie-request-event-handler>, event: borrow<cookie-request-event>) -> result<_, gate-error>;
+  new-cookie-store-event-handler: func(id: u64) -> own<cookie-store-event-handler>;
+  call-cookie-store-event-handler: func(callback: borrow<cookie-store-event-handler>, event: borrow<cookie-store-event>) -> result<_, gate-error>;
+  new-disconnect-event-handler: func(id: u64) -> own<disconnect-event-handler>;
+  call-disconnect-event-handler: func(callback: borrow<disconnect-event-handler>, event: borrow<disconnect-event>) -> result<_, gate-error>;
+  new-game-profile-request-event-handler: func(id: u64) -> own<game-profile-request-event-handler>;
+  call-game-profile-request-event-handler: func(callback: borrow<game-profile-request-event-handler>, event: borrow<game-profile-request-event>) -> result<_, gate-error>;
   new-gate-func: func(id: u64) -> own<gate-func>;
   call-gate-func: func(callback: borrow<gate-func>, permission: string) -> tri-state;
   new-has-joined-url-fn: func(id: u64) -> own<has-joined-url-fn>;
   call-has-joined-url-fn: func(callback: borrow<has-joined-url-fn>, server-id: string, username: string, user-ip: string) -> string;
+  new-kicked-from-server-event-handler: func(id: u64) -> own<kicked-from-server-event-handler>;
+  call-kicked-from-server-event-handler: func(callback: borrow<kicked-from-server-event-handler>, event: borrow<kicked-from-server-event>) -> result<_, gate-error>;
   new-load-config-func: func(id: u64) -> own<load-config-func>;
   call-load-config-func: func(callback: borrow<load-config-func>) -> result<option<own<config-pointer-37c11021fd63>>, gate-error>;
+  new-login-event-handler: func(id: u64) -> own<login-event-handler>;
+  call-login-event-handler: func(callback: borrow<login-event-handler>, event: borrow<login-event>) -> result<_, gate-error>;
+  new-permissions-setup-event-handler: func(id: u64) -> own<permissions-setup-event-handler>;
+  call-permissions-setup-event-handler: func(callback: borrow<permissions-setup-event-handler>, event: borrow<permissions-setup-event>) -> result<_, gate-error>;
+  new-ping-event-handler: func(id: u64) -> own<ping-event-handler>;
+  call-ping-event-handler: func(callback: borrow<ping-event-handler>, event: borrow<ping-event>) -> result<_, gate-error>;
+  new-player-available-commands-event-handler: func(id: u64) -> own<player-available-commands-event-handler>;
+  call-player-available-commands-event-handler: func(callback: borrow<player-available-commands-event-handler>, event: borrow<player-available-commands-event>) -> result<_, gate-error>;
+  new-player-channel-register-event-handler: func(id: u64) -> own<player-channel-register-event-handler>;
+  call-player-channel-register-event-handler: func(callback: borrow<player-channel-register-event-handler>, event: borrow<player-channel-register-event>) -> result<_, gate-error>;
+  new-player-channel-unregister-event-handler: func(id: u64) -> own<player-channel-unregister-event-handler>;
+  call-player-channel-unregister-event-handler: func(callback: borrow<player-channel-unregister-event-handler>, event: borrow<player-channel-unregister-event>) -> result<_, gate-error>;
+  new-player-chat-event-handler: func(id: u64) -> own<player-chat-event-handler>;
+  call-player-chat-event-handler: func(callback: borrow<player-chat-event-handler>, event: borrow<player-chat-event>) -> result<_, gate-error>;
+  new-player-choose-initial-server-event-handler: func(id: u64) -> own<player-choose-initial-server-event-handler>;
+  call-player-choose-initial-server-event-handler: func(callback: borrow<player-choose-initial-server-event-handler>, event: borrow<player-choose-initial-server-event>) -> result<_, gate-error>;
+  new-player-client-brand-event-handler: func(id: u64) -> own<player-client-brand-event-handler>;
+  call-player-client-brand-event-handler: func(callback: borrow<player-client-brand-event-handler>, event: borrow<player-client-brand-event>) -> result<_, gate-error>;
+  new-player-mod-info-event-handler: func(id: u64) -> own<player-mod-info-event-handler>;
+  call-player-mod-info-event-handler: func(callback: borrow<player-mod-info-event-handler>, event: borrow<player-mod-info-event>) -> result<_, gate-error>;
+  new-player-resource-pack-status-event-handler: func(id: u64) -> own<player-resource-pack-status-event-handler>;
+  call-player-resource-pack-status-event-handler: func(callback: borrow<player-resource-pack-status-event-handler>, event: borrow<player-resource-pack-status-event-6e0ee0072fce>) -> result<_, gate-error>;
+  new-player-settings-changed-event-handler: func(id: u64) -> own<player-settings-changed-event-handler>;
+  call-player-settings-changed-event-handler: func(callback: borrow<player-settings-changed-event-handler>, event: borrow<player-settings-changed-event>) -> result<_, gate-error>;
+  new-plugin-message-event-handler: func(id: u64) -> own<plugin-message-event-handler>;
+  call-plugin-message-event-handler: func(callback: borrow<plugin-message-event-handler>, event: borrow<plugin-message-event>) -> result<_, gate-error>;
+  new-post-login-event-handler: func(id: u64) -> own<post-login-event-handler>;
+  call-post-login-event-handler: func(callback: borrow<post-login-event-handler>, event: borrow<post-login-event>) -> result<_, gate-error>;
+  new-pre-login-event-handler: func(id: u64) -> own<pre-login-event-handler>;
+  call-pre-login-event-handler: func(callback: borrow<pre-login-event-handler>, event: borrow<pre-login-event>) -> result<_, gate-error>;
+  new-pre-shutdown-event-handler: func(id: u64) -> own<pre-shutdown-event-handler>;
+  call-pre-shutdown-event-handler: func(callback: borrow<pre-shutdown-event-handler>, event: borrow<pre-shutdown-event>) -> result<_, gate-error>;
+  new-pre-transfer-event-handler: func(id: u64) -> own<pre-transfer-event-handler>;
+  call-pre-transfer-event-handler: func(callback: borrow<pre-transfer-event-handler>, event: borrow<pre-transfer-event>) -> result<_, gate-error>;
+  new-ready-event-handler: func(id: u64) -> own<ready-event-handler>;
+  call-ready-event-handler: func(callback: borrow<ready-event-handler>, event: borrow<ready-event>) -> result<_, gate-error>;
   new-runnable-func: func(id: u64) -> own<runnable-func>;
   call-runnable-func: func(callback: borrow<runnable-func>, ctx: option<borrow<context-e30d9213847b>>) -> result<_, gate-error>;
   new-seq-4454e9c05542: func(id: u64) -> own<seq-4454e9c05542>;
@@ -2580,10 +2710,30 @@ interface gate-callbacks {
   call-seq-56a88aa8d577: func(callback: borrow<seq-56a88aa8d577>, yield: option<own<callback-1178afb46377>>);
   new-seq-b074101856aa: func(id: u64) -> own<seq-b074101856aa>;
   call-seq-b074101856aa: func(callback: borrow<seq-b074101856aa>, yield: option<own<callback-2c1c5989286b>>);
+  new-server-connected-event-handler: func(id: u64) -> own<server-connected-event-handler>;
+  call-server-connected-event-handler: func(callback: borrow<server-connected-event-handler>, event: borrow<server-connected-event>) -> result<_, gate-error>;
+  new-server-login-plugin-message-event-handler: func(id: u64) -> own<server-login-plugin-message-event-handler>;
+  call-server-login-plugin-message-event-handler: func(callback: borrow<server-login-plugin-message-event-handler>, event: borrow<server-login-plugin-message-event>) -> result<_, gate-error>;
+  new-server-post-connect-event-handler: func(id: u64) -> own<server-post-connect-event-handler>;
+  call-server-post-connect-event-handler: func(callback: borrow<server-post-connect-event-handler>, event: borrow<server-post-connect-event>) -> result<_, gate-error>;
+  new-server-pre-connect-event-handler: func(id: u64) -> own<server-pre-connect-event-handler>;
+  call-server-pre-connect-event-handler: func(callback: borrow<server-pre-connect-event-handler>, event: borrow<server-pre-connect-event>) -> result<_, gate-error>;
+  new-server-registered-event-handler: func(id: u64) -> own<server-registered-event-handler>;
+  call-server-registered-event-handler: func(callback: borrow<server-registered-event-handler>, event: borrow<server-registered-event>) -> result<_, gate-error>;
+  new-server-resource-pack-remove-event-handler: func(id: u64) -> own<server-resource-pack-remove-event-handler>;
+  call-server-resource-pack-remove-event-handler: func(callback: borrow<server-resource-pack-remove-event-handler>, event: borrow<server-resource-pack-remove-event>) -> result<_, gate-error>;
+  new-server-resource-pack-send-event-handler: func(id: u64) -> own<server-resource-pack-send-event-handler>;
+  call-server-resource-pack-send-event-handler: func(callback: borrow<server-resource-pack-send-event-handler>, event: borrow<server-resource-pack-send-event>) -> result<_, gate-error>;
+  new-server-unregistered-event-handler: func(id: u64) -> own<server-unregistered-event-handler>;
+  call-server-unregistered-event-handler: func(callback: borrow<server-unregistered-event-handler>, event: borrow<server-unregistered-event>) -> result<_, gate-error>;
+  new-shutdown-event-handler: func(id: u64) -> own<shutdown-event-handler>;
+  call-shutdown-event-handler: func(callback: borrow<shutdown-event-handler>, event: borrow<shutdown-event-pointer>) -> result<_, gate-error>;
   new-start-option: func(id: u64) -> own<start-option>;
   call-start-option: func(callback: borrow<start-option>, o: option<borrow<start-options>>);
   new-suggest-func: func(id: u64) -> own<suggest-func>;
   call-suggest-func: func(callback: borrow<suggest-func>, c: option<borrow<context-pointer>>, b: option<borrow<suggestions-builder-pointer>>) -> option<own<suggestions-pointer>>;
+  new-tab-complete-event-handler: func(id: u64) -> own<tab-complete-event-handler>;
+  call-tab-complete-event-handler: func(callback: borrow<tab-complete-event-handler>, event: borrow<tab-complete-event>) -> result<_, gate-error>;
 }
 
 interface pkg-command {
@@ -4306,7 +4456,7 @@ interface pkg-edition-java-proto-version {
 }
 
 interface pkg-edition-java-proxy {
-  use gate-types.{addr, anonymous-dynamic-1c10c7b1df5a6e62, anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, auth, authenticator, backend-floodgate, backend-handshake-addresser, backend-version-provider, bedrock-config, bit-set, bool-or-struct-5876f4a1e31a, callback-0105467f2bef, callback-a5d0afa3c957, channel-identifier, channel-message-sink, channel-message-source, channel-registrar, chat-state, client-protocol-provider, command-execute-event, component-8135a805e033, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, conn, connection-event, connection-event-conn, connection-handshake-event, connection-request, connection-result, connection-status, context-e30d9213847b, cookie-receive-event, cookie-request-event, cookie-store-event, disconnect-event, duration-147de15d0597, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, forwarding-mode-provider, game-profile, game-profile-pointer, game-profile-provider, game-profile-request-event, gate-error, gate-func, handshake-addresser, handshake-intent, hash, identified-key, inbound, info, info-pointer, key, kicked-from-server-event, last-seen-messages, lastseenmessages-pointer, lite, login-event, login-phase-connection, login-status, manager-d3469a289502, manager-pointer, message-consumer, message-option, message-sink, message-type-668a92415c80, mod, mod-info-80041f204962, options-218b44945fda, origin, packet, packet-limiter, permissions-setup-event, ping-event, player-9f25ee10b6eb, player-available-commands-event, player-b186caed0db5, player-channel-register-event, player-channel-unregister-event, player-chat-event, player-choose-initial-server-event, player-client-brand-event, player-mod-info-event, player-settings-changed-event, players-849b766b7567, plugin-message-event, post-login-event, pre-login-event, pre-login-result, pre-shutdown-event, pre-transfer-event, property, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, query, quota, quota-settings, ready-event, registered-server, response-status, root-command-node-pointer, route, server-connected-event, server-connection-4f41e3a0f548, server-dialer, server-info, server-kick-result, server-login-plugin-message-event, server-login-plugin-message-result-pointer, server-ping-pointer, server-post-connect-event, server-pre-connect-event, server-registered-event, server-registrar, server-registry, server-resource-pack-remove-event, server-resource-pack-send-event, server-unregistered-event, settings, single-or-multi-937acf956e09, source, status-dc852aff07bd, status-pointer, strategy, subject, tab-complete-event, tab-list, text-component-pointer, time-pointer, timestamp, tri-state, url-pointer-0703e7cbaa23, uuid, via, wasm, wasm-plugin};
+  use gate-types.{addr, anonymous-dynamic-1c10c7b1df5a6e62, anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, auth, authenticator, backend-floodgate, backend-handshake-addresser, backend-version-provider, bedrock-config, bit-set, bool-or-struct-5876f4a1e31a, callback-0105467f2bef, callback-a5d0afa3c957, channel-identifier, channel-message-sink, channel-message-source, channel-registrar, chat-state, client-protocol-provider, command-execute-event, command-execute-event-handler, component-8135a805e033, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, conn, connection-event, connection-event-conn, connection-event-handler, connection-handshake-event, connection-handshake-event-handler, connection-request, connection-result, connection-status, context-e30d9213847b, cookie-receive-event, cookie-receive-event-handler, cookie-request-event, cookie-request-event-handler, cookie-store-event, cookie-store-event-handler, disconnect-event, disconnect-event-handler, duration-147de15d0597, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, forwarding-mode-provider, game-profile, game-profile-pointer, game-profile-provider, game-profile-request-event, game-profile-request-event-handler, gate-error, gate-func, handshake-addresser, handshake-intent, hash, identified-key, inbound, info, info-pointer, key, kicked-from-server-event, kicked-from-server-event-handler, last-seen-messages, lastseenmessages-pointer, lite, login-event, login-event-handler, login-phase-connection, login-status, manager-d3469a289502, manager-pointer, message-consumer, message-option, message-sink, message-type-668a92415c80, mod, mod-info-80041f204962, options-218b44945fda, origin, packet, packet-limiter, permissions-setup-event, permissions-setup-event-handler, ping-event, ping-event-handler, player-9f25ee10b6eb, player-available-commands-event, player-available-commands-event-handler, player-b186caed0db5, player-channel-register-event, player-channel-register-event-handler, player-channel-unregister-event, player-channel-unregister-event-handler, player-chat-event, player-chat-event-handler, player-choose-initial-server-event, player-choose-initial-server-event-handler, player-client-brand-event, player-client-brand-event-handler, player-mod-info-event, player-mod-info-event-handler, player-resource-pack-status-event-handler, player-settings-changed-event, player-settings-changed-event-handler, players-849b766b7567, plugin-message-event, plugin-message-event-handler, post-login-event, post-login-event-handler, pre-login-event, pre-login-event-handler, pre-login-result, pre-shutdown-event, pre-shutdown-event-handler, pre-transfer-event, pre-transfer-event-handler, property, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, query, quota, quota-settings, ready-event, ready-event-handler, registered-server, response-status, root-command-node-pointer, route, server-connected-event, server-connected-event-handler, server-connection-4f41e3a0f548, server-dialer, server-info, server-kick-result, server-login-plugin-message-event, server-login-plugin-message-event-handler, server-login-plugin-message-result-pointer, server-ping-pointer, server-post-connect-event, server-post-connect-event-handler, server-pre-connect-event, server-pre-connect-event-handler, server-registered-event, server-registered-event-handler, server-registrar, server-registry, server-resource-pack-remove-event, server-resource-pack-remove-event-handler, server-resource-pack-send-event, server-resource-pack-send-event-handler, server-unregistered-event, server-unregistered-event-handler, settings, shutdown-event-handler, single-or-multi-937acf956e09, source, status-dc852aff07bd, status-pointer, strategy, subject, tab-complete-event, tab-complete-event-handler, tab-list, text-component-pointer, time-pointer, timestamp, tri-state, url-pointer-0703e7cbaa23, uuid, via, wasm, wasm-plugin};
 
   /// AcceptedResourcePackResponseStatus indicates the player has accepted the resource pack and is now downloading it.
   get-accepted-resource-pack-response-status: func() -> response-status;
@@ -4334,6 +4484,8 @@ interface pkg-edition-java-proxy {
   chat-state-last-timestamp: func(self: borrow<chat-state>) -> timestamp;
   chat-state-update-from-message: func(self: borrow<chat-state>, timestamp: option<borrow<time-pointer>>, last-seen-messages: option<borrow<lastseenmessages-pointer>>) -> option<own<lastseenmessages-pointer>>;
   client-protocol-provider-client-protocol: func(self: borrow<client-protocol-provider>) -> protocol-e8c68391e5ba;
+  /// Subscribes a component callback to CommandExecuteEvent with transactional event mutation.
+  subscribe-command-execute-event: func(priority: s64, handler: own<command-execute-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed returns true when the command is allowed to be executed.
   command-execute-event-allowed: func(self: borrow<command-execute-event>) -> bool;
   /// Command returns the whole commandline without the leading "/".
@@ -4353,6 +4505,8 @@ interface pkg-edition-java-proxy {
   component-plugin-manager-close: func(self: borrow<component-plugin-manager>) -> result<_, gate-error>;
   component-plugin-manager-start: func(self: borrow<component-plugin-manager>, arg0: option<borrow<context-e30d9213847b>>, arg1: option<borrow<proxy-3cf24d6ad4bb>>) -> result<_, gate-error>;
   get-conflicting-login-status: func() -> login-status;
+  /// Subscribes a component callback to ConnectionEvent with transactional event mutation.
+  subscribe-connection-event: func(priority: s64, handler: own<connection-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Connection returns the connection.
   connection-event-connection: func(self: borrow<connection-event>) -> option<own<conn>>;
   /// OriginalConnection returns the original connection.
@@ -4368,6 +4522,8 @@ interface pkg-edition-java-proxy {
   connection-event-conn-set-read-deadline: func(self: borrow<connection-event-conn>, t: timestamp) -> result<_, gate-error>;
   connection-event-conn-set-write-deadline: func(self: borrow<connection-event-conn>, t: timestamp) -> result<_, gate-error>;
   connection-event-conn-write: func(self: borrow<connection-event-conn>, b: option<list<u8>>) -> result<s64, gate-error>;
+  /// Subscribes a component callback to ConnectionHandshakeEvent with transactional event mutation.
+  subscribe-connection-handshake-event: func(priority: s64, handler: own<connection-handshake-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Connection returns the inbound connection.
   connection-handshake-event-connection: func(self: borrow<connection-handshake-event>) -> option<own<inbound>>;
   /// Intent returns the handshake intent.
@@ -4388,6 +4544,8 @@ interface pkg-edition-java-proxy {
   connection-status-server-disconnected: func(self: connection-status) -> bool;
   /// Successful is true if the player was successfully connected to the server.
   connection-status-successful: func(self: connection-status) -> bool;
+  /// Subscribes a component callback to CookieReceiveEvent with transactional event mutation.
+  subscribe-cookie-receive-event: func(priority: s64, handler: own<cookie-receive-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed returns whether the cookie request is allowed to be forwarded to the client.
   cookie-receive-event-allowed: func(self: borrow<cookie-receive-event>) -> bool;
   /// Key returns the provider of the responded cookie.
@@ -4406,6 +4564,8 @@ interface pkg-edition-java-proxy {
   cookie-receive-event-set-key: func(self: borrow<cookie-receive-event>, key: option<borrow<key>>);
   /// SetPayload sets the payload of the responded cookie.
   cookie-receive-event-set-payload: func(self: borrow<cookie-receive-event>, payload: option<list<u8>>);
+  /// Subscribes a component callback to CookieRequestEvent with transactional event mutation.
+  subscribe-cookie-request-event: func(priority: s64, handler: own<cookie-request-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed returns whether the cookie request is allowed to be forwarded to the client.
   cookie-request-event-allowed: func(self: borrow<cookie-request-event>) -> bool;
   /// Key returns the provider of the requested cookie.
@@ -4419,6 +4579,8 @@ interface pkg-edition-java-proxy {
   cookie-request-event-set-allowed: func(self: borrow<cookie-request-event>, allowed: bool);
   /// SetKey sets the provider of the requested cookie.
   cookie-request-event-set-key: func(self: borrow<cookie-request-event>, key: option<borrow<key>>);
+  /// Subscribes a component callback to CookieStoreEvent with transactional event mutation.
+  subscribe-cookie-store-event: func(priority: s64, handler: own<cookie-store-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed returns whether the cookie request is allowed to be forwarded to the client.
   cookie-store-event-allowed: func(self: borrow<cookie-store-event>) -> bool;
   /// Key returns the provider of the responded cookie.
@@ -4444,6 +4606,8 @@ interface pkg-edition-java-proxy {
   get-denied-pre-login: func() -> pre-login-result;
   /// DiscardedResourcePackResponseStatus indicates the resource pack was discarded.
   get-discarded-resource-pack-response-status: func() -> response-status;
+  /// Subscribes a component callback to DisconnectEvent with transactional event mutation.
+  subscribe-disconnect-event: func(priority: s64, handler: own<disconnect-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   disconnect-event-login-status: func(self: borrow<disconnect-event>) -> login-status;
   disconnect-event-player: func(self: borrow<disconnect-event>) -> option<own<player-9f25ee10b6eb>>;
   /// DownloadedResourcePackResponseStatus indicates the player has downloaded the resource pack.
@@ -4480,6 +4644,8 @@ interface pkg-edition-java-proxy {
   /// This text format doesn't support many component features, such as hover events.
   get-game-info-message-type: func() -> message-type-668a92415c80;
   game-profile-provider-game-profile: func(self: borrow<game-profile-provider>) -> option<own<game-profile-pointer>>;
+  /// Subscribes a component callback to GameProfileRequestEvent with transactional event mutation.
+  subscribe-game-profile-request-event: func(priority: s64, handler: own<game-profile-request-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Conn returns the inbound connection that is connecting to the proxy.
   game-profile-request-event-conn: func(self: borrow<game-profile-request-event>) -> option<own<inbound>>;
   /// GameProfile returns the game profile that will be used to initialize the connection with.
@@ -4502,6 +4668,8 @@ interface pkg-edition-java-proxy {
   inbound-virtual-host: func(self: borrow<inbound>) -> option<own<addr>>;
   /// InvalidURLResourcePackResponseStatus indicates the URL of the resource pack failed to load.
   get-invalid-url-resource-pack-response-status: func() -> response-status;
+  /// Subscribes a component callback to KickedFromServerEvent with transactional event mutation.
+  subscribe-kicked-from-server-event: func(priority: s64, handler: own<kicked-from-server-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// KickedDuringServerConnect returns true if the player got kicked while connecting to another server.
   kicked-from-server-event-kicked-during-server-connect: func(self: borrow<kicked-from-server-event>) -> bool;
   /// OriginalReason returns the reason the server kicked the player from the server.
@@ -4517,6 +4685,8 @@ interface pkg-edition-java-proxy {
   kicked-from-server-event-server: func(self: borrow<kicked-from-server-event>) -> option<own<registered-server>>;
   /// SetResult sets the kick result.
   kicked-from-server-event-set-result: func(self: borrow<kicked-from-server-event>, gate-result: option<borrow<server-kick-result>>);
+  /// Subscribes a component callback to LoginEvent with transactional event mutation.
+  subscribe-login-event: func(priority: s64, handler: own<login-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   login-event-allow: func(self: borrow<login-event>);
   login-event-allowed: func(self: borrow<login-event>) -> bool;
   login-event-deny: func(self: borrow<login-event>, reason: option<borrow<component-8135a805e033>>);
@@ -4541,6 +4711,8 @@ interface pkg-edition-java-proxy {
   /// NewGameProfileRequestEvent creates a new GameProfileRequestEvent.
   new-game-profile-request-event: func(inbound: option<borrow<inbound>>, original: game-profile, online-mode: bool) -> option<own<game-profile-request-event>>;
   new-server-info: func(name: string, addr: option<borrow<addr>>) -> option<own<server-info>>;
+  /// Subscribes a component callback to PermissionsSetupEvent with transactional event mutation.
+  subscribe-permissions-setup-event: func(priority: s64, handler: own<permissions-setup-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Func returns the permission.Func used for the subject.
   permissions-setup-event-func: func(self: borrow<permissions-setup-event>) -> option<own<gate-func>>;
   /// SetFunc sets the permission.Func usec for the subject.
@@ -4548,6 +4720,8 @@ interface pkg-edition-java-proxy {
   permissions-setup-event-set-func: func(self: borrow<permissions-setup-event>, fn: option<own<gate-func>>);
   /// Subject returns the subject the permissions are setup for.
   permissions-setup-event-subject: func(self: borrow<permissions-setup-event>) -> option<own<subject>>;
+  /// Subscribes a component callback to PingEvent with transactional event mutation.
+  subscribe-ping-event: func(priority: s64, handler: own<ping-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Connection returns the inbound connection.
   ping-event-connection: func(self: borrow<ping-event>) -> option<own<inbound>>;
   /// Ping returns the used ping. (pre-initialized by the proxy)
@@ -4589,14 +4763,22 @@ interface pkg-edition-java-proxy {
   player-virtual-host: func(self: borrow<player-9f25ee10b6eb>) -> option<own<addr>>;
   player-write: func(self: borrow<player-9f25ee10b6eb>, payload: option<list<u8>>) -> result<_, gate-error>;
   player-write-packet: func(self: borrow<player-9f25ee10b6eb>, p: option<borrow<packet>>) -> result<_, gate-error>;
+  /// Subscribes a component callback to PlayerAvailableCommandsEvent with transactional event mutation.
+  subscribe-player-available-commands-event: func(priority: s64, handler: own<player-available-commands-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Player returns the player that is about to see the available commands.
   player-available-commands-event-player: func(self: borrow<player-available-commands-event>) -> option<own<player-9f25ee10b6eb>>;
   /// RootNode returns the available commands to the Player.
   player-available-commands-event-root-node: func(self: borrow<player-available-commands-event>) -> option<own<root-command-node-pointer>>;
+  /// Subscribes a component callback to PlayerChannelRegisterEvent with transactional event mutation.
+  subscribe-player-channel-register-event: func(priority: s64, handler: own<player-channel-register-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   player-channel-register-event-channels: func(self: borrow<player-channel-register-event>) -> option<list<option<own<channel-identifier>>>>;
   player-channel-register-event-player: func(self: borrow<player-channel-register-event>) -> option<own<player-9f25ee10b6eb>>;
+  /// Subscribes a component callback to PlayerChannelUnregisterEvent with transactional event mutation.
+  subscribe-player-channel-unregister-event: func(priority: s64, handler: own<player-channel-unregister-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   player-channel-unregister-event-channels: func(self: borrow<player-channel-unregister-event>) -> option<list<option<own<channel-identifier>>>>;
   player-channel-unregister-event-player: func(self: borrow<player-channel-unregister-event>) -> option<own<player-9f25ee10b6eb>>;
+  /// Subscribes a component callback to PlayerChatEvent with transactional event mutation.
+  subscribe-player-chat-event: func(priority: s64, handler: own<player-chat-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed returns true when the chat message is allowed.
   player-chat-event-allowed: func(self: borrow<player-chat-event>) -> bool;
   /// Message returns the message that will be sent by the player.
@@ -4610,18 +4792,28 @@ interface pkg-edition-java-proxy {
   player-chat-event-set-allowed: func(self: borrow<player-chat-event>, allowed: bool);
   /// SetMessage modifies the message of the player.
   player-chat-event-set-message: func(self: borrow<player-chat-event>, msg: string);
+  /// Subscribes a component callback to PlayerChooseInitialServerEvent with transactional event mutation.
+  subscribe-player-choose-initial-server-event: func(priority: s64, handler: own<player-choose-initial-server-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// InitialServer returns the initial server or nil if no server is configured.
   player-choose-initial-server-event-initial-server: func(self: borrow<player-choose-initial-server-event>) -> option<own<registered-server>>;
   /// Player returns the player to find the initial server for.
   player-choose-initial-server-event-player: func(self: borrow<player-choose-initial-server-event>) -> option<own<player-9f25ee10b6eb>>;
   /// SetInitialServer sets the initial server for the player.
   player-choose-initial-server-event-set-initial-server: func(self: borrow<player-choose-initial-server-event>, server: option<borrow<registered-server>>);
+  /// Subscribes a component callback to PlayerClientBrandEvent with transactional event mutation.
+  subscribe-player-client-brand-event: func(priority: s64, handler: own<player-client-brand-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   player-client-brand-event-brand: func(self: borrow<player-client-brand-event>) -> string;
   player-client-brand-event-player: func(self: borrow<player-client-brand-event>) -> option<own<player-9f25ee10b6eb>>;
+  /// Subscribes a component callback to PlayerModInfoEvent with transactional event mutation.
+  subscribe-player-mod-info-event: func(priority: s64, handler: own<player-mod-info-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// ModInfo is the mod info received by the player.
   player-mod-info-event-mod-info: func(self: borrow<player-mod-info-event>) -> mod-info-80041f204962;
   /// Player returns the player who sent the mod info.
   player-mod-info-event-player: func(self: borrow<player-mod-info-event>) -> option<own<player-9f25ee10b6eb>>;
+  /// Subscribes a component callback to PlayerResourcePackStatusEvent with transactional event mutation.
+  subscribe-player-resource-pack-status-event: func(priority: s64, handler: own<player-resource-pack-status-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
+  /// Subscribes a component callback to PlayerSettingsChangedEvent with transactional event mutation.
+  subscribe-player-settings-changed-event: func(priority: s64, handler: own<player-settings-changed-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Player returns the player whose settings where updates/initialized.
   player-settings-changed-event-player: func(self: borrow<player-settings-changed-event>) -> option<own<player-9f25ee10b6eb>>;
   /// Settings returns player's new settings.
@@ -4638,6 +4830,8 @@ interface pkg-edition-java-proxy {
   players-to-slice-a905a666891c: func(p: option<borrow<players-849b766b7567>>) -> option<list<option<own<player-b186caed0db5>>>>;
   /// PlayersToSlice returns a slice of all players.
   players-to-slice-c5365be0f6b1: func(p: option<borrow<players-849b766b7567>>) -> option<list<option<own<channel-message-sink>>>>;
+  /// Subscribes a component callback to PluginMessageEvent with transactional event mutation.
+  subscribe-plugin-message-event: func(priority: s64, handler: own<plugin-message-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   plugin-message-event-allowed: func(self: borrow<plugin-message-event>) -> bool;
   plugin-message-event-data: func(self: borrow<plugin-message-event>) -> option<list<u8>>;
   plugin-message-event-identifier: func(self: borrow<plugin-message-event>) -> option<own<channel-identifier>>;
@@ -4645,7 +4839,11 @@ interface pkg-edition-java-proxy {
   plugin-message-event-source: func(self: borrow<plugin-message-event>) -> option<own<channel-message-source>>;
   plugin-message-event-target: func(self: borrow<plugin-message-event>) -> option<own<channel-message-sink>>;
   get-plugin-on-proxy-resource-pack-origin: func() -> origin;
+  /// Subscribes a component callback to PostLoginEvent with transactional event mutation.
+  subscribe-post-login-event: func(priority: s64, handler: own<post-login-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   post-login-event-player: func(self: borrow<post-login-event>) -> option<own<player-9f25ee10b6eb>>;
+  /// Subscribes a component callback to PreLoginEvent with transactional event mutation.
+  subscribe-pre-login-event: func(priority: s64, handler: own<pre-login-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   pre-login-event-allow: func(self: borrow<pre-login-event>);
   /// Conn returns the inbound connection that is connecting to the proxy.
   pre-login-event-conn: func(self: borrow<pre-login-event>) -> option<own<inbound>>;
@@ -4668,11 +4866,15 @@ interface pkg-edition-java-proxy {
   pre-login-event-set-virtual-host: func(self: borrow<pre-login-event>, addr: option<borrow<addr>>) -> bool;
   /// Username returns the username of the player.
   pre-login-event-username: func(self: borrow<pre-login-event>) -> string;
+  /// Subscribes a component callback to PreShutdownEvent with transactional event mutation.
+  subscribe-pre-shutdown-event: func(priority: s64, handler: own<pre-shutdown-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Reason returns the shutdown reason used to disconnect players with.
   /// May be nil!
   pre-shutdown-event-reason: func(self: borrow<pre-shutdown-event>) -> option<own<component-8135a805e033>>;
   /// SetReason sets the shutdown reason used to disconnect players with.
   pre-shutdown-event-set-reason: func(self: borrow<pre-shutdown-event>, reason: option<borrow<component-8135a805e033>>);
+  /// Subscribes a component callback to PreTransferEvent with transactional event mutation.
+  subscribe-pre-transfer-event: func(priority: s64, handler: own<pre-transfer-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Addr returns the target address the player will be transferred to.
   pre-transfer-event-addr: func(self: borrow<pre-transfer-event>) -> option<own<addr>>;
   /// Allowed returns true if the transfer is allowed.
@@ -4730,6 +4932,8 @@ interface pkg-edition-java-proxy {
   /// Unregister unregisters the server exactly matching the
   /// given ServerInfo and returns true if found.
   proxy-unregister: func(self: borrow<proxy-3cf24d6ad4bb>, info: option<borrow<server-info>>) -> bool;
+  /// Subscribes a component callback to ReadyEvent with transactional event mutation.
+  subscribe-ready-event: func(priority: s64, handler: own<ready-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Addr returns the address the proxy is listening on.
   ready-event-addr: func(self: borrow<ready-event>) -> string;
   registered-server-players: func(self: borrow<registered-server>) -> option<own<players-849b766b7567>>;
@@ -4737,6 +4941,8 @@ interface pkg-edition-java-proxy {
   /// RegisteredServerEqual returns true if RegisteredServer a and b are equal.
   /// They are never equal if one of them is nil.
   registered-server-equal: func(a: option<borrow<registered-server>>, b: option<borrow<registered-server>>) -> bool;
+  /// Subscribes a component callback to ServerConnectedEvent with transactional event mutation.
+  subscribe-server-connected-event: func(priority: s64, handler: own<server-connected-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// EntityID returns the current entity ID of the player.
   /// This is the entity ID the player has on the connected server and changes
   /// every time the player connects to a new server.
@@ -4760,6 +4966,8 @@ interface pkg-edition-java-proxy {
   /// ServerInfoEqual returns true if ServerInfo a and b are equal.
   /// They are never equal if one of them is nil.
   server-info-equal: func(a: option<borrow<server-info>>, b: option<borrow<server-info>>) -> bool;
+  /// Subscribes a component callback to ServerLoginPluginMessageEvent with transactional event mutation.
+  subscribe-server-login-plugin-message-event: func(priority: s64, handler: own<server-login-plugin-message-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Contents returns the contents of the login plugin message sent by the server.
   server-login-plugin-message-event-contents: func(self: borrow<server-login-plugin-message-event>) -> option<list<u8>>;
   server-login-plugin-message-event-result: func(self: borrow<server-login-plugin-message-event>) -> option<own<server-login-plugin-message-result-pointer>>;
@@ -4770,11 +4978,15 @@ interface pkg-edition-java-proxy {
   server-login-plugin-message-result-allowed: func(self: borrow<server-login-plugin-message-result-pointer>) -> bool;
   server-login-plugin-message-result-copy: func(self: borrow<server-login-plugin-message-result-pointer>) -> option<list<u8>>;
   server-login-plugin-message-result-reply: func(self: borrow<server-login-plugin-message-result-pointer>, response: option<list<u8>>) -> option<own<server-login-plugin-message-result-pointer>>;
+  /// Subscribes a component callback to ServerPostConnectEvent with transactional event mutation.
+  subscribe-server-post-connect-event: func(priority: s64, handler: own<server-post-connect-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Player returns the associated player.
   server-post-connect-event-player: func(self: borrow<server-post-connect-event>) -> option<own<player-9f25ee10b6eb>>;
   /// PreviousServer returns the server the player was previously connected to.
   /// May return nil if there was none!
   server-post-connect-event-previous-server: func(self: borrow<server-post-connect-event>) -> option<own<registered-server>>;
+  /// Subscribes a component callback to ServerPreConnectEvent with transactional event mutation.
+  subscribe-server-pre-connect-event: func(priority: s64, handler: own<server-pre-connect-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allow the player to connect to the specified server.
   server-pre-connect-event-allow: func(self: borrow<server-pre-connect-event>, server: option<borrow<registered-server>>);
   /// Allowed returns true whether the connection is allowed.
@@ -4793,6 +5005,8 @@ interface pkg-edition-java-proxy {
   /// Server returns the server the player will connect to OR
   /// nil if Allowed() returns false.
   server-pre-connect-event-server: func(self: borrow<server-pre-connect-event>) -> option<own<registered-server>>;
+  /// Subscribes a component callback to ServerRegisteredEvent with transactional event mutation.
+  subscribe-server-registered-event: func(priority: s64, handler: own<server-registered-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Server returns the server that was registered.
   server-registered-event-server: func(self: borrow<server-registered-event>) -> option<own<registered-server>>;
   server-registrar-register: func(self: borrow<server-registrar>, info: option<borrow<server-info>>) -> result<option<own<registered-server>>, gate-error>;
@@ -4800,6 +5014,8 @@ interface pkg-edition-java-proxy {
   server-registry-register: func(self: borrow<server-registry>, info: option<borrow<server-info>>) -> result<option<own<registered-server>>, gate-error>;
   server-registry-server: func(self: borrow<server-registry>, name: string) -> option<own<registered-server>>;
   server-registry-unregister: func(self: borrow<server-registry>, info: option<borrow<server-info>>) -> bool;
+  /// Subscribes a component callback to ServerResourcePackRemoveEvent with transactional event mutation.
+  subscribe-server-resource-pack-remove-event: func(priority: s64, handler: own<server-resource-pack-remove-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed indicates whether removing the resource pack from the client is allowed.
   server-resource-pack-remove-event-allowed: func(self: borrow<server-resource-pack-remove-event>) -> bool;
   /// PackID returns the resource pack ID requested for removal, or uuid.Nil when
@@ -4809,6 +5025,8 @@ interface pkg-edition-java-proxy {
   server-resource-pack-remove-event-server-connection: func(self: borrow<server-resource-pack-remove-event>) -> option<own<server-connection-4f41e3a0f548>>;
   /// SetAllowed allows or denies removing the resource pack from the client.
   server-resource-pack-remove-event-set-allowed: func(self: borrow<server-resource-pack-remove-event>, allowed: bool);
+  /// Subscribes a component callback to ServerResourcePackSendEvent with transactional event mutation.
+  subscribe-server-resource-pack-send-event: func(priority: s64, handler: own<server-resource-pack-send-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Allowed indicated whether sending the resource pack to the client is allowed.
   server-resource-pack-send-event-allowed: func(self: borrow<server-resource-pack-send-event>) -> bool;
   /// ProvidedResourcePack returns the resource pack provided to the client if allowed.
@@ -4821,8 +5039,12 @@ interface pkg-edition-java-proxy {
   server-resource-pack-send-event-set-allowed: func(self: borrow<server-resource-pack-send-event>, allowed: bool);
   /// SetProvidedResourcePack sets the resource pack provided to the client if allowed.
   server-resource-pack-send-event-set-provided-resource-pack: func(self: borrow<server-resource-pack-send-event>, pack: info);
+  /// Subscribes a component callback to ServerUnregisteredEvent with transactional event mutation.
+  subscribe-server-unregistered-event: func(priority: s64, handler: own<server-unregistered-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// ServerInfo returns the server info of the server that was unregistered.
   server-unregistered-event-server-info: func(self: borrow<server-unregistered-event>) -> option<own<server-info>>;
+  /// Subscribes a component callback to ShutdownEvent with transactional event mutation.
+  subscribe-shutdown-event: func(priority: s64, handler: own<shutdown-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// SuccessConnectionStatus indicates that the player was successfully connected to the server.
   get-success-connection-status: func() -> connection-status;
   get-successful-login-status: func() -> login-status;
@@ -4833,6 +5055,8 @@ interface pkg-edition-java-proxy {
   /// but does not want general chat from other players.
   /// It lets the chat message appear in the client's HUD and can't be dismissed.
   get-system-message-type: func() -> message-type-668a92415c80;
+  /// Subscribes a component callback to TabCompleteEvent with transactional event mutation.
+  subscribe-tab-complete-event: func(priority: s64, handler: own<tab-complete-event-handler>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// PartialMessage returns the message being partially completed.
   tab-complete-event-partial-message: func(self: borrow<tab-complete-event>) -> string;
   /// Player returns the player requesting the tab completion.
@@ -5763,7 +5987,7 @@ interface pkg-version {
 }
 
 interface plugin {
-  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, callback-0105467f2bef, callback-1178afb46377, callback-1f86eef915ce, callback-2053c44117ea, callback-2c1c5989286b, callback-4e5db8a68395, callback-8ce8588e75ea, callback-9b79f3eb4945, callback-a3de14505458, callback-a5d0afa3c957, callback-bf78377c58d5, callback-d4c80bbf993f, callback-f39d53d38ffd, cancel-func, command-context, command-func, config-pointer-37c11021fd63, context-e30d9213847b, context-pointer, gate-error, gate-func, gate-type, has-joined-url-fn, load-config-func, method, packet, player-9f25ee10b6eb, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, reader-4d25c51b00a6, requires-context-pointer, runnable-func, seq-4454e9c05542, seq-56a88aa8d577, seq-b074101856aa, start-option, start-options, struct-field, struct-tag, suggest-func, suggestions-builder-pointer, suggestions-pointer, tri-state, value, writer-38b5996d575b};
+  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, callback-0105467f2bef, callback-1178afb46377, callback-1f86eef915ce, callback-2053c44117ea, callback-2c1c5989286b, callback-4e5db8a68395, callback-8ce8588e75ea, callback-9b79f3eb4945, callback-a3de14505458, callback-a5d0afa3c957, callback-bf78377c58d5, callback-d4c80bbf993f, callback-f39d53d38ffd, cancel-func, command-context, command-execute-event, command-execute-event-handler, command-func, config-pointer-37c11021fd63, connection-event, connection-event-handler, connection-handshake-event, connection-handshake-event-handler, context-e30d9213847b, context-pointer, cookie-receive-event, cookie-receive-event-handler, cookie-request-event, cookie-request-event-handler, cookie-store-event, cookie-store-event-handler, disconnect-event, disconnect-event-handler, game-profile-request-event, game-profile-request-event-handler, gate-error, gate-func, gate-type, has-joined-url-fn, kicked-from-server-event, kicked-from-server-event-handler, load-config-func, login-event, login-event-handler, method, packet, permissions-setup-event, permissions-setup-event-handler, ping-event, ping-event-handler, player-9f25ee10b6eb, player-available-commands-event, player-available-commands-event-handler, player-channel-register-event, player-channel-register-event-handler, player-channel-unregister-event, player-channel-unregister-event-handler, player-chat-event, player-chat-event-handler, player-choose-initial-server-event, player-choose-initial-server-event-handler, player-client-brand-event, player-client-brand-event-handler, player-mod-info-event, player-mod-info-event-handler, player-resource-pack-status-event-6e0ee0072fce, player-resource-pack-status-event-handler, player-settings-changed-event, player-settings-changed-event-handler, plugin-message-event, plugin-message-event-handler, post-login-event, post-login-event-handler, pre-login-event, pre-login-event-handler, pre-shutdown-event, pre-shutdown-event-handler, pre-transfer-event, pre-transfer-event-handler, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, reader-4d25c51b00a6, ready-event, ready-event-handler, requires-context-pointer, runnable-func, seq-4454e9c05542, seq-56a88aa8d577, seq-b074101856aa, server-connected-event, server-connected-event-handler, server-login-plugin-message-event, server-login-plugin-message-event-handler, server-post-connect-event, server-post-connect-event-handler, server-pre-connect-event, server-pre-connect-event-handler, server-registered-event, server-registered-event-handler, server-resource-pack-remove-event, server-resource-pack-remove-event-handler, server-resource-pack-send-event, server-resource-pack-send-event-handler, server-unregistered-event, server-unregistered-event-handler, shutdown-event-handler, shutdown-event-pointer, start-option, start-options, struct-field, struct-tag, suggest-func, suggestions-builder-pointer, suggestions-pointer, tab-complete-event, tab-complete-event-handler, tri-state, value, writer-38b5996d575b};
 
   record plugin-metadata {
     name: string,
@@ -5788,16 +6012,53 @@ interface plugin {
   invoke-callback-d4c80bbf993f: func(id: u64, rd: option<borrow<reader-4d25c51b00a6>>, protocol: protocol-e8c68391e5ba) -> result<option<own<anonymous-dynamic-3f3a2bbef3d45970>>, gate-error>;
   invoke-callback-f39d53d38ffd: func(id: u64, arg0: option<borrow<packet>>) -> result<_, gate-error>;
   invoke-cancel-func: func(id: u64);
+  invoke-command-execute-event-handler: func(id: u64, event: borrow<command-execute-event>) -> result<_, gate-error>;
   invoke-command-func: func(id: u64, c: option<borrow<command-context>>) -> result<_, gate-error>;
+  invoke-connection-event-handler: func(id: u64, event: borrow<connection-event>) -> result<_, gate-error>;
+  invoke-connection-handshake-event-handler: func(id: u64, event: borrow<connection-handshake-event>) -> result<_, gate-error>;
+  invoke-cookie-receive-event-handler: func(id: u64, event: borrow<cookie-receive-event>) -> result<_, gate-error>;
+  invoke-cookie-request-event-handler: func(id: u64, event: borrow<cookie-request-event>) -> result<_, gate-error>;
+  invoke-cookie-store-event-handler: func(id: u64, event: borrow<cookie-store-event>) -> result<_, gate-error>;
+  invoke-disconnect-event-handler: func(id: u64, event: borrow<disconnect-event>) -> result<_, gate-error>;
+  invoke-game-profile-request-event-handler: func(id: u64, event: borrow<game-profile-request-event>) -> result<_, gate-error>;
   invoke-gate-func: func(id: u64, permission: string) -> tri-state;
   invoke-has-joined-url-fn: func(id: u64, server-id: string, username: string, user-ip: string) -> string;
+  invoke-kicked-from-server-event-handler: func(id: u64, event: borrow<kicked-from-server-event>) -> result<_, gate-error>;
   invoke-load-config-func: func(id: u64) -> result<option<own<config-pointer-37c11021fd63>>, gate-error>;
+  invoke-login-event-handler: func(id: u64, event: borrow<login-event>) -> result<_, gate-error>;
+  invoke-permissions-setup-event-handler: func(id: u64, event: borrow<permissions-setup-event>) -> result<_, gate-error>;
+  invoke-ping-event-handler: func(id: u64, event: borrow<ping-event>) -> result<_, gate-error>;
+  invoke-player-available-commands-event-handler: func(id: u64, event: borrow<player-available-commands-event>) -> result<_, gate-error>;
+  invoke-player-channel-register-event-handler: func(id: u64, event: borrow<player-channel-register-event>) -> result<_, gate-error>;
+  invoke-player-channel-unregister-event-handler: func(id: u64, event: borrow<player-channel-unregister-event>) -> result<_, gate-error>;
+  invoke-player-chat-event-handler: func(id: u64, event: borrow<player-chat-event>) -> result<_, gate-error>;
+  invoke-player-choose-initial-server-event-handler: func(id: u64, event: borrow<player-choose-initial-server-event>) -> result<_, gate-error>;
+  invoke-player-client-brand-event-handler: func(id: u64, event: borrow<player-client-brand-event>) -> result<_, gate-error>;
+  invoke-player-mod-info-event-handler: func(id: u64, event: borrow<player-mod-info-event>) -> result<_, gate-error>;
+  invoke-player-resource-pack-status-event-handler: func(id: u64, event: borrow<player-resource-pack-status-event-6e0ee0072fce>) -> result<_, gate-error>;
+  invoke-player-settings-changed-event-handler: func(id: u64, event: borrow<player-settings-changed-event>) -> result<_, gate-error>;
+  invoke-plugin-message-event-handler: func(id: u64, event: borrow<plugin-message-event>) -> result<_, gate-error>;
+  invoke-post-login-event-handler: func(id: u64, event: borrow<post-login-event>) -> result<_, gate-error>;
+  invoke-pre-login-event-handler: func(id: u64, event: borrow<pre-login-event>) -> result<_, gate-error>;
+  invoke-pre-shutdown-event-handler: func(id: u64, event: borrow<pre-shutdown-event>) -> result<_, gate-error>;
+  invoke-pre-transfer-event-handler: func(id: u64, event: borrow<pre-transfer-event>) -> result<_, gate-error>;
+  invoke-ready-event-handler: func(id: u64, event: borrow<ready-event>) -> result<_, gate-error>;
   invoke-runnable-func: func(id: u64, ctx: option<borrow<context-e30d9213847b>>) -> result<_, gate-error>;
   invoke-seq-4454e9c05542: func(id: u64, yield: option<own<callback-2053c44117ea>>);
   invoke-seq-56a88aa8d577: func(id: u64, yield: option<own<callback-1178afb46377>>);
   invoke-seq-b074101856aa: func(id: u64, yield: option<own<callback-2c1c5989286b>>);
+  invoke-server-connected-event-handler: func(id: u64, event: borrow<server-connected-event>) -> result<_, gate-error>;
+  invoke-server-login-plugin-message-event-handler: func(id: u64, event: borrow<server-login-plugin-message-event>) -> result<_, gate-error>;
+  invoke-server-post-connect-event-handler: func(id: u64, event: borrow<server-post-connect-event>) -> result<_, gate-error>;
+  invoke-server-pre-connect-event-handler: func(id: u64, event: borrow<server-pre-connect-event>) -> result<_, gate-error>;
+  invoke-server-registered-event-handler: func(id: u64, event: borrow<server-registered-event>) -> result<_, gate-error>;
+  invoke-server-resource-pack-remove-event-handler: func(id: u64, event: borrow<server-resource-pack-remove-event>) -> result<_, gate-error>;
+  invoke-server-resource-pack-send-event-handler: func(id: u64, event: borrow<server-resource-pack-send-event>) -> result<_, gate-error>;
+  invoke-server-unregistered-event-handler: func(id: u64, event: borrow<server-unregistered-event>) -> result<_, gate-error>;
+  invoke-shutdown-event-handler: func(id: u64, event: borrow<shutdown-event-pointer>) -> result<_, gate-error>;
   invoke-start-option: func(id: u64, o: option<borrow<start-options>>);
   invoke-suggest-func: func(id: u64, c: option<borrow<context-pointer>>, b: option<borrow<suggestions-builder-pointer>>) -> option<own<suggestions-pointer>>;
+  invoke-tab-complete-event-handler: func(id: u64, event: borrow<tab-complete-event>) -> result<_, gate-error>;
 }
 
 world gate-plugin {
