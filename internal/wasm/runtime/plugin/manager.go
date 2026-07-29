@@ -23,6 +23,7 @@ import (
 type componentRuntime interface {
 	Metadata() (native.Metadata, error)
 	Init(contextID, proxyID uint64) error
+	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
 	Close() error
 }
 
@@ -108,8 +109,15 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 			manager.closeAfterFailure()
 			return fmt.Errorf("load wasm plugin %s: %w", path, err)
 		}
-		plugin := &loadedPlugin{path: path, runtime: runtime, host: host}
-		metadata, err := runtime.Metadata()
+		serialized := newExecutor(runtime)
+		if err := host.ReplaceCallbackInvoker(serialized); err != nil {
+			_ = serialized.Close()
+			_ = host.Close()
+			manager.closeAfterFailure()
+			return fmt.Errorf("bind wasm plugin executor %s: %w", path, err)
+		}
+		plugin := &loadedPlugin{path: path, runtime: serialized, host: host}
+		metadata, err := serialized.Metadata()
 		if err != nil {
 			manager.closePlugin(plugin)
 			manager.closeAfterFailure()
@@ -131,7 +139,7 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 			manager.closePlugin(plugin)
 			continue
 		}
-		if err := runtime.Init(host.ContextHandle(), host.ProxyHandle()); err != nil {
+		if err := serialized.Init(host.ContextHandle(), host.ProxyHandle()); err != nil {
 			manager.closePlugin(plugin)
 			manager.closeAfterFailure()
 			return fmt.Errorf(

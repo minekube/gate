@@ -151,6 +151,18 @@ func (host *Host) BindCallbackInvoker(invoker native.CallbackInvoker) error {
 	return nil
 }
 
+// ReplaceCallbackInvoker installs the serialized top-level callback entry
+// after the native runtime has completed its bootstrap binding.
+func (host *Host) ReplaceCallbackInvoker(invoker native.CallbackInvoker) error {
+	if invoker == nil {
+		return errors.New("wasm callback invoker is required")
+	}
+	host.mu.Lock()
+	host.callbackRoot = invoker
+	host.mu.Unlock()
+	return nil
+}
+
 func (host *Host) RegisterCallback(
 	callbackTypeID uint32,
 	guestID uint64,

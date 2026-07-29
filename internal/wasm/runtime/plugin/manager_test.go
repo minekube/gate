@@ -32,6 +32,10 @@ func (runtime *fakeRuntime) Init(uint64, uint64) error {
 	return nil
 }
 
+func (runtime *fakeRuntime) InvokeCallback(uint32, uint64, []byte) ([]byte, error) {
+	return nil, nil
+}
+
 func (runtime *fakeRuntime) Close() error {
 	if runtime.close != nil {
 		return runtime.close()
