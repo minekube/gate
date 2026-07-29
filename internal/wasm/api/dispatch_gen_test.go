@@ -20,6 +20,11 @@ func TestGeneratedDispatchMatchesManifest(t *testing.T) {
 	require.NoError(t, err)
 	var manifest generate.Manifest
 	require.NoError(t, json.Unmarshal(encoded, &manifest))
+	contractBytes, err := os.ReadFile(generate.ContractFile)
+	require.NoError(t, err)
+	var contract generate.Contract
+	require.NoError(t, json.Unmarshal(contractBytes, &contract))
+	require.Equal(t, contract.WITHash, GeneratedDispatchWITHash)
 	require.Equal(t, len(manifest.Operations), len(GeneratedOperations))
 	for index, operation := range GeneratedOperations {
 		require.EqualValues(t, index+1, operation.ID)

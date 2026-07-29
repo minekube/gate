@@ -7,12 +7,15 @@ import (
 )
 
 const (
-	WITFile        = "gate.wit"
-	ManifestFile   = "manifest.json"
-	ContractFile   = "contract.json"
-	GoValuesFile   = "values_gen.go"
-	GoDispatchFile = "dispatch_gen.go"
-	RustValuesFile = "values.rs"
+	WITFile          = "gate.wit"
+	ManifestFile     = "manifest.json"
+	ContractFile     = "contract.json"
+	GoValuesFile     = "values_gen.go"
+	GoDispatchFile   = "dispatch_gen.go"
+	CHeaderFile      = "gate_wasm_generated.h"
+	RustBindingsFile = "bindings.rs"
+	RustDispatchFile = "dispatch.rs"
+	RustValuesFile   = "values.rs"
 )
 
 // Artifacts renders every synchronized contract artifact.
@@ -37,12 +40,17 @@ func Artifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", GoDispatchFile, err)
 	}
+	header, err := RenderCHeader(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", CHeaderFile, err)
+	}
 	return map[string][]byte{
 		WITFile:        wit,
 		ManifestFile:   manifest,
 		ContractFile:   contract,
 		GoValuesFile:   values,
 		GoDispatchFile: dispatch,
+		CHeaderFile:    header,
 	}, nil
 }
 
@@ -52,5 +60,17 @@ func NativeArtifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", RustValuesFile, err)
 	}
-	return map[string][]byte{RustValuesFile: values}, nil
+	bindings, err := RenderRustBindings(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", RustBindingsFile, err)
+	}
+	dispatch, err := RenderRustDispatch(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", RustDispatchFile, err)
+	}
+	return map[string][]byte{
+		RustValuesFile:   values,
+		RustBindingsFile: bindings,
+		RustDispatchFile: dispatch,
+	}, nil
 }

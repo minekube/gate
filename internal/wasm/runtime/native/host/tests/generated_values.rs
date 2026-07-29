@@ -1,7 +1,12 @@
+use gate_wasm_native::generated::dispatch::{
+    Dispatch, Operation, ResourceDescriptor, WIT_HASH, add_to_linker,
+};
 use gate_wasm_native::generated::values::{
     ABI_LAYOUT_FINGERPRINT, ABI_SCHEMA_VERSION, VALUE_LAYOUTS,
 };
 use gate_wasm_native::{Sample, abi::OwnedSample};
+use wasmtime::StoreContextMut;
+use wasmtime::component::{Linker, Val, types::ComponentFunc};
 
 #[test]
 fn generated_values_have_valid_fixed_width_layouts() {
@@ -36,6 +41,10 @@ fn generated_rust_hash_matches_committed_contract() {
         contract.contains(&format!("\"abiLayoutHash\": \"{ABI_LAYOUT_FINGERPRINT}\"")),
         "generated Rust values and contract hash differ"
     );
+    assert!(
+        contract.contains(&format!("\"witHash\": \"{WIT_HASH}\"")),
+        "generated Rust dispatch and contract WIT hash differ"
+    );
 }
 
 #[test]
@@ -65,4 +74,36 @@ fn owned_nested_values_preserve_unicode_and_empty_lists() {
         }
         owned.free_rust();
     }
+}
+
+struct NoopDispatch;
+
+impl Dispatch for NoopDispatch {
+    fn invoke(
+        _store: StoreContextMut<'_, Self>,
+        operation: &'static Operation,
+        _function_type: ComponentFunc,
+        _parameters: &[Val],
+        _results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        Err(wasmtime::Error::msg(format!(
+            "unexpected invocation of {}",
+            operation.identity
+        )))
+    }
+
+    fn drop_resource(
+        _store: StoreContextMut<'_, Self>,
+        _resource: &'static ResourceDescriptor,
+        _representation: u32,
+    ) -> wasmtime::Result<()> {
+        Ok(())
+    }
+}
+
+#[test]
+fn generated_adapters_register_with_wasmtime_linker() {
+    let engine = wasmtime::Engine::default();
+    let mut linker = Linker::<NoopDispatch>::new(&engine);
+    add_to_linker(&mut linker).expect("all generated adapters must register");
 }

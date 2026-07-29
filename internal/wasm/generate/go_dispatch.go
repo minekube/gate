@@ -111,6 +111,10 @@ func RenderGoDispatch(api *model.API) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	witHash, err := generatedWITHash(normalized)
+	if err != nil {
+		return nil, err
+	}
 	declarations := make(
 		map[string]model.Declaration,
 		len(normalized.Declarations),
@@ -155,6 +159,12 @@ func RenderGoDispatch(api *model.API) ([]byte, error) {
 		)
 	}
 	fmt.Fprintln(&output, ")")
+	fmt.Fprintln(&output)
+	fmt.Fprintf(
+		&output,
+		"const GeneratedDispatchWITHash = %s\n",
+		strconv.Quote(witHash),
+	)
 	fmt.Fprintln(&output)
 	renderOperationDescriptors(&output, operations)
 	fmt.Fprintln(&output)
