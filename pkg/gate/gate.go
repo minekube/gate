@@ -339,6 +339,13 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	// would share the same map, causing removed servers to persist
 	cfg.Config.Servers = make(map[string]string)
 	cfg.Config.ForcedHosts = make(map[string][]string)
+	cfg.Config.Wasm.Plugins = make(
+		map[string]jconfig.WasmPlugin,
+		len(config.DefaultConfig.Config.Wasm.Plugins),
+	)
+	for name, plugin := range config.DefaultConfig.Config.Wasm.Plugins {
+		cfg.Config.Wasm.Plugins[name] = plugin
+	}
 
 	// Load in Gate config
 	if err := fixedReadInConfig(v, &cfg); err != nil {

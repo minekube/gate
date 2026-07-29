@@ -19,6 +19,25 @@ type executorRuntime struct {
 	invoke  func() error
 }
 
+type queuedFailureRuntime struct {
+	executorRuntime
+	failure error
+	release chan struct{}
+}
+
+func (runtime *queuedFailureRuntime) InvokeCallback(
+	_ uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	runtime.entered <- guestID
+	if guestID == 1 {
+		<-runtime.release
+		return nil, runtime.failure
+	}
+	return append([]byte(nil), input...), nil
+}
+
 func (runtime *executorRuntime) Metadata() (native.Metadata, error) {
 	return native.Metadata{Name: "executor-test"}, nil
 }
@@ -129,4 +148,48 @@ func TestExecutorMarksRuntimeCallbackFailureFatal(t *testing.T) {
 
 	_, err = executor.InvokeCallback(1, 2, nil)
 	require.ErrorIs(t, err, errExecutorFailed)
+}
+
+func TestExecutorRejectsQueuedCallbackAfterFatalFailure(t *testing.T) {
+	t.Parallel()
+
+	expected := errors.New("component trapped")
+	runtime := &queuedFailureRuntime{
+		executorRuntime: executorRuntime{entered: make(chan uint64, 2)},
+		failure:         expected,
+		release:         make(chan struct{}),
+	}
+	fatal := make(chan error, 1)
+	executor := newExecutor(runtime, func(err error) { fatal <- err })
+	t.Cleanup(func() { require.NoError(t, executor.Close()) })
+
+	first := make(chan error, 1)
+	go func() {
+		_, err := executor.InvokeCallback(1, 1, nil)
+		first <- err
+	}()
+	require.Equal(t, uint64(1), <-runtime.entered)
+
+	second := make(chan error, 1)
+	go func() {
+		_, err := executor.InvokeCallback(1, 2, nil)
+		second <- err
+	}()
+	require.Eventually(t, func() bool {
+		if executor.mu.TryLock() {
+			executor.mu.Unlock()
+			return false
+		}
+		return true
+	}, time.Second, time.Millisecond, "second callback must be queued")
+
+	close(runtime.release)
+	require.ErrorIs(t, <-first, expected)
+	require.ErrorIs(t, <-fatal, expected)
+	require.ErrorIs(t, <-second, errExecutorFailed)
+	select {
+	case id := <-runtime.entered:
+		t.Fatalf("queued callback %d entered the failed runtime", id)
+	default:
+	}
 }

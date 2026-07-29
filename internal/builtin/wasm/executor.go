@@ -3,6 +3,7 @@ package wasm
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.minekube.com/gate/internal/builtin/wasm/wasmtime"
@@ -17,8 +18,14 @@ type executionResult struct {
 }
 
 type executionRequest struct {
-	run    func() (any, error)
-	result chan executionResult
+	run         func() (any, error)
+	result      chan executionResult
+	fatal       bool
+	allowFailed bool
+}
+
+type executorFailure struct {
+	err error
 }
 
 // executor is the single top-level entry lane for one component store.
@@ -32,7 +39,7 @@ type executor struct {
 	closed    bool
 	closeOnce sync.Once
 	closeErr  error
-	failure   error
+	failure   atomic.Pointer[executorFailure]
 	failOnce  sync.Once
 	onFatal   func(error)
 }
@@ -53,23 +60,44 @@ func newExecutor(runtime componentRuntime, onFatal ...func(error)) *executor {
 func (executor *executor) run() {
 	defer close(executor.done)
 	for request := range executor.requests {
+		if failure := executor.failureCause(); failure != nil &&
+			!request.allowFailed {
+			request.result <- executionResult{
+				err: errors.Join(errExecutorFailed, failure),
+			}
+			continue
+		}
 		value, err := request.run()
+		if request.fatal && err != nil {
+			executor.fail(err)
+		}
 		request.result <- executionResult{value: value, err: err}
 	}
 }
 
 func (executor *executor) call(run func() (any, error)) (any, error) {
+	return executor.enqueue(run, false)
+}
+
+func (executor *executor) callFatal(run func() (any, error)) (any, error) {
+	return executor.enqueue(run, true)
+}
+
+func (executor *executor) enqueue(
+	run func() (any, error),
+	fatal bool,
+) (any, error) {
 	request := executionRequest{
 		run:    run,
 		result: make(chan executionResult, 1),
+		fatal:  fatal,
 	}
 	executor.mu.Lock()
 	if executor.closed {
 		executor.mu.Unlock()
 		return nil, errExecutorClosed
 	}
-	if executor.failure != nil {
-		failure := executor.failure
+	if failure := executor.failureCause(); failure != nil {
 		executor.mu.Unlock()
 		return nil, errors.Join(errExecutorFailed, failure)
 	}
@@ -108,14 +136,10 @@ func (executor *executor) InvokeCallback(
 	guestID uint64,
 	input []byte,
 ) ([]byte, error) {
-	value, err := executor.call(func() (any, error) {
+	value, err := executor.callFatal(func() (any, error) {
 		return executor.runtime.InvokeCallback(callbackTypeID, guestID, input)
 	})
 	if err != nil {
-		if !errors.Is(err, errExecutorClosed) &&
-			!errors.Is(err, errExecutorFailed) {
-			executor.fail(err)
-		}
 		return nil, err
 	}
 	return value.([]byte), nil
@@ -123,13 +147,19 @@ func (executor *executor) InvokeCallback(
 
 func (executor *executor) fail(failure error) {
 	executor.failOnce.Do(func() {
-		executor.mu.Lock()
-		executor.failure = failure
-		executor.mu.Unlock()
+		executor.failure.Store(&executorFailure{err: failure})
 		if executor.onFatal != nil {
 			executor.onFatal(failure)
 		}
 	})
+}
+
+func (executor *executor) failureCause() error {
+	failure := executor.failure.Load()
+	if failure == nil {
+		return nil
+	}
+	return failure.err
 }
 
 func (executor *executor) Close() error {
@@ -140,7 +170,8 @@ func (executor *executor) Close() error {
 			run: func() (any, error) {
 				return nil, executor.runtime.Close()
 			},
-			result: make(chan executionResult, 1),
+			result:      make(chan executionResult, 1),
+			allowFailed: true,
 		}
 		executor.requests <- request
 		close(executor.requests)

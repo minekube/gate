@@ -56,7 +56,8 @@ component.
 
 ## Gate configuration
 
-WebAssembly plugins are disabled by default:
+WebAssembly plugins are enabled by default. An absent or empty plugin directory
+is a no-op:
 
 ```yaml
 config:
