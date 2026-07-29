@@ -4,12 +4,15 @@
   "version": "1.0.0",
   "author": "Minekube",
   "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "pnpm exec vitepress dev docs",
     "build": "node scripts/build-with-community-stats.mjs",
     "build:worker": "pnpm run build && wrangler pages functions build --outdir .worker-dist",
-    "deploy:worker": "wrangler deploy",
-    "deploy:worker:canary": "wrangler deploy --config wrangler.canary.jsonc",
+    "deploy:worker": "node scripts/deploy-worker.mjs",
+    "deploy:worker:canary": "node scripts/deploy-worker.mjs --canary",
     "serve": "pnpm exec vitepress serve docs",
     "test": "node --test scripts/*.test.mjs"
   },

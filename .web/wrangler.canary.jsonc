@@ -11,8 +11,7 @@
   },
   "kv_namespaces": [
     {
-      "binding": "GITHUB_CACHE",
-      "id": "bb52b8a4ec434908a275405672230219"
+      "binding": "GITHUB_CACHE"
     }
   ],
   "assets": {
