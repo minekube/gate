@@ -12,6 +12,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
+	wasmplugin "go.minekube.com/gate/internal/wasm/runtime/plugin"
 	"go.minekube.com/gate/pkg/gate"
 	"go.minekube.com/gate/pkg/version"
 	"go.uber.org/zap"
@@ -149,7 +150,10 @@ Visit the website https://gate.minekube.com/ for more information.`
 		disableAutoReload := noAutoReload || cfg.NoAutoReload
 
 		// Start Gate
-		startOpts := []gate.StartOption{gate.WithConfig(*cfg)}
+		startOpts := []gate.StartOption{
+			gate.WithConfig(*cfg),
+			gate.WithComponentPlugins(wasmplugin.New(cfg.Config.Wasm)),
+		}
 		if !disableAutoReload && v.ConfigFileUsed() != "" {
 			startOpts = append(startOpts, gate.WithAutoConfigReload(v.ConfigFileUsed()))
 		}

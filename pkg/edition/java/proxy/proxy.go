@@ -78,6 +78,8 @@ type Proxy struct {
 
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
+
+	componentPlugins ComponentPluginManager
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -91,6 +93,8 @@ type Options struct {
 	// Authenticator to authenticate users in online mode.
 	// If not set, creates a default one.
 	Authenticator auth.Authenticator
+	// ComponentPlugins loads language-neutral WebAssembly Component plugins.
+	ComponentPlugins ComponentPluginManager
 }
 
 // New returns a new Proxy ready to start.
@@ -126,6 +130,7 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
+		componentPlugins: options.ComponentPlugins,
 	}
 
 	// Connection & login rate limiters
@@ -201,6 +206,13 @@ func (p *Proxy) Start(ctx context.Context) error {
 	// Init "plugins" with the proxy
 	if err := p.initPlugins(ctx); err != nil {
 		return err
+	}
+	if p.componentPlugins != nil {
+		defer func() {
+			if err := p.componentPlugins.Close(); err != nil {
+				p.log.Error(err, "error closing component plugins")
+			}
+		}()
 	}
 
 	logInfo := func() {
@@ -422,6 +434,16 @@ func (p *Proxy) initPlugins(ctx context.Context) error {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
 		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
+	}
+	if p.componentPlugins != nil {
+		start := time.Now()
+		if err := p.componentPlugins.Start(ctx, p); err != nil {
+			return fmt.Errorf("error initializing component plugins: %w", err)
+		}
+		log.Info(
+			"initialized component plugins",
+			"time", time.Since(start).Round(time.Millisecond).String(),
+		)
 	}
 	return nil
 }

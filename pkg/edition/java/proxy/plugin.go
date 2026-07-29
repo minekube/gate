@@ -10,6 +10,13 @@ import "context"
 // will fire the ShutdownEvent so other plugins can gracefully de-initialize.
 var Plugins []Plugin
 
+// ComponentPluginManager owns language-neutral component plugins. It remains
+// independent from Plugins: native plugins are not wrapped or migrated.
+type ComponentPluginManager interface {
+	Start(context.Context, *Proxy) error
+	Close() error
+}
+
 // Plugin provides the ability to extend Gate with external code.
 //
 // Quick notes on Go's plugin system:

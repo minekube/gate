@@ -14,7 +14,7 @@ use std::time::Duration;
 use anyhow::{Context as _, anyhow};
 
 use abi::{AbiLimits, OwnedBytes, OwnedSample, SampleView, Slice, SliceList};
-pub use engine::Engine;
+pub use engine::{Engine, PluginMetadata};
 pub use reentry::ActiveCall;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -266,6 +266,34 @@ pub struct GateWasmRuntime {
 }
 
 #[repr(C)]
+pub struct PluginMetadataView {
+    name: Slice,
+    version: Slice,
+    contract_hash: Slice,
+    generator_format: u32,
+}
+
+impl PluginMetadataView {
+    fn new(metadata: &PluginMetadata) -> Self {
+        Self {
+            name: Slice {
+                ptr: metadata.name.as_ptr(),
+                len: metadata.name.len(),
+            },
+            version: Slice {
+                ptr: metadata.version.as_ptr(),
+                len: metadata.version.len(),
+            },
+            contract_hash: Slice {
+                ptr: metadata.contract_hash.as_ptr(),
+                len: metadata.contract_hash.len(),
+            },
+            generator_format: metadata.generator_format,
+        }
+    }
+}
+
+#[repr(C)]
 pub struct GateWasmReentry {
     _opaque: [u8; 0],
 }
@@ -413,6 +441,28 @@ pub unsafe extern "C" fn gate_wasm_runtime_new(
             unsafe { set_error(error, panic_message(payload)) };
             ptr::null_mut()
         }
+    }
+}
+
+/// # Safety
+///
+/// `runtime` must be live for this call and `output` must be writable. The
+/// returned slices borrow runtime-owned strings and are valid until the runtime
+/// is freed.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gate_wasm_runtime_metadata(
+    runtime: *const GateWasmRuntime,
+    output: *mut PluginMetadataView,
+    error: *mut OwnedBytes,
+) -> i32 {
+    // SAFETY: ffi_status contains all panics and reports errors through C.
+    unsafe {
+        ffi_status(error, || {
+            let runtime = runtime
+                .as_ref()
+                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
+            set_owned(output, PluginMetadataView::new(runtime.engine.metadata()))
+        })
     }
 }
 

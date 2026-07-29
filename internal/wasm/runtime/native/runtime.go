@@ -28,6 +28,13 @@ type Limits struct {
 	Deadline      time.Duration
 }
 
+type Metadata struct {
+	Name            string
+	Version         string
+	ContractHash    string
+	GeneratorFormat uint32
+}
+
 type Host interface {
 	ContextCancelled(contextID uint64) (bool, error)
 	Transform(proxyID uint64, input Sample) (Sample, error)
@@ -43,11 +50,19 @@ type Runtime struct {
 }
 
 type runtimeImpl interface {
+	Metadata() (Metadata, error)
 	Init(contextID, proxyID uint64) (Sample, error)
 	OnEvent(proxyID uint64, input string) (string, error)
 	Allocate(bytes uint64) (uint64, error)
 	Spin() error
 	Close() error
+}
+
+func (r *Runtime) Metadata() (Metadata, error) {
+	if r == nil || r.impl == nil {
+		return Metadata{}, ErrClosed
+	}
+	return r.impl.Metadata()
 }
 
 func (r *Runtime) Init(contextID, proxyID uint64) (Sample, error) {

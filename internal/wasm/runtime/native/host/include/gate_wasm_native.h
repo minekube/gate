@@ -45,6 +45,13 @@ typedef struct gate_wasm_limits {
   uint64_t deadline_nanos;
 } gate_wasm_limits;
 
+typedef struct gate_wasm_plugin_metadata {
+  gate_wasm_slice name;
+  gate_wasm_slice version;
+  gate_wasm_slice contract_hash;
+  uint32_t generator_format;
+} gate_wasm_plugin_metadata;
+
 typedef struct gate_wasm_runtime gate_wasm_runtime;
 typedef struct gate_wasm_reentry gate_wasm_reentry;
 
@@ -61,6 +68,9 @@ typedef enum gate_wasm_status {
 gate_wasm_slice gate_wasm_runtime_version(void);
 gate_wasm_runtime *gate_wasm_runtime_new(
     gate_wasm_slice component, uintptr_t go_host, gate_wasm_limits limits,
+    gate_wasm_owned_bytes *error);
+int32_t gate_wasm_runtime_metadata(
+    const gate_wasm_runtime *runtime, gate_wasm_plugin_metadata *output,
     gate_wasm_owned_bytes *error);
 int32_t gate_wasm_runtime_init(
     gate_wasm_runtime *runtime, uint64_t context_id, uint64_t proxy_id,

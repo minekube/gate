@@ -38,6 +38,8 @@ type Options struct {
 	// The event manager to use.
 	// If none is set, no events are sent.
 	EventMgr event.Manager
+	// ComponentPlugins loads language-neutral component plugins.
+	ComponentPlugins jproxy.ComponentPluginManager
 }
 
 // New returns a new Gate instance.
@@ -81,8 +83,9 @@ func New(options Options) (gate *Gate, err error) {
 	c := options.Config
 	// Java proxy is always created (embedded config)
 	gate.javaProxy, err = jproxy.New(jproxy.Options{
-		Config:   &c.Config,
-		EventMgr: eventMgr,
+		Config:           &c.Config,
+		EventMgr:         eventMgr,
+		ComponentPlugins: options.ComponentPlugins,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating new %s proxy: %w", edition.Java, err)
@@ -158,6 +161,7 @@ type startOptions struct {
 	conf                      *config.Config
 	autoShutdownOnSignal      bool
 	autoConfigReloadWatchPath string
+	componentPlugins          jproxy.ComponentPluginManager
 }
 
 // WithConfig is a StartOption for Start
@@ -165,6 +169,13 @@ type startOptions struct {
 func WithConfig(c config.Config) StartOption {
 	return func(o *startOptions) {
 		o.conf = &c
+	}
+}
+
+// WithComponentPlugins configures a language-neutral component plugin loader.
+func WithComponentPlugins(plugins jproxy.ComponentPluginManager) StartOption {
+	return func(o *startOptions) {
+		o.componentPlugins = plugins
 	}
 }
 
@@ -227,8 +238,9 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	// Setup new Gate instance with loaded config.
 	eventMgr := event.New(event.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
-		Config:   c.conf,
-		EventMgr: eventMgr,
+		Config:           c.conf,
+		EventMgr:         eventMgr,
+		ComponentPlugins: c.componentPlugins,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating Gate instance: %w", err)

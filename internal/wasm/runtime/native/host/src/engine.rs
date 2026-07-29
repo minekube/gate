@@ -311,12 +311,20 @@ impl From<Sample> for WitSample {
 
 pub struct Engine {
     store: Store<StoreData>,
-    metadata: Func,
+    metadata: PluginMetadata,
     init: Func,
     engine: wasmtime::Engine,
     fuel: u64,
     deadline: Duration,
     memory_bytes: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginMetadata {
+    pub name: String,
+    pub version: String,
+    pub contract_hash: String,
+    pub generator_format: u32,
 }
 
 impl Engine {
@@ -365,7 +373,7 @@ impl Engine {
         let plugin = instance
             .get_export_index(&mut store, None, "minekube:gate/plugin@0.1.0")
             .context("component does not export minekube:gate/plugin@0.1.0")?;
-        let metadata = instance
+        let metadata_export = instance
             .get_export_index(&mut store, Some(&plugin), "metadata")
             .and_then(|index| instance.get_func(&mut store, &index))
             .context("component does not export plugin metadata")?;
@@ -377,14 +385,19 @@ impl Engine {
 
         let mut engine = Self {
             store,
-            metadata,
+            metadata: PluginMetadata {
+                name: String::new(),
+                version: String::new(),
+                contract_hash: String::new(),
+                generator_format: 0,
+            },
             init,
             engine,
             fuel: limits.fuel,
             deadline: limits.deadline,
             memory_bytes: limits.memory_bytes,
         };
-        engine.validate_metadata()?;
+        engine.metadata = engine.read_metadata(metadata_export)?;
         Ok(engine)
     }
 
@@ -438,15 +451,20 @@ impl Engine {
         }
     }
 
-    fn validate_metadata(&mut self) -> anyhow::Result<()> {
-        let mut results = vec![Val::Bool(false); self.metadata.ty(&self.store).results().len()];
-        self.metadata
+    fn read_metadata(&mut self, metadata: Func) -> anyhow::Result<PluginMetadata> {
+        let mut results = vec![Val::Bool(false); metadata.ty(&self.store).results().len()];
+        metadata
             .call(&mut self.store, &[], &mut results)
             .map_err(anyhow::Error::from)
             .context("component metadata trapped")?;
         let [Val::Record(fields)] = results.as_slice() else {
             bail!("component metadata returned an invalid value");
         };
+        let name = record_string(fields, "name")?;
+        if name.trim().is_empty() {
+            bail!("component metadata name is empty");
+        }
+        let version = record_string(fields, "version")?;
         let contract_hash = record_string(fields, "contract-hash")?;
         if contract_hash != generated::dispatch::WIT_HASH {
             bail!(
@@ -461,7 +479,16 @@ impl Engine {
                 generated::bindings::GENERATOR_FORMAT
             );
         }
-        Ok(())
+        Ok(PluginMetadata {
+            name,
+            version,
+            contract_hash,
+            generator_format,
+        })
+    }
+
+    pub fn metadata(&self) -> &PluginMetadata {
+        &self.metadata
     }
 
     pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {

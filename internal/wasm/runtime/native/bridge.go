@@ -76,6 +76,38 @@ func nativeRuntimeVersion() string {
 	return string(version)
 }
 
+func (r *nativeRuntime) Metadata() (Metadata, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed {
+		return Metadata{}, ErrClosed
+	}
+	var output C.gate_wasm_plugin_metadata
+	var cError C.gate_wasm_owned_bytes
+	status := C.gate_wasm_runtime_metadata(r.ptr, &output, &cError)
+	if status != 0 {
+		return Metadata{}, takeRustStatus(status, cError)
+	}
+	name, err := copySlice(output.name)
+	if err != nil {
+		return Metadata{}, err
+	}
+	version, err := copySlice(output.version)
+	if err != nil {
+		return Metadata{}, err
+	}
+	contractHash, err := copySlice(output.contract_hash)
+	if err != nil {
+		return Metadata{}, err
+	}
+	return Metadata{
+		Name:            string(name),
+		Version:         string(version),
+		ContractHash:    string(contractHash),
+		GeneratorFormat: uint32(output.generator_format),
+	}, nil
+}
+
 func (r *nativeRuntime) Init(contextID, proxyID uint64) (Sample, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

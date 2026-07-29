@@ -28,6 +28,12 @@ func TestRuntimeInitReceivesContextAndRealProxy(t *testing.T) {
 	require.NoError(t, err)
 	runtime, err := native.New(component, host, native.Limits{})
 	require.NoError(t, err)
+	metadata, err := runtime.Metadata()
+	require.NoError(t, err)
+	require.Equal(t, "gate-wasm-fixture", metadata.Name)
+	require.Equal(t, "0.0.0", metadata.Version)
+	require.Len(t, metadata.ContractHash, 64)
+	require.EqualValues(t, 1, metadata.GeneratorFormat)
 
 	_, err = runtime.Init(host.ContextHandle(), host.ProxyHandle())
 	require.NoError(t, err)
