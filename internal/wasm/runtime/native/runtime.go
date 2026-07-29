@@ -6,13 +6,14 @@ import (
 )
 
 var (
-	ErrUnavailable    = errors.New("wasm native runtime unavailable")
-	ErrClosed         = errors.New("wasm runtime closed")
-	ErrExpiredReentry = errors.New("wasm reentry token expired")
-	ErrFuelExhausted  = errors.New("wasm fuel exhausted")
-	ErrDeadline       = errors.New("wasm call deadline exceeded")
-	ErrMemoryLimit    = errors.New("wasm memory limit exceeded")
-	ErrTransferLimit  = errors.New("wasm transfer limit exceeded")
+	ErrUnavailable        = errors.New("wasm native runtime unavailable")
+	ErrClosed             = errors.New("wasm runtime closed")
+	ErrExpiredReentry     = errors.New("wasm reentry token expired")
+	ErrFuelExhausted      = errors.New("wasm fuel exhausted")
+	ErrDeadline           = errors.New("wasm call deadline exceeded")
+	ErrMemoryLimit        = errors.New("wasm memory limit exceeded")
+	ErrTransferLimit      = errors.New("wasm transfer limit exceeded")
+	ErrWrongReentryThread = errors.New("wasm reentry token used from another OS thread")
 )
 
 type Limits struct {
@@ -42,6 +43,7 @@ type Runtime struct {
 type runtimeImpl interface {
 	Metadata() (Metadata, error)
 	Init(contextID, proxyID uint64) error
+	SetDeadline(deadline time.Duration) error
 	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
 	Close() error
 }
@@ -58,6 +60,13 @@ func (r *Runtime) Init(contextID, proxyID uint64) error {
 		return ErrClosed
 	}
 	return r.impl.Init(contextID, proxyID)
+}
+
+func (r *Runtime) SetDeadline(deadline time.Duration) error {
+	if r == nil || r.impl == nil {
+		return ErrClosed
+	}
+	return r.impl.SetDeadline(deadline)
 }
 
 func (r *Runtime) InvokeCallback(

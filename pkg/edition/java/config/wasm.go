@@ -18,6 +18,7 @@ var DefaultWasm = Wasm{
 	TransferBytes:     16 << 20,
 	Fuel:              10_000_000,
 	ResourceHandles:   65_536,
+	TimerLimit:        1_024,
 	InitDeadline:      configutil.Duration(5 * time.Second),
 	CallbackDeadline:  configutil.Duration(100 * time.Millisecond),
 	Plugins:           map[string]WasmPlugin{},
@@ -32,6 +33,7 @@ type Wasm struct {
 	TransferBytes     uint64                `yaml:"transferBytes,omitempty" json:"transferBytes,omitempty"`
 	Fuel              uint64                `yaml:"fuel,omitempty" json:"fuel,omitempty"`
 	ResourceHandles   uint32                `yaml:"resourceHandles,omitempty" json:"resourceHandles,omitempty"`
+	TimerLimit        uint32                `yaml:"timerLimit,omitempty" json:"timerLimit,omitempty"`
 	InitDeadline      configutil.Duration   `yaml:"initDeadline,omitempty" json:"initDeadline,omitempty"`
 	CallbackDeadline  configutil.Duration   `yaml:"callbackDeadline,omitempty" json:"callbackDeadline,omitempty"`
 	Plugins           map[string]WasmPlugin `yaml:"plugins,omitempty" json:"plugins,omitempty"`
@@ -67,6 +69,9 @@ func (cfg Wasm) Validate() []error {
 	}
 	if cfg.ResourceHandles == 0 || cfg.ResourceHandles > maxWasmResourceHandles {
 		add("resourceHandles must be between 1 and %d", maxWasmResourceHandles)
+	}
+	if cfg.TimerLimit == 0 || cfg.TimerLimit > 1<<20 {
+		add("timerLimit must be between 1 and %d", 1<<20)
 	}
 	for name, deadline := range map[string]configutil.Duration{
 		"initDeadline":     cfg.InitDeadline,

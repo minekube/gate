@@ -52,6 +52,9 @@ int32_t gate_wasm_runtime_metadata(
 int32_t gate_wasm_runtime_init(
     gate_wasm_runtime *runtime, uint64_t context_id, uint64_t proxy_id,
     gate_wasm_owned_bytes *error);
+int32_t gate_wasm_runtime_set_deadline(
+    gate_wasm_runtime *runtime, uint64_t deadline_nanos,
+    gate_wasm_owned_bytes *error);
 int32_t gate_wasm_runtime_invoke_callback(
     gate_wasm_runtime *runtime, uint32_t callback_type_id,
     uint64_t guest_id, gate_wasm_slice input,

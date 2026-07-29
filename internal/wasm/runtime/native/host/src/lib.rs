@@ -407,6 +407,29 @@ pub unsafe extern "C" fn gate_wasm_runtime_init(
 
 /// # Safety
 ///
+/// `runtime` must be live and exclusively borrowed for this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gate_wasm_runtime_set_deadline(
+    runtime: *mut GateWasmRuntime,
+    deadline_nanos: u64,
+    error: *mut OwnedBytes,
+) -> i32 {
+    // SAFETY: ffi_status contains all panics and reports errors through C.
+    unsafe {
+        ffi_status(error, || {
+            let runtime = runtime
+                .as_mut()
+                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
+            runtime
+                .engine
+                .set_deadline(Duration::from_nanos(deadline_nanos));
+            Ok(())
+        })
+    }
+}
+
+/// # Safety
+///
 /// `runtime` must be live and exclusively borrowed, `input` must be readable,
 /// and output pointers must be writable for this call.
 #[unsafe(no_mangle)]

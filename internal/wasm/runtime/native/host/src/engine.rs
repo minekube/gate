@@ -473,6 +473,10 @@ impl Engine {
         &self.metadata
     }
 
+    pub fn set_deadline(&mut self, deadline: Duration) {
+        self.deadline = deadline;
+    }
+
     pub fn invoke_callback(
         &mut self,
         callback_type: u32,

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -29,6 +30,10 @@ func (runtime *fakeRuntime) Init(uint64, uint64) error {
 	if runtime.init != nil {
 		return runtime.init()
 	}
+	return nil
+}
+
+func (runtime *fakeRuntime) SetDeadline(time.Duration) error {
 	return nil
 }
 

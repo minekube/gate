@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -22,6 +23,10 @@ func (runtime *executorRuntime) Metadata() (native.Metadata, error) {
 }
 
 func (runtime *executorRuntime) Init(uint64, uint64) error {
+	return nil
+}
+
+func (runtime *executorRuntime) SetDeadline(time.Duration) error {
 	return nil
 }
 

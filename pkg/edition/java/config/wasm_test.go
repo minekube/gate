@@ -19,6 +19,7 @@ func TestDefaultWasmConfigIsSafeAndDisabled(t *testing.T) {
 	require.EqualValues(t, 16<<20, cfg.TransferBytes)
 	require.EqualValues(t, 10_000_000, cfg.Fuel)
 	require.EqualValues(t, 65_536, cfg.ResourceHandles)
+	require.EqualValues(t, 1_024, cfg.TimerLimit)
 	require.Equal(t, 5*time.Second, time.Duration(cfg.InitDeadline))
 	require.Equal(t, 100*time.Millisecond, time.Duration(cfg.CallbackDeadline))
 	require.Empty(t, cfg.Validate())
@@ -35,6 +36,7 @@ func TestWasmConfigValidationRejectsDangerousLimits(t *testing.T) {
 		},
 		"fuel":    func(cfg *Wasm) { cfg.Fuel = 0 },
 		"handles": func(cfg *Wasm) { cfg.ResourceHandles = 1 << 24 },
+		"timers":  func(cfg *Wasm) { cfg.TimerLimit = 0 },
 		"init":    func(cfg *Wasm) { cfg.InitDeadline = 0 },
 		"callback": func(cfg *Wasm) {
 			cfg.CallbackDeadline = configutil.Duration(2 * time.Minute)

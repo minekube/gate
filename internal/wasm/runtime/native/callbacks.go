@@ -18,8 +18,6 @@ import (
 	"unsafe"
 )
 
-var errWrongReentryThread = errors.New("wasm reentry token used from another OS thread")
-
 type nativeCallbackReentry struct {
 	mu       sync.Mutex
 	ptr      *C.gate_wasm_callback_reentry
@@ -38,7 +36,7 @@ func (reentry *nativeCallbackReentry) InvokeCallback(
 		return nil, ErrExpiredReentry
 	}
 	if C.gate_wasm_current_thread_id() != reentry.threadID {
-		return nil, errWrongReentryThread
+		return nil, ErrWrongReentryThread
 	}
 	var output C.gate_wasm_owned_bytes
 	var cError C.gate_wasm_owned_bytes

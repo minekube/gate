@@ -22,7 +22,7 @@ impl Guest for Fixture {
         PluginMetadata {
             name: "gate-wasm-fixture".into(),
             version: "0.0.0".into(),
-            contract_hash: "3a0686b2c3efdd358afbb2cd1f78374009a6865140ce8d97adb6756bfa448907"
+            contract_hash: "05844571b07f3e19787939aa5fa98328c13acef7ab49ba74bb3388ab713cd2c3"
                 .into(),
             generator_format: 1,
         }

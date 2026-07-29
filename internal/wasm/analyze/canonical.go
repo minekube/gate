@@ -148,6 +148,7 @@ func Analyze(ctx context.Context, options Options) (*model.API, error) {
 		api.Packages = append(api.Packages, canonicalPackage)
 	}
 	addEventSubscriptions(api)
+	addRuntimeExtensions(api)
 	for _, exclusion := range options.Exclusions {
 		if _, matched := matchedExclusions[exclusion.Identity]; !matched {
 			return nil, fmt.Errorf(
@@ -160,6 +161,141 @@ func Analyze(ctx context.Context, options Options) (*model.API, error) {
 		return nil, fmt.Errorf("normalize canonical Gate API: %w", err)
 	}
 	return api, nil
+}
+
+func addRuntimeExtensions(api *model.API) {
+	commandPackage := api.ModulePath + "/pkg/command"
+	gatePackage := api.ModulePath + "/pkg/gate"
+	if !hasCanonicalPackage(api, commandPackage) ||
+		!hasCanonicalPackage(api, gatePackage) {
+		return
+	}
+	unsubscribe := syntheticCallback(
+		"callback-"+identityHash("func()"),
+		"func()",
+		model.Callable{},
+	)
+	commandHandler := syntheticCallback(
+		"callback-"+identityHash(
+			"func(c *go.minekube.com/gate/pkg/command.Context) error",
+		),
+		"func(c *go.minekube.com/gate/pkg/command.Context) error",
+		model.Callable{
+			Parameters: []model.Parameter{{
+				GoName: "c", WITName: "c",
+				Type: model.Type{
+					Identity: "go.minekube.com/gate/pkg/command.Context#pointer",
+					WITName:  "context-pointer",
+					GoType:   "*go.minekube.com/gate/pkg/command.Context",
+					Kind:     model.TypeResource, Ownership: model.OwnershipBorrow,
+					Lifetime: model.LifetimeBorrowedCall, Nullable: true,
+					ResourceType: "go.minekube.com/gate/pkg/command.Context#pointer",
+				},
+			}},
+			Error: &model.ErrorBehavior{Fallback: true},
+		},
+	)
+	timerHandler := syntheticCallback(
+		"callback-"+identityHash("func() error"),
+		"func() error",
+		model.Callable{Error: &model.ErrorBehavior{Fallback: true}},
+	)
+	stringType := model.Type{
+		GoType: "string", Kind: model.TypeString,
+		Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
+	}
+	s64Type := model.Type{
+		GoType: "int64", Kind: model.TypeS64,
+		Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
+	}
+	stringList := model.Type{
+		GoType: "[]string", Kind: model.TypeList,
+		Ownership: model.OwnershipCopy, Lifetime: model.LifetimeValue,
+		Nullable: true, Element: &stringType,
+	}
+	appendSyntheticDeclaration(api, model.Declaration{
+		Identity:    commandPackage + "#wasm-register-command",
+		PackagePath: commandPackage,
+		GoName:      "WasmRegisterCommand",
+		WITName:     "wasm-register-command",
+		Kind:        model.DeclarationFunction,
+		Documentation: "Registers a component command and returns an explicit " +
+			"unregister callback.",
+		Callable: &model.Callable{
+			Parameters: []model.Parameter{
+				{GoName: "name", WITName: "name", Type: stringType},
+				{GoName: "aliases", WITName: "aliases", Type: stringList},
+				{GoName: "execute", WITName: "execute", Type: commandHandler},
+			},
+			Results: []model.Parameter{{
+				GoName: "unregister", WITName: "unregister", Type: unsubscribe,
+			}},
+			Error: &model.ErrorBehavior{Fallback: true},
+		},
+		Coverage: model.Coverage{State: model.CoverageRepresented},
+	})
+	for _, timer := range []struct {
+		name, documentation string
+	}{
+		{"after", "Schedules one component callback after a delay."},
+		{"every", "Schedules a non-overlapping recurring component callback."},
+	} {
+		appendSyntheticDeclaration(api, model.Declaration{
+			Identity:      gatePackage + "#wasm-" + timer.name,
+			PackagePath:   gatePackage,
+			GoName:        "Wasm" + strings.ToUpper(timer.name[:1]) + timer.name[1:],
+			WITName:       "wasm-" + timer.name,
+			Kind:          model.DeclarationFunction,
+			Documentation: timer.documentation,
+			Callable: &model.Callable{
+				Parameters: []model.Parameter{
+					{GoName: "nanoseconds", WITName: "nanoseconds", Type: s64Type},
+					{GoName: "handler", WITName: "handler", Type: timerHandler},
+				},
+				Results: []model.Parameter{{
+					GoName: "cancel", WITName: "cancel", Type: unsubscribe,
+				}},
+				Error: &model.ErrorBehavior{Fallback: true},
+			},
+			Coverage: model.Coverage{State: model.CoverageRepresented},
+		})
+	}
+}
+
+func hasCanonicalPackage(api *model.API, path string) bool {
+	for _, pkg := range api.Packages {
+		if pkg.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
+func syntheticCallback(identity, goType string, callable model.Callable) model.Type {
+	return model.Type{
+		Identity: identity, WITName: identity, GoType: goType,
+		Kind: model.TypeCallback, Ownership: model.OwnershipOwn,
+		Lifetime: model.LifetimePlugin, ResourceType: identity,
+		Callback: &model.Callback{
+			Identity: identity, Direction: model.CallbackHostToGuest,
+			Callable: callable, Retained: true, Reentrant: true,
+		},
+	}
+}
+
+func appendSyntheticDeclaration(api *model.API, declaration model.Declaration) {
+	declaration.Dependencies = declarationDependencies(declaration)
+	api.Declarations = append(api.Declarations, declaration)
+	for index := range api.Packages {
+		if api.Packages[index].Path == declaration.PackagePath {
+			api.Packages[index].Declarations = append(
+				api.Packages[index].Declarations,
+				declaration.Identity,
+			)
+			return
+		}
+	}
+	panic("synthetic declaration package is missing: " + declaration.PackagePath)
 }
 
 func addEventSubscriptions(api *model.API) {

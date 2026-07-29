@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"go.minekube.com/gate/internal/wasm/runtime/native"
 )
@@ -79,6 +80,13 @@ func (executor *executor) Metadata() (native.Metadata, error) {
 func (executor *executor) Init(contextID, proxyID uint64) error {
 	_, err := executor.call(func() (any, error) {
 		return nil, executor.runtime.Init(contextID, proxyID)
+	})
+	return err
+}
+
+func (executor *executor) SetDeadline(deadline time.Duration) error {
+	_, err := executor.call(func() (any, error) {
+		return nil, executor.runtime.SetDeadline(deadline)
 	})
 	return err
 }

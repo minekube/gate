@@ -15,15 +15,21 @@ import (
 type OperationKind string
 
 const (
-	OperationFunction       OperationKind = "function"
-	OperationMethod         OperationKind = "method"
-	OperationConstantGet    OperationKind = "constant-get"
-	OperationVariableGet    OperationKind = "variable-get"
-	OperationVariableSet    OperationKind = "variable-set"
-	OperationEventSubscribe OperationKind = "event-subscribe"
+	OperationFunction        OperationKind = "function"
+	OperationMethod          OperationKind = "method"
+	OperationConstantGet     OperationKind = "constant-get"
+	OperationVariableGet     OperationKind = "variable-get"
+	OperationVariableSet     OperationKind = "variable-set"
+	OperationEventSubscribe  OperationKind = "event-subscribe"
+	OperationCommandRegister OperationKind = "command-register"
+	OperationTimerAfter      OperationKind = "timer-after"
+	OperationTimerEvery      OperationKind = "timer-every"
 )
 
 const eventSubscriptionSuffix = "#wasm-subscribe"
+const commandRegistrationSuffix = "#wasm-register-command"
+const timerAfterSuffix = "#wasm-after"
+const timerEverySuffix = "#wasm-every"
 
 type GeneratedOperation struct {
 	ID                  uint32        `json:"id"`
@@ -57,8 +63,15 @@ func Operations(api *model.API) ([]GeneratedOperation, error) {
 		switch declaration.Kind {
 		case model.DeclarationFunction:
 			kind := OperationFunction
-			if strings.HasSuffix(declaration.Identity, eventSubscriptionSuffix) {
+			switch {
+			case strings.HasSuffix(declaration.Identity, eventSubscriptionSuffix):
 				kind = OperationEventSubscribe
+			case strings.HasSuffix(declaration.Identity, commandRegistrationSuffix):
+				kind = OperationCommandRegister
+			case strings.HasSuffix(declaration.Identity, timerAfterSuffix):
+				kind = OperationTimerAfter
+			case strings.HasSuffix(declaration.Identity, timerEverySuffix):
+				kind = OperationTimerEvery
 			}
 			add(
 				declaration,
@@ -252,7 +265,7 @@ func renderCompileReferences(
 		if declaration.Coverage.State != model.CoverageRepresented {
 			continue
 		}
-		if strings.HasSuffix(declaration.Identity, eventSubscriptionSuffix) {
+		if strings.Contains(declaration.Identity, "#wasm-") {
 			continue
 		}
 		alias := aliases[declaration.PackagePath]
@@ -412,6 +425,26 @@ func renderOperationHandler(
 			output,
 			"\tsignature := func(int, func(*"+eventAlias+"."+event.GoName+
 				") error) (func(), error) { return nil, nil }",
+		)
+		fmt.Fprintln(
+			output,
+			"\treturn host.CallExtension(ctx, operation, signature, arguments)",
+		)
+	case OperationCommandRegister:
+		fmt.Fprintln(
+			output,
+			"\tsignature := func(string, []string, func(*"+
+				aliases[declaration.PackagePath]+
+				".Context) error) (func(), error) { return nil, nil }",
+		)
+		fmt.Fprintln(
+			output,
+			"\treturn host.CallExtension(ctx, operation, signature, arguments)",
+		)
+	case OperationTimerAfter, OperationTimerEvery:
+		fmt.Fprintln(
+			output,
+			"\tsignature := func(int64, func() error) (func(), error) { return nil, nil }",
 		)
 		fmt.Fprintln(
 			output,

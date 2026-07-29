@@ -20,6 +20,7 @@ import (
 	"runtime/cgo"
 	"sync"
 	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -128,6 +129,24 @@ func (r *nativeRuntime) Init(contextID, proxyID uint64) error {
 		r.ptr,
 		C.uint64_t(contextID),
 		C.uint64_t(proxyID),
+		&cError,
+	)
+	if status != 0 {
+		return takeRustStatus(status, cError)
+	}
+	return nil
+}
+
+func (r *nativeRuntime) SetDeadline(deadline time.Duration) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed {
+		return ErrClosed
+	}
+	var cError C.gate_wasm_owned_bytes
+	status := C.gate_wasm_runtime_set_deadline(
+		r.ptr,
+		C.uint64_t(max(deadline, 0)),
 		&cError,
 	)
 	if status != 0 {

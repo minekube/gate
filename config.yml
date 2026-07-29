@@ -119,6 +119,7 @@ config:
     transferBytes: 16777216
     fuel: 10000000
     resourceHandles: 65536
+    timerLimit: 1024
     initDeadline: 5s
     callbackDeadline: 100ms
     # Disable a discovered plugin by its exported metadata name:

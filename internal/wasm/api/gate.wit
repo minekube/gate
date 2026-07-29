@@ -2583,6 +2583,7 @@ interface gate-types {
     transfer-bytes: u64,
     fuel: u64,
     resource-handles: u32,
+    timer-limit: u32,
     init-deadline: duration-cebb2f3e1688,
     callback-deadline: duration-cebb2f3e1688,
     plugins: option<list<anonymous-record-a61d19f74dce9161>>,
@@ -2737,8 +2738,10 @@ interface gate-callbacks {
 }
 
 interface pkg-command {
-  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, anonymous-record-b98ac6e17e4f4897, callback-1f86eef915ce, callback-8ce8588e75ea, callback-a3de14505458, command as type-command, command-context, command-node, command-node-string-map, component-8135a805e033, context-9490c9b0e951, context-e30d9213847b, error, gate-error, literal-command-node, literal-node-builder, manager-pointer, message-option, opaque-4ea7cc146071, parse-results-pointer-8958c798f310, parse-results-pointer-a3ab65872fe4, requires-context, source, string-reader-pointer, suggest-func, suggestion-context-pointer, suggestions-builder-pointer, suggestions-pointer, timestamp, tri-state};
+  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, anonymous-record-b98ac6e17e4f4897, callback-0105467f2bef, callback-1f86eef915ce, callback-8ce8588e75ea, callback-a3de14505458, command as type-command, command-context, command-node, command-node-string-map, component-8135a805e033, context-9490c9b0e951, context-e30d9213847b, error, gate-error, literal-command-node, literal-node-builder, manager-pointer, message-option, opaque-4ea7cc146071, parse-results-pointer-8958c798f310, parse-results-pointer-a3ab65872fe4, requires-context, source, string-reader-pointer, suggest-func, suggestion-context-pointer, suggestions-builder-pointer, suggestions-pointer, timestamp, tri-state};
 
+  /// Registers a component command and returns an explicit unregister callback.
+  wasm-register-command: func(name: string, aliases: option<list<string>>, execute: own<callback-a3de14505458>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Command wraps the context for a brigodier.Command.
   command: func(fn: option<own<callback-a3de14505458>>) -> option<own<type-command>>;
   context-bool: func(self: context-9490c9b0e951, argument-name: string) -> bool;
@@ -5483,8 +5486,12 @@ interface pkg-edition-java-title {
 }
 
 interface pkg-gate {
-  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, context-e30d9213847b, duration-cebb2f3e1688, favicon, forced-hosts, forwarding, forwarding-mode, gate, gate-error, health-service, manager-d3469a289502, options-44b62bb619f5, packet-limiter, proxy-3cf24d6ad4bb, proxy-f9797141fae0, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, start-option, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, viper, wasm, wasm-plugin};
+  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, callback-0105467f2bef, callback-9b79f3eb4945, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, context-e30d9213847b, duration-cebb2f3e1688, favicon, forced-hosts, forwarding, forwarding-mode, gate, gate-error, health-service, manager-d3469a289502, options-44b62bb619f5, packet-limiter, proxy-3cf24d6ad4bb, proxy-f9797141fae0, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, start-option, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, viper, wasm, wasm-plugin};
 
+  /// Schedules one component callback after a delay.
+  wasm-after: func(nanoseconds: s64, handler: own<callback-9b79f3eb4945>) -> result<own<callback-0105467f2bef>, gate-error>;
+  /// Schedules a non-overlapping recurring component callback.
+  wasm-every: func(nanoseconds: s64, handler: own<callback-9b79f3eb4945>) -> result<own<callback-0105467f2bef>, gate-error>;
   /// Bedrock returns the Bedrock edition proxy, or nil if none.
   gate-bedrock: func(self: borrow<gate>) -> option<own<proxy-f9797141fae0>>;
   /// Java returns the Java edition proxy, or nil if none.

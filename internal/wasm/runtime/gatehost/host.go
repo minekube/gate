@@ -9,14 +9,17 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/robinbraemer/event"
+	"go.minekube.com/brigodier"
 
 	"go.minekube.com/gate/internal/wasm/api"
 	"go.minekube.com/gate/internal/wasm/runtime/dispatch"
 	"go.minekube.com/gate/internal/wasm/runtime/native"
 	"go.minekube.com/gate/internal/wasm/runtime/resources"
 	"go.minekube.com/gate/internal/wasm/runtime/wire"
+	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 )
 
@@ -33,7 +36,12 @@ type Host struct {
 	callbackRoot   native.CallbackInvoker
 	callbackActive native.CallbackInvoker
 	eventManager   event.Manager
+	commandManager *command.Manager
 	subscriptions  []func()
+	timers         map[*ownedTimer]struct{}
+	timerLimit     uint32
+	closed         bool
+	stopOnce       sync.Once
 	contextHandle  resources.Handle
 	proxyHandle    resources.Handle
 }
@@ -52,10 +60,13 @@ func New(
 	}
 	table := resources.NewTable(plugin, resourceCapacity)
 	host := &Host{
-		context:      ctx,
-		table:        table,
-		dispatch:     dispatch.NewHost(table),
-		eventManager: gateProxy.Event(),
+		context:        ctx,
+		table:          table,
+		dispatch:       dispatch.NewHost(table),
+		eventManager:   gateProxy.Event(),
+		commandManager: gateProxy.Command(),
+		timers:         make(map[*ownedTimer]struct{}),
+		timerLimit:     1024,
 	}
 	var err error
 	host.contextHandle, err = table.Insert(
@@ -99,6 +110,19 @@ func (host *Host) ContextHandle() uint64 {
 
 func (host *Host) ProxyHandle() uint64 {
 	return uint64(host.proxyHandle)
+}
+
+func (host *Host) SetTimerLimit(limit uint32) error {
+	if limit == 0 {
+		return errors.New("wasm plugin timer limit must be greater than zero")
+	}
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	if len(host.timers) != 0 {
+		return errors.New("wasm plugin timer limit cannot change after scheduling")
+	}
+	host.timerLimit = limit
+	return nil
 }
 
 func (host *Host) Invoke(operationID uint32, input []byte) ([]byte, error) {
@@ -218,7 +242,17 @@ func (router callbackRouter) InvokeCallback(
 	if invoker == nil {
 		return nil, errors.New("wasm callback runtime is not bound")
 	}
-	return invoker.InvokeCallback(callbackTypeID, guestID, input)
+	output, err := invoker.InvokeCallback(callbackTypeID, guestID, input)
+	if !errors.Is(err, native.ErrWrongReentryThread) {
+		return output, err
+	}
+	router.host.mu.RLock()
+	root := router.host.callbackRoot
+	router.host.mu.RUnlock()
+	if root == nil || root == invoker {
+		return nil, err
+	}
+	return root.InvokeCallback(callbackTypeID, guestID, input)
 }
 
 func (host *Host) ContextCancelled(contextHandle uint64) (bool, error) {
@@ -237,14 +271,35 @@ func (host *Host) Close() error {
 	if host == nil || host.dispatch == nil {
 		return nil
 	}
-	host.mu.Lock()
-	subscriptions := host.subscriptions
-	host.subscriptions = nil
-	host.mu.Unlock()
-	for index := len(subscriptions) - 1; index >= 0; index-- {
-		subscriptions[index]()
-	}
+	host.StopRegistrations()
 	return host.dispatch.Close()
+}
+
+// StopRegistrations prevents new external callbacks and removes timers,
+// commands, and event subscriptions without invalidating resource handles
+// needed while the component store itself is being dropped.
+func (host *Host) StopRegistrations() {
+	if host == nil {
+		return
+	}
+	host.stopOnce.Do(func() {
+		host.mu.Lock()
+		host.closed = true
+		subscriptions := host.subscriptions
+		host.subscriptions = nil
+		timers := make([]*ownedTimer, 0, len(host.timers))
+		for timer := range host.timers {
+			timers = append(timers, timer)
+		}
+		host.timers = nil
+		host.mu.Unlock()
+		for _, timer := range timers {
+			timer.stop()
+		}
+		for index := len(subscriptions) - 1; index >= 0; index-- {
+			subscriptions[index]()
+		}
+	})
 }
 
 func (host *Host) invokeExtension(
@@ -252,9 +307,24 @@ func (host *Host) invokeExtension(
 	operation dispatch.Operation,
 	arguments []any,
 ) ([]any, error) {
-	if !strings.HasSuffix(operation.Identity, "#wasm-subscribe") {
+	switch {
+	case strings.HasSuffix(operation.Identity, "#wasm-subscribe"):
+		return host.subscribeEvent(operation, arguments)
+	case strings.HasSuffix(operation.Identity, "#wasm-register-command"):
+		return host.registerCommand(operation, arguments)
+	case strings.HasSuffix(operation.Identity, "#wasm-after"):
+		return host.scheduleTimer(operation, arguments, false)
+	case strings.HasSuffix(operation.Identity, "#wasm-every"):
+		return host.scheduleTimer(operation, arguments, true)
+	default:
 		return nil, fmt.Errorf("unknown wasm runtime extension %s", operation.Identity)
 	}
+}
+
+func (host *Host) subscribeEvent(
+	operation dispatch.Operation,
+	arguments []any,
+) ([]any, error) {
 	if len(arguments) != 2 {
 		return nil, host.dispatch.ArgumentCount(operation, len(arguments), 2)
 	}
@@ -292,9 +362,117 @@ func (host *Host) invokeExtension(
 		once.Do(unsubscribe)
 	}
 	host.mu.Lock()
+	if host.closed {
+		host.mu.Unlock()
+		trackedUnsubscribe()
+		return nil, errors.New("wasm plugin host is closed")
+	}
 	host.subscriptions = append(host.subscriptions, trackedUnsubscribe)
 	host.mu.Unlock()
 	return []any{trackedUnsubscribe}, nil
+}
+
+func (host *Host) registerCommand(
+	operation dispatch.Operation,
+	arguments []any,
+) ([]any, error) {
+	if len(arguments) != 3 {
+		return nil, host.dispatch.ArgumentCount(operation, len(arguments), 3)
+	}
+	name, ok := arguments[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("command name has type %T", arguments[0])
+	}
+	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "" || strings.ContainsAny(name, " \t\r\n") {
+		return nil, fmt.Errorf("command name %q is invalid", name)
+	}
+	aliases, ok := arguments[1].([]string)
+	if !ok && arguments[1] != nil {
+		return nil, fmt.Errorf("command aliases have type %T", arguments[1])
+	}
+	normalized := make([]string, len(aliases))
+	seen := map[string]struct{}{name: {}}
+	for index, alias := range aliases {
+		alias = strings.ToLower(strings.TrimSpace(alias))
+		if alias == "" || strings.ContainsAny(alias, " \t\r\n") {
+			return nil, fmt.Errorf("command alias %q is invalid", alias)
+		}
+		if _, duplicate := seen[alias]; duplicate {
+			return nil, fmt.Errorf("duplicate command name or alias %q", alias)
+		}
+		seen[alias] = struct{}{}
+		normalized[index] = alias
+	}
+	execute, ok := arguments[2].(func(*command.Context) error)
+	if !ok {
+		return nil, fmt.Errorf("command callback has type %T", arguments[2])
+	}
+
+	host.mu.Lock()
+	if host.closed {
+		host.mu.Unlock()
+		return nil, errors.New("wasm plugin host is closed")
+	}
+	for candidate := range seen {
+		if host.commandManager.Has(candidate) {
+			host.mu.Unlock()
+			return nil, fmt.Errorf("command %q is already registered", candidate)
+		}
+	}
+	host.commandManager.RegisterWithAliases(
+		brigodier.Literal(name).Executes(command.Command(execute)),
+		normalized...,
+	)
+	var once sync.Once
+	unregister := func() {
+		once.Do(func() {
+			host.mu.Lock()
+			host.commandManager.Root.RemoveChild(append([]string{name}, normalized...)...)
+			host.mu.Unlock()
+		})
+	}
+	host.subscriptions = append(host.subscriptions, unregister)
+	host.mu.Unlock()
+	return []any{unregister}, nil
+}
+
+func (host *Host) scheduleTimer(
+	operation dispatch.Operation,
+	arguments []any,
+	recurring bool,
+) ([]any, error) {
+	if len(arguments) != 2 {
+		return nil, host.dispatch.ArgumentCount(operation, len(arguments), 2)
+	}
+	nanoseconds, ok := arguments[0].(int64)
+	if !ok {
+		return nil, fmt.Errorf("timer duration has type %T", arguments[0])
+	}
+	duration := time.Duration(nanoseconds)
+	if duration <= 0 {
+		return nil, errors.New("timer duration must be greater than zero")
+	}
+	handler, ok := arguments[1].(func() error)
+	if !ok {
+		return nil, fmt.Errorf("timer callback has type %T", arguments[1])
+	}
+	timer := &ownedTimer{
+		host: host, duration: duration, recurring: recurring, handler: handler,
+	}
+	host.mu.Lock()
+	if host.closed {
+		host.mu.Unlock()
+		return nil, errors.New("wasm plugin host is closed")
+	}
+	if uint32(len(host.timers)) >= host.timerLimit {
+		host.mu.Unlock()
+		return nil, fmt.Errorf("wasm plugin timer limit %d reached", host.timerLimit)
+	}
+	host.timers[timer] = struct{}{}
+	host.mu.Unlock()
+	timer.start()
+	return []any{func() { timer.cancel() }}, nil
 }
 
 func eventTransaction(
@@ -311,6 +489,50 @@ func eventTransaction(
 	return copy, func() {
 		original.Elem().Set(copy.Elem())
 	}, true
+}
+
+type ownedTimer struct {
+	mu        sync.Mutex
+	host      *Host
+	timer     *time.Timer
+	duration  time.Duration
+	handler   func() error
+	recurring bool
+	stopped   bool
+}
+
+func (timer *ownedTimer) start() {
+	timer.mu.Lock()
+	if !timer.stopped {
+		timer.timer = time.AfterFunc(timer.duration, timer.fire)
+	}
+	timer.mu.Unlock()
+}
+
+func (timer *ownedTimer) fire() {
+	if err := timer.handler(); err != nil || !timer.recurring {
+		timer.cancel()
+		return
+	}
+	timer.start()
+}
+
+func (timer *ownedTimer) cancel() {
+	timer.stop()
+	timer.host.mu.Lock()
+	if timer.host.timers != nil {
+		delete(timer.host.timers, timer)
+	}
+	timer.host.mu.Unlock()
+}
+
+func (timer *ownedTimer) stop() {
+	timer.mu.Lock()
+	timer.stopped = true
+	if timer.timer != nil {
+		timer.timer.Stop()
+	}
+	timer.mu.Unlock()
 }
 
 func encodeDispatchError(operationID uint32, err error) ([]byte, error) {

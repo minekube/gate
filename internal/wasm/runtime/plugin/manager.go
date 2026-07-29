@@ -23,6 +23,7 @@ import (
 type componentRuntime interface {
 	Metadata() (native.Metadata, error)
 	Init(contextID, proxyID uint64) error
+	SetDeadline(deadline time.Duration) error
 	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
 	Close() error
 }
@@ -103,6 +104,11 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 			manager.closeAfterFailure()
 			return fmt.Errorf("prepare wasm plugin %s: %w", path, err)
 		}
+		if err := host.SetTimerLimit(manager.config.TimerLimit); err != nil {
+			_ = host.Close()
+			manager.closeAfterFailure()
+			return fmt.Errorf("configure wasm plugin %s: %w", path, err)
+		}
 		runtime, err := manager.loader(component, host, manager.limits())
 		if err != nil {
 			_ = host.Close()
@@ -146,6 +152,15 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 				"initialize wasm plugin %q from %s: %w",
 				metadata.Name,
 				path,
+				err,
+			)
+		}
+		if err := serialized.SetDeadline(time.Duration(manager.config.CallbackDeadline)); err != nil {
+			manager.closePlugin(plugin)
+			manager.closeAfterFailure()
+			return fmt.Errorf(
+				"configure wasm plugin %q callback deadline: %w",
+				metadata.Name,
 				err,
 			)
 		}
@@ -201,6 +216,7 @@ func (manager *Manager) closePlugin(plugin *loadedPlugin) error {
 	if plugin == nil {
 		return nil
 	}
+	plugin.host.StopRegistrations()
 	return errors.Join(plugin.runtime.Close(), plugin.host.Close())
 }
 
@@ -208,6 +224,7 @@ func closePlugins(plugins []*loadedPlugin) error {
 	var errs []error
 	for index := len(plugins) - 1; index >= 0; index-- {
 		plugin := plugins[index]
+		plugin.host.StopRegistrations()
 		if err := plugin.runtime.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("close wasm plugin %q: %w", plugin.metadata.Name, err))
 		}

@@ -3,7 +3,7 @@
 /// ABI schema version 1.
 pub const ABI_SCHEMA_VERSION: u32 = 1;
 pub const ABI_LAYOUT_FINGERPRINT: &str =
-    "84d15c20b160bd5d384aab1298b0d67b439f941731e5725305329e6fbd8b43f2";
+    "42360cdec0d21a8a7a18c5f90242140dd71b2ff6fa041952d046b6e4c890880c";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ValueLayout {
@@ -17,6 +17,42 @@ pub struct ValueLayout {
 }
 
 pub static VALUE_LAYOUTS: &[ValueLayout] = &[
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/command#wasm-register-command.parameter.0",
+        direction: "borrowed-input",
+        kind: "buffer",
+        size: 16,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/command#wasm-register-command.parameter.1",
+        direction: "borrowed-input",
+        kind: "option",
+        size: 24,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/command#wasm-register-command.parameter.2",
+        direction: "borrowed-input",
+        kind: "handle",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/command#wasm-register-command.result.0",
+        direction: "rust-owned-output",
+        kind: "handle",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
     ValueLayout {
         identity: "go.minekube.com/gate/pkg/command.Command.parameter.0",
         direction: "borrowed-input",
@@ -29245,6 +29281,60 @@ pub static VALUE_LAYOUTS: &[ValueLayout] = &[
         direction: "rust-owned-output",
         kind: "option",
         size: 16,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-after.parameter.0",
+        direction: "borrowed-input",
+        kind: "scalar",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-after.parameter.1",
+        direction: "borrowed-input",
+        kind: "handle",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-after.result.0",
+        direction: "rust-owned-output",
+        kind: "handle",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-every.parameter.0",
+        direction: "borrowed-input",
+        kind: "scalar",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-every.parameter.1",
+        direction: "borrowed-input",
+        kind: "handle",
+        size: 8,
+        alignment: 8,
+        allocator: "",
+        free_operation: "",
+    },
+    ValueLayout {
+        identity: "go.minekube.com/gate/pkg/gate#wasm-every.result.0",
+        direction: "rust-owned-output",
+        kind: "handle",
+        size: 8,
         alignment: 8,
         allocator: "",
         free_operation: "",
