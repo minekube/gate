@@ -118,11 +118,6 @@ func New(options Options) (p *Proxy, err error) {
 		}
 	}
 
-	plugins := append([]Plugin(nil), Plugins...)
-	if options.ComponentPlugins != nil {
-		plugins = append(plugins, componentManagerPlugin(options.ComponentPlugins))
-	}
-
 	p = &Proxy{
 		log:              logr.Discard(), // updated by Proxy.Start
 		cfg:              options.Config,
@@ -135,7 +130,7 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
-		plugins:          plugins,
+		plugins:          pluginsWithComponentManager(options.ComponentPlugins),
 	}
 
 	// Connection & login rate limiters
@@ -295,6 +290,13 @@ func liteRoutesChanged(current, previous []liteconfig.Route) bool {
 	return false
 }
 
+// Native and compatibility component plugins share one initialization path.
+// Component cleanup subscribes to ShutdownEvent during initialization.
+// Proxy shutdown is installed before plugin initialization so those handlers
+// also run when a later plugin fails to initialize.
+// This keeps lifecycle ownership in the proxy instead of a parallel manager.
+// Plugin-specific cleanup therefore needs no special shutdown branch here.
+
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
 // It first stops listening for new connections, disconnects
@@ -434,6 +436,16 @@ func (p *Proxy) initPlugins(ctx context.Context) error {
 		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
 	}
 	return nil
+}
+
+// pluginsWithComponentManager snapshots native plugins and appends the
+// compatibility manager to the same lifecycle.
+func pluginsWithComponentManager(manager ComponentPluginManager) []Plugin {
+	plugins := append([]Plugin(nil), Plugins...)
+	if manager != nil {
+		plugins = append(plugins, componentManagerPlugin(manager))
+	}
+	return plugins
 }
 
 // Event returns the Proxy's event manager.

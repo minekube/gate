@@ -12,7 +12,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
-	wasmplugin "go.minekube.com/gate/internal/wasm/runtime/plugin"
+	wasmplugin "go.minekube.com/gate/internal/builtin/wasm"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate"

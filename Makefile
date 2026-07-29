@@ -34,10 +34,10 @@ wasm-rust-example-test: wasm-api-check wasm-native-lib
 		./internal/wasm/runtime/native -run TestPublicRustExampleLoadsAndInitializes
 
 wasm-api-generate:
-	go run ./internal/wasm/cmd/gate-wasm-gen generate -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
+	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen generate -repo . -out internal/builtin/wasm/generated -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
 
 wasm-api-check:
-	go run ./internal/wasm/cmd/gate-wasm-gen check -repo . -out internal/wasm/api -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
+	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen check -repo . -out internal/builtin/wasm/generated -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
 
 # Sync embedded config files from root directory
 sync-configs:
