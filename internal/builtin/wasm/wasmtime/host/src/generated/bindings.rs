@@ -3,7 +3,7 @@
 pub const GENERATOR_FORMAT: u32 = 1;
 
 wasmtime::component::bindgen!({
-    path: "../../../api",
+    path: "../../generated",
     world: "gate-plugin",
     imports: { default: trappable | store },
 });

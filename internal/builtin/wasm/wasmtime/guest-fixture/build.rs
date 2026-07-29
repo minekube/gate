@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn main() {
-    let contract = PathBuf::from("../../../api/contract.json");
+    let contract = PathBuf::from("../../generated/contract.json");
     println!("cargo:rerun-if-changed={}", contract.display());
     let document = fs::read_to_string(&contract).expect("read generated Gate contract");
     let hash = string_field(&document, "witHash");

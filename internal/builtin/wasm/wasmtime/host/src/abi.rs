@@ -10,6 +10,12 @@ pub struct Slice {
 }
 
 impl Slice {
+    /// Copies bytes supplied through the C ABI into a Rust-owned buffer.
+    ///
+    /// # Safety
+    ///
+    /// For a non-zero length, `ptr` must reference `len` readable bytes and
+    /// remain valid for the duration of this call.
     pub unsafe fn copy(self) -> anyhow::Result<Vec<u8>> {
         if self.len == 0 {
             return Ok(Vec::new());
@@ -58,6 +64,12 @@ impl OwnedBytes {
         Self::from_vec(value.into_bytes())
     }
 
+    /// Releases a buffer previously created by [`OwnedBytes::from_vec`].
+    ///
+    /// # Safety
+    ///
+    /// The value must have been created by Rust through `from_vec` or
+    /// `from_string`, and ownership must not have been released before.
     pub unsafe fn free_rust(self) {
         if self.cap == 0 {
             return;
@@ -67,6 +79,12 @@ impl OwnedBytes {
         drop(unsafe { Vec::from_raw_parts(self.ptr, self.len, self.cap) });
     }
 
+    /// Copies a C-allocated callback buffer and releases the source buffer.
+    ///
+    /// # Safety
+    ///
+    /// A non-null `ptr` must come from `malloc`, reference at least `len`
+    /// readable bytes, and transfer exclusive ownership to this call.
     pub unsafe fn copy_and_free_c(self) -> anyhow::Result<Vec<u8>> {
         let bytes = if self.len == 0 {
             Vec::new()

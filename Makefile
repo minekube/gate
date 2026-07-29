@@ -1,4 +1,4 @@
-WASM_NATIVE_DIR := internal/wasm/runtime/native
+WASM_NATIVE_DIR := internal/builtin/wasm/wasmtime
 WASM_FIXTURE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_fixture_guest.wasm
 WASM_FIXTURE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_fixture.component.wasm
 WASM_RUST_EXAMPLE_DIR := .examples/wasm/rust
@@ -23,7 +23,7 @@ wasm-native-lib:
 	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-native --release
 
 wasm-native-test: wasm-api-check wasm-fixture-component wasm-native-lib
-	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
+	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/builtin/wasm/wasmtime
 
 wasm-rust-example-test: wasm-api-check wasm-native-lib
 	$(WASM_CARGO) build --manifest-path $(WASM_RUST_EXAMPLE_DIR)/Cargo.toml --release --target wasm32-unknown-unknown
@@ -31,13 +31,13 @@ wasm-rust-example-test: wasm-api-check wasm-native-lib
 		../../../../$(WASM_RUST_EXAMPLE_CORE) \
 		../../../../$(WASM_RUST_EXAMPLE_COMPONENT)
 	CGO_ENABLED=1 go test -count=1 -tags='wasm_native wasm_example' \
-		./internal/wasm/runtime/native -run TestPublicRustExampleLoadsAndInitializes
+		./internal/builtin/wasm/wasmtime -run TestPublicRustExampleLoadsAndInitializes
 
 wasm-api-generate:
-	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen generate -repo . -out internal/builtin/wasm/generated -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
+	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen generate -repo . -out internal/builtin/wasm/generated -native-out internal/builtin/wasm/wasmtime/host/src/generated -public-out wasm/wit
 
 wasm-api-check:
-	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen check -repo . -out internal/builtin/wasm/generated -native-out internal/wasm/runtime/native/host/src/generated -public-out wasm/wit
+	go run ./internal/builtin/wasm/codegen/cmd/gate-wasm-gen check -repo . -out internal/builtin/wasm/generated -native-out internal/builtin/wasm/wasmtime/host/src/generated -public-out wasm/wit
 
 # Sync embedded config files from root directory
 sync-configs:

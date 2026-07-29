@@ -34,7 +34,7 @@ jobs:
           path: |
             wasm/wit/contract.json
             wasm/wit/gate.wit
-            internal/wasm/api/manifest.json
+            internal/builtin/wasm/generated/manifest.json
 
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
@@ -91,7 +91,7 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: internal/wasm/runtime/native -> target
+          workspaces: internal/builtin/wasm/wasmtime -> target
 
       - name: Verify statically linked Wasm component runtime
         run: make wasm-native-test
@@ -398,7 +398,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           mkdir -p dist/wasm-contract/wit
           cp wasm/wit/contract.json wasm/wit/gate.wit dist/wasm-contract/wit/
-          cp internal/wasm/api/manifest.json dist/wasm-contract/wit/
+          cp internal/builtin/wasm/generated/manifest.json dist/wasm-contract/wit/
           cp -R .examples/wasm dist/wasm-contract/examples
           tar -C dist/wasm-contract -czf \
             "../release/gate_wasm_contract_${version}.tar.gz" wit examples

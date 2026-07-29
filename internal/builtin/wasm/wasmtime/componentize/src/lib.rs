@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn generated_wit_golden_is_valid() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../generate/testdata/simple.golden.wit");
+            .join("../../codegen/generate/testdata/simple.golden.wit");
 
         validate_wit(&path).unwrap_or_else(|error| {
             panic!("generated WIT {} is invalid: {error:#}", path.display())
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn generated_gate_wit_is_valid() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../api/gate.wit");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../generated/gate.wit");
 
         validate_wit(&path).unwrap_or_else(|error| {
             panic!("generated WIT {} is invalid: {error:#}", path.display())

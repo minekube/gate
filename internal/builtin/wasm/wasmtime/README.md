@@ -2,7 +2,7 @@
 
 This directory proves Gate can host a WebAssembly Component through Wasmtime
 and a statically linked Rust library. The generated Gate contract lives in
-[`../../api/gate.wit`](../../api/gate.wit).
+[`../generated/gate.wit`](../generated/gate.wit).
 
 WIT is the language-neutral plugin interface. Gate does not maintain separate
 Go, Rust, TypeScript, or other language SDKs. Plugin authors use their

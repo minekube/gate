@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"go.minekube.com/gate/internal/wasm/runtime/native"
+	"go.minekube.com/gate/internal/builtin/wasm/wasmtime"
 )
 
 var errExecutorClosed = errors.New("wasm plugin executor is closed")

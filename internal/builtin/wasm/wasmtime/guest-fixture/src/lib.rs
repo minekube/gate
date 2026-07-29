@@ -1,5 +1,5 @@
 wit_bindgen::generate!({
-    path: "../../../api",
+    path: "../../generated",
     world: "gate-plugin",
 });
 

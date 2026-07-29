@@ -26,7 +26,7 @@ func RenderRustBindings(api *model.API) ([]byte, error) {
 	)
 	fmt.Fprintln(&output)
 	fmt.Fprintln(&output, "wasmtime::component::bindgen!({")
-	fmt.Fprintln(&output, "    path: \"../../../api\",")
+	fmt.Fprintln(&output, "    path: \"../../generated\",")
 	fmt.Fprintln(&output, "    world: \"gate-plugin\",")
 	fmt.Fprintln(&output, "    imports: { default: trappable | store },")
 	fmt.Fprintln(&output, "});")

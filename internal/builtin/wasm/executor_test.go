@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"go.minekube.com/gate/internal/wasm/runtime/native"
+	"go.minekube.com/gate/internal/builtin/wasm/wasmtime"
 )
 
 type executorRuntime struct {

@@ -26,7 +26,7 @@ ARG TARGETOS TARGETARCH
 
 # Build
 ARG VERSION=unknown
-RUN cd internal/wasm/runtime/native \
+RUN cd internal/builtin/wasm/wasmtime \
     && cargo build -p gate-wasm-native --release
 RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags=wasm_native \

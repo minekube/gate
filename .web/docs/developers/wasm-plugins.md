@@ -35,7 +35,7 @@ Each Gate release includes:
 The same files live in the
 [`wasm/wit`](https://github.com/minekube/gate/tree/master/wasm/wit)
 directory; the larger manifest is kept with Gate's
-[`generated host artifacts`](https://github.com/minekube/gate/tree/master/internal/wasm/api)
+[`generated host artifacts`](https://github.com/minekube/gate/tree/master/internal/builtin/wasm/generated)
 and included in release bundles. The contract is generated statically from all
 exported declarations under Gate's `api/...` and `pkg/...` packages. Only the
 native Go plugin bootstrap types are excluded because the component world

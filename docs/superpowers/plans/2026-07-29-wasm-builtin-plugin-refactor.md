@@ -601,17 +601,19 @@ Also change the `wit_bindgen::generate!` path emitted by
 `codegen/generate/rust_dispatch.go` from `"../../../api"` to
 `"../../generated"` before regeneration.
 
-Change the public Rust example component path in
-`example_integration_test.go` from four parent traversals to three:
+Keep the public Rust example component path in
+`example_integration_test.go` at four parent traversals because the old and
+new native workspace roots have the same repository depth:
 
 ```go
-filepath.Join("..", "..", "..", ".examples", "wasm", "rust", "gate-rust-example.component.wasm")
+filepath.Join("..", "..", "..", "..", ".examples", "wasm", "rust", "gate-rust-example.component.wasm")
 ```
 
-Change the repository root in `release_contract_test.go` to:
+Likewise, keep the repository root in `release_contract_test.go` at four
+parent traversals:
 
 ```go
-root := filepath.Join("..", "..", "..")
+root := filepath.Join("..", "..", "..", "..")
 ```
 
 - [ ] **Step 3: Update build and release paths**
@@ -625,8 +627,8 @@ WASM_NATIVE_DIR := internal/builtin/wasm/wasmtime
 Update Make targets to test `./internal/builtin/wasm/wasmtime`, run
 `./internal/builtin/wasm/codegen/cmd/gate-wasm-gen`, write Go artifacts to
 `internal/builtin/wasm/generated`, and write Rust artifacts to
-`internal/builtin/wasm/wasmtime/host/src/generated`. Reduce the Rust example
-relative traversal from `../../../../` to `../../../`.
+`internal/builtin/wasm/wasmtime/host/src/generated`. Keep the Rust example
+relative traversal at `../../../../`.
 
 Update:
 

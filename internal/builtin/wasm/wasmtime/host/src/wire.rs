@@ -349,7 +349,7 @@ fn value_to_wire<T: ResourceTransport>(
         },
         Val::Flags(values) => WireValue::Flags(values.clone()),
         Val::Resource(value) => {
-            let resource = value.clone().try_into_resource_dynamic(&mut *store)?;
+            let resource = (*value).try_into_resource_dynamic(&mut *store)?;
             WireValue::Resource(store.data().resource_handle(resource.rep())?)
         }
         Val::Future(_) | Val::Stream(_) | Val::ErrorContext(_) => {

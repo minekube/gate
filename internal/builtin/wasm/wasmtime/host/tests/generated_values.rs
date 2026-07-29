@@ -27,7 +27,7 @@ fn generated_values_have_valid_fixed_width_layouts() {
             layout.identity
         );
         if !layout.allocator.is_empty() {
-            assert_eq!(layout.direction.ends_with("owned-output"), true);
+            assert!(layout.direction.ends_with("owned-output"));
             assert!(!layout.free_operation.is_empty());
         }
     }
@@ -35,7 +35,7 @@ fn generated_values_have_valid_fixed_width_layouts() {
 
 #[test]
 fn generated_rust_hash_matches_committed_contract() {
-    let contract = include_str!("../../../../api/contract.json");
+    let contract = include_str!("../../../generated/contract.json");
     assert!(
         contract.contains(&format!("\"abiLayoutHash\": \"{ABI_LAYOUT_FINGERPRINT}\"")),
         "generated Rust values and contract hash differ"

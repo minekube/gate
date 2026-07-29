@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.minekube.com/gate/internal/builtin/wasm/host"
-	"go.minekube.com/gate/internal/wasm/runtime/native"
+	"go.minekube.com/gate/internal/builtin/wasm/wasmtime"
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 )

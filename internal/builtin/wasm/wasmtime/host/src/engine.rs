@@ -340,18 +340,18 @@ impl Engine {
             .context("component does not export minekube:gate/plugin@0.1.0")?;
         let metadata_export = instance
             .get_export_index(&mut store, Some(&plugin), "metadata")
-            .and_then(|index| instance.get_func(&mut store, &index))
+            .and_then(|index| instance.get_func(&mut store, index))
             .context("component does not export plugin metadata")?;
         let init = instance
             .get_export_index(&mut store, Some(&plugin), "init")
-            .and_then(|index| instance.get_func(&mut store, &index))
+            .and_then(|index| instance.get_func(&mut store, index))
             .context("component does not export plugin init")?;
         let mut callbacks = HashMap::new();
         for callback in generated::dispatch::CALLBACKS {
             let name = format!("invoke-{}", callback.name);
             let function = instance
                 .get_export_index(&mut store, Some(&plugin), &name)
-                .and_then(|index| instance.get_func(&mut store, &index))
+                .and_then(|index| instance.get_func(&mut store, index))
                 .with_context(|| format!("component does not export plugin {name}"))?;
             callbacks.insert(callback.id, function);
         }
@@ -410,10 +410,10 @@ impl Engine {
             .context("component init trapped");
         let mut drop_error = None;
         for parameter in parameters.drain(..) {
-            if let Val::Resource(resource) = parameter {
-                if let Err(error) = resource.resource_drop(&mut self.store) {
-                    drop_error.get_or_insert(error);
-                }
+            if let Val::Resource(resource) = parameter
+                && let Err(error) = resource.resource_drop(&mut self.store)
+            {
+                drop_error.get_or_insert(error);
             }
         }
         self.store.data_mut().resources.remove(&context_rep);
