@@ -33,12 +33,13 @@ RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
       -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" \
       -a -o gate gate.go
 
-# The arm64 geyserlite executable is dynamically linked and needs zlib.
-# Stage the target-platform library so managed Bedrock also works in the
-# minimal distroless image.
+# The managed Bedrock runtime needs zlib, and the statically archived Rust
+# Wasmtime host still uses GCC's shared unwinder. Stage both target-platform
+# libraries so Gate works in the minimal distroless image.
 FROM debian:bookworm-slim AS runtime-deps
 RUN mkdir -p /runtime-libs \
-    && cp -L /usr/lib/*-linux-gnu/libz.so.1 /runtime-libs/libz.so.1
+    && cp -L /usr/lib/*-linux-gnu/libz.so.1 /runtime-libs/libz.so.1 \
+    && cp -L /usr/lib/*-linux-gnu/libgcc_s.so.1 /runtime-libs/libgcc_s.so.1
 
 # Move binary into final image (default Gate image - distroless)
 # NOTE: We use distroless/base (glibc) instead of distroless/static because the
@@ -51,6 +52,7 @@ RUN mkdir -p /runtime-libs \
 FROM gcr.io/distroless/base-debian12 AS gate
 COPY --from=build /workspace/gate /
 COPY --from=runtime-deps /runtime-libs/libz.so.1 /usr/lib/libz.so.1
+COPY --from=runtime-deps /runtime-libs/libgcc_s.so.1 /usr/lib/libgcc_s.so.1
 ENV XDG_CACHE_HOME=/var/cache/gate
 VOLUME ["/var/cache/gate"]
 ENTRYPOINT ["/gate"]

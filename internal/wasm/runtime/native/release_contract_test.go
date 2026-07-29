@@ -24,6 +24,7 @@ func TestReleaseAndContainerBuildsLinkTheNativeRuntime(t *testing.T) {
 	require.Contains(t, dockerfile, "cargo build -p gate-wasm-native --release")
 	require.Contains(t, dockerfile, "CGO_ENABLED=1")
 	require.Contains(t, dockerfile, "-tags=wasm_native")
+	require.Contains(t, dockerfile, "libgcc_s.so.1")
 
 	workflow := read(filepath.Join(".github", "workflows", "ci.yml"))
 	for _, target := range []string{
