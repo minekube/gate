@@ -95,6 +95,97 @@ jobs:
 
       - name: Verify statically linked Wasm component runtime
         run: make wasm-native-test
+  release-binaries:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - lint
+      - test
+      - wasm-native-feasibility
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            rust_toolchain: "1.94.0"
+            extension: ""
+            shell: bash
+          - platform: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+            rust_toolchain: "1.94.0"
+            extension: ""
+            shell: bash
+          - platform: macos-13
+            goos: darwin
+            goarch: amd64
+            rust_toolchain: "1.94.0"
+            extension: ""
+            shell: bash
+          - platform: macos-14
+            goos: darwin
+            goarch: arm64
+            rust_toolchain: "1.94.0"
+            extension: ""
+            shell: bash
+          - platform: windows-latest
+            goos: windows
+            goarch: amd64
+            rust_toolchain: "1.94.0-x86_64-pc-windows-gnu"
+            extension: ".exe"
+            shell: msys2 {0}
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go with cache
+        uses: actions/setup-go@v6
+        with:
+          cache: true
+          go-version-file: go.mod
+
+      - name: Setup pinned Rust toolchain
+        run: rustup toolchain install ${{ matrix.rust_toolchain }} --profile minimal
+
+      - name: Install Windows C toolchain
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: mingw-w64-x86_64-gcc make
+          path-type: inherit
+
+      - name: Build static Wasmtime archive
+        shell: ${{ matrix.shell }}
+        run: make wasm-native-lib
+
+      - name: Build Gate release binary
+        shell: ${{ matrix.shell }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          version="${GITHUB_REF_NAME#v}"
+          output="release/gate_${version}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.extension }}"
+          CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -tags=wasm_native \
+              -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${GITHUB_REF_NAME}'" \
+              -o "$output" gate.go
+
+      - name: Verify release binary starts
+        if: runner.os != 'Windows'
+        shell: bash
+        run: release/gate_* --version
+
+      - name: Upload release binary
+        uses: actions/upload-artifact@v6
+        with:
+          name: gate-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: release/*
+          if-no-files-found: error
   # Regression test for https://github.com/minekube/gate/issues/697:
   # The published images crashed with "exec /gate: no such file or directory"
   # because the gate binary is dynamically linked (the geyserlite dependency
@@ -173,6 +264,7 @@ jobs:
     needs:
       - lint
       - test
+      - wasm-native-feasibility
       - docker-smoke
     runs-on: ubuntu-latest
     outputs:
@@ -264,6 +356,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build
+      - release-binaries
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -271,19 +364,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
+      - name: Download platform release binaries
+        uses: actions/download-artifact@v7
         with:
-          cache: true
-          go-version-file: go.mod
+          pattern: gate-*
+          path: dist/release
+          merge-multiple: true
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          version: latest
-          args: release --clean
+      - name: Publish statically linked release binaries
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd dist/release
+          sha256sum gate_* > checksums.txt
+          cd ../..
+          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 \
+            || gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes
+          gh release upload "${GITHUB_REF_NAME}" dist/release/* --clobber
 
       - name: Verify published release assets
         env:

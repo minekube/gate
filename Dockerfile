@@ -1,6 +1,13 @@
-FROM --platform=$BUILDPLATFORM golang:1.26 AS build
+FROM --platform=$TARGETPLATFORM golang:1.26 AS build
 
 WORKDIR /workspace
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+      | sh -s -- -y --profile minimal --default-toolchain 1.94.0 \
+    && /root/.cargo/bin/rustup target add wasm32-unknown-unknown
+ENV PATH="/root/.cargo/bin:${PATH}"
 # Copy the Go Modules manifests
 COPY go.mod go.sum ./
 
@@ -10,6 +17,7 @@ RUN go mod download
 
 # Copy the go source
 COPY cmd ./cmd
+COPY internal ./internal
 COPY pkg ./pkg
 COPY gate.go ./
 
@@ -18,8 +26,12 @@ ARG TARGETOS TARGETARCH
 
 # Build
 ARG VERSION=unknown
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" -a -o gate gate.go
+RUN cd internal/wasm/runtime/native \
+    && cargo build -p gate-wasm-native --release
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -tags=wasm_native \
+      -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" \
+      -a -o gate gate.go
 
 # The arm64 geyserlite executable is dynamically linked and needs zlib.
 # Stage the target-platform library so managed Bedrock also works in the
