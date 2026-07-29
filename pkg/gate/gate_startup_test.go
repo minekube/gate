@@ -46,7 +46,14 @@ func TestStartupShippedConfigs(t *testing.T) {
 	}{
 		{name: "minimal", config: configs.MinimalConfigBytes},
 		{name: "simple", config: configs.SimpleConfigBytes},
-		{name: "full", config: configs.DefaultConfigBytes},
+		{
+			name:   "full",
+			config: configs.DefaultConfigBytes,
+			verify: func(t *testing.T, g *Gate) {
+				require.True(t, g.Java().Config().Wasm.Enabled,
+					"the shipped full config must enable the built-in Wasm plugin")
+			},
+		},
 		{
 			name:   "lite",
 			config: configs.LiteConfigBytes,

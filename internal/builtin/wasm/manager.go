@@ -1,4 +1,4 @@
-// Package plugin discovers and owns language-neutral WebAssembly Component
+// Package wasm discovers and owns language-neutral WebAssembly Component
 // plugins for one Gate proxy.
 package wasm
 

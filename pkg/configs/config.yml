@@ -112,7 +112,7 @@ config:
   # Language-neutral WebAssembly Component plugins.
   # Components are initialized with the same context and proxy as native plugins.
   wasm:
-    enabled: false
+    enabled: true
     directory: plugins
     maxComponentBytes: 67108864
     memoryBytes: 134217728

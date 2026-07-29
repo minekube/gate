@@ -70,10 +70,10 @@ make check
 
 The output is `gate-rust-example.component.wasm`.
 
-## Enable plugins
+## Install plugins
 
-Copy component `.wasm` files into the configured directory and enable the
-runtime:
+The Wasm runtime is enabled by default. Copy component `.wasm` files into the
+configured directory; an absent or empty directory is a no-op:
 
 ```yaml
 config:
