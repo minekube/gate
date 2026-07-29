@@ -122,10 +122,16 @@ returning the original startup error.
 
 ## Removal of the Parallel Lifecycle
 
-The Wasm implementation will no longer require the
-`proxy.ComponentPluginManager` field or the `gate.WithComponentPlugins`
-configuration option. `proxy.Proxy` will initialize only native plugins; the
-built-in Wasm plugin owns its component manager internally.
+`proxy.Proxy` will no longer own or initialize a separate component-plugin
+manager field. It will initialize only native plugins, and the built-in Wasm
+plugin will own its component manager internally.
+
+The already-exported `proxy.ComponentPluginManager` and
+`gate.WithComponentPlugins` declarations remain as deprecated,
+source-compatible adapters so this organizational refactor does not
+unnecessarily change Gate's public Go or generated WIT contract. The adapter
+wraps a supplied component manager in a native `proxy.Plugin`; it does not
+restore a second proxy lifecycle.
 
 This removes Wasm-specific orchestration from `proxy.Proxy` without changing
 the lifecycle exposed to component guests:
@@ -200,6 +206,9 @@ Rust tests, linting, and release build checks used by the Wasm feature branch.
   import-path-only internal artifact necessarily changes.
 - Preserve the exported `pkg/edition/java/config.Wasm` Go type and its YAML and
   JSON keys.
+- Preserve the exported `proxy.ComponentPluginManager` and
+  `gate.WithComponentPlugins` declarations as deprecated native-plugin
+  adapters until a separately approved breaking API change removes them.
 - Preserve git history through focused moves where practical.
 - Update Go imports, `go:generate` directives, Rust build paths, release scripts,
   Docker assets, and CI path filters together.
