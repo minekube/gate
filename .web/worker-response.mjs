@@ -9,6 +9,8 @@ export function normalizePagesResponse(response) {
   const contentType = headers.get('content-type');
 
   headers.set('access-control-allow-origin', '*');
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('referrer-policy', 'strict-origin-when-cross-origin');
 
   if (response.status === 404) {
     headers.set('cache-control', 'no-store');

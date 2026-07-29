@@ -103,6 +103,11 @@ test('the Worker preserves Pages response headers for static assets and custom 4
   );
   assert.equal(html.headers.get('access-control-allow-origin'), '*');
   assert.equal(html.headers.get('content-type'), 'text/html; charset=utf-8');
+  assert.equal(html.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(
+    html.headers.get('referrer-policy'),
+    'strict-origin-when-cross-origin'
+  );
 
   const css = normalizePagesResponse(
     new Response('body{}', {
@@ -122,5 +127,10 @@ test('the Worker preserves Pages response headers for static assets and custom 4
   );
   assert.equal(missing.headers.get('cache-control'), 'no-store');
   assert.equal(missing.headers.get('access-control-allow-origin'), '*');
+  assert.equal(missing.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(
+    missing.headers.get('referrer-policy'),
+    'strict-origin-when-cross-origin'
+  );
   assert.equal(missing.status, 404);
 });
