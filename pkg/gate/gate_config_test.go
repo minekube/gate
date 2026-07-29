@@ -7,6 +7,9 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	gateconfig "go.minekube.com/gate/pkg/gate/config"
 )
 
 // TestLoadConfig_MapSharing tests that LoadConfig creates fresh maps
@@ -165,4 +168,53 @@ config:
 	// cfg2 should NOT be affected
 	require.NotContains(t, cfg2.Config.Servers, "dynamic", "Config instances should be independent")
 	require.Len(t, cfg2.Config.Servers, 1, "cfg2 should still have only 1 server")
+}
+
+func TestLoadConfig_WasmPluginsMapSharing(t *testing.T) {
+	const pluginName = "reload-test"
+	t.Cleanup(func() {
+		delete(jconfig.DefaultWasm.Plugins, pluginName)
+		delete(gateconfig.DefaultConfig.Config.Wasm.Plugins, pluginName)
+	})
+
+	configPath := filepath.Join(t.TempDir(), "config.yml")
+	writeConfig := func(contents string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(configPath, []byte(contents), 0o600))
+	}
+	load := func() *gateconfig.Config {
+		t.Helper()
+		v := viper.New()
+		v.SetConfigFile(configPath)
+		cfg, err := LoadConfig(v)
+		require.NoError(t, err)
+		return cfg
+	}
+
+	writeConfig(`
+config:
+  wasm:
+    plugins:
+      reload-test:
+        disabled: true
+`)
+	first := load()
+	require.True(t, first.Config.Wasm.Plugins[pluginName].Disabled)
+
+	writeConfig(`
+config:
+  wasm:
+    enabled: true
+`)
+	second := load()
+	require.NotContains(t, second.Config.Wasm.Plugins, pluginName,
+		"removed Wasm plugin overrides must not persist across reloads")
+	require.NotContains(t, jconfig.DefaultWasm.Plugins, pluginName,
+		"loading config must not mutate the Java default")
+	require.NotContains(t, gateconfig.DefaultConfig.Config.Wasm.Plugins, pluginName,
+		"loading config must not mutate the Gate default")
+
+	first.Config.Wasm.Plugins["first-only"] = jconfig.WasmPlugin{Disabled: true}
+	require.NotContains(t, second.Config.Wasm.Plugins, "first-only",
+		"loaded Wasm plugin maps must be independent")
 }

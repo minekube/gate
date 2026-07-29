@@ -1,6 +1,13 @@
-FROM --platform=$BUILDPLATFORM golang:1.26 AS build
+FROM --platform=$TARGETPLATFORM golang:1.26-bookworm AS build
 
 WORKDIR /workspace
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+      | sh -s -- -y --profile minimal --default-toolchain 1.94.0 \
+    && /root/.cargo/bin/rustup target add wasm32-unknown-unknown
+ENV PATH="/root/.cargo/bin:${PATH}"
 # Copy the Go Modules manifests
 COPY go.mod go.sum ./
 
@@ -10,6 +17,7 @@ RUN go mod download
 
 # Copy the go source
 COPY cmd ./cmd
+COPY internal ./internal
 COPY pkg ./pkg
 COPY gate.go ./
 
@@ -18,15 +26,20 @@ ARG TARGETOS TARGETARCH
 
 # Build
 ARG VERSION=unknown
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" -a -o gate gate.go
+RUN cd internal/builtin/wasm/wasmtime \
+    && cargo build -p gate-wasm-native --release
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -tags=wasm_native \
+      -ldflags="-s -w -X 'go.minekube.com/gate/pkg/version.Version=${VERSION}'" \
+      -a -o gate gate.go
 
-# The arm64 geyserlite executable is dynamically linked and needs zlib.
-# Stage the target-platform library so managed Bedrock also works in the
-# minimal distroless image.
+# The managed Bedrock runtime needs zlib, and the statically archived Rust
+# Wasmtime host still uses GCC's shared unwinder. Stage both target-platform
+# libraries so Gate works in the minimal distroless image.
 FROM debian:bookworm-slim AS runtime-deps
 RUN mkdir -p /runtime-libs \
-    && cp -L /usr/lib/*-linux-gnu/libz.so.1 /runtime-libs/libz.so.1
+    && cp -L /usr/lib/*-linux-gnu/libz.so.1 /runtime-libs/libz.so.1 \
+    && cp -L /usr/lib/*-linux-gnu/libgcc_s.so.1 /runtime-libs/libgcc_s.so.1
 
 # Move binary into final image (default Gate image - distroless)
 # NOTE: We use distroless/base (glibc) instead of distroless/static because the
@@ -39,6 +52,7 @@ RUN mkdir -p /runtime-libs \
 FROM gcr.io/distroless/base-debian12 AS gate
 COPY --from=build /workspace/gate /
 COPY --from=runtime-deps /runtime-libs/libz.so.1 /usr/lib/libz.so.1
+COPY --from=runtime-deps /runtime-libs/libgcc_s.so.1 /usr/lib/libgcc_s.so.1
 ENV XDG_CACHE_HOME=/var/cache/gate
 VOLUME ["/var/cache/gate"]
 ENTRYPOINT ["/gate"]

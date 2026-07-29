@@ -17,7 +17,7 @@ import (
 
 const (
 	verifyAssetsStepName  = "Verify published release assets"
-	createReleaseStepName = "Run GoReleaser"
+	createReleaseStepName = "Publish statically linked release binaries"
 )
 
 type assetWorkflow struct {
@@ -40,7 +40,7 @@ func readReleaseJobSteps(t *testing.T) []assetWorkflowStep {
 
 	// Gate publishes from the tag-gated releaser job in ci.yml rather than a
 	// dedicated release.yml; the guard is API-side, so the publish mechanism
-	// (GoReleaser here) is irrelevant to it.
+	// is irrelevant to it.
 	const workflowPath = ".github/workflows/ci.yml"
 
 	workflowBytes, err := os.ReadFile(workflowPath)
@@ -144,21 +144,22 @@ func TestReleaseVerificationRequiresRealBuildArtifact(t *testing.T) {
 
 	// The metadata types that must NOT satisfy the guard on their own.
 	for _, excluded := range []string{
-		`^checksums\\.txt$`,        // the manifest itself
-		`^SHA(256|512)SUMS$`,       // checksum manifests
-		`^LICENSE`,                 // license metadata
-		`^README`,                  // readme metadata
-		`\\.sig$`,                  // detached signatures
-		`\\.sigstore\\.json$`,      // signature bundles
-		`\\.attest\\.spdx\\.json$`, // SBOM attestations
-		`\\.spdx\\.json$`,          // SBOM metadata
-		`\\.asc$`,                  // armored signatures
-		`\\.pem$`,                  // certificate metadata
-		`\\.sha256$`,               // checksum sidecars
-		`\\.h$`,                    // C headers
-		`\\.hpp$`,                  // C++ headers
-		`\\.md$`,                   // markdown metadata
-		`\\.txt$`,                  // text metadata
+		`^checksums\\.txt$`,                  // the manifest itself
+		`^SHA(256|512)SUMS$`,                 // checksum manifests
+		`^LICENSE`,                           // license metadata
+		`^README`,                            // readme metadata
+		`^gate_wasm_contract_.*\\.tar\\.gz$`, // authoring contract bundle
+		`\\.sig$`,                            // detached signatures
+		`\\.sigstore\\.json$`,                // signature bundles
+		`\\.attest\\.spdx\\.json$`,           // SBOM attestations
+		`\\.spdx\\.json$`,                    // SBOM metadata
+		`\\.asc$`,                            // armored signatures
+		`\\.pem$`,                            // certificate metadata
+		`\\.sha256$`,                         // checksum sidecars
+		`\\.h$`,                              // C headers
+		`\\.hpp$`,                            // C++ headers
+		`\\.md$`,                             // markdown metadata
+		`\\.txt$`,                            // text metadata
 	} {
 		if !strings.Contains(script, excluded) {
 			t.Errorf("build-artifact classifier does not exclude %s; a release of pure "+

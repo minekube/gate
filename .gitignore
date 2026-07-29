@@ -6,3 +6,5 @@ tmp
 ./gate
 .DS_Store
 config-forge-test.yml
+internal/builtin/wasm/wasmtime/target/
+internal/builtin/wasm/wasmtime/artifacts/*.wasm

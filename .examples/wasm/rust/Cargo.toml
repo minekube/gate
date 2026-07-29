@@ -1,0 +1,13 @@
+[package]
+name = "gate-wasm-rust-example"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94.0"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "=0.60.0"

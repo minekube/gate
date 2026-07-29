@@ -2,20 +2,12 @@ version: 2
 before:
   hooks:
     - go mod download
+    - make wasm-native-lib
 builds:
   - id: gate
-    env: [ CGO_ENABLED=0 ]
-    ldflags:
-      - "-s -w"
-      - "-X 'go.minekube.com/gate/pkg/version.Version={{.Version}}'"
-    goos:
-      - linux
-      - windows
-      - darwin
-  - id: gate-musl
-    env: [ CGO_ENABLED=0 ]
+    env: [ CGO_ENABLED=1 ]
     tags:
-      - musl
+      - wasm_native
     ldflags:
       - "-s -w"
       - "-X 'go.minekube.com/gate/pkg/version.Version={{.Version}}'"
@@ -23,20 +15,12 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
-      - '386'
 archives:
   - id: gate
     ids:
       - gate
     formats:
       - binary
-  - id: gate-musl
-    ids:
-      - gate-musl
-    formats:
-      - binary
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}_musl"
 checksum:
   name_template: 'checksums.txt'
 changelog:

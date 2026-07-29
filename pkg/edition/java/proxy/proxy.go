@@ -78,6 +78,8 @@ type Proxy struct {
 
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
+
+	plugins []Plugin
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -91,6 +93,8 @@ type Options struct {
 	// Authenticator to authenticate users in online mode.
 	// If not set, creates a default one.
 	Authenticator auth.Authenticator
+	// ComponentPlugins loads language-neutral WebAssembly Component plugins.
+	ComponentPlugins ComponentPluginManager
 }
 
 // New returns a new Proxy ready to start.
@@ -126,6 +130,7 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
+		plugins:          pluginsWithComponentManager(options.ComponentPlugins),
 	}
 
 	// Connection & login rate limiters
@@ -198,6 +203,10 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
+	defer func() {
+		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
+	}()
+
 	// Init "plugins" with the proxy
 	if err := p.initPlugins(ctx); err != nil {
 		return err
@@ -219,10 +228,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 	}
 	logInfo()
-
-	defer func() {
-		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
-	}()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	listen := func(addr string) context.CancelFunc {
@@ -284,6 +289,13 @@ func liteRoutesChanged(current, previous []liteconfig.Route) bool {
 	}
 	return false
 }
+
+// Native and compatibility component plugins share one initialization path.
+// Component cleanup subscribes to ShutdownEvent during initialization.
+// Proxy shutdown is installed before plugin initialization so those handlers
+// also run when a later plugin fails to initialize.
+// This keeps lifecycle ownership in the proxy instead of a parallel manager.
+// Plugin-specific cleanup therefore needs no special shutdown branch here.
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
@@ -416,7 +428,7 @@ func (p *Proxy) init() (err error) {
 
 func (p *Proxy) initPlugins(ctx context.Context) error {
 	log := logr.FromContextOrDiscard(ctx)
-	for _, pl := range Plugins {
+	for _, pl := range p.plugins {
 		start := time.Now()
 		if err := pl.Init(ctx, p); err != nil {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
@@ -424,6 +436,16 @@ func (p *Proxy) initPlugins(ctx context.Context) error {
 		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
 	}
 	return nil
+}
+
+// pluginsWithComponentManager snapshots native plugins and appends the
+// compatibility manager to the same lifecycle.
+func pluginsWithComponentManager(manager ComponentPluginManager) []Plugin {
+	plugins := append([]Plugin(nil), Plugins...)
+	if manager != nil {
+		plugins = append(plugins, componentManagerPlugin(manager))
+	}
+	return plugins
 }
 
 // Event returns the Proxy's event manager.
