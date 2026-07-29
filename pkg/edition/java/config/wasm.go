@@ -11,7 +11,7 @@ import (
 const maxWasmResourceHandles = 1<<24 - 1
 
 var DefaultWasm = Wasm{
-	Enabled:           false,
+	Enabled:           true,
 	Directory:         "plugins",
 	MaxComponentBytes: 64 << 20,
 	MemoryBytes:       128 << 20,

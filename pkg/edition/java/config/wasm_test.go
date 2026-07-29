@@ -9,11 +9,11 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 )
 
-func TestDefaultWasmConfigIsSafeAndDisabled(t *testing.T) {
+func TestDefaultWasmConfigIsSafeAndEnabled(t *testing.T) {
 	t.Parallel()
 
 	cfg := DefaultWasm
-	require.False(t, cfg.Enabled)
+	require.True(t, cfg.Enabled)
 	require.Equal(t, "plugins", cfg.Directory)
 	require.EqualValues(t, 128<<20, cfg.MemoryBytes)
 	require.EqualValues(t, 16<<20, cfg.TransferBytes)

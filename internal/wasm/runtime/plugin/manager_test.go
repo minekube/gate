@@ -22,6 +22,33 @@ type fakeRuntime struct {
 	close    func() error
 }
 
+func TestManagerTreatsMissingAndEmptyDirectoriesAsNoop(t *testing.T) {
+	t.Parallel()
+
+	for name, directory := range map[string]string{
+		"missing": filepath.Join(t.TempDir(), "missing"),
+		"empty":   t.TempDir(),
+	} {
+		t.Run(name, func(t *testing.T) {
+			cfg := config.DefaultWasm
+			cfg.Directory = directory
+			loaded := false
+			manager := newWithLoader(cfg, func(
+				[]byte,
+				*gatehost.Host,
+				native.Limits,
+			) (componentRuntime, error) {
+				loaded = true
+				return nil, errors.New("loader must not run")
+			})
+
+			require.NoError(t, manager.Start(context.Background(), &proxy.Proxy{}))
+			require.False(t, loaded)
+			require.NoError(t, manager.Close())
+		})
+	}
+}
+
 func (runtime *fakeRuntime) Metadata() (native.Metadata, error) {
 	return runtime.metadata, nil
 }
