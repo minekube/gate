@@ -51,7 +51,16 @@ the pull request comments.
 
 Worker deployments use the pinned Wrangler toolchain. Set
 `GITHUB_CACHE_KV_NAMESPACE_ID` to the existing `GITHUB_CACHE` Workers KV
-namespace ID in the deployment environment, then run
-`pnpm run build:worker` followed by `pnpm run deploy:worker:canary`.
+namespace ID in the deployment environment. Before the first uncached API
+request, provision the existing GitHub App private key as a secret on each
+Worker; the key must remain outside the repository:
+
+```sh console
+$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.canary.jsonc
+$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.jsonc
+```
+
+Then run `pnpm run build:worker` followed by
+`pnpm run deploy:worker:canary`.
 The production command is `pnpm run deploy:worker`; Cloudflare Pages remains
 available for rollback during canary verification.

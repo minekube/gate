@@ -84,3 +84,10 @@ test('the Worker toolchain is reproducible and permits only required install scr
     'workerd',
   ]);
 });
+
+test('deployment instructions provision the GitHub App private key as a Worker secret', async () => {
+  const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8');
+
+  assert.match(readme, /GITHUB_APP_PRIVATE_KEY/);
+  assert.match(readme, /wrangler secret put GITHUB_APP_PRIVATE_KEY/);
+});
