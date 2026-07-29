@@ -29,7 +29,8 @@ func TestInitPluginsPassesSameContextAndProxyToComponentManager(t *testing.T) {
 
 	manager := &fixtureComponentPlugins{}
 	gateProxy := &Proxy{componentPlugins: manager}
-	ctx := context.WithValue(context.Background(), struct{}{}, "lifetime")
+	type contextKey struct{}
+	ctx := context.WithValue(context.Background(), contextKey{}, "lifetime")
 
 	require.NoError(t, gateProxy.initPlugins(ctx))
 	require.Same(t, gateProxy, manager.proxy)

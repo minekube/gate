@@ -132,43 +132,58 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 		plugin := &loadedPlugin{path: path, runtime: serialized, host: host}
 		metadata, err := serialized.Metadata()
 		if err != nil {
-			manager.closePlugin(plugin)
+			cleanupErr := manager.closePlugin(plugin)
 			manager.closeAfterFailure()
-			return fmt.Errorf("read wasm plugin metadata %s: %w", path, err)
+			return errors.Join(
+				fmt.Errorf("read wasm plugin metadata %s: %w", path, err),
+				cleanupErr,
+			)
 		}
 		plugin.metadata = metadata
 		if previous, duplicate := identities[metadata.Name]; duplicate {
-			manager.closePlugin(plugin)
+			cleanupErr := manager.closePlugin(plugin)
 			manager.closeAfterFailure()
-			return fmt.Errorf(
-				"duplicate wasm plugin identity %q in %s and %s",
-				metadata.Name,
-				previous,
-				path,
+			return errors.Join(
+				fmt.Errorf(
+					"duplicate wasm plugin identity %q in %s and %s",
+					metadata.Name,
+					previous,
+					path,
+				),
+				cleanupErr,
 			)
 		}
 		identities[metadata.Name] = path
 		if override, configured := manager.config.Plugins[metadata.Name]; configured && override.Disabled {
-			manager.closePlugin(plugin)
+			if err := manager.closePlugin(plugin); err != nil {
+				manager.closeAfterFailure()
+				return fmt.Errorf("close disabled wasm plugin %q: %w", metadata.Name, err)
+			}
 			continue
 		}
 		if err := serialized.Init(host.ContextHandle(), host.ProxyHandle()); err != nil {
-			manager.closePlugin(plugin)
+			cleanupErr := manager.closePlugin(plugin)
 			manager.closeAfterFailure()
-			return fmt.Errorf(
-				"initialize wasm plugin %q from %s: %w",
-				metadata.Name,
-				path,
-				err,
+			return errors.Join(
+				fmt.Errorf(
+					"initialize wasm plugin %q from %s: %w",
+					metadata.Name,
+					path,
+					err,
+				),
+				cleanupErr,
 			)
 		}
 		if err := serialized.SetDeadline(time.Duration(manager.config.CallbackDeadline)); err != nil {
-			manager.closePlugin(plugin)
+			cleanupErr := manager.closePlugin(plugin)
 			manager.closeAfterFailure()
-			return fmt.Errorf(
-				"configure wasm plugin %q callback deadline: %w",
-				metadata.Name,
-				err,
+			return errors.Join(
+				fmt.Errorf(
+					"configure wasm plugin %q callback deadline: %w",
+					metadata.Name,
+					err,
+				),
+				cleanupErr,
 			)
 		}
 		manager.mu.Lock()

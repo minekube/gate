@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/otelconnect"
 	"github.com/go-logr/logr"
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"golang.org/x/net/http2/h2c" //nolint:staticcheck // Preserve HTTP/1.1 h2c Upgrade support; Server.Protocols only supports prior knowledge.
 	"golang.org/x/sync/errgroup"
 
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
@@ -43,7 +43,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	hs := &http.Server{
 		Addr: s.cfg.Bind,
-		Handler: h2c.NewHandler(mux, &http2.Server{
+		Handler: h2c.NewHandler(mux, &http2.Server{ //nolint:staticcheck // See the h2c import rationale above.
 			IdleTimeout: time.Second * 30,
 		}),
 		ReadTimeout:       time.Second * 5,

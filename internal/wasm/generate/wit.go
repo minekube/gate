@@ -391,13 +391,9 @@ func renderPackageInterface(
 	if len(used) > 0 && len(operations) > 0 {
 		fmt.Fprintln(output)
 	}
-	for index, declaration := range operations {
+	for _, declaration := range operations {
 		renderDocumentation(output, "  ", declaration.Documentation)
 		registry.renderOperation(output, declaration, localNames)
-		if index+1 < len(operations) {
-			// Operations are intentionally compact; documentation remains
-			// attached to the declaration immediately below it.
-		}
 	}
 	fmt.Fprintln(output, "}")
 }

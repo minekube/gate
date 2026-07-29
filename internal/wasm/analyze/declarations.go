@@ -101,19 +101,6 @@ func objectDeclaration(packagePath string, object types.Object) (Declaration, bo
 	return declaration, true
 }
 
-func methodDeclarations(
-	packagePath string,
-	receiver string,
-	named *types.Named,
-) []Declaration {
-	entries := methodDeclarationEntries(packagePath, receiver, named)
-	declarations := make([]Declaration, len(entries))
-	for index, entry := range entries {
-		declarations[index] = entry.Declaration
-	}
-	return declarations
-}
-
 func methodDeclarationEntries(
 	packagePath string,
 	receiver string,

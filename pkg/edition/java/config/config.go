@@ -292,9 +292,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	validateProxyProtocol(c, e, w)
-	for _, err := range c.Wasm.Validate() {
-		errs = append(errs, err)
-	}
+	errs = append(errs, c.Wasm.Validate()...)
 
 	validateBackendFloodgate(c, e)
 	if c.Lite.Enabled {
