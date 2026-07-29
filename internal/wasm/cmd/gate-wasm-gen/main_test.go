@@ -24,12 +24,13 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"-out", output,
 		"-native-out", nativeOutput,
 	}, &stdout, &stdout))
-	require.Contains(t, stdout.String(), "generated 5 WebAssembly API artifacts")
+	require.Contains(t, stdout.String(), "generated 6 WebAssembly API artifacts")
 	for _, name := range []string{
 		generate.WITFile,
 		generate.ManifestFile,
 		generate.ContractFile,
 		generate.GoValuesFile,
+		generate.GoDispatchFile,
 	} {
 		info, err := os.Stat(filepath.Join(output, name))
 		require.NoError(t, err)

@@ -3,8 +3,9 @@
   "generatorFormat": 1,
   "abiSchemaVersion": 1,
   "abiLayoutHash": "320d49296bb4e08ac043567eee1bd2a572db7d5ef37464b64a6d3c3458ba41b7",
-  "canonicalHash": "1c7fe1600ec1170111017a69d0307a1c550949283e26e6afc0519f00d2c8fe39",
+  "canonicalHash": "e60bb3e5eb31bbaad5521cf0d29c4f0c1f5e3559d24189eb30800d62361130dc",
   "witHash": "1fc6cec81933f7829b1ead2abc702a8f6699b78d557671c29ae1d092e703ec99",
   "packageCount": 69,
-  "declarationCount": 2072
+  "declarationCount": 2072,
+  "operationCount": 1877
 }

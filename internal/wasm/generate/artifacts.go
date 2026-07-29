@@ -11,6 +11,7 @@ const (
 	ManifestFile   = "manifest.json"
 	ContractFile   = "contract.json"
 	GoValuesFile   = "values_gen.go"
+	GoDispatchFile = "dispatch_gen.go"
 	RustValuesFile = "values.rs"
 )
 
@@ -32,11 +33,16 @@ func Artifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", GoValuesFile, err)
 	}
+	dispatch, err := RenderGoDispatch(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", GoDispatchFile, err)
+	}
 	return map[string][]byte{
-		WITFile:      wit,
-		ManifestFile: manifest,
-		ContractFile: contract,
-		GoValuesFile: values,
+		WITFile:        wit,
+		ManifestFile:   manifest,
+		ContractFile:   contract,
+		GoValuesFile:   values,
+		GoDispatchFile: dispatch,
 	}, nil
 }
 

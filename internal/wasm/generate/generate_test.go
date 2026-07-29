@@ -59,6 +59,9 @@ func TestManifestAndContractHashesAreDeterministic(t *testing.T) {
 	require.Len(t, contract.WITHash, 64)
 	require.Equal(t, len(api.Packages), contract.PackageCount)
 	require.Equal(t, len(api.Declarations), contract.DeclarationCount)
+	operations, err := Operations(api)
+	require.NoError(t, err)
+	require.Equal(t, len(operations), contract.OperationCount)
 
 	again, err := RenderContract(cloneAPI(t, api), wit)
 	require.NoError(t, err)

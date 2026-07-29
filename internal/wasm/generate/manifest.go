@@ -9,16 +9,21 @@ import (
 
 // Manifest is the generated, complete public API coverage record.
 type Manifest struct {
-	Generated       string              `json:"_generated"`
-	GeneratorFormat uint32              `json:"generatorFormat"`
-	ModulePath      string              `json:"modulePath"`
-	Packages        []model.Package     `json:"packages"`
-	Declarations    []model.Declaration `json:"declarations"`
+	Generated       string               `json:"_generated"`
+	GeneratorFormat uint32               `json:"generatorFormat"`
+	ModulePath      string               `json:"modulePath"`
+	Packages        []model.Package      `json:"packages"`
+	Declarations    []model.Declaration  `json:"declarations"`
+	Operations      []GeneratedOperation `json:"operations"`
 }
 
 // RenderManifest renders complete declaration coverage as deterministic JSON.
 func RenderManifest(api *model.API) ([]byte, error) {
 	normalized, err := normalizedAPI(api)
+	if err != nil {
+		return nil, err
+	}
+	operations, err := Operations(normalized)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +33,7 @@ func RenderManifest(api *model.API) ([]byte, error) {
 		ModulePath:      normalized.ModulePath,
 		Packages:        normalized.Packages,
 		Declarations:    normalized.Declarations,
+		Operations:      operations,
 	}
 	rendered, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {

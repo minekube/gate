@@ -19,6 +19,7 @@ type Contract struct {
 	WITHash          string `json:"witHash"`
 	PackageCount     int    `json:"packageCount"`
 	DeclarationCount int    `json:"declarationCount"`
+	OperationCount   int    `json:"operationCount"`
 }
 
 // RenderContract renders deterministic contract metadata.
@@ -35,6 +36,10 @@ func RenderContract(api *model.API, wit []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build ABI schema: %w", err)
 	}
+	operations, err := Operations(normalized)
+	if err != nil {
+		return nil, fmt.Errorf("build operation manifest: %w", err)
+	}
 	canonicalHash := sha256.Sum256(manifest)
 	witHash := sha256.Sum256(wit)
 	contract := Contract{
@@ -46,6 +51,7 @@ func RenderContract(api *model.API, wit []byte) ([]byte, error) {
 		WITHash:          hex.EncodeToString(witHash[:]),
 		PackageCount:     len(normalized.Packages),
 		DeclarationCount: len(normalized.Declarations),
+		OperationCount:   len(operations),
 	}
 	rendered, err := json.MarshalIndent(contract, "", "  ")
 	if err != nil {
