@@ -9,6 +9,7 @@ import (
 )
 
 var errExecutorClosed = errors.New("wasm plugin executor is closed")
+var errExecutorFailed = errors.New("wasm plugin executor failed")
 
 type executionResult struct {
 	value any
@@ -31,13 +32,19 @@ type executor struct {
 	closed    bool
 	closeOnce sync.Once
 	closeErr  error
+	failure   error
+	failOnce  sync.Once
+	onFatal   func(error)
 }
 
-func newExecutor(runtime componentRuntime) *executor {
+func newExecutor(runtime componentRuntime, onFatal ...func(error)) *executor {
 	executor := &executor{
 		runtime:  runtime,
 		requests: make(chan executionRequest),
 		done:     make(chan struct{}),
+	}
+	if len(onFatal) != 0 {
+		executor.onFatal = onFatal[0]
 	}
 	go executor.run()
 	return executor
@@ -60,6 +67,11 @@ func (executor *executor) call(run func() (any, error)) (any, error) {
 	if executor.closed {
 		executor.mu.Unlock()
 		return nil, errExecutorClosed
+	}
+	if executor.failure != nil {
+		failure := executor.failure
+		executor.mu.Unlock()
+		return nil, errors.Join(errExecutorFailed, failure)
 	}
 	executor.requests <- request
 	executor.mu.Unlock()
@@ -100,9 +112,24 @@ func (executor *executor) InvokeCallback(
 		return executor.runtime.InvokeCallback(callbackTypeID, guestID, input)
 	})
 	if err != nil {
+		if !errors.Is(err, errExecutorClosed) &&
+			!errors.Is(err, errExecutorFailed) {
+			executor.fail(err)
+		}
 		return nil, err
 	}
 	return value.([]byte), nil
+}
+
+func (executor *executor) fail(failure error) {
+	executor.failOnce.Do(func() {
+		executor.mu.Lock()
+		executor.failure = failure
+		executor.mu.Unlock()
+		if executor.onFatal != nil {
+			executor.onFatal(failure)
+		}
+	})
 }
 
 func (executor *executor) Close() error {

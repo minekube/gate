@@ -115,7 +115,14 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 			manager.closeAfterFailure()
 			return fmt.Errorf("load wasm plugin %s: %w", path, err)
 		}
-		serialized := newExecutor(runtime)
+		var serialized *executor
+		serialized = newExecutor(runtime, func(error) {
+			host.StopRegistrations()
+			go func() {
+				_ = serialized.Close()
+				_ = host.Close()
+			}()
+		})
 		if err := host.ReplaceCallbackInvoker(serialized); err != nil {
 			_ = serialized.Close()
 			_ = host.Close()

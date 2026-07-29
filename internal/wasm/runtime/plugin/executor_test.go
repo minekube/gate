@@ -16,6 +16,7 @@ type executorRuntime struct {
 	entered chan uint64
 	release chan struct{}
 	closed  bool
+	invoke  func() error
 }
 
 func (runtime *executorRuntime) Metadata() (native.Metadata, error) {
@@ -36,6 +37,11 @@ func (runtime *executorRuntime) InvokeCallback(
 	input []byte,
 ) ([]byte, error) {
 	runtime.entered <- guestID
+	if runtime.invoke != nil {
+		if err := runtime.invoke(); err != nil {
+			return nil, err
+		}
+	}
 	if runtime.release != nil {
 		<-runtime.release
 	}
@@ -103,4 +109,24 @@ func TestExecutorReturnsRuntimeErrors(t *testing.T) {
 	t.Cleanup(func() { require.NoError(t, executor.Close()) })
 
 	require.ErrorIs(t, executor.Init(1, 2), expected)
+}
+
+func TestExecutorMarksRuntimeCallbackFailureFatal(t *testing.T) {
+	t.Parallel()
+
+	expected := errors.New("component trapped")
+	fatal := make(chan error, 1)
+	runtime := &executorRuntime{
+		entered: make(chan uint64, 1),
+		invoke:  func() error { return expected },
+	}
+	executor := newExecutor(runtime, func(err error) { fatal <- err })
+	t.Cleanup(func() { require.NoError(t, executor.Close()) })
+
+	_, err := executor.InvokeCallback(1, 1, nil)
+	require.ErrorIs(t, err, expected)
+	require.ErrorIs(t, <-fatal, expected)
+
+	_, err = executor.InvokeCallback(1, 2, nil)
+	require.ErrorIs(t, err, errExecutorFailed)
 }
