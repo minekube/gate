@@ -30,6 +30,8 @@ func RenderWIT(api *model.API) ([]byte, error) {
 	fmt.Fprintln(&output)
 	registry.renderTypes(&output)
 	fmt.Fprintln(&output)
+	renderCallbacksInterface(&output, registry)
+	fmt.Fprintln(&output)
 
 	declarations := make(map[string]model.Declaration, len(normalized.Declarations))
 	for _, declaration := range normalized.Declarations {
@@ -50,6 +52,7 @@ func RenderWIT(api *model.API) ([]byte, error) {
 	for _, pkg := range normalized.Packages {
 		fmt.Fprintf(&output, "  import %s;\n", pkg.WITName)
 	}
+	fmt.Fprintln(&output, "  import gate-callbacks;")
 	fmt.Fprintln(&output, "  export plugin;")
 	fmt.Fprintln(&output, "}")
 	return output.Bytes(), nil
@@ -523,13 +526,8 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 		"name:" + proxyName:   {},
 		"gate-error":          {},
 	}
-	var callbacks []*witDefinition
-	for _, definition := range registry.definitions {
-		if definition.typ.Kind != model.TypeCallback ||
-			definition.typ.Callback == nil {
-			continue
-		}
-		callbacks = append(callbacks, definition)
+	callbacks := registry.callbacks()
+	for _, definition := range callbacks {
 		collectDefinitionUse(definition.identity, registry, used)
 		for _, parameter := range definition.typ.Callback.Callable.Parameters {
 			collectTypeUses(parameter.Type, registry, used)
@@ -538,10 +536,6 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 			collectTypeUses(result.Type, registry, used)
 		}
 	}
-	slices.SortFunc(callbacks, func(left, right *witDefinition) int {
-		return strings.Compare(left.name, right.name)
-	})
-
 	reserved := map[string]struct{}{
 		"metadata": {},
 		"init":     {},
@@ -592,6 +586,82 @@ func renderPluginInterface(output *bytes.Buffer, registry *witRegistry) {
 		)
 	}
 	fmt.Fprintln(output, "}")
+}
+
+func renderCallbacksInterface(output *bytes.Buffer, registry *witRegistry) {
+	callbacks := registry.callbacks()
+	used := map[string]struct{}{"gate-error": {}}
+	reserved := make(map[string]struct{}, len(callbacks)*2)
+	for _, callback := range callbacks {
+		collectDefinitionUse(callback.identity, registry, used)
+		for _, parameter := range callback.typ.Callback.Callable.Parameters {
+			collectTypeUses(parameter.Type, registry, used)
+		}
+		for _, result := range callback.typ.Callback.Callable.Results {
+			collectTypeUses(result.Type, registry, used)
+		}
+		reserved["new-"+callback.name] = struct{}{}
+		reserved["call-"+callback.name] = struct{}{}
+	}
+	localNames := localTypeNames(used, reserved)
+
+	fmt.Fprintln(output, "interface gate-callbacks {")
+	renderUse(output, used, localNames)
+	if len(used) > 0 && len(callbacks) > 0 {
+		fmt.Fprintln(output)
+	}
+	for _, callback := range callbacks {
+		callbackType := callback.typ
+		callbackType.Nullable = false
+		callbackType.Ownership = model.OwnershipOwn
+		fmt.Fprintf(
+			output,
+			"  new-%s: func(id: u64) -> %s;\n",
+			callback.name,
+			registry.typeExpression(callbackType, witOutput, localNames, ""),
+		)
+
+		callbackType.Ownership = model.OwnershipBorrow
+		parameters := []string{
+			"callback: " +
+				registry.typeExpression(callbackType, witInput, localNames, ""),
+		}
+		callable := callback.typ.Callback.Callable
+		for _, parameter := range callable.Parameters {
+			parameters = append(
+				parameters,
+				parameter.WITName+": "+
+					registry.typeExpression(
+						parameter.Type,
+						witInput,
+						localNames,
+						"",
+					),
+			)
+		}
+		fmt.Fprintf(
+			output,
+			"  call-%s: func(%s)%s;\n",
+			callback.name,
+			strings.Join(parameters, ", "),
+			registry.resultExpression(callable, localNames),
+		)
+	}
+	fmt.Fprintln(output, "}")
+}
+
+func (r *witRegistry) callbacks() []*witDefinition {
+	var callbacks []*witDefinition
+	for _, definition := range r.definitions {
+		if definition.typ.Kind == model.TypeCallback &&
+			definition.typ.Callback != nil {
+			callbacks = append(callbacks, definition)
+		}
+	}
+	slices.SortFunc(callbacks, func(left, right *witDefinition) int {
+		return strings.Compare(left.name, right.name)
+	})
+	return callbacks
 }
 
 func renderUse(

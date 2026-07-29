@@ -1,4 +1,7 @@
-use gate_wasm_native::wire::{WireValue, decode_request, encode_request};
+use gate_wasm_native::wire::{
+    GateError, Response, WireValue, decode_request, decode_response, encode_request,
+    encode_response,
+};
 
 #[test]
 fn nested_language_neutral_values_round_trip() -> anyhow::Result<()> {
@@ -25,6 +28,26 @@ fn nested_language_neutral_values_round_trip() -> anyhow::Result<()> {
 
     let encoded = encode_request(&values)?;
     assert_eq!(decode_request(&encoded)?, values);
+    Ok(())
+}
+
+#[test]
+fn callback_responses_round_trip() -> anyhow::Result<()> {
+    let success = Response {
+        values: vec![WireValue::Bool(true)],
+        error: None,
+    };
+    assert_eq!(decode_response(&encode_response(&success)?)?, success);
+
+    let failure = Response {
+        values: vec![],
+        error: Some(GateError {
+            kind: "guest-error".into(),
+            message: "failed".into(),
+            operation: "callback".into(),
+        }),
+    };
+    assert_eq!(decode_response(&encode_response(&failure)?)?, failure);
     Ok(())
 }
 

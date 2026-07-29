@@ -78,6 +78,20 @@ func TestRenderGoDispatchBindsEveryOperation(t *testing.T) {
 	require.NotContains(t, string(source), "recover(")
 }
 
+func TestRenderGoCallbacksRegistersBothDirections(t *testing.T) {
+	t.Parallel()
+
+	source, err := RenderGoCallbacks(simpleAPI())
+	require.NoError(t, err)
+	rendered := string(source)
+	require.Contains(t, rendered, "var GeneratedCallbacks")
+	require.Contains(t, rendered, `Identity:        "example.com/project/pkg/shapes.Handler"`)
+	require.Contains(t, rendered, `WITName:         "handler"`)
+	require.Contains(t, rendered, "CallOperationID: 2147483649")
+	require.Contains(t, rendered, "func RegisterGeneratedCallbacks")
+	require.Contains(t, rendered, "host.CallResource")
+}
+
 func operationIdentities(operations []GeneratedOperation) []string {
 	identities := make([]string, len(operations))
 	for index, operation := range operations {

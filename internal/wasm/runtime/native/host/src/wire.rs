@@ -167,6 +167,108 @@ pub fn decode_results<T: ResourceTransport>(
     Ok(())
 }
 
+pub fn decode_callback_parameters<T: ResourceTransport>(
+    mut store: StoreContextMut<'_, T>,
+    function_type: &ComponentFunc,
+    guest_id: u64,
+    input: &[u8],
+) -> anyhow::Result<Vec<Val>> {
+    let types: Vec<_> = function_type.params().collect();
+    let Some((_, Type::U64)) = types.first() else {
+        bail!("generated callback export does not begin with a u64 ID");
+    };
+    let values = decode_request(input)?;
+    if values.len() + 1 != types.len() {
+        bail!(
+            "callback has {} arguments, received {}",
+            types.len() - 1,
+            values.len()
+        );
+    }
+    let mut parameters = Vec::with_capacity(types.len());
+    parameters.push(Val::U64(guest_id));
+    for ((_, expected), value) in types.iter().skip(1).zip(values) {
+        parameters.push(wire_to_value(&mut store, expected, value)?);
+    }
+    Ok(parameters)
+}
+
+pub fn encode_callback_results<T: ResourceTransport>(
+    mut store: StoreContextMut<'_, T>,
+    function_type: &ComponentFunc,
+    results: &[Val],
+) -> anyhow::Result<Vec<u8>> {
+    let types: Vec<_> = function_type.results().collect();
+    if types.len() != results.len() {
+        bail!(
+            "callback result slot mismatch: function has {}, Wasmtime supplied {}",
+            types.len(),
+            results.len()
+        );
+    }
+    let response = match (types.as_slice(), results) {
+        ([], []) => Response {
+            values: Vec::new(),
+            error: None,
+        },
+        ([Type::Result(_)], [Val::Result(Ok(value))]) => {
+            let values = match value {
+                None => Vec::new(),
+                Some(value) => match value_to_wire(&mut store, value)? {
+                    WireValue::Tuple(values) => values,
+                    value => vec![value],
+                },
+            };
+            Response {
+                values,
+                error: None,
+            }
+        }
+        ([Type::Result(_)], [Val::Result(Err(Some(error)))]) => Response {
+            values: Vec::new(),
+            error: Some(callback_gate_error(error)?),
+        },
+        ([Type::Result(_)], [Val::Result(Err(None))]) => Response {
+            values: Vec::new(),
+            error: Some(GateError {
+                kind: "guest-error".into(),
+                message: "callback returned an empty error".into(),
+                operation: "callback".into(),
+            }),
+        },
+        ([_], [value]) => Response {
+            values: vec![value_to_wire(&mut store, value)?],
+            error: None,
+        },
+        _ => bail!(
+            "unsupported component callback with {} flat results",
+            types.len()
+        ),
+    };
+    encode_response(&response)
+}
+
+fn callback_gate_error(value: &Val) -> anyhow::Result<GateError> {
+    let Val::Record(fields) = value else {
+        bail!("callback error is not a gate-error record");
+    };
+    let field = |name: &str| -> anyhow::Result<String> {
+        fields
+            .iter()
+            .find(|(field, _)| field == name)
+            .and_then(|(_, value)| match value {
+                Val::String(value) => Some(value.clone()),
+                _ => None,
+            })
+            .with_context(|| format!("callback error field {name} is missing"))
+    };
+    Ok(GateError {
+        kind: field("kind")?,
+        message: field("message")?,
+        operation: field("operation")?,
+    })
+}
+
 fn response_payload(mut values: Vec<WireValue>) -> anyhow::Result<WireValue> {
     match values.len() {
         0 => bail!("Go returned no value for a result payload"),
@@ -490,6 +592,23 @@ pub fn encode_request(values: &[WireValue]) -> anyhow::Result<Vec<u8>> {
     let mut output = vec![VERSION];
     write_uint(&mut output, values.len() as u64);
     for value in values {
+        encode_value(&mut output, value)?;
+    }
+    Ok(output)
+}
+
+pub fn encode_response(response: &Response) -> anyhow::Result<Vec<u8>> {
+    let mut output = vec![VERSION];
+    if let Some(error) = &response.error {
+        output.push(1);
+        write_string(&mut output, &error.kind);
+        write_string(&mut output, &error.message);
+        write_string(&mut output, &error.operation);
+        return Ok(output);
+    }
+    output.push(0);
+    write_uint(&mut output, response.values.len() as u64);
+    for value in &response.values {
         encode_value(&mut output, value)?;
     }
     Ok(output)

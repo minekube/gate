@@ -16,7 +16,7 @@ func MarshalGoValues(values []any, table *resources.Table) ([]any, error) {
 	marshaled := make([]any, len(values))
 	for index, value := range values {
 		var err error
-		marshaled[index], err = marshalGoValue(reflect.ValueOf(value), table)
+		marshaled[index], err = marshalGoValue(reflect.ValueOf(value), table, nil)
 		if err != nil {
 			return nil, fmt.Errorf("result %d: %w", index, err)
 		}
@@ -24,7 +24,33 @@ func MarshalGoValues(values []any, table *resources.Table) ([]any, error) {
 	return marshaled, nil
 }
 
-func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
+// MarshalGoValuesBorrowed copies values while registering identity-bearing
+// values in a borrowed scope that expires when the callback returns.
+func MarshalGoValuesBorrowed(
+	values []any,
+	table *resources.Table,
+	scope *resources.Scope,
+) ([]any, error) {
+	marshaled := make([]any, len(values))
+	for index, value := range values {
+		var err error
+		marshaled[index], err = marshalGoValue(
+			reflect.ValueOf(value),
+			table,
+			scope,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("callback argument %d: %w", index, err)
+		}
+	}
+	return marshaled, nil
+}
+
+func marshalGoValue(
+	value reflect.Value,
+	table *resources.Table,
+	scope *resources.Scope,
+) (any, error) {
 	if !value.IsValid() {
 		return nil, nil
 	}
@@ -32,7 +58,7 @@ func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
 		if value.IsNil() {
 			return nil, nil
 		}
-		return insertResource(value.Interface(), value.Type(), table)
+		return insertResource(value.Interface(), value.Type(), table, scope)
 	}
 	switch value.Kind() {
 	case reflect.Bool:
@@ -69,14 +95,14 @@ func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
 		if value.IsNil() {
 			return nil, nil
 		}
-		return insertResource(value.Interface(), value.Type(), table)
+		return insertResource(value.Interface(), value.Type(), table, scope)
 	case reflect.Slice:
 		if value.IsNil() {
 			return nil, nil
 		}
-		return marshalSequence(value, table)
+		return marshalSequence(value, table, scope)
 	case reflect.Array:
-		return marshalSequence(value, table)
+		return marshalSequence(value, table, scope)
 	case reflect.Map:
 		if value.IsNil() {
 			return nil, nil
@@ -84,11 +110,11 @@ func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
 		entries := make(Map, 0, value.Len())
 		iterator := value.MapRange()
 		for iterator.Next() {
-			key, err := marshalGoValue(iterator.Key(), table)
+			key, err := marshalGoValue(iterator.Key(), table, scope)
 			if err != nil {
 				return nil, fmt.Errorf("map key: %w", err)
 			}
-			item, err := marshalGoValue(iterator.Value(), table)
+			item, err := marshalGoValue(iterator.Value(), table, scope)
 			if err != nil {
 				return nil, fmt.Errorf("map value: %w", err)
 			}
@@ -103,7 +129,7 @@ func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
 			if !field.IsExported() {
 				continue
 			}
-			item, err := marshalGoValue(value.Field(index), table)
+			item, err := marshalGoValue(value.Field(index), table, scope)
 			if err != nil {
 				return nil, fmt.Errorf("field %s: %w", field.Name, err)
 			}
@@ -117,10 +143,14 @@ func marshalGoValue(value reflect.Value, table *resources.Table) (any, error) {
 	}
 }
 
-func marshalSequence(value reflect.Value, table *resources.Table) ([]any, error) {
+func marshalSequence(
+	value reflect.Value,
+	table *resources.Table,
+	scope *resources.Scope,
+) ([]any, error) {
 	items := make([]any, value.Len())
 	for index := range items {
-		item, err := marshalGoValue(value.Index(index), table)
+		item, err := marshalGoValue(value.Index(index), table, scope)
 		if err != nil {
 			return nil, fmt.Errorf("item %d: %w", index, err)
 		}
@@ -133,17 +163,24 @@ func insertResource(
 	value any,
 	typ reflect.Type,
 	table *resources.Table,
+	scope *resources.Scope,
 ) (Resource, error) {
 	if table == nil {
 		return 0, fmt.Errorf("cannot marshal resource %s without a resource table", typ)
 	}
 	identity := resourceTypeIdentity(typ)
-	handle, err := table.Insert(
-		value,
-		identity,
-		resources.LifetimeOwned,
-		nil,
-	)
+	var handle resources.Handle
+	var err error
+	if scope == nil {
+		handle, err = table.Insert(
+			value,
+			identity,
+			resources.LifetimeOwned,
+			nil,
+		)
+	} else {
+		handle, err = table.Borrow(scope, value, identity, nil)
+	}
 	return Resource(handle), err
 }
 

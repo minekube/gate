@@ -109,3 +109,25 @@ func TestMarshalGoValuesCopiesRecordsAndRegistersResources(t *testing.T) {
 	require.NoError(t, err)
 	require.Same(t, resource, resolved)
 }
+
+func TestMarshalGoValuesBorrowedExpiresResourcesWithScope(t *testing.T) {
+	t.Parallel()
+
+	table := resources.NewTable("callback", 4)
+	t.Cleanup(func() { require.NoError(t, table.Close()) })
+	scope, err := table.BeginScope(resources.LifetimeBorrowedCall)
+	require.NoError(t, err)
+	value := &fixtureResource{Name: "event"}
+
+	values, err := MarshalGoValuesBorrowed([]any{value}, table, scope)
+	require.NoError(t, err)
+	require.Len(t, values, 1)
+	handle := resources.Handle(values[0].(Resource))
+	resolved, _, err := table.ResolveAny(handle)
+	require.NoError(t, err)
+	require.Same(t, value, resolved)
+
+	require.NoError(t, scope.Close())
+	_, _, err = table.ResolveAny(handle)
+	require.ErrorIs(t, err, resources.ErrExpiredHandle)
+}

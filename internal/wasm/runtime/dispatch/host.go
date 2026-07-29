@@ -172,6 +172,36 @@ func (host *Host) CallResourceMethod(
 	)
 }
 
+// CallResource invokes a function value stored in the resource table. The
+// first argument is the callback resource and the remaining values are the
+// function arguments.
+func (host *Host) CallResource(
+	ctx context.Context,
+	operation Operation,
+	arguments []any,
+) ([]any, error) {
+	if len(arguments) == 0 {
+		return nil, host.ArgumentCount(operation, 0, 1)
+	}
+	handleValue, err := argumentValue(
+		operation,
+		0,
+		arguments[0],
+		reflect.TypeFor[resources.Handle](),
+		host.resources,
+	)
+	if err != nil {
+		return nil, err
+	}
+	value, _, err := host.resources.ResolveAny(
+		handleValue.Interface().(resources.Handle),
+	)
+	if err != nil {
+		return nil, operationError(operation, err)
+	}
+	return host.Call(ctx, operation, value, arguments[1:], false)
+}
+
 func (host *Host) ArgumentCount(
 	operation Operation,
 	got int,
@@ -321,7 +351,7 @@ func convertWireValue(
 		if err != nil {
 			return reflect.Value{}, err
 		}
-		return convertResolvedValue(reflect.ValueOf(resolved), expected)
+		return convertResolvedValue(reflect.ValueOf(resolved), expected, table)
 	}
 	if expected.Kind() == reflect.Pointer {
 		record, ok := argument.(wire.Record)
@@ -443,9 +473,15 @@ func convertAnyValue(
 func convertResolvedValue(
 	value reflect.Value,
 	expected reflect.Type,
+	table *resources.Table,
 ) (reflect.Value, error) {
 	if !value.IsValid() {
 		return reflect.Zero(expected), nil
+	}
+	if value.CanInterface() {
+		if callback, ok := value.Interface().(GuestCallback); ok {
+			return bindGuestCallback(callback, expected, table)
+		}
 	}
 	if value.Type().AssignableTo(expected) {
 		return value, nil

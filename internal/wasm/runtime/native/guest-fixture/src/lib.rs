@@ -12,7 +12,7 @@ impl Guest for Fixture {
         PluginMetadata {
             name: "gate-wasm-fixture".into(),
             version: "0.0.0".into(),
-            contract_hash: "2bf3d745acae5b35b9858473d7ac4baa5b8f2ce60fbeda68505efbc6739c52aa"
+            contract_hash: "1a1698fe90dd0b309713427f3fa97187801b744d51589d588857dd6c35e0474b"
                 .into(),
             generator_format: 1,
         }
@@ -27,6 +27,8 @@ impl Guest for Fixture {
                 operation: "init".into(),
             });
         }
+        let callback = minekube::gate::gate_callbacks::new_callback_9b79f3eb4945(42);
+        minekube::gate::pkg_edition_java_proto_util::recover_func(Some(callback))?;
         Ok(())
     }
 
@@ -54,8 +56,16 @@ impl Guest for Fixture {
     fn invoke_callback_8ce8588e75ea(_id: u64, _c: Option<&RequiresContextPointer>) -> bool {
         false
     }
-    fn invoke_callback_9b79f3eb4945(_id: u64) -> Result<(), GateError> {
-        Ok(())
+    fn invoke_callback_9b79f3eb4945(id: u64) -> Result<(), GateError> {
+        if id == 42 {
+            Ok(())
+        } else {
+            Err(GateError {
+                kind: "fixture".into(),
+                message: format!("unexpected callback ID {id}"),
+                operation: "invoke-callback-9b79f3eb4945".into(),
+            })
+        }
     }
     fn invoke_callback_a3de14505458(
         _id: u64,

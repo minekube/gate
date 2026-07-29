@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::rc::Rc;
 use std::sync::mpsc::{SyncSender, sync_channel};
 use std::sync::{Arc, mpsc};
 use std::thread::{self, JoinHandle};
@@ -32,6 +34,7 @@ pub(crate) struct StoreData {
     contexts: HashMap<u32, u64>,
     proxies: HashMap<u32, u64>,
     resources: HashMap<u32, HostResource>,
+    callbacks: HashMap<u32, Func>,
     next_resource: u32,
     instance: Option<Instance>,
     store_limits: StoreLimits,
@@ -157,15 +160,83 @@ impl generated::dispatch::Dispatch for StoreData {
             .ensure_transfer(request.len())
             .map_err(wasmtime::Error::from_anyhow)?;
         let host = Arc::clone(&store.data().host);
+        let mut active = CallbackCall::new(store);
         let response = host
-            .invoke(operation.id, &request)
+            .invoke(&mut active, operation.id, &request)
             .map_err(wasmtime::Error::from_anyhow)?;
-        store
+        active
+            .store
             .data()
             .ensure_transfer(response.len())
             .map_err(wasmtime::Error::from_anyhow)?;
-        wire::decode_results(store.as_context_mut(), &function_type, &response, results)
-            .map_err(wasmtime::Error::from_anyhow)
+        wire::decode_results(
+            active.store.as_context_mut(),
+            &function_type,
+            &response,
+            results,
+        )
+        .map_err(wasmtime::Error::from_anyhow)
+    }
+
+    fn register_callback(
+        mut store: StoreContextMut<'_, Self>,
+        callback: &'static generated::dispatch::CallbackDescriptor,
+        guest_id: u64,
+        results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        let handle = store
+            .data()
+            .host
+            .register_callback(callback.id, guest_id)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        let representation = <Self as wire::ResourceTransport>::insert_resource(
+            store.data_mut(),
+            handle,
+            callback.type_id,
+            true,
+        )
+        .map_err(wasmtime::Error::from_anyhow)?;
+        let resource = ResourceDynamic::new_own(representation, callback.type_id)
+            .try_into_resource_any(&mut store)?;
+        let [result] = results else {
+            return Err(wasmtime::Error::msg(
+                "callback constructor expected one resource result",
+            ));
+        };
+        *result = Val::Resource(resource);
+        Ok(())
+    }
+
+    fn call_callback(
+        mut store: StoreContextMut<'_, Self>,
+        callback: &'static generated::dispatch::CallbackDescriptor,
+        function_type: ComponentFunc,
+        parameters: &[Val],
+        results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        let request = wire::encode_parameters(store.as_context_mut(), parameters)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        store
+            .data()
+            .ensure_transfer(request.len())
+            .map_err(wasmtime::Error::from_anyhow)?;
+        let host = Arc::clone(&store.data().host);
+        let mut active = CallbackCall::new(store);
+        let response = host
+            .invoke(&mut active, (1_u32 << 31) | callback.id, &request)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        active
+            .store
+            .data()
+            .ensure_transfer(response.len())
+            .map_err(wasmtime::Error::from_anyhow)?;
+        wire::decode_results(
+            active.store.as_context_mut(),
+            &function_type,
+            &response,
+            results,
+        )
+        .map_err(wasmtime::Error::from_anyhow)
     }
 
     fn drop_resource(
@@ -309,6 +380,54 @@ impl From<Sample> for WitSample {
     }
 }
 
+/// A synchronous, thread-bound callback entry into the currently active
+/// generated Gate API call.
+pub struct CallbackCall<'a> {
+    store: StoreContextMut<'a, StoreData>,
+    _thread_bound: PhantomData<Rc<()>>,
+}
+
+impl<'a> CallbackCall<'a> {
+    fn new(store: StoreContextMut<'a, StoreData>) -> Self {
+        Self {
+            store,
+            _thread_bound: PhantomData,
+        }
+    }
+
+    pub fn invoke_callback(
+        &mut self,
+        callback_type: u32,
+        guest_id: u64,
+        input: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
+        self.store.data().ensure_transfer(input.len())?;
+        let callback = self
+            .store
+            .data()
+            .callbacks
+            .get(&callback_type)
+            .cloned()
+            .with_context(|| format!("unknown generated callback type {callback_type}"))?;
+        let function_type = callback.ty(&self.store);
+        let parameters = wire::decode_callback_parameters(
+            self.store.as_context_mut(),
+            &function_type,
+            guest_id,
+            input,
+        )?;
+        let mut results = vec![Val::Bool(false); function_type.results().len()];
+        callback
+            .call(&mut self.store, &parameters, &mut results)
+            .map_err(anyhow::Error::from)
+            .with_context(|| format!("component callback {callback_type} trapped"))?;
+        let output =
+            wire::encode_callback_results(self.store.as_context_mut(), &function_type, &results)?;
+        self.store.data().ensure_transfer(output.len())?;
+        Ok(output)
+    }
+}
+
 pub struct Engine {
     store: Store<StoreData>,
     metadata: PluginMetadata,
@@ -351,6 +470,7 @@ impl Engine {
                 contexts: HashMap::new(),
                 proxies: HashMap::new(),
                 resources: HashMap::new(),
+                callbacks: HashMap::new(),
                 next_resource: 1,
                 instance: None,
                 store_limits: StoreLimitsBuilder::new()
@@ -381,6 +501,16 @@ impl Engine {
             .get_export_index(&mut store, Some(&plugin), "init")
             .and_then(|index| instance.get_func(&mut store, &index))
             .context("component does not export plugin init")?;
+        let mut callbacks = HashMap::new();
+        for callback in generated::dispatch::CALLBACKS {
+            let name = format!("invoke-{}", callback.name);
+            let function = instance
+                .get_export_index(&mut store, Some(&plugin), &name)
+                .and_then(|index| instance.get_func(&mut store, &index))
+                .with_context(|| format!("component does not export plugin {name}"))?;
+            callbacks.insert(callback.id, function);
+        }
+        store.data_mut().callbacks = callbacks;
         store.data_mut().instance = Some(instance);
 
         let mut engine = Self {
@@ -489,6 +619,39 @@ impl Engine {
 
     pub fn metadata(&self) -> &PluginMetadata {
         &self.metadata
+    }
+
+    pub fn invoke_callback(
+        &mut self,
+        callback_type: u32,
+        guest_id: u64,
+        input: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
+        let callback = self
+            .store
+            .data()
+            .callbacks
+            .get(&callback_type)
+            .cloned()
+            .with_context(|| format!("unknown generated callback type {callback_type}"))?;
+        let _deadline = self.prepare_call()?;
+        self.store.data().ensure_transfer(input.len())?;
+        let function_type = callback.ty(&self.store);
+        let parameters = wire::decode_callback_parameters(
+            self.store.as_context_mut(),
+            &function_type,
+            guest_id,
+            input,
+        )?;
+        let mut results = vec![Val::Bool(false); function_type.results().len()];
+        callback
+            .call(&mut self.store, &parameters, &mut results)
+            .map_err(anyhow::Error::from)
+            .with_context(|| format!("component callback {callback_type} trapped"))?;
+        let output =
+            wire::encode_callback_results(self.store.as_context_mut(), &function_type, &results)?;
+        self.store.data().ensure_transfer(output.len())?;
+        Ok(output)
     }
 
     pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {

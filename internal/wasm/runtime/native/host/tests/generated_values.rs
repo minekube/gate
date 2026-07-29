@@ -1,5 +1,5 @@
 use gate_wasm_native::generated::dispatch::{
-    Dispatch, Operation, ResourceDescriptor, WIT_HASH, add_to_linker,
+    CallbackDescriptor, Dispatch, Operation, ResourceDescriptor, WIT_HASH, add_to_linker,
 };
 use gate_wasm_native::generated::values::{
     ABI_LAYOUT_FINGERPRINT, ABI_SCHEMA_VERSION, VALUE_LAYOUTS,
@@ -89,6 +89,31 @@ impl Dispatch for NoopDispatch {
         Err(wasmtime::Error::msg(format!(
             "unexpected invocation of {}",
             operation.identity
+        )))
+    }
+
+    fn register_callback(
+        _store: StoreContextMut<'_, Self>,
+        callback: &'static CallbackDescriptor,
+        _guest_id: u64,
+        _results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        Err(wasmtime::Error::msg(format!(
+            "unexpected callback registration of {}",
+            callback.identity
+        )))
+    }
+
+    fn call_callback(
+        _store: StoreContextMut<'_, Self>,
+        callback: &'static CallbackDescriptor,
+        _function_type: ComponentFunc,
+        _parameters: &[Val],
+        _results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        Err(wasmtime::Error::msg(format!(
+            "unexpected callback invocation of {}",
+            callback.identity
         )))
     }
 

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"go.minekube.com/gate/internal/wasm/api"
 	"go.minekube.com/gate/internal/wasm/runtime/dispatch"
@@ -21,11 +22,14 @@ const (
 )
 
 type Host struct {
-	context       context.Context
-	table         *resources.Table
-	dispatch      *dispatch.Host
-	contextHandle resources.Handle
-	proxyHandle   resources.Handle
+	mu             sync.RWMutex
+	context        context.Context
+	table          *resources.Table
+	dispatch       *dispatch.Host
+	callbackRoot   native.CallbackInvoker
+	callbackActive native.CallbackInvoker
+	contextHandle  resources.Handle
+	proxyHandle    resources.Handle
 }
 
 func New(
@@ -71,6 +75,10 @@ func New(
 		_ = host.Close()
 		return nil, fmt.Errorf("register generated Gate API: %w", err)
 	}
+	if err := api.RegisterGeneratedCallbacks(host.dispatch); err != nil {
+		_ = host.Close()
+		return nil, fmt.Errorf("register generated Gate callbacks: %w", err)
+	}
 	return host, nil
 }
 
@@ -83,6 +91,30 @@ func (host *Host) ProxyHandle() uint64 {
 }
 
 func (host *Host) Invoke(operationID uint32, input []byte) ([]byte, error) {
+	return host.invoke(operationID, input)
+}
+
+func (host *Host) InvokeWithReentry(
+	reentry native.CallbackInvoker,
+	operationID uint32,
+	input []byte,
+) ([]byte, error) {
+	if reentry == nil {
+		return nil, errors.New("wasm callback reentry is required")
+	}
+	host.mu.Lock()
+	previous := host.callbackActive
+	host.callbackActive = reentry
+	host.mu.Unlock()
+	defer func() {
+		host.mu.Lock()
+		host.callbackActive = previous
+		host.mu.Unlock()
+	}()
+	return host.invoke(operationID, input)
+}
+
+func (host *Host) invoke(operationID uint32, input []byte) ([]byte, error) {
 	arguments, err := wire.Decode(input)
 	if err != nil {
 		return nil, fmt.Errorf("decode operation %d arguments: %w", operationID, err)
@@ -104,6 +136,66 @@ func (host *Host) Invoke(operationID uint32, input []byte) ([]byte, error) {
 
 func (host *Host) DropResource(handle uint64) error {
 	return host.table.Drop(resources.Handle(handle))
+}
+
+func (host *Host) BindCallbackInvoker(invoker native.CallbackInvoker) error {
+	if invoker == nil {
+		return errors.New("wasm callback invoker is required")
+	}
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	if host.callbackRoot != nil {
+		return errors.New("wasm callback invoker is already bound")
+	}
+	host.callbackRoot = invoker
+	return nil
+}
+
+func (host *Host) RegisterCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+) (uint64, error) {
+	if callbackTypeID == 0 || int(callbackTypeID) > len(api.GeneratedCallbacks) {
+		return 0, fmt.Errorf("unknown generated callback type %d", callbackTypeID)
+	}
+	host.mu.RLock()
+	invoker := host.callbackRoot
+	host.mu.RUnlock()
+	if invoker == nil {
+		return 0, errors.New("wasm callback runtime is not bound")
+	}
+	callback := api.GeneratedCallbacks[callbackTypeID-1]
+	handle, err := host.table.Insert(
+		dispatch.GuestCallback{
+			TypeID: callbackTypeID, GuestID: guestID,
+			Invoker: callbackRouter{host: host},
+		},
+		callback.Identity,
+		resources.LifetimePlugin,
+		nil,
+	)
+	return uint64(handle), err
+}
+
+type callbackRouter struct {
+	host *Host
+}
+
+func (router callbackRouter) InvokeCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	router.host.mu.RLock()
+	invoker := router.host.callbackActive
+	if invoker == nil {
+		invoker = router.host.callbackRoot
+	}
+	router.host.mu.RUnlock()
+	if invoker == nil {
+		return nil, errors.New("wasm callback runtime is not bound")
+	}
+	return invoker.InvokeCallback(callbackTypeID, guestID, input)
 }
 
 func (host *Host) ContextCancelled(contextHandle uint64) (bool, error) {

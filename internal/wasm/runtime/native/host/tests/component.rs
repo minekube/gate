@@ -1,11 +1,17 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use gate_wasm_native::wire::{WireValue, decode_request};
-use gate_wasm_native::{ActiveCall, Engine, Host, Limits, Sample};
+use gate_wasm_native::wire::{
+    Response, WireValue, decode_request, decode_response, encode_request, encode_response,
+};
+use gate_wasm_native::{ActiveCall, CallbackCall, Engine, Host, Limits, Sample};
 
 const COMPONENT: &[u8] = include_bytes!("../../artifacts/gate_wasm_fixture.component.wasm");
-const PROXY_PLAYER_COUNT: u32 = 1294;
+const PROXY_PLAYER_COUNT: u32 = 1299;
+const RECOVER_FUNC: u32 = 909;
+const CALLBACK_ERROR_FUNC: u32 = 8;
+const CALLBACK_HANDLE: u64 = 3;
+const CALLBACK_GUEST_ID: u64 = 42;
 
 struct TestHost {
     invokes: Arc<AtomicUsize>,
@@ -33,14 +39,44 @@ impl Host for TestHost {
         unreachable!("the generated fixture does not use spike callbacks")
     }
 
-    fn invoke(&self, operation: u32, request: &[u8]) -> anyhow::Result<Vec<u8>> {
-        assert_eq!(operation, PROXY_PLAYER_COUNT);
-        assert_eq!(decode_request(request)?, [WireValue::Resource(2)]);
+    fn invoke(
+        &self,
+        active: &mut CallbackCall<'_>,
+        operation: u32,
+        request: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
         self.invokes.fetch_add(1, Ordering::SeqCst);
+        match operation {
+            PROXY_PLAYER_COUNT => {
+                assert_eq!(decode_request(request)?, [WireValue::Resource(2)]);
+                let mut response = vec![1, 0, 1, 9];
+                response.extend_from_slice(&0_i64.to_le_bytes());
+                Ok(response)
+            }
+            RECOVER_FUNC => {
+                assert_eq!(
+                    decode_request(request)?,
+                    [WireValue::Resource(CALLBACK_HANDLE)]
+                );
+                let callback = active.invoke_callback(
+                    CALLBACK_ERROR_FUNC,
+                    CALLBACK_GUEST_ID,
+                    &encode_request(&[])?,
+                )?;
+                assert_eq!(decode_response(&callback)?.error, None);
+                encode_response(&Response {
+                    values: vec![],
+                    error: None,
+                })
+            }
+            other => anyhow::bail!("unexpected generated operation {other}"),
+        }
+    }
 
-        let mut response = vec![1, 0, 1, 9];
-        response.extend_from_slice(&0_i64.to_le_bytes());
-        Ok(response)
+    fn register_callback(&self, callback_type: u32, guest_id: u64) -> anyhow::Result<u64> {
+        assert_eq!(callback_type, CALLBACK_ERROR_FUNC);
+        assert_eq!(guest_id, CALLBACK_GUEST_ID);
+        Ok(CALLBACK_HANDLE)
     }
 }
 
@@ -54,7 +90,7 @@ fn init_receives_real_gate_resources_and_calls_generated_api() -> anyhow::Result
 
     engine.init(1, 2)?;
 
-    assert_eq!(invokes.load(Ordering::SeqCst), 1);
+    assert_eq!(invokes.load(Ordering::SeqCst), 2);
     Ok(())
 }
 
@@ -90,10 +126,38 @@ impl Host for DropHost {
         unreachable!("the generated fixture does not use spike callbacks")
     }
 
-    fn invoke(&self, _operation: u32, _request: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let mut response = vec![1, 0, 1, 9];
-        response.extend_from_slice(&0_i64.to_le_bytes());
-        Ok(response)
+    fn invoke(
+        &self,
+        active: &mut CallbackCall<'_>,
+        operation: u32,
+        request: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
+        match operation {
+            PROXY_PLAYER_COUNT => {
+                let mut response = vec![1, 0, 1, 9];
+                response.extend_from_slice(&0_i64.to_le_bytes());
+                Ok(response)
+            }
+            RECOVER_FUNC => {
+                let callback = active.invoke_callback(
+                    CALLBACK_ERROR_FUNC,
+                    CALLBACK_GUEST_ID,
+                    &encode_request(&[])?,
+                )?;
+                assert_eq!(decode_response(&callback)?.error, None);
+                encode_response(&Response {
+                    values: vec![],
+                    error: None,
+                })
+            }
+            other => {
+                anyhow::bail!("unexpected generated operation {other} with request {request:?}")
+            }
+        }
+    }
+
+    fn register_callback(&self, _callback_type: u32, _guest_id: u64) -> anyhow::Result<u64> {
+        Ok(CALLBACK_HANDLE)
     }
 }
 

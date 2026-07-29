@@ -45,6 +45,10 @@ type Reentry interface {
 	OnEvent(proxyID uint64, input string) (string, error)
 }
 
+type CallbackInvoker interface {
+	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
+}
+
 type Runtime struct {
 	impl runtimeImpl
 }
@@ -52,6 +56,7 @@ type Runtime struct {
 type runtimeImpl interface {
 	Metadata() (Metadata, error)
 	Init(contextID, proxyID uint64) (Sample, error)
+	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
 	OnEvent(proxyID uint64, input string) (string, error)
 	Allocate(bytes uint64) (uint64, error)
 	Spin() error
@@ -70,6 +75,17 @@ func (r *Runtime) Init(contextID, proxyID uint64) (Sample, error) {
 		return Sample{}, ErrClosed
 	}
 	return r.impl.Init(contextID, proxyID)
+}
+
+func (r *Runtime) InvokeCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	if r == nil || r.impl == nil {
+		return nil, ErrClosed
+	}
+	return r.impl.InvokeCallback(callbackTypeID, guestID, input)
 }
 
 func (r *Runtime) OnEvent(proxyID uint64, input string) (string, error) {

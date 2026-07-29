@@ -31,6 +31,15 @@ func TestRustDispatchAndCHeaderCoverEveryOperation(t *testing.T) {
 		len(operations),
 		strings.Count(string(dispatch), "    Operation {"),
 	)
+	require.Contains(t, string(dispatch), "pub static CALLBACKS: &[CallbackDescriptor]")
+	require.Contains(t, string(dispatch), "name: \"handler\"")
+	require.Contains(t, string(dispatch), "new_name: \"new-handler\"")
+	require.Contains(t, string(dispatch), "call_name: \"call-handler\"")
+	require.Contains(
+		t,
+		string(dispatch),
+		"linker.instance(\"minekube:gate/gate-callbacks@0.1.0\")",
+	)
 
 	header, err := RenderCHeader(api)
 	require.NoError(t, err)

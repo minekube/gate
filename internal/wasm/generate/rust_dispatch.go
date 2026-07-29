@@ -51,6 +51,15 @@ func RenderRustDispatch(api *model.API) ([]byte, error) {
 		return nil, err
 	}
 	resources := generatedWITResources(wit)
+	registry, err := newWITRegistry(normalized)
+	if err != nil {
+		return nil, err
+	}
+	callbacks := registry.callbacks()
+	resourceIDs := make(map[string]int, len(resources))
+	for index, resource := range resources {
+		resourceIDs[resource] = index + 1
+	}
 	packages := make(map[string]string, len(normalized.Packages))
 	for _, pkg := range normalized.Packages {
 		packages[pkg.Path] = pkg.WITName
@@ -120,6 +129,48 @@ func RenderRustDispatch(api *model.API) ([]byte, error) {
 	fmt.Fprintln(&output, "];")
 	fmt.Fprintln(&output)
 	fmt.Fprintln(&output, "#[derive(Clone, Copy, Debug, PartialEq, Eq)]")
+	fmt.Fprintln(&output, "pub struct CallbackDescriptor {")
+	fmt.Fprintln(&output, "    pub id: u32,")
+	fmt.Fprintln(&output, "    pub type_id: u32,")
+	fmt.Fprintln(&output, "    pub identity: &'static str,")
+	fmt.Fprintln(&output, "    pub name: &'static str,")
+	fmt.Fprintln(&output, "    pub new_name: &'static str,")
+	fmt.Fprintln(&output, "    pub call_name: &'static str,")
+	fmt.Fprintln(&output, "}")
+	fmt.Fprintln(&output)
+	fmt.Fprintln(
+		&output,
+		"pub static CALLBACKS: &[CallbackDescriptor] = &[",
+	)
+	for index, callback := range callbacks {
+		fmt.Fprintln(&output, "    CallbackDescriptor {")
+		fmt.Fprintf(&output, "        id: %d,\n", index+1)
+		fmt.Fprintf(
+			&output,
+			"        type_id: %d,\n",
+			resourceIDs[callback.name],
+		)
+		fmt.Fprintf(
+			&output,
+			"        identity: %s,\n",
+			strconv.Quote(callback.identity),
+		)
+		fmt.Fprintf(&output, "        name: %s,\n", strconv.Quote(callback.name))
+		fmt.Fprintf(
+			&output,
+			"        new_name: %s,\n",
+			strconv.Quote("new-"+callback.name),
+		)
+		fmt.Fprintf(
+			&output,
+			"        call_name: %s,\n",
+			strconv.Quote("call-"+callback.name),
+		)
+		fmt.Fprintln(&output, "    },")
+	}
+	fmt.Fprintln(&output, "];")
+	fmt.Fprintln(&output)
+	fmt.Fprintln(&output, "#[derive(Clone, Copy, Debug, PartialEq, Eq)]")
 	fmt.Fprintln(&output, "pub struct ResourceDescriptor {")
 	fmt.Fprintln(&output, "    pub id: u32,")
 	fmt.Fprintln(&output, "    pub name: &'static str,")
@@ -141,6 +192,21 @@ func RenderRustDispatch(api *model.API) ([]byte, error) {
 	fmt.Fprintln(&output, "    fn invoke(")
 	fmt.Fprintln(&output, "        store: StoreContextMut<'_, Self>,")
 	fmt.Fprintln(&output, "        operation: &'static Operation,")
+	fmt.Fprintln(&output, "        function_type: ComponentFunc,")
+	fmt.Fprintln(&output, "        parameters: &[Val],")
+	fmt.Fprintln(&output, "        results: &mut [Val],")
+	fmt.Fprintln(&output, "    ) -> wasmtime::Result<()>;")
+	fmt.Fprintln(&output)
+	fmt.Fprintln(&output, "    fn register_callback(")
+	fmt.Fprintln(&output, "        store: StoreContextMut<'_, Self>,")
+	fmt.Fprintln(&output, "        callback: &'static CallbackDescriptor,")
+	fmt.Fprintln(&output, "        guest_id: u64,")
+	fmt.Fprintln(&output, "        results: &mut [Val],")
+	fmt.Fprintln(&output, "    ) -> wasmtime::Result<()>;")
+	fmt.Fprintln(&output)
+	fmt.Fprintln(&output, "    fn call_callback(")
+	fmt.Fprintln(&output, "        store: StoreContextMut<'_, Self>,")
+	fmt.Fprintln(&output, "        callback: &'static CallbackDescriptor,")
 	fmt.Fprintln(&output, "        function_type: ComponentFunc,")
 	fmt.Fprintln(&output, "        parameters: &[Val],")
 	fmt.Fprintln(&output, "        results: &mut [Val],")
@@ -229,6 +295,47 @@ func RenderRustDispatch(api *model.API) ([]byte, error) {
 			fmt.Fprintln(
 				&output,
 				"                T::invoke(store, operation, function_type, parameters, results)",
+			)
+			fmt.Fprintln(&output, "            },")
+			fmt.Fprintln(&output, "        )?;")
+		}
+		fmt.Fprintln(&output, "    }")
+	}
+	if len(callbacks) > 0 {
+		fmt.Fprintln(&output, "    {")
+		fmt.Fprintln(
+			&output,
+			"        let mut instance = linker.instance(\"minekube:gate/gate-callbacks@0.1.0\")?;",
+		)
+		for index := range callbacks {
+			fmt.Fprintf(&output, "        let callback = &CALLBACKS[%d];\n", index)
+			fmt.Fprintln(&output, "        instance.func_new(")
+			fmt.Fprintln(&output, "            callback.new_name,")
+			fmt.Fprintln(
+				&output,
+				"            move |store, _function_type, parameters, results| {",
+			)
+			fmt.Fprintln(&output, "                let [Val::U64(guest_id)] = parameters else {")
+			fmt.Fprintln(
+				&output,
+				"                    return Err(wasmtime::Error::msg(\"callback constructor expected one u64 ID\"));",
+			)
+			fmt.Fprintln(&output, "                };")
+			fmt.Fprintln(
+				&output,
+				"                T::register_callback(store, callback, *guest_id, results)",
+			)
+			fmt.Fprintln(&output, "            },")
+			fmt.Fprintln(&output, "        )?;")
+			fmt.Fprintln(&output, "        instance.func_new(")
+			fmt.Fprintln(&output, "            callback.call_name,")
+			fmt.Fprintln(
+				&output,
+				"            move |store, function_type, parameters, results| {",
+			)
+			fmt.Fprintln(
+				&output,
+				"                T::call_callback(store, callback, function_type, parameters, results)",
 			)
 			fmt.Fprintln(&output, "            },")
 			fmt.Fprintln(&output, "        )?;")

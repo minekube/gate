@@ -20,6 +20,13 @@ interface gate-types {
   }
 }
 
+interface gate-callbacks {
+  use gate-types.{gate-error, handler};
+
+  new-handler: func(id: u64) -> own<handler>;
+  call-handler: func(callback: borrow<handler>, input: string) -> bool;
+}
+
 interface pkg-shapes {
   use gate-types.{gate-error, handler, proxy, sample};
 
@@ -44,5 +51,6 @@ interface plugin {
 
 world gate-plugin {
   import pkg-shapes;
+  import gate-callbacks;
   export plugin;
 }

@@ -14,7 +14,7 @@ use std::time::Duration;
 use anyhow::{Context as _, anyhow};
 
 use abi::{AbiLimits, OwnedBytes, OwnedSample, SampleView, Slice, SliceList};
-pub use engine::{Engine, PluginMetadata};
+pub use engine::{CallbackCall, Engine, PluginMetadata};
 pub use reentry::ActiveCall;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,9 +77,19 @@ pub trait Host: Send + Sync + 'static {
         input: String,
     ) -> anyhow::Result<Result<String, String>>;
 
-    fn invoke(&self, operation: u32, input: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let _ = (operation, input);
+    fn invoke(
+        &self,
+        active: &mut CallbackCall<'_>,
+        operation: u32,
+        input: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
+        let _ = (active, operation, input);
         Err(anyhow!("generated Gate dispatch is unavailable"))
+    }
+
+    fn register_callback(&self, callback_type: u32, guest_id: u64) -> anyhow::Result<u64> {
+        let _ = (callback_type, guest_id);
+        Err(anyhow!("generated Gate callback dispatch is unavailable"))
     }
 
     fn drop_resource(&self, _handle: u64) -> anyhow::Result<()> {
@@ -115,9 +125,17 @@ unsafe extern "C" {
     ) -> i32;
     fn gate_wasm_go_invoke(
         host: usize,
+        reentry: *mut GateWasmCallbackReentry,
         operation_id: u32,
         input: Slice,
         output: *mut OwnedBytes,
+        error: *mut OwnedBytes,
+    ) -> i32;
+    fn gate_wasm_go_register_callback(
+        host: usize,
+        callback_type_id: u32,
+        guest_id: u64,
+        handle: *mut u64,
         error: *mut OwnedBytes,
     ) -> i32;
     fn gate_wasm_go_drop_resource(host: usize, handle: u64, error: *mut OwnedBytes) -> i32;
@@ -224,7 +242,12 @@ impl Host for CgoHost {
         ))
     }
 
-    fn invoke(&self, operation: u32, input: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn invoke(
+        &self,
+        active: &mut CallbackCall<'_>,
+        operation: u32,
+        input: &[u8],
+    ) -> anyhow::Result<Vec<u8>> {
         let mut output = OwnedBytes::default();
         let mut error = OwnedBytes::default();
         let input = Slice {
@@ -233,9 +256,11 @@ impl Host for CgoHost {
         };
         // SAFETY: The input is borrowed only for this synchronous call and Go
         // transfers any output allocation to Rust.
+        let reentry = ptr::from_mut(active).cast::<GateWasmCallbackReentry>();
         let status = unsafe {
             gate_wasm_go_invoke(
                 self.handle,
+                reentry,
                 operation,
                 input,
                 &raw mut output,
@@ -257,6 +282,25 @@ impl Host for CgoHost {
             return Err(Self::callback_error("Go resource drop callback", error));
         }
         Ok(())
+    }
+
+    fn register_callback(&self, callback_type: u32, guest_id: u64) -> anyhow::Result<u64> {
+        let mut handle = 0_u64;
+        let mut error = OwnedBytes::default();
+        // SAFETY: The outputs are valid for the complete synchronous call.
+        let status = unsafe {
+            gate_wasm_go_register_callback(
+                self.handle,
+                callback_type,
+                guest_id,
+                &raw mut handle,
+                &raw mut error,
+            )
+        };
+        if status != 0 {
+            return Err(Self::callback_error("Go callback registration", error));
+        }
+        Ok(handle)
     }
 }
 
@@ -295,6 +339,11 @@ impl PluginMetadataView {
 
 #[repr(C)]
 pub struct GateWasmReentry {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct GateWasmCallbackReentry {
     _opaque: [u8; 0],
 }
 
@@ -495,6 +544,34 @@ pub unsafe extern "C" fn gate_wasm_runtime_init(
 /// `runtime` must be live and exclusively borrowed, `input` must be readable,
 /// and output pointers must be writable for this call.
 #[unsafe(no_mangle)]
+pub unsafe extern "C" fn gate_wasm_runtime_invoke_callback(
+    runtime: *mut GateWasmRuntime,
+    callback_type_id: u32,
+    guest_id: u64,
+    input: Slice,
+    output: *mut OwnedBytes,
+    error: *mut OwnedBytes,
+) -> i32 {
+    // SAFETY: ffi_status contains all panics and reports errors through C.
+    unsafe {
+        ffi_status(error, || {
+            let runtime = runtime
+                .as_mut()
+                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
+            let input = input.copy()?;
+            let result = runtime
+                .engine
+                .invoke_callback(callback_type_id, guest_id, &input)?;
+            set_owned(output, OwnedBytes::from_vec(result))
+        })
+    }
+}
+
+/// # Safety
+///
+/// `runtime` must be live and exclusively borrowed, `input` must be readable,
+/// and output pointers must be writable for this call.
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn gate_wasm_runtime_on_event(
     runtime: *mut GateWasmRuntime,
     proxy_id: u64,
@@ -582,6 +659,33 @@ pub unsafe extern "C" fn gate_wasm_reentry_on_event(
             let input = String::from_utf8(input.copy()?).context("event input is not UTF-8")?;
             let result = reentry.on_event(proxy_id, &input)?;
             set_owned(output, OwnedBytes::from_string(result))
+        })
+    }
+}
+
+/// # Safety
+///
+/// `reentry` must be the active token supplied to the current generated host
+/// call; input and output pointers must be valid for this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gate_wasm_callback_reentry_invoke(
+    reentry: *mut GateWasmCallbackReentry,
+    callback_type_id: u32,
+    guest_id: u64,
+    input: Slice,
+    output: *mut OwnedBytes,
+    error: *mut OwnedBytes,
+) -> i32 {
+    // SAFETY: ffi_status contains all panics and reports errors through C.
+    unsafe {
+        ffi_status(error, || {
+            let reentry = reentry
+                .cast::<CallbackCall<'static>>()
+                .as_mut()
+                .ok_or_else(|| anyhow!("wasm callback reentry token is null"))?;
+            let input = input.copy()?;
+            let result = reentry.invoke_callback(callback_type_id, guest_id, &input)?;
+            set_owned(output, OwnedBytes::from_vec(result))
         })
     }
 }

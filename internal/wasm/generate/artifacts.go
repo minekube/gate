@@ -12,6 +12,7 @@ const (
 	ContractFile     = "contract.json"
 	GoValuesFile     = "values_gen.go"
 	GoDispatchFile   = "dispatch_gen.go"
+	GoCallbacksFile  = "callbacks_gen.go"
 	CHeaderFile      = "gate_wasm_generated.h"
 	RustBindingsFile = "bindings.rs"
 	RustDispatchFile = "dispatch.rs"
@@ -40,17 +41,22 @@ func Artifacts(api *model.API) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", GoDispatchFile, err)
 	}
+	callbacks, err := RenderGoCallbacks(api)
+	if err != nil {
+		return nil, fmt.Errorf("render %s: %w", GoCallbacksFile, err)
+	}
 	header, err := RenderCHeader(api)
 	if err != nil {
 		return nil, fmt.Errorf("render %s: %w", CHeaderFile, err)
 	}
 	return map[string][]byte{
-		WITFile:        wit,
-		ManifestFile:   manifest,
-		ContractFile:   contract,
-		GoValuesFile:   values,
-		GoDispatchFile: dispatch,
-		CHeaderFile:    header,
+		WITFile:         wit,
+		ManifestFile:    manifest,
+		ContractFile:    contract,
+		GoValuesFile:    values,
+		GoDispatchFile:  dispatch,
+		GoCallbacksFile: callbacks,
+		CHeaderFile:     header,
 	}, nil
 }
 

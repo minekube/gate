@@ -55,10 +55,19 @@ func New(component []byte, host Host, limits Limits) (*Runtime, error) {
 		return nil, takeRustError(cError)
 	}
 	liveHostHandles.Add(1)
-	return &Runtime{impl: &nativeRuntime{
+	result := &Runtime{impl: &nativeRuntime{
 		ptr:    ptr,
 		handle: handle,
-	}}, nil
+	}}
+	if binder, ok := host.(interface {
+		BindCallbackInvoker(CallbackInvoker) error
+	}); ok {
+		if err := binder.BindCallbackInvoker(result); err != nil {
+			_ = result.Close()
+			return nil, fmt.Errorf("bind wasm callback runtime: %w", err)
+		}
+	}
+	return result, nil
 }
 
 func deadlineNanos(limits Limits) C.uint64_t {
@@ -127,6 +136,33 @@ func (r *nativeRuntime) Init(contextID, proxyID uint64) (Sample, error) {
 		return Sample{}, takeRustStatus(status, cError)
 	}
 	return takeRustSample(output)
+}
+
+func (r *nativeRuntime) InvokeCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed {
+		return nil, ErrClosed
+	}
+	var output C.gate_wasm_owned_bytes
+	var cError C.gate_wasm_owned_bytes
+	status := C.gate_wasm_runtime_invoke_callback(
+		r.ptr,
+		C.uint32_t(callbackTypeID),
+		C.uint64_t(guestID),
+		borrowedBytes(input),
+		&output,
+		&cError,
+	)
+	runtime.KeepAlive(input)
+	if status != 0 {
+		return nil, takeRustStatus(status, cError)
+	}
+	return takeRustBytes(output)
 }
 
 func (r *nativeRuntime) OnEvent(proxyID uint64, input string) (string, error) {

@@ -69,6 +69,29 @@ func TestHostInvokesFunctionsMethodsAndErrors(t *testing.T) {
 	require.ErrorContains(t, err, "fixture.Receiver.Join: fixture failure")
 }
 
+func TestHostCallsFunctionResource(t *testing.T) {
+	t.Parallel()
+
+	table := resources.NewTable("callback", 8)
+	t.Cleanup(func() { require.NoError(t, table.Close()) })
+	host := NewHost(table)
+	handle, err := table.Insert(
+		func(input string) bool { return input == "gate" },
+		"fixture.Handler",
+		resources.LifetimeOwned,
+		nil,
+	)
+	require.NoError(t, err)
+
+	results, err := host.CallResource(
+		context.Background(),
+		Operation{ID: 1, Identity: "fixture.Handler#call"},
+		[]any{wire.Resource(handle), "gate"},
+	)
+	require.NoError(t, err)
+	require.Equal(t, []any{true}, results)
+}
+
 func TestHostRecoversPanicsWithOperationIdentity(t *testing.T) {
 	host := NewHost(resources.NewTable("fixture", 1))
 	t.Cleanup(func() { require.NoError(t, host.Close()) })
@@ -126,6 +149,61 @@ type fixtureInput struct {
 	HTTPServerID string
 	Values       []int32
 	Labels       map[string]uint64
+}
+
+type fixtureCallbackInvoker struct {
+	invoke func(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
+}
+
+func (invoker fixtureCallbackInvoker) InvokeCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	return invoker.invoke(callbackTypeID, guestID, input)
+}
+
+func TestHostConvertsGuestCallbackResourceToTypedGoFunction(t *testing.T) {
+	t.Parallel()
+
+	table := resources.NewTable("guest-callback", 8)
+	t.Cleanup(func() { require.NoError(t, table.Close()) })
+	host := NewHost(table)
+	guest := GuestCallback{
+		TypeID:  3,
+		GuestID: 9,
+		Invoker: fixtureCallbackInvoker{invoke: func(
+			callbackTypeID uint32,
+			guestID uint64,
+			input []byte,
+		) ([]byte, error) {
+			require.EqualValues(t, 3, callbackTypeID)
+			require.EqualValues(t, 9, guestID)
+			arguments, err := wire.Decode(input)
+			require.NoError(t, err)
+			require.Equal(t, []any{"gate"}, arguments)
+			return wire.EncodeResponse(wire.Response{Values: []any{true}})
+		}},
+	}
+	handle, err := table.Insert(
+		guest,
+		"fixture.Handler",
+		resources.LifetimePlugin,
+		nil,
+	)
+	require.NoError(t, err)
+
+	results, err := host.Call(
+		context.Background(),
+		Operation{ID: 6, Identity: "fixture.Register"},
+		func(handler func(string) (bool, error)) (bool, error) {
+			return handler("gate")
+		},
+		[]any{wire.Resource(handle)},
+		false,
+	)
+	require.NoError(t, err)
+	require.Equal(t, []any{true}, results)
 }
 
 func TestHostConvertsLanguageNeutralCompositeArguments(t *testing.T) {

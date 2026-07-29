@@ -82,6 +82,11 @@ interface gate-types {
     imaginary: f64,
   }
 
+  record anonymous-record-a61d19f74dce9161 {
+    key: string,
+    value: wasm-plugin,
+  }
+
   record anonymous-record-b98ac6e17e4f4897 {
     gate-unit: u8,
   }
@@ -467,6 +472,10 @@ interface gate-types {
 
   resource component-holder-pointer;
 
+  /// ComponentPluginManager owns language-neutral component plugins. It remains
+  /// independent from Plugins: native plugins are not wrapped or migrated.
+  resource component-plugin-manager;
+
   resource component-pointer;
 
   /// CompoundBinaryTag is a compound binary tag.
@@ -524,6 +533,7 @@ interface gate-types {
     lite: config-f050a2f6645e,
     via: via,
     bedrock: bedrock-config,
+    wasm: wasm,
   }
 
   record config-a3d353eccea8 {
@@ -1344,6 +1354,7 @@ interface gate-types {
     config: option<own<config-pointer-d638d8d410fb>>,
     event-mgr: option<own<manager-d3469a289502>>,
     authenticator: option<own<authenticator>>,
+    component-plugins: option<own<component-plugin-manager>>,
   }
 
   /// Options to create a new Authenticator.
@@ -1358,6 +1369,7 @@ interface gate-types {
   record options-44b62bb619f5 {
     config: option<own<config-pointer-37c11021fd63>>,
     event-mgr: option<own<manager-d3469a289502>>,
+    component-plugins: option<own<component-plugin-manager>>,
   }
 
   /// Options for showing a title.
@@ -2486,6 +2498,25 @@ interface gate-types {
 
   resource viper;
 
+  /// Wasm configures language-neutral WebAssembly Component plugins.
+  record wasm {
+    enabled: bool,
+    directory: string,
+    max-component-bytes: u64,
+    memory-bytes: u64,
+    transfer-bytes: u64,
+    fuel: u64,
+    resource-handles: u32,
+    init-deadline: duration-cebb2f3e1688,
+    callback-deadline: duration-cebb2f3e1688,
+    plugins: option<list<anonymous-record-a61d19f74dce9161>>,
+  }
+
+  /// WasmPlugin contains identity-based component overrides.
+  record wasm-plugin {
+    disabled: bool,
+  }
+
   record wire-node {
     i-dx: s64,
     gate-flags: u8,
@@ -2500,6 +2531,59 @@ interface gate-types {
 
   /// Writer is a packet writer.
   resource writer-ecd9b874f7be;
+}
+
+interface gate-callbacks {
+  use gate-types.{anonymous-dynamic-3f3a2bbef3d45970, callback-0105467f2bef, callback-1178afb46377, callback-1f86eef915ce, callback-2053c44117ea, callback-2c1c5989286b, callback-4e5db8a68395, callback-8ce8588e75ea, callback-9b79f3eb4945, callback-a3de14505458, callback-a5d0afa3c957, callback-bf78377c58d5, callback-d4c80bbf993f, callback-f39d53d38ffd, cancel-func, command-context, command-func, config-pointer-37c11021fd63, context-e30d9213847b, context-pointer, gate-error, gate-func, gate-type, has-joined-url-fn, load-config-func, method, packet, player-9f25ee10b6eb, protocol-e8c68391e5ba, reader-4d25c51b00a6, requires-context-pointer, runnable-func, seq-4454e9c05542, seq-56a88aa8d577, seq-b074101856aa, start-option, start-options, struct-field, struct-tag, suggest-func, suggestions-builder-pointer, suggestions-pointer, tri-state, value, writer-38b5996d575b};
+
+  new-callback-0105467f2bef: func(id: u64) -> own<callback-0105467f2bef>;
+  call-callback-0105467f2bef: func(callback: borrow<callback-0105467f2bef>);
+  new-callback-1178afb46377: func(id: u64) -> own<callback-1178afb46377>;
+  call-callback-1178afb46377: func(callback: borrow<callback-1178afb46377>, arg0: option<borrow<gate-type>>) -> bool;
+  new-callback-1f86eef915ce: func(id: u64) -> own<callback-1f86eef915ce>;
+  call-callback-1f86eef915ce: func(callback: borrow<callback-1f86eef915ce>, arg0: option<borrow<context-e30d9213847b>>) -> bool;
+  new-callback-2053c44117ea: func(id: u64) -> own<callback-2053c44117ea>;
+  call-callback-2053c44117ea: func(callback: borrow<callback-2053c44117ea>, arg0: method) -> bool;
+  new-callback-2c1c5989286b: func(id: u64) -> own<callback-2c1c5989286b>;
+  call-callback-2c1c5989286b: func(callback: borrow<callback-2c1c5989286b>, arg0: struct-field) -> bool;
+  new-callback-4e5db8a68395: func(id: u64) -> own<callback-4e5db8a68395>;
+  call-callback-4e5db8a68395: func(callback: borrow<callback-4e5db8a68395>, wr: option<borrow<writer-38b5996d575b>>, v: option<borrow<anonymous-dynamic-3f3a2bbef3d45970>>, protocol: protocol-e8c68391e5ba) -> result<_, gate-error>;
+  new-callback-8ce8588e75ea: func(id: u64) -> own<callback-8ce8588e75ea>;
+  call-callback-8ce8588e75ea: func(callback: borrow<callback-8ce8588e75ea>, c: option<borrow<requires-context-pointer>>) -> bool;
+  new-callback-9b79f3eb4945: func(id: u64) -> own<callback-9b79f3eb4945>;
+  call-callback-9b79f3eb4945: func(callback: borrow<callback-9b79f3eb4945>) -> result<_, gate-error>;
+  new-callback-a3de14505458: func(id: u64) -> own<callback-a3de14505458>;
+  call-callback-a3de14505458: func(callback: borrow<callback-a3de14505458>, c: option<borrow<context-pointer>>) -> result<_, gate-error>;
+  new-callback-a5d0afa3c957: func(id: u64) -> own<callback-a5d0afa3c957>;
+  call-callback-a5d0afa3c957: func(callback: borrow<callback-a5d0afa3c957>, p: option<borrow<player-9f25ee10b6eb>>) -> bool;
+  new-callback-bf78377c58d5: func(id: u64) -> own<callback-bf78377c58d5>;
+  call-callback-bf78377c58d5: func(callback: borrow<callback-bf78377c58d5>, arg0: string) -> bool;
+  new-callback-d4c80bbf993f: func(id: u64) -> own<callback-d4c80bbf993f>;
+  call-callback-d4c80bbf993f: func(callback: borrow<callback-d4c80bbf993f>, rd: option<borrow<reader-4d25c51b00a6>>, protocol: protocol-e8c68391e5ba) -> result<option<own<anonymous-dynamic-3f3a2bbef3d45970>>, gate-error>;
+  new-callback-f39d53d38ffd: func(id: u64) -> own<callback-f39d53d38ffd>;
+  call-callback-f39d53d38ffd: func(callback: borrow<callback-f39d53d38ffd>, arg0: option<borrow<packet>>) -> result<_, gate-error>;
+  new-cancel-func: func(id: u64) -> own<cancel-func>;
+  call-cancel-func: func(callback: borrow<cancel-func>);
+  new-command-func: func(id: u64) -> own<command-func>;
+  call-command-func: func(callback: borrow<command-func>, c: option<borrow<command-context>>) -> result<_, gate-error>;
+  new-gate-func: func(id: u64) -> own<gate-func>;
+  call-gate-func: func(callback: borrow<gate-func>, permission: string) -> tri-state;
+  new-has-joined-url-fn: func(id: u64) -> own<has-joined-url-fn>;
+  call-has-joined-url-fn: func(callback: borrow<has-joined-url-fn>, server-id: string, username: string, user-ip: string) -> string;
+  new-load-config-func: func(id: u64) -> own<load-config-func>;
+  call-load-config-func: func(callback: borrow<load-config-func>) -> result<option<own<config-pointer-37c11021fd63>>, gate-error>;
+  new-runnable-func: func(id: u64) -> own<runnable-func>;
+  call-runnable-func: func(callback: borrow<runnable-func>, ctx: option<borrow<context-e30d9213847b>>) -> result<_, gate-error>;
+  new-seq-4454e9c05542: func(id: u64) -> own<seq-4454e9c05542>;
+  call-seq-4454e9c05542: func(callback: borrow<seq-4454e9c05542>, yield: option<own<callback-2053c44117ea>>);
+  new-seq-56a88aa8d577: func(id: u64) -> own<seq-56a88aa8d577>;
+  call-seq-56a88aa8d577: func(callback: borrow<seq-56a88aa8d577>, yield: option<own<callback-1178afb46377>>);
+  new-seq-b074101856aa: func(id: u64) -> own<seq-b074101856aa>;
+  call-seq-b074101856aa: func(callback: borrow<seq-b074101856aa>, yield: option<own<callback-2c1c5989286b>>);
+  new-start-option: func(id: u64) -> own<start-option>;
+  call-start-option: func(callback: borrow<start-option>, o: option<borrow<start-options>>);
+  new-suggest-func: func(id: u64) -> own<suggest-func>;
+  call-suggest-func: func(callback: borrow<suggest-func>, c: option<borrow<context-pointer>>, b: option<borrow<suggestions-builder-pointer>>) -> option<own<suggestions-pointer>>;
 }
 
 interface pkg-command {
@@ -2970,7 +3054,7 @@ interface pkg-edition-java-bossbar {
 }
 
 interface pkg-edition-java-config {
-  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-fe1a3b005de42270, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, packet-limiter, query, quota, quota-settings, route, single-or-multi-937acf956e09, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via};
+  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, packet-limiter, query, quota, quota-settings, route, single-or-multi-937acf956e09, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, wasm, wasm-plugin};
 
   /// BungeeGuardForwardingMode is a forwarding mode used by versions lower than 1.13
   get-bungee-guard-forwarding-mode: func() -> forwarding-mode;
@@ -2989,6 +3073,8 @@ interface pkg-edition-java-config {
   /// proxy that has a public address must list it explicitly.
   /// A new slice is returned on every call so callers cannot mutate the defaults.
   default-proxy-protocol-trusted-proxies: func() -> option<list<string>>;
+  get-default-wasm: func() -> wasm;
+  set-default-wasm: func(value: wasm);
   get-legacy-forwarding-mode: func() -> forwarding-mode;
   get-none-forwarding-mode: func() -> forwarding-mode;
   /// ResolveProxyProtocolTrustedProxies returns the configured trusted upstreams,
@@ -2997,6 +3083,7 @@ interface pkg-edition-java-config {
   /// VelocityForwardingMode is a forwarding mode specified by the Velocity java proxy and
   /// supported by PaperSpigot for versions starting at 1.13.
   get-velocity-forwarding-mode: func() -> forwarding-mode;
+  wasm-validate: func(self: wasm) -> option<list<option<own<error>>>>;
 }
 
 interface pkg-edition-java-cookie {
@@ -4219,7 +4306,7 @@ interface pkg-edition-java-proto-version {
 }
 
 interface pkg-edition-java-proxy {
-  use gate-types.{addr, anonymous-dynamic-1c10c7b1df5a6e62, anonymous-record-521544b5d760d299, anonymous-record-fe1a3b005de42270, auth, authenticator, backend-floodgate, backend-handshake-addresser, backend-version-provider, bedrock-config, bit-set, bool-or-struct-5876f4a1e31a, callback-0105467f2bef, callback-a5d0afa3c957, channel-identifier, channel-message-sink, channel-message-source, channel-registrar, chat-state, client-protocol-provider, command-execute-event, component-8135a805e033, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, conn, connection-event, connection-event-conn, connection-handshake-event, connection-request, connection-result, connection-status, context-e30d9213847b, cookie-receive-event, cookie-request-event, cookie-store-event, disconnect-event, duration-147de15d0597, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, forwarding-mode-provider, game-profile, game-profile-pointer, game-profile-provider, game-profile-request-event, gate-error, gate-func, handshake-addresser, handshake-intent, hash, identified-key, inbound, info, info-pointer, key, kicked-from-server-event, last-seen-messages, lastseenmessages-pointer, lite, login-event, login-phase-connection, login-status, manager-d3469a289502, manager-pointer, message-consumer, message-option, message-sink, message-type-668a92415c80, mod, mod-info-80041f204962, options-218b44945fda, origin, packet, packet-limiter, permissions-setup-event, ping-event, player-9f25ee10b6eb, player-available-commands-event, player-b186caed0db5, player-channel-register-event, player-channel-unregister-event, player-chat-event, player-choose-initial-server-event, player-client-brand-event, player-mod-info-event, player-settings-changed-event, players-849b766b7567, plugin-message-event, post-login-event, pre-login-event, pre-login-result, pre-shutdown-event, pre-transfer-event, property, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, query, quota, quota-settings, ready-event, registered-server, response-status, root-command-node-pointer, route, server-connected-event, server-connection-4f41e3a0f548, server-dialer, server-info, server-kick-result, server-login-plugin-message-event, server-login-plugin-message-result-pointer, server-ping-pointer, server-post-connect-event, server-pre-connect-event, server-registered-event, server-registrar, server-registry, server-resource-pack-remove-event, server-resource-pack-send-event, server-unregistered-event, settings, single-or-multi-937acf956e09, source, status-dc852aff07bd, status-pointer, strategy, subject, tab-complete-event, tab-list, text-component-pointer, time-pointer, timestamp, tri-state, url-pointer-0703e7cbaa23, uuid, via};
+  use gate-types.{addr, anonymous-dynamic-1c10c7b1df5a6e62, anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, auth, authenticator, backend-floodgate, backend-handshake-addresser, backend-version-provider, bedrock-config, bit-set, bool-or-struct-5876f4a1e31a, callback-0105467f2bef, callback-a5d0afa3c957, channel-identifier, channel-message-sink, channel-message-source, channel-registrar, chat-state, client-protocol-provider, command-execute-event, component-8135a805e033, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-f050a2f6645e, config-pointer-d638d8d410fb, conn, connection-event, connection-event-conn, connection-handshake-event, connection-request, connection-result, connection-status, context-e30d9213847b, cookie-receive-event, cookie-request-event, cookie-store-event, disconnect-event, duration-147de15d0597, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, forwarding-mode-provider, game-profile, game-profile-pointer, game-profile-provider, game-profile-request-event, gate-error, gate-func, handshake-addresser, handshake-intent, hash, identified-key, inbound, info, info-pointer, key, kicked-from-server-event, last-seen-messages, lastseenmessages-pointer, lite, login-event, login-phase-connection, login-status, manager-d3469a289502, manager-pointer, message-consumer, message-option, message-sink, message-type-668a92415c80, mod, mod-info-80041f204962, options-218b44945fda, origin, packet, packet-limiter, permissions-setup-event, ping-event, player-9f25ee10b6eb, player-available-commands-event, player-b186caed0db5, player-channel-register-event, player-channel-unregister-event, player-chat-event, player-choose-initial-server-event, player-client-brand-event, player-mod-info-event, player-settings-changed-event, players-849b766b7567, plugin-message-event, post-login-event, pre-login-event, pre-login-result, pre-shutdown-event, pre-transfer-event, property, protocol-e8c68391e5ba, proxy-3cf24d6ad4bb, query, quota, quota-settings, ready-event, registered-server, response-status, root-command-node-pointer, route, server-connected-event, server-connection-4f41e3a0f548, server-dialer, server-info, server-kick-result, server-login-plugin-message-event, server-login-plugin-message-result-pointer, server-ping-pointer, server-post-connect-event, server-pre-connect-event, server-registered-event, server-registrar, server-registry, server-resource-pack-remove-event, server-resource-pack-send-event, server-unregistered-event, settings, single-or-multi-937acf956e09, source, status-dc852aff07bd, status-pointer, strategy, subject, tab-complete-event, tab-list, text-component-pointer, time-pointer, timestamp, tri-state, url-pointer-0703e7cbaa23, uuid, via, wasm, wasm-plugin};
 
   /// AcceptedResourcePackResponseStatus indicates the player has accepted the resource pack and is now downloading it.
   get-accepted-resource-pack-response-status: func() -> response-status;
@@ -4263,6 +4350,8 @@ interface pkg-edition-java-proxy {
   command-execute-event-set-forward: func(self: borrow<command-execute-event>, forward: bool);
   /// Source returns the command source that wants to run the command.
   command-execute-event-source: func(self: borrow<command-execute-event>) -> option<own<source>>;
+  component-plugin-manager-close: func(self: borrow<component-plugin-manager>) -> result<_, gate-error>;
+  component-plugin-manager-start: func(self: borrow<component-plugin-manager>, arg0: option<borrow<context-e30d9213847b>>, arg1: option<borrow<proxy-3cf24d6ad4bb>>) -> result<_, gate-error>;
   get-conflicting-login-status: func() -> login-status;
   /// Connection returns the connection.
   connection-event-connection: func(self: borrow<connection-event>) -> option<own<conn>>;
@@ -5170,7 +5259,7 @@ interface pkg-edition-java-title {
 }
 
 interface pkg-gate {
-  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, context-e30d9213847b, duration-cebb2f3e1688, favicon, forced-hosts, forwarding, forwarding-mode, gate, gate-error, health-service, manager-d3469a289502, options-44b62bb619f5, packet-limiter, proxy-3cf24d6ad4bb, proxy-f9797141fae0, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, start-option, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, viper};
+  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-plugin-manager, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, context-e30d9213847b, duration-cebb2f3e1688, favicon, forced-hosts, forwarding, forwarding-mode, gate, gate-error, health-service, manager-d3469a289502, options-44b62bb619f5, packet-limiter, proxy-3cf24d6ad4bb, proxy-f9797141fae0, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, start-option, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, viper, wasm, wasm-plugin};
 
   /// Bedrock returns the Bedrock edition proxy, or nil if none.
   gate-bedrock: func(self: borrow<gate>) -> option<own<proxy-f9797141fae0>>;
@@ -5203,13 +5292,15 @@ interface pkg-gate {
   /// when a shutdown signal is received.
   /// This setting is enabled by default.
   with-auto-shutdown-on-signal: func(enabled: bool) -> option<own<start-option>>;
+  /// WithComponentPlugins configures a language-neutral component plugin loader.
+  with-component-plugins: func(plugins: option<borrow<component-plugin-manager>>) -> option<own<start-option>>;
   /// WithConfig is a StartOption for Start
   /// that uses the provided config.Config.
   with-config: func(c: config-ae5346cac14f) -> option<own<start-option>>;
 }
 
 interface pkg-gate-config {
-  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, health-service, packet-limiter, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via};
+  use gate-types.{anonymous-record-521544b5d760d299, anonymous-record-a61d19f74dce9161, anonymous-record-fe1a3b005de42270, api, auth, backend-floodgate, bedrock-config, bool-or-struct-5876f4a1e31a, component-pointer, compression, config-9d254ed91f83, config-a3d353eccea8, config-a4c25324bd61, config-ae5346cac14f, config-f050a2f6645e, config-pointer-37c11021fd63, duration-cebb2f3e1688, error, favicon, forced-hosts, forwarding, forwarding-mode, health-service, packet-limiter, query, quota, quota-settings, route, service, single-or-multi-937acf956e09, status-dc852aff07bd, status-pointer, strategy, text-component-pointer, url-pointer-0703e7cbaa23, via, wasm, wasm-plugin};
 
   /// Validate validates a Config and all enabled configs.
   config-validate: func(self: borrow<config-pointer-37c11021fd63>) -> tuple<option<list<option<own<error>>>>, option<list<option<own<error>>>>>;
@@ -5779,5 +5870,6 @@ world gate-plugin {
   import pkg-util-uuid;
   import pkg-util-validation;
   import pkg-version;
+  import gate-callbacks;
   export plugin;
 }

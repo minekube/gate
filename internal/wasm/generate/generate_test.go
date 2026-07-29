@@ -167,14 +167,35 @@ func TestRenderCompleteGateAPI(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, len(wit), 100_000)
 	require.Contains(t, string(wit), "interface pkg-edition-java-proxy {")
+	require.Contains(t, string(wit), "interface gate-callbacks {")
 	require.Contains(t, string(wit), "world gate-plugin {")
-	require.Equal(t, len(api.Packages), strings.Count(string(wit), "\n  import "))
+	require.Equal(t, len(api.Packages)+1, strings.Count(string(wit), "\n  import "))
 
 	manifest, err := RenderManifest(api)
 	require.NoError(t, err)
 	var rendered Manifest
 	require.NoError(t, json.Unmarshal(manifest, &rendered))
 	require.Equal(t, len(api.Declarations), len(rendered.Declarations))
+}
+
+func TestRenderWITExposesCallbacksInBothDirections(t *testing.T) {
+	t.Parallel()
+
+	wit, err := RenderWIT(simpleAPI())
+	require.NoError(t, err)
+	contract := string(wit)
+	require.Contains(t, contract, "interface gate-callbacks {")
+	require.Contains(
+		t,
+		contract,
+		"  new-handler: func(id: u64) -> own<handler>;",
+	)
+	require.Contains(
+		t,
+		contract,
+		"  call-handler: func(callback: borrow<handler>, input: string) -> bool;",
+	)
+	require.Contains(t, contract, "  import gate-callbacks;")
 }
 
 func simpleAPI() *model.API {

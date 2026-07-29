@@ -54,6 +54,7 @@ typedef struct gate_wasm_plugin_metadata {
 
 typedef struct gate_wasm_runtime gate_wasm_runtime;
 typedef struct gate_wasm_reentry gate_wasm_reentry;
+typedef struct gate_wasm_callback_reentry gate_wasm_callback_reentry;
 
 typedef enum gate_wasm_status {
   GATE_WASM_STATUS_OK = 0,
@@ -75,6 +76,10 @@ int32_t gate_wasm_runtime_metadata(
 int32_t gate_wasm_runtime_init(
     gate_wasm_runtime *runtime, uint64_t context_id, uint64_t proxy_id,
     gate_wasm_owned_sample *output, gate_wasm_owned_bytes *error);
+int32_t gate_wasm_runtime_invoke_callback(
+    gate_wasm_runtime *runtime, uint32_t callback_type_id,
+    uint64_t guest_id, gate_wasm_slice input,
+    gate_wasm_owned_bytes *output, gate_wasm_owned_bytes *error);
 int32_t gate_wasm_runtime_on_event(
     gate_wasm_runtime *runtime, uint64_t proxy_id, gate_wasm_slice input,
     gate_wasm_owned_bytes *output, gate_wasm_owned_bytes *error);
@@ -85,6 +90,10 @@ int32_t gate_wasm_runtime_spin(
     gate_wasm_runtime *runtime, gate_wasm_owned_bytes *error);
 int32_t gate_wasm_reentry_on_event(
     gate_wasm_reentry *reentry, uint64_t proxy_id, gate_wasm_slice input,
+    gate_wasm_owned_bytes *output, gate_wasm_owned_bytes *error);
+int32_t gate_wasm_callback_reentry_invoke(
+    gate_wasm_callback_reentry *reentry, uint32_t callback_type_id,
+    uint64_t guest_id, gate_wasm_slice input,
     gate_wasm_owned_bytes *output, gate_wasm_owned_bytes *error);
 void gate_wasm_runtime_free(gate_wasm_runtime *runtime);
 void gate_wasm_owned_bytes_free(gate_wasm_owned_bytes value);

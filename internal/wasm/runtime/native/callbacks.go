@@ -27,6 +27,50 @@ type nativeReentry struct {
 	active   bool
 }
 
+type nativeCallbackReentry struct {
+	mu       sync.Mutex
+	ptr      *C.gate_wasm_callback_reentry
+	threadID C.uintptr_t
+	active   bool
+}
+
+func (reentry *nativeCallbackReentry) InvokeCallback(
+	callbackTypeID uint32,
+	guestID uint64,
+	input []byte,
+) ([]byte, error) {
+	reentry.mu.Lock()
+	defer reentry.mu.Unlock()
+	if !reentry.active || reentry.ptr == nil {
+		return nil, ErrExpiredReentry
+	}
+	if C.gate_wasm_current_thread_id() != reentry.threadID {
+		return nil, errWrongReentryThread
+	}
+	var output C.gate_wasm_owned_bytes
+	var cError C.gate_wasm_owned_bytes
+	status := C.gate_wasm_callback_reentry_invoke(
+		reentry.ptr,
+		C.uint32_t(callbackTypeID),
+		C.uint64_t(guestID),
+		borrowedBytes(input),
+		&output,
+		&cError,
+	)
+	runtime.KeepAlive(input)
+	if status != 0 {
+		return nil, takeRustStatus(status, cError)
+	}
+	return takeRustBytes(output)
+}
+
+func (reentry *nativeCallbackReentry) expire() {
+	reentry.mu.Lock()
+	reentry.active = false
+	reentry.ptr = nil
+	reentry.mu.Unlock()
+}
+
 func (r *nativeReentry) OnEvent(proxyID uint64, input string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -158,12 +202,19 @@ func gate_wasm_go_emit_nested(
 
 type dispatchHost interface {
 	Invoke(operationID uint32, input []byte) ([]byte, error)
+	InvokeWithReentry(
+		reentry CallbackInvoker,
+		operationID uint32,
+		input []byte,
+	) ([]byte, error)
+	RegisterCallback(callbackTypeID uint32, guestID uint64) (uint64, error)
 	DropResource(handle uint64) error
 }
 
 //export gate_wasm_go_invoke
 func gate_wasm_go_invoke(
 	host C.uintptr_t,
+	reentryPointer *C.gate_wasm_callback_reentry,
 	operationID C.uint32_t,
 	input C.gate_wasm_slice,
 	output *C.gate_wasm_owned_bytes,
@@ -175,6 +226,9 @@ func gate_wasm_go_invoke(
 	if output == nil {
 		return callbackError(errorOutput, errors.New("dispatch output is null"))
 	}
+	if reentryPointer == nil {
+		return callbackError(errorOutput, errors.New("callback reentry pointer is null"))
+	}
 	inputBytes, err := copySlice(input)
 	if err != nil {
 		return callbackError(errorOutput, err)
@@ -183,13 +237,54 @@ func gate_wasm_go_invoke(
 	if !ok {
 		return callbackError(errorOutput, errors.New("Go host does not provide Gate API dispatch"))
 	}
-	result, err := hostValue.Invoke(uint32(operationID), inputBytes)
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	reentry := &nativeCallbackReentry{
+		ptr:      reentryPointer,
+		threadID: C.gate_wasm_current_thread_id(),
+		active:   true,
+	}
+	defer reentry.expire()
+
+	result, err := hostValue.InvokeWithReentry(
+		reentry,
+		uint32(operationID),
+		inputBytes,
+	)
 	if err != nil {
 		return callbackError(errorOutput, err)
 	}
 	if err := setCBytes(output, result); err != nil {
 		return callbackError(errorOutput, err)
 	}
+	return 0
+}
+
+//export gate_wasm_go_register_callback
+func gate_wasm_go_register_callback(
+	host C.uintptr_t,
+	callbackTypeID C.uint32_t,
+	guestID C.uint64_t,
+	handle *C.uint64_t,
+	errorOutput *C.gate_wasm_owned_bytes,
+) (status C.int32_t) {
+	clearOwnedBytes(errorOutput)
+	defer recoverCallback(&status, errorOutput)
+	if handle == nil {
+		return callbackError(errorOutput, errors.New("callback handle output is null"))
+	}
+	hostValue, ok := goHost(host).(dispatchHost)
+	if !ok {
+		return callbackError(errorOutput, errors.New("Go host does not provide callback dispatch"))
+	}
+	value, err := hostValue.RegisterCallback(
+		uint32(callbackTypeID),
+		uint64(guestID),
+	)
+	if err != nil {
+		return callbackError(errorOutput, err)
+	}
+	*handle = C.uint64_t(value)
 	return 0
 }
 
