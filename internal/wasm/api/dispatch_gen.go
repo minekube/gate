@@ -13582,7 +13582,7 @@ var GeneratedOperations = [...]GeneratedOperationDescriptor{
 // Compile-time references make source API drift a Go compiler error.
 var generatedDeclarationReference0001 = p000.Command
 
-func generatedDeclarationReference0002(_ p000.Context) {}
+func generatedDeclarationReference0002(_ *p000.Context) {}
 
 var generatedDeclarationReference0003 = p000.Context.Bool
 var generatedDeclarationReference0004 = p000.Context.Copy
@@ -13605,7 +13605,7 @@ var generatedDeclarationReference0020 = p000.Context.Value
 var generatedDeclarationReference0021 = p000.ContextWithSource
 var generatedDeclarationReference0022 = p000.ErrForward
 
-func generatedDeclarationReference0023(_ p000.Manager) {}
+func generatedDeclarationReference0023(_ *p000.Manager) {}
 
 var generatedDeclarationReference0024 = (*p000.Manager).AllUsage
 var generatedDeclarationReference0025 = (*p000.Manager).CompletionSuggestions
@@ -13623,15 +13623,15 @@ var generatedDeclarationReference0036 = (*p000.Manager).Register
 var generatedDeclarationReference0037 = (*p000.Manager).RegisterWithAliases
 var generatedDeclarationReference0038 = (*p000.Manager).SmartUsage
 
-func generatedDeclarationReference0039(_ p000.MessageOption) {}
+func generatedDeclarationReference0039(_ *p000.MessageOption) {}
 
 var generatedDeclarationReference0040 = p000.MessageOption.Apply
 
-func generatedDeclarationReference0041(_ p000.ParseResults) {}
+func generatedDeclarationReference0041(_ *p000.ParseResults) {}
 
 var generatedDeclarationReference0042 = p000.Requires
 
-func generatedDeclarationReference0043(_ p000.RequiresContext) {}
+func generatedDeclarationReference0043(_ *p000.RequiresContext) {}
 
 var generatedDeclarationReference0044 = p000.RequiresContext.Deadline
 var generatedDeclarationReference0045 = p000.RequiresContext.Done
@@ -13641,14 +13641,14 @@ var generatedDeclarationReference0048 = p000.RequiresContext.PermissionValue
 var generatedDeclarationReference0049 = p000.RequiresContext.SendMessage
 var generatedDeclarationReference0050 = p000.RequiresContext.Value
 
-func generatedDeclarationReference0051(_ p000.Source) {}
+func generatedDeclarationReference0051(_ *p000.Source) {}
 
 var generatedDeclarationReference0052 = p000.Source.HasPermission
 var generatedDeclarationReference0053 = p000.Source.PermissionValue
 var generatedDeclarationReference0054 = p000.Source.SendMessage
 var generatedDeclarationReference0055 = p000.SourceFromContext
 
-func generatedDeclarationReference0056(_ p000.SuggestFunc) {}
+func generatedDeclarationReference0056(_ *p000.SuggestFunc) {}
 
 var generatedDeclarationReference0057 = p000.SuggestFunc.Suggestions
 var generatedDeclarationReference0058 = p001.DefaultMinimumSimilarityScore
@@ -13662,19 +13662,19 @@ var generatedDeclarationReference0065 = p002.MinimalConfigBytes
 var generatedDeclarationReference0066 = p002.SimpleConfigBytes
 var generatedDeclarationReference0067 = p003.Bedrock
 
-func generatedDeclarationReference0068(_ p003.Edition) {}
+func generatedDeclarationReference0068(_ *p003.Edition) {}
 
 var generatedDeclarationReference0069 = p003.Java
 
-func generatedDeclarationReference0070(_ p004.BackendFloodgate) {}
-func generatedDeclarationReference0071(_ p004.BedrockConfig)    {}
+func generatedDeclarationReference0070(_ *p004.BackendFloodgate) {}
+func generatedDeclarationReference0071(_ *p004.BedrockConfig)    {}
 
 var generatedDeclarationReference0072 = (*p004.BedrockConfig).GetManagedConfig
 var generatedDeclarationReference0073 = (*p004.BedrockConfig).ToConfig
 var generatedDeclarationReference0074 = (*p004.BedrockConfig).UnmarshalYAML
 
-func generatedDeclarationReference0075(_ p004.BoolOrManagedGeyser) {}
-func generatedDeclarationReference0076(_ p004.Config)              {}
+func generatedDeclarationReference0075(_ *p004.BoolOrManagedGeyser) {}
+func generatedDeclarationReference0076(_ *p004.Config)              {}
 
 var generatedDeclarationReference0077 = (*p004.Config).GetManaged
 var generatedDeclarationReference0078 = (*p004.Config).Validate
@@ -13682,19 +13682,19 @@ var generatedDeclarationReference0079 = p004.DefaultBedrockConfig
 var generatedDeclarationReference0080 = p004.DefaultConfig
 var generatedDeclarationReference0081 = p004.DefaultManaged
 
-func generatedDeclarationReference0082(_ p004.Geyserlite)    {}
-func generatedDeclarationReference0083(_ p004.JavaGeyser)    {}
-func generatedDeclarationReference0084(_ p004.ManagedEngine) {}
+func generatedDeclarationReference0082(_ *p004.Geyserlite)    {}
+func generatedDeclarationReference0083(_ *p004.JavaGeyser)    {}
+func generatedDeclarationReference0084(_ *p004.ManagedEngine) {}
 
 var generatedDeclarationReference0085 = p004.ManagedEngineGeyserlite
 var generatedDeclarationReference0086 = p004.ManagedEngineJava
 
-func generatedDeclarationReference0087(_ p004.ManagedGeyser) {}
+func generatedDeclarationReference0087(_ *p004.ManagedGeyser) {}
 
 var generatedDeclarationReference0088 = p005.FromContext
 var generatedDeclarationReference0089 = p005.GEYSER_API_URL
 
-func generatedDeclarationReference0090(_ p005.GeyserConnection) {}
+func generatedDeclarationReference0090(_ *p005.GeyserConnection) {}
 
 var generatedDeclarationReference0091 = (*p005.GeyserConnection).Close
 var generatedDeclarationReference0092 = p005.GeyserConnection.Deadline
@@ -13710,33 +13710,33 @@ var generatedDeclarationReference0101 = p005.GeyserConnection.SetWriteDeadline
 var generatedDeclarationReference0102 = p005.GeyserConnection.Value
 var generatedDeclarationReference0103 = p005.GeyserConnection.Write
 
-func generatedDeclarationReference0104(_ p005.Integration) {}
+func generatedDeclarationReference0104(_ *p005.Integration) {}
 
 var generatedDeclarationReference0105 = (*p005.Integration).BackendHandshakeAddr
 var generatedDeclarationReference0106 = (*p005.Integration).Start
 var generatedDeclarationReference0107 = (*p005.Integration).Stop
 
-func generatedDeclarationReference0108(_ p005.LinkedAccountResult) {}
+func generatedDeclarationReference0108(_ *p005.LinkedAccountResult) {}
 
 var generatedDeclarationReference0109 = p005.NewIntegration
 var generatedDeclarationReference0110 = p005.NewProfileManager
 
-func generatedDeclarationReference0111(_ p005.ProfileManager) {}
+func generatedDeclarationReference0111(_ *p005.ProfileManager) {}
 
 var generatedDeclarationReference0112 = (*p005.ProfileManager).GetLinkedAccount
 var generatedDeclarationReference0113 = (*p005.ProfileManager).GetSkin
 
-func generatedDeclarationReference0114(_ p005.SkinResult) {}
-func generatedDeclarationReference0115(_ p006.AesCipher)  {}
+func generatedDeclarationReference0114(_ *p005.SkinResult) {}
+func generatedDeclarationReference0115(_ *p006.AesCipher)  {}
 
 var generatedDeclarationReference0116 = (*p006.AesCipher).Decrypt
 var generatedDeclarationReference0117 = (*p006.AesCipher).Encrypt
 
-func generatedDeclarationReference0118(_ p006.BedrockData) {}
+func generatedDeclarationReference0118(_ *p006.BedrockData) {}
 
 var generatedDeclarationReference0119 = (*p006.BedrockData).JavaUuid
 
-func generatedDeclarationReference0120(_ p006.DeviceOS) {}
+func generatedDeclarationReference0120(_ *p006.DeviceOS) {}
 
 var generatedDeclarationReference0121 = p006.DeviceOS.IsAndroid
 var generatedDeclarationReference0122 = p006.DeviceOS.IsAndroidBased
@@ -13768,7 +13768,7 @@ var generatedDeclarationReference0147 = p006.DeviceOSWindowsX86
 var generatedDeclarationReference0148 = p006.DeviceOSXbox
 var generatedDeclarationReference0149 = p006.DeviceOSes
 
-func generatedDeclarationReference0150(_ p006.Floodgate) {}
+func generatedDeclarationReference0150(_ *p006.Floodgate) {}
 
 var generatedDeclarationReference0151 = (*p006.Floodgate).Decrypt
 var generatedDeclarationReference0152 = (*p006.Floodgate).Encrypt
@@ -13789,26 +13789,26 @@ var generatedDeclarationReference0166 = p006.TAG_BIT_LENGTH
 var generatedDeclarationReference0167 = p006.VERSION
 var generatedDeclarationReference0168 = p007.New
 
-func generatedDeclarationReference0169(_ p007.Runner) {}
+func generatedDeclarationReference0169(_ *p007.Runner) {}
 
 var generatedDeclarationReference0170 = (*p007.Runner).Ensure
 var generatedDeclarationReference0171 = (*p007.Runner).EnsureKey
 var generatedDeclarationReference0172 = (*p007.Runner).Start
 var generatedDeclarationReference0173 = (*p007.Runner).Stop
 
-func generatedDeclarationReference0174(_ p008.Decoder) {}
+func generatedDeclarationReference0174(_ *p008.Decoder) {}
 
 var generatedDeclarationReference0175 = (*p008.Decoder).Decode
 
-func generatedDeclarationReference0176(_ p008.Encoder) {}
-func generatedDeclarationReference0177(_ p008.Header)  {}
+func generatedDeclarationReference0176(_ *p008.Encoder) {}
+func generatedDeclarationReference0177(_ *p008.Header)  {}
 
 var generatedDeclarationReference0178 = (*p008.Header).Decode
 var generatedDeclarationReference0179 = (*p008.Header).Encode
 var generatedDeclarationReference0180 = p008.NewDecoder
 var generatedDeclarationReference0181 = p008.NewEncoder
 
-func generatedDeclarationReference0182(_ p008.PacketMeta) {}
+func generatedDeclarationReference0182(_ *p008.PacketMeta) {}
 
 var generatedDeclarationReference0183 = (*p008.PacketMeta).KnownPacket
 var generatedDeclarationReference0184 = (*p008.PacketMeta).String
@@ -13816,13 +13816,13 @@ var generatedDeclarationReference0185 = p009.ReadVarUint32
 var generatedDeclarationReference0186 = p009.WriteVarUint32
 var generatedDeclarationReference0187 = p010.New
 
-func generatedDeclarationReference0188(_ p010.Options) {}
-func generatedDeclarationReference0189(_ p010.Proxy)   {}
+func generatedDeclarationReference0188(_ *p010.Options) {}
+func generatedDeclarationReference0189(_ *p010.Proxy)   {}
 
 var generatedDeclarationReference0190 = (*p010.Proxy).Event
 var generatedDeclarationReference0191 = (*p010.Proxy).Start
 
-func generatedDeclarationReference0192(_ p011.Authenticator) {}
+func generatedDeclarationReference0192(_ *p011.Authenticator) {}
 
 var generatedDeclarationReference0193 = p011.Authenticator.AuthenticateJoin
 var generatedDeclarationReference0194 = p011.Authenticator.DecryptSharedSecret
@@ -13834,18 +13834,18 @@ var generatedDeclarationReference0199 = p011.CustomHasJoinedURL
 var generatedDeclarationReference0200 = p011.DefaultHasJoinedURL
 var generatedDeclarationReference0201 = p011.DefaultPrivateKeyBits
 
-func generatedDeclarationReference0202(_ p011.HasJoinedURLFn) {}
+func generatedDeclarationReference0202(_ *p011.HasJoinedURLFn) {}
 
 var generatedDeclarationReference0203 = p011.New
 
-func generatedDeclarationReference0204(_ p011.Options)  {}
-func generatedDeclarationReference0205(_ p011.Response) {}
+func generatedDeclarationReference0204(_ *p011.Options)  {}
+func generatedDeclarationReference0205(_ *p011.Response) {}
 
 var generatedDeclarationReference0206 = p011.Response.GameProfile
 var generatedDeclarationReference0207 = p011.Response.OnlineMode
 var generatedDeclarationReference0208 = p012.BlueColor
 
-func generatedDeclarationReference0209(_ p012.BossBar) {}
+func generatedDeclarationReference0209(_ *p012.BossBar) {}
 
 var generatedDeclarationReference0210 = p012.BossBar.AddViewer
 var generatedDeclarationReference0211 = p012.BossBar.Color
@@ -13862,17 +13862,17 @@ var generatedDeclarationReference0221 = p012.BossBar.SetOverlay
 var generatedDeclarationReference0222 = p012.BossBar.SetPercent
 var generatedDeclarationReference0223 = p012.BossBar.Viewers
 
-func generatedDeclarationReference0224(_ p012.Color) {}
+func generatedDeclarationReference0224(_ *p012.Color) {}
 
 var generatedDeclarationReference0225 = p012.Colors
 var generatedDeclarationReference0226 = p012.CreateWorldFogFlag
 var generatedDeclarationReference0227 = p012.DarkenScreenFlag
 
-func generatedDeclarationReference0228(_ p012.Flag) {}
+func generatedDeclarationReference0228(_ *p012.Flag) {}
 
 var generatedDeclarationReference0229 = p012.GreenColor
 
-func generatedDeclarationReference0230(_ p012.ManagedViewer) {}
+func generatedDeclarationReference0230(_ *p012.ManagedViewer) {}
 
 var generatedDeclarationReference0231 = p012.ManagedViewer.Context
 var generatedDeclarationReference0232 = p012.ManagedViewer.ID
@@ -13888,7 +13888,7 @@ var generatedDeclarationReference0241 = p012.Notched12Overlay
 var generatedDeclarationReference0242 = p012.Notched20Overlay
 var generatedDeclarationReference0243 = p012.Notched6Overlay
 
-func generatedDeclarationReference0244(_ p012.Overlay) {}
+func generatedDeclarationReference0244(_ *p012.Overlay) {}
 
 var generatedDeclarationReference0245 = p012.PinkColor
 var generatedDeclarationReference0246 = p012.PlayBossMusicFlag
@@ -13897,7 +13897,7 @@ var generatedDeclarationReference0248 = p012.PurpleColor
 var generatedDeclarationReference0249 = p012.RedColor
 var generatedDeclarationReference0250 = p012.RemoveAllViewers
 
-func generatedDeclarationReference0251(_ p012.Viewer) {}
+func generatedDeclarationReference0251(_ *p012.Viewer) {}
 
 var generatedDeclarationReference0252 = p012.Viewer.Context
 var generatedDeclarationReference0253 = p012.Viewer.ID
@@ -13905,51 +13905,51 @@ var generatedDeclarationReference0254 = p012.Viewer.WritePacket
 var generatedDeclarationReference0255 = p012.WhiteColor
 var generatedDeclarationReference0256 = p012.YellowColor
 
-func generatedDeclarationReference0257(_ p013.Auth) {}
+func generatedDeclarationReference0257(_ *p013.Auth) {}
 
 var generatedDeclarationReference0258 = p013.BungeeGuardForwardingMode
 
-func generatedDeclarationReference0259(_ p013.Compression) {}
-func generatedDeclarationReference0260(_ p013.Config)      {}
+func generatedDeclarationReference0259(_ *p013.Compression) {}
+func generatedDeclarationReference0260(_ *p013.Config)      {}
 
 var generatedDeclarationReference0261 = (*p013.Config).Validate
 var generatedDeclarationReference0262 = p013.DefaultConfig
 var generatedDeclarationReference0263 = p013.DefaultProxyProtocolTrustedProxies
 var generatedDeclarationReference0264 = p013.DefaultWasm
 
-func generatedDeclarationReference0265(_ p013.ForcedHosts)    {}
-func generatedDeclarationReference0266(_ p013.Forwarding)     {}
-func generatedDeclarationReference0267(_ p013.ForwardingMode) {}
+func generatedDeclarationReference0265(_ *p013.ForcedHosts)    {}
+func generatedDeclarationReference0266(_ *p013.Forwarding)     {}
+func generatedDeclarationReference0267(_ *p013.ForwardingMode) {}
 
 var generatedDeclarationReference0268 = p013.LegacyForwardingMode
 var generatedDeclarationReference0269 = p013.NoneForwardingMode
 
-func generatedDeclarationReference0270(_ p013.PacketLimiter) {}
-func generatedDeclarationReference0271(_ p013.Query)         {}
-func generatedDeclarationReference0272(_ p013.Quota)         {}
-func generatedDeclarationReference0273(_ p013.QuotaSettings) {}
+func generatedDeclarationReference0270(_ *p013.PacketLimiter) {}
+func generatedDeclarationReference0271(_ *p013.Query)         {}
+func generatedDeclarationReference0272(_ *p013.Quota)         {}
+func generatedDeclarationReference0273(_ *p013.QuotaSettings) {}
 
 var generatedDeclarationReference0274 = p013.ResolveProxyProtocolTrustedProxies
 
-func generatedDeclarationReference0275(_ p013.Status) {}
+func generatedDeclarationReference0275(_ *p013.Status) {}
 
 var generatedDeclarationReference0276 = p013.VelocityForwardingMode
 
-func generatedDeclarationReference0277(_ p013.Via)  {}
-func generatedDeclarationReference0278(_ p013.Wasm) {}
+func generatedDeclarationReference0277(_ *p013.Via)  {}
+func generatedDeclarationReference0278(_ *p013.Wasm) {}
 
 var generatedDeclarationReference0279 = p013.Wasm.Validate
 
-func generatedDeclarationReference0280(_ p013.WasmPlugin) {}
+func generatedDeclarationReference0280(_ *p013.WasmPlugin) {}
 
 var generatedDeclarationReference0281 = p014.Clear
 
-func generatedDeclarationReference0282(_ p014.Client) {}
+func generatedDeclarationReference0282(_ *p014.Client) {}
 
 var generatedDeclarationReference0283 = p014.Client.Context
 var generatedDeclarationReference0284 = p014.Client.WritePacket
 
-func generatedDeclarationReference0285(_ p014.Cookie) {}
+func generatedDeclarationReference0285(_ *p014.Cookie) {}
 
 var generatedDeclarationReference0286 = p014.DefaultRequestTimeout
 var generatedDeclarationReference0287 = p014.ErrUnsupportedClientProtocol
@@ -13975,11 +13975,11 @@ var generatedDeclarationReference0306 = p016.ModernToken
 var generatedDeclarationReference0307 = p016.Token
 var generatedDeclarationReference0308 = p017.Default
 
-func generatedDeclarationReference0309(_ p017.Mod) {}
+func generatedDeclarationReference0309(_ *p017.Mod) {}
 
 var generatedDeclarationReference0310 = (*p017.Mod).Validate
 
-func generatedDeclarationReference0311(_ p017.ModInfo) {}
+func generatedDeclarationReference0311(_ *p017.ModInfo) {}
 
 var generatedDeclarationReference0312 = p018.ClearVirtualHost
 var generatedDeclarationReference0313 = p018.FindRoute
@@ -13988,7 +13988,7 @@ var generatedDeclarationReference0315 = p018.Forward
 var generatedDeclarationReference0316 = p018.IsConnectionRefused
 var generatedDeclarationReference0317 = p018.IsTCPShieldRealIP
 
-func generatedDeclarationReference0318(_ p018.Lite) {}
+func generatedDeclarationReference0318(_ *p018.Lite) {}
 
 var generatedDeclarationReference0319 = (*p018.Lite).StrategyManager
 var generatedDeclarationReference0320 = p018.NewLite
@@ -13996,7 +13996,7 @@ var generatedDeclarationReference0321 = p018.NewStrategyManager
 var generatedDeclarationReference0322 = p018.ResetPingCache
 var generatedDeclarationReference0323 = p018.ResolveStatusResponse
 
-func generatedDeclarationReference0324(_ p018.StrategyManager) {}
+func generatedDeclarationReference0324(_ *p018.StrategyManager) {}
 
 var generatedDeclarationReference0325 = (*p018.StrategyManager).GetNextBackend
 var generatedDeclarationReference0326 = (*p018.StrategyManager).GetOrCreateCounter
@@ -14004,23 +14004,23 @@ var generatedDeclarationReference0327 = (*p018.StrategyManager).IncrementConnect
 var generatedDeclarationReference0328 = (*p018.StrategyManager).RecordLatency
 var generatedDeclarationReference0329 = p018.TCPShieldRealIP
 
-func generatedDeclarationReference0330(_ p019.Config) {}
+func generatedDeclarationReference0330(_ *p019.Config) {}
 
 var generatedDeclarationReference0331 = p019.Config.Validate
 var generatedDeclarationReference0332 = p019.DefaultConfig
 
-func generatedDeclarationReference0333(_ p019.Route) {}
+func generatedDeclarationReference0333(_ *p019.Route) {}
 
 var generatedDeclarationReference0334 = (*p019.Route).CachePingEnabled
 var generatedDeclarationReference0335 = (*p019.Route).Equal
 var generatedDeclarationReference0336 = (*p019.Route).GetCachePingTTL
 var generatedDeclarationReference0337 = (*p019.Route).GetTCPShieldRealIP
 
-func generatedDeclarationReference0338(_ p019.Status) {}
+func generatedDeclarationReference0338(_ *p019.Status) {}
 
 var generatedDeclarationReference0339 = (*p019.Status).Response
 
-func generatedDeclarationReference0340(_ p019.Strategy) {}
+func generatedDeclarationReference0340(_ *p019.Strategy) {}
 
 var generatedDeclarationReference0341 = p019.StrategyLeastConnections
 var generatedDeclarationReference0342 = p019.StrategyLowestLatency
@@ -14038,7 +14038,7 @@ var generatedDeclarationReference0353 = p020.ErrClosedConn
 var generatedDeclarationReference0354 = p020.ErrReadPacketRetry
 var generatedDeclarationReference0355 = p020.KnownDisconnect
 
-func generatedDeclarationReference0356(_ p020.MinecraftConn) {}
+func generatedDeclarationReference0356(_ *p020.MinecraftConn) {}
 
 var generatedDeclarationReference0357 = p020.MinecraftConn.ActiveSessionHandler
 var generatedDeclarationReference0358 = p020.MinecraftConn.AddSessionHandler
@@ -14070,7 +14070,7 @@ var generatedDeclarationReference0383 = p020.NewMinecraftConn
 var generatedDeclarationReference0384 = p020.NewReader
 var generatedDeclarationReference0385 = p020.NewWriter
 
-func generatedDeclarationReference0386(_ p020.PacketWriter) {}
+func generatedDeclarationReference0386(_ *p020.PacketWriter) {}
 
 var generatedDeclarationReference0387 = p020.PacketWriter.BufferPacket
 var generatedDeclarationReference0388 = p020.PacketWriter.BufferPayload
@@ -14078,7 +14078,7 @@ var generatedDeclarationReference0389 = p020.PacketWriter.Flush
 var generatedDeclarationReference0390 = p020.PacketWriter.Write
 var generatedDeclarationReference0391 = p020.PacketWriter.WritePacket
 
-func generatedDeclarationReference0392(_ p020.Reader) {}
+func generatedDeclarationReference0392(_ *p020.Reader) {}
 
 var generatedDeclarationReference0393 = p020.Reader.EnableEncryption
 var generatedDeclarationReference0394 = p020.Reader.ReadBuffered
@@ -14088,21 +14088,21 @@ var generatedDeclarationReference0397 = p020.Reader.SetProtocol
 var generatedDeclarationReference0398 = p020.Reader.SetState
 var generatedDeclarationReference0399 = p020.SendKeepAlive
 
-func generatedDeclarationReference0400(_ p020.SessionHandler) {}
+func generatedDeclarationReference0400(_ *p020.SessionHandler) {}
 
 var generatedDeclarationReference0401 = p020.SessionHandler.Activated
 var generatedDeclarationReference0402 = p020.SessionHandler.Deactivated
 var generatedDeclarationReference0403 = p020.SessionHandler.Disconnected
 var generatedDeclarationReference0404 = p020.SessionHandler.HandlePacket
 
-func generatedDeclarationReference0405(_ p020.StateChanger) {}
+func generatedDeclarationReference0405(_ *p020.StateChanger) {}
 
 var generatedDeclarationReference0406 = p020.StateChanger.EnableEncryption
 var generatedDeclarationReference0407 = p020.StateChanger.SetCompressionThreshold
 var generatedDeclarationReference0408 = p020.StateChanger.SetProtocol
 var generatedDeclarationReference0409 = p020.StateChanger.SetState
 
-func generatedDeclarationReference0410(_ p020.Writer) {}
+func generatedDeclarationReference0410(_ *p020.Writer) {}
 
 var generatedDeclarationReference0411 = p020.Writer.Direction
 var generatedDeclarationReference0412 = p020.Writer.EnableEncryption
@@ -14113,28 +14113,28 @@ var generatedDeclarationReference0416 = p020.Writer.SetState
 var generatedDeclarationReference0417 = p020.Writer.Write
 var generatedDeclarationReference0418 = p020.Writer.WritePacket
 
-func generatedDeclarationReference0419(_ p021.Players)      {}
-func generatedDeclarationReference0420(_ p021.SamplePlayer) {}
-func generatedDeclarationReference0421(_ p021.ServerPing)   {}
+func generatedDeclarationReference0419(_ *p021.Players)      {}
+func generatedDeclarationReference0420(_ *p021.SamplePlayer) {}
+func generatedDeclarationReference0421(_ *p021.ServerPing)   {}
 
 var generatedDeclarationReference0422 = (*p021.ServerPing).MarshalJSON
 var generatedDeclarationReference0423 = (*p021.ServerPing).MarshalYAML
 var generatedDeclarationReference0424 = (*p021.ServerPing).UnmarshalJSON
 var generatedDeclarationReference0425 = (*p021.ServerPing).UnmarshalYAML
 
-func generatedDeclarationReference0426(_ p021.Version)     {}
-func generatedDeclarationReference0427(_ p022.GameProfile) {}
+func generatedDeclarationReference0426(_ *p021.Version)     {}
+func generatedDeclarationReference0427(_ *p022.GameProfile) {}
 
 var generatedDeclarationReference0428 = (*p022.GameProfile).MarshalJSON
 var generatedDeclarationReference0429 = (*p022.GameProfile).String
 var generatedDeclarationReference0430 = (*p022.GameProfile).UnmarshalJSON
 var generatedDeclarationReference0431 = p022.NewOffline
 
-func generatedDeclarationReference0432(_ p022.Property) {}
+func generatedDeclarationReference0432(_ *p022.Property) {}
 
 var generatedDeclarationReference0433 = (*p022.Property).String
 
-func generatedDeclarationReference0434(_ p023.Decoder) {}
+func generatedDeclarationReference0434(_ *p023.Decoder) {}
 
 var generatedDeclarationReference0435 = (*p023.Decoder).Decode
 var generatedDeclarationReference0436 = (*p023.Decoder).SetCompressionThreshold
@@ -14142,7 +14142,7 @@ var generatedDeclarationReference0437 = (*p023.Decoder).SetProtocol
 var generatedDeclarationReference0438 = (*p023.Decoder).SetReader
 var generatedDeclarationReference0439 = (*p023.Decoder).SetState
 
-func generatedDeclarationReference0440(_ p023.Encoder) {}
+func generatedDeclarationReference0440(_ *p023.Encoder) {}
 
 var generatedDeclarationReference0441 = (*p023.Encoder).Direction
 var generatedDeclarationReference0442 = (*p023.Encoder).SetCompression
@@ -14153,7 +14153,7 @@ var generatedDeclarationReference0446 = (*p023.Encoder).Sync
 var generatedDeclarationReference0447 = (*p023.Encoder).Write
 var generatedDeclarationReference0448 = (*p023.Encoder).WritePacket
 
-func generatedDeclarationReference0449(_ p023.FrameTooLargeError) {}
+func generatedDeclarationReference0449(_ *p023.FrameTooLargeError) {}
 
 var generatedDeclarationReference0450 = (*p023.FrameTooLargeError).Error
 var generatedDeclarationReference0451 = p023.HardMaximumUncompressedSize
@@ -14174,65 +14174,65 @@ var generatedDeclarationReference0465 = p024.SnbtToJSON
 var generatedDeclarationReference0466 = p025.AcceptedResourcePackResponseStatus
 var generatedDeclarationReference0467 = p025.AddChatCompletionAction
 
-func generatedDeclarationReference0468(_ p025.AvailableCommands) {}
+func generatedDeclarationReference0468(_ *p025.AvailableCommands) {}
 
 var generatedDeclarationReference0469 = (*p025.AvailableCommands).Decode
 var generatedDeclarationReference0470 = (*p025.AvailableCommands).Encode
 
-func generatedDeclarationReference0471(_ p025.BundleDelimiter) {}
+func generatedDeclarationReference0471(_ *p025.BundleDelimiter) {}
 
 var generatedDeclarationReference0472 = (*p025.BundleDelimiter).Decode
 var generatedDeclarationReference0473 = (*p025.BundleDelimiter).Encode
 
-func generatedDeclarationReference0474(_ p025.ChatCompletionAction) {}
-func generatedDeclarationReference0475(_ p025.ClientSettings)       {}
+func generatedDeclarationReference0474(_ *p025.ChatCompletionAction) {}
+func generatedDeclarationReference0475(_ *p025.ClientSettings)       {}
 
 var generatedDeclarationReference0476 = (*p025.ClientSettings).Decode
 var generatedDeclarationReference0477 = (*p025.ClientSettings).Encode
 
-func generatedDeclarationReference0478(_ p025.CustomClickActionPacket) {}
+func generatedDeclarationReference0478(_ *p025.CustomClickActionPacket) {}
 
 var generatedDeclarationReference0479 = (*p025.CustomClickActionPacket).Decode
 var generatedDeclarationReference0480 = (*p025.CustomClickActionPacket).Encode
 
-func generatedDeclarationReference0481(_ p025.CustomReportDetails) {}
+func generatedDeclarationReference0481(_ *p025.CustomReportDetails) {}
 
 var generatedDeclarationReference0482 = (*p025.CustomReportDetails).Decode
 var generatedDeclarationReference0483 = (*p025.CustomReportDetails).Encode
 
-func generatedDeclarationReference0484(_ p025.DeathPosition) {}
+func generatedDeclarationReference0484(_ *p025.DeathPosition) {}
 
 var generatedDeclarationReference0485 = (*p025.DeathPosition).String
 var generatedDeclarationReference0486 = p025.DeclinedResourcePackResponseStatus
 
-func generatedDeclarationReference0487(_ p025.DialogClear) {}
+func generatedDeclarationReference0487(_ *p025.DialogClear) {}
 
 var generatedDeclarationReference0488 = (*p025.DialogClear).Decode
 var generatedDeclarationReference0489 = (*p025.DialogClear).Encode
 
-func generatedDeclarationReference0490(_ p025.DialogShow) {}
+func generatedDeclarationReference0490(_ *p025.DialogShow) {}
 
 var generatedDeclarationReference0491 = (*p025.DialogShow).Decode
 var generatedDeclarationReference0492 = (*p025.DialogShow).Encode
 var generatedDeclarationReference0493 = (*p025.DialogShow).SetState
 
-func generatedDeclarationReference0494(_ p025.DimensionInfo) {}
+func generatedDeclarationReference0494(_ *p025.DimensionInfo) {}
 
 var generatedDeclarationReference0495 = (*p025.DimensionInfo).Validate
 var generatedDeclarationReference0496 = p025.DiscardedResourcePackResponseStatus
 
-func generatedDeclarationReference0497(_ p025.Disconnect) {}
+func generatedDeclarationReference0497(_ *p025.Disconnect) {}
 
 var generatedDeclarationReference0498 = (*p025.Disconnect).Decode
 var generatedDeclarationReference0499 = (*p025.Disconnect).Encode
 var generatedDeclarationReference0500 = p025.DownloadedResourcePackResponseStatus
 
-func generatedDeclarationReference0501(_ p025.EncryptionRequest) {}
+func generatedDeclarationReference0501(_ *p025.EncryptionRequest) {}
 
 var generatedDeclarationReference0502 = (*p025.EncryptionRequest).Decode
 var generatedDeclarationReference0503 = (*p025.EncryptionRequest).Encode
 
-func generatedDeclarationReference0504(_ p025.EncryptionResponse) {}
+func generatedDeclarationReference0504(_ *p025.EncryptionResponse) {}
 
 var generatedDeclarationReference0505 = (*p025.EncryptionResponse).Decode
 var generatedDeclarationReference0506 = (*p025.EncryptionResponse).Encode
@@ -14244,41 +14244,41 @@ var generatedDeclarationReference0511 = p025.FlagIsRedirect
 var generatedDeclarationReference0512 = p025.FlagIsRestricted
 var generatedDeclarationReference0513 = p025.FlagNodeType
 
-func generatedDeclarationReference0514(_ p025.Handshake) {}
+func generatedDeclarationReference0514(_ *p025.Handshake) {}
 
 var generatedDeclarationReference0515 = (*p025.Handshake).Decode
 var generatedDeclarationReference0516 = (*p025.Handshake).Encode
 var generatedDeclarationReference0517 = (*p025.Handshake).Intent
 
-func generatedDeclarationReference0518(_ p025.HandshakeIntent) {}
-func generatedDeclarationReference0519(_ p025.HeaderAndFooter) {}
+func generatedDeclarationReference0518(_ *p025.HandshakeIntent) {}
+func generatedDeclarationReference0519(_ *p025.HeaderAndFooter) {}
 
 var generatedDeclarationReference0520 = (*p025.HeaderAndFooter).Decode
 var generatedDeclarationReference0521 = (*p025.HeaderAndFooter).Encode
 var generatedDeclarationReference0522 = p025.InvalidURLResourcePackResponseStatus
 
-func generatedDeclarationReference0523(_ p025.JoinGame) {}
+func generatedDeclarationReference0523(_ *p025.JoinGame) {}
 
 var generatedDeclarationReference0524 = (*p025.JoinGame).Decode
 var generatedDeclarationReference0525 = (*p025.JoinGame).Encode
 
-func generatedDeclarationReference0526(_ p025.KeepAlive) {}
+func generatedDeclarationReference0526(_ *p025.KeepAlive) {}
 
 var generatedDeclarationReference0527 = (*p025.KeepAlive).Decode
 var generatedDeclarationReference0528 = (*p025.KeepAlive).Encode
 
-func generatedDeclarationReference0529(_ p025.LoginAcknowledged) {}
+func generatedDeclarationReference0529(_ *p025.LoginAcknowledged) {}
 
 var generatedDeclarationReference0530 = (*p025.LoginAcknowledged).Decode
 var generatedDeclarationReference0531 = (*p025.LoginAcknowledged).Encode
 var generatedDeclarationReference0532 = p025.LoginHandshakeIntent
 
-func generatedDeclarationReference0533(_ p025.LoginPluginMessage) {}
+func generatedDeclarationReference0533(_ *p025.LoginPluginMessage) {}
 
 var generatedDeclarationReference0534 = (*p025.LoginPluginMessage).Decode
 var generatedDeclarationReference0535 = (*p025.LoginPluginMessage).Encode
 
-func generatedDeclarationReference0536(_ p025.LoginPluginResponse) {}
+func generatedDeclarationReference0536(_ *p025.LoginPluginResponse) {}
 
 var generatedDeclarationReference0537 = (*p025.LoginPluginResponse).Decode
 var generatedDeclarationReference0538 = (*p025.LoginPluginResponse).Encode
@@ -14287,80 +14287,80 @@ var generatedDeclarationReference0540 = p025.NodeTypeArgument
 var generatedDeclarationReference0541 = p025.NodeTypeLiteral
 var generatedDeclarationReference0542 = p025.NodeTypeRoot
 
-func generatedDeclarationReference0543(_ p025.PingIdentify) {}
+func generatedDeclarationReference0543(_ *p025.PingIdentify) {}
 
 var generatedDeclarationReference0544 = (*p025.PingIdentify).Decode
 var generatedDeclarationReference0545 = (*p025.PingIdentify).Encode
 var generatedDeclarationReference0546 = p025.PlaceholderCommand
 
-func generatedDeclarationReference0547(_ p025.PlayerChatCompletion) {}
+func generatedDeclarationReference0547(_ *p025.PlayerChatCompletion) {}
 
 var generatedDeclarationReference0548 = (*p025.PlayerChatCompletion).Decode
 var generatedDeclarationReference0549 = (*p025.PlayerChatCompletion).Encode
 var generatedDeclarationReference0550 = p025.RemoveChatCompletionAction
 
-func generatedDeclarationReference0551(_ p025.RemoveResourcePack) {}
+func generatedDeclarationReference0551(_ *p025.RemoveResourcePack) {}
 
 var generatedDeclarationReference0552 = (*p025.RemoveResourcePack).Decode
 var generatedDeclarationReference0553 = (*p025.RemoveResourcePack).Encode
 var generatedDeclarationReference0554 = p025.ResetHeaderAndFooter
 
-func generatedDeclarationReference0555(_ p025.ResourcePackRequest) {}
+func generatedDeclarationReference0555(_ *p025.ResourcePackRequest) {}
 
 var generatedDeclarationReference0556 = (*p025.ResourcePackRequest).Decode
 var generatedDeclarationReference0557 = (*p025.ResourcePackRequest).Encode
 
-func generatedDeclarationReference0558(_ p025.ResourcePackResponse) {}
+func generatedDeclarationReference0558(_ *p025.ResourcePackResponse) {}
 
 var generatedDeclarationReference0559 = (*p025.ResourcePackResponse).Decode
 var generatedDeclarationReference0560 = (*p025.ResourcePackResponse).Encode
 
-func generatedDeclarationReference0561(_ p025.Respawn) {}
+func generatedDeclarationReference0561(_ *p025.Respawn) {}
 
 var generatedDeclarationReference0562 = (*p025.Respawn).Decode
 var generatedDeclarationReference0563 = (*p025.Respawn).Encode
 
-func generatedDeclarationReference0564(_ p025.ResponseStatus) {}
+func generatedDeclarationReference0564(_ *p025.ResponseStatus) {}
 
 var generatedDeclarationReference0565 = p025.ResponseStatus.Intermediate
 
-func generatedDeclarationReference0566(_ p025.ServerData) {}
+func generatedDeclarationReference0566(_ *p025.ServerData) {}
 
 var generatedDeclarationReference0567 = (*p025.ServerData).Decode
 var generatedDeclarationReference0568 = (*p025.ServerData).Encode
 
-func generatedDeclarationReference0569(_ p025.ServerLink) {}
+func generatedDeclarationReference0569(_ *p025.ServerLink) {}
 
 var generatedDeclarationReference0570 = (*p025.ServerLink).Decode
 var generatedDeclarationReference0571 = (*p025.ServerLink).Encode
 
-func generatedDeclarationReference0572(_ p025.ServerLinks) {}
+func generatedDeclarationReference0572(_ *p025.ServerLinks) {}
 
 var generatedDeclarationReference0573 = (*p025.ServerLinks).Decode
 var generatedDeclarationReference0574 = (*p025.ServerLinks).Encode
 
-func generatedDeclarationReference0575(_ p025.ServerLogin) {}
+func generatedDeclarationReference0575(_ *p025.ServerLogin) {}
 
 var generatedDeclarationReference0576 = (*p025.ServerLogin).Decode
 var generatedDeclarationReference0577 = (*p025.ServerLogin).Encode
 
-func generatedDeclarationReference0578(_ p025.ServerLoginSuccess) {}
+func generatedDeclarationReference0578(_ *p025.ServerLoginSuccess) {}
 
 var generatedDeclarationReference0579 = (*p025.ServerLoginSuccess).Decode
 var generatedDeclarationReference0580 = (*p025.ServerLoginSuccess).Encode
 var generatedDeclarationReference0581 = p025.SetChatCompletionAction
 
-func generatedDeclarationReference0582(_ p025.SetCompression) {}
+func generatedDeclarationReference0582(_ *p025.SetCompression) {}
 
 var generatedDeclarationReference0583 = (*p025.SetCompression).Decode
 var generatedDeclarationReference0584 = (*p025.SetCompression).Encode
 
-func generatedDeclarationReference0585(_ p025.SoundEntityPacket) {}
+func generatedDeclarationReference0585(_ *p025.SoundEntityPacket) {}
 
 var generatedDeclarationReference0586 = (*p025.SoundEntityPacket).Decode
 var generatedDeclarationReference0587 = (*p025.SoundEntityPacket).Encode
 
-func generatedDeclarationReference0588(_ p025.SoundSource) {}
+func generatedDeclarationReference0588(_ *p025.SoundSource) {}
 
 var generatedDeclarationReference0589 = p025.SoundSource.String
 var generatedDeclarationReference0590 = (*p025.SoundSource).UnmarshalText
@@ -14377,39 +14377,39 @@ var generatedDeclarationReference0600 = p025.SoundSourceVoice
 var generatedDeclarationReference0601 = p025.SoundSourceWeather
 var generatedDeclarationReference0602 = p025.StatusHandshakeIntent
 
-func generatedDeclarationReference0603(_ p025.StatusPing) {}
+func generatedDeclarationReference0603(_ *p025.StatusPing) {}
 
 var generatedDeclarationReference0604 = (*p025.StatusPing).Decode
 var generatedDeclarationReference0605 = (*p025.StatusPing).Encode
 
-func generatedDeclarationReference0606(_ p025.StatusRequest) {}
+func generatedDeclarationReference0606(_ *p025.StatusRequest) {}
 
 var generatedDeclarationReference0607 = p025.StatusRequest.Decode
 var generatedDeclarationReference0608 = p025.StatusRequest.Encode
 
-func generatedDeclarationReference0609(_ p025.StatusResponse) {}
+func generatedDeclarationReference0609(_ *p025.StatusResponse) {}
 
 var generatedDeclarationReference0610 = (*p025.StatusResponse).Decode
 var generatedDeclarationReference0611 = (*p025.StatusResponse).Encode
 
-func generatedDeclarationReference0612(_ p025.StopSoundPacket) {}
+func generatedDeclarationReference0612(_ *p025.StopSoundPacket) {}
 
 var generatedDeclarationReference0613 = (*p025.StopSoundPacket).Decode
 var generatedDeclarationReference0614 = (*p025.StopSoundPacket).Encode
 var generatedDeclarationReference0615 = p025.SuccessfulResourcePackResponseStatus
 
-func generatedDeclarationReference0616(_ p025.TabCompleteOffer)   {}
-func generatedDeclarationReference0617(_ p025.TabCompleteRequest) {}
+func generatedDeclarationReference0616(_ *p025.TabCompleteOffer)   {}
+func generatedDeclarationReference0617(_ *p025.TabCompleteRequest) {}
 
 var generatedDeclarationReference0618 = (*p025.TabCompleteRequest).Decode
 var generatedDeclarationReference0619 = (*p025.TabCompleteRequest).Encode
 
-func generatedDeclarationReference0620(_ p025.TabCompleteResponse) {}
+func generatedDeclarationReference0620(_ *p025.TabCompleteResponse) {}
 
 var generatedDeclarationReference0621 = (*p025.TabCompleteResponse).Decode
 var generatedDeclarationReference0622 = (*p025.TabCompleteResponse).Encode
 
-func generatedDeclarationReference0623(_ p025.Transfer) {}
+func generatedDeclarationReference0623(_ *p025.Transfer) {}
 
 var generatedDeclarationReference0624 = (*p025.Transfer).Addr
 var generatedDeclarationReference0625 = (*p025.Transfer).Decode
@@ -14417,24 +14417,24 @@ var generatedDeclarationReference0626 = (*p025.Transfer).Encode
 var generatedDeclarationReference0627 = p025.TransferHandshakeIntent
 var generatedDeclarationReference0628 = p025.VanillaMaxTabCompleteLen
 
-func generatedDeclarationReference0629(_ p025.WireNode) {}
-func generatedDeclarationReference0630(_ p026.Action)   {}
+func generatedDeclarationReference0629(_ *p025.WireNode) {}
+func generatedDeclarationReference0630(_ *p026.Action)   {}
 
 var generatedDeclarationReference0631 = p026.AddAction
 var generatedDeclarationReference0632 = p026.BlueColor
 
-func generatedDeclarationReference0633(_ p026.BossBar) {}
+func generatedDeclarationReference0633(_ *p026.BossBar) {}
 
 var generatedDeclarationReference0634 = (*p026.BossBar).Decode
 var generatedDeclarationReference0635 = (*p026.BossBar).Encode
 
-func generatedDeclarationReference0636(_ p026.Color) {}
+func generatedDeclarationReference0636(_ *p026.Color) {}
 
 var generatedDeclarationReference0637 = p026.ConvertFlags
 var generatedDeclarationReference0638 = p026.CreateWorldFogFlag
 var generatedDeclarationReference0639 = p026.DarkenScreenFlag
 
-func generatedDeclarationReference0640(_ p026.Flag) {}
+func generatedDeclarationReference0640(_ *p026.Flag) {}
 
 var generatedDeclarationReference0641 = p026.GreenColor
 var generatedDeclarationReference0642 = p026.Notched10Overlay
@@ -14442,7 +14442,7 @@ var generatedDeclarationReference0643 = p026.Notched12Overlay
 var generatedDeclarationReference0644 = p026.Notched20Overlay
 var generatedDeclarationReference0645 = p026.Notched6Overlay
 
-func generatedDeclarationReference0646(_ p026.Overlay) {}
+func generatedDeclarationReference0646(_ *p026.Overlay) {}
 
 var generatedDeclarationReference0647 = p026.PinkColor
 var generatedDeclarationReference0648 = p026.PlayBossMusicFlag
@@ -14457,23 +14457,23 @@ var generatedDeclarationReference0656 = p026.UpdateStyleAction
 var generatedDeclarationReference0657 = p026.WhiteColor
 var generatedDeclarationReference0658 = p026.YellowColor
 
-func generatedDeclarationReference0659(_ p027.ArgumentIdentifier) {}
+func generatedDeclarationReference0659(_ *p027.ArgumentIdentifier) {}
 
 var generatedDeclarationReference0660 = p027.ArgumentIdentifier.String
 
-func generatedDeclarationReference0661(_ p027.ArgumentPropertyCodec) {}
+func generatedDeclarationReference0661(_ *p027.ArgumentPropertyCodec) {}
 
 var generatedDeclarationReference0662 = p027.ArgumentPropertyCodec.Decode
 var generatedDeclarationReference0663 = p027.ArgumentPropertyCodec.Encode
 
-func generatedDeclarationReference0664(_ p027.ArgumentPropertyCodecFuncs) {}
+func generatedDeclarationReference0664(_ *p027.ArgumentPropertyCodecFuncs) {}
 
 var generatedDeclarationReference0665 = (*p027.ArgumentPropertyCodecFuncs).Decode
 var generatedDeclarationReference0666 = (*p027.ArgumentPropertyCodecFuncs).Encode
 var generatedDeclarationReference0667 = p027.BoolArgumentPropertyCodec
 var generatedDeclarationReference0668 = p027.ByteArgumentPropertyCodec
 
-func generatedDeclarationReference0669(_ p027.ByteArgumentType) {}
+func generatedDeclarationReference0669(_ *p027.ByteArgumentType) {}
 
 var generatedDeclarationReference0670 = p027.ByteArgumentType.Parse
 var generatedDeclarationReference0671 = p027.ByteArgumentType.String
@@ -14482,7 +14482,7 @@ var generatedDeclarationReference0673 = p027.EmptyArgumentPropertyCodec
 var generatedDeclarationReference0674 = p027.Encode
 var generatedDeclarationReference0675 = p027.EntityArgumentPropertyCodec
 
-func generatedDeclarationReference0676(_ p027.EntityArgumentType) {}
+func generatedDeclarationReference0676(_ *p027.EntityArgumentType) {}
 
 var generatedDeclarationReference0677 = (*p027.EntityArgumentType).Parse
 var generatedDeclarationReference0678 = (*p027.EntityArgumentType).String
@@ -14493,12 +14493,12 @@ var generatedDeclarationReference0682 = p027.HasMinIntFlag
 var generatedDeclarationReference0683 = p027.Int32ArgumentPropertyCodec
 var generatedDeclarationReference0684 = p027.Int64ArgumentPropertyCodec
 
-func generatedDeclarationReference0685(_ p027.IntArgumentType) {}
+func generatedDeclarationReference0685(_ *p027.IntArgumentType) {}
 
 var generatedDeclarationReference0686 = p027.IntArgumentType.Parse
 var generatedDeclarationReference0687 = p027.IntArgumentType.String
 
-func generatedDeclarationReference0688(_ p027.ModArgumentProperty) {}
+func generatedDeclarationReference0688(_ *p027.ModArgumentProperty) {}
 
 var generatedDeclarationReference0689 = (*p027.ModArgumentProperty).Parse
 var generatedDeclarationReference0690 = (*p027.ModArgumentProperty).String
@@ -14507,56 +14507,56 @@ var generatedDeclarationReference0692 = p027.PlayerArgument
 var generatedDeclarationReference0693 = p027.RegistryKeyArgument
 var generatedDeclarationReference0694 = p027.RegistryKeyArgumentPropertyCodec
 
-func generatedDeclarationReference0695(_ p027.RegistryKeyArgumentType) {}
+func generatedDeclarationReference0695(_ *p027.RegistryKeyArgumentType) {}
 
 var generatedDeclarationReference0696 = (*p027.RegistryKeyArgumentType).Parse
 var generatedDeclarationReference0697 = (*p027.RegistryKeyArgumentType).String
 var generatedDeclarationReference0698 = p027.ResourceKeyArgument
 var generatedDeclarationReference0699 = p027.ResourceKeyArgumentPropertyCodec
 
-func generatedDeclarationReference0700(_ p027.ResourceKeyArgumentType) {}
+func generatedDeclarationReference0700(_ *p027.ResourceKeyArgumentType) {}
 
 var generatedDeclarationReference0701 = (*p027.ResourceKeyArgumentType).Parse
 var generatedDeclarationReference0702 = (*p027.ResourceKeyArgumentType).String
 var generatedDeclarationReference0703 = p027.ResourceOrTagKeyArgument
 var generatedDeclarationReference0704 = p027.ResourceOrTagKeyArgumentPropertyCodec
 
-func generatedDeclarationReference0705(_ p027.ResourceOrTagKeyArgumentType) {}
+func generatedDeclarationReference0705(_ *p027.ResourceOrTagKeyArgumentType) {}
 
 var generatedDeclarationReference0706 = (*p027.ResourceOrTagKeyArgumentType).Parse
 var generatedDeclarationReference0707 = (*p027.ResourceOrTagKeyArgumentType).String
 var generatedDeclarationReference0708 = p027.ResourceSelectorArgument
 var generatedDeclarationReference0709 = p027.ResourceSelectorArgumentPropertyCodec
 
-func generatedDeclarationReference0710(_ p027.ResourceSelectorArgumentType) {}
+func generatedDeclarationReference0710(_ *p027.ResourceSelectorArgumentType) {}
 
 var generatedDeclarationReference0711 = (*p027.ResourceSelectorArgumentType).Parse
 var generatedDeclarationReference0712 = (*p027.ResourceSelectorArgumentType).String
 var generatedDeclarationReference0713 = p027.StringArgumentPropertyCodec
 var generatedDeclarationReference0714 = p027.TimeArgumentPropertyCodec
 
-func generatedDeclarationReference0715(_ p028.ArgumentSignature) {}
+func generatedDeclarationReference0715(_ *p028.ArgumentSignature) {}
 
 var generatedDeclarationReference0716 = (*p028.ArgumentSignature).Decode
 var generatedDeclarationReference0717 = (*p028.ArgumentSignature).Encode
 
-func generatedDeclarationReference0718(_ p028.ArgumentSignatures) {}
+func generatedDeclarationReference0718(_ *p028.ArgumentSignatures) {}
 
 var generatedDeclarationReference0719 = (*p028.ArgumentSignatures).Decode
 var generatedDeclarationReference0720 = (*p028.ArgumentSignatures).Encode
 
-func generatedDeclarationReference0721(_ p028.Builder) {}
+func generatedDeclarationReference0721(_ *p028.Builder) {}
 
 var generatedDeclarationReference0722 = (*p028.Builder).ToClient
 var generatedDeclarationReference0723 = (*p028.Builder).ToServer
 
-func generatedDeclarationReference0724(_ p028.ChatAcknowledgement) {}
+func generatedDeclarationReference0724(_ *p028.ChatAcknowledgement) {}
 
 var generatedDeclarationReference0725 = (*p028.ChatAcknowledgement).Decode
 var generatedDeclarationReference0726 = (*p028.ChatAcknowledgement).Encode
 var generatedDeclarationReference0727 = p028.ChatMessageType
 
-func generatedDeclarationReference0728(_ p028.ComponentHolder) {}
+func generatedDeclarationReference0728(_ *p028.ComponentHolder) {}
 
 var generatedDeclarationReference0729 = (*p028.ComponentHolder).AsBinaryTag
 var generatedDeclarationReference0730 = (*p028.ComponentHolder).AsComponent
@@ -14568,123 +14568,123 @@ var generatedDeclarationReference0735 = p028.FromComponent
 var generatedDeclarationReference0736 = p028.FromComponentProtocol
 var generatedDeclarationReference0737 = p028.GameInfoMessageType
 
-func generatedDeclarationReference0738(_ p028.KeyedPlayerChat) {}
+func generatedDeclarationReference0738(_ *p028.KeyedPlayerChat) {}
 
 var generatedDeclarationReference0739 = (*p028.KeyedPlayerChat).Decode
 var generatedDeclarationReference0740 = (*p028.KeyedPlayerChat).Encode
 
-func generatedDeclarationReference0741(_ p028.KeyedPlayerCommand) {}
+func generatedDeclarationReference0741(_ *p028.KeyedPlayerCommand) {}
 
 var generatedDeclarationReference0742 = (*p028.KeyedPlayerCommand).Decode
 var generatedDeclarationReference0743 = (*p028.KeyedPlayerCommand).Encode
 
-func generatedDeclarationReference0744(_ p028.LastSeenMessages) {}
+func generatedDeclarationReference0744(_ *p028.LastSeenMessages) {}
 
 var generatedDeclarationReference0745 = (*p028.LastSeenMessages).Decode
 var generatedDeclarationReference0746 = (*p028.LastSeenMessages).Empty
 var generatedDeclarationReference0747 = (*p028.LastSeenMessages).Encode
 
-func generatedDeclarationReference0748(_ p028.LegacyChat) {}
+func generatedDeclarationReference0748(_ *p028.LegacyChat) {}
 
 var generatedDeclarationReference0749 = (*p028.LegacyChat).Decode
 var generatedDeclarationReference0750 = (*p028.LegacyChat).Encode
 var generatedDeclarationReference0751 = p028.MaxPreviousMessageCount
 var generatedDeclarationReference0752 = p028.MaxServerBoundMessageLength
 
-func generatedDeclarationReference0753(_ p028.MessageType) {}
+func generatedDeclarationReference0753(_ *p028.MessageType) {}
 
 var generatedDeclarationReference0754 = p028.NewKeyedPlayerCommand
 var generatedDeclarationReference0755 = p028.ReadComponentHolder
 var generatedDeclarationReference0756 = p028.ReadComponentHolderNP
 
-func generatedDeclarationReference0757(_ p028.RemoteChatSession) {}
+func generatedDeclarationReference0757(_ *p028.RemoteChatSession) {}
 
 var generatedDeclarationReference0758 = (*p028.RemoteChatSession).Decode
 var generatedDeclarationReference0759 = (*p028.RemoteChatSession).Encode
 var generatedDeclarationReference0760 = (*p028.RemoteChatSession).IdentifiedKey
 var generatedDeclarationReference0761 = (*p028.RemoteChatSession).SessionID
 
-func generatedDeclarationReference0762(_ p028.SessionPlayerChat) {}
+func generatedDeclarationReference0762(_ *p028.SessionPlayerChat) {}
 
 var generatedDeclarationReference0763 = (*p028.SessionPlayerChat).Decode
 var generatedDeclarationReference0764 = (*p028.SessionPlayerChat).Encode
 
-func generatedDeclarationReference0765(_ p028.SessionPlayerCommand) {}
+func generatedDeclarationReference0765(_ *p028.SessionPlayerCommand) {}
 
 var generatedDeclarationReference0766 = (*p028.SessionPlayerCommand).Decode
 var generatedDeclarationReference0767 = (*p028.SessionPlayerCommand).Encode
 var generatedDeclarationReference0768 = (*p028.SessionPlayerCommand).Signed
 
-func generatedDeclarationReference0769(_ p028.SystemChat) {}
+func generatedDeclarationReference0769(_ *p028.SystemChat) {}
 
 var generatedDeclarationReference0770 = (*p028.SystemChat).Decode
 var generatedDeclarationReference0771 = (*p028.SystemChat).Encode
 var generatedDeclarationReference0772 = p028.SystemMessageType
 
-func generatedDeclarationReference0773(_ p028.UnsignedPlayerCommand) {}
+func generatedDeclarationReference0773(_ *p028.UnsignedPlayerCommand) {}
 
 var generatedDeclarationReference0774 = (*p028.UnsignedPlayerCommand).Decode
 var generatedDeclarationReference0775 = (*p028.UnsignedPlayerCommand).Encode
 var generatedDeclarationReference0776 = (*p028.UnsignedPlayerCommand).Signed
 
-func generatedDeclarationReference0777(_ p029.ActiveFeatures) {}
+func generatedDeclarationReference0777(_ *p029.ActiveFeatures) {}
 
 var generatedDeclarationReference0778 = (*p029.ActiveFeatures).Decode
 var generatedDeclarationReference0779 = (*p029.ActiveFeatures).Encode
 
-func generatedDeclarationReference0780(_ p029.CodeOfConductAcceptPacket) {}
+func generatedDeclarationReference0780(_ *p029.CodeOfConductAcceptPacket) {}
 
 var generatedDeclarationReference0781 = (*p029.CodeOfConductAcceptPacket).Decode
 var generatedDeclarationReference0782 = (*p029.CodeOfConductAcceptPacket).Encode
 
-func generatedDeclarationReference0783(_ p029.CodeOfConductPacket) {}
+func generatedDeclarationReference0783(_ *p029.CodeOfConductPacket) {}
 
 var generatedDeclarationReference0784 = (*p029.CodeOfConductPacket).Decode
 var generatedDeclarationReference0785 = (*p029.CodeOfConductPacket).Encode
 var generatedDeclarationReference0786 = p029.ErrTooManyPacks
 
-func generatedDeclarationReference0787(_ p029.FinishedUpdate) {}
+func generatedDeclarationReference0787(_ *p029.FinishedUpdate) {}
 
 var generatedDeclarationReference0788 = (*p029.FinishedUpdate).Decode
 var generatedDeclarationReference0789 = (*p029.FinishedUpdate).Encode
 
-func generatedDeclarationReference0790(_ p029.KnownPack) {}
+func generatedDeclarationReference0790(_ *p029.KnownPack) {}
 
 var generatedDeclarationReference0791 = (*p029.KnownPack).Read
 var generatedDeclarationReference0792 = (*p029.KnownPack).Write
 
-func generatedDeclarationReference0793(_ p029.KnownPacks) {}
+func generatedDeclarationReference0793(_ *p029.KnownPacks) {}
 
 var generatedDeclarationReference0794 = (*p029.KnownPacks).Decode
 var generatedDeclarationReference0795 = (*p029.KnownPacks).Encode
 var generatedDeclarationReference0796 = p029.MaxLengthPacks
 
-func generatedDeclarationReference0797(_ p029.RegistrySync) {}
+func generatedDeclarationReference0797(_ *p029.RegistrySync) {}
 
 var generatedDeclarationReference0798 = (*p029.RegistrySync).Decode
 var generatedDeclarationReference0799 = (*p029.RegistrySync).Encode
 
-func generatedDeclarationReference0800(_ p029.StartUpdate) {}
+func generatedDeclarationReference0800(_ *p029.StartUpdate) {}
 
 var generatedDeclarationReference0801 = (*p029.StartUpdate).Decode
 var generatedDeclarationReference0802 = (*p029.StartUpdate).Encode
 
-func generatedDeclarationReference0803(_ p029.TagsUpdate) {}
+func generatedDeclarationReference0803(_ *p029.TagsUpdate) {}
 
 var generatedDeclarationReference0804 = (*p029.TagsUpdate).Decode
 var generatedDeclarationReference0805 = (*p029.TagsUpdate).Encode
 
-func generatedDeclarationReference0806(_ p030.CookieRequest) {}
+func generatedDeclarationReference0806(_ *p030.CookieRequest) {}
 
 var generatedDeclarationReference0807 = (*p030.CookieRequest).Decode
 var generatedDeclarationReference0808 = (*p030.CookieRequest).Encode
 
-func generatedDeclarationReference0809(_ p030.CookieResponse) {}
+func generatedDeclarationReference0809(_ *p030.CookieResponse) {}
 
 var generatedDeclarationReference0810 = (*p030.CookieResponse).Decode
 var generatedDeclarationReference0811 = (*p030.CookieResponse).Encode
 
-func generatedDeclarationReference0812(_ p030.CookieStore) {}
+func generatedDeclarationReference0812(_ *p030.CookieStore) {}
 
 var generatedDeclarationReference0813 = (*p030.CookieStore).Decode
 var generatedDeclarationReference0814 = (*p030.CookieStore).Encode
@@ -14701,7 +14701,7 @@ var generatedDeclarationReference0824 = p031.LegacyUnregister
 var generatedDeclarationReference0825 = p031.MaxServerboundPayloadSize
 var generatedDeclarationReference0826 = p031.McBrand
 
-func generatedDeclarationReference0827(_ p031.Message) {}
+func generatedDeclarationReference0827(_ *p031.Message) {}
 
 var generatedDeclarationReference0828 = (*p031.Message).Decode
 var generatedDeclarationReference0829 = (*p031.Message).Encode
@@ -14714,13 +14714,13 @@ var generatedDeclarationReference0835 = p031.UnregisterChannel
 var generatedDeclarationReference0836 = p031.UnregisterChannelLegacy
 var generatedDeclarationReference0837 = p032.AddPlayerListItemAction
 
-func generatedDeclarationReference0838(_ p032.PlayerListItem) {}
+func generatedDeclarationReference0838(_ *p032.PlayerListItem) {}
 
 var generatedDeclarationReference0839 = (*p032.PlayerListItem).Decode
 var generatedDeclarationReference0840 = (*p032.PlayerListItem).Encode
 
-func generatedDeclarationReference0841(_ p032.PlayerListItemAction) {}
-func generatedDeclarationReference0842(_ p032.PlayerListItemEntry)  {}
+func generatedDeclarationReference0841(_ *p032.PlayerListItemAction) {}
+func generatedDeclarationReference0842(_ *p032.PlayerListItemEntry)  {}
 
 var generatedDeclarationReference0843 = p032.RemovePlayerListItemAction
 var generatedDeclarationReference0844 = p032.UpdateDisplayNamePlayerListItemAction
@@ -14729,11 +14729,11 @@ var generatedDeclarationReference0846 = p032.UpdateLatencyPlayerListItemAction
 var generatedDeclarationReference0847 = p033.AddPlayerAction
 var generatedDeclarationReference0848 = p033.ContainsAction
 
-func generatedDeclarationReference0849(_ p033.Entry) {}
+func generatedDeclarationReference0849(_ *p033.Entry) {}
 
 var generatedDeclarationReference0850 = p033.InitializeChatAction
 
-func generatedDeclarationReference0851(_ p033.Remove) {}
+func generatedDeclarationReference0851(_ *p033.Remove) {}
 
 var generatedDeclarationReference0852 = (*p033.Remove).Decode
 var generatedDeclarationReference0853 = (*p033.Remove).Encode
@@ -14744,31 +14744,31 @@ var generatedDeclarationReference0857 = p033.UpdateLatencyAction
 var generatedDeclarationReference0858 = p033.UpdateListOrderAction
 var generatedDeclarationReference0859 = p033.UpdateListedAction
 
-func generatedDeclarationReference0860(_ p033.Upsert) {}
+func generatedDeclarationReference0860(_ *p033.Upsert) {}
 
 var generatedDeclarationReference0861 = (*p033.Upsert).Decode
 var generatedDeclarationReference0862 = (*p033.Upsert).Encode
 
-func generatedDeclarationReference0863(_ p033.UpsertAction) {}
+func generatedDeclarationReference0863(_ *p033.UpsertAction) {}
 
 var generatedDeclarationReference0864 = p033.UpsertAction.Decode
 var generatedDeclarationReference0865 = p033.UpsertAction.Encode
 var generatedDeclarationReference0866 = p033.UpsertActions
 
-func generatedDeclarationReference0867(_ p034.Action)    {}
-func generatedDeclarationReference0868(_ p034.Actionbar) {}
+func generatedDeclarationReference0867(_ *p034.Action)    {}
+func generatedDeclarationReference0868(_ *p034.Actionbar) {}
 
 var generatedDeclarationReference0869 = (*p034.Actionbar).Decode
 var generatedDeclarationReference0870 = (*p034.Actionbar).Encode
 
-func generatedDeclarationReference0871(_ p034.Builder) {}
-func generatedDeclarationReference0872(_ p034.Clear)   {}
+func generatedDeclarationReference0871(_ *p034.Builder) {}
+func generatedDeclarationReference0872(_ *p034.Clear)   {}
 
 var generatedDeclarationReference0873 = (*p034.Clear).Decode
 var generatedDeclarationReference0874 = (*p034.Clear).Encode
 var generatedDeclarationReference0875 = p034.Hide
 
-func generatedDeclarationReference0876(_ p034.Legacy) {}
+func generatedDeclarationReference0876(_ *p034.Legacy) {}
 
 var generatedDeclarationReference0877 = (*p034.Legacy).Decode
 var generatedDeclarationReference0878 = (*p034.Legacy).Encode
@@ -14780,17 +14780,17 @@ var generatedDeclarationReference0883 = p034.SetSubtitle
 var generatedDeclarationReference0884 = p034.SetTimes
 var generatedDeclarationReference0885 = p034.SetTitle
 
-func generatedDeclarationReference0886(_ p034.Subtitle) {}
+func generatedDeclarationReference0886(_ *p034.Subtitle) {}
 
 var generatedDeclarationReference0887 = (*p034.Subtitle).Decode
 var generatedDeclarationReference0888 = (*p034.Subtitle).Encode
 
-func generatedDeclarationReference0889(_ p034.Text) {}
+func generatedDeclarationReference0889(_ *p034.Text) {}
 
 var generatedDeclarationReference0890 = (*p034.Text).Decode
 var generatedDeclarationReference0891 = (*p034.Text).Encode
 
-func generatedDeclarationReference0892(_ p034.Times) {}
+func generatedDeclarationReference0892(_ *p034.Times) {}
 
 var generatedDeclarationReference0893 = (*p034.Times).Decode
 var generatedDeclarationReference0894 = (*p034.Times).Encode
@@ -14801,19 +14801,19 @@ var generatedDeclarationReference0898 = p035.Login
 var generatedDeclarationReference0899 = p035.NewPacketRegistry
 var generatedDeclarationReference0900 = p035.NewRegistry
 
-func generatedDeclarationReference0901(_ p035.PacketMapping)  {}
-func generatedDeclarationReference0902(_ p035.PacketRegistry) {}
+func generatedDeclarationReference0901(_ *p035.PacketMapping)  {}
+func generatedDeclarationReference0902(_ *p035.PacketRegistry) {}
 
 var generatedDeclarationReference0903 = (*p035.PacketRegistry).ProtocolRegistry
 var generatedDeclarationReference0904 = (*p035.PacketRegistry).Register
 var generatedDeclarationReference0905 = p035.Play
 
-func generatedDeclarationReference0906(_ p035.ProtocolRegistry) {}
+func generatedDeclarationReference0906(_ *p035.ProtocolRegistry) {}
 
 var generatedDeclarationReference0907 = (*p035.ProtocolRegistry).CreatePacket
 var generatedDeclarationReference0908 = (*p035.ProtocolRegistry).PacketID
 
-func generatedDeclarationReference0909(_ p035.Registry) {}
+func generatedDeclarationReference0909(_ *p035.Registry) {}
 
 var generatedDeclarationReference0910 = p035.Registry.String
 var generatedDeclarationReference0911 = p035.Status
@@ -14822,13 +14822,13 @@ var generatedDeclarationReference0913 = p036.HandshakeState
 var generatedDeclarationReference0914 = p036.LoginState
 var generatedDeclarationReference0915 = p036.PlayState
 
-func generatedDeclarationReference0916(_ p036.State) {}
+func generatedDeclarationReference0916(_ *p036.State) {}
 
 var generatedDeclarationReference0917 = p036.State.String
 var generatedDeclarationReference0918 = p036.StatusState
 
-func generatedDeclarationReference0919(_ p037.BinaryTag)         {}
-func generatedDeclarationReference0920(_ p037.CompoundBinaryTag) {}
+func generatedDeclarationReference0919(_ *p037.BinaryTag)         {}
+func generatedDeclarationReference0920(_ *p037.CompoundBinaryTag) {}
 
 var generatedDeclarationReference0921 = p037.DefaultJsonCodec
 var generatedDeclarationReference0922 = p037.DefaultMaxStringSize
@@ -14857,7 +14857,7 @@ var generatedDeclarationReference0944 = p037.PReadStringVal
 var generatedDeclarationReference0945 = p037.PReadStrings
 var generatedDeclarationReference0946 = p037.PReadUint8
 
-func generatedDeclarationReference0947(_ p037.PReader) {}
+func generatedDeclarationReference0947(_ *p037.PReader) {}
 
 var generatedDeclarationReference0948 = (*p037.PReader).Bool
 var generatedDeclarationReference0949 = (*p037.PReader).Byte
@@ -14887,7 +14887,7 @@ var generatedDeclarationReference0972 = p037.PWriteString
 var generatedDeclarationReference0973 = p037.PWriteStrings
 var generatedDeclarationReference0974 = p037.PWriteVarInt
 
-func generatedDeclarationReference0975(_ p037.PWriter) {}
+func generatedDeclarationReference0975(_ *p037.PWriter) {}
 
 var generatedDeclarationReference0976 = (*p037.PWriter).Bool
 var generatedDeclarationReference0977 = (*p037.PWriter).Byte
@@ -14977,7 +14977,7 @@ var generatedDeclarationReference1060 = p037.WriteVarIntN
 var generatedDeclarationReference1061 = p038.ErrQueueFull
 var generatedDeclarationReference1062 = p038.NewPlayPacketQueue
 
-func generatedDeclarationReference1063(_ p038.PlayPacketQueue) {}
+func generatedDeclarationReference1063(_ *p038.PlayPacketQueue) {}
 
 var generatedDeclarationReference1064 = (*p038.PlayPacketQueue).Queue
 var generatedDeclarationReference1065 = (*p038.PlayPacketQueue).ReleaseQueue
@@ -15028,7 +15028,7 @@ var generatedDeclarationReference1109 = p039.Minecraft_26_1
 var generatedDeclarationReference1110 = p039.Minecraft_26_2
 var generatedDeclarationReference1111 = p039.MinimumVersion
 
-func generatedDeclarationReference1112(_ p039.Protocol) {}
+func generatedDeclarationReference1112(_ *p039.Protocol) {}
 
 var generatedDeclarationReference1113 = p039.Protocol.Legacy
 var generatedDeclarationReference1114 = p039.Protocol.String
@@ -15044,11 +15044,11 @@ var generatedDeclarationReference1123 = p040.AcceptedResourcePackResponseStatus
 var generatedDeclarationReference1124 = p040.AllowedPreLogin
 var generatedDeclarationReference1125 = p040.AlreadyConnectedConnectionStatus
 
-func generatedDeclarationReference1126(_ p040.BackendHandshakeAddresser) {}
+func generatedDeclarationReference1126(_ *p040.BackendHandshakeAddresser) {}
 
 var generatedDeclarationReference1127 = p040.BackendHandshakeAddresser.BackendHandshakeAddr
 
-func generatedDeclarationReference1128(_ p040.BackendVersionProvider) {}
+func generatedDeclarationReference1128(_ *p040.BackendVersionProvider) {}
 
 var generatedDeclarationReference1129 = p040.BackendVersionProvider.BackendVersion
 var generatedDeclarationReference1130 = p040.BroadcastMessage
@@ -15059,18 +15059,18 @@ var generatedDeclarationReference1134 = p040.CanceledByUserLoginStatus
 var generatedDeclarationReference1135 = p040.CanceledConnectionStatus
 var generatedDeclarationReference1136 = p040.ChatMessageType
 
-func generatedDeclarationReference1137(_ p040.ChatState) {}
+func generatedDeclarationReference1137(_ *p040.ChatState) {}
 
 var generatedDeclarationReference1138 = (*p040.ChatState).AccumulateAckCount
 var generatedDeclarationReference1139 = (*p040.ChatState).CreateLastSeen
 var generatedDeclarationReference1140 = (*p040.ChatState).LastTimestamp
 var generatedDeclarationReference1141 = (*p040.ChatState).UpdateFromMessage
 
-func generatedDeclarationReference1142(_ p040.ClientProtocolProvider) {}
+func generatedDeclarationReference1142(_ *p040.ClientProtocolProvider) {}
 
 var generatedDeclarationReference1143 = p040.ClientProtocolProvider.ClientProtocol
 
-func generatedDeclarationReference1144(_ p040.CommandExecuteEvent) {}
+func generatedDeclarationReference1144(_ *p040.CommandExecuteEvent) {}
 
 var generatedDeclarationReference1146 = (*p040.CommandExecuteEvent).Allowed
 var generatedDeclarationReference1147 = (*p040.CommandExecuteEvent).Command
@@ -15081,19 +15081,19 @@ var generatedDeclarationReference1151 = (*p040.CommandExecuteEvent).SetCommand
 var generatedDeclarationReference1152 = (*p040.CommandExecuteEvent).SetForward
 var generatedDeclarationReference1153 = (*p040.CommandExecuteEvent).Source
 
-func generatedDeclarationReference1154(_ p040.ComponentPluginManager) {}
+func generatedDeclarationReference1154(_ *p040.ComponentPluginManager) {}
 
 var generatedDeclarationReference1155 = p040.ComponentPluginManager.Close
 var generatedDeclarationReference1156 = p040.ComponentPluginManager.Start
 var generatedDeclarationReference1157 = p040.ConflictingLoginStatus
 
-func generatedDeclarationReference1158(_ p040.ConnectionEvent) {}
+func generatedDeclarationReference1158(_ *p040.ConnectionEvent) {}
 
 var generatedDeclarationReference1160 = (*p040.ConnectionEvent).Connection
 var generatedDeclarationReference1161 = (*p040.ConnectionEvent).OriginalConnection
 var generatedDeclarationReference1162 = (*p040.ConnectionEvent).SetConnection
 
-func generatedDeclarationReference1163(_ p040.ConnectionEventConn) {}
+func generatedDeclarationReference1163(_ *p040.ConnectionEventConn) {}
 
 var generatedDeclarationReference1164 = p040.ConnectionEventConn.Close
 var generatedDeclarationReference1165 = p040.ConnectionEventConn.Closed
@@ -15105,23 +15105,23 @@ var generatedDeclarationReference1170 = p040.ConnectionEventConn.SetReadDeadline
 var generatedDeclarationReference1171 = p040.ConnectionEventConn.SetWriteDeadline
 var generatedDeclarationReference1172 = p040.ConnectionEventConn.Write
 
-func generatedDeclarationReference1173(_ p040.ConnectionHandshakeEvent) {}
+func generatedDeclarationReference1173(_ *p040.ConnectionHandshakeEvent) {}
 
 var generatedDeclarationReference1175 = (*p040.ConnectionHandshakeEvent).Connection
 var generatedDeclarationReference1176 = (*p040.ConnectionHandshakeEvent).Intent
 
-func generatedDeclarationReference1177(_ p040.ConnectionRequest) {}
+func generatedDeclarationReference1177(_ *p040.ConnectionRequest) {}
 
 var generatedDeclarationReference1178 = p040.ConnectionRequest.Connect
 var generatedDeclarationReference1179 = p040.ConnectionRequest.ConnectWithIndication
 var generatedDeclarationReference1180 = p040.ConnectionRequest.Server
 
-func generatedDeclarationReference1181(_ p040.ConnectionResult) {}
+func generatedDeclarationReference1181(_ *p040.ConnectionResult) {}
 
 var generatedDeclarationReference1182 = p040.ConnectionResult.Reason
 var generatedDeclarationReference1183 = p040.ConnectionResult.Status
 
-func generatedDeclarationReference1184(_ p040.ConnectionStatus) {}
+func generatedDeclarationReference1184(_ *p040.ConnectionStatus) {}
 
 var generatedDeclarationReference1185 = p040.ConnectionStatus.AlreadyConnected
 var generatedDeclarationReference1186 = p040.ConnectionStatus.Canceled
@@ -15129,7 +15129,7 @@ var generatedDeclarationReference1187 = p040.ConnectionStatus.ConnectionInProgre
 var generatedDeclarationReference1188 = p040.ConnectionStatus.ServerDisconnected
 var generatedDeclarationReference1189 = p040.ConnectionStatus.Successful
 
-func generatedDeclarationReference1190(_ p040.CookieReceiveEvent) {}
+func generatedDeclarationReference1190(_ *p040.CookieReceiveEvent) {}
 
 var generatedDeclarationReference1192 = (*p040.CookieReceiveEvent).Allowed
 var generatedDeclarationReference1193 = (*p040.CookieReceiveEvent).Key
@@ -15141,7 +15141,7 @@ var generatedDeclarationReference1198 = (*p040.CookieReceiveEvent).SetAllowed
 var generatedDeclarationReference1199 = (*p040.CookieReceiveEvent).SetKey
 var generatedDeclarationReference1200 = (*p040.CookieReceiveEvent).SetPayload
 
-func generatedDeclarationReference1201(_ p040.CookieRequestEvent) {}
+func generatedDeclarationReference1201(_ *p040.CookieRequestEvent) {}
 
 var generatedDeclarationReference1203 = (*p040.CookieRequestEvent).Allowed
 var generatedDeclarationReference1204 = (*p040.CookieRequestEvent).Key
@@ -15150,7 +15150,7 @@ var generatedDeclarationReference1206 = (*p040.CookieRequestEvent).Player
 var generatedDeclarationReference1207 = (*p040.CookieRequestEvent).SetAllowed
 var generatedDeclarationReference1208 = (*p040.CookieRequestEvent).SetKey
 
-func generatedDeclarationReference1209(_ p040.CookieStoreEvent) {}
+func generatedDeclarationReference1209(_ *p040.CookieStoreEvent) {}
 
 var generatedDeclarationReference1211 = (*p040.CookieStoreEvent).Allowed
 var generatedDeclarationReference1212 = (*p040.CookieStoreEvent).Key
@@ -15165,12 +15165,12 @@ var generatedDeclarationReference1220 = p040.DeclinedResourcePackResponseStatus
 var generatedDeclarationReference1221 = p040.DeniedPreLogin
 var generatedDeclarationReference1222 = p040.DiscardedResourcePackResponseStatus
 
-func generatedDeclarationReference1223(_ p040.DisconnectEvent) {}
+func generatedDeclarationReference1223(_ *p040.DisconnectEvent) {}
 
 var generatedDeclarationReference1225 = (*p040.DisconnectEvent).LoginStatus
 var generatedDeclarationReference1226 = (*p040.DisconnectEvent).Player
 
-func generatedDeclarationReference1227(_ p040.DisconnectPlayerKickResult) {}
+func generatedDeclarationReference1227(_ *p040.DisconnectPlayerKickResult) {}
 
 var generatedDeclarationReference1228 = p040.DownloadedResourcePackResponseStatus
 var generatedDeclarationReference1229 = p040.DownstreamServerResourcePackOrigin
@@ -15186,16 +15186,16 @@ var generatedDeclarationReference1238 = p040.ForceOfflineModePreLogin
 var generatedDeclarationReference1239 = p040.ForceOnlineModePreLogin
 var generatedDeclarationReference1240 = p040.ForgeLoginWrapperChannel
 
-func generatedDeclarationReference1241(_ p040.ForwardingModeProvider) {}
+func generatedDeclarationReference1241(_ *p040.ForwardingModeProvider) {}
 
 var generatedDeclarationReference1242 = p040.ForwardingModeProvider.ForwardingMode
 var generatedDeclarationReference1243 = p040.GameInfoMessageType
 
-func generatedDeclarationReference1244(_ p040.GameProfileProvider) {}
+func generatedDeclarationReference1244(_ *p040.GameProfileProvider) {}
 
 var generatedDeclarationReference1245 = p040.GameProfileProvider.GameProfile
 
-func generatedDeclarationReference1246(_ p040.GameProfileRequestEvent) {}
+func generatedDeclarationReference1246(_ *p040.GameProfileRequestEvent) {}
 
 var generatedDeclarationReference1248 = (*p040.GameProfileRequestEvent).Conn
 var generatedDeclarationReference1249 = (*p040.GameProfileRequestEvent).GameProfile
@@ -15203,12 +15203,12 @@ var generatedDeclarationReference1250 = (*p040.GameProfileRequestEvent).OnlineMo
 var generatedDeclarationReference1251 = (*p040.GameProfileRequestEvent).Original
 var generatedDeclarationReference1252 = (*p040.GameProfileRequestEvent).SetGameProfile
 
-func generatedDeclarationReference1253(_ p040.HandshakeAddresser) {}
+func generatedDeclarationReference1253(_ *p040.HandshakeAddresser) {}
 
 var generatedDeclarationReference1254 = p040.HandshakeAddresser.HandshakeAddr
 var generatedDeclarationReference1255 = p040.InProgressConnectionStatus
 
-func generatedDeclarationReference1256(_ p040.Inbound) {}
+func generatedDeclarationReference1256(_ *p040.Inbound) {}
 
 var generatedDeclarationReference1257 = p040.Inbound.Active
 var generatedDeclarationReference1258 = p040.Inbound.Context
@@ -15218,7 +15218,7 @@ var generatedDeclarationReference1261 = p040.Inbound.RemoteAddr
 var generatedDeclarationReference1262 = p040.Inbound.VirtualHost
 var generatedDeclarationReference1263 = p040.InvalidURLResourcePackResponseStatus
 
-func generatedDeclarationReference1264(_ p040.KickedFromServerEvent) {}
+func generatedDeclarationReference1264(_ *p040.KickedFromServerEvent) {}
 
 var generatedDeclarationReference1266 = (*p040.KickedFromServerEvent).KickedDuringServerConnect
 var generatedDeclarationReference1267 = (*p040.KickedFromServerEvent).OriginalReason
@@ -15227,7 +15227,7 @@ var generatedDeclarationReference1269 = (*p040.KickedFromServerEvent).Result
 var generatedDeclarationReference1270 = (*p040.KickedFromServerEvent).Server
 var generatedDeclarationReference1271 = (*p040.KickedFromServerEvent).SetResult
 
-func generatedDeclarationReference1272(_ p040.LoginEvent) {}
+func generatedDeclarationReference1272(_ *p040.LoginEvent) {}
 
 var generatedDeclarationReference1274 = (*p040.LoginEvent).Allow
 var generatedDeclarationReference1275 = (*p040.LoginEvent).Allowed
@@ -15236,7 +15236,7 @@ var generatedDeclarationReference1277 = (*p040.LoginEvent).Player
 var generatedDeclarationReference1278 = (*p040.LoginEvent).Reason
 var generatedDeclarationReference1279 = (*p040.LoginEvent).ServerIDHash
 
-func generatedDeclarationReference1280(_ p040.LoginPhaseConnection) {}
+func generatedDeclarationReference1280(_ *p040.LoginPhaseConnection) {}
 
 var generatedDeclarationReference1281 = p040.LoginPhaseConnection.Active
 var generatedDeclarationReference1282 = p040.LoginPhaseConnection.Context
@@ -15247,36 +15247,36 @@ var generatedDeclarationReference1286 = p040.LoginPhaseConnection.RemoteAddr
 var generatedDeclarationReference1287 = p040.LoginPhaseConnection.SendLoginPluginMessage
 var generatedDeclarationReference1288 = p040.LoginPhaseConnection.VirtualHost
 
-func generatedDeclarationReference1289(_ p040.LoginStatus)     {}
-func generatedDeclarationReference1290(_ p040.MessageConsumer) {}
+func generatedDeclarationReference1289(_ *p040.LoginStatus)     {}
+func generatedDeclarationReference1290(_ *p040.MessageConsumer) {}
 
 var generatedDeclarationReference1291 = p040.MessageConsumer.OnMessageResponse
 
-func generatedDeclarationReference1292(_ p040.MessageSink) {}
+func generatedDeclarationReference1292(_ *p040.MessageSink) {}
 
 var generatedDeclarationReference1293 = p040.MessageSink.SendMessage
 
-func generatedDeclarationReference1294(_ p040.MessageType) {}
+func generatedDeclarationReference1294(_ *p040.MessageType) {}
 
 var generatedDeclarationReference1295 = p040.New
 var generatedDeclarationReference1296 = p040.NewGameProfileRequestEvent
 var generatedDeclarationReference1297 = p040.NewServerInfo
 
-func generatedDeclarationReference1298(_ p040.NotifyKickResult)      {}
-func generatedDeclarationReference1299(_ p040.Options)               {}
-func generatedDeclarationReference1300(_ p040.PermissionsSetupEvent) {}
+func generatedDeclarationReference1298(_ *p040.NotifyKickResult)      {}
+func generatedDeclarationReference1299(_ *p040.Options)               {}
+func generatedDeclarationReference1300(_ *p040.PermissionsSetupEvent) {}
 
 var generatedDeclarationReference1302 = (*p040.PermissionsSetupEvent).Func
 var generatedDeclarationReference1303 = (*p040.PermissionsSetupEvent).SetFunc
 var generatedDeclarationReference1304 = (*p040.PermissionsSetupEvent).Subject
 
-func generatedDeclarationReference1305(_ p040.PingEvent) {}
+func generatedDeclarationReference1305(_ *p040.PingEvent) {}
 
 var generatedDeclarationReference1307 = (*p040.PingEvent).Connection
 var generatedDeclarationReference1308 = (*p040.PingEvent).Ping
 var generatedDeclarationReference1309 = (*p040.PingEvent).SetPing
 
-func generatedDeclarationReference1310(_ p040.Player) {}
+func generatedDeclarationReference1310(_ *p040.Player) {}
 
 var generatedDeclarationReference1311 = p040.Player.Active
 var generatedDeclarationReference1312 = p040.Player.AppliedResourcePack
@@ -15314,22 +15314,22 @@ var generatedDeclarationReference1343 = p040.Player.VirtualHost
 var generatedDeclarationReference1344 = p040.Player.Write
 var generatedDeclarationReference1345 = p040.Player.WritePacket
 
-func generatedDeclarationReference1346(_ p040.PlayerAvailableCommandsEvent) {}
+func generatedDeclarationReference1346(_ *p040.PlayerAvailableCommandsEvent) {}
 
 var generatedDeclarationReference1348 = (*p040.PlayerAvailableCommandsEvent).Player
 var generatedDeclarationReference1349 = (*p040.PlayerAvailableCommandsEvent).RootNode
 
-func generatedDeclarationReference1350(_ p040.PlayerChannelRegisterEvent) {}
+func generatedDeclarationReference1350(_ *p040.PlayerChannelRegisterEvent) {}
 
 var generatedDeclarationReference1352 = (*p040.PlayerChannelRegisterEvent).Channels
 var generatedDeclarationReference1353 = (*p040.PlayerChannelRegisterEvent).Player
 
-func generatedDeclarationReference1354(_ p040.PlayerChannelUnregisterEvent) {}
+func generatedDeclarationReference1354(_ *p040.PlayerChannelUnregisterEvent) {}
 
 var generatedDeclarationReference1356 = (*p040.PlayerChannelUnregisterEvent).Channels
 var generatedDeclarationReference1357 = (*p040.PlayerChannelUnregisterEvent).Player
 
-func generatedDeclarationReference1358(_ p040.PlayerChatEvent) {}
+func generatedDeclarationReference1358(_ *p040.PlayerChatEvent) {}
 
 var generatedDeclarationReference1360 = (*p040.PlayerChatEvent).Allowed
 var generatedDeclarationReference1361 = (*p040.PlayerChatEvent).Message
@@ -15338,29 +15338,29 @@ var generatedDeclarationReference1363 = (*p040.PlayerChatEvent).Player
 var generatedDeclarationReference1364 = (*p040.PlayerChatEvent).SetAllowed
 var generatedDeclarationReference1365 = (*p040.PlayerChatEvent).SetMessage
 
-func generatedDeclarationReference1366(_ p040.PlayerChooseInitialServerEvent) {}
+func generatedDeclarationReference1366(_ *p040.PlayerChooseInitialServerEvent) {}
 
 var generatedDeclarationReference1368 = (*p040.PlayerChooseInitialServerEvent).InitialServer
 var generatedDeclarationReference1369 = (*p040.PlayerChooseInitialServerEvent).Player
 var generatedDeclarationReference1370 = (*p040.PlayerChooseInitialServerEvent).SetInitialServer
 
-func generatedDeclarationReference1371(_ p040.PlayerClientBrandEvent) {}
+func generatedDeclarationReference1371(_ *p040.PlayerClientBrandEvent) {}
 
 var generatedDeclarationReference1373 = (*p040.PlayerClientBrandEvent).Brand
 var generatedDeclarationReference1374 = (*p040.PlayerClientBrandEvent).Player
 
-func generatedDeclarationReference1375(_ p040.PlayerModInfoEvent) {}
+func generatedDeclarationReference1375(_ *p040.PlayerModInfoEvent) {}
 
 var generatedDeclarationReference1377 = (*p040.PlayerModInfoEvent).ModInfo
 var generatedDeclarationReference1378 = (*p040.PlayerModInfoEvent).Player
 
-func generatedDeclarationReference1379(_ p040.PlayerResourcePackStatusEvent) {}
-func generatedDeclarationReference1381(_ p040.PlayerSettingsChangedEvent)    {}
+func generatedDeclarationReference1379(_ *p040.PlayerResourcePackStatusEvent) {}
+func generatedDeclarationReference1381(_ *p040.PlayerSettingsChangedEvent)    {}
 
 var generatedDeclarationReference1383 = (*p040.PlayerSettingsChangedEvent).Player
 var generatedDeclarationReference1384 = (*p040.PlayerSettingsChangedEvent).Settings
 
-func generatedDeclarationReference1385(_ p040.Players) {}
+func generatedDeclarationReference1385(_ *p040.Players) {}
 
 var generatedDeclarationReference1386 = p040.Players.Len
 var generatedDeclarationReference1387 = p040.Players.Range
@@ -15370,7 +15370,7 @@ var generatedDeclarationReference1390 = p040.PlayersToSlice[p040.Player]
 var generatedDeclarationReference1391 = p040.PlayersToSlice[p041.Player]
 var generatedDeclarationReference1392 = p040.PlayersToSlice[p044.ChannelMessageSink]
 
-func generatedDeclarationReference1394(_ p040.PluginMessageEvent) {}
+func generatedDeclarationReference1394(_ *p040.PluginMessageEvent) {}
 
 var generatedDeclarationReference1396 = (*p040.PluginMessageEvent).Allowed
 var generatedDeclarationReference1397 = (*p040.PluginMessageEvent).Data
@@ -15380,11 +15380,11 @@ var generatedDeclarationReference1400 = (*p040.PluginMessageEvent).Source
 var generatedDeclarationReference1401 = (*p040.PluginMessageEvent).Target
 var generatedDeclarationReference1402 = p040.PluginOnProxyResourcePackOrigin
 
-func generatedDeclarationReference1404(_ p040.PostLoginEvent) {}
+func generatedDeclarationReference1404(_ *p040.PostLoginEvent) {}
 
 var generatedDeclarationReference1406 = (*p040.PostLoginEvent).Player
 
-func generatedDeclarationReference1407(_ p040.PreLoginEvent) {}
+func generatedDeclarationReference1407(_ *p040.PreLoginEvent) {}
 
 var generatedDeclarationReference1409 = (*p040.PreLoginEvent).Allow
 var generatedDeclarationReference1410 = (*p040.PreLoginEvent).Conn
@@ -15397,20 +15397,20 @@ var generatedDeclarationReference1416 = (*p040.PreLoginEvent).Result
 var generatedDeclarationReference1417 = (*p040.PreLoginEvent).SetVirtualHost
 var generatedDeclarationReference1418 = (*p040.PreLoginEvent).Username
 
-func generatedDeclarationReference1419(_ p040.PreLoginResult)   {}
-func generatedDeclarationReference1420(_ p040.PreShutdownEvent) {}
+func generatedDeclarationReference1419(_ *p040.PreLoginResult)   {}
+func generatedDeclarationReference1420(_ *p040.PreShutdownEvent) {}
 
 var generatedDeclarationReference1422 = (*p040.PreShutdownEvent).Reason
 var generatedDeclarationReference1423 = (*p040.PreShutdownEvent).SetReason
 
-func generatedDeclarationReference1424(_ p040.PreTransferEvent) {}
+func generatedDeclarationReference1424(_ *p040.PreTransferEvent) {}
 
 var generatedDeclarationReference1426 = (*p040.PreTransferEvent).Addr
 var generatedDeclarationReference1427 = (*p040.PreTransferEvent).Allowed
 var generatedDeclarationReference1428 = (*p040.PreTransferEvent).Player
 var generatedDeclarationReference1429 = (*p040.PreTransferEvent).TransferTo
 
-func generatedDeclarationReference1430(_ p040.Proxy) {}
+func generatedDeclarationReference1430(_ *p040.Proxy) {}
 
 var generatedDeclarationReference1431 = (*p040.Proxy).ChannelRegistrar
 var generatedDeclarationReference1432 = (*p040.Proxy).Command
@@ -15431,64 +15431,64 @@ var generatedDeclarationReference1446 = (*p040.Proxy).Shutdown
 var generatedDeclarationReference1447 = (*p040.Proxy).Start
 var generatedDeclarationReference1448 = (*p040.Proxy).Unregister
 
-func generatedDeclarationReference1449(_ p040.ReadyEvent) {}
+func generatedDeclarationReference1449(_ *p040.ReadyEvent) {}
 
 var generatedDeclarationReference1451 = (*p040.ReadyEvent).Addr
 
-func generatedDeclarationReference1452(_ p040.RedirectPlayerKickResult) {}
-func generatedDeclarationReference1453(_ p040.RegisteredServer)         {}
+func generatedDeclarationReference1452(_ *p040.RedirectPlayerKickResult) {}
+func generatedDeclarationReference1453(_ *p040.RegisteredServer)         {}
 
 var generatedDeclarationReference1454 = p040.RegisteredServer.Players
 var generatedDeclarationReference1455 = p040.RegisteredServer.ServerInfo
 var generatedDeclarationReference1456 = p040.RegisteredServerEqual
 
-func generatedDeclarationReference1457(_ p040.ResourcePackInfo)           {}
-func generatedDeclarationReference1458(_ p040.ResourcePackOrigin)         {}
-func generatedDeclarationReference1459(_ p040.ResourcePackResponseStatus) {}
-func generatedDeclarationReference1460(_ p040.ServerConnectedEvent)       {}
+func generatedDeclarationReference1457(_ *p040.ResourcePackInfo)           {}
+func generatedDeclarationReference1458(_ *p040.ResourcePackOrigin)         {}
+func generatedDeclarationReference1459(_ *p040.ResourcePackResponseStatus) {}
+func generatedDeclarationReference1460(_ *p040.ServerConnectedEvent)       {}
 
 var generatedDeclarationReference1462 = (*p040.ServerConnectedEvent).EntityID
 var generatedDeclarationReference1463 = (*p040.ServerConnectedEvent).Player
 var generatedDeclarationReference1464 = (*p040.ServerConnectedEvent).PreviousServer
 var generatedDeclarationReference1465 = (*p040.ServerConnectedEvent).Server
 
-func generatedDeclarationReference1466(_ p040.ServerConnection) {}
+func generatedDeclarationReference1466(_ *p040.ServerConnection) {}
 
 var generatedDeclarationReference1467 = p040.ServerConnection.Player
 var generatedDeclarationReference1468 = p040.ServerConnection.SendPluginMessage
 var generatedDeclarationReference1469 = p040.ServerConnection.Server
 
-func generatedDeclarationReference1470(_ p040.ServerDialer) {}
+func generatedDeclarationReference1470(_ *p040.ServerDialer) {}
 
 var generatedDeclarationReference1471 = p040.ServerDialer.Dial
 var generatedDeclarationReference1472 = p040.ServerDisconnectedConnectionStatus
 
-func generatedDeclarationReference1473(_ p040.ServerInfo) {}
+func generatedDeclarationReference1473(_ *p040.ServerInfo) {}
 
 var generatedDeclarationReference1474 = p040.ServerInfo.Addr
 var generatedDeclarationReference1475 = p040.ServerInfo.Name
 var generatedDeclarationReference1476 = p040.ServerInfoEqual
 
-func generatedDeclarationReference1477(_ p040.ServerKickResult)              {}
-func generatedDeclarationReference1478(_ p040.ServerLoginPluginMessageEvent) {}
+func generatedDeclarationReference1477(_ *p040.ServerKickResult)              {}
+func generatedDeclarationReference1478(_ *p040.ServerLoginPluginMessageEvent) {}
 
 var generatedDeclarationReference1480 = (*p040.ServerLoginPluginMessageEvent).Contents
 var generatedDeclarationReference1481 = (*p040.ServerLoginPluginMessageEvent).Result
 var generatedDeclarationReference1482 = (*p040.ServerLoginPluginMessageEvent).SequenceID
 var generatedDeclarationReference1483 = (*p040.ServerLoginPluginMessageEvent).ServerConnection
 
-func generatedDeclarationReference1484(_ p040.ServerLoginPluginMessageResult) {}
+func generatedDeclarationReference1484(_ *p040.ServerLoginPluginMessageResult) {}
 
 var generatedDeclarationReference1485 = (*p040.ServerLoginPluginMessageResult).Allowed
 var generatedDeclarationReference1486 = (*p040.ServerLoginPluginMessageResult).Copy
 var generatedDeclarationReference1487 = (*p040.ServerLoginPluginMessageResult).Reply
 
-func generatedDeclarationReference1488(_ p040.ServerPostConnectEvent) {}
+func generatedDeclarationReference1488(_ *p040.ServerPostConnectEvent) {}
 
 var generatedDeclarationReference1490 = (*p040.ServerPostConnectEvent).Player
 var generatedDeclarationReference1491 = (*p040.ServerPostConnectEvent).PreviousServer
 
-func generatedDeclarationReference1492(_ p040.ServerPreConnectEvent) {}
+func generatedDeclarationReference1492(_ *p040.ServerPreConnectEvent) {}
 
 var generatedDeclarationReference1494 = (*p040.ServerPreConnectEvent).Allow
 var generatedDeclarationReference1495 = (*p040.ServerPreConnectEvent).Allowed
@@ -15498,29 +15498,29 @@ var generatedDeclarationReference1498 = (*p040.ServerPreConnectEvent).Player
 var generatedDeclarationReference1499 = (*p040.ServerPreConnectEvent).PreviousServer
 var generatedDeclarationReference1500 = (*p040.ServerPreConnectEvent).Server
 
-func generatedDeclarationReference1501(_ p040.ServerRegisteredEvent) {}
+func generatedDeclarationReference1501(_ *p040.ServerRegisteredEvent) {}
 
 var generatedDeclarationReference1503 = (*p040.ServerRegisteredEvent).Server
 
-func generatedDeclarationReference1504(_ p040.ServerRegistrar) {}
+func generatedDeclarationReference1504(_ *p040.ServerRegistrar) {}
 
 var generatedDeclarationReference1505 = p040.ServerRegistrar.Register
 var generatedDeclarationReference1506 = p040.ServerRegistrar.Unregister
 
-func generatedDeclarationReference1507(_ p040.ServerRegistry) {}
+func generatedDeclarationReference1507(_ *p040.ServerRegistry) {}
 
 var generatedDeclarationReference1508 = p040.ServerRegistry.Register
 var generatedDeclarationReference1509 = p040.ServerRegistry.Server
 var generatedDeclarationReference1510 = p040.ServerRegistry.Unregister
 
-func generatedDeclarationReference1511(_ p040.ServerResourcePackRemoveEvent) {}
+func generatedDeclarationReference1511(_ *p040.ServerResourcePackRemoveEvent) {}
 
 var generatedDeclarationReference1513 = (*p040.ServerResourcePackRemoveEvent).Allowed
 var generatedDeclarationReference1514 = (*p040.ServerResourcePackRemoveEvent).PackID
 var generatedDeclarationReference1515 = (*p040.ServerResourcePackRemoveEvent).ServerConnection
 var generatedDeclarationReference1516 = (*p040.ServerResourcePackRemoveEvent).SetAllowed
 
-func generatedDeclarationReference1517(_ p040.ServerResourcePackSendEvent) {}
+func generatedDeclarationReference1517(_ *p040.ServerResourcePackSendEvent) {}
 
 var generatedDeclarationReference1519 = (*p040.ServerResourcePackSendEvent).Allowed
 var generatedDeclarationReference1520 = (*p040.ServerResourcePackSendEvent).ProvidedResourcePack
@@ -15529,18 +15529,18 @@ var generatedDeclarationReference1522 = (*p040.ServerResourcePackSendEvent).Serv
 var generatedDeclarationReference1523 = (*p040.ServerResourcePackSendEvent).SetAllowed
 var generatedDeclarationReference1524 = (*p040.ServerResourcePackSendEvent).SetProvidedResourcePack
 
-func generatedDeclarationReference1525(_ p040.ServerUnregisteredEvent) {}
+func generatedDeclarationReference1525(_ *p040.ServerUnregisteredEvent) {}
 
 var generatedDeclarationReference1527 = (*p040.ServerUnregisteredEvent).ServerInfo
 
-func generatedDeclarationReference1528(_ p040.ShutdownEvent) {}
+func generatedDeclarationReference1528(_ *p040.ShutdownEvent) {}
 
 var generatedDeclarationReference1530 = p040.SuccessConnectionStatus
 var generatedDeclarationReference1531 = p040.SuccessfulLoginStatus
 var generatedDeclarationReference1532 = p040.SuccessfulResourcePackResponseStatus
 var generatedDeclarationReference1533 = p040.SystemMessageType
 
-func generatedDeclarationReference1534(_ p040.TabCompleteEvent) {}
+func generatedDeclarationReference1534(_ *p040.TabCompleteEvent) {}
 
 var generatedDeclarationReference1536 = (*p040.TabCompleteEvent).PartialMessage
 var generatedDeclarationReference1537 = (*p040.TabCompleteEvent).Player
@@ -15551,13 +15551,13 @@ var generatedDeclarationReference1541 = p040.WithMessageType
 var generatedDeclarationReference1542 = p041.Channel
 var generatedDeclarationReference1543 = p041.IsBungeeCordMessage
 
-func generatedDeclarationReference1544(_ p041.MessageResponder) {}
+func generatedDeclarationReference1544(_ *p041.MessageResponder) {}
 
 var generatedDeclarationReference1545 = p041.MessageResponder.Process
 var generatedDeclarationReference1546 = p041.NewMessageResponder
 var generatedDeclarationReference1547 = p041.NopMessageResponder
 
-func generatedDeclarationReference1548(_ p041.Player) {}
+func generatedDeclarationReference1548(_ *p041.Player) {}
 
 var generatedDeclarationReference1549 = p041.Player.Disconnect
 var generatedDeclarationReference1550 = p041.Player.ID
@@ -15565,14 +15565,14 @@ var generatedDeclarationReference1551 = p041.Player.Protocol
 var generatedDeclarationReference1552 = p041.Player.RemoteAddr
 var generatedDeclarationReference1553 = p041.Player.Username
 
-func generatedDeclarationReference1554(_ p041.PlayerProvider) {}
+func generatedDeclarationReference1554(_ *p041.PlayerProvider) {}
 
 var generatedDeclarationReference1555 = p041.PlayerProvider.BroadcastMessage
 var generatedDeclarationReference1556 = p041.PlayerProvider.PlayerByName
 var generatedDeclarationReference1557 = p041.PlayerProvider.PlayerCount
 var generatedDeclarationReference1558 = p041.PlayerProvider.Players
 
-func generatedDeclarationReference1559(_ p041.Providers) {}
+func generatedDeclarationReference1559(_ *p041.Providers) {}
 
 var generatedDeclarationReference1560 = p041.Providers.BroadcastMessage
 var generatedDeclarationReference1561 = p041.Providers.ConnectedServer
@@ -15582,7 +15582,7 @@ var generatedDeclarationReference1564 = p041.Providers.Players
 var generatedDeclarationReference1565 = p041.Providers.Server
 var generatedDeclarationReference1566 = p041.Providers.Servers
 
-func generatedDeclarationReference1567(_ p041.Server) {}
+func generatedDeclarationReference1567(_ *p041.Server) {}
 
 var generatedDeclarationReference1568 = p041.Server.Addr
 var generatedDeclarationReference1569 = p041.Server.BroadcastMessage
@@ -15592,24 +15592,24 @@ var generatedDeclarationReference1572 = p041.Server.Name
 var generatedDeclarationReference1573 = p041.Server.PlayerCount
 var generatedDeclarationReference1574 = p041.Server.Players
 
-func generatedDeclarationReference1575(_ p041.ServerConnection) {}
+func generatedDeclarationReference1575(_ *p041.ServerConnection) {}
 
 var generatedDeclarationReference1576 = p041.ServerConnection.Name
 var generatedDeclarationReference1577 = p041.ServerConnection.Protocol
 var generatedDeclarationReference1578 = p041.ServerConnection.WritePacket
 
-func generatedDeclarationReference1579(_ p041.ServerConnectionProvider) {}
+func generatedDeclarationReference1579(_ *p041.ServerConnectionProvider) {}
 
 var generatedDeclarationReference1580 = p041.ServerConnectionProvider.ConnectedServer
 
-func generatedDeclarationReference1581(_ p041.ServerProvider) {}
+func generatedDeclarationReference1581(_ *p041.ServerProvider) {}
 
 var generatedDeclarationReference1582 = p041.ServerProvider.Server
 var generatedDeclarationReference1583 = p041.ServerProvider.Servers
 var generatedDeclarationReference1584 = p042.CanSetHolder
 var generatedDeclarationReference1585 = p042.Equal
 
-func generatedDeclarationReference1586(_ p042.IdentifiedKey) {}
+func generatedDeclarationReference1586(_ *p042.IdentifiedKey) {}
 
 var generatedDeclarationReference1587 = p042.IdentifiedKey.Expired
 var generatedDeclarationReference1588 = p042.IdentifiedKey.ExpiryTemporal
@@ -15623,11 +15623,11 @@ var generatedDeclarationReference1595 = p042.IdentifiedKey.SignedPublicKeyBytes
 var generatedDeclarationReference1596 = p042.IdentifiedKey.Signer
 var generatedDeclarationReference1597 = p042.IdentifiedKey.VerifyDataSignature
 
-func generatedDeclarationReference1598(_ p042.KeyIdentifiable) {}
+func generatedDeclarationReference1598(_ *p042.KeyIdentifiable) {}
 
 var generatedDeclarationReference1599 = p042.KeyIdentifiable.IdentifiedKey
 
-func generatedDeclarationReference1600(_ p042.KeySigned) {}
+func generatedDeclarationReference1600(_ *p042.KeySigned) {}
 
 var generatedDeclarationReference1601 = p042.KeySigned.Expired
 var generatedDeclarationReference1602 = p042.KeySigned.ExpiryTemporal
@@ -15639,12 +15639,12 @@ var generatedDeclarationReference1607 = p042.NewIdentifiedKey
 var generatedDeclarationReference1608 = p042.ReadPlayerKey
 var generatedDeclarationReference1609 = p042.SetHolder
 
-func generatedDeclarationReference1610(_ p042.SignaturePair) {}
+func generatedDeclarationReference1610(_ *p042.SignaturePair) {}
 
 var generatedDeclarationReference1611 = (*p042.SignaturePair).Decode
 var generatedDeclarationReference1612 = (*p042.SignaturePair).Encode
 
-func generatedDeclarationReference1613(_ p042.SignedMessage) {}
+func generatedDeclarationReference1613(_ *p042.SignedMessage) {}
 
 var generatedDeclarationReference1614 = p042.SignedMessage.Expired
 var generatedDeclarationReference1615 = p042.SignedMessage.ExpiryTemporal
@@ -15660,23 +15660,23 @@ var generatedDeclarationReference1624 = p043.Applicable
 var generatedDeclarationReference1625 = p043.GenericV1
 var generatedDeclarationReference1626 = p043.LinkedV2
 
-func generatedDeclarationReference1627(_ p043.Revision) {}
+func generatedDeclarationReference1627(_ *p043.Revision) {}
 
 var generatedDeclarationReference1628 = p043.Revision.ApplicableTo
 var generatedDeclarationReference1629 = p043.RevisionIndex
 var generatedDeclarationReference1630 = p043.Revisions
 
-func generatedDeclarationReference1631(_ p044.ChannelIdentifier) {}
+func generatedDeclarationReference1631(_ *p044.ChannelIdentifier) {}
 
 var generatedDeclarationReference1632 = p044.ChannelIdentifier.ID
 var generatedDeclarationReference1633 = p044.ChannelIdentifierFrom
 
-func generatedDeclarationReference1634(_ p044.ChannelMessageSink) {}
+func generatedDeclarationReference1634(_ *p044.ChannelMessageSink) {}
 
 var generatedDeclarationReference1635 = p044.ChannelMessageSink.SendPluginMessage
 
-func generatedDeclarationReference1636(_ p044.ChannelMessageSource) {}
-func generatedDeclarationReference1637(_ p044.ChannelRegistrar)     {}
+func generatedDeclarationReference1636(_ *p044.ChannelMessageSource) {}
+func generatedDeclarationReference1637(_ *p044.ChannelRegistrar)     {}
 
 var generatedDeclarationReference1638 = (*p044.ChannelRegistrar).ChannelsForProtocol
 var generatedDeclarationReference1639 = (*p044.ChannelRegistrar).FromID
@@ -15690,11 +15690,11 @@ var generatedDeclarationReference1646 = p044.ErrNameInvalid
 var generatedDeclarationReference1647 = p044.ErrNamespaceEmpty
 var generatedDeclarationReference1648 = p044.ErrNamespaceInvalid
 
-func generatedDeclarationReference1649(_ p044.LegacyChannelIdentifier) {}
+func generatedDeclarationReference1649(_ *p044.LegacyChannelIdentifier) {}
 
 var generatedDeclarationReference1650 = p044.LegacyChannelIdentifier.ID
 
-func generatedDeclarationReference1651(_ p044.MinecraftChannelIdentifier) {}
+func generatedDeclarationReference1651(_ *p044.MinecraftChannelIdentifier) {}
 
 var generatedDeclarationReference1652 = (*p044.MinecraftChannelIdentifier).ID
 var generatedDeclarationReference1653 = p044.MinecraftChannelIdentifier.Namespace
@@ -15705,57 +15705,57 @@ var generatedDeclarationReference1657 = p044.NewChannelRegistrar
 var generatedDeclarationReference1658 = p044.NewDefaultNamespace
 var generatedDeclarationReference1659 = p044.NewLegacyChannelIdentifier
 
-func generatedDeclarationReference1660(_ p045.BackendConn) {}
+func generatedDeclarationReference1660(_ *p045.BackendConn) {}
 
 var generatedDeclarationReference1661 = p045.BackendConn.FlushQueuedPluginMessages
 var generatedDeclarationReference1662 = p045.BackendConn.WritePacket
 
-func generatedDeclarationReference1663(_ p045.BackendConnectionPhase) {}
+func generatedDeclarationReference1663(_ *p045.BackendConnectionPhase) {}
 
 var generatedDeclarationReference1664 = p045.BackendConnectionPhase.ConsideredComplete
 var generatedDeclarationReference1665 = p045.BackendConnectionPhase.Handle
 var generatedDeclarationReference1666 = p045.BackendConnectionPhase.OnDepartForNewServer
 
-func generatedDeclarationReference1667(_ p045.BackendConnectionPhaseSetter) {}
+func generatedDeclarationReference1667(_ *p045.BackendConnectionPhaseSetter) {}
 
 var generatedDeclarationReference1668 = p045.BackendConnectionPhaseSetter.SetPhase
 
-func generatedDeclarationReference1669(_ p045.ClientConnectionPhase) {}
+func generatedDeclarationReference1669(_ *p045.ClientConnectionPhase) {}
 
 var generatedDeclarationReference1670 = p045.ClientConnectionPhase.ConsideredComplete
 var generatedDeclarationReference1671 = p045.ClientConnectionPhase.Handle
 var generatedDeclarationReference1672 = p045.ClientConnectionPhase.OnFirstJoin
 var generatedDeclarationReference1673 = p045.ClientConnectionPhase.ResetConnectionPhase
 
-func generatedDeclarationReference1674(_ p045.ClientConnectionPhaseSetter) {}
+func generatedDeclarationReference1674(_ *p045.ClientConnectionPhaseSetter) {}
 
 var generatedDeclarationReference1675 = p045.ClientConnectionPhaseSetter.SetPhase
 var generatedDeclarationReference1676 = p045.CompleteLegacyForgeHandshakeBackendPhase
 var generatedDeclarationReference1677 = p045.CompleteLegacyForgeHandshakeClientPhase
 
-func generatedDeclarationReference1678(_ p045.ConnectionType) {}
+func generatedDeclarationReference1678(_ *p045.ConnectionType) {}
 
 var generatedDeclarationReference1679 = p045.ConnectionType.AddGameProfileTokensIfRequired
 var generatedDeclarationReference1680 = p045.ConnectionType.InitialBackendPhase
 var generatedDeclarationReference1681 = p045.ConnectionType.InitialClientPhase
 
-func generatedDeclarationReference1682(_ p045.ConnectionTypeSetter) {}
+func generatedDeclarationReference1682(_ *p045.ConnectionTypeSetter) {}
 
 var generatedDeclarationReference1683 = p045.ConnectionTypeSetter.SetType
 var generatedDeclarationReference1684 = p045.HelloLegacyForgeHandshakeBackendPhase
 var generatedDeclarationReference1685 = p045.HelloLegacyForgeHandshakeClientPhase
 var generatedDeclarationReference1686 = p045.InTransitionBackendPhase
 
-func generatedDeclarationReference1687(_ p045.KeepAlive) {}
+func generatedDeclarationReference1687(_ *p045.KeepAlive) {}
 
 var generatedDeclarationReference1688 = p045.KeepAlive.SendKeepAlive
 var generatedDeclarationReference1689 = p045.LegacyForge
 
-func generatedDeclarationReference1690(_ p045.LegacyForgeHandshakeResetter) {}
+func generatedDeclarationReference1690(_ *p045.LegacyForgeHandshakeResetter) {}
 
 var generatedDeclarationReference1691 = p045.LegacyForgeHandshakeResetter.SendLegacyForgeHandshakeResetPacket
 
-func generatedDeclarationReference1692(_ p045.ModInfo) {}
+func generatedDeclarationReference1692(_ *p045.ModInfo) {}
 
 var generatedDeclarationReference1693 = p045.ModInfo.ModInfo
 var generatedDeclarationReference1694 = p045.ModInfo.SetModInfo
@@ -15764,12 +15764,12 @@ var generatedDeclarationReference1696 = p045.ModernForge
 var generatedDeclarationReference1697 = p045.NotStartedLegacyForgeHandshakeBackendPhase
 var generatedDeclarationReference1698 = p045.NotStartedLegacyForgeHandshakeClientPhase
 
-func generatedDeclarationReference1699(_ p045.PacketWriter) {}
+func generatedDeclarationReference1699(_ *p045.PacketWriter) {}
 
 var generatedDeclarationReference1700 = p045.PacketWriter.WritePacket
 var generatedDeclarationReference1701 = p045.PendingCompleteLegacyForgeHandshakeClientPhase
 
-func generatedDeclarationReference1702(_ p045.Resetter) {}
+func generatedDeclarationReference1702(_ *p045.Resetter) {}
 
 var generatedDeclarationReference1703 = p045.Resetter.ResetConnectionPhase
 var generatedDeclarationReference1704 = p045.SentModListLegacyForgeHandshakeBackendPhase
@@ -15786,8 +15786,8 @@ var generatedDeclarationReference1714 = p045.WaitingServerDataLegacyForgeHandsha
 var generatedDeclarationReference1715 = p046.AllParticleStatus
 var generatedDeclarationReference1716 = p046.AsHoverEntity
 
-func generatedDeclarationReference1717(_ p046.ChatMode)    {}
-func generatedDeclarationReference1718(_ p046.ChatSession) {}
+func generatedDeclarationReference1717(_ *p046.ChatMode)    {}
+func generatedDeclarationReference1718(_ *p046.ChatSession) {}
 
 var generatedDeclarationReference1719 = p046.ChatSession.IdentifiedKey
 var generatedDeclarationReference1720 = p046.ChatSession.SessionID
@@ -15797,16 +15797,16 @@ var generatedDeclarationReference1723 = p046.DefaultSettings
 var generatedDeclarationReference1724 = p046.Hidden
 var generatedDeclarationReference1725 = p046.LeftMainHand
 
-func generatedDeclarationReference1726(_ p046.MainHand) {}
+func generatedDeclarationReference1726(_ *p046.MainHand) {}
 
 var generatedDeclarationReference1727 = p046.MinimalParticleStatus
 var generatedDeclarationReference1728 = p046.NewSettings
 
-func generatedDeclarationReference1729(_ p046.ParticleStatus) {}
+func generatedDeclarationReference1729(_ *p046.ParticleStatus) {}
 
 var generatedDeclarationReference1730 = p046.RightMainHand
 
-func generatedDeclarationReference1731(_ p046.Settings) {}
+func generatedDeclarationReference1731(_ *p046.Settings) {}
 
 var generatedDeclarationReference1732 = p046.Settings.ChatColors
 var generatedDeclarationReference1733 = p046.Settings.ChatMode
@@ -15819,7 +15819,7 @@ var generatedDeclarationReference1739 = p046.Settings.TextFiltering
 var generatedDeclarationReference1740 = p046.Settings.ViewDistance
 var generatedDeclarationReference1741 = p046.ShownChatMode
 
-func generatedDeclarationReference1742(_ p046.SkinParts) {}
+func generatedDeclarationReference1742(_ *p046.SkinParts) {}
 
 var generatedDeclarationReference1743 = p046.SkinParts.Cape
 var generatedDeclarationReference1744 = p046.SkinParts.Hat
@@ -15831,7 +15831,7 @@ var generatedDeclarationReference1749 = p046.SkinParts.RightSleeve
 var generatedDeclarationReference1750 = p047.ClearHeaderFooter
 var generatedDeclarationReference1751 = p047.ClearTabListHeaderFooter
 
-func generatedDeclarationReference1752(_ p047.Entry) {}
+func generatedDeclarationReference1752(_ *p047.Entry) {}
 
 var generatedDeclarationReference1753 = p047.Entry.ChatSession
 var generatedDeclarationReference1754 = p047.Entry.DisplayName
@@ -15851,7 +15851,7 @@ var generatedDeclarationReference1767 = p047.Entry.TabList
 var generatedDeclarationReference1768 = p047.HasEntry
 var generatedDeclarationReference1769 = p047.SendHeaderFooter
 
-func generatedDeclarationReference1770(_ p047.TabList) {}
+func generatedDeclarationReference1770(_ *p047.TabList) {}
 
 var generatedDeclarationReference1771 = p047.TabList.Add
 var generatedDeclarationReference1772 = p047.TabList.Entries
@@ -15859,7 +15859,7 @@ var generatedDeclarationReference1773 = p047.TabList.HeaderFooter
 var generatedDeclarationReference1774 = p047.TabList.RemoveAll
 var generatedDeclarationReference1775 = p047.TabList.SetHeaderFooter
 
-func generatedDeclarationReference1776(_ p047.Viewer) {}
+func generatedDeclarationReference1776(_ *p047.Viewer) {}
 
 var generatedDeclarationReference1777 = p047.Viewer.IdentifiedKey
 var generatedDeclarationReference1778 = p047.Viewer.Protocol
@@ -15874,12 +15874,12 @@ var generatedDeclarationReference1786 = p048.NewSound
 var generatedDeclarationReference1787 = p048.ParseSource
 var generatedDeclarationReference1788 = p048.Play
 
-func generatedDeclarationReference1789(_ p048.Player) {}
+func generatedDeclarationReference1789(_ *p048.Player) {}
 
 var generatedDeclarationReference1790 = p048.Player.Protocol
 var generatedDeclarationReference1791 = p048.Player.WritePacket
 
-func generatedDeclarationReference1792(_ p048.Sound) {}
+func generatedDeclarationReference1792(_ *p048.Sound) {}
 
 var generatedDeclarationReference1793 = p048.Sound.WithPitch
 var generatedDeclarationReference1794 = p048.Sound.WithSeed
@@ -15902,15 +15902,15 @@ var generatedDeclarationReference1810 = p048.StopSource
 var generatedDeclarationReference1811 = p049.ClearTitle
 var generatedDeclarationReference1812 = p049.HideTitle
 
-func generatedDeclarationReference1813(_ p049.Options) {}
-func generatedDeclarationReference1814(_ p049.Part)    {}
+func generatedDeclarationReference1813(_ *p049.Options) {}
+func generatedDeclarationReference1814(_ *p049.Part)    {}
 
 var generatedDeclarationReference1815 = p049.ShowTitle
 var generatedDeclarationReference1816 = p049.SubtitlePart
 var generatedDeclarationReference1817 = p049.TimesPart
 var generatedDeclarationReference1818 = p049.TitlePart
 
-func generatedDeclarationReference1819(_ p049.Viewer) {}
+func generatedDeclarationReference1819(_ *p049.Viewer) {}
 
 var generatedDeclarationReference1820 = p049.Viewer.BufferPacket
 var generatedDeclarationReference1821 = p049.Viewer.BufferPayload
@@ -15918,22 +15918,22 @@ var generatedDeclarationReference1822 = p049.Viewer.Flush
 var generatedDeclarationReference1823 = p049.Viewer.Write
 var generatedDeclarationReference1824 = p049.Viewer.WritePacket
 
-func generatedDeclarationReference1831(_ p050.Gate) {}
+func generatedDeclarationReference1831(_ *p050.Gate) {}
 
 var generatedDeclarationReference1832 = (*p050.Gate).Bedrock
 var generatedDeclarationReference1833 = (*p050.Gate).Java
 var generatedDeclarationReference1834 = (*p050.Gate).Start
 var generatedDeclarationReference1835 = p050.LoadConfig
 
-func generatedDeclarationReference1836(_ p050.LoadConfigFunc) {}
+func generatedDeclarationReference1836(_ *p050.LoadConfigFunc) {}
 
 var generatedDeclarationReference1837 = p050.New
 
-func generatedDeclarationReference1838(_ p050.Options) {}
+func generatedDeclarationReference1838(_ *p050.Options) {}
 
 var generatedDeclarationReference1839 = p050.Start
 
-func generatedDeclarationReference1840(_ p050.StartOption) {}
+func generatedDeclarationReference1840(_ *p050.StartOption) {}
 
 var generatedDeclarationReference1841 = p050.Viper
 var generatedDeclarationReference1842 = p050.WithAutoConfigReload
@@ -15941,44 +15941,44 @@ var generatedDeclarationReference1843 = p050.WithAutoShutdownOnSignal
 var generatedDeclarationReference1844 = p050.WithComponentPlugins
 var generatedDeclarationReference1845 = p050.WithConfig
 
-func generatedDeclarationReference1846(_ p051.API)    {}
-func generatedDeclarationReference1847(_ p051.Config) {}
+func generatedDeclarationReference1846(_ *p051.API)    {}
+func generatedDeclarationReference1847(_ *p051.Config) {}
 
 var generatedDeclarationReference1848 = (*p051.Config).Validate
 var generatedDeclarationReference1849 = p051.DefaultConfig
 
-func generatedDeclarationReference1850(_ p051.HealthService) {}
+func generatedDeclarationReference1850(_ *p051.HealthService) {}
 
 var generatedDeclarationReference1851 = p052.ClientBound
 
-func generatedDeclarationReference1852(_ p052.Direction) {}
+func generatedDeclarationReference1852(_ *p052.Direction) {}
 
 var generatedDeclarationReference1853 = p052.Direction.String
 var generatedDeclarationReference1854 = p052.ErrDecoderLeftBytes
 
-func generatedDeclarationReference1855(_ p052.Packet) {}
+func generatedDeclarationReference1855(_ *p052.Packet) {}
 
 var generatedDeclarationReference1856 = p052.Packet.Decode
 var generatedDeclarationReference1857 = p052.Packet.Encode
 
-func generatedDeclarationReference1858(_ p052.PacketContext) {}
+func generatedDeclarationReference1858(_ *p052.PacketContext) {}
 
 var generatedDeclarationReference1859 = (*p052.PacketContext).KnownPacket
 var generatedDeclarationReference1860 = (*p052.PacketContext).String
 
-func generatedDeclarationReference1861(_ p052.PacketDecoder) {}
+func generatedDeclarationReference1861(_ *p052.PacketDecoder) {}
 
 var generatedDeclarationReference1862 = p052.PacketDecoder.Decode
 
-func generatedDeclarationReference1863(_ p052.PacketEncoder) {}
+func generatedDeclarationReference1863(_ *p052.PacketEncoder) {}
 
 var generatedDeclarationReference1864 = p052.PacketEncoder.Encode
 
-func generatedDeclarationReference1865(_ p052.PacketID) {}
+func generatedDeclarationReference1865(_ *p052.PacketID) {}
 
 var generatedDeclarationReference1866 = p052.PacketID.String
 
-func generatedDeclarationReference1867(_ p052.PacketType) {}
+func generatedDeclarationReference1867(_ *p052.PacketType) {}
 
 var generatedDeclarationReference1868 = p052.PacketType.Align
 var generatedDeclarationReference1869 = p052.PacketType.AssignableTo
@@ -16020,11 +16020,11 @@ var generatedDeclarationReference1904 = p052.PacketType.PkgPath
 var generatedDeclarationReference1905 = p052.PacketType.Size
 var generatedDeclarationReference1906 = p052.PacketType.String
 
-func generatedDeclarationReference1907(_ p052.PacketWriter) {}
+func generatedDeclarationReference1907(_ *p052.PacketWriter) {}
 
 var generatedDeclarationReference1908 = p052.PacketWriter.WritePacket
 
-func generatedDeclarationReference1909(_ p052.Protocol) {}
+func generatedDeclarationReference1909(_ *p052.Protocol) {}
 
 var generatedDeclarationReference1910 = p052.Protocol.Greater
 var generatedDeclarationReference1911 = p052.Protocol.GreaterEqual
@@ -16034,7 +16034,7 @@ var generatedDeclarationReference1914 = p052.Protocol.String
 var generatedDeclarationReference1915 = p052.ServerBound
 var generatedDeclarationReference1916 = p052.TypeOf
 
-func generatedDeclarationReference1917(_ p052.Version) {}
+func generatedDeclarationReference1917(_ *p052.Version) {}
 
 var generatedDeclarationReference1918 = (*p052.Version).FirstName
 var generatedDeclarationReference1919 = p052.Version.Greater
@@ -16044,25 +16044,25 @@ var generatedDeclarationReference1922 = p052.Version.Lower
 var generatedDeclarationReference1923 = p052.Version.LowerEqual
 var generatedDeclarationReference1924 = p052.Version.String
 
-func generatedDeclarationReference1925(_ p053.Collection) {}
+func generatedDeclarationReference1925(_ *p053.Collection) {}
 
 var generatedDeclarationReference1926 = p053.Collection.Add
 var generatedDeclarationReference1927 = p053.Collection.Start
 var generatedDeclarationReference1928 = p053.DefaultGracefulShutdownPeriod
 var generatedDeclarationReference1929 = p053.New
 
-func generatedDeclarationReference1930(_ p053.Options)  {}
-func generatedDeclarationReference1931(_ p053.Runnable) {}
+func generatedDeclarationReference1930(_ *p053.Options)  {}
+func generatedDeclarationReference1931(_ *p053.Runnable) {}
 
 var generatedDeclarationReference1932 = p053.Runnable.Start
 
-func generatedDeclarationReference1933(_ p053.RunnableFunc) {}
+func generatedDeclarationReference1933(_ *p053.RunnableFunc) {}
 
 var generatedDeclarationReference1934 = p053.RunnableFunc.Start
 var generatedDeclarationReference1935 = p054.ParseComponent
 var generatedDeclarationReference1936 = p054.ParseTextComponent
 
-func generatedDeclarationReference1937(_ p055.BoolOrStruct[any]) {}
+func generatedDeclarationReference1937(_ *p055.BoolOrStruct[any]) {}
 
 var generatedDeclarationReference1938 = p055.BoolOrStruct[any].BoolValue
 var generatedDeclarationReference1939 = p055.BoolOrStruct[any].IsBool
@@ -16074,10 +16074,10 @@ var generatedDeclarationReference1944 = p055.BoolOrStruct[any].StructValue
 var generatedDeclarationReference1945 = (*p055.BoolOrStruct[any]).UnmarshalJSON
 var generatedDeclarationReference1946 = (*p055.BoolOrStruct[any]).UnmarshalYAML
 
-func generatedDeclarationReference1947(_ p055.BoolOrStruct[any])                {}
-func generatedDeclarationReference1948(_ p055.BoolOrStruct[any])                {}
-func generatedDeclarationReference1949(_ p055.BoolOrStruct[p004.ManagedGeyser]) {}
-func generatedDeclarationReference1950(_ p055.Component)                        {}
+func generatedDeclarationReference1947(_ *p055.BoolOrStruct[any])                {}
+func generatedDeclarationReference1948(_ *p055.BoolOrStruct[any])                {}
+func generatedDeclarationReference1949(_ *p055.BoolOrStruct[p004.ManagedGeyser]) {}
+func generatedDeclarationReference1950(_ *p055.Component)                        {}
 
 var generatedDeclarationReference1951 = (*p055.Component).C
 var generatedDeclarationReference1952 = (*p055.Component).MarshalJSON
@@ -16085,7 +16085,7 @@ var generatedDeclarationReference1953 = (*p055.Component).MarshalYAML
 var generatedDeclarationReference1954 = (*p055.Component).UnmarshalJSON
 var generatedDeclarationReference1955 = (*p055.Component).UnmarshalYAML
 
-func generatedDeclarationReference1956(_ p055.Duration) {}
+func generatedDeclarationReference1956(_ *p055.Duration) {}
 
 var generatedDeclarationReference1957 = (*p055.Duration).MarshalJSON
 var generatedDeclarationReference1958 = (*p055.Duration).MarshalYAML
@@ -16097,7 +16097,7 @@ var generatedDeclarationReference1963 = p055.NewBoolOrStructBool[p004.ManagedGey
 var generatedDeclarationReference1964 = p055.NewBoolOrStructStruct[any]
 var generatedDeclarationReference1965 = p055.NewBoolOrStructStruct[any]
 
-func generatedDeclarationReference1966(_ p055.SingleOrMulti[any]) {}
+func generatedDeclarationReference1966(_ *p055.SingleOrMulti[any]) {}
 
 var generatedDeclarationReference1967 = p055.SingleOrMulti[any].Copy
 var generatedDeclarationReference1968 = p055.SingleOrMulti[any].IsMulti
@@ -16110,10 +16110,10 @@ var generatedDeclarationReference1974 = p055.SingleOrMulti[any].String
 var generatedDeclarationReference1975 = (*p055.SingleOrMulti[any]).UnmarshalJSON
 var generatedDeclarationReference1976 = (*p055.SingleOrMulti[any]).UnmarshalYAML
 
-func generatedDeclarationReference1977(_ p055.SingleOrMulti[any])    {}
-func generatedDeclarationReference1978(_ p055.SingleOrMulti[any])    {}
-func generatedDeclarationReference1979(_ p055.SingleOrMulti[string]) {}
-func generatedDeclarationReference1980(_ p055.TextComponent)         {}
+func generatedDeclarationReference1977(_ *p055.SingleOrMulti[any])    {}
+func generatedDeclarationReference1978(_ *p055.SingleOrMulti[any])    {}
+func generatedDeclarationReference1979(_ *p055.SingleOrMulti[string]) {}
+func generatedDeclarationReference1980(_ *p055.TextComponent)         {}
 
 var generatedDeclarationReference1981 = (*p055.TextComponent).MarshalJSON
 var generatedDeclarationReference1982 = (*p055.TextComponent).MarshalYAML
@@ -16121,7 +16121,7 @@ var generatedDeclarationReference1983 = (*p055.TextComponent).T
 var generatedDeclarationReference1984 = (*p055.TextComponent).UnmarshalJSON
 var generatedDeclarationReference1985 = (*p055.TextComponent).UnmarshalYAML
 
-func generatedDeclarationReference1986(_ p055.URL) {}
+func generatedDeclarationReference1986(_ *p055.URL) {}
 
 var generatedDeclarationReference1987 = (*p055.URL).MarshalBinary
 var generatedDeclarationReference1988 = (*p055.URL).MarshalJSON
@@ -16132,17 +16132,17 @@ var generatedDeclarationReference1992 = (*p055.URL).UnmarshalBinary
 var generatedDeclarationReference1993 = (*p055.URL).UnmarshalJSON
 var generatedDeclarationReference1994 = (*p055.URL).UnmarshalYAML
 
-func generatedDeclarationReference1995(_ p056.Endpoint) {}
+func generatedDeclarationReference1995(_ *p056.Endpoint) {}
 
 var generatedDeclarationReference1996 = p056.Endpoint.Name
 var generatedDeclarationReference1997 = p056.Endpoint.Propose
 var generatedDeclarationReference1998 = p056.Endpoint.Rejections
 
-func generatedDeclarationReference1999(_ p056.EndpointListener) {}
+func generatedDeclarationReference1999(_ *p056.EndpointListener) {}
 
 var generatedDeclarationReference2000 = p056.EndpointListener.AcceptEndpoint
 
-func generatedDeclarationReference2001(_ p056.InboundTunnel) {}
+func generatedDeclarationReference2001(_ *p056.InboundTunnel) {}
 
 var generatedDeclarationReference2002 = p056.InboundTunnel.Close
 var generatedDeclarationReference2003 = p056.InboundTunnel.LocalAddr
@@ -16156,11 +16156,11 @@ var generatedDeclarationReference2010 = p056.InboundTunnel.Write
 var generatedDeclarationReference2011 = p056.RequireEndpointName
 var generatedDeclarationReference2012 = p056.RequireTunnelSessionID
 
-func generatedDeclarationReference2013(_ p056.TunnelListener) {}
+func generatedDeclarationReference2013(_ *p056.TunnelListener) {}
 
 var generatedDeclarationReference2014 = p056.TunnelListener.AcceptTunnel
 
-func generatedDeclarationReference2015(_ p056.TunnelSession) {}
+func generatedDeclarationReference2015(_ *p056.TunnelSession) {}
 
 var generatedDeclarationReference2016 = p056.TunnelSession.Close
 var generatedDeclarationReference2017 = p056.TunnelSession.LocalAddr
@@ -16172,14 +16172,14 @@ var generatedDeclarationReference2022 = p056.TunnelSession.SetReadDeadline
 var generatedDeclarationReference2023 = p056.TunnelSession.SetWriteDeadline
 var generatedDeclarationReference2024 = p056.TunnelSession.Write
 
-func generatedDeclarationReference2025(_ p057.Config)      {}
-func generatedDeclarationReference2026(_ p057.ConnHandler) {}
+func generatedDeclarationReference2025(_ *p057.Config)      {}
+func generatedDeclarationReference2026(_ *p057.ConnHandler) {}
 
 var generatedDeclarationReference2027 = p057.ConnHandler.HandleConn
 var generatedDeclarationReference2028 = p057.DefaultConfig
 var generatedDeclarationReference2029 = p057.DefaultWatchServiceAddr
 
-func generatedDeclarationReference2030(_ p057.Instance) {}
+func generatedDeclarationReference2030(_ *p057.Instance) {}
 
 var generatedDeclarationReference2031 = p057.Instance.HandleConn
 var generatedDeclarationReference2032 = p057.Instance.Register
@@ -16187,32 +16187,32 @@ var generatedDeclarationReference2033 = p057.Instance.Server
 var generatedDeclarationReference2034 = p057.Instance.Unregister
 var generatedDeclarationReference2035 = p057.New
 
-func generatedDeclarationReference2036(_ p057.Service)  {}
-func generatedDeclarationReference2037(_ p058.Listener) {}
+func generatedDeclarationReference2036(_ *p057.Service)  {}
+func generatedDeclarationReference2037(_ *p058.Listener) {}
 
 var generatedDeclarationReference2038 = p058.Listener.AcceptEndpoint
 var generatedDeclarationReference2039 = p058.Listener.AcceptTunnel
 var generatedDeclarationReference2040 = p058.New
 
-func generatedDeclarationReference2041(_ p058.Options) {}
+func generatedDeclarationReference2041(_ *p058.Options) {}
 
 var generatedDeclarationReference2042 = p059.ErrMissingConfig
 var generatedDeclarationReference2043 = p059.IsConnClosedErr
 var generatedDeclarationReference2044 = p059.NewSilentErr
 
-func generatedDeclarationReference2045(_ p059.SilentError) {}
+func generatedDeclarationReference2045(_ *p059.SilentError) {}
 
 var generatedDeclarationReference2046 = (*p059.SilentError).Error
 var generatedDeclarationReference2047 = (*p059.SilentError).Unwrap
 var generatedDeclarationReference2048 = p059.V
 
-func generatedDeclarationReference2049(_ p059.VerbosityError) {}
+func generatedDeclarationReference2049(_ *p059.VerbosityError) {}
 
 var generatedDeclarationReference2050 = (*p059.VerbosityError).Error
 var generatedDeclarationReference2051 = (*p059.VerbosityError).Unwrap
 var generatedDeclarationReference2052 = p059.WrapSilent
 
-func generatedDeclarationReference2053(_ p060.Favicon) {}
+func generatedDeclarationReference2053(_ *p060.Favicon) {}
 
 var generatedDeclarationReference2054 = p060.Favicon.Bytes
 var generatedDeclarationReference2055 = (*p060.Favicon).UnmarshalJSON
@@ -16232,41 +16232,41 @@ var generatedDeclarationReference2068 = p062.ParseTrustedNetworks
 var generatedDeclarationReference2069 = p062.Port
 var generatedDeclarationReference2070 = p062.PortStr
 
-func generatedDeclarationReference2071(_ p062.TrustedNetworks) {}
+func generatedDeclarationReference2071(_ *p062.TrustedNetworks) {}
 
 var generatedDeclarationReference2072 = p062.TrustedNetworks.Contains
 var generatedDeclarationReference2073 = p062.TrustedNetworks.ContainsStr
 var generatedDeclarationReference2074 = p062.TrustedNetworks.String
 var generatedDeclarationReference2075 = p063.False
 
-func generatedDeclarationReference2076(_ p063.Func)    {}
-func generatedDeclarationReference2077(_ p063.Subject) {}
+func generatedDeclarationReference2076(_ *p063.Func)    {}
+func generatedDeclarationReference2077(_ *p063.Subject) {}
 
 var generatedDeclarationReference2078 = p063.Subject.HasPermission
 var generatedDeclarationReference2079 = p063.Subject.PermissionValue
 
-func generatedDeclarationReference2080(_ p063.TriState) {}
+func generatedDeclarationReference2080(_ *p063.TriState) {}
 
 var generatedDeclarationReference2081 = p063.TriState.Bool
 var generatedDeclarationReference2082 = p063.True
 var generatedDeclarationReference2083 = p063.Undefined
 
-func generatedDeclarationReference2084(_ p064.CappedSet[any]) {}
+func generatedDeclarationReference2084(_ *p064.CappedSet[any]) {}
 
 var generatedDeclarationReference2085 = (*p064.CappedSet[any]).Add
 var generatedDeclarationReference2086 = (*p064.CappedSet[any]).Len
 var generatedDeclarationReference2087 = (*p064.CappedSet[any]).Remove
 var generatedDeclarationReference2088 = (*p064.CappedSet[any]).UnsortedList
 
-func generatedDeclarationReference2089(_ p064.CappedSet[any])    {}
-func generatedDeclarationReference2090(_ p064.CappedSet[string]) {}
-func generatedDeclarationReference2091(_ p064.Empty)             {}
+func generatedDeclarationReference2089(_ *p064.CappedSet[any])    {}
+func generatedDeclarationReference2090(_ *p064.CappedSet[string]) {}
+func generatedDeclarationReference2091(_ *p064.Empty)             {}
 
 var generatedDeclarationReference2092 = p064.NewCappedSet[any]
 var generatedDeclarationReference2093 = p064.NewCappedSet[string]
 var generatedDeclarationReference2094 = p064.NewString
 
-func generatedDeclarationReference2095(_ p064.String) {}
+func generatedDeclarationReference2095(_ *p064.String) {}
 
 var generatedDeclarationReference2096 = p064.String.Delete
 var generatedDeclarationReference2097 = p064.String.Has
@@ -16282,7 +16282,7 @@ var generatedDeclarationReference2106 = p065.OfflinePlayerUUID
 var generatedDeclarationReference2107 = p065.Parse
 var generatedDeclarationReference2108 = p065.ParseBytes
 
-func generatedDeclarationReference2109(_ p065.UUID) {}
+func generatedDeclarationReference2109(_ *p065.UUID) {}
 
 var generatedDeclarationReference2110 = p065.UUID.MarshalJSON
 var generatedDeclarationReference2111 = p065.UUID.String

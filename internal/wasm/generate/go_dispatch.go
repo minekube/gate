@@ -298,7 +298,7 @@ func renderCompileReferences(
 			}
 			fmt.Fprintf(
 				output,
-				"func %s(_ %s) {}\n",
+				"func %s(_ *%s) {}\n",
 				name,
 				expression,
 			)

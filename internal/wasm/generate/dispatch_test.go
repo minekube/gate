@@ -70,6 +70,8 @@ func TestRenderGoDispatchBindsEveryOperation(t *testing.T) {
 	require.Contains(t, string(source), "func RegisterGeneratedOperations")
 	require.Contains(t, string(source), "p000.Register")
 	require.Contains(t, string(source), "p000.Transform")
+	require.Contains(t, string(source), "func generatedDeclarationReference")
+	require.Contains(t, string(source), "(_ *p000.Sample)")
 	require.Equal(
 		t,
 		len(operations),
