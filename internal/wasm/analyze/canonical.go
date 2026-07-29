@@ -660,21 +660,16 @@ func objectSource(root string, pkg *packages.Package, object types.Object) model
 	if relative, err := filepath.Rel(root, file); err == nil &&
 		relative != ".." &&
 		!strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-		file = relative
-	} else if object.Pkg() != nil {
-		file = filepath.Join(
-			"go",
-			filepath.FromSlash(object.Pkg().Path()),
-			filepath.Base(file),
-		)
-	} else {
-		file = filepath.Base(file)
+		return model.Source{
+			File:   filepath.ToSlash(relative),
+			Line:   position.Line,
+			Column: position.Column,
+		}
 	}
-	return model.Source{
-		File:   filepath.ToSlash(file),
-		Line:   position.Line,
-		Column: position.Column,
+	if object.Pkg() == nil {
+		return model.Source{File: "go/builtin"}
 	}
+	return model.Source{File: "go/" + object.Pkg().Path()}
 }
 
 func declarationDependencies(declaration model.Declaration) []string {

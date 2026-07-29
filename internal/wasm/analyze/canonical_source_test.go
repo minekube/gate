@@ -30,13 +30,13 @@ func TestObjectSourceUsesStablePathsOutsideRepository(t *testing.T) {
 			name:        "standard library source",
 			filename:    "/opt/go/1.26.2/src/context/context.go",
 			packagePath: "context",
-			want:        "go/context/context.go",
+			want:        "go/context",
 		},
 		{
 			name:        "module cache source",
 			filename:    "/home/user/go/pkg/mod/example.com/dependency@v1.2.3/pkg/api.go",
 			packagePath: "example.com/dependency/pkg",
-			want:        "go/example.com/dependency/pkg/api.go",
+			want:        "go/example.com/dependency/pkg",
 		},
 	}
 
@@ -57,8 +57,13 @@ func TestObjectSourceUsesStablePathsOutsideRepository(t *testing.T) {
 			source := objectSource(root, &packages.Package{Fset: fileSet}, object)
 
 			require.Equal(t, test.want, source.File)
-			require.Equal(t, 2, source.Line)
-			require.Equal(t, 1, source.Column)
+			if test.name == "repository source" {
+				require.Equal(t, 2, source.Line)
+				require.Equal(t, 1, source.Column)
+			} else {
+				require.Zero(t, source.Line)
+				require.Zero(t, source.Column)
+			}
 		})
 	}
 }
