@@ -156,6 +156,61 @@ func gate_wasm_go_emit_nested(
 	return 0
 }
 
+type dispatchHost interface {
+	Invoke(operationID uint32, input []byte) ([]byte, error)
+	DropResource(handle uint64) error
+}
+
+//export gate_wasm_go_invoke
+func gate_wasm_go_invoke(
+	host C.uintptr_t,
+	operationID C.uint32_t,
+	input C.gate_wasm_slice,
+	output *C.gate_wasm_owned_bytes,
+	errorOutput *C.gate_wasm_owned_bytes,
+) (status C.int32_t) {
+	clearOwnedBytes(output)
+	clearOwnedBytes(errorOutput)
+	defer recoverCallback(&status, errorOutput)
+	if output == nil {
+		return callbackError(errorOutput, errors.New("dispatch output is null"))
+	}
+	inputBytes, err := copySlice(input)
+	if err != nil {
+		return callbackError(errorOutput, err)
+	}
+	hostValue, ok := goHost(host).(dispatchHost)
+	if !ok {
+		return callbackError(errorOutput, errors.New("Go host does not provide Gate API dispatch"))
+	}
+	result, err := hostValue.Invoke(uint32(operationID), inputBytes)
+	if err != nil {
+		return callbackError(errorOutput, err)
+	}
+	if err := setCBytes(output, result); err != nil {
+		return callbackError(errorOutput, err)
+	}
+	return 0
+}
+
+//export gate_wasm_go_drop_resource
+func gate_wasm_go_drop_resource(
+	host C.uintptr_t,
+	handle C.uint64_t,
+	errorOutput *C.gate_wasm_owned_bytes,
+) (status C.int32_t) {
+	clearOwnedBytes(errorOutput)
+	defer recoverCallback(&status, errorOutput)
+	hostValue, ok := goHost(host).(dispatchHost)
+	if !ok {
+		return callbackError(errorOutput, errors.New("Go host does not provide resource dispatch"))
+	}
+	if err := hostValue.DropResource(uint64(handle)); err != nil {
+		return callbackError(errorOutput, err)
+	}
+	return 0
+}
+
 func goHost(handle C.uintptr_t) Host {
 	return cgo.Handle(handle).Value().(Host)
 }

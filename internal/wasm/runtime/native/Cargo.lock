@@ -417,6 +417,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "gate-wasm-fixture-guest"
+version = "0.0.0"
+dependencies = [
+ "wit-bindgen",
+]
+
+[[package]]
 name = "gate-wasm-native"
 version = "0.0.0"
 dependencies = [

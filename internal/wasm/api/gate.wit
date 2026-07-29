@@ -83,6 +83,7 @@ interface gate-types {
   }
 
   record anonymous-record-b98ac6e17e4f4897 {
+    gate-unit: u8,
   }
 
   record anonymous-record-bf6ffe65b29ace0c {
@@ -224,7 +225,7 @@ interface gate-types {
   /// BoolOrManagedGeyser represents a field that can be either:
   /// - bool: true/false for simple enable/disable
   /// - ManagedGeyser: advanced managed configuration struct
-  type bool-or-managed-geyser = own<bool-or-struct-5876f4a1e31a>;
+  resource bool-or-managed-geyser;
 
   /// BoolOrStruct is a type that can be either a boolean or a struct of type T.
   /// This is useful for configuration fields that support both:
@@ -292,6 +293,7 @@ interface gate-types {
   resource builder-pointer-4a3caf487bdb;
 
   record bundle-delimiter {
+    gate-unit: u8,
   }
 
   resource bundledelimiter-pointer;
@@ -410,6 +412,7 @@ interface gate-types {
 
   /// CodeOfConductAcceptPacket is sent by the client to accept the code of conduct.
   record code-of-conduct-accept-packet {
+    gate-unit: u8,
   }
 
   /// CodeOfConductPacket is sent by the server to display the code of conduct.
@@ -680,6 +683,7 @@ interface gate-types {
   }
 
   record dialog-clear {
+    gate-unit: u8,
   }
 
   record dialog-show {
@@ -742,6 +746,7 @@ interface gate-types {
   type edition = string;
 
   record empty {
+    gate-unit: u8,
   }
 
   /// Encoder is a synchronized packet encoder.
@@ -812,6 +817,7 @@ interface gate-types {
   resource favicon-pointer;
 
   record finished-update {
+    gate-unit: u8,
   }
 
   resource finishedupdate-pointer;
@@ -1142,6 +1148,7 @@ interface gate-types {
   resource logger;
 
   record login-acknowledged {
+    gate-unit: u8,
   }
 
   resource login-event;
@@ -1596,7 +1603,7 @@ interface gate-types {
   /// PlayerResourcePackStatusEvent is fired when the status of a resource pack sent to the player by the server is
   /// changed. Depending on the result of this event (which the proxy will wait until completely fired),
   /// the player may be kicked from the server.
-  type player-resource-pack-status-event-6e0ee0072fce = own<player-resource-pack-status-event-7973bc9f95c2>;
+  resource player-resource-pack-status-event-6e0ee0072fce;
 
   resource player-resource-pack-status-event-7973bc9f95c2;
 
@@ -2090,6 +2097,7 @@ interface gate-types {
   /// Subscribe to this event to gracefully stop any subtasks,
   /// such as plugin dependencies.
   record shutdown-event {
+    gate-unit: u8,
   }
 
   resource signal;
@@ -2180,6 +2188,7 @@ interface gate-types {
   resource start-options;
 
   record start-update {
+    gate-unit: u8,
   }
 
   resource startupdate-pointer;
@@ -2215,6 +2224,7 @@ interface gate-types {
   resource status-pointer;
 
   record status-request {
+    gate-unit: u8,
   }
 
   record status-response {

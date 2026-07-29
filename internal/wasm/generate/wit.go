@@ -288,6 +288,15 @@ func (r *witRegistry) renderTypes(output *bytes.Buffer) {
 
 func (r *witRegistry) renderDefinition(output *bytes.Buffer, definition *witDefinition) {
 	if definition.aliasTarget != nil {
+		if definition.aliasTarget.Kind == model.TypeResource ||
+			definition.aliasTarget.Kind == model.TypeCallback ||
+			definition.aliasTarget.Kind == model.TypeDynamic {
+			// WIT handle types cannot be named aliases. Give a Go alias its
+			// own opaque resource identity so standard guest binding
+			// generators can consume the contract.
+			fmt.Fprintf(output, "  resource %s;\n", definition.name)
+			return
+		}
 		fmt.Fprintf(
 			output,
 			"  type %s = %s;\n",
@@ -302,6 +311,11 @@ func (r *witRegistry) renderDefinition(output *bytes.Buffer, definition *witDefi
 		fmt.Fprintf(output, "  resource %s;\n", definition.name)
 	case model.TypeRecord:
 		fmt.Fprintf(output, "  record %s {\n", definition.name)
+		if len(typ.Fields) == 0 {
+			// The component model rejects zero-field records. Preserve empty
+			// Go value semantics with a generated zero-valued unit field.
+			fmt.Fprintln(output, "    gate-unit: u8,")
+		}
 		for _, field := range typ.Fields {
 			renderDocumentation(output, "    ", field.Documentation)
 			fmt.Fprintf(

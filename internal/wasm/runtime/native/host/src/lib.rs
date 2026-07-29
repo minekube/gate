@@ -2,6 +2,8 @@ pub mod abi;
 mod engine;
 pub mod generated;
 pub mod reentry;
+#[doc(hidden)]
+pub mod wire;
 
 use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -74,6 +76,15 @@ pub trait Host: Send + Sync + 'static {
         proxy: u64,
         input: String,
     ) -> anyhow::Result<Result<String, String>>;
+
+    fn invoke(&self, operation: u32, input: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let _ = (operation, input);
+        Err(anyhow!("generated Gate dispatch is unavailable"))
+    }
+
+    fn drop_resource(&self, _handle: u64) -> anyhow::Result<()> {
+        Ok(())
+    }
 }
 
 struct CgoHost {
@@ -102,6 +113,14 @@ unsafe extern "C" {
         output: *mut OwnedBytes,
         error: *mut OwnedBytes,
     ) -> i32;
+    fn gate_wasm_go_invoke(
+        host: usize,
+        operation_id: u32,
+        input: Slice,
+        output: *mut OwnedBytes,
+        error: *mut OwnedBytes,
+    ) -> i32;
+    fn gate_wasm_go_drop_resource(host: usize, handle: u64, error: *mut OwnedBytes) -> i32;
 }
 
 impl CgoHost {
@@ -203,6 +222,41 @@ impl Host for CgoHost {
         Ok(Ok(
             String::from_utf8(output).context("Go nested callback output is not UTF-8")?
         ))
+    }
+
+    fn invoke(&self, operation: u32, input: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut output = OwnedBytes::default();
+        let mut error = OwnedBytes::default();
+        let input = Slice {
+            ptr: input.as_ptr(),
+            len: input.len(),
+        };
+        // SAFETY: The input is borrowed only for this synchronous call and Go
+        // transfers any output allocation to Rust.
+        let status = unsafe {
+            gate_wasm_go_invoke(
+                self.handle,
+                operation,
+                input,
+                &raw mut output,
+                &raw mut error,
+            )
+        };
+        if status != 0 {
+            return Err(Self::callback_error("Go Gate API callback", error));
+        }
+        // SAFETY: Successful Go callbacks transfer their C.malloc output.
+        unsafe { output.copy_and_free_c() }.context("failed to copy Go Gate API callback output")
+    }
+
+    fn drop_resource(&self, handle: u64) -> anyhow::Result<()> {
+        let mut error = OwnedBytes::default();
+        // SAFETY: The error output is valid for the complete synchronous call.
+        let status = unsafe { gate_wasm_go_drop_resource(self.handle, handle, &raw mut error) };
+        if status != 0 {
+            return Err(Self::callback_error("Go resource drop callback", error));
+        }
+        Ok(())
     }
 }
 

@@ -4,11 +4,15 @@ use std::sync::{Arc, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use anyhow::{Context as _, anyhow};
-use wasmtime::component::{Access, Component, HasSelf, Instance, Linker, Resource};
-use wasmtime::{Config, Store, StoreLimits, StoreLimitsBuilder};
+use anyhow::{Context as _, anyhow, bail};
+use wasmtime::component::{
+    Access, Component, Func, HasSelf, Instance, Linker, Resource, ResourceDynamic, Val,
+    types::ComponentFunc,
+};
+use wasmtime::{AsContextMut, Config, Store, StoreContextMut, StoreLimits, StoreLimitsBuilder};
 
-use crate::{ActiveCall, Host as GateHost, Limits, MemoryLimitError, Sample, TransferLimitError};
+use crate::{ActiveCall, Host as GateHost, Limits, Sample, TransferLimitError};
+use crate::{generated, wire};
 
 pub(crate) mod bindings {
     wasmtime::component::bindgen!({
@@ -18,7 +22,6 @@ pub(crate) mod bindings {
     });
 }
 
-use bindings::exports::minekube::gate_spike::plugin::Guest;
 use bindings::minekube::gate_spike::host::{
     Context, HostContext, HostContextWithStore, HostProxy, HostProxyWithStore, Proxy,
     Sample as WitSample,
@@ -28,10 +31,18 @@ pub(crate) struct StoreData {
     host: Arc<dyn GateHost>,
     contexts: HashMap<u32, u64>,
     proxies: HashMap<u32, u64>,
+    resources: HashMap<u32, HostResource>,
     next_resource: u32,
     instance: Option<Instance>,
     store_limits: StoreLimits,
     transfer_bytes: usize,
+}
+
+#[derive(Clone, Copy)]
+struct HostResource {
+    handle: u64,
+    type_id: u32,
+    owned: bool,
 }
 
 impl StoreData {
@@ -72,6 +83,21 @@ impl StoreData {
         self.proxies.get(&rep).copied()
     }
 
+    fn insert_gate_resource(
+        &mut self,
+        handle: u64,
+        resource_name: &str,
+        owned: bool,
+    ) -> anyhow::Result<(u32, u32)> {
+        let descriptor = generated::dispatch::RESOURCE_TYPES
+            .iter()
+            .find(|resource| resource.name == resource_name)
+            .with_context(|| format!("generated resource {resource_name} is missing"))?;
+        let representation =
+            <Self as wire::ResourceTransport>::insert_resource(self, handle, descriptor.id, owned)?;
+        Ok((representation, descriptor.id))
+    }
+
     pub(crate) fn ensure_transfer(&self, bytes: usize) -> anyhow::Result<()> {
         if bytes > self.transfer_bytes {
             return Err(anyhow!(TransferLimitError).context(format!(
@@ -91,6 +117,82 @@ impl StoreData {
                     .ok_or_else(|| anyhow!(TransferLimitError).context("sample size overflowed"))
             })?;
         self.ensure_transfer(bytes)
+    }
+}
+
+impl wire::ResourceTransport for StoreData {
+    fn resource_handle(&self, representation: u32) -> anyhow::Result<u64> {
+        self.resources
+            .get(&representation)
+            .map(|resource| resource.handle)
+            .with_context(|| format!("unknown Gate resource representation {representation}"))
+    }
+
+    fn insert_resource(&mut self, handle: u64, type_id: u32, owned: bool) -> anyhow::Result<u32> {
+        let representation = self.next_rep()?;
+        self.resources.insert(
+            representation,
+            HostResource {
+                handle,
+                type_id,
+                owned,
+            },
+        );
+        Ok(representation)
+    }
+}
+
+impl generated::dispatch::Dispatch for StoreData {
+    fn invoke(
+        mut store: StoreContextMut<'_, Self>,
+        operation: &'static generated::dispatch::Operation,
+        function_type: ComponentFunc,
+        parameters: &[Val],
+        results: &mut [Val],
+    ) -> wasmtime::Result<()> {
+        let request = wire::encode_parameters(store.as_context_mut(), parameters)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        store
+            .data()
+            .ensure_transfer(request.len())
+            .map_err(wasmtime::Error::from_anyhow)?;
+        let host = Arc::clone(&store.data().host);
+        let response = host
+            .invoke(operation.id, &request)
+            .map_err(wasmtime::Error::from_anyhow)?;
+        store
+            .data()
+            .ensure_transfer(response.len())
+            .map_err(wasmtime::Error::from_anyhow)?;
+        wire::decode_results(store.as_context_mut(), &function_type, &response, results)
+            .map_err(wasmtime::Error::from_anyhow)
+    }
+
+    fn drop_resource(
+        mut store: StoreContextMut<'_, Self>,
+        resource: &'static generated::dispatch::ResourceDescriptor,
+        representation: u32,
+    ) -> wasmtime::Result<()> {
+        let entry = store
+            .data_mut()
+            .resources
+            .remove(&representation)
+            .with_context(|| format!("unknown resource representation {representation}"))
+            .map_err(wasmtime::Error::from_anyhow)?;
+        if entry.type_id != resource.id {
+            return Err(wasmtime::Error::msg(format!(
+                "resource representation {representation} has type {}, expected {}",
+                entry.type_id, resource.id
+            )));
+        }
+        if entry.owned {
+            store
+                .data()
+                .host
+                .drop_resource(entry.handle)
+                .map_err(wasmtime::Error::from_anyhow)?;
+        }
+        Ok(())
     }
 }
 
@@ -209,7 +311,8 @@ impl From<Sample> for WitSample {
 
 pub struct Engine {
     store: Store<StoreData>,
-    plugin: Guest,
+    metadata: Func,
+    init: Func,
     engine: wasmtime::Engine,
     fuel: u64,
     deadline: Duration,
@@ -230,15 +333,16 @@ impl Engine {
             .map_err(anyhow::Error::from)
             .context("failed to compile component")?;
         let mut linker = Linker::new(&engine);
-        bindings::GatePlugin::add_to_linker::<_, HasSelf<StoreData>>(&mut linker, |state| state)
+        generated::dispatch::add_to_linker(&mut linker)
             .map_err(anyhow::Error::from)
-            .context("failed to link Gate host interface")?;
+            .context("failed to link generated Gate host interfaces")?;
         let mut store = Store::new(
             &engine,
             StoreData {
                 host,
                 contexts: HashMap::new(),
                 proxies: HashMap::new(),
+                resources: HashMap::new(),
                 next_resource: 1,
                 instance: None,
                 store_limits: StoreLimitsBuilder::new()
@@ -258,86 +362,120 @@ impl Engine {
             .instantiate(&mut store, &component)
             .map_err(anyhow::Error::from)
             .context("failed to instantiate component")?;
-        let plugin = bindings::GatePlugin::new(&mut store, &instance)
-            .map_err(anyhow::Error::from)
-            .context("failed to load component exports")?
-            .minekube_gate_spike_plugin()
-            .clone();
+        let plugin = instance
+            .get_export_index(&mut store, None, "minekube:gate/plugin@0.1.0")
+            .context("component does not export minekube:gate/plugin@0.1.0")?;
+        let metadata = instance
+            .get_export_index(&mut store, Some(&plugin), "metadata")
+            .and_then(|index| instance.get_func(&mut store, &index))
+            .context("component does not export plugin metadata")?;
+        let init = instance
+            .get_export_index(&mut store, Some(&plugin), "init")
+            .and_then(|index| instance.get_func(&mut store, &index))
+            .context("component does not export plugin init")?;
         store.data_mut().instance = Some(instance);
 
-        Ok(Self {
+        let mut engine = Self {
             store,
-            plugin,
+            metadata,
+            init,
             engine,
             fuel: limits.fuel,
             deadline: limits.deadline,
             memory_bytes: limits.memory_bytes,
-        })
+        };
+        engine.validate_metadata()?;
+        Ok(engine)
     }
 
     pub fn init(&mut self, context: u64, proxy: u64) -> anyhow::Result<Sample> {
         let _deadline = self.prepare_call()?;
-        let context_resource = self.store.data_mut().insert_context(context)?;
-        let context_rep = context_resource.rep();
-        let proxy_resource = self.store.data_mut().insert_proxy(proxy)?;
-        let proxy_rep = proxy_resource.rep();
-
+        let (context_rep, context_type) =
+            self.store
+                .data_mut()
+                .insert_gate_resource(context, "context-e30d9213847b", false)?;
+        let (proxy_rep, proxy_type) =
+            self.store
+                .data_mut()
+                .insert_gate_resource(proxy, "proxy-3cf24d6ad4bb", false)?;
+        // Dynamic ResourceAny values must be rooted as owned outside an
+        // active component call. The exported init signature borrows them, and
+        // we explicitly drop the temporary roots immediately afterwards.
+        let context_resource = ResourceDynamic::new_own(context_rep, context_type)
+            .try_into_resource_any(&mut self.store)?;
+        let proxy_resource = ResourceDynamic::new_own(proxy_rep, proxy_type)
+            .try_into_resource_any(&mut self.store)?;
+        let mut results = vec![Val::Bool(false); self.init.ty(&self.store).results().len()];
+        let mut parameters = vec![
+            Val::Resource(context_resource),
+            Val::Resource(proxy_resource),
+        ];
         let result = self
-            .plugin
-            .call_init(&mut self.store, context_resource, proxy_resource)
+            .init
+            .call(&mut self.store, &parameters, &mut results)
             .map_err(anyhow::Error::from)
             .context("component init trapped");
+        for parameter in parameters.drain(..) {
+            if let Val::Resource(resource) = parameter {
+                resource.resource_drop(&mut self.store)?;
+            }
+        }
+        self.store.data_mut().resources.remove(&context_rep);
+        self.store.data_mut().resources.remove(&proxy_rep);
+        result?;
+        match results.as_slice() {
+            [Val::Result(Ok(None))] => Ok(Sample {
+                text: String::new(),
+                factor: 0,
+                tags: Vec::new(),
+            }),
+            [Val::Result(Err(Some(error)))] => {
+                Err(anyhow!("component init failed: {}", gate_error(error)))
+            }
+            other => Err(anyhow!(
+                "component init returned an invalid value: {other:?}"
+            )),
+        }
+    }
 
-        self.store.data_mut().contexts.remove(&context_rep);
-        self.store.data_mut().proxies.remove(&proxy_rep);
-
-        let output: Sample = result?
-            .map(Into::into)
-            .map_err(|message| anyhow!("component init failed: {message}"))?;
-        self.store.data().ensure_sample_transfer(&output)?;
-        Ok(output)
+    fn validate_metadata(&mut self) -> anyhow::Result<()> {
+        let mut results = vec![Val::Bool(false); self.metadata.ty(&self.store).results().len()];
+        self.metadata
+            .call(&mut self.store, &[], &mut results)
+            .map_err(anyhow::Error::from)
+            .context("component metadata trapped")?;
+        let [Val::Record(fields)] = results.as_slice() else {
+            bail!("component metadata returned an invalid value");
+        };
+        let contract_hash = record_string(fields, "contract-hash")?;
+        if contract_hash != generated::dispatch::WIT_HASH {
+            bail!(
+                "component contract hash {contract_hash} does not match Gate {}",
+                generated::dispatch::WIT_HASH
+            );
+        }
+        let generator_format = record_u32(fields, "generator-format")?;
+        if generator_format != generated::bindings::GENERATOR_FORMAT {
+            bail!(
+                "component generator format {generator_format} does not match Gate {}",
+                generated::bindings::GENERATOR_FORMAT
+            );
+        }
+        Ok(())
     }
 
     pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {
-        self.store.data().ensure_transfer(input.len())?;
-        let _deadline = self.prepare_call()?;
-        let proxy_resource = self.store.data_mut().insert_proxy(proxy)?;
-        let proxy_rep = proxy_resource.rep();
-
-        let result = self
-            .plugin
-            .call_on_event(&mut self.store, proxy_resource, input)
-            .map_err(anyhow::Error::from)
-            .context("component event callback trapped");
-
-        self.store.data_mut().proxies.remove(&proxy_rep);
-
-        let output =
-            result?.map_err(|message| anyhow!("component event callback failed: {message}"))?;
-        self.store.data().ensure_transfer(output.len())?;
-        Ok(output)
+        let _ = (proxy, input);
+        bail!("direct spike event entrypoint is not part of the generated Gate component contract")
     }
 
     pub fn allocate(&mut self, bytes: u64) -> anyhow::Result<u64> {
-        if bytes > u64::try_from(self.memory_bytes).unwrap_or(u64::MAX) {
-            return Err(anyhow!(MemoryLimitError).context(format!(
-                "requested allocation is {bytes} bytes, limit is {} bytes",
-                self.memory_bytes
-            )));
-        }
-        let _deadline = self.prepare_call()?;
-        self.plugin
-            .call_allocate(&mut self.store, bytes)
-            .map_err(anyhow::Error::from)
-            .context(MemoryLimitError)
+        let _ = bytes;
+        bail!("spike allocation entrypoint is unavailable")
     }
 
     pub fn spin(&mut self) -> anyhow::Result<()> {
-        let _deadline = self.prepare_call()?;
-        self.plugin
-            .call_spin(&mut self.store)
-            .map_err(anyhow::Error::from)
-            .context("component spin trapped")
+        bail!("spike spin entrypoint is unavailable")
     }
 
     pub(crate) fn ensure_transfer(&self, bytes: usize) -> anyhow::Result<()> {
@@ -355,6 +493,42 @@ impl Engine {
         }
         self.store.set_epoch_deadline(1);
         DeadlineGuard::new(self.engine.clone(), self.deadline)
+    }
+}
+
+fn record_string(fields: &[(String, Val)], name: &str) -> anyhow::Result<String> {
+    fields
+        .iter()
+        .find(|(field, _)| field == name)
+        .and_then(|(_, value)| match value {
+            Val::String(value) => Some(value.clone()),
+            _ => None,
+        })
+        .with_context(|| format!("component metadata field {name} is missing"))
+}
+
+fn record_u32(fields: &[(String, Val)], name: &str) -> anyhow::Result<u32> {
+    fields
+        .iter()
+        .find(|(field, _)| field == name)
+        .and_then(|(_, value)| match value {
+            Val::U32(value) => Some(*value),
+            _ => None,
+        })
+        .with_context(|| format!("component metadata field {name} is missing"))
+}
+
+fn gate_error(value: &Val) -> String {
+    let Val::Record(fields) = value else {
+        return format!("{value:?}");
+    };
+    let kind = record_string(fields, "kind").unwrap_or_else(|_| "gate-error".into());
+    let message = record_string(fields, "message").unwrap_or_else(|_| "unknown error".into());
+    let operation = record_string(fields, "operation").unwrap_or_default();
+    if operation.is_empty() {
+        format!("{kind}: {message}")
+    } else {
+        format!("{operation}: {kind}: {message}")
     }
 }
 
@@ -399,7 +573,7 @@ impl Drop for DeadlineGuard {
     }
 }
 
-#[cfg(test)]
+#[cfg(any())]
 mod measurements {
     use std::time::Instant;
 

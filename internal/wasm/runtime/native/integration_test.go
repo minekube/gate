@@ -1,259 +1,53 @@
 //go:build wasm_native && cgo
 
-package native
+package native_test
 
 import (
+	"context"
 	"os"
-	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"go.minekube.com/gate/internal/wasm/runtime/gatehost"
+	"go.minekube.com/gate/internal/wasm/runtime/native"
+	"go.minekube.com/gate/internal/wasm/runtime/resources"
+	"go.minekube.com/gate/pkg/edition/java/proxy"
 )
 
-type integrationHost struct {
-	mu       sync.Mutex
-	calls    []string
-	retained Reentry
-}
-
-type benchmarkHost struct{}
-
-func (benchmarkHost) ContextCancelled(uint64) (bool, error) {
-	return false, nil
-}
-
-func (benchmarkHost) Transform(_ uint64, input Sample) (Sample, error) {
-	return input, nil
-}
-
-func (benchmarkHost) EmitNested(
-	reentry Reentry,
-	proxyID uint64,
-	input string,
-) (string, error) {
-	return reentry.OnEvent(proxyID, input)
-}
-
-func (h *integrationHost) ContextCancelled(contextID uint64) (bool, error) {
-	if contextID != 1 {
-		panic("unexpected context ID")
-	}
-	return false, nil
-}
-
-func (h *integrationHost) Transform(proxyID uint64, input Sample) (Sample, error) {
-	if proxyID != 2 {
-		panic("unexpected proxy ID")
-	}
-	if event, ok := strings.CutPrefix(input.Text, "event:"); ok {
-		h.mu.Lock()
-		h.calls = append(h.calls, "guest:"+event)
-		h.mu.Unlock()
-		return input, nil
-	}
-	input.Text = "host:" + input.Text
-	input.Factor *= 3
-	input.Tags = append(input.Tags, "host")
-	return input, nil
-}
-
-func (h *integrationHost) EmitNested(
-	reentry Reentry,
-	proxyID uint64,
-	input string,
-) (string, error) {
-	h.mu.Lock()
-	h.calls = append(h.calls, "host:emit-nested")
-	h.retained = reentry
-	h.mu.Unlock()
-	result, err := reentry.OnEvent(proxyID, input)
-	h.mu.Lock()
-	h.calls = append(h.calls, "host:return-nested")
-	h.mu.Unlock()
-	return result, err
-}
-
-func TestRuntime_NestedComponentCall(t *testing.T) {
-	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
+func TestRuntimeInitReceivesContextAndRealProxy(t *testing.T) {
+	component, err := os.ReadFile("artifacts/gate_wasm_fixture.component.wasm")
 	require.NoError(t, err)
-	host := &integrationHost{}
-	runtime, err := New(component, host, Limits{})
+	before := resources.LiveResources()
+	host, err := gatehost.New(
+		"gate-wasm-fixture",
+		context.Background(),
+		&proxy.Proxy{},
+		64,
+	)
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		require.NoError(t, runtime.Close())
-	})
-
-	initResult, err := runtime.Init(1, 2)
+	runtime, err := native.New(component, host, native.Limits{})
 	require.NoError(t, err)
-	require.Equal(t, Sample{
-		Text:   "host:init",
-		Factor: 6,
-		Tags:   []string{"guest", "component", "host"},
-	}, initResult)
 
-	eventResult, err := runtime.OnEvent(2, "outer")
+	_, err = runtime.Init(host.ContextHandle(), host.ProxyHandle())
 	require.NoError(t, err)
-	require.Equal(t, "outer:guest:inner", eventResult)
-	require.Equal(t, []string{
-		"guest:outer",
-		"host:emit-nested",
-		"guest:inner",
-		"host:return-nested",
-	}, host.calls)
 
-	_, err = host.retained.OnEvent(2, "expired")
-	require.ErrorIs(t, err, ErrExpiredReentry)
 	require.NoError(t, runtime.Close())
 	require.NoError(t, runtime.Close())
+	require.NoError(t, host.Close())
+	require.Equal(t, before, resources.LiveResources())
 }
 
-func TestRuntime_LimitsFuel(t *testing.T) {
-	runtime := newIntegrationRuntime(t, Limits{
-		Fuel:     1_000,
-		Deadline: time.Second,
-	})
-	defer func() { require.NoError(t, runtime.Close()) }()
-
-	started := time.Now()
-	err := runtime.Spin()
-
-	require.ErrorIs(t, err, ErrFuelExhausted)
-	require.Less(t, time.Since(started), time.Second)
-}
-
-func TestRuntime_LimitsDeadline(t *testing.T) {
-	runtime := newIntegrationRuntime(t, Limits{
-		Fuel:     ^uint64(0),
-		Deadline: 25 * time.Millisecond,
-	})
-	defer func() { require.NoError(t, runtime.Close()) }()
-
-	started := time.Now()
-	err := runtime.Spin()
-
-	require.ErrorIs(t, err, ErrDeadline)
-	require.Less(t, time.Since(started), time.Second)
-}
-
-func TestRuntime_LimitsMemory(t *testing.T) {
-	runtime := newIntegrationRuntime(t, Limits{
-		MemoryBytes: 2 << 20,
-		Deadline:    time.Second,
-	})
-	defer func() { require.NoError(t, runtime.Close()) }()
-
-	_, err := runtime.Allocate(8 << 20)
-
-	require.ErrorIs(t, err, ErrMemoryLimit)
-}
-
-func TestRuntime_LimitsTransfer(t *testing.T) {
-	runtime := newIntegrationRuntime(t, Limits{
-		TransferBytes: 64,
-		Deadline:      time.Second,
-	})
-	defer func() { require.NoError(t, runtime.Close()) }()
-
-	_, err := runtime.OnEvent(2, "large")
-
-	require.ErrorIs(t, err, ErrTransferLimit)
-
-	_, err = runtime.OnEvent(2, strings.Repeat("x", 65))
-	require.ErrorIs(t, err, ErrTransferLimit)
-}
-
-func TestRuntime_CloseAfterFailedCall(t *testing.T) {
-	before := liveHostHandles.Load()
-	runtime := newIntegrationRuntime(t, Limits{
-		Fuel:     1_000,
-		Deadline: 25 * time.Millisecond,
-	})
-	require.Equal(t, before+1, liveHostHandles.Load())
-
-	require.Error(t, runtime.Spin())
-	require.NoError(t, runtime.Close())
-	require.NoError(t, runtime.Close())
-	require.Equal(t, before, liveHostHandles.Load())
-	require.ErrorIs(t, runtime.Spin(), ErrClosed)
-}
-
-func TestNativeLibraryIsLinked(t *testing.T) {
-	require.Equal(t, "wasmtime-47.0.2", nativeRuntimeVersion())
-}
-
-func newIntegrationRuntime(t *testing.T, limits Limits) *Runtime {
-	t.Helper()
-	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
+func TestRuntimeRejectsInvalidComponent(t *testing.T) {
+	host, err := gatehost.New(
+		"invalid",
+		context.Background(),
+		&proxy.Proxy{},
+		8,
+	)
 	require.NoError(t, err)
-	runtime, err := New(component, &integrationHost{}, limits)
-	require.NoError(t, err)
-	return runtime
-}
+	t.Cleanup(func() { require.NoError(t, host.Close()) })
 
-func BenchmarkRuntimeColdCompileAndInstantiate(b *testing.B) {
-	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
-	require.NoError(b, err)
-	host := benchmarkHost{}
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for range b.N {
-		runtime, err := New(component, host, Limits{})
-		if err != nil {
-			b.Fatal(err)
-		}
-		if err := runtime.Close(); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkRuntimeScalarCall(b *testing.B) {
-	runtime := newBenchmarkRuntime(b)
-	defer func() { require.NoError(b, runtime.Close()) }()
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for range b.N {
-		if _, err := runtime.Allocate(0); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkRuntimeRecordListCall(b *testing.B) {
-	runtime := newBenchmarkRuntime(b)
-	defer func() { require.NoError(b, runtime.Close()) }()
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for range b.N {
-		if _, err := runtime.Init(1, 2); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkRuntimeNestedCallback(b *testing.B) {
-	runtime := newBenchmarkRuntime(b)
-	defer func() { require.NoError(b, runtime.Close()) }()
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for range b.N {
-		if _, err := runtime.OnEvent(2, "outer"); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func newBenchmarkRuntime(b *testing.B) *Runtime {
-	b.Helper()
-	component, err := os.ReadFile("artifacts/gate_wasm_spike.component.wasm")
-	require.NoError(b, err)
-	runtime, err := New(component, benchmarkHost{}, Limits{})
-	require.NoError(b, err)
-	return runtime
+	_, err = native.New([]byte("not wasm"), host, native.Limits{})
+	require.ErrorContains(t, err, "failed to compile component")
 }

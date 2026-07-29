@@ -2,11 +2,15 @@ package dispatch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
+	"unicode"
 
 	"go.minekube.com/gate/internal/wasm/runtime/resources"
+	"go.minekube.com/gate/internal/wasm/runtime/wire"
 )
 
 type OperationID uint32
@@ -83,7 +87,13 @@ func (host *Host) Call(
 			Detail: fmt.Sprintf("%T is not callable", callable),
 		}
 	}
-	values, err := callArguments(operation, function.Type(), arguments, variadic)
+	values, err := callArguments(
+		operation,
+		function.Type(),
+		arguments,
+		variadic,
+		host.resources,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +116,9 @@ func (host *Host) CallMethod(
 	variadic bool,
 ) ([]any, error) {
 	receiver, err := host.resources.Resolve(handle, typeIdentity)
+	if errorsIsResourceTypeMismatch(err) {
+		receiver, _, err = host.resources.ResolveAny(handle)
+	}
 	if err != nil {
 		return nil, operationError(operation, err)
 	}
@@ -138,7 +151,13 @@ func (host *Host) CallResourceMethod(
 		return nil, host.ArgumentCount(operation, 0, 1)
 	}
 	handleType := reflect.TypeFor[resources.Handle]()
-	handleValue, err := argumentValue(operation, 0, arguments[0], handleType)
+	handleValue, err := argumentValue(
+		operation,
+		0,
+		arguments[0],
+		handleType,
+		host.resources,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +197,13 @@ func (host *Host) Assign(
 			Detail: "assignment target is not a non-nil pointer",
 		}
 	}
-	converted, err := argumentValue(operation, 0, value, pointer.Elem().Type())
+	converted, err := argumentValue(
+		operation,
+		0,
+		value,
+		pointer.Elem().Type(),
+		host.resources,
+	)
 	if err != nil {
 		return err
 	}
@@ -209,6 +234,7 @@ func callArguments(
 	function reflect.Type,
 	arguments []any,
 	variadic bool,
+	table *resources.Table,
 ) ([]reflect.Value, error) {
 	if variadic {
 		if len(arguments) != function.NumIn() {
@@ -226,7 +252,13 @@ func callArguments(
 	values := make([]reflect.Value, len(arguments))
 	for index, argument := range arguments {
 		expected := function.In(index)
-		converted, err := argumentValue(operation, index, argument, expected)
+		converted, err := argumentValue(
+			operation,
+			index,
+			argument,
+			expected,
+			table,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -240,6 +272,7 @@ func argumentValue(
 	index int,
 	argument any,
 	expected reflect.Type,
+	table *resources.Table,
 ) (reflect.Value, error) {
 	if argument == nil {
 		switch expected.Kind() {
@@ -260,6 +293,10 @@ func argumentValue(
 	if value.Type().ConvertibleTo(expected) {
 		return value.Convert(expected), nil
 	}
+	converted, err := convertWireValue(argument, expected, table)
+	if err == nil {
+		return converted, nil
+	}
 	return reflect.Value{}, &Error{
 		Kind: ErrorArgumentType, Operation: operation,
 		Detail: fmt.Sprintf(
@@ -269,6 +306,205 @@ func argumentValue(
 			expected,
 		),
 	}
+}
+
+func convertWireValue(
+	argument any,
+	expected reflect.Type,
+	table *resources.Table,
+) (reflect.Value, error) {
+	if resource, ok := argument.(wire.Resource); ok {
+		if table == nil {
+			return reflect.Value{}, fmt.Errorf("resource table is unavailable")
+		}
+		resolved, _, err := table.ResolveAny(resources.Handle(resource))
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return convertResolvedValue(reflect.ValueOf(resolved), expected)
+	}
+	if expected.Kind() == reflect.Pointer {
+		record, ok := argument.(wire.Record)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		value := reflect.New(expected.Elem())
+		if err := populateRecord(value.Elem(), record, table); err != nil {
+			return reflect.Value{}, err
+		}
+		return value, nil
+	}
+	switch expected.Kind() {
+	case reflect.Struct:
+		record, ok := argument.(wire.Record)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		value := reflect.New(expected).Elem()
+		if err := populateRecord(value, record, table); err != nil {
+			return reflect.Value{}, err
+		}
+		return value, nil
+	case reflect.Slice:
+		items, ok := argument.([]any)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		value := reflect.MakeSlice(expected, len(items), len(items))
+		for index, item := range items {
+			converted, err := convertAnyValue(item, expected.Elem(), table)
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("item %d: %w", index, err)
+			}
+			value.Index(index).Set(converted)
+		}
+		return value, nil
+	case reflect.Array:
+		items, ok := argument.([]any)
+		if !ok || len(items) != expected.Len() {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		value := reflect.New(expected).Elem()
+		for index, item := range items {
+			converted, err := convertAnyValue(item, expected.Elem(), table)
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("item %d: %w", index, err)
+			}
+			value.Index(index).Set(converted)
+		}
+		return value, nil
+	case reflect.Map:
+		entries, ok := argument.(wire.Map)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		value := reflect.MakeMapWithSize(expected, len(entries))
+		for index, entry := range entries {
+			key, err := convertAnyValue(entry.Key, expected.Key(), table)
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("map key %d: %w", index, err)
+			}
+			item, err := convertAnyValue(entry.Value, expected.Elem(), table)
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("map value %d: %w", index, err)
+			}
+			value.SetMapIndex(key, item)
+		}
+		return value, nil
+	case reflect.Complex64, reflect.Complex128:
+		record, ok := argument.(wire.Record)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+		}
+		var realPart, imaginaryPart float64
+		for _, field := range record {
+			part := reflect.ValueOf(field.Value)
+			if !part.IsValid() || !part.Type().ConvertibleTo(reflect.TypeFor[float64]()) {
+				continue
+			}
+			switch field.Name {
+			case "real":
+				realPart = part.Convert(reflect.TypeFor[float64]()).Float()
+			case "imaginary":
+				imaginaryPart = part.Convert(reflect.TypeFor[float64]()).Float()
+			}
+		}
+		value := reflect.New(expected).Elem()
+		value.SetComplex(complex(realPart, imaginaryPart))
+		return value, nil
+	}
+	return reflect.Value{}, fmt.Errorf("cannot convert %T to %s", argument, expected)
+}
+
+func convertAnyValue(
+	argument any,
+	expected reflect.Type,
+	table *resources.Table,
+) (reflect.Value, error) {
+	if argument == nil {
+		switch expected.Kind() {
+		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map,
+			reflect.Pointer, reflect.Slice:
+			return reflect.Zero(expected), nil
+		default:
+			return reflect.Value{}, fmt.Errorf("nil is not valid for %s", expected)
+		}
+	}
+	value := reflect.ValueOf(argument)
+	if value.Type().AssignableTo(expected) {
+		return value, nil
+	}
+	if value.Type().ConvertibleTo(expected) {
+		return value.Convert(expected), nil
+	}
+	return convertWireValue(argument, expected, table)
+}
+
+func convertResolvedValue(
+	value reflect.Value,
+	expected reflect.Type,
+) (reflect.Value, error) {
+	if !value.IsValid() {
+		return reflect.Zero(expected), nil
+	}
+	if value.Type().AssignableTo(expected) {
+		return value, nil
+	}
+	if value.Type().ConvertibleTo(expected) {
+		return value.Convert(expected), nil
+	}
+	if expected.Kind() == reflect.Interface && value.Type().Implements(expected) {
+		return value, nil
+	}
+	return reflect.Value{}, fmt.Errorf(
+		"resource Go type %s is not assignable to %s",
+		value.Type(),
+		expected,
+	)
+}
+
+func populateRecord(
+	target reflect.Value,
+	record wire.Record,
+	table *resources.Table,
+) error {
+	fields := make(map[string]any, len(record))
+	for _, field := range record {
+		fields[normalizeFieldName(field.Name)] = field.Value
+	}
+	typ := target.Type()
+	for index := 0; index < target.NumField(); index++ {
+		field := typ.Field(index)
+		if !field.IsExported() {
+			continue
+		}
+		input, exists := fields[normalizeFieldName(field.Name)]
+		if !exists {
+			continue
+		}
+		converted, err := convertAnyValue(input, field.Type, table)
+		if err != nil {
+			return fmt.Errorf("field %s: %w", field.Name, err)
+		}
+		target.Field(index).Set(converted)
+	}
+	return nil
+}
+
+func normalizeFieldName(name string) string {
+	return strings.Map(func(character rune) rune {
+		if unicode.IsLetter(character) || unicode.IsDigit(character) {
+			return unicode.ToLower(character)
+		}
+		return -1
+	}, name)
+}
+
+func errorsIsResourceTypeMismatch(err error) bool {
+	var resourceError *resources.Error
+	return err != nil &&
+		errors.As(err, &resourceError) &&
+		resourceError.Kind == resources.ErrorTypeMismatch
 }
 
 var errorType = reflect.TypeFor[error]()

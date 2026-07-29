@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.minekube.com/gate/internal/wasm/runtime/resources"
+	"go.minekube.com/gate/internal/wasm/runtime/wire"
 )
 
 type fixtureReceiver struct {
@@ -119,4 +120,64 @@ func TestHostAssignsExportedVariables(t *testing.T) {
 		&value,
 		"wrong",
 	), ErrArgumentType)
+}
+
+type fixtureInput struct {
+	HTTPServerID string
+	Values       []int32
+	Labels       map[string]uint64
+}
+
+func TestHostConvertsLanguageNeutralCompositeArguments(t *testing.T) {
+	host := NewHost(resources.NewTable("fixture", 2))
+	t.Cleanup(func() { require.NoError(t, host.Close()) })
+	operation := Operation{ID: 4, Identity: "fixture.Composite"}
+
+	results, err := host.Call(
+		context.Background(),
+		operation,
+		func(input fixtureInput) string {
+			return input.HTTPServerID + ":" +
+				string(rune(input.Values[1])) + ":" +
+				string(rune(input.Labels["answer"]))
+		},
+		[]any{wire.Record{
+			{Name: "http-server-id", Value: "gate"},
+			{Name: "values", Value: []any{int64(64), int64(65)}},
+			{Name: "labels", Value: wire.Map{
+				{Key: "answer", Value: uint64(66)},
+			}},
+		}},
+		false,
+	)
+	require.NoError(t, err)
+	require.Equal(t, []any{"gate:A:B"}, results)
+}
+
+func TestHostResolvesResourceArgumentsByGoType(t *testing.T) {
+	table := resources.NewTable("fixture", 2)
+	host := NewHost(table)
+	t.Cleanup(func() { require.NoError(t, host.Close()) })
+	receiver := &fixtureReceiver{prefix: "resource:"}
+	handle, err := table.Insert(
+		receiver,
+		"runtime-concrete-type",
+		resources.LifetimeOwned,
+		nil,
+	)
+	require.NoError(t, err)
+
+	results, err := host.Call(
+		context.Background(),
+		Operation{ID: 5, Identity: "fixture.Resource"},
+		func(value *fixtureReceiver) string { return value.JoinWithoutError("ok") },
+		[]any{wire.Resource(handle)},
+		false,
+	)
+	require.NoError(t, err)
+	require.Equal(t, []any{"resource:ok"}, results)
+}
+
+func (receiver *fixtureReceiver) JoinWithoutError(value string) string {
+	return receiver.prefix + value
 }

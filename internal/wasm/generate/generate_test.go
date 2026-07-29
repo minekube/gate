@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -14,6 +15,29 @@ import (
 	"go.minekube.com/gate/internal/wasm/analyze"
 	"go.minekube.com/gate/internal/wasm/model"
 )
+
+func TestWITDefinitionsAreConsumableByStandardGuestBindgen(t *testing.T) {
+	t.Parallel()
+
+	registry := &witRegistry{}
+	var output bytes.Buffer
+	registry.renderDefinition(&output, &witDefinition{
+		name: "resource-alias",
+		aliasTarget: &model.Type{
+			Kind: model.TypeResource,
+		},
+	})
+	require.Equal(t, "  resource resource-alias;\n", output.String())
+
+	output.Reset()
+	registry.renderDefinition(&output, &witDefinition{
+		name: "empty-record",
+		typ: model.Type{
+			Kind: model.TypeRecord,
+		},
+	})
+	require.Equal(t, "  record empty-record {\n    gate-unit: u8,\n  }\n", output.String())
+}
 
 func TestRenderWITMatchesGoldenAndIsDeterministic(t *testing.T) {
 	api := simpleAPI()

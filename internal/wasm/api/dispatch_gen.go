@@ -77,7 +77,7 @@ import (
 	p068 "net"
 )
 
-const GeneratedDispatchWITHash = "1fc6cec81933f7829b1ead2abc702a8f6699b78d557671c29ae1d092e703ec99"
+const GeneratedDispatchWITHash = "2bf3d745acae5b35b9858473d7ac4baa5b8f2ce60fbeda68505efbc6739c52aa"
 
 type GeneratedOperationDescriptor struct {
 	ID                  uint32

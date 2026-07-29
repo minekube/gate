@@ -3,7 +3,7 @@
 use wasmtime::StoreContextMut;
 use wasmtime::component::{Linker, ResourceType, Val, types::ComponentFunc};
 
-pub const WIT_HASH: &str = "1fc6cec81933f7829b1ead2abc702a8f6699b78d557671c29ae1d092e703ec99";
+pub const WIT_HASH: &str = "2bf3d745acae5b35b9858473d7ac4baa5b8f2ce60fbeda68505efbc6739c52aa";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Operation {
@@ -13257,1458 +13257,1466 @@ pub static RESOURCE_TYPES: &[ResourceDescriptor] = &[
     },
     ResourceDescriptor {
         id: 24,
-        name: "bool-or-struct",
+        name: "bool-or-managed-geyser",
     },
     ResourceDescriptor {
         id: 25,
-        name: "bool-or-struct-13e9271a2f75",
+        name: "bool-or-struct",
     },
     ResourceDescriptor {
         id: 26,
-        name: "bool-or-struct-5876f4a1e31a",
+        name: "bool-or-struct-13e9271a2f75",
     },
     ResourceDescriptor {
         id: 27,
-        name: "bool-or-struct-d9ba0a877421",
+        name: "bool-or-struct-5876f4a1e31a",
     },
     ResourceDescriptor {
         id: 28,
-        name: "boss-bar-ded14c6453f4",
+        name: "bool-or-struct-d9ba0a877421",
     },
     ResourceDescriptor {
         id: 29,
-        name: "boss-bar-pointer",
+        name: "boss-bar-ded14c6453f4",
     },
     ResourceDescriptor {
         id: 30,
-        name: "builder-fedb576b3a3f",
+        name: "boss-bar-pointer",
     },
     ResourceDescriptor {
         id: 31,
-        name: "builder-pointer-30e8a616b8e2",
+        name: "builder-fedb576b3a3f",
     },
     ResourceDescriptor {
         id: 32,
-        name: "builder-pointer-4a3caf487bdb",
+        name: "builder-pointer-30e8a616b8e2",
     },
     ResourceDescriptor {
         id: 33,
-        name: "bundledelimiter-pointer",
+        name: "builder-pointer-4a3caf487bdb",
     },
     ResourceDescriptor {
         id: 34,
-        name: "callback-0105467f2bef",
+        name: "bundledelimiter-pointer",
     },
     ResourceDescriptor {
         id: 35,
-        name: "callback-1178afb46377",
+        name: "callback-0105467f2bef",
     },
     ResourceDescriptor {
         id: 36,
-        name: "callback-1f86eef915ce",
+        name: "callback-1178afb46377",
     },
     ResourceDescriptor {
         id: 37,
-        name: "callback-2053c44117ea",
+        name: "callback-1f86eef915ce",
     },
     ResourceDescriptor {
         id: 38,
-        name: "callback-2c1c5989286b",
+        name: "callback-2053c44117ea",
     },
     ResourceDescriptor {
         id: 39,
-        name: "callback-4e5db8a68395",
+        name: "callback-2c1c5989286b",
     },
     ResourceDescriptor {
         id: 40,
-        name: "callback-8ce8588e75ea",
+        name: "callback-4e5db8a68395",
     },
     ResourceDescriptor {
         id: 41,
-        name: "callback-9b79f3eb4945",
+        name: "callback-8ce8588e75ea",
     },
     ResourceDescriptor {
         id: 42,
-        name: "callback-a3de14505458",
+        name: "callback-9b79f3eb4945",
     },
     ResourceDescriptor {
         id: 43,
-        name: "callback-a5d0afa3c957",
+        name: "callback-a3de14505458",
     },
     ResourceDescriptor {
         id: 44,
-        name: "callback-bf78377c58d5",
+        name: "callback-a5d0afa3c957",
     },
     ResourceDescriptor {
         id: 45,
-        name: "callback-d4c80bbf993f",
+        name: "callback-bf78377c58d5",
     },
     ResourceDescriptor {
         id: 46,
-        name: "callback-f39d53d38ffd",
+        name: "callback-d4c80bbf993f",
     },
     ResourceDescriptor {
         id: 47,
-        name: "cancel-func",
+        name: "callback-f39d53d38ffd",
     },
     ResourceDescriptor {
         id: 48,
-        name: "capped-set",
+        name: "cancel-func",
     },
     ResourceDescriptor {
         id: 49,
-        name: "capped-set-c736fcd16cfb",
+        name: "capped-set",
     },
     ResourceDescriptor {
         id: 50,
-        name: "capped-set-e7934a7a84ba",
+        name: "capped-set-c736fcd16cfb",
     },
     ResourceDescriptor {
         id: 51,
-        name: "channel-identifier",
+        name: "capped-set-e7934a7a84ba",
     },
     ResourceDescriptor {
         id: 52,
-        name: "channel-message-sink",
+        name: "channel-identifier",
     },
     ResourceDescriptor {
         id: 53,
-        name: "channel-message-source",
+        name: "channel-message-sink",
     },
     ResourceDescriptor {
         id: 54,
-        name: "channel-registrar",
+        name: "channel-message-source",
     },
     ResourceDescriptor {
         id: 55,
-        name: "chat-session",
+        name: "channel-registrar",
     },
     ResourceDescriptor {
         id: 56,
-        name: "chat-state",
+        name: "chat-session",
     },
     ResourceDescriptor {
         id: 57,
-        name: "chatacknowledgement-pointer",
+        name: "chat-state",
     },
     ResourceDescriptor {
         id: 58,
-        name: "clear-pointer",
+        name: "chatacknowledgement-pointer",
     },
     ResourceDescriptor {
         id: 59,
-        name: "click-event",
+        name: "clear-pointer",
     },
     ResourceDescriptor {
         id: 60,
-        name: "client",
+        name: "click-event",
     },
     ResourceDescriptor {
         id: 61,
-        name: "client-connection-phase-64d64ccc1c12",
+        name: "client",
     },
     ResourceDescriptor {
         id: 62,
-        name: "client-connection-phase-c711bfaec190",
+        name: "client-connection-phase-64d64ccc1c12",
     },
     ResourceDescriptor {
         id: 63,
-        name: "client-connection-phase-setter",
+        name: "client-connection-phase-c711bfaec190",
     },
     ResourceDescriptor {
         id: 64,
-        name: "client-pointer",
+        name: "client-connection-phase-setter",
     },
     ResourceDescriptor {
         id: 65,
-        name: "client-protocol-provider",
+        name: "client-pointer",
     },
     ResourceDescriptor {
         id: 66,
-        name: "clientsettings-pointer",
+        name: "client-protocol-provider",
     },
     ResourceDescriptor {
         id: 67,
-        name: "codec",
+        name: "clientsettings-pointer",
     },
     ResourceDescriptor {
         id: 68,
-        name: "codeofconductacceptpacket-pointer",
+        name: "codec",
     },
     ResourceDescriptor {
         id: 69,
-        name: "codeofconductpacket-pointer",
+        name: "codeofconductacceptpacket-pointer",
     },
     ResourceDescriptor {
         id: 70,
-        name: "collection",
+        name: "codeofconductpacket-pointer",
     },
     ResourceDescriptor {
         id: 71,
-        name: "color-3a87a8eb92a9",
+        name: "collection",
     },
     ResourceDescriptor {
         id: 72,
-        name: "command",
+        name: "color-3a87a8eb92a9",
     },
     ResourceDescriptor {
         id: 73,
-        name: "command-context",
+        name: "command",
     },
     ResourceDescriptor {
         id: 74,
-        name: "command-execute-event",
+        name: "command-context",
     },
     ResourceDescriptor {
         id: 75,
-        name: "command-func",
+        name: "command-execute-event",
     },
     ResourceDescriptor {
         id: 76,
-        name: "command-node",
+        name: "command-func",
     },
     ResourceDescriptor {
         id: 77,
-        name: "command-node-string-map",
+        name: "command-node",
     },
     ResourceDescriptor {
         id: 78,
-        name: "component-8135a805e033",
+        name: "command-node-string-map",
     },
     ResourceDescriptor {
         id: 79,
-        name: "component-holder-pointer",
+        name: "component-8135a805e033",
     },
     ResourceDescriptor {
         id: 80,
-        name: "component-pointer",
+        name: "component-holder-pointer",
     },
     ResourceDescriptor {
         id: 81,
-        name: "config-pointer-37c11021fd63",
+        name: "component-pointer",
     },
     ResourceDescriptor {
         id: 82,
-        name: "config-pointer-b591ea6ab39b",
+        name: "config-pointer-37c11021fd63",
     },
     ResourceDescriptor {
         id: 83,
-        name: "config-pointer-d638d8d410fb",
+        name: "config-pointer-b591ea6ab39b",
     },
     ResourceDescriptor {
         id: 84,
-        name: "conn",
+        name: "config-pointer-d638d8d410fb",
     },
     ResourceDescriptor {
         id: 85,
-        name: "conn-handler",
+        name: "conn",
     },
     ResourceDescriptor {
         id: 86,
-        name: "connection-event",
+        name: "conn-handler",
     },
     ResourceDescriptor {
         id: 87,
-        name: "connection-event-conn",
+        name: "connection-event",
     },
     ResourceDescriptor {
         id: 88,
-        name: "connection-handshake-event",
+        name: "connection-event-conn",
     },
     ResourceDescriptor {
         id: 89,
-        name: "connection-request",
+        name: "connection-handshake-event",
     },
     ResourceDescriptor {
         id: 90,
-        name: "connection-result",
+        name: "connection-request",
     },
     ResourceDescriptor {
         id: 91,
-        name: "connection-type",
+        name: "connection-result",
     },
     ResourceDescriptor {
         id: 92,
-        name: "connection-type-setter",
+        name: "connection-type",
     },
     ResourceDescriptor {
         id: 93,
-        name: "context-e30d9213847b",
+        name: "connection-type-setter",
     },
     ResourceDescriptor {
         id: 94,
-        name: "context-pointer",
+        name: "context-e30d9213847b",
     },
     ResourceDescriptor {
         id: 95,
-        name: "cookie-pointer",
+        name: "context-pointer",
     },
     ResourceDescriptor {
         id: 96,
-        name: "cookie-receive-event",
+        name: "cookie-pointer",
     },
     ResourceDescriptor {
         id: 97,
-        name: "cookie-request-event",
+        name: "cookie-receive-event",
     },
     ResourceDescriptor {
         id: 98,
-        name: "cookie-store-event",
+        name: "cookie-request-event",
     },
     ResourceDescriptor {
         id: 99,
-        name: "cookierequest-pointer",
+        name: "cookie-store-event",
     },
     ResourceDescriptor {
         id: 100,
-        name: "cookieresponse-pointer",
+        name: "cookierequest-pointer",
     },
     ResourceDescriptor {
         id: 101,
-        name: "cookiestore-pointer",
+        name: "cookieresponse-pointer",
     },
     ResourceDescriptor {
         id: 102,
-        name: "customclickactionpacket-pointer",
+        name: "cookiestore-pointer",
     },
     ResourceDescriptor {
         id: 103,
-        name: "customreportdetails-pointer",
+        name: "customclickactionpacket-pointer",
     },
     ResourceDescriptor {
         id: 104,
-        name: "deathposition-pointer",
+        name: "customreportdetails-pointer",
     },
     ResourceDescriptor {
         id: 105,
-        name: "decoder-4af631b72731",
+        name: "deathposition-pointer",
     },
     ResourceDescriptor {
         id: 106,
-        name: "decoder-af822d8a3e8a",
+        name: "decoder-4af631b72731",
     },
     ResourceDescriptor {
         id: 107,
-        name: "dialogclear-pointer",
+        name: "decoder-af822d8a3e8a",
     },
     ResourceDescriptor {
         id: 108,
-        name: "dialogshow-pointer",
+        name: "dialogclear-pointer",
     },
     ResourceDescriptor {
         id: 109,
-        name: "dimensioninfo-pointer",
+        name: "dialogshow-pointer",
     },
     ResourceDescriptor {
         id: 110,
-        name: "disconnect-event",
+        name: "dimensioninfo-pointer",
     },
     ResourceDescriptor {
         id: 111,
-        name: "disconnect-pointer",
+        name: "disconnect-event",
     },
     ResourceDescriptor {
         id: 112,
-        name: "duration-pointer-31a8427ee473",
+        name: "disconnect-pointer",
     },
     ResourceDescriptor {
         id: 113,
-        name: "duration-pointer-aef1cb078c49",
+        name: "duration-pointer-31a8427ee473",
     },
     ResourceDescriptor {
         id: 114,
-        name: "encoder-99da3d15dde2",
+        name: "duration-pointer-aef1cb078c49",
     },
     ResourceDescriptor {
         id: 115,
-        name: "encoder-b9e83d04a1cc",
+        name: "encoder-99da3d15dde2",
     },
     ResourceDescriptor {
         id: 116,
-        name: "encryptionrequest-pointer",
+        name: "encoder-b9e83d04a1cc",
     },
     ResourceDescriptor {
         id: 117,
-        name: "encryptionresponse-pointer",
+        name: "encryptionrequest-pointer",
     },
     ResourceDescriptor {
         id: 118,
-        name: "endpoint",
+        name: "encryptionresponse-pointer",
     },
     ResourceDescriptor {
         id: 119,
-        name: "endpoint-listener-b406f50010ba",
+        name: "endpoint",
     },
     ResourceDescriptor {
         id: 120,
-        name: "endpoint-listener-ffca25b7b0f6",
+        name: "endpoint-listener-b406f50010ba",
     },
     ResourceDescriptor {
         id: 121,
-        name: "entityargumenttype-pointer",
+        name: "endpoint-listener-ffca25b7b0f6",
     },
     ResourceDescriptor {
         id: 122,
-        name: "entry-54d128365b4d",
+        name: "entityargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 123,
-        name: "entry-pointer",
+        name: "entry-54d128365b4d",
     },
     ResourceDescriptor {
         id: 124,
-        name: "error",
+        name: "entry-pointer",
     },
     ResourceDescriptor {
         id: 125,
-        name: "favicon-pointer",
+        name: "error",
     },
     ResourceDescriptor {
         id: 126,
-        name: "finishedupdate-pointer",
+        name: "favicon-pointer",
     },
     ResourceDescriptor {
         id: 127,
-        name: "floodgate",
+        name: "finishedupdate-pointer",
     },
     ResourceDescriptor {
         id: 128,
-        name: "forwarding-mode-provider",
+        name: "floodgate",
     },
     ResourceDescriptor {
         id: 129,
-        name: "frametoolargeerror-pointer",
+        name: "forwarding-mode-provider",
     },
     ResourceDescriptor {
         id: 130,
-        name: "game-profile-pointer",
+        name: "frametoolargeerror-pointer",
     },
     ResourceDescriptor {
         id: 131,
-        name: "game-profile-provider",
+        name: "game-profile-pointer",
     },
     ResourceDescriptor {
         id: 132,
-        name: "game-profile-request-event",
+        name: "game-profile-provider",
     },
     ResourceDescriptor {
         id: 133,
-        name: "gate",
+        name: "game-profile-request-event",
     },
     ResourceDescriptor {
         id: 134,
-        name: "gate-func",
+        name: "gate",
     },
     ResourceDescriptor {
         id: 135,
-        name: "gate-type",
+        name: "gate-func",
     },
     ResourceDescriptor {
         id: 136,
-        name: "geyser-connection",
+        name: "gate-type",
     },
     ResourceDescriptor {
         id: 137,
-        name: "geyserlite-pointer",
+        name: "geyser-connection",
     },
     ResourceDescriptor {
         id: 138,
-        name: "handshake-addresser",
+        name: "geyserlite-pointer",
     },
     ResourceDescriptor {
         id: 139,
-        name: "handshake-pointer",
+        name: "handshake-addresser",
     },
     ResourceDescriptor {
         id: 140,
-        name: "has-joined-url-fn",
+        name: "handshake-pointer",
     },
     ResourceDescriptor {
         id: 141,
-        name: "header-pointer",
+        name: "has-joined-url-fn",
     },
     ResourceDescriptor {
         id: 142,
-        name: "headerandfooter-pointer",
+        name: "header-pointer",
     },
     ResourceDescriptor {
         id: 143,
-        name: "hover-event",
+        name: "headerandfooter-pointer",
     },
     ResourceDescriptor {
         id: 144,
-        name: "identified-key",
+        name: "hover-event",
     },
     ResourceDescriptor {
         id: 145,
-        name: "image",
+        name: "identified-key",
     },
     ResourceDescriptor {
         id: 146,
-        name: "inbound",
+        name: "image",
     },
     ResourceDescriptor {
         id: 147,
-        name: "inbound-tunnel",
+        name: "inbound",
     },
     ResourceDescriptor {
         id: 148,
-        name: "info-pointer",
+        name: "inbound-tunnel",
     },
     ResourceDescriptor {
         id: 149,
-        name: "instance",
+        name: "info-pointer",
     },
     ResourceDescriptor {
         id: 150,
-        name: "integration",
+        name: "instance",
     },
     ResourceDescriptor {
         id: 151,
-        name: "java-geyser-pointer",
+        name: "integration",
     },
     ResourceDescriptor {
         id: 152,
-        name: "joingame-pointer",
+        name: "java-geyser-pointer",
     },
     ResourceDescriptor {
         id: 153,
-        name: "keep-alive-4460f769324e",
+        name: "joingame-pointer",
     },
     ResourceDescriptor {
         id: 154,
-        name: "keepalive-pointer",
+        name: "keep-alive-4460f769324e",
     },
     ResourceDescriptor {
         id: 155,
-        name: "key",
+        name: "keepalive-pointer",
     },
     ResourceDescriptor {
         id: 156,
-        name: "key-identifiable",
+        name: "key",
     },
     ResourceDescriptor {
         id: 157,
-        name: "key-signed",
+        name: "key-identifiable",
     },
     ResourceDescriptor {
         id: 158,
-        name: "keyedplayerchat-pointer",
+        name: "key-signed",
     },
     ResourceDescriptor {
         id: 159,
-        name: "keyedplayercommand-pointer",
+        name: "keyedplayerchat-pointer",
     },
     ResourceDescriptor {
         id: 160,
-        name: "kicked-from-server-event",
+        name: "keyedplayercommand-pointer",
     },
     ResourceDescriptor {
         id: 161,
-        name: "knownpack-pointer",
+        name: "kicked-from-server-event",
     },
     ResourceDescriptor {
         id: 162,
-        name: "knownpacks-pointer",
+        name: "knownpack-pointer",
     },
     ResourceDescriptor {
         id: 163,
-        name: "lastseenmessages-pointer",
+        name: "knownpacks-pointer",
     },
     ResourceDescriptor {
         id: 164,
-        name: "legacy-forge-handshake-resetter",
+        name: "lastseenmessages-pointer",
     },
     ResourceDescriptor {
         id: 165,
-        name: "legacy-pointer",
+        name: "legacy-forge-handshake-resetter",
     },
     ResourceDescriptor {
         id: 166,
-        name: "legacychat-pointer",
+        name: "legacy-pointer",
     },
     ResourceDescriptor {
         id: 167,
-        name: "limiter",
+        name: "legacychat-pointer",
     },
     ResourceDescriptor {
         id: 168,
-        name: "linked-account-result-pointer",
+        name: "limiter",
     },
     ResourceDescriptor {
         id: 169,
-        name: "listener",
+        name: "linked-account-result-pointer",
     },
     ResourceDescriptor {
         id: 170,
-        name: "lite",
+        name: "listener",
     },
     ResourceDescriptor {
         id: 171,
-        name: "literal-command-node",
+        name: "lite",
     },
     ResourceDescriptor {
         id: 172,
-        name: "literal-node-builder",
+        name: "literal-command-node",
     },
     ResourceDescriptor {
         id: 173,
-        name: "load-config-func",
+        name: "literal-node-builder",
     },
     ResourceDescriptor {
         id: 174,
-        name: "logger",
+        name: "load-config-func",
     },
     ResourceDescriptor {
         id: 175,
-        name: "login-event",
+        name: "logger",
     },
     ResourceDescriptor {
         id: 176,
-        name: "login-phase-connection",
+        name: "login-event",
     },
     ResourceDescriptor {
         id: 177,
-        name: "loginacknowledged-pointer",
+        name: "login-phase-connection",
     },
     ResourceDescriptor {
         id: 178,
-        name: "loginpluginmessage-pointer",
+        name: "loginacknowledged-pointer",
     },
     ResourceDescriptor {
         id: 179,
-        name: "loginpluginresponse-pointer",
+        name: "loginpluginmessage-pointer",
     },
     ResourceDescriptor {
         id: 180,
-        name: "managed-geyser-pointer",
+        name: "loginpluginresponse-pointer",
     },
     ResourceDescriptor {
         id: 181,
-        name: "managed-viewer",
+        name: "managed-geyser-pointer",
     },
     ResourceDescriptor {
         id: 182,
-        name: "manager-d3469a289502",
+        name: "managed-viewer",
     },
     ResourceDescriptor {
         id: 183,
-        name: "manager-pointer",
+        name: "manager-d3469a289502",
     },
     ResourceDescriptor {
         id: 184,
-        name: "message-consumer",
+        name: "manager-pointer",
     },
     ResourceDescriptor {
         id: 185,
-        name: "message-option",
+        name: "message-consumer",
     },
     ResourceDescriptor {
         id: 186,
-        name: "message-pointer",
+        name: "message-option",
     },
     ResourceDescriptor {
         id: 187,
-        name: "message-responder",
+        name: "message-pointer",
     },
     ResourceDescriptor {
         id: 188,
-        name: "message-sink",
+        name: "message-responder",
     },
     ResourceDescriptor {
         id: 189,
-        name: "minecraft-conn",
+        name: "message-sink",
     },
     ResourceDescriptor {
         id: 190,
-        name: "minecraftchannelidentifier-pointer",
+        name: "minecraft-conn",
     },
     ResourceDescriptor {
         id: 191,
-        name: "mod-info-674d23e965e3",
+        name: "minecraftchannelidentifier-pointer",
     },
     ResourceDescriptor {
         id: 192,
-        name: "mod-info-pointer",
+        name: "mod-info-674d23e965e3",
     },
     ResourceDescriptor {
         id: 193,
-        name: "mod-pointer",
+        name: "mod-info-pointer",
     },
     ResourceDescriptor {
         id: 194,
-        name: "modargumentproperty-pointer",
+        name: "mod-pointer",
     },
     ResourceDescriptor {
         id: 195,
-        name: "node",
+        name: "modargumentproperty-pointer",
     },
     ResourceDescriptor {
         id: 196,
-        name: "node-builder",
+        name: "node",
     },
     ResourceDescriptor {
         id: 197,
-        name: "node-pointer",
+        name: "node-builder",
     },
     ResourceDescriptor {
         id: 198,
-        name: "opaque-03760b81836a",
+        name: "node-pointer",
     },
     ResourceDescriptor {
         id: 199,
-        name: "opaque-0e0181856bcc",
+        name: "opaque-03760b81836a",
     },
     ResourceDescriptor {
         id: 200,
-        name: "opaque-1ff24a0cc97d",
+        name: "opaque-0e0181856bcc",
     },
     ResourceDescriptor {
         id: 201,
-        name: "opaque-2a388dbfee24",
+        name: "opaque-1ff24a0cc97d",
     },
     ResourceDescriptor {
         id: 202,
-        name: "opaque-31f02903a9b7",
+        name: "opaque-2a388dbfee24",
     },
     ResourceDescriptor {
         id: 203,
-        name: "opaque-3e89801b52bf",
+        name: "opaque-31f02903a9b7",
     },
     ResourceDescriptor {
         id: 204,
-        name: "opaque-4ea7cc146071",
+        name: "opaque-3e89801b52bf",
     },
     ResourceDescriptor {
         id: 205,
-        name: "opaque-5a94dfe8c64e",
+        name: "opaque-4ea7cc146071",
     },
     ResourceDescriptor {
         id: 206,
-        name: "opaque-61bd2f8625ec",
+        name: "opaque-5a94dfe8c64e",
     },
     ResourceDescriptor {
         id: 207,
-        name: "opaque-782709543008",
+        name: "opaque-61bd2f8625ec",
     },
     ResourceDescriptor {
         id: 208,
-        name: "opaque-8941972aede7",
+        name: "opaque-782709543008",
     },
     ResourceDescriptor {
         id: 209,
-        name: "opaque-959d2add1b82",
+        name: "opaque-8941972aede7",
     },
     ResourceDescriptor {
         id: 210,
-        name: "opaque-98a2a7450732",
+        name: "opaque-959d2add1b82",
     },
     ResourceDescriptor {
         id: 211,
-        name: "opaque-c4f436a8cc27",
+        name: "opaque-98a2a7450732",
     },
     ResourceDescriptor {
         id: 212,
-        name: "opaque-d091b41b8f44",
+        name: "opaque-c4f436a8cc27",
     },
     ResourceDescriptor {
         id: 213,
-        name: "opaque-d42b8bd1d172",
+        name: "opaque-d091b41b8f44",
     },
     ResourceDescriptor {
         id: 214,
-        name: "options-pointer",
+        name: "opaque-d42b8bd1d172",
     },
     ResourceDescriptor {
         id: 215,
-        name: "p-reader",
+        name: "options-pointer",
     },
     ResourceDescriptor {
         id: 216,
-        name: "p-writer",
+        name: "p-reader",
     },
     ResourceDescriptor {
         id: 217,
-        name: "packet",
+        name: "p-writer",
     },
     ResourceDescriptor {
         id: 218,
-        name: "packet-context-pointer",
+        name: "packet",
     },
     ResourceDescriptor {
         id: 219,
-        name: "packet-decoder",
+        name: "packet-context-pointer",
     },
     ResourceDescriptor {
         id: 220,
-        name: "packet-encoder",
+        name: "packet-decoder",
     },
     ResourceDescriptor {
         id: 221,
-        name: "packet-mapping-pointer",
+        name: "packet-encoder",
     },
     ResourceDescriptor {
         id: 222,
-        name: "packet-registry-pointer",
+        name: "packet-mapping-pointer",
     },
     ResourceDescriptor {
         id: 223,
-        name: "packet-type",
+        name: "packet-registry-pointer",
     },
     ResourceDescriptor {
         id: 224,
-        name: "packet-writer-72100b33bb0a",
+        name: "packet-type",
     },
     ResourceDescriptor {
         id: 225,
-        name: "packet-writer-75ace6a620cc",
+        name: "packet-writer-72100b33bb0a",
     },
     ResourceDescriptor {
         id: 226,
-        name: "packet-writer-ac4241cd6be8",
+        name: "packet-writer-75ace6a620cc",
     },
     ResourceDescriptor {
         id: 227,
-        name: "packetmeta-pointer",
+        name: "packet-writer-ac4241cd6be8",
     },
     ResourceDescriptor {
         id: 228,
-        name: "parse-results-pointer-8958c798f310",
+        name: "packetmeta-pointer",
     },
     ResourceDescriptor {
         id: 229,
-        name: "parse-results-pointer-a3ab65872fe4",
+        name: "parse-results-pointer-8958c798f310",
     },
     ResourceDescriptor {
         id: 230,
-        name: "permissions-setup-event",
+        name: "parse-results-pointer-a3ab65872fe4",
     },
     ResourceDescriptor {
         id: 231,
-        name: "ping-event",
+        name: "permissions-setup-event",
     },
     ResourceDescriptor {
         id: 232,
-        name: "pingidentify-pointer",
+        name: "ping-event",
     },
     ResourceDescriptor {
         id: 233,
-        name: "play-packet-queue",
+        name: "pingidentify-pointer",
     },
     ResourceDescriptor {
         id: 234,
-        name: "player-9f25ee10b6eb",
+        name: "play-packet-queue",
     },
     ResourceDescriptor {
         id: 235,
-        name: "player-available-commands-event",
+        name: "player-9f25ee10b6eb",
     },
     ResourceDescriptor {
         id: 236,
-        name: "player-b186caed0db5",
+        name: "player-available-commands-event",
     },
     ResourceDescriptor {
         id: 237,
-        name: "player-baaf10cb00cf",
+        name: "player-b186caed0db5",
     },
     ResourceDescriptor {
         id: 238,
-        name: "player-channel-register-event",
+        name: "player-baaf10cb00cf",
     },
     ResourceDescriptor {
         id: 239,
-        name: "player-channel-unregister-event",
+        name: "player-channel-register-event",
     },
     ResourceDescriptor {
         id: 240,
-        name: "player-chat-event",
+        name: "player-channel-unregister-event",
     },
     ResourceDescriptor {
         id: 241,
-        name: "player-choose-initial-server-event",
+        name: "player-chat-event",
     },
     ResourceDescriptor {
         id: 242,
-        name: "player-client-brand-event",
+        name: "player-choose-initial-server-event",
     },
     ResourceDescriptor {
         id: 243,
-        name: "player-mod-info-event",
+        name: "player-client-brand-event",
     },
     ResourceDescriptor {
         id: 244,
-        name: "player-provider",
+        name: "player-mod-info-event",
     },
     ResourceDescriptor {
         id: 245,
-        name: "player-resource-pack-status-event-7973bc9f95c2",
+        name: "player-provider",
     },
     ResourceDescriptor {
         id: 246,
-        name: "player-settings-changed-event",
+        name: "player-resource-pack-status-event-6e0ee0072fce",
     },
     ResourceDescriptor {
         id: 247,
-        name: "playerchatcompletion-pointer",
+        name: "player-resource-pack-status-event-7973bc9f95c2",
     },
     ResourceDescriptor {
         id: 248,
-        name: "playerlistitem-pointer",
+        name: "player-settings-changed-event",
     },
     ResourceDescriptor {
         id: 249,
-        name: "players-849b766b7567",
+        name: "playerchatcompletion-pointer",
     },
     ResourceDescriptor {
         id: 250,
-        name: "players-pointer",
+        name: "playerlistitem-pointer",
     },
     ResourceDescriptor {
         id: 251,
-        name: "plugin-message-event",
+        name: "players-849b766b7567",
     },
     ResourceDescriptor {
         id: 252,
-        name: "post-login-event",
+        name: "players-pointer",
     },
     ResourceDescriptor {
         id: 253,
-        name: "pre-login-event",
+        name: "plugin-message-event",
     },
     ResourceDescriptor {
         id: 254,
-        name: "pre-shutdown-event",
+        name: "post-login-event",
     },
     ResourceDescriptor {
         id: 255,
-        name: "pre-transfer-event",
+        name: "pre-login-event",
     },
     ResourceDescriptor {
         id: 256,
-        name: "prefix",
+        name: "pre-shutdown-event",
     },
     ResourceDescriptor {
         id: 257,
-        name: "private-key-pointer",
+        name: "pre-transfer-event",
     },
     ResourceDescriptor {
         id: 258,
-        name: "profile-manager",
+        name: "prefix",
     },
     ResourceDescriptor {
         id: 259,
-        name: "property-pointer",
+        name: "private-key-pointer",
     },
     ResourceDescriptor {
         id: 260,
-        name: "protocol-registry-pointer",
+        name: "profile-manager",
     },
     ResourceDescriptor {
         id: 261,
-        name: "providers",
+        name: "property-pointer",
     },
     ResourceDescriptor {
         id: 262,
-        name: "proxy-3cf24d6ad4bb",
+        name: "protocol-registry-pointer",
     },
     ResourceDescriptor {
         id: 263,
-        name: "proxy-f9797141fae0",
+        name: "providers",
     },
     ResourceDescriptor {
         id: 264,
-        name: "public-key-pointer",
+        name: "proxy-3cf24d6ad4bb",
     },
     ResourceDescriptor {
         id: 265,
-        name: "raw-message-pointer",
+        name: "proxy-f9797141fae0",
     },
     ResourceDescriptor {
         id: 266,
-        name: "reader-4d25c51b00a6",
+        name: "public-key-pointer",
     },
     ResourceDescriptor {
         id: 267,
-        name: "reader-e9c6b228554a",
+        name: "raw-message-pointer",
     },
     ResourceDescriptor {
         id: 268,
-        name: "ready-event",
+        name: "reader-4d25c51b00a6",
     },
     ResourceDescriptor {
         id: 269,
-        name: "regexp",
+        name: "reader-e9c6b228554a",
     },
     ResourceDescriptor {
         id: 270,
-        name: "registered-server",
+        name: "ready-event",
     },
     ResourceDescriptor {
         id: 271,
-        name: "registry-pointer",
+        name: "regexp",
     },
     ResourceDescriptor {
         id: 272,
-        name: "registrykeyargumenttype-pointer",
+        name: "registered-server",
     },
     ResourceDescriptor {
         id: 273,
-        name: "registrysync-pointer",
+        name: "registry-pointer",
     },
     ResourceDescriptor {
         id: 274,
-        name: "remotechatsession-pointer",
+        name: "registrykeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 275,
-        name: "remove-pointer",
+        name: "registrysync-pointer",
     },
     ResourceDescriptor {
         id: 276,
-        name: "removeresourcepack-pointer",
+        name: "remotechatsession-pointer",
     },
     ResourceDescriptor {
         id: 277,
-        name: "requires-context-pointer",
+        name: "remove-pointer",
     },
     ResourceDescriptor {
         id: 278,
-        name: "resetter",
+        name: "removeresourcepack-pointer",
     },
     ResourceDescriptor {
         id: 279,
-        name: "resourcekeyargumenttype-pointer",
+        name: "requires-context-pointer",
     },
     ResourceDescriptor {
         id: 280,
-        name: "resourceortagkeyargumenttype-pointer",
+        name: "resetter",
     },
     ResourceDescriptor {
         id: 281,
-        name: "resourcepackrequest-pointer",
+        name: "resourcekeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 282,
-        name: "resourcepackresponse-pointer",
+        name: "resourceortagkeyargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 283,
-        name: "resourceselectorargumenttype-pointer",
+        name: "resourcepackrequest-pointer",
     },
     ResourceDescriptor {
         id: 284,
-        name: "respawn-pointer",
+        name: "resourcepackresponse-pointer",
     },
     ResourceDescriptor {
         id: 285,
-        name: "response",
+        name: "resourceselectorargumenttype-pointer",
     },
     ResourceDescriptor {
         id: 286,
-        name: "revision",
+        name: "respawn-pointer",
     },
     ResourceDescriptor {
         id: 287,
-        name: "root-command-node-pointer",
+        name: "response",
     },
     ResourceDescriptor {
         id: 288,
-        name: "route-pointer",
+        name: "revision",
     },
     ResourceDescriptor {
         id: 289,
-        name: "runnable",
+        name: "root-command-node-pointer",
     },
     ResourceDescriptor {
         id: 290,
-        name: "runnable-func",
+        name: "route-pointer",
     },
     ResourceDescriptor {
         id: 291,
-        name: "runner",
+        name: "runnable",
     },
     ResourceDescriptor {
         id: 292,
-        name: "seq-4454e9c05542",
+        name: "runnable-func",
     },
     ResourceDescriptor {
         id: 293,
-        name: "seq-56a88aa8d577",
+        name: "runner",
     },
     ResourceDescriptor {
         id: 294,
-        name: "seq-b074101856aa",
+        name: "seq-4454e9c05542",
     },
     ResourceDescriptor {
         id: 295,
-        name: "server",
+        name: "seq-56a88aa8d577",
     },
     ResourceDescriptor {
         id: 296,
-        name: "server-connected-event",
+        name: "seq-b074101856aa",
     },
     ResourceDescriptor {
         id: 297,
-        name: "server-connection-0c07c252c79d",
+        name: "server",
     },
     ResourceDescriptor {
         id: 298,
-        name: "server-connection-4f41e3a0f548",
+        name: "server-connected-event",
     },
     ResourceDescriptor {
         id: 299,
-        name: "server-connection-provider",
+        name: "server-connection-0c07c252c79d",
     },
     ResourceDescriptor {
         id: 300,
-        name: "server-dialer",
+        name: "server-connection-4f41e3a0f548",
     },
     ResourceDescriptor {
         id: 301,
-        name: "server-info",
+        name: "server-connection-provider",
     },
     ResourceDescriptor {
         id: 302,
-        name: "server-kick-result",
+        name: "server-dialer",
     },
     ResourceDescriptor {
         id: 303,
-        name: "server-login-plugin-message-event",
+        name: "server-info",
     },
     ResourceDescriptor {
         id: 304,
-        name: "server-login-plugin-message-result-pointer",
+        name: "server-kick-result",
     },
     ResourceDescriptor {
         id: 305,
-        name: "server-ping-pointer",
+        name: "server-login-plugin-message-event",
     },
     ResourceDescriptor {
         id: 306,
-        name: "server-post-connect-event",
+        name: "server-login-plugin-message-result-pointer",
     },
     ResourceDescriptor {
         id: 307,
-        name: "server-pre-connect-event",
+        name: "server-ping-pointer",
     },
     ResourceDescriptor {
         id: 308,
-        name: "server-provider",
+        name: "server-post-connect-event",
     },
     ResourceDescriptor {
         id: 309,
-        name: "server-registered-event",
+        name: "server-pre-connect-event",
     },
     ResourceDescriptor {
         id: 310,
-        name: "server-registrar",
+        name: "server-provider",
     },
     ResourceDescriptor {
         id: 311,
-        name: "server-registry",
+        name: "server-registered-event",
     },
     ResourceDescriptor {
         id: 312,
-        name: "server-resource-pack-remove-event",
+        name: "server-registrar",
     },
     ResourceDescriptor {
         id: 313,
-        name: "server-resource-pack-send-event",
+        name: "server-registry",
     },
     ResourceDescriptor {
         id: 314,
-        name: "server-unregistered-event",
+        name: "server-resource-pack-remove-event",
     },
     ResourceDescriptor {
         id: 315,
-        name: "serverdata-pointer",
+        name: "server-resource-pack-send-event",
     },
     ResourceDescriptor {
         id: 316,
-        name: "serverlink-pointer",
+        name: "server-unregistered-event",
     },
     ResourceDescriptor {
         id: 317,
-        name: "serverlinks-pointer",
+        name: "serverdata-pointer",
     },
     ResourceDescriptor {
         id: 318,
-        name: "serverlogin-pointer",
+        name: "serverlink-pointer",
     },
     ResourceDescriptor {
         id: 319,
-        name: "serverloginsuccess-pointer",
+        name: "serverlinks-pointer",
     },
     ResourceDescriptor {
         id: 320,
-        name: "session",
+        name: "serverlogin-pointer",
     },
     ResourceDescriptor {
         id: 321,
-        name: "session-handler",
+        name: "serverloginsuccess-pointer",
     },
     ResourceDescriptor {
         id: 322,
-        name: "session-rejection",
+        name: "session",
     },
     ResourceDescriptor {
         id: 323,
-        name: "sessionplayerchat-pointer",
+        name: "session-handler",
     },
     ResourceDescriptor {
         id: 324,
-        name: "sessionplayercommand-pointer",
+        name: "session-rejection",
     },
     ResourceDescriptor {
         id: 325,
-        name: "setcompression-pointer",
+        name: "sessionplayerchat-pointer",
     },
     ResourceDescriptor {
         id: 326,
-        name: "settings",
+        name: "sessionplayercommand-pointer",
     },
     ResourceDescriptor {
         id: 327,
-        name: "shadow-color-pointer",
+        name: "setcompression-pointer",
     },
     ResourceDescriptor {
         id: 328,
-        name: "show-entity-hover-type-pointer",
+        name: "settings",
     },
     ResourceDescriptor {
         id: 329,
-        name: "signal",
+        name: "shadow-color-pointer",
     },
     ResourceDescriptor {
         id: 330,
-        name: "signature-pair-pointer",
+        name: "show-entity-hover-type-pointer",
     },
     ResourceDescriptor {
         id: 331,
-        name: "signed-message",
+        name: "signal",
     },
     ResourceDescriptor {
         id: 332,
-        name: "silenterror-pointer",
+        name: "signature-pair-pointer",
     },
     ResourceDescriptor {
         id: 333,
-        name: "singleormulti-pointer",
+        name: "signed-message",
     },
     ResourceDescriptor {
         id: 334,
-        name: "skin-result-pointer",
+        name: "silenterror-pointer",
     },
     ResourceDescriptor {
         id: 335,
-        name: "sound-pointer",
+        name: "singleormulti-pointer",
     },
     ResourceDescriptor {
         id: 336,
-        name: "soundentitypacket-pointer",
+        name: "skin-result-pointer",
     },
     ResourceDescriptor {
         id: 337,
-        name: "soundsource-pointer",
+        name: "sound-pointer",
     },
     ResourceDescriptor {
         id: 338,
-        name: "source",
+        name: "soundentitypacket-pointer",
     },
     ResourceDescriptor {
         id: 339,
-        name: "start-option",
+        name: "soundsource-pointer",
     },
     ResourceDescriptor {
         id: 340,
-        name: "start-options",
+        name: "source",
     },
     ResourceDescriptor {
         id: 341,
-        name: "startupdate-pointer",
+        name: "start-option",
     },
     ResourceDescriptor {
         id: 342,
-        name: "state-changer",
+        name: "start-options",
     },
     ResourceDescriptor {
         id: 343,
-        name: "status-pointer",
+        name: "startupdate-pointer",
     },
     ResourceDescriptor {
         id: 344,
-        name: "status-response-pointer",
+        name: "state-changer",
     },
     ResourceDescriptor {
         id: 345,
-        name: "statusping-pointer",
+        name: "status-pointer",
     },
     ResourceDescriptor {
         id: 346,
-        name: "stopsoundpacket-pointer",
+        name: "status-response-pointer",
     },
     ResourceDescriptor {
         id: 347,
-        name: "strategy-manager",
+        name: "statusping-pointer",
     },
     ResourceDescriptor {
         id: 348,
-        name: "string-reader-pointer",
+        name: "stopsoundpacket-pointer",
     },
     ResourceDescriptor {
         id: 349,
-        name: "subject",
+        name: "strategy-manager",
     },
     ResourceDescriptor {
         id: 350,
-        name: "subtitle-pointer",
+        name: "string-reader-pointer",
     },
     ResourceDescriptor {
         id: 351,
-        name: "suggest-func",
+        name: "subject",
     },
     ResourceDescriptor {
         id: 352,
-        name: "suggestion-context-pointer",
+        name: "subtitle-pointer",
     },
     ResourceDescriptor {
         id: 353,
-        name: "suggestions-builder-pointer",
+        name: "suggest-func",
     },
     ResourceDescriptor {
         id: 354,
-        name: "suggestions-pointer",
+        name: "suggestion-context-pointer",
     },
     ResourceDescriptor {
         id: 355,
-        name: "systemchat-pointer",
+        name: "suggestions-builder-pointer",
     },
     ResourceDescriptor {
         id: 356,
-        name: "tab-complete-event",
+        name: "suggestions-pointer",
     },
     ResourceDescriptor {
         id: 357,
-        name: "tab-list",
+        name: "systemchat-pointer",
     },
     ResourceDescriptor {
         id: 358,
-        name: "tabcompleterequest-pointer",
+        name: "tab-complete-event",
     },
     ResourceDescriptor {
         id: 359,
-        name: "tabcompleteresponse-pointer",
+        name: "tab-list",
     },
     ResourceDescriptor {
         id: 360,
-        name: "tag",
+        name: "tabcompleterequest-pointer",
     },
     ResourceDescriptor {
         id: 361,
-        name: "tagsupdate-pointer",
+        name: "tabcompleteresponse-pointer",
     },
     ResourceDescriptor {
         id: 362,
-        name: "text-component-pointer",
+        name: "tag",
     },
     ResourceDescriptor {
         id: 363,
-        name: "text-pointer-803fc01755ae",
+        name: "tagsupdate-pointer",
     },
     ResourceDescriptor {
         id: 364,
-        name: "text-pointer-d07344de8f54",
+        name: "text-component-pointer",
     },
     ResourceDescriptor {
         id: 365,
-        name: "time-pointer",
+        name: "text-pointer-803fc01755ae",
     },
     ResourceDescriptor {
         id: 366,
-        name: "times-pointer",
+        name: "text-pointer-d07344de8f54",
     },
     ResourceDescriptor {
         id: 367,
-        name: "transfer-pointer",
+        name: "time-pointer",
     },
     ResourceDescriptor {
         id: 368,
-        name: "tunnel-listener-272a61c33ee5",
+        name: "times-pointer",
     },
     ResourceDescriptor {
         id: 369,
-        name: "tunnel-listener-7a63eaef28a0",
+        name: "transfer-pointer",
     },
     ResourceDescriptor {
         id: 370,
-        name: "tunnel-session",
+        name: "tunnel-listener-272a61c33ee5",
     },
     ResourceDescriptor {
         id: 371,
-        name: "uint32",
+        name: "tunnel-listener-7a63eaef28a0",
     },
     ResourceDescriptor {
         id: 372,
-        name: "unsignedplayercommand-pointer",
+        name: "tunnel-session",
     },
     ResourceDescriptor {
         id: 373,
-        name: "upsert-action",
+        name: "uint32",
     },
     ResourceDescriptor {
         id: 374,
-        name: "upsert-pointer",
+        name: "unsignedplayercommand-pointer",
     },
     ResourceDescriptor {
         id: 375,
-        name: "url-pointer-0703e7cbaa23",
+        name: "upsert-action",
     },
     ResourceDescriptor {
         id: 376,
-        name: "url-pointer-b3d2755ffd42",
+        name: "upsert-pointer",
     },
     ResourceDescriptor {
         id: 377,
-        name: "userinfo",
+        name: "url-pointer-0703e7cbaa23",
     },
     ResourceDescriptor {
         id: 378,
-        name: "uuid-pointer",
+        name: "url-pointer-b3d2755ffd42",
     },
     ResourceDescriptor {
         id: 379,
-        name: "value",
+        name: "userinfo",
     },
     ResourceDescriptor {
         id: 380,
-        name: "verbosityerror-pointer",
+        name: "uuid-pointer",
     },
     ResourceDescriptor {
         id: 381,
-        name: "version-pointer",
+        name: "value",
     },
     ResourceDescriptor {
         id: 382,
-        name: "viewer-c56b661327c9",
+        name: "verbosityerror-pointer",
     },
     ResourceDescriptor {
         id: 383,
-        name: "viewer-eecb8223a5fe",
+        name: "version-pointer",
     },
     ResourceDescriptor {
         id: 384,
-        name: "viewer-f8624c46fe61",
+        name: "viewer-c56b661327c9",
     },
     ResourceDescriptor {
         id: 385,
-        name: "viper",
+        name: "viewer-eecb8223a5fe",
     },
     ResourceDescriptor {
         id: 386,
-        name: "writer-38b5996d575b",
+        name: "viewer-f8624c46fe61",
     },
     ResourceDescriptor {
         id: 387,
+        name: "viper",
+    },
+    ResourceDescriptor {
+        id: 388,
+        name: "writer-38b5996d575b",
+    },
+    ResourceDescriptor {
+        id: 389,
         name: "writer-ecd9b874f7be",
     },
 ];
@@ -17049,6 +17057,18 @@ pub fn add_to_linker<T: Dispatch>(linker: &mut Linker<T>) -> wasmtime::Result<()
             move |store, representation| T::drop_resource(store, resource, representation),
         )?;
         let resource = &RESOURCE_TYPES[386];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[387];
+        instance.resource(
+            resource.name,
+            ResourceType::host_dynamic(resource.id),
+            move |store, representation| T::drop_resource(store, resource, representation),
+        )?;
+        let resource = &RESOURCE_TYPES[388];
         instance.resource(
             resource.name,
             ResourceType::host_dynamic(resource.id),

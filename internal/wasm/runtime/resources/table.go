@@ -269,6 +269,20 @@ func (table *Table) Resolve(
 	return resource.value, nil
 }
 
+// ResolveAny returns the Go value behind a validated handle without applying a
+// second string identity check. Callers must still validate the Go type they
+// require. This is used after the component model has already type-checked a
+// resource at the WIT boundary.
+func (table *Table) ResolveAny(handle Handle) (any, Metadata, error) {
+	table.mu.Lock()
+	defer table.mu.Unlock()
+	resource, err := table.resolveSlot(handle)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	return resource.value, resource.metadata, nil
+}
+
 func ResolveAs[T any](
 	table *Table,
 	handle Handle,
