@@ -80,6 +80,7 @@ var DefaultConfig = Config{
 	ForceKeyAuthentication:              true,
 	Lite:                                liteconfig.DefaultConfig,
 	Bedrock:                             bconfig.DefaultBedrockConfig,
+	Wasm:                                DefaultWasm,
 }
 
 func defaultMotd() *configutil.Component {
@@ -176,6 +177,9 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 
 	// Bedrock edition configuration
 	Bedrock bconfig.BedrockConfig `yaml:"bedrock,omitempty" json:"bedrock,omitempty"`
+
+	// Language-neutral WebAssembly Component plugins.
+	Wasm Wasm `yaml:"wasm,omitempty" json:"wasm,omitempty"`
 }
 
 type (
@@ -288,6 +292,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	validateProxyProtocol(c, e, w)
+	for _, err := range c.Wasm.Validate() {
+		errs = append(errs, err)
+	}
 
 	validateBackendFloodgate(c, e)
 	if c.Lite.Enabled {

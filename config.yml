@@ -109,6 +109,22 @@ config:
     #libraryPath: /opt/vialite/libvialite.so
     #binaryPath: /opt/vialite/vialite
     #offline: false
+  # Language-neutral WebAssembly Component plugins.
+  # Components are initialized with the same context and proxy as native plugins.
+  wasm:
+    enabled: false
+    directory: plugins
+    maxComponentBytes: 67108864
+    memoryBytes: 134217728
+    transferBytes: 16777216
+    fuel: 10000000
+    resourceHandles: 65536
+    initDeadline: 5s
+    callbackDeadline: 100ms
+    # Disable a discovered plugin by its exported metadata name:
+    #plugins:
+    #  example-plugin:
+    #    disabled: true
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.
   # Do not enable this if you don't know what it is.
   proxyProtocol: false
