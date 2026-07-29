@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM golang:1.26 AS build
+FROM --platform=$TARGETPLATFORM golang:1.26-bookworm AS build
 
 WORKDIR /workspace
 RUN apt-get update \

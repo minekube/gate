@@ -21,6 +21,7 @@ func TestReleaseAndContainerBuildsLinkTheNativeRuntime(t *testing.T) {
 
 	dockerfile := read("Dockerfile")
 	require.Contains(t, dockerfile, "FROM --platform=$TARGETPLATFORM")
+	require.Contains(t, dockerfile, "golang:1.26-bookworm AS build")
 	require.Contains(t, dockerfile, "cargo build -p gate-wasm-native --release")
 	require.Contains(t, dockerfile, "CGO_ENABLED=1")
 	require.Contains(t, dockerfile, "-tags=wasm_native")
