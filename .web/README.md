@@ -5,13 +5,13 @@ a modern static website generator for documentation.
 
 ## Setup
 
-> You must have Node.js 22+ installed.
+> You must have Node.js 22+ and pnpm 10.11.0 installed.
 > You may use [Volta](https://github.com/volta-cli/volta), a Node version manager,
 > to install Node.js and `pnpm`.
 
 ```sh console
 $ curl https://get.volta.sh | bash
-$ volta install node@22 pnpm
+$ volta install node@22 pnpm@10.11.0
 ```
 
 ### Installation
