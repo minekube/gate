@@ -79,7 +79,7 @@ type Proxy struct {
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
 
-	componentPlugins ComponentPluginManager
+	plugins []Plugin
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -118,6 +118,11 @@ func New(options Options) (p *Proxy, err error) {
 		}
 	}
 
+	plugins := append([]Plugin(nil), Plugins...)
+	if options.ComponentPlugins != nil {
+		plugins = append(plugins, componentManagerPlugin(options.ComponentPlugins))
+	}
+
 	p = &Proxy{
 		log:              logr.Discard(), // updated by Proxy.Start
 		cfg:              options.Config,
@@ -130,7 +135,7 @@ func New(options Options) (p *Proxy, err error) {
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
-		componentPlugins: options.ComponentPlugins,
+		plugins:          plugins,
 	}
 
 	// Connection & login rate limiters
@@ -203,16 +208,13 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
 
+	defer func() {
+		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
+	}()
+
 	// Init "plugins" with the proxy
 	if err := p.initPlugins(ctx); err != nil {
 		return err
-	}
-	if p.componentPlugins != nil {
-		defer func() {
-			if err := p.componentPlugins.Close(); err != nil {
-				p.log.Error(err, "error closing component plugins")
-			}
-		}()
 	}
 
 	logInfo := func() {
@@ -231,10 +233,6 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 	}
 	logInfo()
-
-	defer func() {
-		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
-	}()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	listen := func(addr string) context.CancelFunc {
@@ -428,22 +426,12 @@ func (p *Proxy) init() (err error) {
 
 func (p *Proxy) initPlugins(ctx context.Context) error {
 	log := logr.FromContextOrDiscard(ctx)
-	for _, pl := range Plugins {
+	for _, pl := range p.plugins {
 		start := time.Now()
 		if err := pl.Init(ctx, p); err != nil {
 			return fmt.Errorf("error running init hook for plugin %q: %w", pl.Name, err)
 		}
 		log.Info("initialized plugin", "name", pl.Name, "time", time.Since(start).Round(time.Millisecond).String())
-	}
-	if p.componentPlugins != nil {
-		start := time.Now()
-		if err := p.componentPlugins.Start(ctx, p); err != nil {
-			return fmt.Errorf("error initializing component plugins: %w", err)
-		}
-		log.Info(
-			"initialized component plugins",
-			"time", time.Since(start).Round(time.Millisecond).String(),
-		)
 	}
 	return nil
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 	wasmplugin "go.minekube.com/gate/internal/wasm/runtime/plugin"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate"
 	"go.minekube.com/gate/pkg/version"
 	"go.uber.org/zap"
@@ -152,17 +154,30 @@ Visit the website https://gate.minekube.com/ for more information.`
 		// Start Gate
 		startOpts := []gate.StartOption{
 			gate.WithConfig(*cfg),
-			gate.WithComponentPlugins(wasmplugin.New(cfg.Config.Wasm)),
 		}
 		if !disableAutoReload && v.ConfigFileUsed() != "" {
 			startOpts = append(startOpts, gate.WithAutoConfigReload(v.ConfigFileUsed()))
 		}
-		if err = gate.Start(c.Context, startOpts...); err != nil {
+		if err = withBuiltinWasm(cfg.Config.Wasm, func() error {
+			return gate.Start(c.Context, startOpts...)
+		}); err != nil {
 			return cli.Exit(fmt.Errorf("error running Gate: %w", err), 1)
 		}
 		return nil
 	}
 	return app
+}
+
+func withBuiltinWasm(cfg jconfig.Wasm, run func() error) error {
+	previous := jproxy.Plugins
+	jproxy.Plugins = append(
+		append([]jproxy.Plugin(nil), previous...),
+		wasmplugin.Plugin(cfg),
+	)
+	defer func() {
+		jproxy.Plugins = previous
+	}()
+	return run()
 }
 
 func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
