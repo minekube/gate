@@ -1,5 +1,5 @@
 [workspace]
-members = ["componentize", "guest-fixture", "guest-spike", "host"]
+members = ["componentize", "guest-fixture", "host"]
 resolver = "3"
 
 [workspace.package]

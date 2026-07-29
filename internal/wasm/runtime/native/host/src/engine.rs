@@ -7,36 +7,17 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use anyhow::{Context as _, anyhow, bail};
-use wasmtime::component::{
-    Access, Component, Func, HasSelf, Instance, Linker, Resource, ResourceDynamic, Val,
-    types::ComponentFunc,
-};
+use wasmtime::component::{Component, Func, Linker, ResourceDynamic, Val, types::ComponentFunc};
 use wasmtime::{AsContextMut, Config, Store, StoreContextMut, StoreLimits, StoreLimitsBuilder};
 
-use crate::{ActiveCall, Host as GateHost, Limits, Sample, TransferLimitError};
+use crate::{Host as GateHost, Limits, TransferLimitError};
 use crate::{generated, wire};
-
-pub(crate) mod bindings {
-    wasmtime::component::bindgen!({
-        path: "../wit",
-        world: "gate-plugin",
-        imports: { default: trappable | store },
-    });
-}
-
-use bindings::minekube::gate_spike::host::{
-    Context, HostContext, HostContextWithStore, HostProxy, HostProxyWithStore, Proxy,
-    Sample as WitSample,
-};
 
 pub(crate) struct StoreData {
     host: Arc<dyn GateHost>,
-    contexts: HashMap<u32, u64>,
-    proxies: HashMap<u32, u64>,
     resources: HashMap<u32, HostResource>,
     callbacks: HashMap<u32, Func>,
     next_resource: u32,
-    instance: Option<Instance>,
     store_limits: StoreLimits,
     transfer_bytes: usize,
 }
@@ -49,18 +30,6 @@ struct HostResource {
 }
 
 impl StoreData {
-    fn insert_context(&mut self, id: u64) -> anyhow::Result<Resource<Context>> {
-        let rep = self.next_rep()?;
-        self.contexts.insert(rep, id);
-        Ok(Resource::new_borrow(rep))
-    }
-
-    fn insert_proxy(&mut self, id: u64) -> anyhow::Result<Resource<Proxy>> {
-        let rep = self.next_rep()?;
-        self.proxies.insert(rep, id);
-        Ok(Resource::new_borrow(rep))
-    }
-
     fn next_rep(&mut self) -> anyhow::Result<u32> {
         let rep = self.next_resource;
         self.next_resource = self
@@ -68,22 +37,6 @@ impl StoreData {
             .checked_add(1)
             .ok_or_else(|| anyhow!("resource representation exhausted"))?;
         Ok(rep)
-    }
-
-    fn context_id(&self, resource: &Resource<Context>) -> wasmtime::Result<u64> {
-        self.contexts.get(&resource.rep()).copied().ok_or_else(|| {
-            wasmtime::Error::msg(format!("unknown context resource {}", resource.rep()))
-        })
-    }
-
-    fn proxy_id(&self, resource: &Resource<Proxy>) -> wasmtime::Result<u64> {
-        self.proxies.get(&resource.rep()).copied().ok_or_else(|| {
-            wasmtime::Error::msg(format!("unknown proxy resource {}", resource.rep()))
-        })
-    }
-
-    pub(crate) fn proxy_for_rep(&self, rep: u32) -> Option<u64> {
-        self.proxies.get(&rep).copied()
     }
 
     fn insert_gate_resource(
@@ -111,16 +64,17 @@ impl StoreData {
         Ok(())
     }
 
-    pub(crate) fn ensure_sample_transfer(&self, sample: &Sample) -> anyhow::Result<()> {
-        let bytes = sample
-            .tags
-            .iter()
-            .try_fold(sample.text.len(), |size, tag| {
-                size.checked_add(tag.len())
-                    .ok_or_else(|| anyhow!(TransferLimitError).context("sample size overflowed"))
-            })?;
-        self.ensure_transfer(bytes)
+    fn resource_scope(&self) -> u32 {
+        self.next_resource
     }
+
+    fn release_borrowed_since(&mut self, first: u32) {
+        release_borrowed_resources(&mut self.resources, first);
+    }
+}
+
+fn release_borrowed_resources(resources: &mut HashMap<u32, HostResource>, first: u32) {
+    resources.retain(|representation, resource| *representation < first || resource.owned);
 }
 
 impl wire::ResourceTransport for StoreData {
@@ -267,119 +221,6 @@ impl generated::dispatch::Dispatch for StoreData {
     }
 }
 
-impl HostContextWithStore<StoreData> for HasSelf<StoreData> {
-    fn is_cancelled(
-        mut access: Access<StoreData, Self>,
-        resource: Resource<Context>,
-    ) -> wasmtime::Result<bool> {
-        let state = access.get();
-        let id = state.context_id(&resource)?;
-        state
-            .host
-            .context_is_cancelled(id)
-            .map_err(wasmtime::Error::from_anyhow)
-    }
-
-    fn drop(
-        mut access: Access<StoreData, Self>,
-        resource: Resource<Context>,
-    ) -> wasmtime::Result<()> {
-        access.get().contexts.remove(&resource.rep());
-        Ok(())
-    }
-}
-
-impl HostProxyWithStore<StoreData> for HasSelf<StoreData> {
-    fn transform(
-        mut access: Access<StoreData, Self>,
-        resource: Resource<Proxy>,
-        input: WitSample,
-    ) -> wasmtime::Result<Result<WitSample, String>> {
-        let state = access.get();
-        let id = state.proxy_id(&resource)?;
-        let input: Sample = input.into();
-        state
-            .ensure_sample_transfer(&input)
-            .map_err(wasmtime::Error::from_anyhow)?;
-        let output = state
-            .host
-            .proxy_transform(id, input)
-            .map_err(wasmtime::Error::from_anyhow)?;
-        if let Ok(sample) = &output {
-            state
-                .ensure_sample_transfer(sample)
-                .map_err(wasmtime::Error::from_anyhow)?;
-        }
-        Ok(output.map(Into::into))
-    }
-
-    fn emit_nested(
-        mut access: Access<StoreData, Self>,
-        resource: Resource<Proxy>,
-        input: String,
-    ) -> wasmtime::Result<Result<String, String>> {
-        let proxy_rep = resource.rep();
-        let state = access.get();
-        let proxy_id = state.proxy_id(&resource)?;
-        state
-            .ensure_transfer(input.len())
-            .map_err(wasmtime::Error::from_anyhow)?;
-        let instance = access
-            .get()
-            .instance
-            .ok_or_else(|| wasmtime::Error::msg("component instance is not active"))?;
-        let plugin = bindings::GatePlugin::new(&mut access, &instance)?
-            .minekube_gate_spike_plugin()
-            .clone();
-        let host = Arc::clone(&access.get().host);
-        let mut active = ActiveCall::new(access, plugin, proxy_rep);
-
-        let output = host
-            .proxy_emit_nested(&mut active, proxy_id, input)
-            .map_err(wasmtime::Error::from_anyhow)?;
-        active
-            .ensure_transfer(
-                output
-                    .as_ref()
-                    .map_or_else(|error| error.len(), String::len),
-            )
-            .map_err(wasmtime::Error::from_anyhow)?;
-        Ok(output)
-    }
-
-    fn drop(
-        mut access: Access<StoreData, Self>,
-        resource: Resource<Proxy>,
-    ) -> wasmtime::Result<()> {
-        access.get().proxies.remove(&resource.rep());
-        Ok(())
-    }
-}
-
-impl HostContext for StoreData {}
-impl HostProxy for StoreData {}
-impl bindings::minekube::gate_spike::host::Host for StoreData {}
-
-impl From<WitSample> for Sample {
-    fn from(value: WitSample) -> Self {
-        Self {
-            text: value.text,
-            factor: value.factor,
-            tags: value.tags,
-        }
-    }
-}
-
-impl From<Sample> for WitSample {
-    fn from(value: Sample) -> Self {
-        Self {
-            text: value.text,
-            factor: value.factor,
-            tags: value.tags,
-        }
-    }
-}
-
 /// A synchronous, thread-bound callback entry into the currently active
 /// generated Gate API call.
 pub struct CallbackCall<'a> {
@@ -401,30 +242,38 @@ impl<'a> CallbackCall<'a> {
         guest_id: u64,
         input: &[u8],
     ) -> anyhow::Result<Vec<u8>> {
-        self.store.data().ensure_transfer(input.len())?;
-        let callback = self
-            .store
-            .data()
-            .callbacks
-            .get(&callback_type)
-            .cloned()
-            .with_context(|| format!("unknown generated callback type {callback_type}"))?;
-        let function_type = callback.ty(&self.store);
-        let parameters = wire::decode_callback_parameters(
-            self.store.as_context_mut(),
-            &function_type,
-            guest_id,
-            input,
-        )?;
-        let mut results = vec![Val::Bool(false); function_type.results().len()];
-        callback
-            .call(&mut self.store, &parameters, &mut results)
-            .map_err(anyhow::Error::from)
-            .with_context(|| format!("component callback {callback_type} trapped"))?;
-        let output =
-            wire::encode_callback_results(self.store.as_context_mut(), &function_type, &results)?;
-        self.store.data().ensure_transfer(output.len())?;
-        Ok(output)
+        let scope = self.store.data().resource_scope();
+        let result = (|| {
+            self.store.data().ensure_transfer(input.len())?;
+            let callback = self
+                .store
+                .data()
+                .callbacks
+                .get(&callback_type)
+                .cloned()
+                .with_context(|| format!("unknown generated callback type {callback_type}"))?;
+            let function_type = callback.ty(&self.store);
+            let parameters = wire::decode_callback_parameters(
+                self.store.as_context_mut(),
+                &function_type,
+                guest_id,
+                input,
+            )?;
+            let mut results = vec![Val::Bool(false); function_type.results().len()];
+            callback
+                .call(&mut self.store, &parameters, &mut results)
+                .map_err(anyhow::Error::from)
+                .with_context(|| format!("component callback {callback_type} trapped"))?;
+            let output = wire::encode_callback_results(
+                self.store.as_context_mut(),
+                &function_type,
+                &results,
+            )?;
+            self.store.data().ensure_transfer(output.len())?;
+            Ok(output)
+        })();
+        self.store.data_mut().release_borrowed_since(scope);
+        result
     }
 }
 
@@ -435,7 +284,6 @@ pub struct Engine {
     engine: wasmtime::Engine,
     fuel: u64,
     deadline: Duration,
-    memory_bytes: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -467,12 +315,9 @@ impl Engine {
             &engine,
             StoreData {
                 host,
-                contexts: HashMap::new(),
-                proxies: HashMap::new(),
                 resources: HashMap::new(),
                 callbacks: HashMap::new(),
                 next_resource: 1,
-                instance: None,
                 store_limits: StoreLimitsBuilder::new()
                     .memory_size(limits.memory_bytes)
                     .trap_on_grow_failure(true)
@@ -511,7 +356,6 @@ impl Engine {
             callbacks.insert(callback.id, function);
         }
         store.data_mut().callbacks = callbacks;
-        store.data_mut().instance = Some(instance);
 
         let mut engine = Self {
             store,
@@ -525,14 +369,20 @@ impl Engine {
             engine,
             fuel: limits.fuel,
             deadline: limits.deadline,
-            memory_bytes: limits.memory_bytes,
         };
         engine.metadata = engine.read_metadata(metadata_export)?;
         Ok(engine)
     }
 
-    pub fn init(&mut self, context: u64, proxy: u64) -> anyhow::Result<Sample> {
+    pub fn init(&mut self, context: u64, proxy: u64) -> anyhow::Result<()> {
         let _deadline = self.prepare_call()?;
+        let scope = self.store.data().resource_scope();
+        let result = self.init_scoped(context, proxy);
+        self.store.data_mut().release_borrowed_since(scope);
+        result
+    }
+
+    fn init_scoped(&mut self, context: u64, proxy: u64) -> anyhow::Result<()> {
         let (context_rep, context_type) =
             self.store
                 .data_mut()
@@ -558,20 +408,22 @@ impl Engine {
             .call(&mut self.store, &parameters, &mut results)
             .map_err(anyhow::Error::from)
             .context("component init trapped");
+        let mut drop_error = None;
         for parameter in parameters.drain(..) {
             if let Val::Resource(resource) = parameter {
-                resource.resource_drop(&mut self.store)?;
+                if let Err(error) = resource.resource_drop(&mut self.store) {
+                    drop_error.get_or_insert(error);
+                }
             }
         }
         self.store.data_mut().resources.remove(&context_rep);
         self.store.data_mut().resources.remove(&proxy_rep);
         result?;
+        if let Some(error) = drop_error {
+            return Err(error.into());
+        }
         match results.as_slice() {
-            [Val::Result(Ok(None))] => Ok(Sample {
-                text: String::new(),
-                factor: 0,
-                tags: Vec::new(),
-            }),
+            [Val::Result(Ok(None))] => Ok(()),
             [Val::Result(Err(Some(error)))] => {
                 Err(anyhow!("component init failed: {}", gate_error(error)))
             }
@@ -627,49 +479,39 @@ impl Engine {
         guest_id: u64,
         input: &[u8],
     ) -> anyhow::Result<Vec<u8>> {
-        let callback = self
-            .store
-            .data()
-            .callbacks
-            .get(&callback_type)
-            .cloned()
-            .with_context(|| format!("unknown generated callback type {callback_type}"))?;
         let _deadline = self.prepare_call()?;
-        self.store.data().ensure_transfer(input.len())?;
-        let function_type = callback.ty(&self.store);
-        let parameters = wire::decode_callback_parameters(
-            self.store.as_context_mut(),
-            &function_type,
-            guest_id,
-            input,
-        )?;
-        let mut results = vec![Val::Bool(false); function_type.results().len()];
-        callback
-            .call(&mut self.store, &parameters, &mut results)
-            .map_err(anyhow::Error::from)
-            .with_context(|| format!("component callback {callback_type} trapped"))?;
-        let output =
-            wire::encode_callback_results(self.store.as_context_mut(), &function_type, &results)?;
-        self.store.data().ensure_transfer(output.len())?;
-        Ok(output)
-    }
-
-    pub fn on_event(&mut self, proxy: u64, input: &str) -> anyhow::Result<String> {
-        let _ = (proxy, input);
-        bail!("direct spike event entrypoint is not part of the generated Gate component contract")
-    }
-
-    pub fn allocate(&mut self, bytes: u64) -> anyhow::Result<u64> {
-        let _ = bytes;
-        bail!("spike allocation entrypoint is unavailable")
-    }
-
-    pub fn spin(&mut self) -> anyhow::Result<()> {
-        bail!("spike spin entrypoint is unavailable")
-    }
-
-    pub(crate) fn ensure_transfer(&self, bytes: usize) -> anyhow::Result<()> {
-        self.store.data().ensure_transfer(bytes)
+        let scope = self.store.data().resource_scope();
+        let result = (|| {
+            let callback = self
+                .store
+                .data()
+                .callbacks
+                .get(&callback_type)
+                .cloned()
+                .with_context(|| format!("unknown generated callback type {callback_type}"))?;
+            self.store.data().ensure_transfer(input.len())?;
+            let function_type = callback.ty(&self.store);
+            let parameters = wire::decode_callback_parameters(
+                self.store.as_context_mut(),
+                &function_type,
+                guest_id,
+                input,
+            )?;
+            let mut results = vec![Val::Bool(false); function_type.results().len()];
+            callback
+                .call(&mut self.store, &parameters, &mut results)
+                .map_err(anyhow::Error::from)
+                .with_context(|| format!("component callback {callback_type} trapped"))?;
+            let output = wire::encode_callback_results(
+                self.store.as_context_mut(),
+                &function_type,
+                &results,
+            )?;
+            self.store.data().ensure_transfer(output.len())?;
+            Ok(output)
+        })();
+        self.store.data_mut().release_borrowed_since(scope);
+        result
     }
 
     fn prepare_call(&mut self) -> anyhow::Result<DeadlineGuard> {
@@ -763,107 +605,44 @@ impl Drop for DeadlineGuard {
     }
 }
 
-#[cfg(any())]
-mod measurements {
-    use std::time::Instant;
-
-    use super::*;
-
-    const COMPONENT: &[u8] = include_bytes!("../../artifacts/gate_wasm_spike.component.wasm");
-
-    struct MeasurementHost;
-
-    impl GateHost for MeasurementHost {
-        fn context_is_cancelled(&self, _context: u64) -> anyhow::Result<bool> {
-            Ok(false)
-        }
-
-        fn proxy_transform(
-            &self,
-            _proxy: u64,
-            input: Sample,
-        ) -> anyhow::Result<Result<Sample, String>> {
-            Ok(Ok(input))
-        }
-
-        fn proxy_emit_nested(
-            &self,
-            active: &mut ActiveCall<'_>,
-            proxy: u64,
-            input: String,
-        ) -> anyhow::Result<Result<String, String>> {
-            Ok(Ok(active.on_event(proxy, &input)?))
-        }
-    }
+#[cfg(test)]
+mod tests {
+    use super::{HostResource, release_borrowed_resources};
+    use std::collections::HashMap;
 
     #[test]
-    #[ignore = "run explicitly to record feasibility measurements"]
-    fn measure_cold_compilation_and_instantiation() -> anyhow::Result<()> {
-        const COMPILE_ITERATIONS: u32 = 20;
-        let compile_started = Instant::now();
-        for _ in 0..COMPILE_ITERATIONS {
-            let (engine, component, _) = compile_component()?;
-            std::hint::black_box((engine, component));
-        }
-        let compile_ns = compile_started.elapsed().as_nanos() / u128::from(COMPILE_ITERATIONS);
+    fn callback_scope_releases_only_new_borrowed_resources() {
+        let mut resources = HashMap::from([
+            (
+                3,
+                HostResource {
+                    handle: 30,
+                    type_id: 1,
+                    owned: false,
+                },
+            ),
+            (
+                4,
+                HostResource {
+                    handle: 40,
+                    type_id: 1,
+                    owned: false,
+                },
+            ),
+            (
+                5,
+                HostResource {
+                    handle: 50,
+                    type_id: 1,
+                    owned: true,
+                },
+            ),
+        ]);
 
-        let (engine, component, linker) = compile_component()?;
-        const INSTANTIATE_ITERATIONS: u32 = 100;
-        let instantiate_started = Instant::now();
-        for _ in 0..INSTANTIATE_ITERATIONS {
-            let instance = instantiate_component(&engine, &component, &linker)?;
-            std::hint::black_box(instance);
-        }
-        let instantiate_ns =
-            instantiate_started.elapsed().as_nanos() / u128::from(INSTANTIATE_ITERATIONS);
+        release_borrowed_resources(&mut resources, 4);
 
-        eprintln!("measurement:cold-compilation-ns={compile_ns}");
-        eprintln!("measurement:instantiation-ns={instantiate_ns}");
-        Ok(())
-    }
-
-    fn compile_component() -> anyhow::Result<(wasmtime::Engine, Component, Linker<StoreData>)> {
-        let mut config = Config::new();
-        config.wasm_component_model(true);
-        config.concurrency_support(false);
-        config.consume_fuel(true);
-        config.epoch_interruption(true);
-        let engine = wasmtime::Engine::new(&config)?;
-        let component = Component::new(&engine, COMPONENT)?;
-        let mut linker = Linker::new(&engine);
-        bindings::GatePlugin::add_to_linker::<_, HasSelf<StoreData>>(&mut linker, |state| state)?;
-        Ok((engine, component, linker))
-    }
-
-    fn instantiate_component(
-        engine: &wasmtime::Engine,
-        component: &Component,
-        linker: &Linker<StoreData>,
-    ) -> anyhow::Result<Store<StoreData>> {
-        let limits = Limits::default();
-        let mut store = Store::new(
-            engine,
-            StoreData {
-                host: Arc::new(MeasurementHost),
-                contexts: HashMap::new(),
-                proxies: HashMap::new(),
-                next_resource: 1,
-                instance: None,
-                store_limits: StoreLimitsBuilder::new()
-                    .memory_size(limits.memory_bytes)
-                    .trap_on_grow_failure(true)
-                    .build(),
-                transfer_bytes: limits.transfer_bytes,
-            },
-        );
-        store.limiter(|state| &mut state.store_limits);
-        store.set_fuel(u64::MAX)?;
-        store.set_epoch_deadline(u64::MAX);
-        let instance = linker.instantiate(&mut store, component)?;
-        let _plugin = bindings::GatePlugin::new(&mut store, &instance)?
-            .minekube_gate_spike_plugin()
-            .clone();
-        store.data_mut().instance = Some(instance);
-        Ok(store)
+        assert!(resources.contains_key(&3));
+        assert!(!resources.contains_key(&4));
+        assert!(resources.contains_key(&5));
     }
 }

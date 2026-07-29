@@ -25,11 +25,11 @@ func (runtime *fakeRuntime) Metadata() (native.Metadata, error) {
 	return runtime.metadata, nil
 }
 
-func (runtime *fakeRuntime) Init(uint64, uint64) (native.Sample, error) {
+func (runtime *fakeRuntime) Init(uint64, uint64) error {
 	if runtime.init != nil {
-		return native.Sample{}, runtime.init()
+		return runtime.init()
 	}
-	return native.Sample{}, nil
+	return nil
 }
 
 func (runtime *fakeRuntime) Close() error {

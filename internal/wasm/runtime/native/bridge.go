@@ -117,25 +117,23 @@ func (r *nativeRuntime) Metadata() (Metadata, error) {
 	}, nil
 }
 
-func (r *nativeRuntime) Init(contextID, proxyID uint64) (Sample, error) {
+func (r *nativeRuntime) Init(contextID, proxyID uint64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.closed {
-		return Sample{}, ErrClosed
+		return ErrClosed
 	}
-	var output C.gate_wasm_owned_sample
 	var cError C.gate_wasm_owned_bytes
 	status := C.gate_wasm_runtime_init(
 		r.ptr,
 		C.uint64_t(contextID),
 		C.uint64_t(proxyID),
-		&output,
 		&cError,
 	)
 	if status != 0 {
-		return Sample{}, takeRustStatus(status, cError)
+		return takeRustStatus(status, cError)
 	}
-	return takeRustSample(output)
+	return nil
 }
 
 func (r *nativeRuntime) InvokeCallback(
@@ -165,63 +163,6 @@ func (r *nativeRuntime) InvokeCallback(
 	return takeRustBytes(output)
 }
 
-func (r *nativeRuntime) OnEvent(proxyID uint64, input string) (string, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.closed {
-		return "", ErrClosed
-	}
-	var output C.gate_wasm_owned_bytes
-	var cError C.gate_wasm_owned_bytes
-	status := C.gate_wasm_runtime_on_event(
-		r.ptr,
-		C.uint64_t(proxyID),
-		borrowedString(input),
-		&output,
-		&cError,
-	)
-	runtime.KeepAlive(input)
-	if status != 0 {
-		return "", takeRustStatus(status, cError)
-	}
-	bytes, err := takeRustBytes(output)
-	return string(bytes), err
-}
-
-func (r *nativeRuntime) Allocate(bytes uint64) (uint64, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.closed {
-		return 0, ErrClosed
-	}
-	var output C.uint64_t
-	var cError C.gate_wasm_owned_bytes
-	status := C.gate_wasm_runtime_allocate(
-		r.ptr,
-		C.uint64_t(bytes),
-		&output,
-		&cError,
-	)
-	if status != 0 {
-		return 0, takeRustStatus(status, cError)
-	}
-	return uint64(output), nil
-}
-
-func (r *nativeRuntime) Spin() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.closed {
-		return ErrClosed
-	}
-	var cError C.gate_wasm_owned_bytes
-	status := C.gate_wasm_runtime_spin(r.ptr, &cError)
-	if status != 0 {
-		return takeRustStatus(status, cError)
-	}
-	return nil
-}
-
 func (r *nativeRuntime) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -240,14 +181,6 @@ func borrowedBytes(value []byte) C.gate_wasm_slice {
 	var ptr *C.uint8_t
 	if len(value) != 0 {
 		ptr = (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(value)))
-	}
-	return C.gate_wasm_slice{ptr: ptr, len: C.size_t(len(value))}
-}
-
-func borrowedString(value string) C.gate_wasm_slice {
-	var ptr *C.uint8_t
-	if len(value) != 0 {
-		ptr = (*C.uint8_t)(unsafe.Pointer(unsafe.StringData(value)))
 	}
 	return C.gate_wasm_slice{ptr: ptr, len: C.size_t(len(value))}
 }
@@ -293,57 +226,4 @@ func takeRustStatus(status C.int32_t, value C.gate_wasm_owned_bytes) error {
 		return detail
 	}
 	return errors.Join(kind, detail)
-}
-
-func takeRustSample(value C.gate_wasm_owned_sample) (Sample, error) {
-	defer C.gate_wasm_owned_sample_free(value)
-	text, err := copyRustBytes(value.text)
-	if err != nil {
-		return Sample{}, err
-	}
-	tagValues, err := rustOwnedBytesSlice(value.tags)
-	if err != nil {
-		return Sample{}, err
-	}
-	tags := make([]string, len(tagValues))
-	for i, tag := range tagValues {
-		bytes, err := copyRustBytes(tag)
-		if err != nil {
-			return Sample{}, err
-		}
-		tags[i] = string(bytes)
-	}
-	return Sample{
-		Text:   string(text),
-		Factor: int32(value.factor),
-		Tags:   tags,
-	}, nil
-}
-
-func copyRustBytes(value C.gate_wasm_owned_bytes) ([]byte, error) {
-	if value.len == 0 {
-		return nil, nil
-	}
-	if value.ptr == nil {
-		return nil, errors.New("Rust returned a non-empty null buffer")
-	}
-	if uint64(value.len) > math.MaxInt {
-		return nil, fmt.Errorf("Rust buffer length %d exceeds Go int", uint64(value.len))
-	}
-	return C.GoBytes(unsafe.Pointer(value.ptr), C.int(value.len)), nil
-}
-
-func rustOwnedBytesSlice(
-	value C.gate_wasm_owned_bytes_list,
-) ([]C.gate_wasm_owned_bytes, error) {
-	if value.len == 0 {
-		return nil, nil
-	}
-	if value.ptr == nil {
-		return nil, errors.New("Rust returned a non-empty null buffer list")
-	}
-	if uint64(value.len) > math.MaxInt {
-		return nil, fmt.Errorf("Rust buffer-list length %d exceeds Go int", uint64(value.len))
-	}
-	return unsafe.Slice(value.ptr, int(value.len)), nil
 }

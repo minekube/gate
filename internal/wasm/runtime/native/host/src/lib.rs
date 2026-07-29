@@ -1,7 +1,6 @@
 pub mod abi;
 mod engine;
 pub mod generated;
-pub mod reentry;
 #[doc(hidden)]
 pub mod wire;
 
@@ -13,16 +12,8 @@ use std::time::Duration;
 
 use anyhow::{Context as _, anyhow};
 
-use abi::{AbiLimits, OwnedBytes, OwnedSample, SampleView, Slice, SliceList};
+use abi::{AbiLimits, OwnedBytes, Slice};
 pub use engine::{CallbackCall, Engine, PluginMetadata};
-pub use reentry::ActiveCall;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Sample {
-    pub text: String,
-    pub factor: i32,
-    pub tags: Vec<String>,
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Limits {
@@ -66,17 +57,6 @@ impl std::fmt::Display for TransferLimitError {
 impl std::error::Error for TransferLimitError {}
 
 pub trait Host: Send + Sync + 'static {
-    fn context_is_cancelled(&self, context: u64) -> anyhow::Result<bool>;
-
-    fn proxy_transform(&self, proxy: u64, input: Sample) -> anyhow::Result<Result<Sample, String>>;
-
-    fn proxy_emit_nested(
-        &self,
-        active: &mut ActiveCall<'_>,
-        proxy: u64,
-        input: String,
-    ) -> anyhow::Result<Result<String, String>>;
-
     fn invoke(
         &self,
         active: &mut CallbackCall<'_>,
@@ -102,27 +82,6 @@ struct CgoHost {
 }
 
 unsafe extern "C" {
-    fn gate_wasm_go_context_cancelled(
-        host: usize,
-        context_id: u64,
-        cancelled: *mut u8,
-        error: *mut OwnedBytes,
-    ) -> i32;
-    fn gate_wasm_go_transform(
-        host: usize,
-        proxy_id: u64,
-        input: SampleView,
-        output: *mut OwnedSample,
-        error: *mut OwnedBytes,
-    ) -> i32;
-    fn gate_wasm_go_emit_nested(
-        host: usize,
-        reentry: *mut GateWasmReentry,
-        proxy_id: u64,
-        input: Slice,
-        output: *mut OwnedBytes,
-        error: *mut OwnedBytes,
-    ) -> i32;
     fn gate_wasm_go_invoke(
         host: usize,
         reentry: *mut GateWasmCallbackReentry,
@@ -156,92 +115,6 @@ impl CgoHost {
 }
 
 impl Host for CgoHost {
-    fn context_is_cancelled(&self, context: u64) -> anyhow::Result<bool> {
-        let mut cancelled = 0_u8;
-        let mut error = OwnedBytes::default();
-        // SAFETY: All pointers reference stack values valid for the complete
-        // synchronous callback. Go does not retain them.
-        let status = unsafe {
-            gate_wasm_go_context_cancelled(self.handle, context, &raw mut cancelled, &raw mut error)
-        };
-        if status != 0 {
-            return Err(Self::callback_error("Go context callback", error));
-        }
-        Ok(cancelled != 0)
-    }
-
-    fn proxy_transform(&self, proxy: u64, input: Sample) -> anyhow::Result<Result<Sample, String>> {
-        let tags: Vec<_> = input
-            .tags
-            .iter()
-            .map(|tag| Slice {
-                ptr: tag.as_ptr(),
-                len: tag.len(),
-            })
-            .collect();
-        let view = SampleView {
-            text: Slice {
-                ptr: input.text.as_ptr(),
-                len: input.text.len(),
-            },
-            factor: input.factor,
-            tags: SliceList {
-                ptr: tags.as_ptr(),
-                len: tags.len(),
-            },
-        };
-        let mut output = OwnedSample::default();
-        let mut error = OwnedBytes::default();
-        // SAFETY: The view borrows input and tags only for this synchronous
-        // callback. Go copies all values before returning.
-        let status = unsafe {
-            gate_wasm_go_transform(self.handle, proxy, view, &raw mut output, &raw mut error)
-        };
-        if status != 0 {
-            return Err(Self::callback_error("Go transform callback", error));
-        }
-        // SAFETY: Successful Go callbacks transfer their C.malloc output.
-        let output = unsafe { output.copy_and_free_c() }
-            .context("failed to copy Go transform callback output")?;
-        Ok(Ok(output))
-    }
-
-    fn proxy_emit_nested(
-        &self,
-        active: &mut ActiveCall<'_>,
-        proxy: u64,
-        input: String,
-    ) -> anyhow::Result<Result<String, String>> {
-        let mut output = OwnedBytes::default();
-        let mut error = OwnedBytes::default();
-        let input = Slice {
-            ptr: input.as_ptr(),
-            len: input.len(),
-        };
-        let reentry = ptr::from_mut(active).cast::<GateWasmReentry>();
-        // SAFETY: reentry is valid only for this synchronous callback. The Go
-        // adapter expires its wrapper before returning.
-        let status = unsafe {
-            gate_wasm_go_emit_nested(
-                self.handle,
-                reentry,
-                proxy,
-                input,
-                &raw mut output,
-                &raw mut error,
-            )
-        };
-        if status != 0 {
-            return Err(Self::callback_error("Go nested callback", error));
-        }
-        // SAFETY: Successful Go callbacks transfer their C.malloc output.
-        let output = unsafe { output.copy_and_free_c() }
-            .context("failed to copy Go nested callback output")?;
-        Ok(Ok(
-            String::from_utf8(output).context("Go nested callback output is not UTF-8")?
-        ))
-    }
-
     fn invoke(
         &self,
         active: &mut CallbackCall<'_>,
@@ -335,11 +208,6 @@ impl PluginMetadataView {
             generator_format: metadata.generator_format,
         }
     }
-}
-
-#[repr(C)]
-pub struct GateWasmReentry {
-    _opaque: [u8; 0],
 }
 
 #[repr(C)]
@@ -524,7 +392,6 @@ pub unsafe extern "C" fn gate_wasm_runtime_init(
     runtime: *mut GateWasmRuntime,
     context_id: u64,
     proxy_id: u64,
-    output: *mut OwnedSample,
     error: *mut OwnedBytes,
 ) -> i32 {
     // SAFETY: ffi_status contains all panics and reports errors through C.
@@ -533,8 +400,7 @@ pub unsafe extern "C" fn gate_wasm_runtime_init(
             let runtime = runtime
                 .as_mut()
                 .ok_or_else(|| anyhow!("wasm runtime is null"))?;
-            let result = runtime.engine.init(context_id, proxy_id)?;
-            set_owned(output, OwnedSample::from_sample(result))
+            runtime.engine.init(context_id, proxy_id)
         })
     }
 }
@@ -563,102 +429,6 @@ pub unsafe extern "C" fn gate_wasm_runtime_invoke_callback(
                 .engine
                 .invoke_callback(callback_type_id, guest_id, &input)?;
             set_owned(output, OwnedBytes::from_vec(result))
-        })
-    }
-}
-
-/// # Safety
-///
-/// `runtime` must be live and exclusively borrowed, `input` must be readable,
-/// and output pointers must be writable for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn gate_wasm_runtime_on_event(
-    runtime: *mut GateWasmRuntime,
-    proxy_id: u64,
-    input: Slice,
-    output: *mut OwnedBytes,
-    error: *mut OwnedBytes,
-) -> i32 {
-    // SAFETY: ffi_status contains all panics and reports errors through C.
-    unsafe {
-        ffi_status(error, || {
-            let runtime = runtime
-                .as_mut()
-                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
-            runtime.engine.ensure_transfer(input.len)?;
-            let input = String::from_utf8(input.copy()?).context("event input is not UTF-8")?;
-            let result = runtime.engine.on_event(proxy_id, &input)?;
-            set_owned(output, OwnedBytes::from_string(result))
-        })
-    }
-}
-
-/// # Safety
-///
-/// `runtime` must be live and exclusively borrowed; output pointers must be
-/// writable for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn gate_wasm_runtime_allocate(
-    runtime: *mut GateWasmRuntime,
-    bytes: u64,
-    output: *mut u64,
-    error: *mut OwnedBytes,
-) -> i32 {
-    // SAFETY: ffi_status contains all panics and reports errors through C.
-    unsafe {
-        ffi_status(error, || {
-            let runtime = runtime
-                .as_mut()
-                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
-            let result = runtime.engine.allocate(bytes)?;
-            set_owned(output, result)
-        })
-    }
-}
-
-/// # Safety
-///
-/// `runtime` must be live and exclusively borrowed and `error` must be null or
-/// writable for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn gate_wasm_runtime_spin(
-    runtime: *mut GateWasmRuntime,
-    error: *mut OwnedBytes,
-) -> i32 {
-    // SAFETY: ffi_status contains all panics and reports errors through C.
-    unsafe {
-        ffi_status(error, || {
-            let runtime = runtime
-                .as_mut()
-                .ok_or_else(|| anyhow!("wasm runtime is null"))?;
-            runtime.engine.spin()
-        })
-    }
-}
-
-/// # Safety
-///
-/// `reentry` must be the active token supplied to the current host callback;
-/// input and output pointers must be valid for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn gate_wasm_reentry_on_event(
-    reentry: *mut GateWasmReentry,
-    proxy_id: u64,
-    input: Slice,
-    output: *mut OwnedBytes,
-    error: *mut OwnedBytes,
-) -> i32 {
-    // SAFETY: ffi_status contains all panics and reports errors through C.
-    unsafe {
-        ffi_status(error, || {
-            let reentry = reentry
-                .cast::<ActiveCall<'static>>()
-                .as_mut()
-                .ok_or_else(|| anyhow!("wasm reentry token is null"))?;
-            reentry.ensure_transfer(input.len)?;
-            let input = String::from_utf8(input.copy()?).context("event input is not UTF-8")?;
-            let result = reentry.on_event(proxy_id, &input)?;
-            set_owned(output, OwnedBytes::from_string(result))
         })
     }
 }
@@ -710,17 +480,6 @@ pub unsafe extern "C" fn gate_wasm_runtime_free(runtime: *mut GateWasmRuntime) {
 /// `value` must be an output returned by this library and not already freed.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gate_wasm_owned_bytes_free(value: OwnedBytes) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: The caller returns an owned Rust output exactly once.
-        unsafe { value.free_rust() };
-    }));
-}
-
-/// # Safety
-///
-/// `value` must be an output returned by this library and not already freed.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn gate_wasm_owned_sample_free(value: OwnedSample) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: The caller returns an owned Rust output exactly once.
         unsafe { value.free_rust() };

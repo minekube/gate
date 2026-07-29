@@ -210,20 +210,6 @@ func (host *Host) ContextCancelled(contextHandle uint64) (bool, error) {
 	return ctx.Err() != nil, nil
 }
 
-// Transform and EmitNested remain only to satisfy the feasibility runtime
-// interface while its obsolete entrypoints are removed.
-func (host *Host) Transform(uint64, native.Sample) (native.Sample, error) {
-	return native.Sample{}, errors.New("spike transform callback is unavailable")
-}
-
-func (host *Host) EmitNested(
-	native.Reentry,
-	uint64,
-	string,
-) (string, error) {
-	return "", errors.New("spike nested callback is unavailable")
-}
-
 func (host *Host) Close() error {
 	if host == nil || host.dispatch == nil {
 		return nil

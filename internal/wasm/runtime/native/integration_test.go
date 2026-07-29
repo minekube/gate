@@ -35,7 +35,7 @@ func TestRuntimeInitReceivesContextAndRealProxy(t *testing.T) {
 	require.Len(t, metadata.ContractHash, 64)
 	require.EqualValues(t, 1, metadata.GeneratorFormat)
 
-	_, err = runtime.Init(host.ContextHandle(), host.ProxyHandle())
+	err = runtime.Init(host.ContextHandle(), host.ProxyHandle())
 	require.NoError(t, err)
 
 	require.NoError(t, runtime.Close())

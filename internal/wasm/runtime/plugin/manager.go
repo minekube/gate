@@ -22,7 +22,7 @@ import (
 
 type componentRuntime interface {
 	Metadata() (native.Metadata, error)
-	Init(contextID, proxyID uint64) (native.Sample, error)
+	Init(contextID, proxyID uint64) error
 	Close() error
 }
 
@@ -131,7 +131,7 @@ func (manager *Manager) Start(ctx context.Context, gateProxy *proxy.Proxy) (err 
 			manager.closePlugin(plugin)
 			continue
 		}
-		if _, err := runtime.Init(host.ContextHandle(), host.ProxyHandle()); err != nil {
+		if err := runtime.Init(host.ContextHandle(), host.ProxyHandle()); err != nil {
 			manager.closePlugin(plugin)
 			manager.closeAfterFailure()
 			return fmt.Errorf(

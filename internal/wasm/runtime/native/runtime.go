@@ -15,12 +15,6 @@ var (
 	ErrTransferLimit  = errors.New("wasm transfer limit exceeded")
 )
 
-type Sample struct {
-	Text   string
-	Factor int32
-	Tags   []string
-}
-
 type Limits struct {
 	MemoryBytes   uint64
 	TransferBytes uint64
@@ -35,15 +29,7 @@ type Metadata struct {
 	GeneratorFormat uint32
 }
 
-type Host interface {
-	ContextCancelled(contextID uint64) (bool, error)
-	Transform(proxyID uint64, input Sample) (Sample, error)
-	EmitNested(reentry Reentry, proxyID uint64, input string) (string, error)
-}
-
-type Reentry interface {
-	OnEvent(proxyID uint64, input string) (string, error)
-}
+type Host interface{}
 
 type CallbackInvoker interface {
 	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
@@ -55,11 +41,8 @@ type Runtime struct {
 
 type runtimeImpl interface {
 	Metadata() (Metadata, error)
-	Init(contextID, proxyID uint64) (Sample, error)
+	Init(contextID, proxyID uint64) error
 	InvokeCallback(callbackTypeID uint32, guestID uint64, input []byte) ([]byte, error)
-	OnEvent(proxyID uint64, input string) (string, error)
-	Allocate(bytes uint64) (uint64, error)
-	Spin() error
 	Close() error
 }
 
@@ -70,9 +53,9 @@ func (r *Runtime) Metadata() (Metadata, error) {
 	return r.impl.Metadata()
 }
 
-func (r *Runtime) Init(contextID, proxyID uint64) (Sample, error) {
+func (r *Runtime) Init(contextID, proxyID uint64) error {
 	if r == nil || r.impl == nil {
-		return Sample{}, ErrClosed
+		return ErrClosed
 	}
 	return r.impl.Init(contextID, proxyID)
 }
@@ -86,27 +69,6 @@ func (r *Runtime) InvokeCallback(
 		return nil, ErrClosed
 	}
 	return r.impl.InvokeCallback(callbackTypeID, guestID, input)
-}
-
-func (r *Runtime) OnEvent(proxyID uint64, input string) (string, error) {
-	if r == nil || r.impl == nil {
-		return "", ErrClosed
-	}
-	return r.impl.OnEvent(proxyID, input)
-}
-
-func (r *Runtime) Allocate(bytes uint64) (uint64, error) {
-	if r == nil || r.impl == nil {
-		return 0, ErrClosed
-	}
-	return r.impl.Allocate(bytes)
-}
-
-func (r *Runtime) Spin() error {
-	if r == nil || r.impl == nil {
-		return ErrClosed
-	}
-	return r.impl.Spin()
 }
 
 func (r *Runtime) Close() error {

@@ -4,7 +4,6 @@ use gate_wasm_native::generated::dispatch::{
 use gate_wasm_native::generated::values::{
     ABI_LAYOUT_FINGERPRINT, ABI_SCHEMA_VERSION, VALUE_LAYOUTS,
 };
-use gate_wasm_native::{Sample, abi::OwnedSample};
 use wasmtime::StoreContextMut;
 use wasmtime::component::{Linker, Val, types::ComponentFunc};
 
@@ -45,35 +44,6 @@ fn generated_rust_hash_matches_committed_contract() {
         contract.contains(&format!("\"witHash\": \"{WIT_HASH}\"")),
         "generated Rust dispatch and contract WIT hash differ"
     );
-}
-
-#[test]
-fn owned_nested_values_preserve_unicode_and_empty_lists() {
-    let expected = Sample {
-        text: "Gate 🧊".to_owned(),
-        factor: -7,
-        tags: vec!["日本語".to_owned(), String::new()],
-    };
-    let owned = OwnedSample::from_sample(expected.clone());
-
-    // SAFETY: OwnedSample::from_sample keeps all Rust allocations live until
-    // free_rust below. The test only reads the declared lengths.
-    unsafe {
-        let text = std::slice::from_raw_parts(owned.text.ptr, owned.text.len);
-        assert_eq!(text, expected.text.as_bytes());
-        assert_eq!(owned.factor, expected.factor);
-        let tags = std::slice::from_raw_parts(owned.tags.ptr, owned.tags.len);
-        assert_eq!(tags.len(), expected.tags.len());
-        for (actual, expected) in tags.iter().zip(&expected.tags) {
-            let bytes = if actual.len == 0 {
-                &[][..]
-            } else {
-                std::slice::from_raw_parts(actual.ptr, actual.len)
-            };
-            assert_eq!(bytes, expected.as_bytes());
-        }
-        owned.free_rust();
-    }
 }
 
 struct NoopDispatch;

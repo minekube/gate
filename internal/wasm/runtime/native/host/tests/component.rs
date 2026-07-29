@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use gate_wasm_native::wire::{
     Response, WireValue, decode_request, decode_response, encode_request, encode_response,
 };
-use gate_wasm_native::{ActiveCall, CallbackCall, Engine, Host, Limits, Sample};
+use gate_wasm_native::{CallbackCall, Engine, Host, Limits};
 
 const COMPONENT: &[u8] = include_bytes!("../../artifacts/gate_wasm_fixture.component.wasm");
 const PROXY_PLAYER_COUNT: u32 = 1299;
@@ -18,27 +18,6 @@ struct TestHost {
 }
 
 impl Host for TestHost {
-    fn context_is_cancelled(&self, _context: u64) -> anyhow::Result<bool> {
-        Ok(false)
-    }
-
-    fn proxy_transform(
-        &self,
-        _proxy: u64,
-        input: Sample,
-    ) -> anyhow::Result<Result<Sample, String>> {
-        Ok(Ok(input))
-    }
-
-    fn proxy_emit_nested(
-        &self,
-        _active: &mut ActiveCall<'_>,
-        _proxy: u64,
-        _input: String,
-    ) -> anyhow::Result<Result<String, String>> {
-        unreachable!("the generated fixture does not use spike callbacks")
-    }
-
     fn invoke(
         &self,
         active: &mut CallbackCall<'_>,
@@ -105,27 +84,6 @@ impl Drop for DropHost {
 }
 
 impl Host for DropHost {
-    fn context_is_cancelled(&self, _context: u64) -> anyhow::Result<bool> {
-        Ok(false)
-    }
-
-    fn proxy_transform(
-        &self,
-        _proxy: u64,
-        input: Sample,
-    ) -> anyhow::Result<Result<Sample, String>> {
-        Ok(Ok(input))
-    }
-
-    fn proxy_emit_nested(
-        &self,
-        _active: &mut ActiveCall<'_>,
-        _proxy: u64,
-        _input: String,
-    ) -> anyhow::Result<Result<String, String>> {
-        unreachable!("the generated fixture does not use spike callbacks")
-    }
-
     fn invoke(
         &self,
         active: &mut CallbackCall<'_>,

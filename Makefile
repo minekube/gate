@@ -1,6 +1,4 @@
 WASM_NATIVE_DIR := internal/wasm/runtime/native
-WASM_SPIKE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm
-WASM_SPIKE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_spike.component.wasm
 WASM_FIXTURE_CORE := $(WASM_NATIVE_DIR)/target/wasm32-unknown-unknown/release/gate_wasm_fixture_guest.wasm
 WASM_FIXTURE_COMPONENT := $(WASM_NATIVE_DIR)/artifacts/gate_wasm_fixture.component.wasm
 
@@ -12,12 +10,6 @@ endif
 
 all: fmt vet mod lint
 
-wasm-spike-component:
-	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-spike-guest --release --target wasm32-unknown-unknown
-	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) run -p gate-wasm-componentize --release -- \
-		target/wasm32-unknown-unknown/release/gate_wasm_spike_guest.wasm \
-		artifacts/gate_wasm_spike.component.wasm
-
 wasm-fixture-component:
 	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-fixture-guest --release --target wasm32-unknown-unknown
 	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) run -p gate-wasm-componentize --release -- \
@@ -27,7 +19,7 @@ wasm-fixture-component:
 wasm-native-lib:
 	cd $(WASM_NATIVE_DIR) && $(WASM_CARGO) build -p gate-wasm-native --release
 
-wasm-native-test: wasm-fixture-component wasm-native-lib
+wasm-native-test: wasm-api-check wasm-fixture-component wasm-native-lib
 	CGO_ENABLED=1 go test -count=1 -tags=wasm_native ./internal/wasm/runtime/native
 
 wasm-api-generate:

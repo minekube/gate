@@ -318,8 +318,13 @@ func RenderRustDispatch(api *model.API) ([]byte, error) {
 			fmt.Fprintln(&output, "                let [Val::U64(guest_id)] = parameters else {")
 			fmt.Fprintln(
 				&output,
-				"                    return Err(wasmtime::Error::msg(\"callback constructor expected one u64 ID\"));",
+				"                    return Err(wasmtime::Error::msg(",
 			)
+			fmt.Fprintln(
+				&output,
+				"                        \"callback constructor expected one u64 ID\",",
+			)
+			fmt.Fprintln(&output, "                    ));")
 			fmt.Fprintln(&output, "                };")
 			fmt.Fprintln(
 				&output,

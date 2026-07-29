@@ -24,7 +24,7 @@ func TestRunGenerateAndCheck(t *testing.T) {
 		"-out", output,
 		"-native-out", nativeOutput,
 	}, &stdout, &stdout))
-	require.Contains(t, stdout.String(), "generated 9 WebAssembly API artifacts")
+	require.Contains(t, stdout.String(), "generated 10 WebAssembly API artifacts")
 	for _, name := range []string{
 		generate.WITFile,
 		generate.ManifestFile,
