@@ -1,5 +1,7 @@
 /docs/.vitepress/dist/
 /docs/.vitepress/cache
 /node_modules/
+/.worker-dist/
+/.wrangler/
 .pnp.*
 .yarn

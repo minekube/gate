@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gate-minekube-worker-canary",
+  "compatibility_date": "2022-11-29",
+  "main": ".worker-dist/index.js",
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {
+    "GITHUB_APP_ID": "2305701"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "GITHUB_CACHE",
+      "id": "bb52b8a4ec434908a275405672230219"
+    }
+  ],
+  "assets": {
+    "directory": "docs/.vitepress/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": [
+      "/api/extensions",
+      "/api/go-modules"
+    ]
+  }
+}
