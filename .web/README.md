@@ -55,11 +55,16 @@ Worker deployments use the pinned Wrangler toolchain. Set
 `GITHUB_CACHE_KV_NAMESPACE_ID` to the existing `GITHUB_CACHE` Workers KV
 namespace ID in the deployment environment. Before the first uncached API
 request, provision the existing GitHub App private key as a secret on each
-Worker; the key must remain outside the repository:
+Worker. GitHub downloads App keys in PKCS#1 format, while the Worker auth
+library requires PKCS#8. Convert the key in a private directory, keep both
+files outside the repository, and restrict the converted copy to its owner:
 
 ```sh console
-$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.canary.jsonc
-$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.jsonc
+$ umask 077
+$ openssl pkcs8 -topk8 -nocrypt -in github-app-key.pem -out github-app-key-pkcs8.pem
+$ chmod 600 github-app-key-pkcs8.pem
+$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.canary.jsonc < github-app-key-pkcs8.pem
+$ pnpm exec wrangler secret put GITHUB_APP_PRIVATE_KEY --config wrangler.jsonc < github-app-key-pkcs8.pem
 ```
 
 Then run `pnpm run build:worker` followed by

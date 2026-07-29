@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gate-minekube-worker",
   "compatibility_date": "2022-11-29",
-  "main": ".worker-dist/index.js",
+  "main": "worker.mjs",
   "workers_dev": false,
   "preview_urls": false,
   "routes": [
@@ -23,9 +23,6 @@
     "directory": "docs/.vitepress/dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": [
-      "/api/extensions",
-      "/api/go-modules"
-    ]
+    "run_worker_first": true
   }
 }

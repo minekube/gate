@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { createDeploymentConfig } from './deploy-worker.mjs';
+import { normalizePagesResponse } from '../worker-response.mjs';
 
 const readConfig = async (name) =>
   JSON.parse(await readFile(new URL(`../${name}`, import.meta.url), 'utf8'));
@@ -22,7 +23,7 @@ test('production and canary Workers preserve the Pages runtime contract', async 
 
   const shared = {
     compatibility_date: '2022-11-29',
-    main: '.worker-dist/index.js',
+    main: 'worker.mjs',
     vars: { GITHUB_APP_ID: '2305701' },
     kv_namespaces: [
       {
@@ -33,7 +34,7 @@ test('production and canary Workers preserve the Pages runtime contract', async 
       directory: 'docs/.vitepress/dist',
       binding: 'ASSETS',
       not_found_handling: '404-page',
-      run_worker_first: ['/api/extensions', '/api/go-modules'],
+      run_worker_first: true,
     },
   };
 
@@ -90,4 +91,36 @@ test('deployment instructions provision the GitHub App private key as a Worker s
 
   assert.match(readme, /GITHUB_APP_PRIVATE_KEY/);
   assert.match(readme, /wrangler secret put GITHUB_APP_PRIVATE_KEY/);
+  assert.match(readme, /PKCS#8/);
+  assert.match(readme, /openssl pkcs8 -topk8 -nocrypt/);
+});
+
+test('the Worker preserves Pages response headers for static assets and custom 404s', async () => {
+  const html = normalizePagesResponse(
+    new Response('<!doctype html>', {
+      headers: { 'content-type': 'text/html' },
+    })
+  );
+  assert.equal(html.headers.get('access-control-allow-origin'), '*');
+  assert.equal(html.headers.get('content-type'), 'text/html; charset=utf-8');
+
+  const css = normalizePagesResponse(
+    new Response('body{}', {
+      headers: { 'content-type': 'text/css' },
+    })
+  );
+  assert.equal(css.headers.get('content-type'), 'text/css; charset=utf-8');
+
+  const missing = normalizePagesResponse(
+    new Response('missing', {
+      status: 404,
+      headers: {
+        'cache-control': 'public, max-age=0, must-revalidate',
+        'content-type': 'text/html',
+      },
+    })
+  );
+  assert.equal(missing.headers.get('cache-control'), 'no-store');
+  assert.equal(missing.headers.get('access-control-allow-origin'), '*');
+  assert.equal(missing.status, 404);
 });
