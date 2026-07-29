@@ -2903,7 +2903,7 @@
       "witName": "context-bool",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 111,
         "column": 26
       },
@@ -2953,7 +2953,7 @@
       "witName": "context-copy",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/parser.go",
+        "file": "go/go.minekube.com/brigodier/parser.go",
         "line": 90,
         "column": 26
       },
@@ -2996,7 +2996,7 @@
       "witName": "context-copy-for",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/parser.go",
+        "file": "go/go.minekube.com/brigodier/parser.go",
         "line": 114,
         "column": 26
       },
@@ -3056,7 +3056,7 @@
       "witName": "context-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 75,
         "column": 2
       },
@@ -3133,7 +3133,7 @@
       "witName": "context-done",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 108,
         "column": 2
       },
@@ -3184,7 +3184,7 @@
       "witName": "context-err",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 115,
         "column": 2
       },
@@ -3211,7 +3211,7 @@
       "witName": "context-find-suggestion-context",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/suggestions.go",
+        "file": "go/go.minekube.com/brigodier/suggestions.go",
         "line": 200,
         "column": 26
       },
@@ -3270,7 +3270,7 @@
       "witName": "context-float32",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 125,
         "column": 26
       },
@@ -3320,7 +3320,7 @@
       "witName": "context-float64",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 139,
         "column": 26
       },
@@ -3370,7 +3370,7 @@
       "witName": "context-has-nodes",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/parser.go",
+        "file": "go/go.minekube.com/brigodier/parser.go",
         "line": 87,
         "column": 26
       },
@@ -3457,7 +3457,7 @@
       "witName": "context-int",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 77,
         "column": 26
       },
@@ -3507,7 +3507,7 @@
       "witName": "context-int32",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 83,
         "column": 26
       },
@@ -3557,7 +3557,7 @@
       "witName": "context-int64",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 97,
         "column": 26
       },
@@ -3730,7 +3730,7 @@
       "witName": "context-string",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/types.go",
+        "file": "go/go.minekube.com/brigodier/types.go",
         "line": 153,
         "column": 26
       },
@@ -3780,7 +3780,7 @@
       "witName": "context-value",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 162,
         "column": 2
       },
@@ -4010,7 +4010,7 @@
       "witName": "manager-all-usage",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/usage.go",
+        "file": "go/go.minekube.com/brigodier/usage.go",
         "line": 21,
         "column": 22
       },
@@ -4163,7 +4163,7 @@
       "witName": "manager-completion-suggestions-cursor",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/suggestions.go",
+        "file": "go/go.minekube.com/brigodier/suggestions.go",
         "line": 95,
         "column": 22
       },
@@ -4357,7 +4357,7 @@
       "witName": "manager-find-node",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/brigodier.go",
+        "file": "go/go.minekube.com/brigodier/brigodier.go",
         "line": 174,
         "column": 22
       },
@@ -4832,7 +4832,7 @@
       "witName": "manager-path",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/brigodier.go",
+        "file": "go/go.minekube.com/brigodier/brigodier.go",
         "line": 142,
         "column": 22
       },
@@ -4895,7 +4895,7 @@
       "witName": "manager-register",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/brigodier.go",
+        "file": "go/go.minekube.com/brigodier/brigodier.go",
         "line": 22,
         "column": 22
       },
@@ -5034,7 +5034,7 @@
       "witName": "manager-smart-usage",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/brigodier@v0.0.2/usage.go",
+        "file": "go/go.minekube.com/brigodier/usage.go",
         "line": 88,
         "column": 22
       },
@@ -5476,7 +5476,7 @@
       "witName": "requires-context-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 75,
         "column": 2
       },
@@ -5553,7 +5553,7 @@
       "witName": "requires-context-done",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 108,
         "column": 2
       },
@@ -5604,7 +5604,7 @@
       "witName": "requires-context-err",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 115,
         "column": 2
       },
@@ -5804,7 +5804,7 @@
       "witName": "requires-context-value",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 162,
         "column": 2
       },
@@ -9139,7 +9139,7 @@
       "witName": "geyser-connection-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 75,
         "column": 2
       },
@@ -9216,7 +9216,7 @@
       "witName": "geyser-connection-done",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 108,
         "column": 2
       },
@@ -9267,7 +9267,7 @@
       "witName": "geyser-connection-err",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 115,
         "column": 2
       },
@@ -9347,7 +9347,7 @@
       "witName": "geyser-connection-local-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 142,
         "column": 2
       },
@@ -9390,7 +9390,7 @@
       "witName": "geyser-connection-read",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 128,
         "column": 2
       },
@@ -9450,7 +9450,7 @@
       "witName": "geyser-connection-remote-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 145,
         "column": 2
       },
@@ -9493,7 +9493,7 @@
       "witName": "geyser-connection-set-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 168,
         "column": 2
       },
@@ -9562,7 +9562,7 @@
       "witName": "geyser-connection-set-read-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 173,
         "column": 2
       },
@@ -9631,7 +9631,7 @@
       "witName": "geyser-connection-set-write-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 180,
         "column": 2
       },
@@ -9700,7 +9700,7 @@
       "witName": "geyser-connection-value",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/context/context.go",
+        "file": "go/context/context.go",
         "line": 162,
         "column": 2
       },
@@ -9750,7 +9750,7 @@
       "witName": "geyser-connection-write",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 133,
         "column": 2
       },
@@ -69873,7 +69873,7 @@
       "witName": "connection-event-conn-close",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 139,
         "column": 2
       },
@@ -69937,7 +69937,7 @@
       "witName": "connection-event-conn-local-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 142,
         "column": 2
       },
@@ -69980,7 +69980,7 @@
       "witName": "connection-event-conn-read",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 128,
         "column": 2
       },
@@ -70040,7 +70040,7 @@
       "witName": "connection-event-conn-remote-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 145,
         "column": 2
       },
@@ -70083,7 +70083,7 @@
       "witName": "connection-event-conn-set-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 168,
         "column": 2
       },
@@ -70152,7 +70152,7 @@
       "witName": "connection-event-conn-set-read-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 173,
         "column": 2
       },
@@ -70221,7 +70221,7 @@
       "witName": "connection-event-conn-set-write-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 180,
         "column": 2
       },
@@ -70290,7 +70290,7 @@
       "witName": "connection-event-conn-write",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 133,
         "column": 2
       },
@@ -95394,7 +95394,7 @@
       "witName": "minecraft-channel-identifier-namespace",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/common@v0.4.0/minecraft/key/key.go",
+        "file": "go/go.minekube.com/common/minecraft/key/key.go",
         "line": 10,
         "column": 2
       },
@@ -95431,7 +95431,7 @@
       "witName": "minecraft-channel-identifier-string",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/fmt/print.go",
+        "file": "go/fmt/print.go",
         "line": 64,
         "column": 2
       },
@@ -95468,7 +95468,7 @@
       "witName": "minecraft-channel-identifier-value",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/common@v0.4.0/minecraft/key/key.go",
+        "file": "go/go.minekube.com/common/minecraft/key/key.go",
         "line": 11,
         "column": 2
       },
@@ -109979,7 +109979,7 @@
       "witName": "packet-type-align",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 46,
         "column": 2
       },
@@ -110016,7 +110016,7 @@
       "witName": "packet-type-assignable-to",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 122,
         "column": 2
       },
@@ -110072,7 +110072,7 @@
       "witName": "packet-type-bits",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 151,
         "column": 2
       },
@@ -110109,7 +110109,7 @@
       "witName": "packet-type-can-seq",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 273,
         "column": 2
       },
@@ -110146,7 +110146,7 @@
       "witName": "packet-type-can-seq2",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 276,
         "column": 2
       },
@@ -110183,7 +110183,7 @@
       "witName": "packet-type-chan-dir",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 155,
         "column": 2
       },
@@ -110225,7 +110225,7 @@
       "witName": "packet-type-comparable",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 134,
         "column": 2
       },
@@ -110262,7 +110262,7 @@
       "witName": "packet-type-convertible-to",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 128,
         "column": 2
       },
@@ -110318,7 +110318,7 @@
       "witName": "packet-type-elem",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 173,
         "column": 2
       },
@@ -110361,7 +110361,7 @@
       "witName": "packet-type-field",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 178,
         "column": 2
       },
@@ -110509,7 +110509,7 @@
       "witName": "packet-type-field-align",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 50,
         "column": 2
       },
@@ -110546,7 +110546,7 @@
       "witName": "packet-type-field-by-index",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 189,
         "column": 2
       },
@@ -110701,7 +110701,7 @@
       "witName": "packet-type-field-by-name",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 196,
         "column": 2
       },
@@ -110860,7 +110860,7 @@
       "witName": "packet-type-field-by-name-func",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 214,
         "column": 2
       },
@@ -111058,7 +111058,7 @@
       "witName": "packet-type-fields",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 183,
         "column": 2
       },
@@ -111258,7 +111258,7 @@
       "witName": "packet-type-implements",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 119,
         "column": 2
       },
@@ -111314,7 +111314,7 @@
       "witName": "packet-type-in",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 219,
         "column": 2
       },
@@ -111370,7 +111370,7 @@
       "witName": "packet-type-ins",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 224,
         "column": 2
       },
@@ -111478,7 +111478,7 @@
       "witName": "packet-type-is-variadic",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 169,
         "column": 2
       },
@@ -111515,7 +111515,7 @@
       "witName": "packet-type-key",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 228,
         "column": 2
       },
@@ -111558,7 +111558,7 @@
       "witName": "packet-type-kind",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 116,
         "column": 2
       },
@@ -111600,7 +111600,7 @@
       "witName": "packet-type-len",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 232,
         "column": 2
       },
@@ -111637,7 +111637,7 @@
       "witName": "packet-type-method",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 66,
         "column": 2
       },
@@ -111757,7 +111757,7 @@
       "witName": "packet-type-method-by-name",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 84,
         "column": 2
       },
@@ -111888,7 +111888,7 @@
       "witName": "packet-type-methods",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 70,
         "column": 2
       },
@@ -112060,7 +112060,7 @@
       "witName": "packet-type-name",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 95,
         "column": 2
       },
@@ -112097,7 +112097,7 @@
       "witName": "packet-type-num-field",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 236,
         "column": 2
       },
@@ -112134,7 +112134,7 @@
       "witName": "packet-type-num-in",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 240,
         "column": 2
       },
@@ -112171,7 +112171,7 @@
       "witName": "packet-type-num-method",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 91,
         "column": 2
       },
@@ -112208,7 +112208,7 @@
       "witName": "packet-type-num-out",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 244,
         "column": 2
       },
@@ -112245,7 +112245,7 @@
       "witName": "packet-type-out",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 249,
         "column": 2
       },
@@ -112301,7 +112301,7 @@
       "witName": "packet-type-outs",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 254,
         "column": 2
       },
@@ -112409,7 +112409,7 @@
       "witName": "packet-type-overflow-complex",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 258,
         "column": 2
       },
@@ -112483,7 +112483,7 @@
       "witName": "packet-type-overflow-float",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 262,
         "column": 2
       },
@@ -112533,7 +112533,7 @@
       "witName": "packet-type-overflow-int",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 266,
         "column": 2
       },
@@ -112583,7 +112583,7 @@
       "witName": "packet-type-overflow-uint",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 270,
         "column": 2
       },
@@ -112633,7 +112633,7 @@
       "witName": "packet-type-pkg-path",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 102,
         "column": 2
       },
@@ -112670,7 +112670,7 @@
       "witName": "packet-type-size",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 106,
         "column": 2
       },
@@ -112707,7 +112707,7 @@
       "witName": "packet-type-string",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/reflect/type.go",
+        "file": "go/reflect/type.go",
         "line": 113,
         "column": 2
       },
@@ -117045,7 +117045,7 @@
       "witName": "endpoint-propose",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/connect@v0.6.2/connect.go",
+        "file": "go/go.minekube.com/connect/connect.go",
         "line": 66,
         "column": 2
       },
@@ -117106,7 +117106,7 @@
       "witName": "endpoint-rejections",
       "kind": "method",
       "source": {
-        "file": "../../../../go/pkg/mod/go.minekube.com/connect@v0.6.2/connect.go",
+        "file": "go/go.minekube.com/connect/connect.go",
         "line": 67,
         "column": 2
       },
@@ -117276,7 +117276,7 @@
       "witName": "inbound-tunnel-close",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 139,
         "column": 2
       },
@@ -117303,7 +117303,7 @@
       "witName": "inbound-tunnel-local-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 142,
         "column": 2
       },
@@ -117346,7 +117346,7 @@
       "witName": "inbound-tunnel-read",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 128,
         "column": 2
       },
@@ -117406,7 +117406,7 @@
       "witName": "inbound-tunnel-remote-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 145,
         "column": 2
       },
@@ -117486,7 +117486,7 @@
       "witName": "inbound-tunnel-set-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 168,
         "column": 2
       },
@@ -117555,7 +117555,7 @@
       "witName": "inbound-tunnel-set-read-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 173,
         "column": 2
       },
@@ -117624,7 +117624,7 @@
       "witName": "inbound-tunnel-set-write-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 180,
         "column": 2
       },
@@ -117693,7 +117693,7 @@
       "witName": "inbound-tunnel-write",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 133,
         "column": 2
       },
@@ -117980,7 +117980,7 @@
       "witName": "tunnel-session-close",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 139,
         "column": 2
       },
@@ -118007,7 +118007,7 @@
       "witName": "tunnel-session-local-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 142,
         "column": 2
       },
@@ -118050,7 +118050,7 @@
       "witName": "tunnel-session-read",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 128,
         "column": 2
       },
@@ -118110,7 +118110,7 @@
       "witName": "tunnel-session-remote-addr",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 145,
         "column": 2
       },
@@ -118196,7 +118196,7 @@
       "witName": "tunnel-session-set-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 168,
         "column": 2
       },
@@ -118265,7 +118265,7 @@
       "witName": "tunnel-session-set-read-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 173,
         "column": 2
       },
@@ -118334,7 +118334,7 @@
       "witName": "tunnel-session-set-write-deadline",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 180,
         "column": 2
       },
@@ -118403,7 +118403,7 @@
       "witName": "tunnel-session-write",
       "kind": "method",
       "source": {
-        "file": "../../../../../../opt/homebrew/Cellar/go/1.26.2/libexec/src/net/net.go",
+        "file": "go/net/net.go",
         "line": 133,
         "column": 2
       },

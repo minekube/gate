@@ -657,8 +657,18 @@ func objectSource(root string, pkg *packages.Package, object types.Object) model
 	}
 	position := pkg.Fset.Position(object.Pos())
 	file := position.Filename
-	if relative, err := filepath.Rel(root, file); err == nil {
+	if relative, err := filepath.Rel(root, file); err == nil &&
+		relative != ".." &&
+		!strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		file = relative
+	} else if object.Pkg() != nil {
+		file = filepath.Join(
+			"go",
+			filepath.FromSlash(object.Pkg().Path()),
+			filepath.Base(file),
+		)
+	} else {
+		file = filepath.Base(file)
 	}
 	return model.Source{
 		File:   filepath.ToSlash(file),
