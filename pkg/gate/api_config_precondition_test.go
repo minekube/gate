@@ -2,6 +2,7 @@ package gate
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -70,6 +71,30 @@ func TestConfigHandlerRejectsRestartRequiredChange(t *testing.T) {
 	after, err := handler.GetConfig(context.Background(), &pb.GetConfigRequest{})
 	require.NoError(t, err)
 	require.Equal(t, current.Version, after.Version)
+}
+
+func TestConfigHandlerAppliesCompleteConfigPayload(t *testing.T) {
+	g, err := New(Options{Config: liveReloadConfig()})
+	require.NoError(t, err)
+	handler := NewConfigHandler(g, "")
+
+	current, err := handler.GetConfig(context.Background(), &pb.GetConfigRequest{})
+	require.NoError(t, err)
+	currentSnapshot, _, err := g.ConfigSnapshot()
+	require.NoError(t, err)
+	decoded, err := decodeAPIConfig(current.Payload)
+	require.NoError(t, err)
+	currentJSON, err := json.Marshal(currentSnapshot)
+	require.NoError(t, err)
+	decodedJSON, err := json.Marshal(decoded)
+	require.NoError(t, err)
+	require.JSONEq(t, string(currentJSON), string(decodedJSON))
+	applied, err := handler.ApplyConfig(context.Background(), &pb.ApplyConfigRequest{
+		Input:   &pb.ApplyConfigRequest_Config{Config: current.Payload},
+		IfMatch: current.Version,
+	})
+	require.NoError(t, err)
+	require.Equal(t, current.Version, applied.Version)
 }
 
 func TestConfigHandlerPersistsAppliedSnapshot(t *testing.T) {

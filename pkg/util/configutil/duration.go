@@ -17,7 +17,7 @@ type Duration time.Duration
 
 // Make sure Duration implements the interfaces at compile time.
 var (
-	_ yaml.Marshaler   = (*Duration)(nil)
+	_ yaml.Marshaler   = Duration(0)
 	_ yaml.Unmarshaler = (*Duration)(nil)
 
 	_ json.Marshaler   = (*Duration)(nil)
@@ -40,8 +40,8 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d *Duration) MarshalYAML() (any, error) {
-	return time.Duration(*d).String(), nil
+func (d Duration) MarshalYAML() (any, error) {
+	return time.Duration(d).String(), nil
 }
 func (d *Duration) UnmarshalYAML(value *yaml.Node) error {
 	var a any
