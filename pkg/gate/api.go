@@ -49,8 +49,7 @@ func setupAPI(cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.P
 
 			if c.Config.API.Enabled {
 				configHandler := NewConfigHandler(&mu, cfg, eventMgr, initialEnable, configFilePath)
-				liteHandler := NewLiteHandler(&mu, cfg, eventMgr, initialEnable)
-				svc := api.NewService(initialEnable, configHandler, liteHandler)
+				svc := api.NewService(initialEnable, configHandler)
 				srv := api.NewServer(c.Config.API.Config, svc)
 
 				var runCtx context.Context
