@@ -109,7 +109,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		}
 		// Resolve ping response for lite mode.
 		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
-			return lite.ResolveStatusResponse(dialTimeout, routeGeneration, cfg.Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
+			return lite.ResolveStatusResponseWithGeneration(dialTimeout, routeGeneration, cfg.Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
 		}
 	}
 

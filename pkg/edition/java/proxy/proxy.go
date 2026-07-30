@@ -48,6 +48,7 @@ type Proxy struct {
 	// package-local setup code; all runtime readers use currentCfg via config().
 	cfg              *config.Config
 	currentCfg       atomic.Pointer[runtimeConfigSnapshot]
+	liveConfigMu     sync.Mutex
 	event            event.Manager
 	command          command.Manager
 	channelRegistrar *message.ChannelRegistrar
@@ -277,6 +278,9 @@ func liteRoutesChanged(current, previous []liteconfig.Route) bool {
 // changes Lite routes only. Existing Lite connections are direct pipes and retain
 // their already-selected backend; subsequent handshakes read the new snapshot.
 func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
+	p.liveConfigMu.Lock()
+	defer p.liveConfigMu.Unlock()
+
 	current, generation := p.configSnapshot()
 	if candidate == nil || !current.Lite.Enabled || !candidate.Lite.Enabled {
 		return errors.New("unsupported live configuration")

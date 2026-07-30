@@ -348,6 +348,20 @@ func update(pc *proto.PacketContext, h *packet.Handshake) {
 // ResolveStatusResponse resolves the status response for the matching route and caches it for a short time.
 func ResolveStatusResponse(
 	dialTimeout time.Duration,
+	routes []config.Route,
+	log logr.Logger,
+	client netmc.MinecraftConn,
+	handshake *packet.Handshake,
+	handshakeCtx *proto.PacketContext,
+	statusRequestCtx *proto.PacketContext,
+	strategyManager *StrategyManager,
+) (logr.Logger, *packet.StatusResponse, error) {
+	return ResolveStatusResponseWithGeneration(dialTimeout, 0, routes, log, client, handshake, handshakeCtx, statusRequestCtx, strategyManager)
+}
+
+// ResolveStatusResponseWithGeneration resolves a status response with a route snapshot generation.
+func ResolveStatusResponseWithGeneration(
+	dialTimeout time.Duration,
 	routeGeneration uint64,
 	routes []config.Route,
 	log logr.Logger,

@@ -20,6 +20,47 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 )
 
+func TestApplyLiveConfigSerializesConcurrentWriters(t *testing.T) {
+	cfg := config.DefaultConfig
+	cfg.Quota.Connections.Enabled = false
+	cfg.PacketLimiter.PacketsPerSecond = -1
+	cfg.PacketLimiter.BytesPerSecond = -1
+	cfg.Lite = liteconfig.Config{
+		Enabled: true,
+		Routes: []liteconfig.Route{{
+			Host:    []string{"play.example.test"},
+			Backend: []string{"initial.example.test:25565"},
+		}},
+	}
+	p, err := New(Options{Config: &cfg})
+	require.NoError(t, err)
+
+	const writers = 32
+	start := make(chan struct{})
+	results := make(chan error, writers)
+	var wg sync.WaitGroup
+	for i := range writers {
+		candidate := cfg
+		candidate.Lite.Routes = append([]liteconfig.Route(nil), cfg.Lite.Routes...)
+		candidate.Lite.Routes[0].Backend = []string{fmt.Sprintf("backend-%d.example.test:25565", i)}
+		wg.Add(1)
+		go func(candidate config.Config) {
+			defer wg.Done()
+			<-start
+			results <- p.ApplyLiveConfig(&candidate)
+		}(candidate)
+	}
+	close(start)
+	wg.Wait()
+	close(results)
+	for err := range results {
+		require.NoError(t, err)
+	}
+
+	_, generation := p.configSnapshot()
+	require.Equal(t, uint64(writers), generation)
+}
+
 func TestApplyLiveConfigKeepsExistingLiteSessionAndRoutesNewSession(t *testing.T) {
 	firstBackend := newEchoBackend(t)
 	secondBackend := newEchoBackend(t)

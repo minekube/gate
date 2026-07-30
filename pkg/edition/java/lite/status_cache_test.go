@@ -4,10 +4,29 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"golang.org/x/sync/singleflight"
 )
+
+func TestResolveStatusResponseRetainsPublicSignature(t *testing.T) {
+	var resolve func(
+		time.Duration,
+		[]liteconfig.Route,
+		logr.Logger,
+		netmc.MinecraftConn,
+		*packet.Handshake,
+		*proto.PacketContext,
+		*proto.PacketContext,
+		*StrategyManager,
+	) (logr.Logger, *packet.StatusResponse, error) = ResolveStatusResponse
+	if resolve == nil {
+		t.Fatal("ResolveStatusResponse is nil")
+	}
+}
 
 func TestPingStatusCacheSeparatesRouteGenerationsAfterReset(t *testing.T) {
 	cache := newPingStatusCache(time.Now, new(singleflight.Group))
