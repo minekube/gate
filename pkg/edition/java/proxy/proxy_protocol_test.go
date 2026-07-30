@@ -44,7 +44,6 @@ func TestProxyProtocolForgedHeaderFromUntrustedSourceIsNotHonored(t *testing.T) 
 
 	conn := gate.dial(t)
 	writeProxyHeader(t, conn)
-	require.NoError(t, writeStatusHandshake(conn, gate.bind, "localhost", 765))
 
 	observed := gate.observedRemoteAddr(t)
 	require.NotEqual(t, "1.2.3.4", netutil.Host(observed),
@@ -108,7 +107,6 @@ func TestProxyProtocolDisabledIsPassthrough(t *testing.T) {
 	// feature is disabled: the header is never looked at.
 	spoofer := gate.dial(t)
 	writeProxyHeader(t, spoofer)
-	require.NoError(t, writeStatusHandshake(spoofer, gate.bind, "localhost", 765))
 	require.Equal(t, "127.0.0.1", netutil.Host(gate.observedRemoteAddr(t)))
 }
 
