@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.69.1](https://github.com/minekube/gate/compare/v0.69.0...v0.69.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* **proxy:** close open bundles before configuration switch ([#949](https://github.com/minekube/gate/issues/949)) ([3382556](https://github.com/minekube/gate/commit/3382556b2befb885129d28e1ddb030b47d3fdb24))
+
 ## [0.69.0](https://github.com/minekube/gate/compare/v0.68.33...v0.69.0) (2026-07-30)
 
 
