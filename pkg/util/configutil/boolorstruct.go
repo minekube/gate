@@ -1,6 +1,7 @@
 package configutil
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -78,7 +79,7 @@ func (b *BoolOrStruct[T]) UnmarshalYAML(node *yaml.Node) error {
 
 	// Try to unmarshal as struct
 	var structVal T
-	if err := node.Decode(&structVal); err == nil {
+	if err := DecodeYAMLStrict(node, &structVal); err == nil {
 		*b = NewBoolOrStructStruct(structVal)
 		return nil
 	}
@@ -114,12 +115,18 @@ func (b *BoolOrStruct[T]) UnmarshalJSON(data []byte) error {
 
 	// Try to unmarshal as struct
 	var structVal T
-	if err := json.Unmarshal(data, &structVal); err == nil {
+	if err := decodeJSONStrict(data, &structVal); err == nil {
 		*b = NewBoolOrStructStruct(structVal)
 		return nil
 	}
 
 	return fmt.Errorf("field must be either bool or struct")
+}
+
+func decodeJSONStrict(data []byte, target any) error {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(target)
 }
 
 // MarshalJSON implements json.Marshaler.

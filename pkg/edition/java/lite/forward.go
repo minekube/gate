@@ -356,6 +356,21 @@ func ResolveStatusResponse(
 	statusRequestCtx *proto.PacketContext,
 	strategyManager *StrategyManager,
 ) (logr.Logger, *packet.StatusResponse, error) {
+	return ResolveStatusResponseWithGeneration(dialTimeout, 0, routes, log, client, handshake, handshakeCtx, statusRequestCtx, strategyManager)
+}
+
+// ResolveStatusResponseWithGeneration resolves a status response with a route snapshot generation.
+func ResolveStatusResponseWithGeneration(
+	dialTimeout time.Duration,
+	routeGeneration uint64,
+	routes []config.Route,
+	log logr.Logger,
+	client netmc.MinecraftConn,
+	handshake *packet.Handshake,
+	handshakeCtx *proto.PacketContext,
+	statusRequestCtx *proto.PacketContext,
+	strategyManager *StrategyManager,
+) (logr.Logger, *packet.StatusResponse, error) {
 	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		return log, nil, err
@@ -364,7 +379,7 @@ func ResolveStatusResponse(
 	_, log, res, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, *packet.StatusResponse, error) {
 		// Measure status response time for latency tracking (better than dial time)
 		start := time.Now()
-		newLog, response, respErr := resolveStatusResponse(src, dialTimeout, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
+		newLog, response, respErr := resolveStatusResponse(src, dialTimeout, routeGeneration, backendAddr, route, log, client, handshake, handshakeCtx, statusRequestCtx)
 		statusLatency := time.Since(start)
 
 		// Record latency for lowest-latency strategy (only on success)
@@ -430,8 +445,9 @@ func init() {
 }
 
 type pingKey struct {
-	backendAddr string
-	protocol    proto.Protocol
+	backendAddr     string
+	protocol        proto.Protocol
+	routeGeneration uint64
 }
 
 type pingResult struct {
@@ -487,7 +503,7 @@ func (c *pingStatusCache) load(key pingKey, ttl time.Duration, load func() *ping
 	}
 	c.mu.Unlock()
 
-	flightKey := fmt.Sprintf("%d:%s:%d", generation, key.backendAddr, key.protocol)
+	flightKey := fmt.Sprintf("%d:%d:%s:%d", generation, key.routeGeneration, key.backendAddr, key.protocol)
 	result := <-c.group.DoChan(flightKey, func() (any, error) {
 		c.mu.Lock()
 		if generation == c.generation {
@@ -519,6 +535,7 @@ func (c *pingStatusCache) reset() {
 func resolveStatusResponse(
 	src net.Conn,
 	dialTimeout time.Duration,
+	routeGeneration uint64,
 	backendAddr string,
 	route *config.Route,
 	log logr.Logger,
@@ -527,7 +544,7 @@ func resolveStatusResponse(
 	handshakeCtx *proto.PacketContext,
 	statusRequestCtx *proto.PacketContext,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	key := pingKey{backendAddr, proto.Protocol(handshake.ProtocolVersion)}
+	key := pingKey{backendAddr, proto.Protocol(handshake.ProtocolVersion), routeGeneration}
 
 	// fast path: use cache without loader
 	if route.CachePingEnabled() {

@@ -343,7 +343,7 @@ func (bc *BedrockConfig) UnmarshalYAML(node *yaml.Node) error {
 	type tempBedrockConfig BedrockConfig
 	temp := &tempBedrockConfig{}
 
-	if err := node.Decode(temp); err != nil {
+	if err := configutil.DecodeYAMLStrict(node, temp); err != nil {
 		return err
 	}
 

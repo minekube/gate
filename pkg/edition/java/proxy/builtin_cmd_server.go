@@ -50,7 +50,7 @@ func connectPlayersToServer(c *command.Context, proxy *Proxy, serverName string,
 
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(),
-			time.Millisecond*time.Duration(proxy.cfg.ConnectionTimeout))
+			time.Millisecond*time.Duration(proxy.config().ConnectionTimeout))
 		defer cancel()
 
 		wg := new(sync.WaitGroup)

@@ -13,6 +13,7 @@ import (
 	protoversion "go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/componentutil"
+	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"gopkg.in/yaml.v3"
@@ -85,7 +86,7 @@ func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
 	}{
 		Alias: (*Alias)(p),
 	}
-	if err := value.Decode(out); err != nil {
+	if err := configutil.DecodeYAMLStrict(value, out); err != nil {
 		return fmt.Errorf("error decoding yaml: %w", err)
 	}
 

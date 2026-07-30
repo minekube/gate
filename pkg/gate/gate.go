@@ -7,9 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
+	"reflect"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -21,6 +25,7 @@ import (
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	jconfiglite "go.minekube.com/gate/pkg/edition/java/lite/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/internal/otelutil"
@@ -79,6 +84,7 @@ func New(options Options) (gate *Gate, err error) {
 	}
 
 	c := options.Config
+	gate.currentConfig.Store(c)
 	// Java proxy is always created (embedded config)
 	gate.javaProxy, err = jproxy.New(jproxy.Options{
 		Config:   &c.Config,
@@ -129,6 +135,83 @@ type Gate struct {
 	javaProxy    *jproxy.Proxy      // The Java edition proxy.
 	bedrockProxy *bproxy.Proxy      // The Bedrock edition proxy.
 	proc         process.Collection // Parallel running proc.
+
+	// currentConfig is an immutable, atomically published runtime snapshot.
+	// reloadMu serializes validate/prepare/commit so readers only observe whole snapshots.
+	currentConfig atomic.Pointer[config.Config]
+	reloadMu      sync.Mutex
+}
+
+// LiveConfigResult is the redacted outcome of a file-driven live configuration attempt.
+// Code is intentionally a stable category rather than an error detail that could reveal
+// configuration contents.
+type LiveConfigResult struct {
+	Applied          bool
+	Unchanged        bool
+	CacheInvalidated bool
+	Code             string
+}
+
+// ApplyLiveConfig validates and atomically publishes the narrow set of source-proven
+// live-safe changes: routes in an already-enabled Java Lite configuration. All other
+// settings are rejected before any runtime component is changed.
+func (g *Gate) ApplyLiveConfig(candidate *config.Config) LiveConfigResult {
+	g.reloadMu.Lock()
+	defer g.reloadMu.Unlock()
+
+	current := g.currentConfig.Load()
+	if candidate == nil {
+		return LiveConfigResult{Code: "invalid"}
+	}
+	if reflect.DeepEqual(current, candidate) {
+		return LiveConfigResult{Unchanged: true, Code: "unchanged"}
+	}
+	if _, errs := candidate.Validate(); len(errs) != 0 {
+		return LiveConfigResult{Code: "invalid"}
+	}
+	if !onlyLiveLiteRoutesChanged(current, candidate) {
+		return LiveConfigResult{Code: "unsupported"}
+	}
+	routes, err := cloneLiveLiteRoutes(candidate.Config.Lite.Routes)
+	if err != nil {
+		return LiveConfigResult{Code: "prepare_failed"}
+	}
+	published := *current
+	published.Config = current.Config
+	published.Config.Lite = current.Config.Lite
+	published.Config.Lite.Routes = routes
+	if err := g.javaProxy.ApplyLiveConfig(&published.Config); err != nil {
+		return LiveConfigResult{Code: "prepare_failed"}
+	}
+	g.currentConfig.Store(&published)
+	return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied"}
+}
+
+func cloneLiveLiteRoutes(routes []jconfiglite.Route) ([]jconfiglite.Route, error) {
+	encoded, err := json.Marshal(routes)
+	if err != nil {
+		return nil, err
+	}
+	var cloned []jconfiglite.Route
+	if err := json.Unmarshal(encoded, &cloned); err != nil {
+		return nil, err
+	}
+	return cloned, nil
+}
+
+func onlyLiveLiteRoutesChanged(current, candidate *config.Config) bool {
+	if current == nil || candidate == nil || !current.Config.Lite.Enabled || !candidate.Config.Lite.Enabled {
+		return false
+	}
+	currentWithoutRoutes := *current
+	candidateWithoutRoutes := *candidate
+	currentJava := current.Config
+	candidateJava := candidate.Config
+	currentJava.Lite.Routes = nil
+	candidateJava.Lite.Routes = nil
+	currentWithoutRoutes.Config = currentJava
+	candidateWithoutRoutes.Config = candidateJava
+	return reflect.DeepEqual(currentWithoutRoutes, candidateWithoutRoutes)
 }
 
 // Java returns the Java edition proxy, or nil if none.
@@ -183,7 +266,9 @@ func WithAutoShutdownOnSignal(enabled bool) StartOption {
 type LoadConfigFunc func() (*config.Config, error)
 
 // WithAutoConfigReload is a StartOption for Start
-// that automatically reloads the config when a file change is detected.
+// that watches the config file and applies supported live changes when a file
+// change is detected. Currently, only Lite routes in an already-enabled Lite
+// configuration are applied; invalid or unsupported candidates are rejected.
 //
 // This setting is disabled by default.
 func WithAutoConfigReload(path string) StartOption {
@@ -257,7 +342,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(
-		ctx, configLog, eventMgr,
+		ctx, configLog, gate,
 		c.autoConfigReloadWatchPath, c.conf,
 	)
 	if err != nil {
@@ -272,7 +357,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 func setupAutoConfigReload(
 	ctx context.Context,
 	log logr.Logger,
-	mgr event.Manager,
+	gate *Gate,
 	path string,
 	initialCfg *config.Config,
 ) error {
@@ -280,20 +365,71 @@ func setupAutoConfigReload(
 		return nil // No auto config reload
 	}
 	log.Info("auto config reload enabled", "path", path)
-	prevCfg := initialCfg
+	_ = initialCfg // Gate owns the immutable initial snapshot.
 	// Watch config file for changes
 	return reload.Watch(ctx, path, func() error {
-		cfg, err := LoadConfig(Viper)
+		cfg, err := loadLiveConfigCandidate(Viper, path)
 		if err != nil {
 			return err
 		}
-		if err = validateConfig(log, cfg); err != nil {
+		if _, errs := cfg.Validate(); len(errs) != 0 {
+			return reload.Reject("invalid")
+		}
+		result := gate.ApplyLiveConfig(cfg)
+		switch result.Code {
+		case "applied", "unchanged":
+			return nil
+		default:
+			return reload.Reject(result.Code)
+		}
+	})
+}
+
+// validateConfigFileSyntax rejects incomplete and unknown configuration before
+// Viper applies defaults or environment overrides. Errors never leave this
+// function so reload diagnostics cannot disclose config contents.
+func validateConfigFileSyntax(configPath string) error {
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+	var candidate config.Config
+	return decodeConfigStrict(b, path.Ext(configPath), &candidate)
+}
+
+func decodeConfigStrict(b []byte, extension string, candidate *config.Config) error {
+	switch extension {
+	case ".yaml", ".yml":
+		decoder := yaml.NewDecoder(bytes.NewReader(b))
+		decoder.KnownFields(true)
+		if err := decoder.Decode(candidate); err != nil {
 			return err
 		}
-		reload.FireConfigUpdate(mgr, cfg, prevCfg)
-		prevCfg = cfg
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			if err == nil {
+				return errors.New("multiple config documents")
+			}
+			return err
+		}
 		return nil
-	})
+	case ".json":
+		decoder := json.NewDecoder(bytes.NewReader(b))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(candidate); err != nil {
+			return err
+		}
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			if err == nil {
+				return errors.New("multiple config values")
+			}
+			return err
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported config format")
+	}
 }
 
 // validateConfig validates the provided config.Config
@@ -320,19 +456,48 @@ func validateConfig(log logr.Logger, c *config.Config) error {
 // LoadConfig loads in config.Config from viper.
 // It is used by Start with the packages Viper if no WithConfig option is given.
 func LoadConfig(v *viper.Viper) (*config.Config, error) {
-	// Clone default config
-	cfg := func() config.Config { return config.DefaultConfig }()
-	// IMPORTANT: Create fresh maps to avoid sharing state between loads
-	// Maps are reference types in Go, so without this, all config instances
-	// would share the same map, causing removed servers to persist
-	cfg.Config.Servers = make(map[string]string)
-	cfg.Config.ForcedHosts = make(map[string][]string)
+	cfg := newConfigCandidate()
 
 	// Load in Gate config
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
 	}
+	return finishConfigCandidate(v, &cfg), nil
+}
 
+// loadLiveConfigCandidate reads and strictly parses one complete file image.
+// The candidate is built independently from the current runtime configuration.
+func loadLiveConfigCandidate(v *viper.Viper, configPath string) (*config.Config, error) {
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, reload.Reject("read_failed")
+	}
+	cfg := newConfigCandidate()
+	extension := path.Ext(configPath)
+	if err := decodeConfigStrict(b, extension, &cfg); err != nil {
+		return nil, reload.Reject("parse_failed")
+	}
+	if err := readDecodedConfig(v, extension, &cfg); err != nil {
+		return nil, reload.Reject("parse_failed")
+	}
+	return finishConfigCandidate(v, &cfg), nil
+}
+
+func newConfigCandidate() config.Config {
+	encoded, err := json.Marshal(config.DefaultConfig)
+	if err != nil {
+		panic(err)
+	}
+	var cfg config.Config
+	if err := json.Unmarshal(encoded, &cfg); err != nil {
+		panic(err)
+	}
+	cfg.Config.Servers = make(map[string]string)
+	cfg.Config.ForcedHosts = make(map[string][]string)
+	return cfg
+}
+
+func finishConfigCandidate(v *viper.Viper, cfg *config.Config) *config.Config {
 	// Apply environment variable overrides for specific fields
 	// This allows environment variables to override config file values
 	// Set custom environment variable names for forwarding secrets
@@ -355,7 +520,30 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	}
 
 	// Java config is now embedded directly in cfg.Config
-	return &cfg, nil
+	return cfg
+}
+
+func readDecodedConfig(v *viper.Viper, extension string, cfg *config.Config) error {
+	var (
+		marshal    func(any) ([]byte, error)
+		configType string
+	)
+	switch extension {
+	case ".yaml", ".yml":
+		marshal = yaml.Marshal
+		configType = "yaml"
+	case ".json":
+		marshal = json.Marshal
+		configType = "json"
+	default:
+		return fmt.Errorf("unsupported config file format")
+	}
+	b, err := marshal(cfg)
+	if err != nil {
+		return err
+	}
+	v.SetConfigType(configType)
+	return v.ReadConfig(bytes.NewReader(b))
 }
 
 // Workaround for https://github.com/minekube/gate/issues/218#issuecomment-1632800775

@@ -95,19 +95,21 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
+	cfg, routeGeneration := h.proxy.configSnapshot()
+
 	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
-	if h.config().Lite.Enabled {
+	if cfg.Lite.Enabled {
 		h.conn.SetState(nextState)
-		dialTimeout := time.Duration(h.config().ConnectionTimeout)
+		dialTimeout := time.Duration(cfg.ConnectionTimeout)
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
-			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
+			lite.Forward(dialTimeout, cfg.Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
 			return
 		}
 		// Resolve ping response for lite mode.
 		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
-			return lite.ResolveStatusResponse(dialTimeout, h.config().Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
+			return lite.ResolveStatusResponseWithGeneration(dialTimeout, routeGeneration, cfg.Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
 		}
 	}
 
@@ -118,7 +120,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	handshakeIntent := handshake.Intent()
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
-	if handshakeIntent == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
+	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {
 		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
 		return
 	}
