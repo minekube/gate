@@ -3,6 +3,9 @@ package lite
 import (
 	"math"
 	"math/rand"
+	"net"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -10,6 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jellydator/ttlcache/v3"
 	"go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/util/netutil"
 )
 
 // StrategyManager manages state for load balancing strategies across a single Gate instance.
@@ -23,6 +27,10 @@ type StrategyManager struct {
 
 	// Connection counters for least-connections strategy
 	connectionCounters *sync.Map // map[string]*atomic.Uint32
+	strategyCountersMu sync.Mutex
+
+	activeConnectionsMu sync.RWMutex
+	activeConnections   map[string]uint32
 
 	// Latency cache for lowest-latency strategy
 	latencyCache *ttlcache.Cache[string, time.Duration]
@@ -34,6 +42,7 @@ func NewStrategyManager() *StrategyManager {
 		rng:                rand.New(rand.NewSource(time.Now().UnixNano())),
 		roundRobinIndexes:  &sync.Map{},
 		connectionCounters: &sync.Map{},
+		activeConnections:  make(map[string]uint32),
 		latencyCache:       ttlcache.New[string, time.Duration](),
 	}
 }
@@ -66,13 +75,73 @@ func (sm *StrategyManager) GetNextBackend(log logr.Logger, route *config.Route, 
 
 // IncrementConnection increments the connection counter for a backend (used with least-connections).
 func (sm *StrategyManager) IncrementConnection(backend string) func() {
-	if counter := sm.getOrCreateCounter(backend); counter != nil {
-		counter.Add(1)
-		return func() {
-			counter.Add(^uint32(0)) // Decrement on disconnect
+	sm.strategyCountersMu.Lock()
+	counter := sm.getOrCreateCounter(backend)
+	if counter == nil {
+		sm.strategyCountersMu.Unlock()
+		return func() {}
+	}
+	counter.Add(1)
+	sm.strategyCountersMu.Unlock()
+
+	return func() {
+		sm.strategyCountersMu.Lock()
+		defer sm.strategyCountersMu.Unlock()
+		if counter.Load() == 0 {
+			return
+		}
+		counter.Add(^uint32(0))
+		if counter.Load() == 0 {
+			sm.connectionCounters.CompareAndDelete(backend, counter)
 		}
 	}
-	return func() {} // No-op if counter creation failed
+}
+
+func (sm *StrategyManager) TrackConnection(routeHost, backend string) func() {
+	key := canonicalConnectionKey(routeHost, backend)
+	sm.activeConnectionsMu.Lock()
+	sm.activeConnections[key]++
+	sm.activeConnectionsMu.Unlock()
+
+	decrementStrategyCounter := sm.IncrementConnection(backend)
+	return func() {
+		decrementStrategyCounter()
+
+		sm.activeConnectionsMu.Lock()
+		if count := sm.activeConnections[key]; count <= 1 {
+			delete(sm.activeConnections, key)
+		} else {
+			sm.activeConnections[key] = count - 1
+		}
+		sm.activeConnectionsMu.Unlock()
+	}
+}
+
+func (sm *StrategyManager) ActiveConnections() uint32 {
+	sm.activeConnectionsMu.RLock()
+	defer sm.activeConnectionsMu.RUnlock()
+
+	var total uint32
+	for _, count := range sm.activeConnections {
+		total += count
+	}
+	return total
+}
+
+func canonicalConnectionKey(routeHost, backend string) string {
+	return strings.ToLower(routeHost) + "\x00" + canonicalBackendAddress(backend)
+}
+
+func canonicalBackendAddress(backend string) string {
+	addr, err := netutil.Parse(backend, "tcp")
+	if err != nil {
+		return strings.ToLower(backend)
+	}
+	host, port := netutil.HostPort(addr)
+	if port == 0 {
+		port = 25565
+	}
+	return net.JoinHostPort(strings.ToLower(host), strconv.Itoa(int(port)))
 }
 
 // RecordLatency records the latency for a backend (used with lowest-latency).
@@ -129,12 +198,10 @@ func (sm *StrategyManager) leastConnectionsNextBackend(log logr.Logger, backends
 	var leastCount uint32 = math.MaxUint32
 
 	for _, backend := range backends {
-		counter := sm.getOrCreateCounter(backend)
-		if counter == nil {
-			continue
+		var count uint32
+		if counter := sm.getCounter(backend); counter != nil {
+			count = counter.Load()
 		}
-
-		count := counter.Load()
 		if count < leastCount {
 			leastBackend = backend
 			leastCount = count
@@ -186,6 +253,18 @@ func (sm *StrategyManager) GetOrCreateCounter(backend string) *atomic.Uint32 {
 
 func (sm *StrategyManager) getOrCreateCounter(backend string) *atomic.Uint32 {
 	value, _ := sm.connectionCounters.LoadOrStore(backend, &atomic.Uint32{})
+	counter, ok := value.(*atomic.Uint32)
+	if !ok {
+		return nil
+	}
+	return counter
+}
+
+func (sm *StrategyManager) getCounter(backend string) *atomic.Uint32 {
+	value, ok := sm.connectionCounters.Load(backend)
+	if !ok {
+		return nil
+	}
 	counter, ok := value.(*atomic.Uint32)
 	if !ok {
 		return nil

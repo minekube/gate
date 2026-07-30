@@ -56,6 +56,15 @@ const (
 	// GateServiceRequestCookieProcedure is the fully-qualified name of the GateService's RequestCookie
 	// RPC.
 	GateServiceRequestCookieProcedure = "/minekube.gate.v1.GateService/RequestCookie"
+	// GateServiceGetStatusProcedure is the fully-qualified name of the GateService's GetStatus RPC.
+	GateServiceGetStatusProcedure = "/minekube.gate.v1.GateService/GetStatus"
+	// GateServiceGetConfigProcedure is the fully-qualified name of the GateService's GetConfig RPC.
+	GateServiceGetConfigProcedure = "/minekube.gate.v1.GateService/GetConfig"
+	// GateServiceValidateConfigProcedure is the fully-qualified name of the GateService's
+	// ValidateConfig RPC.
+	GateServiceValidateConfigProcedure = "/minekube.gate.v1.GateService/ValidateConfig"
+	// GateServiceApplyConfigProcedure is the fully-qualified name of the GateService's ApplyConfig RPC.
+	GateServiceApplyConfigProcedure = "/minekube.gate.v1.GateService/ApplyConfig"
 )
 
 // GateServiceClient is a client for the minekube.gate.v1.GateService service.
@@ -92,6 +101,14 @@ type GateServiceClient interface {
 	// RequestCookie requests a cookie from a player's client.
 	// The payload in RequestCookieResponse may be empty if the cookie is not found.
 	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
+	// GetStatus returns current proxy metadata including version, mode, players and servers.
+	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
+	// GetConfig returns the current effective config.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// ValidateConfig parses and validates a config payload without applying it.
+	ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error)
+	// ApplyConfig parses, validates, and applies a new config payload.
+	ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error)
 }
 
 // NewGateServiceClient constructs a client for the minekube.gate.v1.GateService service. By
@@ -159,6 +176,30 @@ func NewGateServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 			connect.WithClientOptions(opts...),
 		),
+		getStatus: connect.NewClient[v1.GetStatusRequest, v1.GetStatusResponse](
+			httpClient,
+			baseURL+GateServiceGetStatusProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("GetStatus")),
+			connect.WithClientOptions(opts...),
+		),
+		getConfig: connect.NewClient[v1.GetConfigRequest, v1.GetConfigResponse](
+			httpClient,
+			baseURL+GateServiceGetConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("GetConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		validateConfig: connect.NewClient[v1.ValidateConfigRequest, v1.ValidateConfigResponse](
+			httpClient,
+			baseURL+GateServiceValidateConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("ValidateConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		applyConfig: connect.NewClient[v1.ApplyConfigRequest, v1.ApplyConfigResponse](
+			httpClient,
+			baseURL+GateServiceApplyConfigProcedure,
+			connect.WithSchema(gateServiceMethods.ByName("ApplyConfig")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -173,6 +214,10 @@ type gateServiceClient struct {
 	disconnectPlayer *connect.Client[v1.DisconnectPlayerRequest, v1.DisconnectPlayerResponse]
 	storeCookie      *connect.Client[v1.StoreCookieRequest, v1.StoreCookieResponse]
 	requestCookie    *connect.Client[v1.RequestCookieRequest, v1.RequestCookieResponse]
+	getStatus        *connect.Client[v1.GetStatusRequest, v1.GetStatusResponse]
+	getConfig        *connect.Client[v1.GetConfigRequest, v1.GetConfigResponse]
+	validateConfig   *connect.Client[v1.ValidateConfigRequest, v1.ValidateConfigResponse]
+	applyConfig      *connect.Client[v1.ApplyConfigRequest, v1.ApplyConfigResponse]
 }
 
 // GetPlayer calls minekube.gate.v1.GateService.GetPlayer.
@@ -220,6 +265,26 @@ func (c *gateServiceClient) RequestCookie(ctx context.Context, req *connect.Requ
 	return c.requestCookie.CallUnary(ctx, req)
 }
 
+// GetStatus calls minekube.gate.v1.GateService.GetStatus.
+func (c *gateServiceClient) GetStatus(ctx context.Context, req *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error) {
+	return c.getStatus.CallUnary(ctx, req)
+}
+
+// GetConfig calls minekube.gate.v1.GateService.GetConfig.
+func (c *gateServiceClient) GetConfig(ctx context.Context, req *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return c.getConfig.CallUnary(ctx, req)
+}
+
+// ValidateConfig calls minekube.gate.v1.GateService.ValidateConfig.
+func (c *gateServiceClient) ValidateConfig(ctx context.Context, req *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error) {
+	return c.validateConfig.CallUnary(ctx, req)
+}
+
+// ApplyConfig calls minekube.gate.v1.GateService.ApplyConfig.
+func (c *gateServiceClient) ApplyConfig(ctx context.Context, req *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error) {
+	return c.applyConfig.CallUnary(ctx, req)
+}
+
 // GateServiceHandler is an implementation of the minekube.gate.v1.GateService service.
 type GateServiceHandler interface {
 	// GetPlayer returns the player by the given id or username.
@@ -254,6 +319,14 @@ type GateServiceHandler interface {
 	// RequestCookie requests a cookie from a player's client.
 	// The payload in RequestCookieResponse may be empty if the cookie is not found.
 	RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error)
+	// GetStatus returns current proxy metadata including version, mode, players and servers.
+	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
+	// GetConfig returns the current effective config.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// ValidateConfig parses and validates a config payload without applying it.
+	ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error)
+	// ApplyConfig parses, validates, and applies a new config payload.
+	ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error)
 }
 
 // NewGateServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -317,6 +390,30 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(gateServiceMethods.ByName("RequestCookie")),
 		connect.WithHandlerOptions(opts...),
 	)
+	gateServiceGetStatusHandler := connect.NewUnaryHandler(
+		GateServiceGetStatusProcedure,
+		svc.GetStatus,
+		connect.WithSchema(gateServiceMethods.ByName("GetStatus")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceGetConfigHandler := connect.NewUnaryHandler(
+		GateServiceGetConfigProcedure,
+		svc.GetConfig,
+		connect.WithSchema(gateServiceMethods.ByName("GetConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceValidateConfigHandler := connect.NewUnaryHandler(
+		GateServiceValidateConfigProcedure,
+		svc.ValidateConfig,
+		connect.WithSchema(gateServiceMethods.ByName("ValidateConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	gateServiceApplyConfigHandler := connect.NewUnaryHandler(
+		GateServiceApplyConfigProcedure,
+		svc.ApplyConfig,
+		connect.WithSchema(gateServiceMethods.ByName("ApplyConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/minekube.gate.v1.GateService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GateServiceGetPlayerProcedure:
@@ -337,6 +434,14 @@ func NewGateServiceHandler(svc GateServiceHandler, opts ...connect.HandlerOption
 			gateServiceStoreCookieHandler.ServeHTTP(w, r)
 		case GateServiceRequestCookieProcedure:
 			gateServiceRequestCookieHandler.ServeHTTP(w, r)
+		case GateServiceGetStatusProcedure:
+			gateServiceGetStatusHandler.ServeHTTP(w, r)
+		case GateServiceGetConfigProcedure:
+			gateServiceGetConfigHandler.ServeHTTP(w, r)
+		case GateServiceValidateConfigProcedure:
+			gateServiceValidateConfigHandler.ServeHTTP(w, r)
+		case GateServiceApplyConfigProcedure:
+			gateServiceApplyConfigHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -380,4 +485,20 @@ func (UnimplementedGateServiceHandler) StoreCookie(context.Context, *connect.Req
 
 func (UnimplementedGateServiceHandler) RequestCookie(context.Context, *connect.Request[v1.RequestCookieRequest]) (*connect.Response[v1.RequestCookieResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.RequestCookie is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetStatus is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.GetConfig is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ValidateConfig(context.Context, *connect.Request[v1.ValidateConfigRequest]) (*connect.Response[v1.ValidateConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ValidateConfig is not implemented"))
+}
+
+func (UnimplementedGateServiceHandler) ApplyConfig(context.Context, *connect.Request[v1.ApplyConfigRequest]) (*connect.Response[v1.ApplyConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("minekube.gate.v1.GateService.ApplyConfig is not implemented"))
 }

@@ -4,16 +4,25 @@
 ## Table of Contents
 
 - [minekube/gate/v1/gate_service.proto](#minekube_gate_v1_gate_service-proto)
+    - [ApplyConfigRequest](#minekube-gate-v1-ApplyConfigRequest)
+    - [ApplyConfigResponse](#minekube-gate-v1-ApplyConfigResponse)
+    - [BedrockPlayerData](#minekube-gate-v1-BedrockPlayerData)
+    - [ClassicStats](#minekube-gate-v1-ClassicStats)
     - [ConnectPlayerRequest](#minekube-gate-v1-ConnectPlayerRequest)
     - [ConnectPlayerResponse](#minekube-gate-v1-ConnectPlayerResponse)
     - [DisconnectPlayerRequest](#minekube-gate-v1-DisconnectPlayerRequest)
     - [DisconnectPlayerResponse](#minekube-gate-v1-DisconnectPlayerResponse)
+    - [GetConfigRequest](#minekube-gate-v1-GetConfigRequest)
+    - [GetConfigResponse](#minekube-gate-v1-GetConfigResponse)
     - [GetPlayerRequest](#minekube-gate-v1-GetPlayerRequest)
     - [GetPlayerResponse](#minekube-gate-v1-GetPlayerResponse)
+    - [GetStatusRequest](#minekube-gate-v1-GetStatusRequest)
+    - [GetStatusResponse](#minekube-gate-v1-GetStatusResponse)
     - [ListPlayersRequest](#minekube-gate-v1-ListPlayersRequest)
     - [ListPlayersResponse](#minekube-gate-v1-ListPlayersResponse)
     - [ListServersRequest](#minekube-gate-v1-ListServersRequest)
     - [ListServersResponse](#minekube-gate-v1-ListServersResponse)
+    - [LiteStats](#minekube-gate-v1-LiteStats)
     - [Player](#minekube-gate-v1-Player)
     - [RegisterServerRequest](#minekube-gate-v1-RegisterServerRequest)
     - [RegisterServerResponse](#minekube-gate-v1-RegisterServerResponse)
@@ -24,7 +33,14 @@
     - [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse)
     - [UnregisterServerRequest](#minekube-gate-v1-UnregisterServerRequest)
     - [UnregisterServerResponse](#minekube-gate-v1-UnregisterServerResponse)
-  
+    - [ValidateConfigRequest](#minekube-gate-v1-ValidateConfigRequest)
+    - [ValidateConfigResponse](#minekube-gate-v1-ValidateConfigResponse)
+
+    - [BedrockDeviceOS](#minekube-gate-v1-BedrockDeviceOS)
+    - [BedrockInputMode](#minekube-gate-v1-BedrockInputMode)
+    - [BedrockUIProfile](#minekube-gate-v1-BedrockUIProfile)
+    - [ProxyMode](#minekube-gate-v1-ProxyMode)
+
     - [GateService](#minekube-gate-v1-GateService)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -35,6 +51,79 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## minekube/gate/v1/gate_service.proto
+
+
+
+<a name="minekube-gate-v1-ApplyConfigRequest"></a>
+
+### ApplyConfigRequest
+ApplyConfigRequest is the request for ApplyConfig method.
+The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [string](#string) |  | Complete configuration data as a YAML or JSON string. |
+| merge_patch | [string](#string) |  | RFC 7396 JSON Merge Patch applied to the current configuration. |
+| persist | [bool](#bool) |  | Whether to persist the config to disk by overwriting the existing config file. Only works if a config file exists. Defaults to false (in-memory only). |
+| if_match | [string](#string) |  | Version returned by GetConfig. The apply is rejected when it is stale. |
+
+
+
+
+
+
+<a name="minekube-gate-v1-ApplyConfigResponse"></a>
+
+### ApplyConfigResponse
+ApplyConfigResponse contains validation warnings emitted while applying the config.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| warnings | [string](#string) | repeated |  |
+| version | [string](#string) |  | Version of the effective configuration after the apply. |
+
+
+
+
+
+
+<a name="minekube-gate-v1-BedrockPlayerData"></a>
+
+### BedrockPlayerData
+BedrockPlayerData contains information specific to Bedrock Edition players.
+This data is only available for players connecting through Geyser/Floodgate.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| xuid | [int64](#int64) |  | Xbox User ID (XUID) - unique identifier for Bedrock players |
+| device_os | [BedrockDeviceOS](#minekube-gate-v1-BedrockDeviceOS) |  | Device operating system the player is using |
+| language | [string](#string) |  | Client language code (e.g., &#34;en_US&#34;) |
+| ui_profile | [BedrockUIProfile](#minekube-gate-v1-BedrockUIProfile) |  | UI profile (Classic or Pocket) |
+| input_mode | [BedrockInputMode](#minekube-gate-v1-BedrockInputMode) |  | Input method (mouse, touch, gamepad, etc.) |
+| behind_proxy | [bool](#bool) |  | Whether the player is connecting through a proxy |
+| linked_player | [string](#string) |  | Linked Java Edition username (if any) |
+
+
+
+
+
+
+<a name="minekube-gate-v1-ClassicStats"></a>
+
+### ClassicStats
+ClassicStats contains statistics for classic proxy mode.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| players | [int32](#int32) |  | Number of online players |
+| servers | [int32](#int32) |  | Number of registered servers |
+
+
+
 
 
 
@@ -98,6 +187,32 @@ DisconnectPlayerResponse is the response for DisconnectPlayer method.
 
 
 
+<a name="minekube-gate-v1-GetConfigRequest"></a>
+
+### GetConfigRequest
+GetConfigRequest is the request for GetConfig method.
+
+
+
+
+
+
+<a name="minekube-gate-v1-GetConfigResponse"></a>
+
+### GetConfigResponse
+GetConfigResponse contains the serialized config payload.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| payload | [string](#string) |  | YAML-serialized configuration data |
+| version | [string](#string) |  | Opaque version of the effective configuration, used as an ETag. |
+
+
+
+
+
+
 <a name="minekube-gate-v1-GetPlayerRequest"></a>
 
 ### GetPlayerRequest
@@ -123,6 +238,34 @@ GetPlayerResponse is the response for GetPlayer method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | player | [Player](#minekube-gate-v1-Player) |  | The player matching the request criteria |
+
+
+
+
+
+
+<a name="minekube-gate-v1-GetStatusRequest"></a>
+
+### GetStatusRequest
+GetStatusRequest is the request for GetStatus method.
+
+
+
+
+
+
+<a name="minekube-gate-v1-GetStatusResponse"></a>
+
+### GetStatusResponse
+GetStatusResponse contains proxy runtime metadata.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [string](#string) |  | Gate version string |
+| mode | [ProxyMode](#minekube-gate-v1-ProxyMode) |  | Current operating mode (classic or lite) |
+| classic | [ClassicStats](#minekube-gate-v1-ClassicStats) |  | Statistics for classic mode |
+| lite | [LiteStats](#minekube-gate-v1-LiteStats) |  | Statistics for lite mode |
 
 
 
@@ -184,6 +327,22 @@ ListServersResponse is the response for ListServers method.
 
 
 
+<a name="minekube-gate-v1-LiteStats"></a>
+
+### LiteStats
+LiteStats contains statistics for lite proxy mode.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| connections | [int32](#int32) |  | Number of active connections being proxied |
+| routes | [int32](#int32) |  | Number of configured routes |
+
+
+
+
+
+
 <a name="minekube-gate-v1-Player"></a>
 
 ### Player
@@ -194,6 +353,7 @@ Player represents an online player on the proxy.
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | The player&#39;s Minecraft UUID |
 | username | [string](#string) |  | The player&#39;s username |
+| bedrock | [BedrockPlayerData](#minekube-gate-v1-BedrockPlayerData) |  | Optional Bedrock player data (only present for Bedrock players) |
 
 
 
@@ -326,7 +486,108 @@ UnregisterServerResponse is the response for UnregisterServer method.
 
 
 
+
+<a name="minekube-gate-v1-ValidateConfigRequest"></a>
+
+### ValidateConfigRequest
+ValidateConfigRequest is the request for ValidateConfig method.
+The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [string](#string) |  | Configuration data as YAML or JSON string |
+
+
+
+
+
+
+<a name="minekube-gate-v1-ValidateConfigResponse"></a>
+
+### ValidateConfigResponse
+ValidateConfigResponse contains validation results when the config is processed.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| warnings | [string](#string) | repeated |  |
+| errors | [string](#string) | repeated |  |
+
+
+
+
+
  
+
+
+<a name="minekube-gate-v1-BedrockDeviceOS"></a>
+
+### BedrockDeviceOS
+BedrockDeviceOS represents the operating system of a Bedrock Edition player&#39;s device.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BEDROCK_DEVICE_OS_UNSPECIFIED | 0 |  |
+| BEDROCK_DEVICE_OS_UNKNOWN | 1 |  |
+| BEDROCK_DEVICE_OS_ANDROID | 2 |  |
+| BEDROCK_DEVICE_OS_IOS | 3 |  |
+| BEDROCK_DEVICE_OS_MACOS | 4 |  |
+| BEDROCK_DEVICE_OS_AMAZON | 5 |  |
+| BEDROCK_DEVICE_OS_GEAR_VR | 6 |  |
+| BEDROCK_DEVICE_OS_HOLOLENS | 7 | Deprecated |
+| BEDROCK_DEVICE_OS_WINDOWS_UWP | 8 |  |
+| BEDROCK_DEVICE_OS_WINDOWS_X86 | 9 |  |
+| BEDROCK_DEVICE_OS_DEDICATED | 10 |  |
+| BEDROCK_DEVICE_OS_APPLE_TV | 11 | Deprecated |
+| BEDROCK_DEVICE_OS_PLAYSTATION | 12 |  |
+| BEDROCK_DEVICE_OS_SWITCH | 13 |  |
+| BEDROCK_DEVICE_OS_XBOX | 14 |  |
+| BEDROCK_DEVICE_OS_WINDOWS_PHONE | 15 | Deprecated |
+| BEDROCK_DEVICE_OS_LINUX | 16 |  |
+
+
+
+<a name="minekube-gate-v1-BedrockInputMode"></a>
+
+### BedrockInputMode
+BedrockInputMode represents the input method used by a Bedrock Edition player.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BEDROCK_INPUT_MODE_UNSPECIFIED | 0 |  |
+| BEDROCK_INPUT_MODE_UNKNOWN | 1 |  |
+| BEDROCK_INPUT_MODE_MOUSE | 2 |  |
+| BEDROCK_INPUT_MODE_TOUCH | 3 |  |
+| BEDROCK_INPUT_MODE_GAMEPAD | 4 |  |
+| BEDROCK_INPUT_MODE_MOTION_CONTROLLER | 5 |  |
+
+
+
+<a name="minekube-gate-v1-BedrockUIProfile"></a>
+
+### BedrockUIProfile
+BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BEDROCK_UI_PROFILE_UNSPECIFIED | 0 |  |
+| BEDROCK_UI_PROFILE_CLASSIC | 1 |  |
+| BEDROCK_UI_PROFILE_POCKET | 2 |  |
+
+
+
+<a name="minekube-gate-v1-ProxyMode"></a>
+
+### ProxyMode
+ProxyMode enumerates the current operating mode of Gate.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PROXY_MODE_UNSPECIFIED | 0 |  |
+| PROXY_MODE_CLASSIC | 1 |  |
+| PROXY_MODE_LITE | 2 |  |
+
 
  
 
@@ -351,6 +612,10 @@ All methods follow standard gRPC error codes and include detailed error messages
 | DisconnectPlayer | [DisconnectPlayerRequest](#minekube-gate-v1-DisconnectPlayerRequest) | [DisconnectPlayerResponse](#minekube-gate-v1-DisconnectPlayerResponse) | DisconnectPlayer disconnects a player from the proxy. Returns NOT_FOUND if the player doesn&#39;t exist. Returns INVALID_ARGUMENT if the reason text is malformed. |
 | StoreCookie | [StoreCookieRequest](#minekube-gate-v1-StoreCookieRequest) | [StoreCookieResponse](#minekube-gate-v1-StoreCookieResponse) | StoreCookie stores a cookie on a player&#39;s client. Returns NOT_FOUND if the player doesn&#39;t exist. Passing an empty payload will remove the cookie. |
 | RequestCookie | [RequestCookieRequest](#minekube-gate-v1-RequestCookieRequest) | [RequestCookieResponse](#minekube-gate-v1-RequestCookieResponse) | RequestCookie requests a cookie from a player&#39;s client. The payload in RequestCookieResponse may be empty if the cookie is not found. |
+| GetStatus | [GetStatusRequest](#minekube-gate-v1-GetStatusRequest) | [GetStatusResponse](#minekube-gate-v1-GetStatusResponse) | GetStatus returns current proxy metadata including version, mode, players and servers. |
+| GetConfig | [GetConfigRequest](#minekube-gate-v1-GetConfigRequest) | [GetConfigResponse](#minekube-gate-v1-GetConfigResponse) | GetConfig returns the current effective config. |
+| ValidateConfig | [ValidateConfigRequest](#minekube-gate-v1-ValidateConfigRequest) | [ValidateConfigResponse](#minekube-gate-v1-ValidateConfigResponse) | ValidateConfig parses and validates a config payload without applying it. |
+| ApplyConfig | [ApplyConfigRequest](#minekube-gate-v1-ApplyConfigRequest) | [ApplyConfigResponse](#minekube-gate-v1-ApplyConfigResponse) | ApplyConfig parses, validates, and applies a new config payload. |
 
  
 
@@ -375,4 +640,3 @@ All methods follow standard gRPC error codes and include detailed error messages
 | <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
 | <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
 | <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
-

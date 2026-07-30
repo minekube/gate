@@ -16,7 +16,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/process"
 )
 
-func setupAPI(cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.Proxy) process.Runnable {
+func setupAPI(gate *Gate, cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.Proxy, configFilePath string) process.Runnable {
 	return process.RunnableFunc(func(ctx context.Context) error {
 		log := logr.FromContextOrDiscard(ctx).WithName("api")
 		ctx = logr.NewContext(ctx, log)
@@ -48,7 +48,8 @@ func setupAPI(cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.P
 			}
 
 			if c.Config.API.Enabled {
-				svc := api.NewService(initialEnable)
+				configHandler := NewConfigHandler(gate, configFilePath)
+				svc := api.NewService(initialEnable, configHandler)
 				srv := api.NewServer(c.Config.API.Config, svc)
 
 				var runCtx context.Context

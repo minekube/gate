@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package minekube.gate.v1;
 
+option go_package = "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1;gatev1";
+
 // GateService is the service API for managing a Gate proxy instance.
 // It provides methods for managing players and servers.
 // All methods follow standard gRPC error codes and include detailed error messages.
@@ -46,6 +48,19 @@ service GateService {
   // RequestCookie requests a cookie from a player's client.
   // The payload in RequestCookieResponse may be empty if the cookie is not found.
   rpc RequestCookie(RequestCookieRequest) returns (RequestCookieResponse);
+
+  // GetStatus returns current proxy metadata including version, mode, players and servers.
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+
+  // GetConfig returns the current effective config.
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+
+  // ValidateConfig parses and validates a config payload without applying it.
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse);
+
+  // ApplyConfig parses, validates, and applies a new config payload.
+  rpc ApplyConfig(ApplyConfigRequest) returns (ApplyConfigResponse);
+
 }
 
 // StoreCookieRequest is the request for StoreCookie method.
@@ -76,7 +91,6 @@ message RequestCookieResponse {
   // May be empty if the cookie is not found.
   bytes payload = 1;
 }
-
 
 // DisconnectPlayerRequest is the request for DisconnectPlayer method.
 message DisconnectPlayerRequest {
@@ -191,4 +205,152 @@ message Player {
   string id = 1;
   // The player's username
   string username = 2;
+  // Optional Bedrock player data (only present for Bedrock players)
+  BedrockPlayerData bedrock = 3;
+}
+
+// BedrockPlayerData contains information specific to Bedrock Edition players.
+// This data is only available for players connecting through Geyser/Floodgate.
+message BedrockPlayerData {
+  // Xbox User ID (XUID) - unique identifier for Bedrock players
+  int64 xuid = 1;
+  // Device operating system the player is using
+  BedrockDeviceOS device_os = 2;
+  // Client language code (e.g., "en_US")
+  string language = 3;
+  // UI profile (Classic or Pocket)
+  BedrockUIProfile ui_profile = 4;
+  // Input method (mouse, touch, gamepad, etc.)
+  BedrockInputMode input_mode = 5;
+  // Whether the player is connecting through a proxy
+  bool behind_proxy = 6;
+  // Linked Java Edition username (if any)
+  string linked_player = 7;
+}
+
+// GetStatusRequest is the request for GetStatus method.
+message GetStatusRequest {}
+
+// ProxyMode enumerates the current operating mode of Gate.
+enum ProxyMode {
+  PROXY_MODE_UNSPECIFIED = 0;
+  PROXY_MODE_CLASSIC = 1;
+  PROXY_MODE_LITE = 2;
+}
+
+// BedrockDeviceOS represents the operating system of a Bedrock Edition player's device.
+enum BedrockDeviceOS {
+  BEDROCK_DEVICE_OS_UNSPECIFIED = 0;
+  BEDROCK_DEVICE_OS_UNKNOWN = 1;
+  BEDROCK_DEVICE_OS_ANDROID = 2;
+  BEDROCK_DEVICE_OS_IOS = 3;
+  BEDROCK_DEVICE_OS_MACOS = 4;
+  BEDROCK_DEVICE_OS_AMAZON = 5;
+  BEDROCK_DEVICE_OS_GEAR_VR = 6;
+  BEDROCK_DEVICE_OS_HOLOLENS = 7;     // Deprecated
+  BEDROCK_DEVICE_OS_WINDOWS_UWP = 8;
+  BEDROCK_DEVICE_OS_WINDOWS_X86 = 9;
+  BEDROCK_DEVICE_OS_DEDICATED = 10;
+  BEDROCK_DEVICE_OS_APPLE_TV = 11;    // Deprecated
+  BEDROCK_DEVICE_OS_PLAYSTATION = 12;
+  BEDROCK_DEVICE_OS_SWITCH = 13;
+  BEDROCK_DEVICE_OS_XBOX = 14;
+  BEDROCK_DEVICE_OS_WINDOWS_PHONE = 15; // Deprecated
+  BEDROCK_DEVICE_OS_LINUX = 16;
+}
+
+// BedrockInputMode represents the input method used by a Bedrock Edition player.
+enum BedrockInputMode {
+  BEDROCK_INPUT_MODE_UNSPECIFIED = 0;
+  BEDROCK_INPUT_MODE_UNKNOWN = 1;
+  BEDROCK_INPUT_MODE_MOUSE = 2;
+  BEDROCK_INPUT_MODE_TOUCH = 3;
+  BEDROCK_INPUT_MODE_GAMEPAD = 4;
+  BEDROCK_INPUT_MODE_MOTION_CONTROLLER = 5;
+}
+
+// BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+enum BedrockUIProfile {
+  BEDROCK_UI_PROFILE_UNSPECIFIED = 0;
+  BEDROCK_UI_PROFILE_CLASSIC = 1;
+  BEDROCK_UI_PROFILE_POCKET = 2;
+}
+
+// GetStatusResponse contains proxy runtime metadata.
+message GetStatusResponse {
+  // Gate version string
+  string version = 1;
+  // Current operating mode (classic or lite)
+  ProxyMode mode = 2;
+  // Mode-specific statistics
+  oneof stats {
+    // Statistics for classic mode
+    ClassicStats classic = 3;
+    // Statistics for lite mode
+    LiteStats lite = 4;
+  }
+}
+
+// ClassicStats contains statistics for classic proxy mode.
+message ClassicStats {
+  // Number of online players
+  int32 players = 1;
+  // Number of registered servers
+  int32 servers = 2;
+}
+
+// LiteStats contains statistics for lite proxy mode.
+message LiteStats {
+  // Number of active connections being proxied
+  int32 connections = 1;
+  // Number of configured routes
+  int32 routes = 2;
+}
+
+
+// GetConfigRequest is the request for GetConfig method.
+message GetConfigRequest {}
+
+// GetConfigResponse contains the serialized config payload.
+message GetConfigResponse {
+  // YAML-serialized configuration data
+  string payload = 1;
+  // Opaque version of the effective configuration, used as an ETag.
+  string version = 2;
+}
+
+// ValidateConfigRequest is the request for ValidateConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+message ValidateConfigRequest {
+  // Configuration data as YAML or JSON string
+  string config = 1;
+}
+
+// ValidateConfigResponse contains validation results when the config is processed.
+message ValidateConfigResponse {
+  repeated string warnings = 1;
+  repeated string errors = 2;
+}
+
+// ApplyConfigRequest is the request for ApplyConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+message ApplyConfigRequest {
+  oneof input {
+    // Complete configuration data as a YAML or JSON string.
+    string config = 1;
+    // RFC 7396 JSON Merge Patch applied to the current configuration.
+    string merge_patch = 3;
+  }
+  // Whether to persist the config to disk by overwriting the existing config file.
+  // Only works if a config file exists. Defaults to false (in-memory only).
+  bool persist = 2;
+  // Version returned by GetConfig. The apply is rejected when it is stale.
+  string if_match = 4;
+}
+
+// ApplyConfigResponse contains validation warnings emitted while applying the config.
+message ApplyConfigResponse {
+  repeated string warnings = 1;
+  // Version of the effective configuration after the apply.
+  string version = 2;
 }

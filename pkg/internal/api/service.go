@@ -18,21 +18,27 @@ import (
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
-func NewService(p *proxy.Proxy) *Service {
+// ConfigHandler defines methods for configuration management
+type ConfigHandler interface {
+	GetStatus(context.Context, *pb.GetStatusRequest) (*pb.GetStatusResponse, error)
+	GetConfig(context.Context, *pb.GetConfigRequest) (*pb.GetConfigResponse, error)
+	ValidateConfig(context.Context, *pb.ValidateConfigRequest) ([]string, error)
+	ApplyConfig(context.Context, *pb.ApplyConfigRequest) (*pb.ApplyConfigResponse, error)
+}
+
+func NewService(p *proxy.Proxy, configHandler ConfigHandler) *Service {
 	return &Service{
-		p: p,
+		p:             p,
+		configHandler: configHandler,
 	}
 }
 
-type (
-	Handler = gatev1connect.GateServiceHandler
+type Service struct {
+	p             *proxy.Proxy
+	configHandler ConfigHandler
+}
 
-	Service struct {
-		p *proxy.Proxy
-	}
-)
-
-var _ Handler = (*Service)(nil)
+var _ gatev1connect.GateServiceHandler = (*Service)(nil)
 
 func (s *Service) ListPlayers(ctx context.Context, c *connect.Request[pb.ListPlayersRequest]) (*connect.Response[pb.ListPlayersResponse], error) {
 	var players []proxy.Player
@@ -240,4 +246,48 @@ func (s *Service) StoreCookie(ctx context.Context, c *connect.Request[pb.StoreCo
 	}
 
 	return connect.NewResponse(&pb.StoreCookieResponse{}), nil
+}
+
+func (s *Service) GetStatus(ctx context.Context, c *connect.Request[pb.GetStatusRequest]) (*connect.Response[pb.GetStatusResponse], error) {
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
+	}
+	resp, err := s.configHandler.GetStatus(ctx, c.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (s *Service) GetConfig(ctx context.Context, c *connect.Request[pb.GetConfigRequest]) (*connect.Response[pb.GetConfigResponse], error) {
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
+	}
+	resp, err := s.configHandler.GetConfig(ctx, c.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (s *Service) ValidateConfig(ctx context.Context, c *connect.Request[pb.ValidateConfigRequest]) (*connect.Response[pb.ValidateConfigResponse], error) {
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
+	}
+	warns, err := s.configHandler.ValidateConfig(ctx, c.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&pb.ValidateConfigResponse{Warnings: warns}), nil
+}
+
+func (s *Service) ApplyConfig(ctx context.Context, c *connect.Request[pb.ApplyConfigRequest]) (*connect.Response[pb.ApplyConfigResponse], error) {
+	if s.configHandler == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
+	}
+	response, err := s.configHandler.ApplyConfig(ctx, c.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(response), nil
 }

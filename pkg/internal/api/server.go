@@ -17,7 +17,7 @@ import (
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
 )
 
-func NewServer(cfg Config, h Handler) *Server {
+func NewServer(cfg Config, h gatev1connect.GateServiceHandler) *Server {
 	return &Server{
 		cfg: cfg,
 		h:   h,
@@ -26,7 +26,7 @@ func NewServer(cfg Config, h Handler) *Server {
 
 type Server struct {
 	cfg Config
-	h   Handler
+	h   gatev1connect.GateServiceHandler
 }
 
 func (s *Server) Start(ctx context.Context) error {

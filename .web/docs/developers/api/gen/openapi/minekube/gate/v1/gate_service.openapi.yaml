@@ -2,6 +2,42 @@ openapi: 3.1.0
 info:
   title: minekube.gate.v1
 paths:
+  /minekube.gate.v1.GateService/ApplyConfig:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: ApplyConfig parses, validates, and applies a new config payload.
+      description: ApplyConfig parses, validates, and applies a new config payload.
+      operationId: minekube.gate.v1.GateService.ApplyConfig
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.ApplyConfigRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.ApplyConfigResponse'
   /minekube.gate.v1.GateService/ConnectPlayer:
     post:
       tags:
@@ -80,6 +116,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/minekube.gate.v1.DisconnectPlayerResponse'
+  /minekube.gate.v1.GateService/GetConfig:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: GetConfig returns the current effective config.
+      description: GetConfig returns the current effective config.
+      operationId: minekube.gate.v1.GateService.GetConfig
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.GetConfigRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.GetConfigResponse'
   /minekube.gate.v1.GateService/GetPlayer:
     post:
       tags:
@@ -119,6 +191,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/minekube.gate.v1.GetPlayerResponse'
+  /minekube.gate.v1.GateService/GetStatus:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: GetStatus returns current proxy metadata including version, mode, players and servers.
+      description: GetStatus returns current proxy metadata including version, mode, players and servers.
+      operationId: minekube.gate.v1.GateService.GetStatus
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.GetStatusRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.GetStatusResponse'
   /minekube.gate.v1.GateService/ListPlayers:
     post:
       tags:
@@ -348,6 +456,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/minekube.gate.v1.UnregisterServerResponse'
+  /minekube.gate.v1.GateService/ValidateConfig:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: ValidateConfig parses and validates a config payload without applying it.
+      description: ValidateConfig parses and validates a config payload without applying it.
+      operationId: minekube.gate.v1.GateService.ValidateConfig
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.ValidateConfigRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.ValidateConfigResponse'
 components:
   schemas:
     connect-protocol-version:
@@ -419,6 +563,153 @@ components:
           description: Deserialized error detail payload. The 'type' field indicates the schema. This field is for easier debugging and should not be relied upon for application logic.
       additionalProperties: true
       description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message, with an additional debug field for ConnectRPC error details.
+    minekube.gate.v1.ApplyConfigRequest:
+      type: object
+      allOf:
+        - properties:
+            persist:
+              type: boolean
+              title: persist
+              description: |-
+                Whether to persist the config to disk by overwriting the existing config file.
+                 Only works if a config file exists. Defaults to false (in-memory only).
+            ifMatch:
+              type: string
+              title: if_match
+              description: Version returned by GetConfig. The apply is rejected when it is stale.
+        - oneOf:
+            - properties:
+                config:
+                  type: string
+                  title: config
+                  description: Complete configuration data as a YAML or JSON string.
+              title: config
+              required:
+                - config
+            - properties:
+                mergePatch:
+                  type: string
+                  title: merge_patch
+                  description: RFC 7396 JSON Merge Patch applied to the current configuration.
+              title: merge_patch
+              required:
+                - mergePatch
+      title: ApplyConfigRequest
+      additionalProperties: false
+      description: |-
+        ApplyConfigRequest is the request for ApplyConfig method.
+         The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+    minekube.gate.v1.ApplyConfigResponse:
+      type: object
+      properties:
+        warnings:
+          type: array
+          items:
+            type: string
+          title: warnings
+        version:
+          type: string
+          title: version
+          description: Version of the effective configuration after the apply.
+      title: ApplyConfigResponse
+      additionalProperties: false
+      description: ApplyConfigResponse contains validation warnings emitted while applying the config.
+    minekube.gate.v1.BedrockDeviceOS:
+      type: string
+      title: BedrockDeviceOS
+      enum:
+        - BEDROCK_DEVICE_OS_UNSPECIFIED
+        - BEDROCK_DEVICE_OS_UNKNOWN
+        - BEDROCK_DEVICE_OS_ANDROID
+        - BEDROCK_DEVICE_OS_IOS
+        - BEDROCK_DEVICE_OS_MACOS
+        - BEDROCK_DEVICE_OS_AMAZON
+        - BEDROCK_DEVICE_OS_GEAR_VR
+        - BEDROCK_DEVICE_OS_HOLOLENS
+        - BEDROCK_DEVICE_OS_WINDOWS_UWP
+        - BEDROCK_DEVICE_OS_WINDOWS_X86
+        - BEDROCK_DEVICE_OS_DEDICATED
+        - BEDROCK_DEVICE_OS_APPLE_TV
+        - BEDROCK_DEVICE_OS_PLAYSTATION
+        - BEDROCK_DEVICE_OS_SWITCH
+        - BEDROCK_DEVICE_OS_XBOX
+        - BEDROCK_DEVICE_OS_WINDOWS_PHONE
+        - BEDROCK_DEVICE_OS_LINUX
+      description: BedrockDeviceOS represents the operating system of a Bedrock Edition player's device.
+    minekube.gate.v1.BedrockInputMode:
+      type: string
+      title: BedrockInputMode
+      enum:
+        - BEDROCK_INPUT_MODE_UNSPECIFIED
+        - BEDROCK_INPUT_MODE_UNKNOWN
+        - BEDROCK_INPUT_MODE_MOUSE
+        - BEDROCK_INPUT_MODE_TOUCH
+        - BEDROCK_INPUT_MODE_GAMEPAD
+        - BEDROCK_INPUT_MODE_MOTION_CONTROLLER
+      description: BedrockInputMode represents the input method used by a Bedrock Edition player.
+    minekube.gate.v1.BedrockPlayerData:
+      type: object
+      properties:
+        xuid:
+          type:
+            - integer
+            - string
+          title: xuid
+          format: int64
+          description: Xbox User ID (XUID) - unique identifier for Bedrock players
+        deviceOs:
+          title: device_os
+          description: Device operating system the player is using
+          $ref: '#/components/schemas/minekube.gate.v1.BedrockDeviceOS'
+        language:
+          type: string
+          title: language
+          description: Client language code (e.g., "en_US")
+        uiProfile:
+          title: ui_profile
+          description: UI profile (Classic or Pocket)
+          $ref: '#/components/schemas/minekube.gate.v1.BedrockUIProfile'
+        inputMode:
+          title: input_mode
+          description: Input method (mouse, touch, gamepad, etc.)
+          $ref: '#/components/schemas/minekube.gate.v1.BedrockInputMode'
+        behindProxy:
+          type: boolean
+          title: behind_proxy
+          description: Whether the player is connecting through a proxy
+        linkedPlayer:
+          type: string
+          title: linked_player
+          description: Linked Java Edition username (if any)
+      title: BedrockPlayerData
+      additionalProperties: false
+      description: |-
+        BedrockPlayerData contains information specific to Bedrock Edition players.
+         This data is only available for players connecting through Geyser/Floodgate.
+    minekube.gate.v1.BedrockUIProfile:
+      type: string
+      title: BedrockUIProfile
+      enum:
+        - BEDROCK_UI_PROFILE_UNSPECIFIED
+        - BEDROCK_UI_PROFILE_CLASSIC
+        - BEDROCK_UI_PROFILE_POCKET
+      description: BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+    minekube.gate.v1.ClassicStats:
+      type: object
+      properties:
+        players:
+          type: integer
+          title: players
+          format: int32
+          description: Number of online players
+        servers:
+          type: integer
+          title: servers
+          format: int32
+          description: Number of registered servers
+      title: ClassicStats
+      additionalProperties: false
+      description: ClassicStats contains statistics for classic proxy mode.
     minekube.gate.v1.ConnectPlayerRequest:
       type: object
       properties:
@@ -466,6 +757,25 @@ components:
       title: DisconnectPlayerResponse
       additionalProperties: false
       description: DisconnectPlayerResponse is the response for DisconnectPlayer method.
+    minekube.gate.v1.GetConfigRequest:
+      type: object
+      title: GetConfigRequest
+      additionalProperties: false
+      description: GetConfigRequest is the request for GetConfig method.
+    minekube.gate.v1.GetConfigResponse:
+      type: object
+      properties:
+        payload:
+          type: string
+          title: payload
+          description: YAML-serialized configuration data
+        version:
+          type: string
+          title: version
+          description: Opaque version of the effective configuration, used as an ETag.
+      title: GetConfigResponse
+      additionalProperties: false
+      description: GetConfigResponse contains the serialized config payload.
     minekube.gate.v1.GetPlayerRequest:
       type: object
       properties:
@@ -497,6 +807,43 @@ components:
       title: GetPlayerResponse
       additionalProperties: false
       description: GetPlayerResponse is the response for GetPlayer method.
+    minekube.gate.v1.GetStatusRequest:
+      type: object
+      title: GetStatusRequest
+      additionalProperties: false
+      description: GetStatusRequest is the request for GetStatus method.
+    minekube.gate.v1.GetStatusResponse:
+      type: object
+      allOf:
+        - properties:
+            version:
+              type: string
+              title: version
+              description: Gate version string
+            mode:
+              title: mode
+              description: Current operating mode (classic or lite)
+              $ref: '#/components/schemas/minekube.gate.v1.ProxyMode'
+        - oneOf:
+            - properties:
+                classic:
+                  title: classic
+                  description: Statistics for classic mode
+                  $ref: '#/components/schemas/minekube.gate.v1.ClassicStats'
+              title: classic
+              required:
+                - classic
+            - properties:
+                lite:
+                  title: lite
+                  description: Statistics for lite mode
+                  $ref: '#/components/schemas/minekube.gate.v1.LiteStats'
+              title: lite
+              required:
+                - lite
+      title: GetStatusResponse
+      additionalProperties: false
+      description: GetStatusResponse contains proxy runtime metadata.
     minekube.gate.v1.ListPlayersRequest:
       type: object
       properties:
@@ -539,6 +886,22 @@ components:
       title: ListServersResponse
       additionalProperties: false
       description: ListServersResponse is the response for ListServers method.
+    minekube.gate.v1.LiteStats:
+      type: object
+      properties:
+        connections:
+          type: integer
+          title: connections
+          format: int32
+          description: Number of active connections being proxied
+        routes:
+          type: integer
+          title: routes
+          format: int32
+          description: Number of configured routes
+      title: LiteStats
+      additionalProperties: false
+      description: LiteStats contains statistics for lite proxy mode.
     minekube.gate.v1.Player:
       type: object
       properties:
@@ -550,9 +913,21 @@ components:
           type: string
           title: username
           description: The player's username
+        bedrock:
+          title: bedrock
+          description: Optional Bedrock player data (only present for Bedrock players)
+          $ref: '#/components/schemas/minekube.gate.v1.BedrockPlayerData'
       title: Player
       additionalProperties: false
       description: Player represents an online player on the proxy.
+    minekube.gate.v1.ProxyMode:
+      type: string
+      title: ProxyMode
+      enum:
+        - PROXY_MODE_UNSPECIFIED
+        - PROXY_MODE_CLASSIC
+        - PROXY_MODE_LITE
+      description: ProxyMode enumerates the current operating mode of Gate.
     minekube.gate.v1.RegisterServerRequest:
       type: object
       properties:
@@ -669,6 +1044,34 @@ components:
       title: UnregisterServerResponse
       additionalProperties: false
       description: UnregisterServerResponse is the response for UnregisterServer method.
+    minekube.gate.v1.ValidateConfigRequest:
+      type: object
+      properties:
+        config:
+          type: string
+          title: config
+          description: Configuration data as YAML or JSON string
+      title: ValidateConfigRequest
+      additionalProperties: false
+      description: |-
+        ValidateConfigRequest is the request for ValidateConfig method.
+         The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+    minekube.gate.v1.ValidateConfigResponse:
+      type: object
+      properties:
+        warnings:
+          type: array
+          items:
+            type: string
+          title: warnings
+        errors:
+          type: array
+          items:
+            type: string
+          title: errors
+      title: ValidateConfigResponse
+      additionalProperties: false
+      description: ValidateConfigResponse contains validation results when the config is processed.
 security: []
 tags:
   - name: minekube.gate.v1.GateService

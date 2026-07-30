@@ -21,6 +21,257 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ProxyMode enumerates the current operating mode of Gate.
+type ProxyMode int32
+
+const (
+	ProxyMode_PROXY_MODE_UNSPECIFIED ProxyMode = 0
+	ProxyMode_PROXY_MODE_CLASSIC     ProxyMode = 1
+	ProxyMode_PROXY_MODE_LITE        ProxyMode = 2
+)
+
+// Enum value maps for ProxyMode.
+var (
+	ProxyMode_name = map[int32]string{
+		0: "PROXY_MODE_UNSPECIFIED",
+		1: "PROXY_MODE_CLASSIC",
+		2: "PROXY_MODE_LITE",
+	}
+	ProxyMode_value = map[string]int32{
+		"PROXY_MODE_UNSPECIFIED": 0,
+		"PROXY_MODE_CLASSIC":     1,
+		"PROXY_MODE_LITE":        2,
+	}
+)
+
+func (x ProxyMode) Enum() *ProxyMode {
+	p := new(ProxyMode)
+	*p = x
+	return p
+}
+
+func (x ProxyMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProxyMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[0].Descriptor()
+}
+
+func (ProxyMode) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[0]
+}
+
+func (x ProxyMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProxyMode.Descriptor instead.
+func (ProxyMode) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{0}
+}
+
+// BedrockDeviceOS represents the operating system of a Bedrock Edition player's device.
+type BedrockDeviceOS int32
+
+const (
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_UNSPECIFIED   BedrockDeviceOS = 0
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_UNKNOWN       BedrockDeviceOS = 1
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_ANDROID       BedrockDeviceOS = 2
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_IOS           BedrockDeviceOS = 3
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_MACOS         BedrockDeviceOS = 4
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_AMAZON        BedrockDeviceOS = 5
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_GEAR_VR       BedrockDeviceOS = 6
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_HOLOLENS      BedrockDeviceOS = 7 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_UWP   BedrockDeviceOS = 8
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_X86   BedrockDeviceOS = 9
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_DEDICATED     BedrockDeviceOS = 10
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_APPLE_TV      BedrockDeviceOS = 11 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_PLAYSTATION   BedrockDeviceOS = 12
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_SWITCH        BedrockDeviceOS = 13
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_XBOX          BedrockDeviceOS = 14
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_WINDOWS_PHONE BedrockDeviceOS = 15 // Deprecated
+	BedrockDeviceOS_BEDROCK_DEVICE_OS_LINUX         BedrockDeviceOS = 16
+)
+
+// Enum value maps for BedrockDeviceOS.
+var (
+	BedrockDeviceOS_name = map[int32]string{
+		0:  "BEDROCK_DEVICE_OS_UNSPECIFIED",
+		1:  "BEDROCK_DEVICE_OS_UNKNOWN",
+		2:  "BEDROCK_DEVICE_OS_ANDROID",
+		3:  "BEDROCK_DEVICE_OS_IOS",
+		4:  "BEDROCK_DEVICE_OS_MACOS",
+		5:  "BEDROCK_DEVICE_OS_AMAZON",
+		6:  "BEDROCK_DEVICE_OS_GEAR_VR",
+		7:  "BEDROCK_DEVICE_OS_HOLOLENS",
+		8:  "BEDROCK_DEVICE_OS_WINDOWS_UWP",
+		9:  "BEDROCK_DEVICE_OS_WINDOWS_X86",
+		10: "BEDROCK_DEVICE_OS_DEDICATED",
+		11: "BEDROCK_DEVICE_OS_APPLE_TV",
+		12: "BEDROCK_DEVICE_OS_PLAYSTATION",
+		13: "BEDROCK_DEVICE_OS_SWITCH",
+		14: "BEDROCK_DEVICE_OS_XBOX",
+		15: "BEDROCK_DEVICE_OS_WINDOWS_PHONE",
+		16: "BEDROCK_DEVICE_OS_LINUX",
+	}
+	BedrockDeviceOS_value = map[string]int32{
+		"BEDROCK_DEVICE_OS_UNSPECIFIED":   0,
+		"BEDROCK_DEVICE_OS_UNKNOWN":       1,
+		"BEDROCK_DEVICE_OS_ANDROID":       2,
+		"BEDROCK_DEVICE_OS_IOS":           3,
+		"BEDROCK_DEVICE_OS_MACOS":         4,
+		"BEDROCK_DEVICE_OS_AMAZON":        5,
+		"BEDROCK_DEVICE_OS_GEAR_VR":       6,
+		"BEDROCK_DEVICE_OS_HOLOLENS":      7,
+		"BEDROCK_DEVICE_OS_WINDOWS_UWP":   8,
+		"BEDROCK_DEVICE_OS_WINDOWS_X86":   9,
+		"BEDROCK_DEVICE_OS_DEDICATED":     10,
+		"BEDROCK_DEVICE_OS_APPLE_TV":      11,
+		"BEDROCK_DEVICE_OS_PLAYSTATION":   12,
+		"BEDROCK_DEVICE_OS_SWITCH":        13,
+		"BEDROCK_DEVICE_OS_XBOX":          14,
+		"BEDROCK_DEVICE_OS_WINDOWS_PHONE": 15,
+		"BEDROCK_DEVICE_OS_LINUX":         16,
+	}
+)
+
+func (x BedrockDeviceOS) Enum() *BedrockDeviceOS {
+	p := new(BedrockDeviceOS)
+	*p = x
+	return p
+}
+
+func (x BedrockDeviceOS) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BedrockDeviceOS) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[1].Descriptor()
+}
+
+func (BedrockDeviceOS) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[1]
+}
+
+func (x BedrockDeviceOS) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BedrockDeviceOS.Descriptor instead.
+func (BedrockDeviceOS) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{1}
+}
+
+// BedrockInputMode represents the input method used by a Bedrock Edition player.
+type BedrockInputMode int32
+
+const (
+	BedrockInputMode_BEDROCK_INPUT_MODE_UNSPECIFIED       BedrockInputMode = 0
+	BedrockInputMode_BEDROCK_INPUT_MODE_UNKNOWN           BedrockInputMode = 1
+	BedrockInputMode_BEDROCK_INPUT_MODE_MOUSE             BedrockInputMode = 2
+	BedrockInputMode_BEDROCK_INPUT_MODE_TOUCH             BedrockInputMode = 3
+	BedrockInputMode_BEDROCK_INPUT_MODE_GAMEPAD           BedrockInputMode = 4
+	BedrockInputMode_BEDROCK_INPUT_MODE_MOTION_CONTROLLER BedrockInputMode = 5
+)
+
+// Enum value maps for BedrockInputMode.
+var (
+	BedrockInputMode_name = map[int32]string{
+		0: "BEDROCK_INPUT_MODE_UNSPECIFIED",
+		1: "BEDROCK_INPUT_MODE_UNKNOWN",
+		2: "BEDROCK_INPUT_MODE_MOUSE",
+		3: "BEDROCK_INPUT_MODE_TOUCH",
+		4: "BEDROCK_INPUT_MODE_GAMEPAD",
+		5: "BEDROCK_INPUT_MODE_MOTION_CONTROLLER",
+	}
+	BedrockInputMode_value = map[string]int32{
+		"BEDROCK_INPUT_MODE_UNSPECIFIED":       0,
+		"BEDROCK_INPUT_MODE_UNKNOWN":           1,
+		"BEDROCK_INPUT_MODE_MOUSE":             2,
+		"BEDROCK_INPUT_MODE_TOUCH":             3,
+		"BEDROCK_INPUT_MODE_GAMEPAD":           4,
+		"BEDROCK_INPUT_MODE_MOTION_CONTROLLER": 5,
+	}
+)
+
+func (x BedrockInputMode) Enum() *BedrockInputMode {
+	p := new(BedrockInputMode)
+	*p = x
+	return p
+}
+
+func (x BedrockInputMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BedrockInputMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[2].Descriptor()
+}
+
+func (BedrockInputMode) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[2]
+}
+
+func (x BedrockInputMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BedrockInputMode.Descriptor instead.
+func (BedrockInputMode) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{2}
+}
+
+// BedrockUIProfile represents the UI profile used by a Bedrock Edition player.
+type BedrockUIProfile int32
+
+const (
+	BedrockUIProfile_BEDROCK_UI_PROFILE_UNSPECIFIED BedrockUIProfile = 0
+	BedrockUIProfile_BEDROCK_UI_PROFILE_CLASSIC     BedrockUIProfile = 1
+	BedrockUIProfile_BEDROCK_UI_PROFILE_POCKET      BedrockUIProfile = 2
+)
+
+// Enum value maps for BedrockUIProfile.
+var (
+	BedrockUIProfile_name = map[int32]string{
+		0: "BEDROCK_UI_PROFILE_UNSPECIFIED",
+		1: "BEDROCK_UI_PROFILE_CLASSIC",
+		2: "BEDROCK_UI_PROFILE_POCKET",
+	}
+	BedrockUIProfile_value = map[string]int32{
+		"BEDROCK_UI_PROFILE_UNSPECIFIED": 0,
+		"BEDROCK_UI_PROFILE_CLASSIC":     1,
+		"BEDROCK_UI_PROFILE_POCKET":      2,
+	}
+)
+
+func (x BedrockUIProfile) Enum() *BedrockUIProfile {
+	p := new(BedrockUIProfile)
+	*p = x
+	return p
+}
+
+func (x BedrockUIProfile) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BedrockUIProfile) Descriptor() protoreflect.EnumDescriptor {
+	return file_minekube_gate_v1_gate_service_proto_enumTypes[3].Descriptor()
+}
+
+func (BedrockUIProfile) Type() protoreflect.EnumType {
+	return &file_minekube_gate_v1_gate_service_proto_enumTypes[3]
+}
+
+func (x BedrockUIProfile) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BedrockUIProfile.Descriptor instead.
+func (BedrockUIProfile) EnumDescriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{3}
+}
+
 // StoreCookieRequest is the request for StoreCookie method.
 type StoreCookieRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -956,7 +1207,9 @@ type Player struct {
 	// The player's Minecraft UUID
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The player's username
-	Username      string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	// Optional Bedrock player data (only present for Bedrock players)
+	Bedrock       *BedrockPlayerData `protobuf:"bytes,3,opt,name=bedrock,proto3" json:"bedrock,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1001,6 +1254,717 @@ func (x *Player) GetId() string {
 func (x *Player) GetUsername() string {
 	if x != nil {
 		return x.Username
+	}
+	return ""
+}
+
+func (x *Player) GetBedrock() *BedrockPlayerData {
+	if x != nil {
+		return x.Bedrock
+	}
+	return nil
+}
+
+// BedrockPlayerData contains information specific to Bedrock Edition players.
+// This data is only available for players connecting through Geyser/Floodgate.
+type BedrockPlayerData struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Xbox User ID (XUID) - unique identifier for Bedrock players
+	Xuid int64 `protobuf:"varint,1,opt,name=xuid,proto3" json:"xuid,omitempty"`
+	// Device operating system the player is using
+	DeviceOs BedrockDeviceOS `protobuf:"varint,2,opt,name=device_os,json=deviceOs,proto3,enum=minekube.gate.v1.BedrockDeviceOS" json:"device_os,omitempty"`
+	// Client language code (e.g., "en_US")
+	Language string `protobuf:"bytes,3,opt,name=language,proto3" json:"language,omitempty"`
+	// UI profile (Classic or Pocket)
+	UiProfile BedrockUIProfile `protobuf:"varint,4,opt,name=ui_profile,json=uiProfile,proto3,enum=minekube.gate.v1.BedrockUIProfile" json:"ui_profile,omitempty"`
+	// Input method (mouse, touch, gamepad, etc.)
+	InputMode BedrockInputMode `protobuf:"varint,5,opt,name=input_mode,json=inputMode,proto3,enum=minekube.gate.v1.BedrockInputMode" json:"input_mode,omitempty"`
+	// Whether the player is connecting through a proxy
+	BehindProxy bool `protobuf:"varint,6,opt,name=behind_proxy,json=behindProxy,proto3" json:"behind_proxy,omitempty"`
+	// Linked Java Edition username (if any)
+	LinkedPlayer  string `protobuf:"bytes,7,opt,name=linked_player,json=linkedPlayer,proto3" json:"linked_player,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BedrockPlayerData) Reset() {
+	*x = BedrockPlayerData{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BedrockPlayerData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BedrockPlayerData) ProtoMessage() {}
+
+func (x *BedrockPlayerData) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BedrockPlayerData.ProtoReflect.Descriptor instead.
+func (*BedrockPlayerData) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *BedrockPlayerData) GetXuid() int64 {
+	if x != nil {
+		return x.Xuid
+	}
+	return 0
+}
+
+func (x *BedrockPlayerData) GetDeviceOs() BedrockDeviceOS {
+	if x != nil {
+		return x.DeviceOs
+	}
+	return BedrockDeviceOS_BEDROCK_DEVICE_OS_UNSPECIFIED
+}
+
+func (x *BedrockPlayerData) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *BedrockPlayerData) GetUiProfile() BedrockUIProfile {
+	if x != nil {
+		return x.UiProfile
+	}
+	return BedrockUIProfile_BEDROCK_UI_PROFILE_UNSPECIFIED
+}
+
+func (x *BedrockPlayerData) GetInputMode() BedrockInputMode {
+	if x != nil {
+		return x.InputMode
+	}
+	return BedrockInputMode_BEDROCK_INPUT_MODE_UNSPECIFIED
+}
+
+func (x *BedrockPlayerData) GetBehindProxy() bool {
+	if x != nil {
+		return x.BehindProxy
+	}
+	return false
+}
+
+func (x *BedrockPlayerData) GetLinkedPlayer() string {
+	if x != nil {
+		return x.LinkedPlayer
+	}
+	return ""
+}
+
+// GetStatusRequest is the request for GetStatus method.
+type GetStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatusRequest) Reset() {
+	*x = GetStatusRequest{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatusRequest) ProtoMessage() {}
+
+func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatusRequest.ProtoReflect.Descriptor instead.
+func (*GetStatusRequest) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{21}
+}
+
+// GetStatusResponse contains proxy runtime metadata.
+type GetStatusResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Gate version string
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// Current operating mode (classic or lite)
+	Mode ProxyMode `protobuf:"varint,2,opt,name=mode,proto3,enum=minekube.gate.v1.ProxyMode" json:"mode,omitempty"`
+	// Mode-specific statistics
+	//
+	// Types that are valid to be assigned to Stats:
+	//
+	//	*GetStatusResponse_Classic
+	//	*GetStatusResponse_Lite
+	Stats         isGetStatusResponse_Stats `protobuf_oneof:"stats"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatusResponse) Reset() {
+	*x = GetStatusResponse{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatusResponse) ProtoMessage() {}
+
+func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatusResponse.ProtoReflect.Descriptor instead.
+func (*GetStatusResponse) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetStatusResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *GetStatusResponse) GetMode() ProxyMode {
+	if x != nil {
+		return x.Mode
+	}
+	return ProxyMode_PROXY_MODE_UNSPECIFIED
+}
+
+func (x *GetStatusResponse) GetStats() isGetStatusResponse_Stats {
+	if x != nil {
+		return x.Stats
+	}
+	return nil
+}
+
+func (x *GetStatusResponse) GetClassic() *ClassicStats {
+	if x != nil {
+		if x, ok := x.Stats.(*GetStatusResponse_Classic); ok {
+			return x.Classic
+		}
+	}
+	return nil
+}
+
+func (x *GetStatusResponse) GetLite() *LiteStats {
+	if x != nil {
+		if x, ok := x.Stats.(*GetStatusResponse_Lite); ok {
+			return x.Lite
+		}
+	}
+	return nil
+}
+
+type isGetStatusResponse_Stats interface {
+	isGetStatusResponse_Stats()
+}
+
+type GetStatusResponse_Classic struct {
+	// Statistics for classic mode
+	Classic *ClassicStats `protobuf:"bytes,3,opt,name=classic,proto3,oneof"`
+}
+
+type GetStatusResponse_Lite struct {
+	// Statistics for lite mode
+	Lite *LiteStats `protobuf:"bytes,4,opt,name=lite,proto3,oneof"`
+}
+
+func (*GetStatusResponse_Classic) isGetStatusResponse_Stats() {}
+
+func (*GetStatusResponse_Lite) isGetStatusResponse_Stats() {}
+
+// ClassicStats contains statistics for classic proxy mode.
+type ClassicStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of online players
+	Players int32 `protobuf:"varint,1,opt,name=players,proto3" json:"players,omitempty"`
+	// Number of registered servers
+	Servers       int32 `protobuf:"varint,2,opt,name=servers,proto3" json:"servers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClassicStats) Reset() {
+	*x = ClassicStats{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassicStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassicStats) ProtoMessage() {}
+
+func (x *ClassicStats) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassicStats.ProtoReflect.Descriptor instead.
+func (*ClassicStats) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ClassicStats) GetPlayers() int32 {
+	if x != nil {
+		return x.Players
+	}
+	return 0
+}
+
+func (x *ClassicStats) GetServers() int32 {
+	if x != nil {
+		return x.Servers
+	}
+	return 0
+}
+
+// LiteStats contains statistics for lite proxy mode.
+type LiteStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of active connections being proxied
+	Connections int32 `protobuf:"varint,1,opt,name=connections,proto3" json:"connections,omitempty"`
+	// Number of configured routes
+	Routes        int32 `protobuf:"varint,2,opt,name=routes,proto3" json:"routes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LiteStats) Reset() {
+	*x = LiteStats{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LiteStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LiteStats) ProtoMessage() {}
+
+func (x *LiteStats) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LiteStats.ProtoReflect.Descriptor instead.
+func (*LiteStats) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *LiteStats) GetConnections() int32 {
+	if x != nil {
+		return x.Connections
+	}
+	return 0
+}
+
+func (x *LiteStats) GetRoutes() int32 {
+	if x != nil {
+		return x.Routes
+	}
+	return 0
+}
+
+// GetConfigRequest is the request for GetConfig method.
+type GetConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetConfigRequest) Reset() {
+	*x = GetConfigRequest{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetConfigRequest) ProtoMessage() {}
+
+func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetConfigRequest) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{25}
+}
+
+// GetConfigResponse contains the serialized config payload.
+type GetConfigResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// YAML-serialized configuration data
+	Payload string `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// Opaque version of the effective configuration, used as an ETag.
+	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetConfigResponse) Reset() {
+	*x = GetConfigResponse{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetConfigResponse) ProtoMessage() {}
+
+func (x *GetConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetConfigResponse.ProtoReflect.Descriptor instead.
+func (*GetConfigResponse) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *GetConfigResponse) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
+func (x *GetConfigResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+// ValidateConfigRequest is the request for ValidateConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+type ValidateConfigRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Configuration data as YAML or JSON string
+	Config        string `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateConfigRequest) Reset() {
+	*x = ValidateConfigRequest{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateConfigRequest) ProtoMessage() {}
+
+func (x *ValidateConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateConfigRequest.ProtoReflect.Descriptor instead.
+func (*ValidateConfigRequest) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ValidateConfigRequest) GetConfig() string {
+	if x != nil {
+		return x.Config
+	}
+	return ""
+}
+
+// ValidateConfigResponse contains validation results when the config is processed.
+type ValidateConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Warnings      []string               `protobuf:"bytes,1,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Errors        []string               `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateConfigResponse) Reset() {
+	*x = ValidateConfigResponse{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateConfigResponse) ProtoMessage() {}
+
+func (x *ValidateConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateConfigResponse.ProtoReflect.Descriptor instead.
+func (*ValidateConfigResponse) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ValidateConfigResponse) GetWarnings() []string {
+	if x != nil {
+		return x.Warnings
+	}
+	return nil
+}
+
+func (x *ValidateConfigResponse) GetErrors() []string {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
+}
+
+// ApplyConfigRequest is the request for ApplyConfig method.
+// The config payload is parsed with a YAML decoder (which supports JSON as YAML is a superset).
+type ApplyConfigRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Input:
+	//
+	//	*ApplyConfigRequest_Config
+	//	*ApplyConfigRequest_MergePatch
+	Input isApplyConfigRequest_Input `protobuf_oneof:"input"`
+	// Whether to persist the config to disk by overwriting the existing config file.
+	// Only works if a config file exists. Defaults to false (in-memory only).
+	Persist bool `protobuf:"varint,2,opt,name=persist,proto3" json:"persist,omitempty"`
+	// Version returned by GetConfig. The apply is rejected when it is stale.
+	IfMatch       string `protobuf:"bytes,4,opt,name=if_match,json=ifMatch,proto3" json:"if_match,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyConfigRequest) Reset() {
+	*x = ApplyConfigRequest{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyConfigRequest) ProtoMessage() {}
+
+func (x *ApplyConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyConfigRequest.ProtoReflect.Descriptor instead.
+func (*ApplyConfigRequest) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ApplyConfigRequest) GetInput() isApplyConfigRequest_Input {
+	if x != nil {
+		return x.Input
+	}
+	return nil
+}
+
+func (x *ApplyConfigRequest) GetConfig() string {
+	if x != nil {
+		if x, ok := x.Input.(*ApplyConfigRequest_Config); ok {
+			return x.Config
+		}
+	}
+	return ""
+}
+
+func (x *ApplyConfigRequest) GetMergePatch() string {
+	if x != nil {
+		if x, ok := x.Input.(*ApplyConfigRequest_MergePatch); ok {
+			return x.MergePatch
+		}
+	}
+	return ""
+}
+
+func (x *ApplyConfigRequest) GetPersist() bool {
+	if x != nil {
+		return x.Persist
+	}
+	return false
+}
+
+func (x *ApplyConfigRequest) GetIfMatch() string {
+	if x != nil {
+		return x.IfMatch
+	}
+	return ""
+}
+
+type isApplyConfigRequest_Input interface {
+	isApplyConfigRequest_Input()
+}
+
+type ApplyConfigRequest_Config struct {
+	// Complete configuration data as a YAML or JSON string.
+	Config string `protobuf:"bytes,1,opt,name=config,proto3,oneof"`
+}
+
+type ApplyConfigRequest_MergePatch struct {
+	// RFC 7396 JSON Merge Patch applied to the current configuration.
+	MergePatch string `protobuf:"bytes,3,opt,name=merge_patch,json=mergePatch,proto3,oneof"`
+}
+
+func (*ApplyConfigRequest_Config) isApplyConfigRequest_Input() {}
+
+func (*ApplyConfigRequest_MergePatch) isApplyConfigRequest_Input() {}
+
+// ApplyConfigResponse contains validation warnings emitted while applying the config.
+type ApplyConfigResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Warnings []string               `protobuf:"bytes,1,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// Version of the effective configuration after the apply.
+	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyConfigResponse) Reset() {
+	*x = ApplyConfigResponse{}
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyConfigResponse) ProtoMessage() {}
+
+func (x *ApplyConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_minekube_gate_v1_gate_service_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyConfigResponse.ProtoReflect.Descriptor instead.
+func (*ApplyConfigResponse) Descriptor() ([]byte, []int) {
+	return file_minekube_gate_v1_gate_service_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ApplyConfigResponse) GetWarnings() []string {
+	if x != nil {
+		return x.Warnings
+	}
+	return nil
+}
+
+func (x *ApplyConfigResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
 	}
 	return ""
 }
@@ -1051,10 +2015,87 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\x12ListPlayersRequest\x12\x18\n" +
 	"\aservers\x18\x01 \x03(\tR\aservers\"I\n" +
 	"\x13ListPlayersResponse\x122\n" +
-	"\aplayers\x18\x01 \x03(\v2\x18.minekube.gate.v1.PlayerR\aplayers\"4\n" +
+	"\aplayers\x18\x01 \x03(\v2\x18.minekube.gate.v1.PlayerR\aplayers\"s\n" +
 	"\x06Player\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername2\xf6\x06\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12=\n" +
+	"\abedrock\x18\x03 \x01(\v2#.minekube.gate.v1.BedrockPlayerDataR\abedrock\"\xd1\x02\n" +
+	"\x11BedrockPlayerData\x12\x12\n" +
+	"\x04xuid\x18\x01 \x01(\x03R\x04xuid\x12>\n" +
+	"\tdevice_os\x18\x02 \x01(\x0e2!.minekube.gate.v1.BedrockDeviceOSR\bdeviceOs\x12\x1a\n" +
+	"\blanguage\x18\x03 \x01(\tR\blanguage\x12A\n" +
+	"\n" +
+	"ui_profile\x18\x04 \x01(\x0e2\".minekube.gate.v1.BedrockUIProfileR\tuiProfile\x12A\n" +
+	"\n" +
+	"input_mode\x18\x05 \x01(\x0e2\".minekube.gate.v1.BedrockInputModeR\tinputMode\x12!\n" +
+	"\fbehind_proxy\x18\x06 \x01(\bR\vbehindProxy\x12#\n" +
+	"\rlinked_player\x18\a \x01(\tR\flinkedPlayer\"\x12\n" +
+	"\x10GetStatusRequest\"\xd6\x01\n" +
+	"\x11GetStatusResponse\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\x12/\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x1b.minekube.gate.v1.ProxyModeR\x04mode\x12:\n" +
+	"\aclassic\x18\x03 \x01(\v2\x1e.minekube.gate.v1.ClassicStatsH\x00R\aclassic\x121\n" +
+	"\x04lite\x18\x04 \x01(\v2\x1b.minekube.gate.v1.LiteStatsH\x00R\x04liteB\a\n" +
+	"\x05stats\"B\n" +
+	"\fClassicStats\x12\x18\n" +
+	"\aplayers\x18\x01 \x01(\x05R\aplayers\x12\x18\n" +
+	"\aservers\x18\x02 \x01(\x05R\aservers\"E\n" +
+	"\tLiteStats\x12 \n" +
+	"\vconnections\x18\x01 \x01(\x05R\vconnections\x12\x16\n" +
+	"\x06routes\x18\x02 \x01(\x05R\x06routes\"\x12\n" +
+	"\x10GetConfigRequest\"G\n" +
+	"\x11GetConfigResponse\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\tR\apayload\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"/\n" +
+	"\x15ValidateConfigRequest\x12\x16\n" +
+	"\x06config\x18\x01 \x01(\tR\x06config\"L\n" +
+	"\x16ValidateConfigResponse\x12\x1a\n" +
+	"\bwarnings\x18\x01 \x03(\tR\bwarnings\x12\x16\n" +
+	"\x06errors\x18\x02 \x03(\tR\x06errors\"\x8f\x01\n" +
+	"\x12ApplyConfigRequest\x12\x18\n" +
+	"\x06config\x18\x01 \x01(\tH\x00R\x06config\x12!\n" +
+	"\vmerge_patch\x18\x03 \x01(\tH\x00R\n" +
+	"mergePatch\x12\x18\n" +
+	"\apersist\x18\x02 \x01(\bR\apersist\x12\x19\n" +
+	"\bif_match\x18\x04 \x01(\tR\aifMatchB\a\n" +
+	"\x05input\"K\n" +
+	"\x13ApplyConfigResponse\x12\x1a\n" +
+	"\bwarnings\x18\x01 \x03(\tR\bwarnings\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion*T\n" +
+	"\tProxyMode\x12\x1a\n" +
+	"\x16PROXY_MODE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12PROXY_MODE_CLASSIC\x10\x01\x12\x13\n" +
+	"\x0fPROXY_MODE_LITE\x10\x02*\xad\x04\n" +
+	"\x0fBedrockDeviceOS\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_UNKNOWN\x10\x01\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_ANDROID\x10\x02\x12\x19\n" +
+	"\x15BEDROCK_DEVICE_OS_IOS\x10\x03\x12\x1b\n" +
+	"\x17BEDROCK_DEVICE_OS_MACOS\x10\x04\x12\x1c\n" +
+	"\x18BEDROCK_DEVICE_OS_AMAZON\x10\x05\x12\x1d\n" +
+	"\x19BEDROCK_DEVICE_OS_GEAR_VR\x10\x06\x12\x1e\n" +
+	"\x1aBEDROCK_DEVICE_OS_HOLOLENS\x10\a\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_WINDOWS_UWP\x10\b\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_WINDOWS_X86\x10\t\x12\x1f\n" +
+	"\x1bBEDROCK_DEVICE_OS_DEDICATED\x10\n" +
+	"\x12\x1e\n" +
+	"\x1aBEDROCK_DEVICE_OS_APPLE_TV\x10\v\x12!\n" +
+	"\x1dBEDROCK_DEVICE_OS_PLAYSTATION\x10\f\x12\x1c\n" +
+	"\x18BEDROCK_DEVICE_OS_SWITCH\x10\r\x12\x1a\n" +
+	"\x16BEDROCK_DEVICE_OS_XBOX\x10\x0e\x12#\n" +
+	"\x1fBEDROCK_DEVICE_OS_WINDOWS_PHONE\x10\x0f\x12\x1b\n" +
+	"\x17BEDROCK_DEVICE_OS_LINUX\x10\x10*\xdc\x01\n" +
+	"\x10BedrockInputMode\x12\"\n" +
+	"\x1eBEDROCK_INPUT_MODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aBEDROCK_INPUT_MODE_UNKNOWN\x10\x01\x12\x1c\n" +
+	"\x18BEDROCK_INPUT_MODE_MOUSE\x10\x02\x12\x1c\n" +
+	"\x18BEDROCK_INPUT_MODE_TOUCH\x10\x03\x12\x1e\n" +
+	"\x1aBEDROCK_INPUT_MODE_GAMEPAD\x10\x04\x12(\n" +
+	"$BEDROCK_INPUT_MODE_MOTION_CONTROLLER\x10\x05*u\n" +
+	"\x10BedrockUIProfile\x12\"\n" +
+	"\x1eBEDROCK_UI_PROFILE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aBEDROCK_UI_PROFILE_CLASSIC\x10\x01\x12\x1d\n" +
+	"\x19BEDROCK_UI_PROFILE_POCKET\x10\x022\xe3\t\n" +
 	"\vGateService\x12T\n" +
 	"\tGetPlayer\x12\".minekube.gate.v1.GetPlayerRequest\x1a#.minekube.gate.v1.GetPlayerResponse\x12Z\n" +
 	"\vListPlayers\x12$.minekube.gate.v1.ListPlayersRequest\x1a%.minekube.gate.v1.ListPlayersResponse\x12Z\n" +
@@ -1064,7 +2105,11 @@ const file_minekube_gate_v1_gate_service_proto_rawDesc = "" +
 	"\rConnectPlayer\x12&.minekube.gate.v1.ConnectPlayerRequest\x1a'.minekube.gate.v1.ConnectPlayerResponse\x12i\n" +
 	"\x10DisconnectPlayer\x12).minekube.gate.v1.DisconnectPlayerRequest\x1a*.minekube.gate.v1.DisconnectPlayerResponse\x12Z\n" +
 	"\vStoreCookie\x12$.minekube.gate.v1.StoreCookieRequest\x1a%.minekube.gate.v1.StoreCookieResponse\x12`\n" +
-	"\rRequestCookie\x12&.minekube.gate.v1.RequestCookieRequest\x1a'.minekube.gate.v1.RequestCookieResponseB\xcd\x01\n" +
+	"\rRequestCookie\x12&.minekube.gate.v1.RequestCookieRequest\x1a'.minekube.gate.v1.RequestCookieResponse\x12T\n" +
+	"\tGetStatus\x12\".minekube.gate.v1.GetStatusRequest\x1a#.minekube.gate.v1.GetStatusResponse\x12T\n" +
+	"\tGetConfig\x12\".minekube.gate.v1.GetConfigRequest\x1a#.minekube.gate.v1.GetConfigResponse\x12c\n" +
+	"\x0eValidateConfig\x12'.minekube.gate.v1.ValidateConfigRequest\x1a(.minekube.gate.v1.ValidateConfigResponse\x12Z\n" +
+	"\vApplyConfig\x12$.minekube.gate.v1.ApplyConfigRequest\x1a%.minekube.gate.v1.ApplyConfigResponseB\xcd\x01\n" +
 	"\x14com.minekube.gate.v1B\x10GateServiceProtoP\x01ZAgo.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1;gatev1\xa2\x02\x03MGX\xaa\x02\x10Minekube.Gate.V1\xca\x02\x10Minekube\\Gate\\V1\xe2\x02\x1cMinekube\\Gate\\V1\\GPBMetadata\xea\x02\x12Minekube::Gate::V1b\x06proto3"
 
 var (
@@ -1079,56 +2124,87 @@ func file_minekube_gate_v1_gate_service_proto_rawDescGZIP() []byte {
 	return file_minekube_gate_v1_gate_service_proto_rawDescData
 }
 
-var file_minekube_gate_v1_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_minekube_gate_v1_gate_service_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_minekube_gate_v1_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_minekube_gate_v1_gate_service_proto_goTypes = []any{
-	(*StoreCookieRequest)(nil),       // 0: minekube.gate.v1.StoreCookieRequest
-	(*StoreCookieResponse)(nil),      // 1: minekube.gate.v1.StoreCookieResponse
-	(*RequestCookieRequest)(nil),     // 2: minekube.gate.v1.RequestCookieRequest
-	(*RequestCookieResponse)(nil),    // 3: minekube.gate.v1.RequestCookieResponse
-	(*DisconnectPlayerRequest)(nil),  // 4: minekube.gate.v1.DisconnectPlayerRequest
-	(*DisconnectPlayerResponse)(nil), // 5: minekube.gate.v1.DisconnectPlayerResponse
-	(*ConnectPlayerRequest)(nil),     // 6: minekube.gate.v1.ConnectPlayerRequest
-	(*ConnectPlayerResponse)(nil),    // 7: minekube.gate.v1.ConnectPlayerResponse
-	(*RegisterServerRequest)(nil),    // 8: minekube.gate.v1.RegisterServerRequest
-	(*RegisterServerResponse)(nil),   // 9: minekube.gate.v1.RegisterServerResponse
-	(*UnregisterServerRequest)(nil),  // 10: minekube.gate.v1.UnregisterServerRequest
-	(*UnregisterServerResponse)(nil), // 11: minekube.gate.v1.UnregisterServerResponse
-	(*ListServersRequest)(nil),       // 12: minekube.gate.v1.ListServersRequest
-	(*ListServersResponse)(nil),      // 13: minekube.gate.v1.ListServersResponse
-	(*Server)(nil),                   // 14: minekube.gate.v1.Server
-	(*GetPlayerRequest)(nil),         // 15: minekube.gate.v1.GetPlayerRequest
-	(*GetPlayerResponse)(nil),        // 16: minekube.gate.v1.GetPlayerResponse
-	(*ListPlayersRequest)(nil),       // 17: minekube.gate.v1.ListPlayersRequest
-	(*ListPlayersResponse)(nil),      // 18: minekube.gate.v1.ListPlayersResponse
-	(*Player)(nil),                   // 19: minekube.gate.v1.Player
+	(ProxyMode)(0),                   // 0: minekube.gate.v1.ProxyMode
+	(BedrockDeviceOS)(0),             // 1: minekube.gate.v1.BedrockDeviceOS
+	(BedrockInputMode)(0),            // 2: minekube.gate.v1.BedrockInputMode
+	(BedrockUIProfile)(0),            // 3: minekube.gate.v1.BedrockUIProfile
+	(*StoreCookieRequest)(nil),       // 4: minekube.gate.v1.StoreCookieRequest
+	(*StoreCookieResponse)(nil),      // 5: minekube.gate.v1.StoreCookieResponse
+	(*RequestCookieRequest)(nil),     // 6: minekube.gate.v1.RequestCookieRequest
+	(*RequestCookieResponse)(nil),    // 7: minekube.gate.v1.RequestCookieResponse
+	(*DisconnectPlayerRequest)(nil),  // 8: minekube.gate.v1.DisconnectPlayerRequest
+	(*DisconnectPlayerResponse)(nil), // 9: minekube.gate.v1.DisconnectPlayerResponse
+	(*ConnectPlayerRequest)(nil),     // 10: minekube.gate.v1.ConnectPlayerRequest
+	(*ConnectPlayerResponse)(nil),    // 11: minekube.gate.v1.ConnectPlayerResponse
+	(*RegisterServerRequest)(nil),    // 12: minekube.gate.v1.RegisterServerRequest
+	(*RegisterServerResponse)(nil),   // 13: minekube.gate.v1.RegisterServerResponse
+	(*UnregisterServerRequest)(nil),  // 14: minekube.gate.v1.UnregisterServerRequest
+	(*UnregisterServerResponse)(nil), // 15: minekube.gate.v1.UnregisterServerResponse
+	(*ListServersRequest)(nil),       // 16: minekube.gate.v1.ListServersRequest
+	(*ListServersResponse)(nil),      // 17: minekube.gate.v1.ListServersResponse
+	(*Server)(nil),                   // 18: minekube.gate.v1.Server
+	(*GetPlayerRequest)(nil),         // 19: minekube.gate.v1.GetPlayerRequest
+	(*GetPlayerResponse)(nil),        // 20: minekube.gate.v1.GetPlayerResponse
+	(*ListPlayersRequest)(nil),       // 21: minekube.gate.v1.ListPlayersRequest
+	(*ListPlayersResponse)(nil),      // 22: minekube.gate.v1.ListPlayersResponse
+	(*Player)(nil),                   // 23: minekube.gate.v1.Player
+	(*BedrockPlayerData)(nil),        // 24: minekube.gate.v1.BedrockPlayerData
+	(*GetStatusRequest)(nil),         // 25: minekube.gate.v1.GetStatusRequest
+	(*GetStatusResponse)(nil),        // 26: minekube.gate.v1.GetStatusResponse
+	(*ClassicStats)(nil),             // 27: minekube.gate.v1.ClassicStats
+	(*LiteStats)(nil),                // 28: minekube.gate.v1.LiteStats
+	(*GetConfigRequest)(nil),         // 29: minekube.gate.v1.GetConfigRequest
+	(*GetConfigResponse)(nil),        // 30: minekube.gate.v1.GetConfigResponse
+	(*ValidateConfigRequest)(nil),    // 31: minekube.gate.v1.ValidateConfigRequest
+	(*ValidateConfigResponse)(nil),   // 32: minekube.gate.v1.ValidateConfigResponse
+	(*ApplyConfigRequest)(nil),       // 33: minekube.gate.v1.ApplyConfigRequest
+	(*ApplyConfigResponse)(nil),      // 34: minekube.gate.v1.ApplyConfigResponse
 }
 var file_minekube_gate_v1_gate_service_proto_depIdxs = []int32{
-	14, // 0: minekube.gate.v1.ListServersResponse.servers:type_name -> minekube.gate.v1.Server
-	19, // 1: minekube.gate.v1.GetPlayerResponse.player:type_name -> minekube.gate.v1.Player
-	19, // 2: minekube.gate.v1.ListPlayersResponse.players:type_name -> minekube.gate.v1.Player
-	15, // 3: minekube.gate.v1.GateService.GetPlayer:input_type -> minekube.gate.v1.GetPlayerRequest
-	17, // 4: minekube.gate.v1.GateService.ListPlayers:input_type -> minekube.gate.v1.ListPlayersRequest
-	12, // 5: minekube.gate.v1.GateService.ListServers:input_type -> minekube.gate.v1.ListServersRequest
-	8,  // 6: minekube.gate.v1.GateService.RegisterServer:input_type -> minekube.gate.v1.RegisterServerRequest
-	10, // 7: minekube.gate.v1.GateService.UnregisterServer:input_type -> minekube.gate.v1.UnregisterServerRequest
-	6,  // 8: minekube.gate.v1.GateService.ConnectPlayer:input_type -> minekube.gate.v1.ConnectPlayerRequest
-	4,  // 9: minekube.gate.v1.GateService.DisconnectPlayer:input_type -> minekube.gate.v1.DisconnectPlayerRequest
-	0,  // 10: minekube.gate.v1.GateService.StoreCookie:input_type -> minekube.gate.v1.StoreCookieRequest
-	2,  // 11: minekube.gate.v1.GateService.RequestCookie:input_type -> minekube.gate.v1.RequestCookieRequest
-	16, // 12: minekube.gate.v1.GateService.GetPlayer:output_type -> minekube.gate.v1.GetPlayerResponse
-	18, // 13: minekube.gate.v1.GateService.ListPlayers:output_type -> minekube.gate.v1.ListPlayersResponse
-	13, // 14: minekube.gate.v1.GateService.ListServers:output_type -> minekube.gate.v1.ListServersResponse
-	9,  // 15: minekube.gate.v1.GateService.RegisterServer:output_type -> minekube.gate.v1.RegisterServerResponse
-	11, // 16: minekube.gate.v1.GateService.UnregisterServer:output_type -> minekube.gate.v1.UnregisterServerResponse
-	7,  // 17: minekube.gate.v1.GateService.ConnectPlayer:output_type -> minekube.gate.v1.ConnectPlayerResponse
-	5,  // 18: minekube.gate.v1.GateService.DisconnectPlayer:output_type -> minekube.gate.v1.DisconnectPlayerResponse
-	1,  // 19: minekube.gate.v1.GateService.StoreCookie:output_type -> minekube.gate.v1.StoreCookieResponse
-	3,  // 20: minekube.gate.v1.GateService.RequestCookie:output_type -> minekube.gate.v1.RequestCookieResponse
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	18, // 0: minekube.gate.v1.ListServersResponse.servers:type_name -> minekube.gate.v1.Server
+	23, // 1: minekube.gate.v1.GetPlayerResponse.player:type_name -> minekube.gate.v1.Player
+	23, // 2: minekube.gate.v1.ListPlayersResponse.players:type_name -> minekube.gate.v1.Player
+	24, // 3: minekube.gate.v1.Player.bedrock:type_name -> minekube.gate.v1.BedrockPlayerData
+	1,  // 4: minekube.gate.v1.BedrockPlayerData.device_os:type_name -> minekube.gate.v1.BedrockDeviceOS
+	3,  // 5: minekube.gate.v1.BedrockPlayerData.ui_profile:type_name -> minekube.gate.v1.BedrockUIProfile
+	2,  // 6: minekube.gate.v1.BedrockPlayerData.input_mode:type_name -> minekube.gate.v1.BedrockInputMode
+	0,  // 7: minekube.gate.v1.GetStatusResponse.mode:type_name -> minekube.gate.v1.ProxyMode
+	27, // 8: minekube.gate.v1.GetStatusResponse.classic:type_name -> minekube.gate.v1.ClassicStats
+	28, // 9: minekube.gate.v1.GetStatusResponse.lite:type_name -> minekube.gate.v1.LiteStats
+	19, // 10: minekube.gate.v1.GateService.GetPlayer:input_type -> minekube.gate.v1.GetPlayerRequest
+	21, // 11: minekube.gate.v1.GateService.ListPlayers:input_type -> minekube.gate.v1.ListPlayersRequest
+	16, // 12: minekube.gate.v1.GateService.ListServers:input_type -> minekube.gate.v1.ListServersRequest
+	12, // 13: minekube.gate.v1.GateService.RegisterServer:input_type -> minekube.gate.v1.RegisterServerRequest
+	14, // 14: minekube.gate.v1.GateService.UnregisterServer:input_type -> minekube.gate.v1.UnregisterServerRequest
+	10, // 15: minekube.gate.v1.GateService.ConnectPlayer:input_type -> minekube.gate.v1.ConnectPlayerRequest
+	8,  // 16: minekube.gate.v1.GateService.DisconnectPlayer:input_type -> minekube.gate.v1.DisconnectPlayerRequest
+	4,  // 17: minekube.gate.v1.GateService.StoreCookie:input_type -> minekube.gate.v1.StoreCookieRequest
+	6,  // 18: minekube.gate.v1.GateService.RequestCookie:input_type -> minekube.gate.v1.RequestCookieRequest
+	25, // 19: minekube.gate.v1.GateService.GetStatus:input_type -> minekube.gate.v1.GetStatusRequest
+	29, // 20: minekube.gate.v1.GateService.GetConfig:input_type -> minekube.gate.v1.GetConfigRequest
+	31, // 21: minekube.gate.v1.GateService.ValidateConfig:input_type -> minekube.gate.v1.ValidateConfigRequest
+	33, // 22: minekube.gate.v1.GateService.ApplyConfig:input_type -> minekube.gate.v1.ApplyConfigRequest
+	20, // 23: minekube.gate.v1.GateService.GetPlayer:output_type -> minekube.gate.v1.GetPlayerResponse
+	22, // 24: minekube.gate.v1.GateService.ListPlayers:output_type -> minekube.gate.v1.ListPlayersResponse
+	17, // 25: minekube.gate.v1.GateService.ListServers:output_type -> minekube.gate.v1.ListServersResponse
+	13, // 26: minekube.gate.v1.GateService.RegisterServer:output_type -> minekube.gate.v1.RegisterServerResponse
+	15, // 27: minekube.gate.v1.GateService.UnregisterServer:output_type -> minekube.gate.v1.UnregisterServerResponse
+	11, // 28: minekube.gate.v1.GateService.ConnectPlayer:output_type -> minekube.gate.v1.ConnectPlayerResponse
+	9,  // 29: minekube.gate.v1.GateService.DisconnectPlayer:output_type -> minekube.gate.v1.DisconnectPlayerResponse
+	5,  // 30: minekube.gate.v1.GateService.StoreCookie:output_type -> minekube.gate.v1.StoreCookieResponse
+	7,  // 31: minekube.gate.v1.GateService.RequestCookie:output_type -> minekube.gate.v1.RequestCookieResponse
+	26, // 32: minekube.gate.v1.GateService.GetStatus:output_type -> minekube.gate.v1.GetStatusResponse
+	30, // 33: minekube.gate.v1.GateService.GetConfig:output_type -> minekube.gate.v1.GetConfigResponse
+	32, // 34: minekube.gate.v1.GateService.ValidateConfig:output_type -> minekube.gate.v1.ValidateConfigResponse
+	34, // 35: minekube.gate.v1.GateService.ApplyConfig:output_type -> minekube.gate.v1.ApplyConfigResponse
+	23, // [23:36] is the sub-list for method output_type
+	10, // [10:23] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_minekube_gate_v1_gate_service_proto_init() }
@@ -1136,18 +2212,27 @@ func file_minekube_gate_v1_gate_service_proto_init() {
 	if File_minekube_gate_v1_gate_service_proto != nil {
 		return
 	}
+	file_minekube_gate_v1_gate_service_proto_msgTypes[22].OneofWrappers = []any{
+		(*GetStatusResponse_Classic)(nil),
+		(*GetStatusResponse_Lite)(nil),
+	}
+	file_minekube_gate_v1_gate_service_proto_msgTypes[29].OneofWrappers = []any{
+		(*ApplyConfigRequest_Config)(nil),
+		(*ApplyConfigRequest_MergePatch)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_minekube_gate_v1_gate_service_proto_rawDesc), len(file_minekube_gate_v1_gate_service_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   20,
+			NumEnums:      4,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_minekube_gate_v1_gate_service_proto_goTypes,
 		DependencyIndexes: file_minekube_gate_v1_gate_service_proto_depIdxs,
+		EnumInfos:         file_minekube_gate_v1_gate_service_proto_enumTypes,
 		MessageInfos:      file_minekube_gate_v1_gate_service_proto_msgTypes,
 	}.Build()
 	File_minekube_gate_v1_gate_service_proto = out.File
