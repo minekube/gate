@@ -17,7 +17,7 @@ import (
 
 const (
 	verifyAssetsStepName  = "Verify published release assets"
-	createReleaseStepName = "Run GoReleaser"
+	publishAssetsStepName = "Publish staged release artifacts"
 )
 
 type assetWorkflow struct {
@@ -40,8 +40,8 @@ func readReleaseJob(t *testing.T) assetWorkflowJob {
 	t.Helper()
 
 	// Gate publishes from the tag-gated releaser job in ci.yml rather than a
-	// dedicated release.yml; the guard is API-side, so the publish mechanism
-	// (GoReleaser here) is irrelevant to it.
+	// dedicated release.yml; the guard is API-side, so the build mechanism in
+	// the preceding unprivileged job is irrelevant to it.
 	const workflowPath = ".github/workflows/ci.yml"
 
 	workflowBytes, err := os.ReadFile(workflowPath)
@@ -198,13 +198,13 @@ func TestReleaseVerificationRunsAfterUpload(t *testing.T) {
 	steps := readReleaseJobSteps(t)
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
-	createAt := stepIndex(steps, createReleaseStepName)
-	if verifyAt < 0 || createAt < 0 {
+	publishAt := stepIndex(steps, publishAssetsStepName)
+	if verifyAt < 0 || publishAt < 0 {
 		t.Fatalf("expected both %q (%d) and %q (%d) in the releaser job",
-			createReleaseStepName, createAt, verifyAssetsStepName, verifyAt)
+			publishAssetsStepName, publishAt, verifyAssetsStepName, verifyAt)
 	}
-	if verifyAt < createAt {
+	if verifyAt < publishAt {
 		t.Errorf("%q runs before %q; it would always see an empty release",
-			verifyAssetsStepName, createReleaseStepName)
+			verifyAssetsStepName, publishAssetsStepName)
 	}
 }

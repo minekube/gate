@@ -8,16 +8,20 @@ on:
 env:
   REGISTRY: ghcr.io
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
+  # Tagged code and its dependencies run only in read-only jobs. Write
+  # capabilities are granted narrowly to fresh publisher jobs below.
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -35,9 +39,13 @@ jobs:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Go with cache
         uses: actions/setup-go@v6
@@ -65,9 +73,13 @@ jobs:
       matrix:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v4
@@ -124,29 +136,36 @@ jobs:
           out="$(docker run --rm gate-jre:smoke --version)"
           echo "$out"
           echo "$out" | grep -q "gate version smoke-test"
-  build:
+  # Build tagged/default-branch container images without a registry
+  # credential. The OCI archives cross a runner boundary before publication,
+  # so a tagged Dockerfile or dependency cannot poison the publisher's PATH or
+  # workspace and then use its token.
+  image-build:
     if: ( github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') ) || ( github.event_name == 'push' && ( github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') ) )
     needs:
       - lint
       - test
       - docker-smoke
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       image: ${{ steps.image-ref.outputs.image }}
       image_latest: ${{ steps.image-ref.outputs.image_latest }}
+      image_jre: ${{ steps.image-ref.outputs.image_jre }}
+      image_jre_latest: ${{ steps.image-ref.outputs.image_jre_latest }}
+      image_version: ${{ steps.image-ref.outputs.image_version }}
+      image_jre_version: ${{ steps.image-ref.outputs.image_jre_version }}
+      gate_digest: ${{ steps.gate-image.outputs.digest }}
+      gate_jre_digest: ${{ steps.gate-jre-image.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Login to Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create image ref and version
         id: image-ref
@@ -183,12 +202,12 @@ jobs:
           echo "- ${IMAGE_JRE}" >> $GITHUB_STEP_SUMMARY
           echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
 
-      - name: Build and push docker image
+      - name: Build gate OCI image
+        id: gate-image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
-          push: true
           platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
           cache-to: type=inline
@@ -199,13 +218,14 @@ jobs:
             ${{ steps.image-ref.outputs.image }}
             ${{ steps.image-ref.outputs.image_latest }}
             ${{ steps.image-ref.outputs.image_version }}
+          outputs: type=oci,dest=${{ runner.temp }}/gate-container-images/gate-image.tar,oci-mediatypes=true
 
-      - name: Build and push docker image (jre variant)
+      - name: Build gate JRE OCI image
+        id: gate-jre-image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
-          push: true
           platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_jre_latest }}
           cache-to: type=inline
@@ -216,14 +236,99 @@ jobs:
             ${{ steps.image-ref.outputs.image_jre }}
             ${{ steps.image-ref.outputs.image_jre_latest }}
             ${{ steps.image-ref.outputs.image_jre_version }}
-  releaser:
+          outputs: type=oci,dest=${{ runner.temp }}/gate-container-images/gate-jre-image.tar,oci-mediatypes=true
+
+      - name: Upload staged container images
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-container-images
+          path: ${{ runner.temp }}/gate-container-images
+          if-no-files-found: error
+          retention-days: 1
+
+  # This job is intentionally a fresh runner. It receives only the two OCI
+  # archives, never checks out the tagged tree, and is the only container path
+  # with registry write access.
+  build:
+    needs: image-build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      packages: write
+    outputs:
+      image: ${{ needs.image-build.outputs.image }}
+      image_latest: ${{ needs.image-build.outputs.image_latest }}
+    steps:
+      - name: Download staged container images
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-container-images
+          path: release-images
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Login to Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish staged container images
+        env:
+          GATE_DIGEST: ${{ needs.image-build.outputs.gate_digest }}
+          GATE_JRE_DIGEST: ${{ needs.image-build.outputs.gate_jre_digest }}
+        run: |
+          set -euo pipefail
+
+          for path in release-images/gate-image.tar release-images/gate-jre-image.tar; do
+            if [ ! -f "$path" ] || [ -L "$path" ]; then
+              echo "::error::Expected staged OCI archive $path is missing or is not a regular file."
+              exit 1
+            fi
+          done
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              release-images/gate-image.tar|release-images/gate-jre-image.tar) ;;
+              *)
+                echo "::error::unexpected file $path in the staged container artifact."
+                exit 1
+                ;;
+            esac
+          done < <(find release-images -mindepth 1 -maxdepth 1 -print0)
+
+          for digest in "$GATE_DIGEST" "$GATE_JRE_DIGEST"; do
+            if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Invalid staged image digest: $digest"
+              exit 1
+            fi
+          done
+
+          REF="${GITHUB_SHA::7}"
+          TAGS="${REF},latest"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAGS="${TAGS},${GITHUB_REF_NAME}"
+          fi
+
+          IMAGE="${REGISTRY}/${GITHUB_REPOSITORY}"
+          IMAGE_JRE="${IMAGE}/jre"
+          oras cp --from-oci-layout "release-images/gate-image.tar@${GATE_DIGEST}" "${IMAGE}:${TAGS}"
+          oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
+
+  # GoReleaser executes the tagged configuration and its hooks here with read
+  # access only. Publication happens later on a clean runner.
+  release-build:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -235,9 +340,139 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
-          args: release --clean
+          args: release --clean --skip=publish,announce
+
+      # checksums.txt is GoReleaser's own upload manifest. Use it as the
+      # allowlist instead of globbing dist/, where tag-authored hooks or
+      # dependencies could plant an unrelated file for the publisher.
+      - name: Stage release artifacts from the manifest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f dist/checksums.txt ]; then
+            echo "::error::GoReleaser produced no dist/checksums.txt for $RELEASE_TAG."
+            exit 1
+          fi
+
+          rm -rf upload
+          mkdir -p upload
+          COUNT=0
+          while read -r _ name; do
+            [ -n "$name" ] || continue
+            path=$(jq -r --arg n "$name" \
+              'map(select(.name == $n and (.path // "") != "")) | first | .path // empty' \
+              dist/artifacts.json)
+            if [ -z "$path" ] || [ ! -f "$path" ]; then
+              echo "::error::checksums.txt names $name but GoReleaser produced no such file."
+              exit 1
+            fi
+            cp "$path" "upload/$name"
+            COUNT=$((COUNT + 1))
+          done < dist/checksums.txt
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::dist/checksums.txt for $RELEASE_TAG describes no artifacts."
+            exit 1
+          fi
+          cp dist/checksums.txt upload/checksums.txt
+
+      - name: Upload staged release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-release-assets
+          path: |
+            upload
+            dist/checksums.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  # This publisher starts with a clean workspace and never checks out or runs
+  # tagged code. Only the manifest-allowlisted files cross the job boundary.
+  releaser:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: release-build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download staged release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-release-assets
+
+      - name: Publish staged release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          MANIFEST=dist/checksums.txt
+          STAGED=upload
+          if [ ! -f "$MANIFEST" ] || [ -L "$MANIFEST" ]; then
+            echo "::error::Downloaded artifact has no regular dist/checksums.txt allowlist."
+            exit 1
+          fi
+          if [ ! -d "$STAGED" ] || [ -L "$STAGED" ]; then
+            echo "::error::Downloaded artifact has no regular upload directory."
+            exit 1
+          fi
+
+          while IFS= read -r -d '' file; do
+            if [ ! -f "$file" ] || [ -L "$file" ]; then
+              echo "::error::unexpected file $file in release artifact; it is not a regular staged asset."
+              exit 1
+            fi
+            base="$(basename "$file")"
+            if [ "$base" != "checksums.txt" ] && ! awk -v n="$base" \
+              'NF >= 2 && $2 == n { found = 1 } END { exit !found }' "$MANIFEST"; then
+              echo "::error::unexpected file $file in release artifact; checksums.txt does not name it."
+              exit 1
+            fi
+          done < <(find "$STAGED" -mindepth 1 -maxdepth 1 -print0)
+
+          UPLOAD_FILES=()
+          while read -r _ name; do
+            if [ -z "$name" ]; then
+              echo "::error::checksums.txt contains an empty asset name."
+              exit 1
+            fi
+            name_base="$(basename -- "$name")"
+            if [ "$name" != "$name_base" ] || [ "$name" = "." ] || [ "$name" = ".." ] \
+              || [[ "$name" == *\\* ]] || [[ "$name" == -* ]]; then
+              echo "::error::checksums.txt contains invalid asset name '$name'; expected a plain basename."
+              exit 1
+            fi
+            file="$STAGED/$name"
+            if [ ! -f "$file" ] || [ -L "$file" ]; then
+              echo "::error::checksums.txt names $name but the downloaded artifact has no regular file."
+              exit 1
+            fi
+            UPLOAD_FILES+=("$file")
+          done < "$MANIFEST"
+
+          if [ "${#UPLOAD_FILES[@]}" -eq 0 ]; then
+            echo "::error::$MANIFEST describes no build artifacts."
+            exit 1
+          fi
+          if [ ! -f "$STAGED/checksums.txt" ] || [ -L "$STAGED/checksums.txt" ]; then
+            echo "::error::Downloaded artifact has no regular checksums.txt asset."
+            exit 1
+          fi
+          if ! cmp -s "$MANIFEST" "$STAGED/checksums.txt"; then
+            echo "::error::Staged checksums.txt differs from the publisher allowlist."
+            exit 1
+          fi
+          UPLOAD_FILES+=("$STAGED/checksums.txt")
+
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --title "$RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" --clobber --repo "$GITHUB_REPOSITORY" -- "${UPLOAD_FILES[@]}"
 
       - name: Verify published release assets
         env:
