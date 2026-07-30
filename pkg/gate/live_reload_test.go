@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/gate/config"
@@ -26,6 +27,28 @@ func TestGateApplyLiveConfigPublishesOnlyValidatedLiteRouteSnapshot(t *testing.T
 	require.True(t, result.Applied)
 	require.True(t, result.CacheInvalidated)
 	require.Equal(t, configutil.Duration(time.Minute), g.Java().Config().Lite.Routes[0].CachePingTTL)
+}
+
+func TestGateApplyLiveConfigOwnsPublishedRouteSnapshot(t *testing.T) {
+	initial := liveReloadConfig()
+	g, err := New(Options{Config: initial})
+	require.NoError(t, err)
+
+	candidate := *initial
+	candidate.Config.Lite.Routes = append([]liteconfig.Route(nil), initial.Config.Lite.Routes...)
+	candidate.Config.Lite.Routes[0].Host = append([]string(nil), initial.Config.Lite.Routes[0].Host...)
+	candidate.Config.Lite.Routes[0].Backend = append([]string(nil), initial.Config.Lite.Routes[0].Backend...)
+	candidate.Config.Lite.Routes[0].CachePingTTL = configutil.Duration(time.Minute)
+	require.True(t, g.ApplyLiveConfig(&candidate).Applied)
+
+	candidate.Config.Lite.Routes[0].Host[0] = "mutated.example.test"
+	candidate.Config.Lite.Routes[0].Backend[0] = "mutated.example.test:25565"
+	candidate.Config.Lite.Routes[0].CachePingTTL = configutil.Duration(2 * time.Minute)
+
+	published := g.Java().Config().Lite.Routes[0]
+	require.Equal(t, []string{"play.example.test"}, []string(published.Host))
+	require.Equal(t, []string{"backend.example.test:25565"}, []string(published.Backend))
+	require.Equal(t, configutil.Duration(time.Minute), published.CachePingTTL)
 }
 
 func TestGateApplyLiveConfigRejectsInvalidCandidateAndRetainsLastKnownGood(t *testing.T) {
@@ -104,6 +127,47 @@ func TestValidateConfigFileSyntaxRejectsPartialAndUnknownCandidates(t *testing.T
 
 	require.NoError(t, os.WriteFile(path, []byte("config:\n  unknownOption: true\n"), 0o600))
 	require.Error(t, validateConfigFileSyntax(path))
+}
+
+func TestLoadLiveConfigCandidateRejectsInvalidFilesAndRecovers(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yml")
+	v := viper.New()
+	v.SetConfigFile(path)
+
+	require.NoError(t, os.WriteFile(path, []byte("config:\n  lite: ["), 0o600))
+	_, err := loadLiveConfigCandidate(v, path)
+	require.Error(t, err)
+
+	require.NoError(t, os.WriteFile(path, []byte("config:\n  unknownOption: true\n"), 0o600))
+	_, err = loadLiveConfigCandidate(v, path)
+	require.Error(t, err)
+
+	require.NoError(t, os.WriteFile(path, []byte(`
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: play.example.test
+        backend: backend.example.test:25565
+        strategy: not-a-strategy
+`), 0o600))
+	semantic, err := loadLiveConfigCandidate(v, path)
+	require.NoError(t, err)
+	_, semanticErrors := semantic.Validate()
+	require.NotEmpty(t, semanticErrors)
+
+	require.NoError(t, os.WriteFile(path, []byte(`
+config:
+  lite:
+    enabled: true
+    routes:
+      - host: play.example.test
+        backend: backend.example.test:25565
+        cachePingTTL: 45s
+`), 0o600))
+	recovered, err := loadLiveConfigCandidate(v, path)
+	require.NoError(t, err)
+	require.Equal(t, configutil.Duration(45*time.Second), recovered.Config.Lite.Routes[0].CachePingTTL)
 }
 
 func liveReloadConfig() *config.Config {

@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -288,12 +289,31 @@ func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
 	if _, errs := candidate.Validate(); len(errs) != 0 {
 		return errors.New("invalid live configuration")
 	}
-	p.currentCfg.Store(candidate)
+	routes, err := cloneLiteRoutes(candidate.Lite.Routes)
+	if err != nil {
+		return errors.New("invalid live configuration")
+	}
+	published := *current
+	published.Lite = current.Lite
+	published.Lite.Routes = routes
 	if liteRoutesChanged(candidate.Lite.Routes, current.Lite.Routes) {
 		lite.ResetPingCache()
 		p.log.Info("lite ping cache was reset")
 	}
+	p.currentCfg.Store(&published)
 	return nil
+}
+
+func cloneLiteRoutes(routes []liteconfig.Route) ([]liteconfig.Route, error) {
+	encoded, err := json.Marshal(routes)
+	if err != nil {
+		return nil, err
+	}
+	var cloned []liteconfig.Route
+	if err := json.Unmarshal(encoded, &cloned); err != nil {
+		return nil, err
+	}
+	return cloned, nil
 }
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.

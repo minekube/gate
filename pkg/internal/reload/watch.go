@@ -2,9 +2,10 @@ package reload
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -12,6 +13,7 @@ import (
 )
 
 const debounceDuration = 100 * time.Millisecond
+const reconciliationInterval = 250 * time.Millisecond
 const rejectionLogInterval = time.Minute
 
 // rejection is deliberately a short category. It prevents reload diagnostics
@@ -21,132 +23,243 @@ type rejection struct{ code string }
 func (e rejection) Error() string { return e.code }
 
 // Reject returns an error suitable for a reload callback when a candidate was
-// rejected. Code must be a stable, non-sensitive category.
-func Reject(code string) error { return rejection{code: code} }
+// rejected. Arbitrary values are reduced to a non-sensitive category.
+func Reject(code string) error { return rejection{code: sanitizeRejectionCode(code)} }
 
-// Watch monitors the parent directory so atomic rename and delete/recreate
-// writes remain observable. Each Watch has independent debounce state; a lost
-// fsnotify watcher is recreated until its context ends.
+func sanitizeRejectionCode(code string) string {
+	switch code {
+	case "read_failed", "parse_failed", "invalid", "unsupported", "prepare_failed":
+		return code
+	default:
+		return "rejected"
+	}
+}
+
+type eventWatcher interface {
+	Events() <-chan fsnotify.Event
+	Errors() <-chan error
+	Close() error
+}
+
+type fsnotifyEventWatcher struct{ watcher *fsnotify.Watcher }
+
+func (w *fsnotifyEventWatcher) Events() <-chan fsnotify.Event { return w.watcher.Events }
+func (w *fsnotifyEventWatcher) Errors() <-chan error          { return w.watcher.Errors }
+func (w *fsnotifyEventWatcher) Close() error                  { return w.watcher.Close() }
+
+type watchOptions struct {
+	reconcileInterval time.Duration
+	newWatcher        func(string) (eventWatcher, error)
+	attached          func()
+}
+
+// Watch monitors the active configuration file. Filesystem notifications are
+// low-latency hints; periodic content fingerprints reconcile events that an OS
+// watcher may coalesce or miss. One goroutine owns all watcher, timer, callback,
+// and diagnostic state.
 func Watch(ctx context.Context, path string, cb func() error) error {
+	return watchWithOptions(ctx, path, cb, watchOptions{})
+}
+
+func watch(ctx context.Context, path string, cb func() error, attached func()) error {
+	return watchWithOptions(ctx, path, cb, watchOptions{attached: attached})
+}
+
+func watchWithOptions(ctx context.Context, configPath string, cb func() error, opts watchOptions) error {
 	if ctx.Err() != nil {
 		return nil
 	}
-	dir, name := filepath.Dir(filepath.Clean(path)), filepath.Base(path)
-	watcher, err := newDirectoryWatcher(dir)
+	if opts.reconcileInterval <= 0 {
+		opts.reconcileInterval = reconciliationInterval
+	}
+	if opts.newWatcher == nil {
+		opts.newWatcher = newDirectoryWatcher
+	}
+
+	cleanPath := filepath.Clean(configPath)
+	dir := filepath.Dir(cleanPath)
+	name := filepath.Base(cleanPath)
+	watcher, err := opts.newWatcher(dir)
 	if err != nil {
 		return err
 	}
+	if opts.attached != nil {
+		opts.attached()
+	}
 
-	go func() {
-		for {
-			watchLoop(ctx, dir, name, watcher, cb)
-			if ctx.Err() != nil {
-				return
-			}
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(debounceDuration):
-			}
-			var err error
-			watcher, err = newDirectoryWatcher(dir)
-			if err != nil {
-				// Keep retrying at a deterministic interval. There is no callback
-				// because a watcher loss is not a candidate configuration change.
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(debounceDuration):
-				}
-				continue
-			}
-		}
-	}()
+	initial := fingerprint(cleanPath)
+	go runWatchLoop(ctx, cleanPath, dir, name, initial, watcher, cb, opts)
 	return nil
 }
 
-func newDirectoryWatcher(dir string) (*fsnotify.Watcher, error) {
+func newDirectoryWatcher(dir string) (eventWatcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
+	}
+	parent := filepath.Dir(dir)
+	if parent != dir {
+		if err := watcher.Add(parent); err != nil {
+			_ = watcher.Close()
+			return nil, err
+		}
 	}
 	if err := watcher.Add(dir); err != nil {
 		_ = watcher.Close()
 		return nil, err
 	}
-	return watcher, nil
+	return &fsnotifyEventWatcher{watcher: watcher}, nil
 }
 
-func watchLoop(ctx context.Context, dir, name string, watcher *fsnotify.Watcher, cb func() error) {
+type contentFingerprint struct {
+	state byte
+	sum   [sha256.Size]byte
+}
+
+func fingerprint(path string) contentFingerprint {
+	content, err := os.ReadFile(path)
+	if err == nil {
+		return contentFingerprint{state: 1, sum: sha256.Sum256(content)}
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return contentFingerprint{state: 2}
+	}
+	return contentFingerprint{state: 3}
+}
+
+func runWatchLoop(
+	ctx context.Context,
+	configPath, dir, name string,
+	evaluated contentFingerprint,
+	watcher eventWatcher,
+	cb func() error,
+	opts watchOptions,
+) {
 	log := logr.FromContextOrDiscard(ctx).WithName("config-reload")
-	defer watcher.Close()
+	observed := evaluated
+
+	reconcileTicker := time.NewTicker(opts.reconcileInterval)
+	defer reconcileTicker.Stop()
+	debounceTimer := time.NewTimer(time.Hour)
+	if !debounceTimer.Stop() {
+		<-debounceTimer.C
+	}
+	defer debounceTimer.Stop()
+	var debounce <-chan time.Time
+
+	stopDebounce := func() {
+		if !debounceTimer.Stop() {
+			select {
+			case <-debounceTimer.C:
+			default:
+			}
+		}
+		debounce = nil
+	}
+	schedule := func() {
+		stopDebounce()
+		debounceTimer.Reset(debounceDuration)
+		debounce = debounceTimer.C
+	}
+	reconcile := func() {
+		current := fingerprint(configPath)
+		if current == observed {
+			return
+		}
+		observed = current
+		schedule()
+	}
 
 	var (
-		mu            sync.Mutex
-		timer         *time.Timer
+		events        <-chan fsnotify.Event
+		watcherErrors <-chan error
+	)
+	bindWatcher := func() {
+		if watcher == nil {
+			events = nil
+			watcherErrors = nil
+			return
+		}
+		events = watcher.Events()
+		watcherErrors = watcher.Errors()
+	}
+	closeWatcher := func() {
+		if watcher != nil {
+			_ = watcher.Close()
+			watcher = nil
+		}
+		bindWatcher()
+	}
+	defer closeWatcher()
+	bindWatcher()
+
+	var (
 		lastRejection string
 		lastLoggedAt  time.Time
 	)
-	defer func() {
-		mu.Lock()
-		if timer != nil {
-			timer.Stop()
+	runCallback := func(candidate contentFingerprint) {
+		if candidate == evaluated {
+			return
 		}
-		mu.Unlock()
-	}()
-
-	run := func() {
+		evaluated = candidate
 		start := time.Now()
 		if err := cb(); err != nil {
 			code := "read_failed"
 			var rejected rejection
 			if errors.As(err, &rejected) {
-				code = rejected.code
+				code = sanitizeRejectionCode(rejected.code)
 			}
 			now := time.Now()
-			mu.Lock()
-			shouldLog := code != lastRejection || now.Sub(lastLoggedAt) >= rejectionLogInterval
-			if shouldLog {
+			if code != lastRejection || now.Sub(lastLoggedAt) >= rejectionLogInterval {
 				lastRejection, lastLoggedAt = code, now
-			}
-			mu.Unlock()
-			if shouldLog {
 				log.Info("config reload rejected", "reason", code)
 			}
 			return
 		}
-		mu.Lock()
 		lastRejection = ""
 		lastLoggedAt = time.Time{}
-		mu.Unlock()
 		log.Info("config reloaded", "duration", time.Since(start).Round(time.Millisecond).String())
-	}
-
-	schedule := func() {
-		mu.Lock()
-		defer mu.Unlock()
-		if timer != nil {
-			timer.Stop()
-		}
-		timer = time.AfterFunc(debounceDuration, run)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
+			stopDebounce()
 			return
-		case event, ok := <-watcher.Events:
+		case <-reconcileTicker.C:
+			if watcher == nil {
+				next, err := opts.newWatcher(dir)
+				if err == nil {
+					watcher = next
+					bindWatcher()
+					if opts.attached != nil {
+						opts.attached()
+					}
+				}
+			}
+			reconcile()
+		case <-debounce:
+			debounce = nil
+			runCallback(observed)
+		case event, ok := <-events:
 			if !ok {
-				return
+				closeWatcher()
+				continue
 			}
-			if filepath.Dir(filepath.Clean(event.Name)) == dir && filepath.Base(event.Name) == name {
-				schedule()
+			eventPath := filepath.Clean(event.Name)
+			if eventPath == dir && event.Op&(fsnotify.Remove|fsnotify.Rename) != 0 {
+				closeWatcher()
+				continue
 			}
-		case <-watcher.Errors:
-			// A directory watch normally survives a file replacement. If the OS
-			// closes it, returning lets the supervising process establish a fresh
-			// watcher on its next configuration event/start cycle.
-			return
+			if filepath.Dir(eventPath) == dir && filepath.Base(eventPath) == name {
+				reconcile()
+			}
+		case _, ok := <-watcherErrors:
+			if !ok {
+				closeWatcher()
+				continue
+			}
+			closeWatcher()
 		}
 	}
 }

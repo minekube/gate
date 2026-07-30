@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"reflect"
@@ -24,6 +25,7 @@ import (
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	bproxy "go.minekube.com/gate/pkg/edition/bedrock/proxy"
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
+	jconfiglite "go.minekube.com/gate/pkg/edition/java/lite/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/internal/otelutil"
@@ -170,11 +172,31 @@ func (g *Gate) ApplyLiveConfig(candidate *config.Config) LiveConfigResult {
 	if !onlyLiveLiteRoutesChanged(current, candidate) {
 		return LiveConfigResult{Code: "unsupported"}
 	}
-	if err := g.javaProxy.ApplyLiveConfig(&candidate.Config); err != nil {
+	routes, err := cloneLiveLiteRoutes(candidate.Config.Lite.Routes)
+	if err != nil {
 		return LiveConfigResult{Code: "prepare_failed"}
 	}
-	g.currentConfig.Store(candidate)
+	published := *current
+	published.Config = current.Config
+	published.Config.Lite = current.Config.Lite
+	published.Config.Lite.Routes = routes
+	if err := g.javaProxy.ApplyLiveConfig(&published.Config); err != nil {
+		return LiveConfigResult{Code: "prepare_failed"}
+	}
+	g.currentConfig.Store(&published)
 	return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied"}
+}
+
+func cloneLiveLiteRoutes(routes []jconfiglite.Route) ([]jconfiglite.Route, error) {
+	encoded, err := json.Marshal(routes)
+	if err != nil {
+		return nil, err
+	}
+	var cloned []jconfiglite.Route
+	if err := json.Unmarshal(encoded, &cloned); err != nil {
+		return nil, err
+	}
+	return cloned, nil
 }
 
 func onlyLiveLiteRoutesChanged(current, candidate *config.Config) bool {
@@ -344,12 +366,9 @@ func setupAutoConfigReload(
 	_ = initialCfg // Gate owns the immutable initial snapshot.
 	// Watch config file for changes
 	return reload.Watch(ctx, path, func() error {
-		if err := validateConfigFileSyntax(path); err != nil {
-			return reload.Reject("parse_failed")
-		}
-		cfg, err := LoadConfig(Viper)
+		cfg, err := loadLiveConfigCandidate(Viper, path)
 		if err != nil {
-			return reload.Reject("read_failed")
+			return err
 		}
 		if _, errs := cfg.Validate(); len(errs) != 0 {
 			return reload.Reject("invalid")
@@ -373,15 +392,39 @@ func validateConfigFileSyntax(configPath string) error {
 		return err
 	}
 	var candidate config.Config
-	switch path.Ext(configPath) {
+	return decodeConfigStrict(b, path.Ext(configPath), &candidate)
+}
+
+func decodeConfigStrict(b []byte, extension string, candidate *config.Config) error {
+	switch extension {
 	case ".yaml", ".yml":
 		decoder := yaml.NewDecoder(bytes.NewReader(b))
 		decoder.KnownFields(true)
-		return decoder.Decode(&candidate)
+		if err := decoder.Decode(candidate); err != nil {
+			return err
+		}
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			if err == nil {
+				return errors.New("multiple config documents")
+			}
+			return err
+		}
+		return nil
 	case ".json":
 		decoder := json.NewDecoder(bytes.NewReader(b))
 		decoder.DisallowUnknownFields()
-		return decoder.Decode(&candidate)
+		if err := decoder.Decode(candidate); err != nil {
+			return err
+		}
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			if err == nil {
+				return errors.New("multiple config values")
+			}
+			return err
+		}
+		return nil
 	default:
 		return fmt.Errorf("unsupported config format")
 	}
@@ -411,19 +454,43 @@ func validateConfig(log logr.Logger, c *config.Config) error {
 // LoadConfig loads in config.Config from viper.
 // It is used by Start with the packages Viper if no WithConfig option is given.
 func LoadConfig(v *viper.Viper) (*config.Config, error) {
-	// Clone default config
-	cfg := func() config.Config { return config.DefaultConfig }()
-	// IMPORTANT: Create fresh maps to avoid sharing state between loads
-	// Maps are reference types in Go, so without this, all config instances
-	// would share the same map, causing removed servers to persist
-	cfg.Config.Servers = make(map[string]string)
-	cfg.Config.ForcedHosts = make(map[string][]string)
+	cfg := newConfigCandidate()
 
 	// Load in Gate config
 	if err := fixedReadInConfig(v, &cfg); err != nil {
 		return &cfg, fmt.Errorf("error loading config: %w", err)
 	}
+	return finishConfigCandidate(v, &cfg), nil
+}
 
+// loadLiveConfigCandidate reads and strictly parses one complete file image.
+// The candidate is built independently from the current runtime configuration.
+func loadLiveConfigCandidate(v *viper.Viper, configPath string) (*config.Config, error) {
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, reload.Reject("read_failed")
+	}
+	cfg := newConfigCandidate()
+	extension := path.Ext(configPath)
+	if err := decodeConfigStrict(b, extension, &cfg); err != nil {
+		return nil, reload.Reject("parse_failed")
+	}
+	if err := readDecodedConfig(v, extension, &cfg); err != nil {
+		return nil, reload.Reject("parse_failed")
+	}
+	return finishConfigCandidate(v, &cfg), nil
+}
+
+func newConfigCandidate() config.Config {
+	// Clone default config. Maps must be fresh so removed settings cannot persist
+	// across startup loads or live candidates.
+	cfg := func() config.Config { return config.DefaultConfig }()
+	cfg.Config.Servers = make(map[string]string)
+	cfg.Config.ForcedHosts = make(map[string][]string)
+	return cfg
+}
+
+func finishConfigCandidate(v *viper.Viper, cfg *config.Config) *config.Config {
 	// Apply environment variable overrides for specific fields
 	// This allows environment variables to override config file values
 	// Set custom environment variable names for forwarding secrets
@@ -446,7 +513,30 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 	}
 
 	// Java config is now embedded directly in cfg.Config
-	return &cfg, nil
+	return cfg
+}
+
+func readDecodedConfig(v *viper.Viper, extension string, cfg *config.Config) error {
+	var (
+		marshal    func(any) ([]byte, error)
+		configType string
+	)
+	switch extension {
+	case ".yaml", ".yml":
+		marshal = yaml.Marshal
+		configType = "yaml"
+	case ".json":
+		marshal = json.Marshal
+		configType = "json"
+	default:
+		return fmt.Errorf("unsupported config file format")
+	}
+	b, err := marshal(cfg)
+	if err != nil {
+		return err
+	}
+	v.SetConfigType(configType)
+	return v.ReadConfig(bytes.NewReader(b))
 }
 
 // Workaround for https://github.com/minekube/gate/issues/218#issuecomment-1632800775
