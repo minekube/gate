@@ -22,6 +22,8 @@ type ciIsolationWorkflow struct {
 
 type ciIsolationWorkflowJob struct {
 	Needs       ciIsolationNeeds          `yaml:"needs"`
+	If          string                    `yaml:"if"`
+	Outputs     map[string]string         `yaml:"outputs"`
 	Permissions map[string]string         `yaml:"permissions"`
 	Steps       []ciIsolationWorkflowStep `yaml:"steps"`
 }
@@ -166,6 +168,38 @@ func TestReleasePublishUsesTrustedDefaultBranchWorkflow(t *testing.T) {
 	}
 	if !strings.Contains(string(workflow), "release_tag:") {
 		t.Fatal("release-publish.yml must receive the release tag as an input")
+	}
+}
+
+func TestReleasePublishRequiresTrustedWorkflowRef(t *testing.T) {
+	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
+	want := "github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)"
+
+	for name, job := range workflow.Jobs {
+		if job.If != want {
+			t.Errorf("%s has if %q; release-publish must fail closed outside the trusted master workflow", name, job.If)
+		}
+	}
+}
+
+func TestReleaseBuildUsesVerifiedTagCommit(t *testing.T) {
+	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
+	imageBuild := ciIsolationJob(t, workflow, "image-build")
+	if got := imageBuild.Outputs["tag_sha"]; got != "${{ steps.verify-tag.outputs.tag_sha }}" {
+		t.Fatalf("image-build tag_sha output is %q; it must propagate the verified tag commit", got)
+	}
+
+	releaseBuild := ciIsolationJob(t, workflow, "release-build")
+	checkoutAt := ciIsolationStepIndex(releaseBuild.Steps, "Checkout the release tag")
+	if checkoutAt < 0 {
+		t.Fatal("release-build has no tag checkout")
+	}
+	if got := fmt.Sprint(releaseBuild.Steps[checkoutAt].With["ref"]); got != "${{ needs.image-build.outputs.tag_sha }}" {
+		t.Errorf("release-build checkout ref is %q; it must use the verified tag commit", got)
+	}
+	verifyAt := ciIsolationStepIndex(releaseBuild.Steps, "Confirm the release build commit")
+	if verifyAt < 0 || !strings.Contains(releaseBuild.Steps[verifyAt].Run, "refs/tags/") {
+		t.Error("release-build must revalidate the tag points at the verified commit")
 	}
 }
 

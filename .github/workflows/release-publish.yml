@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   lint:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,6 +43,7 @@ jobs:
         run: golangci-lint run --timeout 3m0s
 
   test:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +72,7 @@ jobs:
         run: go test ./pkg/edition/bedrock/geyser -tags=geyserlite_smoke -run TestLiteManagedRunnerWindowsAutoDownloadSmoke -count=1 -timeout 6m -v
 
   docker-smoke:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     strategy:
       fail-fast: false
       matrix:
@@ -141,6 +144,7 @@ jobs:
           echo "$out" | grep -q "gate version smoke-test"
 
   image-build:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs:
       - lint
       - test
@@ -156,6 +160,7 @@ jobs:
       image_version: ${{ steps.image-ref.outputs.image_version }}
       image_jre_version: ${{ steps.image-ref.outputs.image_jre_version }}
       image_tag: ${{ steps.image-ref.outputs.image_tag }}
+      tag_sha: ${{ steps.verify-tag.outputs.tag_sha }}
       gate_digest: ${{ steps.gate-image.outputs.digest }}
       gate_jre_digest: ${{ steps.gate-jre-image.outputs.digest }}
     steps:
@@ -166,6 +171,7 @@ jobs:
           ref: ${{ inputs.release_tag }}
 
       - name: Confirm the checkout is the tagged commit
+        id: verify-tag
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
@@ -181,6 +187,7 @@ jobs:
             echo "::error::Release tag is not a valid container tag: $RELEASE_TAG"
             exit 1
           fi
+          echo "tag_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v4
@@ -255,6 +262,7 @@ jobs:
           retention-days: 1
 
   release-build:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs: image-build
     runs-on: ubuntu-latest
     permissions:
@@ -265,7 +273,21 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: ${{ inputs.release_tag }}
+          ref: ${{ needs.image-build.outputs.tag_sha }}
+
+      - name: Confirm the release build commit
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
+        run: |
+          set -euo pipefail
+
+          HEAD_SHA=$(git rev-parse HEAD)
+          CURRENT_TAG_SHA=$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" || true)
+          if [ "$HEAD_SHA" != "$TAG_SHA" ] || [ "$CURRENT_TAG_SHA" != "$TAG_SHA" ]; then
+            echo "::error::Release build commit ($HEAD_SHA) no longer matches $RELEASE_TAG ($CURRENT_TAG_SHA) or the verified commit ($TAG_SHA)."
+            exit 1
+          fi
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -322,6 +344,7 @@ jobs:
           retention-days: 1
 
   publish-images:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs: image-build
     runs-on: ubuntu-latest
     permissions:
@@ -392,6 +415,7 @@ jobs:
           oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
 
   publish-release:
+    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs: release-build
     runs-on: ubuntu-latest
     permissions:
