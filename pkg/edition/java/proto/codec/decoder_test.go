@@ -47,6 +47,58 @@ func buildBCCExtraData(bccJSON string) []byte {
 	return buf.Bytes()
 }
 
+func buildSoundEntityPacket773() (frame, payload []byte) {
+	var payloadBuf bytes.Buffer
+	w := util.PanicWriter(&payloadBuf)
+	w.VarInt(0x72) // Clientbound Sound Entity, protocol 773
+	w.VarInt(123)  // registry-backed sound; inline name/range are absent
+	w.VarInt(int(packet.SoundSourcePlayer))
+	w.VarInt(42)
+	w.Float32(1)
+	w.Float32(0.8)
+	w.Int64(987654321)
+
+	var frameBuf bytes.Buffer
+	_ = util.WriteVarInt(&frameBuf, payloadBuf.Len())
+	frameBuf.Write(payloadBuf.Bytes())
+	return frameBuf.Bytes(), payloadBuf.Bytes()
+}
+
+// TestDecoder_SoundEntity_Protocol773_RegistryBacked verifies the decode and
+// raw-forward path for the entity-attached sound emitted when a trident is
+// thrown. Regression for https://github.com/minekube/gate/issues/597.
+func TestDecoder_SoundEntity_Protocol773_RegistryBacked(t *testing.T) {
+	frame, payload := buildSoundEntityPacket773()
+
+	dec := NewDecoder(bytes.NewReader(frame), proto.ClientBound, logr.Discard())
+	dec.SetState(state.Play)
+	dec.SetProtocol(version.Minecraft_1_21_9.Protocol)
+
+	ctx, err := dec.Decode()
+	require.NoError(t, err)
+	require.NotNil(t, ctx)
+
+	sound, ok := ctx.Packet.(*packet.SoundEntityPacket)
+	require.True(t, ok, "expected *packet.SoundEntityPacket, got %T", ctx.Packet)
+	assert.Equal(t, 123, sound.SoundID)
+	assert.Nil(t, sound.SoundName)
+	assert.Nil(t, sound.FixedRange)
+	assert.Equal(t, packet.SoundSourcePlayer, sound.SoundSource)
+	assert.Equal(t, 42, sound.EntityID)
+	assert.InDelta(t, 1, sound.Volume, 0)
+	assert.InDelta(t, 0.8, sound.Pitch, 0.000001)
+	assert.Equal(t, int64(987654321), sound.Seed)
+	assert.Equal(t, payload, ctx.Payload)
+
+	var forwarded bytes.Buffer
+	enc := NewEncoder(&forwarded, proto.ClientBound, logr.Discard())
+	enc.SetState(state.Play)
+	enc.SetProtocol(version.Minecraft_1_21_9.Protocol)
+	_, err = enc.Write(ctx.Payload)
+	require.NoError(t, err)
+	assert.Equal(t, frame, forwarded.Bytes())
+}
+
 func TestDecoder_StatusResponse_NormalPacket(t *testing.T) {
 	status := `{"version":{"name":"1.20.1","protocol":763},"players":{"max":20,"online":5},"description":"A Minecraft Server"}`
 	raw := buildStatusResponsePacket(status, nil)
