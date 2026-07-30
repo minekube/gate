@@ -41,6 +41,15 @@ func TestPluginMessagePacketID_1_21_9(t *testing.T) {
 	}
 }
 
+func TestBundleDelimiterPacketID_1_21_1(t *testing.T) {
+	reg := Play.ClientBound.ProtocolRegistry(version.Minecraft_1_21.Protocol)
+	require.NotNil(t, reg)
+
+	id, ok := reg.PacketID(&p.BundleDelimiter{})
+	require.True(t, ok, "BundleDelimiter not registered")
+	require.Equal(t, proto.PacketID(0x00), id)
+}
+
 // TestPacketIDs_26_1 verifies that packet IDs are correctly mapped for Minecraft 26.1 (protocol 775).
 func TestPacketIDs_26_1(t *testing.T) {
 	v := version.Minecraft_26_1.Protocol
