@@ -4,13 +4,13 @@ package gate
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
-	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -126,7 +126,7 @@ func New(options Options) (gate *Gate, err error) {
 		return nil, err
 	}
 
-	if err = gate.proc.Add(setupAPI(c, eventMgr, gate.Java(), options.ConfigFilePath)); err != nil {
+	if err = gate.proc.Add(setupAPI(gate, c, eventMgr, gate.Java(), options.ConfigFilePath)); err != nil {
 		return nil, err
 	}
 
@@ -153,6 +153,7 @@ type LiveConfigResult struct {
 	Unchanged        bool
 	CacheInvalidated bool
 	Code             string
+	Version          string
 }
 
 // ApplyLiveConfig validates and atomically publishes the narrow set of source-proven
@@ -161,13 +162,58 @@ type LiveConfigResult struct {
 func (g *Gate) ApplyLiveConfig(candidate *config.Config) LiveConfigResult {
 	g.reloadMu.Lock()
 	defer g.reloadMu.Unlock()
+	return g.applyLiveConfigLocked(candidate)
+}
 
+// ApplyLiveConfigIfVersion applies a candidate only if expectedVersion still
+// identifies the current configuration snapshot.
+func (g *Gate) ApplyLiveConfigIfVersion(candidate *config.Config, expectedVersion string) LiveConfigResult {
+	g.reloadMu.Lock()
+	defer g.reloadMu.Unlock()
+
+	version, err := configVersion(g.currentConfig.Load())
+	if err != nil {
+		return LiveConfigResult{Code: "prepare_failed"}
+	}
+	if version != expectedVersion {
+		return LiveConfigResult{Code: "precondition_failed", Version: version}
+	}
+	return g.applyLiveConfigLocked(candidate)
+}
+
+// ConfigSnapshot returns an owned copy of the current effective configuration
+// and its opaque version.
+func (g *Gate) ConfigSnapshot() (*config.Config, string, error) {
+	g.reloadMu.Lock()
+	defer g.reloadMu.Unlock()
+
+	current := g.currentConfig.Load()
+	encoded, err := json.Marshal(current)
+	if err != nil {
+		return nil, "", err
+	}
+	var snapshot config.Config
+	if err := json.Unmarshal(encoded, &snapshot); err != nil {
+		return nil, "", err
+	}
+	version, err := configVersion(current)
+	if err != nil {
+		return nil, "", err
+	}
+	return &snapshot, version, nil
+}
+
+func (g *Gate) applyLiveConfigLocked(candidate *config.Config) LiveConfigResult {
 	current := g.currentConfig.Load()
 	if candidate == nil {
 		return LiveConfigResult{Code: "invalid"}
 	}
-	if reflect.DeepEqual(current, candidate) {
-		return LiveConfigResult{Unchanged: true, Code: "unchanged"}
+	if configsEqual(current, candidate) {
+		version, err := configVersion(current)
+		if err != nil {
+			return LiveConfigResult{Code: "prepare_failed"}
+		}
+		return LiveConfigResult{Unchanged: true, Code: "unchanged", Version: version}
 	}
 	if _, errs := candidate.Validate(); len(errs) != 0 {
 		return LiveConfigResult{Code: "invalid"}
@@ -187,7 +233,19 @@ func (g *Gate) ApplyLiveConfig(candidate *config.Config) LiveConfigResult {
 		return LiveConfigResult{Code: "prepare_failed"}
 	}
 	g.currentConfig.Store(&published)
-	return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied"}
+	version, err := configVersion(&published)
+	if err != nil {
+		return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied"}
+	}
+	return LiveConfigResult{Applied: true, CacheInvalidated: true, Code: "applied", Version: version}
+}
+
+func configVersion(cfg *config.Config) (string, error) {
+	encoded, err := json.Marshal(cfg)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(encoded)), nil
 }
 
 func cloneLiveLiteRoutes(routes []jconfiglite.Route) ([]jconfiglite.Route, error) {
@@ -214,7 +272,19 @@ func onlyLiveLiteRoutesChanged(current, candidate *config.Config) bool {
 	candidateJava.Lite.Routes = nil
 	currentWithoutRoutes.Config = currentJava
 	candidateWithoutRoutes.Config = candidateJava
-	return reflect.DeepEqual(currentWithoutRoutes, candidateWithoutRoutes)
+	return configsEqual(&currentWithoutRoutes, &candidateWithoutRoutes)
+}
+
+func configsEqual(a, b *config.Config) bool {
+	aJSON, err := json.Marshal(a)
+	if err != nil {
+		return false
+	}
+	bJSON, err := json.Marshal(b)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(aJSON, bJSON)
 }
 
 // Java returns the Java edition proxy, or nil if none.

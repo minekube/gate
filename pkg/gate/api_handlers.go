@@ -11,52 +11,39 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/go-logr/logr"
-	"github.com/robinbraemer/event"
 	"gopkg.in/yaml.v3"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/gate/config"
 	pb "go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1"
-	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/version"
 )
 
-// ConfigHandlerImpl implements the ConfigHandler interface.
+// ConfigHandlerImpl exposes the effective Gate configuration through the
+// transactional live-reload path.
 type ConfigHandlerImpl struct {
-	mu             *sync.Mutex
-	cfg            *config.Config
-	eventMgr       event.Manager
-	proxy          *proxy.Proxy
+	applyMu        sync.Mutex
+	gate           *Gate
 	configFilePath string
 }
 
-func NewConfigHandler(mu *sync.Mutex, cfg *config.Config, eventMgr event.Manager, proxy *proxy.Proxy, configFilePath string) *ConfigHandlerImpl {
-	return &ConfigHandlerImpl{
-		mu:             mu,
-		cfg:            cfg,
-		eventMgr:       eventMgr,
-		proxy:          proxy,
-		configFilePath: configFilePath,
-	}
+func NewConfigHandler(gate *Gate, configFilePath string) *ConfigHandlerImpl {
+	return &ConfigHandlerImpl{gate: gate, configFilePath: configFilePath}
 }
 
 func (h *ConfigHandlerImpl) GetStatus(context.Context, *pb.GetStatusRequest) (*pb.GetStatusResponse, error) {
-	h.mu.Lock()
-	isLiteMode := h.cfg.Config.Lite.Enabled
-	h.mu.Unlock()
+	cfg, _, err := h.gate.ConfigSnapshot()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, errors.New("effective config is unavailable"))
+	}
 
 	response := &pb.GetStatusResponse{Version: version.String()}
-	if isLiteMode {
+	if cfg.Config.Lite.Enabled {
 		response.Mode = pb.ProxyMode_PROXY_MODE_LITE
-
-		h.mu.Lock()
-		routes := h.cfg.Config.Lite.Routes
-		h.mu.Unlock()
-
 		var totalConnections int32
-		if h.proxy != nil && h.proxy.Lite() != nil {
-			sm := h.proxy.Lite().StrategyManager()
-			for _, route := range routes {
+		if p := h.gate.Java(); p != nil && p.Lite() != nil {
+			sm := p.Lite().StrategyManager()
+			for _, route := range cfg.Config.Lite.Routes {
 				for _, backend := range route.Backend {
 					if counter := sm.GetOrCreateCounter(backend); counter != nil {
 						totalConnections += int32(counter.Load())
@@ -67,7 +54,7 @@ func (h *ConfigHandlerImpl) GetStatus(context.Context, *pb.GetStatusRequest) (*p
 		response.Stats = &pb.GetStatusResponse_Lite{
 			Lite: &pb.LiteStats{
 				Connections: totalConnections,
-				Routes:      int32(len(routes)),
+				Routes:      int32(len(cfg.Config.Lite.Routes)),
 			},
 		}
 		return response, nil
@@ -75,91 +62,119 @@ func (h *ConfigHandlerImpl) GetStatus(context.Context, *pb.GetStatusRequest) (*p
 
 	response.Mode = pb.ProxyMode_PROXY_MODE_CLASSIC
 	var players, servers int32
-	if h.proxy != nil {
-		for _, server := range h.proxy.Servers() {
+	if p := h.gate.Java(); p != nil {
+		for _, server := range p.Servers() {
 			server.Players().Range(func(proxy.Player) bool {
 				players++
 				return true
 			})
 		}
-		servers = int32(len(h.proxy.Servers()))
+		servers = int32(len(p.Servers()))
 	}
 	response.Stats = &pb.GetStatusResponse_Classic{
-		Classic: &pb.ClassicStats{
-			Players: players,
-			Servers: servers,
-		},
+		Classic: &pb.ClassicStats{Players: players, Servers: servers},
 	}
 	return response, nil
 }
 
 func (h *ConfigHandlerImpl) GetConfig(context.Context, *pb.GetConfigRequest) (*pb.GetConfigResponse, error) {
-	h.mu.Lock()
-	cfgCopy := *h.cfg
-	h.mu.Unlock()
-
-	data, err := yaml.Marshal(cfgCopy)
+	cfg, configVersion, err := h.gate.ConfigSnapshot()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to encode config: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, errors.New("effective config is unavailable"))
 	}
-	return &pb.GetConfigResponse{Payload: string(data)}, nil
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to encode effective config"))
+	}
+	return &pb.GetConfigResponse{Payload: string(data), Version: configVersion}, nil
 }
 
 func (h *ConfigHandlerImpl) ValidateConfig(_ context.Context, req *pb.ValidateConfigRequest) ([]string, error) {
-	var newCfg config.Config
-	if err := yaml.Unmarshal([]byte(req.GetConfig()), &newCfg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid YAML/JSON: %w", err))
+	candidate, err := decodeAPIConfig(req.GetConfig())
+	if err != nil {
+		return nil, err
 	}
-	warns, errs := newCfg.Validate()
-	if len(errs) > 0 {
-		errStrs := make([]string, len(errs))
-		for i, err := range errs {
-			errStrs[i] = err.Error()
-		}
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("config validation failed: %s", strings.Join(errStrs, "; ")))
-	}
-	warnStrs := make([]string, len(warns))
-	for i, warning := range warns {
-		warnStrs[i] = warning.Error()
-	}
-	return warnStrs, nil
+	return validateAPIConfig(candidate)
 }
 
-func (h *ConfigHandlerImpl) ApplyConfig(ctx context.Context, req *pb.ApplyConfigRequest) ([]string, error) {
-	var newCfg config.Config
-	if err := yaml.Unmarshal([]byte(req.GetConfig()), &newCfg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid YAML/JSON: %w", err))
+func (h *ConfigHandlerImpl) ApplyConfig(ctx context.Context, req *pb.ApplyConfigRequest) (*pb.ApplyConfigResponse, error) {
+	h.applyMu.Lock()
+	defer h.applyMu.Unlock()
+
+	if req.GetIfMatch() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("if_match is required"))
+	}
+	current, _, err := h.gate.ConfigSnapshot()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, errors.New("effective config is unavailable"))
 	}
 
-	warns, errs := newCfg.Validate()
-	if len(errs) > 0 {
-		errStrs := make([]string, len(errs))
-		for i, err := range errs {
-			errStrs[i] = err.Error()
-		}
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("config validation failed: %s", strings.Join(errStrs, "; ")))
+	var candidate *config.Config
+	switch input := req.GetInput().(type) {
+	case *pb.ApplyConfigRequest_Config:
+		candidate, err = decodeAPIConfig(input.Config)
+	case *pb.ApplyConfigRequest_MergePatch:
+		candidate, err = mergeConfigPatch(current, input.MergePatch)
+	default:
+		err = errors.New("config or merge_patch is required")
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	h.mu.Lock()
-	prev := *h.cfg
-	*h.cfg = newCfg
-	h.mu.Unlock()
-	reload.FireConfigUpdate(h.eventMgr, h.cfg, &prev)
-	logr.FromContextOrDiscard(ctx).Info("applied config via api")
-
-	warnStrs := make([]string, len(warns))
-	for i, warning := range warns {
-		warnStrs[i] = warning.Error()
+	warnings, err := validateAPIConfig(candidate)
+	if err != nil {
+		return nil, err
 	}
+	result := h.gate.ApplyLiveConfigIfVersion(candidate, req.GetIfMatch())
+	switch result.Code {
+	case "applied", "unchanged":
+	case "precondition_failed":
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("configuration version does not match"))
+	case "unsupported":
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			errors.New("configuration contains restart-required changes; only Java Lite routes can be reloaded"))
+	case "invalid":
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("configuration is invalid"))
+	default:
+		return nil, connect.NewError(connect.CodeInternal, errors.New("configuration could not be applied"))
+	}
+
 	if req.GetPersist() {
-		if err := h.persistConfig(&newCfg); err != nil {
+		if err := h.persistConfig(candidate); err != nil {
 			logr.FromContextOrDiscard(ctx).Error(err, "failed to persist config to disk (config applied in-memory)")
-			warnStrs = append(warnStrs, fmt.Sprintf("failed to persist config to disk: %v", err))
+			warnings = append(warnings, fmt.Sprintf("failed to persist config to disk: %v", err))
 		} else {
 			logr.FromContextOrDiscard(ctx).Info("config persisted to disk")
 		}
 	}
-	return warnStrs, nil
+	logr.FromContextOrDiscard(ctx).Info("applied config via api")
+	return &pb.ApplyConfigResponse{Warnings: warnings, Version: result.Version}, nil
+}
+
+func decodeAPIConfig(payload string) (*config.Config, error) {
+	var candidate config.Config
+	if err := decodeConfigStrict([]byte(payload), ".yaml", &candidate); err != nil {
+		return nil, fmt.Errorf("invalid YAML/JSON: %w", err)
+	}
+	return &candidate, nil
+}
+
+func validateAPIConfig(candidate *config.Config) ([]string, error) {
+	warns, errs := candidate.Validate()
+	if len(errs) > 0 {
+		errStrs := make([]string, len(errs))
+		for i, err := range errs {
+			errStrs[i] = err.Error()
+		}
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("config validation failed: %s", strings.Join(errStrs, "; ")))
+	}
+	warnings := make([]string, len(warns))
+	for i, warning := range warns {
+		warnings[i] = warning.Error()
+	}
+	return warnings, nil
 }
 
 func (h *ConfigHandlerImpl) persistConfig(cfg *config.Config) error {

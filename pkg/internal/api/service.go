@@ -23,7 +23,7 @@ type ConfigHandler interface {
 	GetStatus(context.Context, *pb.GetStatusRequest) (*pb.GetStatusResponse, error)
 	GetConfig(context.Context, *pb.GetConfigRequest) (*pb.GetConfigResponse, error)
 	ValidateConfig(context.Context, *pb.ValidateConfigRequest) ([]string, error)
-	ApplyConfig(context.Context, *pb.ApplyConfigRequest) ([]string, error)
+	ApplyConfig(context.Context, *pb.ApplyConfigRequest) (*pb.ApplyConfigResponse, error)
 }
 
 func NewService(p *proxy.Proxy, configHandler ConfigHandler) *Service {
@@ -285,9 +285,9 @@ func (s *Service) ApplyConfig(ctx context.Context, c *connect.Request[pb.ApplyCo
 	if s.configHandler == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config handler not configured"))
 	}
-	warns, err := s.configHandler.ApplyConfig(ctx, c.Msg)
+	response, err := s.configHandler.ApplyConfig(ctx, c.Msg)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&pb.ApplyConfigResponse{Warnings: warns}), nil
+	return connect.NewResponse(response), nil
 }
