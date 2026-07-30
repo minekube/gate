@@ -1,6 +1,7 @@
 package gate
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/util/configutil"
+	"gopkg.in/yaml.v3"
 )
 
 func TestGateApplyLiveConfigPublishesOnlyValidatedLiteRouteSnapshot(t *testing.T) {
@@ -127,6 +129,37 @@ func TestValidateConfigFileSyntaxRejectsPartialAndUnknownCandidates(t *testing.T
 
 	require.NoError(t, os.WriteFile(path, []byte("config:\n  unknownOption: true\n"), 0o600))
 	require.Error(t, validateConfigFileSyntax(path))
+}
+
+func TestNewConfigCandidateDoesNotMutateMutableDefaults(t *testing.T) {
+	originalMotd := config.DefaultConfig.Config.Status.Motd
+	originalShutdownReason := config.DefaultConfig.Config.ShutdownReason
+	defer func() {
+		config.DefaultConfig.Config.Status.Motd = originalMotd
+		config.DefaultConfig.Config.ShutdownReason = originalShutdownReason
+	}()
+
+	config.DefaultConfig.Config.Status.Motd = &configutil.Component{}
+	candidate := newConfigCandidate()
+	before, err := json.Marshal(config.DefaultConfig.Config.Status.Motd)
+	require.NoError(t, err)
+	require.NoError(t, yaml.Unmarshal([]byte("status:\n  motd: changed\n"), &candidate.Config))
+	after, err := json.Marshal(config.DefaultConfig.Config.Status.Motd)
+	require.NoError(t, err)
+	require.Equal(t, before, after)
+	require.NotSame(t, config.DefaultConfig.Config.Status.Motd, candidate.Config.Status.Motd)
+	require.NotSame(t, config.DefaultConfig.Config.ShutdownReason, candidate.Config.ShutdownReason)
+}
+
+func TestDecodeConfigStrictRejectsUnknownBedrockFields(t *testing.T) {
+	unknownFields := []string{
+		"config:\n  bedrock:\n    unknownOption: true\n",
+		"config:\n  bedrock:\n    managed:\n      enabled: true\n      unknownOption: true\n",
+	}
+	for _, content := range unknownFields {
+		var candidate config.Config
+		require.Error(t, decodeConfigStrict([]byte(content), ".yml", &candidate))
+	}
 }
 
 func TestLoadLiveConfigCandidateRejectsInvalidFilesAndRecovers(t *testing.T) {

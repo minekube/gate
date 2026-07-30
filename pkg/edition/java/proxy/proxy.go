@@ -47,7 +47,7 @@ type Proxy struct {
 	// cfg remains the construction-time configuration for compatibility with
 	// package-local setup code; all runtime readers use currentCfg via config().
 	cfg              *config.Config
-	currentCfg       atomic.Pointer[config.Config]
+	currentCfg       atomic.Pointer[runtimeConfigSnapshot]
 	event            event.Manager
 	command          command.Manager
 	channelRegistrar *message.ChannelRegistrar
@@ -82,6 +82,11 @@ type Proxy struct {
 
 	lite *lite.Lite // lite mode functionality
 	via  *viaManagedRunner
+}
+
+type runtimeConfigSnapshot struct {
+	cfg        *config.Config
+	generation uint64
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -131,7 +136,7 @@ func New(options Options) (p *Proxy, err error) {
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
 		via:              newViaManagedRunner(options.Config),
 	}
-	p.currentCfg.Store(options.Config)
+	p.currentCfg.Store(&runtimeConfigSnapshot{cfg: options.Config})
 
 	// Connection & login rate limiters
 	p.initQuota(&options.Config.Quota)
@@ -272,7 +277,7 @@ func liteRoutesChanged(current, previous []liteconfig.Route) bool {
 // changes Lite routes only. Existing Lite connections are direct pipes and retain
 // their already-selected backend; subsequent handshakes read the new snapshot.
 func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
-	current := p.config()
+	current, generation := p.configSnapshot()
 	if candidate == nil || !current.Lite.Enabled || !candidate.Lite.Enabled {
 		return errors.New("unsupported live configuration")
 	}
@@ -299,8 +304,9 @@ func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
 	if liteRoutesChanged(candidate.Lite.Routes, current.Lite.Routes) {
 		lite.ResetPingCache()
 		p.log.Info("lite ping cache was reset")
+		generation++
 	}
-	p.currentCfg.Store(&published)
+	p.currentCfg.Store(&runtimeConfigSnapshot{cfg: &published, generation: generation})
 	return nil
 }
 
@@ -473,10 +479,15 @@ func (p *Proxy) Config() config.Config {
 }
 
 func (p *Proxy) config() *config.Config {
+	cfg, _ := p.configSnapshot()
+	return cfg
+}
+
+func (p *Proxy) configSnapshot() (*config.Config, uint64) {
 	if current := p.currentCfg.Load(); current != nil {
-		return current
+		return current.cfg, current.generation
 	}
-	return p.cfg
+	return p.cfg, 0
 }
 
 // Lite returns the proxy's lite mode functionality.

@@ -482,9 +482,14 @@ func loadLiveConfigCandidate(v *viper.Viper, configPath string) (*config.Config,
 }
 
 func newConfigCandidate() config.Config {
-	// Clone default config. Maps must be fresh so removed settings cannot persist
-	// across startup loads or live candidates.
-	cfg := func() config.Config { return config.DefaultConfig }()
+	encoded, err := json.Marshal(config.DefaultConfig)
+	if err != nil {
+		panic(err)
+	}
+	var cfg config.Config
+	if err := json.Unmarshal(encoded, &cfg); err != nil {
+		panic(err)
+	}
 	cfg.Config.Servers = make(map[string]string)
 	cfg.Config.ForcedHosts = make(map[string][]string)
 	return cfg
