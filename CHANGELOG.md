@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.69.0](https://github.com/minekube/gate/compare/v0.68.33...v0.69.0) (2026-07-30)
+
+
+### Features
+
+* **gate:** add transactional live reload for Java Lite configs ([#947](https://github.com/minekube/gate/issues/947)) ([f7e37ea](https://github.com/minekube/gate/commit/f7e37ea2784374a00d259593abdbbac5012ceedd))
+
 ## [0.68.33](https://github.com/minekube/gate/compare/v0.68.32...v0.68.33) (2026-07-27)
 
 
