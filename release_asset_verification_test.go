@@ -9,11 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// The release job used to end at "run GoReleaser and hope". A release whose
-// upload silently produced nothing still looked green, because nothing ever
-// re-read the release that actually landed. geyserlite shipped several such
-// empty releases (and one carrying only a C header) before it grew this
-// guard; these tests pin the same guard here.
+// The release publisher must re-read the release that actually landed. These
+// tests pin that guard and its ordering.
 
 const (
 	verifyAssetsStepName  = "Verify published release assets"
@@ -39,10 +36,7 @@ type assetWorkflowStep struct {
 func readReleaseJob(t *testing.T) assetWorkflowJob {
 	t.Helper()
 
-	// Gate publishes from the tag-gated releaser job in ci.yml rather than a
-	// dedicated release.yml; the guard is API-side, so the build mechanism in
-	// the preceding unprivileged job is irrelevant to it.
-	const workflowPath = ".github/workflows/ci.yml"
+	const workflowPath = ".github/workflows/release-publish.yml"
 
 	workflowBytes, err := os.ReadFile(workflowPath)
 	if err != nil {
@@ -54,12 +48,12 @@ func readReleaseJob(t *testing.T) assetWorkflowJob {
 		t.Fatal(err)
 	}
 
-	release, ok := workflow.Jobs["releaser"]
+	release, ok := workflow.Jobs["publish-release"]
 	if !ok {
-		t.Fatal("releaser job is missing")
+		t.Fatal("publish-release job is missing")
 	}
 	if len(release.Steps) == 0 {
-		t.Fatal("releaser job has no steps")
+		t.Fatal("publish-release job has no steps")
 	}
 
 	return release

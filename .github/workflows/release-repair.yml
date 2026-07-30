@@ -13,9 +13,9 @@ name: release-repair
 #      checking out the tag is the only shape that works for every tag,
 #      including tags cut before this file existed.
 #
-#   2. ci.yml's `build` job pushes `ghcr.io/minekube/gate:latest` (and
-#      `.../jre:latest`). Re-running it at an OLD tag would drag `:latest`
-#      backwards and silently downgrade everyone pulling it. This workflow
+#   2. release-publish.yml's trusted container publisher pushes
+#      `ghcr.io/minekube/gate:latest` (and `.../jre:latest`). Re-running a
+#      repair at an OLD tag must not drag `:latest` backwards. This workflow
 #      requests no registry scope, so a backward retag is not "guarded
 #      against" here - it is unrepresentable.
 #
@@ -89,7 +89,7 @@ jobs:
       # already checksummed. Failing here costs seconds instead of a full
       # rebuild.
       #
-      # The classifier is the same one ci.yml's "Verify published release
+      # The classifier is the same one release-publish.yml's "Verify published release
       # assets" step uses: a positive asset count is not a build, so an asset
       # list of pure metadata still counts as a hole worth repairing.
       - name: Refuse to repair a release that already has a build
@@ -414,7 +414,7 @@ jobs:
       # ran would rebuild that same defect one layer up, so re-read the
       # PUBLISHED release from the API and assert on the landed fact.
       #
-      # This is deliberately the same assertion ci.yml's releaser job makes, so
+      # This is deliberately the same assertion release-publish.yml's publisher makes, so
       # a repaired release is held to the release path's standard rather than a
       # weaker one, and it is the LAST step so nothing can run after it.
       - name: Verify published release assets

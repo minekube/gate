@@ -9,12 +9,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ci.yml builds release binaries and container images from the tagged tree.
-// Tagged code, its dependencies, and its build outputs are untrusted at the
-// point where they run. Keep them on runners whose GITHUB_TOKEN cannot write;
-// only fresh publisher jobs may receive write scopes.
+// Tagged release code runs in release-publish.yml with read-only credentials;
+// only its fresh publisher jobs may receive write scopes.
 
 const ciWorkflowPath = ".github/workflows/ci.yml"
+const trustedReleaseWorkflowPath = ".github/workflows/release-publish.yml"
 
 type ciIsolationWorkflow struct {
 	Permissions map[string]string                 `yaml:"permissions"`
@@ -55,9 +54,13 @@ func (n *ciIsolationNeeds) UnmarshalYAML(node *yaml.Node) error {
 }
 
 func readCIIsolationWorkflow(t *testing.T) (ciIsolationWorkflow, string) {
+	return readCIIsolationWorkflowAt(t, ciWorkflowPath)
+}
+
+func readCIIsolationWorkflowAt(t *testing.T, path string) (ciIsolationWorkflow, string) {
 	t.Helper()
 
-	raw, err := os.ReadFile(ciWorkflowPath)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,10 +77,10 @@ func ciIsolationJob(t *testing.T, workflow ciIsolationWorkflow, name string) ciI
 
 	job, ok := workflow.Jobs[name]
 	if !ok {
-		t.Fatalf("%s has no %q job", ciWorkflowPath, name)
+		t.Fatalf("workflow has no %q job", name)
 	}
 	if len(job.Steps) == 0 {
-		t.Fatalf("%s job %q has no steps", ciWorkflowPath, name)
+		t.Fatalf("job %q has no steps", name)
 	}
 	return job
 }
@@ -97,7 +100,7 @@ func TestCIGrantsNoAmbientWritePermission(t *testing.T) {
 		t.Fatalf("workflow permissions are %v; ci.yml must have no ambient token grant", workflow.Permissions)
 	}
 
-	for _, name := range []string{"lint", "test", "docker-smoke", "image-build", "release-build"} {
+	for _, name := range []string{"lint", "test", "docker-smoke"} {
 		job := ciIsolationJob(t, workflow, name)
 		if got := job.Permissions; len(got) != 1 || got["contents"] != "read" {
 			t.Errorf("%s permissions are %v; code-running jobs must have contents: read only", name, got)
@@ -115,12 +118,61 @@ func TestCIGrantsNoAmbientWritePermission(t *testing.T) {
 			}
 		}
 	}
+
+	trusted, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
+	if len(trusted.Permissions) != 0 {
+		t.Fatalf("trusted release workflow permissions are %v; it must have no ambient token grant", trusted.Permissions)
+	}
+	for _, name := range []string{"lint", "test", "docker-smoke", "image-build", "release-build"} {
+		job := ciIsolationJob(t, trusted, name)
+		if got := job.Permissions; len(got) != 1 || got["contents"] != "read" {
+			t.Errorf("%s permissions are %v; tagged code must have contents: read only", name, got)
+		}
+		for _, step := range job.Steps {
+			if strings.HasPrefix(step.Uses, "actions/checkout@") &&
+				fmt.Sprint(step.With["persist-credentials"]) != "false" {
+				t.Errorf("%s checkout %q persists credentials; tagged code could recover the token",
+					name, step.Name)
+			}
+			for _, token := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
+				if _, ok := step.Env[token]; ok {
+					t.Errorf("%s step %q exposes %s to a code-running job", name, step.Name, token)
+				}
+			}
+		}
+	}
+}
+
+func TestReleasePublishUsesTrustedDefaultBranchWorkflow(t *testing.T) {
+	releasePlease, err := os.ReadFile(".github/workflows/release-please.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contents := string(releasePlease)
+	if !strings.Contains(contents, "gh workflow run release-publish.yml") {
+		t.Fatal("release-please must dispatch the trusted release-publish workflow")
+	}
+	if !strings.Contains(contents, "--ref master") {
+		t.Fatal("release-please must dispatch release-publish.yml from master")
+	}
+	if strings.Contains(contents, "gh workflow run ci.yml") {
+		t.Fatal("release-please must not dispatch the tag-selected ci.yml workflow")
+	}
+
+	workflow, err := os.ReadFile(".github/workflows/release-publish.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(workflow), "release_tag:") {
+		t.Fatal("release-publish.yml must receive the release tag as an input")
+	}
 }
 
 func TestCISeparatesContainerBuildFromRegistryWrite(t *testing.T) {
-	workflow, _ := readCIIsolationWorkflow(t)
+	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
 	build := ciIsolationJob(t, workflow, "image-build")
-	publish := ciIsolationJob(t, workflow, "build")
+	publish := ciIsolationJob(t, workflow, "publish-images")
 
 	if got := publish.Permissions; len(got) != 2 ||
 		got["actions"] != "read" || got["packages"] != "write" {
@@ -156,9 +208,9 @@ func TestCISeparatesContainerBuildFromRegistryWrite(t *testing.T) {
 }
 
 func TestCISeparatesReleaseBuildFromContentsWrite(t *testing.T) {
-	workflow, _ := readCIIsolationWorkflow(t)
+	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
 	build := ciIsolationJob(t, workflow, "release-build")
-	publish := ciIsolationJob(t, workflow, "releaser")
+	publish := ciIsolationJob(t, workflow, "publish-release")
 
 	if got := publish.Permissions; len(got) != 2 ||
 		got["actions"] != "read" || got["contents"] != "write" {
