@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.70.0](https://github.com/minekube/gate/compare/v0.69.1...v0.70.0) (2026-07-30)
+
+
+### Features
+
+* **api:** add versioned config management and narrow Gate HTTP API ([acb2a5b](https://github.com/minekube/gate/commit/acb2a5b4446ce13678ebddcfed8a2b88324c4abf))
+* **api:** apply config with versioned merge patches ([605e7b2](https://github.com/minekube/gate/commit/605e7b2f9600d1a32f77e43a58cbfa24c862ad32))
+
+
+### Bug Fixes
+
+* **config:** preserve durations in API YAML round trips ([b472344](https://github.com/minekube/gate/commit/b472344a5c3ee8fb60c1c5ffe4fd12aa1e576f1a))
+
 ## [0.69.1](https://github.com/minekube/gate/compare/v0.69.0...v0.69.1) (2026-07-30)
 
 
