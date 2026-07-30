@@ -42,14 +42,7 @@ func (h *ConfigHandlerImpl) GetStatus(context.Context, *pb.GetStatusRequest) (*p
 		response.Mode = pb.ProxyMode_PROXY_MODE_LITE
 		var totalConnections int32
 		if p := h.gate.Java(); p != nil && p.Lite() != nil {
-			sm := p.Lite().StrategyManager()
-			for _, route := range cfg.Config.Lite.Routes {
-				for _, backend := range route.Backend {
-					if counter := sm.GetOrCreateCounter(backend); counter != nil {
-						totalConnections += int32(counter.Load())
-					}
-				}
-			}
+			totalConnections = int32(p.Lite().StrategyManager().ActiveConnections())
 		}
 		response.Stats = &pb.GetStatusResponse_Lite{
 			Lite: &pb.LiteStats{

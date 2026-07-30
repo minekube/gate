@@ -55,7 +55,7 @@ func TestFindRouteMatchesForgeHandshakeHost(t *testing.T) {
 				_ = server.Close()
 			})
 
-			log, _, route, nextBackend, err := findRoute(
+			log, _, route, _, nextBackend, err := findRoute(
 				routes,
 				testr.New(t),
 				&routeTestConn{conn: client},

@@ -47,7 +47,7 @@ func Forward(
 ) {
 	defer func() { _ = client.Close() }()
 
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, src, route, routeHost, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		// A player connection that matches no route is silently dropped, so log it at
 		// the default verbosity: it is always an operator-actionable misconfiguration,
@@ -72,7 +72,7 @@ func Forward(
 	}
 
 	// Track connection for all strategies (used by status API and least-connections strategy)
-	decrementConnection := strategyManager.IncrementConnection(backendAddr)
+	decrementConnection := strategyManager.TrackConnection(routeHost, backendAddr)
 	defer decrementConnection()
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
@@ -167,12 +167,13 @@ func findRoute(
 	newLog logr.Logger,
 	src net.Conn,
 	route *config.Route,
+	routeHost string,
 	nextBackend nextBackendFunc,
 	err error,
 ) {
 	srcConn, ok := netmc.Assert[interface{ Conn() net.Conn }](client)
 	if !ok {
-		return log, src, nil, nil, errors.New("failed to assert connection as net.Conn")
+		return log, src, nil, "", nil, errors.New("failed to assert connection as net.Conn")
 	}
 	src = srcConn.Conn()
 
@@ -187,7 +188,7 @@ func findRoute(
 	if route == nil {
 		// Status pings hit unknown hosts constantly, so they keep this out of the
 		// default log via errs.V. Forward logs it unconditionally for players.
-		return log, src, nil, nil, &errs.VerbosityError{
+		return log, src, nil, "", nil, &errs.VerbosityError{
 			Err:       fmt.Errorf("no route configured for host %s", clearedHost),
 			Verbosity: 1,
 		}
@@ -195,10 +196,13 @@ func findRoute(
 	log = log.WithValues("route", host)
 
 	if len(route.Backend) == 0 {
-		return log, src, route, nil, errors.New("no backend configured for route")
+		return log, src, route, host, nil, errors.New("no backend configured for route")
 	}
 
 	tryBackends := route.Backend.Copy()
+	for i := range tryBackends {
+		tryBackends[i] = substituteBackendParams(tryBackends[i], groups)
+	}
 	nextBackend = func() (string, logr.Logger, bool) {
 		if len(tryBackends) == 0 {
 			return "", log, false
@@ -210,20 +214,9 @@ func findRoute(
 			return "", log, false
 		}
 
-		// Substitute parameters in backend address if groups were captured
-		if len(groups) > 0 {
-			backendAddr = substituteBackendParams(backendAddr, groups)
-		}
-
 		// Remove selected backend from list to avoid retrying it
 		for i, backend := range tryBackends {
-			// Apply parameter substitution to the original backend for comparison
-			originalBackend := backend
-			if len(groups) > 0 {
-				originalBackend = substituteBackendParams(backend, groups)
-			}
-
-			normalizedBackend, err := netutil.Parse(originalBackend, src.RemoteAddr().Network())
+			normalizedBackend, err := netutil.Parse(backend, src.RemoteAddr().Network())
 			if err != nil {
 				continue
 			}
@@ -250,7 +243,7 @@ func findRoute(
 		return backendAddr, newLog.WithValues("backendAddr", backendAddr), true
 	}
 
-	return log, src, route, nextBackend, nil
+	return log, src, route, host, nextBackend, nil
 }
 
 func dialRoute(
@@ -368,7 +361,7 @@ func ResolveStatusResponseWithGeneration(
 	statusRequestCtx *proto.PacketContext,
 	strategyManager *StrategyManager,
 ) (logr.Logger, *packet.StatusResponse, error) {
-	log, src, route, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
+	log, src, route, _, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		return log, nil, err
 	}

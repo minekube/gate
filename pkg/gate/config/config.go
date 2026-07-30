@@ -26,7 +26,7 @@ var DefaultConfig = Config{
 // Config is the root configuration of Gate.
 type Config struct {
 	// Config is the Java edition configuration (with embedded Bedrock config).
-	Config jconfig.Config `yaml:"config,omitempty"`
+	Config jconfig.Config `json:"config,omitempty" yaml:"config,omitempty"`
 	// See HealthService struct.
 	HealthService HealthService `json:"healthService,omitempty" yaml:"healthService,omitempty"`
 	// See Connect struct.
