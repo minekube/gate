@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/errs"
 )
@@ -46,8 +47,13 @@ func (s *SessionPlayerCommand) Encode(c *proto.PacketContext, wr io.Writer) erro
 }
 
 func (s *SessionPlayerCommand) Decode(c *proto.PacketContext, rd io.Reader) error {
+	// Command length cap increased from 256 to 65536 in 1.20.5+
+	cap := 256
+	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
+		cap = util.DefaultMaxStringSize // 65536
+	}
 	var err error
-	s.Command, err = util.ReadStringMax(rd, 256)
+	s.Command, err = util.ReadStringMax(rd, cap)
 	if err != nil {
 		return err
 	}

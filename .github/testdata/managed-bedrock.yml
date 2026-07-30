@@ -1,0 +1,11 @@
+config:
+  bind: 0.0.0.0:25565
+  onlineMode: false
+  servers:
+    backend: 127.0.0.1:25566
+  try:
+    - backend
+  bedrock:
+    enabled: true
+    floodgateKeyPath: /tmp/floodgate.pem
+    managed: true

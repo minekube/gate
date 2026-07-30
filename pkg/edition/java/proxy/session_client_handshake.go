@@ -95,19 +95,21 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
 
+	cfg, routeGeneration := h.proxy.configSnapshot()
+
 	// Lite mode ping resolver
 	var resolvePingResponse pingResolveFunc
-	if h.config().Lite.Enabled {
+	if cfg.Lite.Enabled {
 		h.conn.SetState(nextState)
-		dialTimeout := time.Duration(h.config().ConnectionTimeout)
+		dialTimeout := time.Duration(cfg.ConnectionTimeout)
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
-			lite.Forward(dialTimeout, h.config().Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
+			lite.Forward(dialTimeout, cfg.Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
 			return
 		}
 		// Resolve ping response for lite mode.
 		resolvePingResponse = func(log logr.Logger, statusRequestCtx *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
-			return lite.ResolveStatusResponse(dialTimeout, h.config().Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
+			return lite.ResolveStatusResponseWithGeneration(dialTimeout, routeGeneration, cfg.Lite.Routes, log, h.conn, handshake, pc, statusRequestCtx, h.proxy.Lite().StrategyManager())
 		}
 	}
 
@@ -118,7 +120,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 	handshakeIntent := handshake.Intent()
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
-	if handshakeIntent == packet.TransferHandshakeIntent && !h.config().AcceptTransfers {
+	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {
 		_ = inbound.disconnect(&component.Translation{Key: "multiplayer.disconnect.transfers_disabled"})
 		return
 	}
@@ -184,8 +186,15 @@ func stateForProtocol(status int) *state.Registry {
 }
 
 func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
-	if strings.Contains(h.ServerAddress, modernforge.Token) &&
+	// Modern Forge 1.20.2+ uses the FORGE token.
+	if modernforge.HasToken(h.ServerAddress) &&
 		h.ProtocolVersion >= int(version.Minecraft_1_20_2.Protocol) {
+		return phase.ModernForge
+	}
+	// Modern Forge 1.13-1.20.1 uses FML2 (1.13-1.17) or FML3 (1.18-1.20.1) tokens.
+	if h.ProtocolVersion >= int(version.Minecraft_1_13.Protocol) &&
+		(strings.Contains(h.ServerAddress, "\000FML2\000") ||
+			strings.Contains(h.ServerAddress, "\000FML3\000")) {
 		return phase.ModernForge
 	}
 	// Determine if we're using Forge (1.8 to 1.12, may not be the case in 1.13).
@@ -197,8 +206,6 @@ func handshakeConnectionType(h *packet.Handshake) phase.ConnectionType {
 		// forge handshake attempts. Also sends a reset handshake packet on every transition.
 		return phase.Undetermined17
 	}
-	// Note for future implementation: Forge 1.13+ identifies
-	// itself using a slightly different hostname token.
 	return phase.Vanilla
 }
 
@@ -222,6 +229,10 @@ func (i *initialInbound) VirtualHost() net.Addr {
 	return i.virtualHost
 }
 
+func (i *initialInbound) setVirtualHost(addr net.Addr) {
+	i.virtualHost = addr
+}
+
 func (i *initialInbound) HandshakeIntent() packet.HandshakeIntent {
 	return i.handshakeIntent
 }
@@ -236,7 +247,7 @@ func (i *initialInbound) String() string {
 
 func (i *initialInbound) disconnect(reason component.Component) error {
 	// TODO add cfg option to log player connections to log "player disconnected"
-	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(reason, i.Protocol(), i.State().State))
+	return netmc.CloseWith(i.MinecraftConn, packet.NewDisconnect(normalizeDisconnectReason(reason), i.Protocol(), i.State().State))
 }
 
 //

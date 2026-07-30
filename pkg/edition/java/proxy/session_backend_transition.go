@@ -103,7 +103,8 @@ func (b *backendTransitionSessionHandler) shouldHandle() bool {
 }
 
 func (b *backendTransitionSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	_ = b.serverConn.conn().WritePacket(p)
+	recordBackendKeepAlive(b.serverConn, p)
+	_ = b.serverConn.player.WritePacket(p)
 }
 func (b *backendTransitionSessionHandler) handleDisconnect(p *packet.Disconnect) {
 	var connType phase.ConnectionType
@@ -194,6 +195,8 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 	} else {
 		b.serverConn.player.mu.Unlock()
 	}
+
+	p.OnlineMode = b.serverConn.player.OnlineMode()
 
 	// The goods are in hand! We got JoinGame.
 	// Let's transition completely to the new state.

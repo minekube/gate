@@ -125,6 +125,7 @@ type Player interface { // TODO convert to struct(?) bc this is a lot of methods
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/bossbar
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/title
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/cookie
+	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/sound
 	//  - https://pkg.go.dev/go.minekube.com/gate/pkg/edition/java/proxy/tablist
 }
 
@@ -149,7 +150,8 @@ type connectedPlayer struct {
 	clientsideChannels                 *sets.CappedSet[string]
 	pendingConfigurationSwitch         bool
 
-	tabList internaltablist.InternalTabList // Player's tab list
+	tabList        internaltablist.InternalTabList // Player's tab list
+	bossBarManager *bossBarManager                 // Boss bar manager for 1.20.2+
 
 	mu                   sync.RWMutex // Protects following fields
 	connectedServer_     *serverConnection
@@ -158,6 +160,9 @@ type connectedPlayer struct {
 	clientSettingsPacket *packet.ClientSettings
 	modInfo              *modinfo.ModInfo
 	connPhase            phase.ClientConnectionPhase
+	forgeLoginRelay      *modernForgeLoginRelay  // non-nil during initial Modern Forge login relay
+	forgeReplayRelay     *modernForgeReplayRelay // non-nil during server switch FML replay
+	forgeLoginCache      []forgeLoginExchange    // cached FML exchanges from initial connection
 
 	clientBrand string // may be empty
 
@@ -200,10 +205,15 @@ func newConnectedPlayer(
 	p.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: p}
 	p.chatQueue = newChatQueue(p)
 	p.tabList = internaltablist.New(p)
+	p.bossBarManager = newBossBarManager(p)
 	return p
 }
 
 func (p *connectedPlayer) IdentifiedKey() crypto.IdentifiedKey { return p.playerKey }
+
+// BossBarManager returns the player's boss bar manager.
+// It is used to handle proxy-level boss bars during server transitions on 1.20.2+.
+func (p *connectedPlayer) BossBarManager() *bossBarManager { return p.bossBarManager }
 
 func (p *connectedPlayer) connectionInFlight() *serverConnection {
 	p.mu.RLock()
@@ -597,6 +607,7 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 	if !p.Active() {
 		return
 	}
+	reason = normalizeDisconnectReason(reason)
 
 	var r string
 	b := new(strings.Builder)
@@ -689,6 +700,12 @@ func (p *connectedPlayer) config() *config.Config {
 
 // switchToConfigState switches the connection of the client into config state.
 func (p *connectedPlayer) switchToConfigState() {
+	if p.bundleHandler.InBundleSession() {
+		p.bundleHandler.ToggleBundleSession()
+		if err := p.BufferPacket(new(packet.BundleDelimiter)); err != nil {
+			p.log.Error(err, "error writing bundle delimiter")
+		}
+	}
 	if err := p.BufferPacket(new(cfgpacket.StartUpdate)); err != nil {
 		p.log.Error(err, "error writing config packet")
 	}
@@ -792,4 +809,36 @@ func (p *connectedPlayer) discardChatQueue() {
 
 func (p *connectedPlayer) HandshakeIntent() packet.HandshakeIntent {
 	return p.handshakeIntent
+}
+
+// CurrentServerEntityID returns the entity ID of the player on their current server.
+// Returns false if the player is not connected to a server.
+func (p *connectedPlayer) CurrentServerEntityID() (int, bool) {
+	serverConn := p.connectedServer()
+	if serverConn == nil {
+		return 0, false
+	}
+	return serverConn.entityID, true
+}
+
+// CheckServerMatch checks if the other player is on the same server.
+// This method is used by the sound package to verify emitters are on the same server.
+func (p *connectedPlayer) CheckServerMatch(other interface{ CurrentServerEntityID() (int, bool) }) bool {
+	// Simple implementation: check both have servers
+	thisEntityID, thisOk := p.CurrentServerEntityID()
+	otherEntityID, otherOk := other.CurrentServerEntityID()
+
+	if !thisOk || !otherOk {
+		return false
+	}
+
+	// If we can cast to connectedPlayer, do proper server name check
+	if otherPlayer, ok := other.(*connectedPlayer); ok {
+		thisServer := p.connectedServer()
+		otherServer := otherPlayer.connectedServer()
+		return ServerInfoEqual(thisServer.Server().ServerInfo(), otherServer.Server().ServerInfo())
+	}
+
+	// Fallback: just check both are connected
+	return thisEntityID != 0 && otherEntityID != 0
 }

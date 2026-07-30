@@ -15,12 +15,12 @@ Gate is only a single executable file ready to run the proxy._
 ```sh [Linux/macOS]
 curl -fsSL https://gate.minekube.com/install | bash
 
-✨ Installing Gate...
-⚡ Downloading Gate 0.42.2 for darwin-arm64...
-✅ Checksum verified for gate_0.42.2_darwin_arm64
-✨ Successfully installed Gate 0.42.2!
-📍 Location: /Users/robin/.local/bin/gate
-🚀 Run gate to start the proxy
+Installing Gate...
+Downloading Gate 0.42.2 for darwin-arm64...
+Checksum verified for gate_0.42.2_darwin_arm64
+Successfully installed Gate 0.42.2!
+Location: /Users/robin/.local/bin/gate
+Run gate to start the proxy
 ```
 
 ```powershell [Windows]
@@ -94,7 +94,13 @@ If you encounter any issues:
    - Try running the installation again
    - If it persists, please report it on our GitHub issues
 
-3. **Permission Denied**:
+3. **Linux binary does not run**:
+
+   - The installer selects `gate_*_linux_*_musl` automatically on Alpine/musl systems
+   - The musl binary is statically linked, but excludes native GeyserLite managed mode and Honeycomb OpenTelemetry auto-configuration
+   - For managed Bedrock on musl, set `bedrock.managed.engine: java`; for native GeyserLite or full OTEL support, use a glibc-based distribution/image such as Debian, Ubuntu, or Fedora, or run the official Docker image
+
+4. **Permission Denied**:
    - Our scripts install to user space and shouldn't require elevated privileges
    - If you see permission errors, ensure you have write access to the installation directory
 

@@ -1,0 +1,3 @@
+# Minimal Gate configuration
+# All other settings will use their default values
+config: {}

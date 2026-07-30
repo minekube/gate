@@ -56,7 +56,7 @@ func splitHostPort(addr string) (host string, port uint16, err error) {
 	host, portStr, err = net.SplitHostPort(addr)
 	if err == nil {
 		portInt, err = strconv.Atoi(portStr)
-	} else if isMissingPortErr(err) {
+	} else if isMissingPortErr(err) || isTooManyColonsErr(err) {
 		host = addr
 		err = nil
 	}
@@ -73,4 +73,9 @@ var _ net.Addr = (*address)(nil)
 func isMissingPortErr(err error) bool {
 	var addrErr *net.AddrError
 	return err != nil && errors.As(err, &addrErr) && addrErr.Err == "missing port in address"
+}
+
+func isTooManyColonsErr(err error) bool {
+	var addrErr *net.AddrError
+	return err != nil && errors.As(err, &addrErr) && addrErr.Err == "too many colons in address"
 }

@@ -1,0 +1,47 @@
+name: Bump managed dependency
+
+on:
+  workflow_dispatch:
+    inputs:
+      dependency:
+        description: Managed dependency to update.
+        required: true
+        type: choice
+        options:
+          - geyserlite
+          - vialite
+      version:
+        description: Released version tag, for example v0.3.15.
+        required: true
+        type: string
+      source_repository:
+        description: Repository that published the release.
+        required: false
+        type: string
+      source_release_url:
+        description: Release URL that triggered the update.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: bump-managed-dependency-${{ inputs.dependency }}
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    uses: minekube/actions/.github/workflows/bump-go-module.yml@v1
+    with:
+      module: ${{ inputs.dependency == 'geyserlite' && 'go.minekube.com/geyserlite' || inputs.dependency == 'vialite' && 'go.minekube.com/vialite' || '' }}
+      version: ${{ inputs.version }}
+      base-ref: master
+      branch: automation/update-${{ inputs.dependency }}
+      pr-title: "fix(deps): update ${{ inputs.dependency }} to ${{ inputs.version }}"
+      commit-message: "fix(deps): update ${{ inputs.dependency }} to ${{ inputs.version }}"
+      ci-workflow: ci.yml
+      source-repository: ${{ inputs.source_repository }}
+      source-release-url: ${{ inputs.source_release_url }}
+    secrets: inherit

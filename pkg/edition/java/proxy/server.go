@@ -131,6 +131,15 @@ func ServerInfoEqual(a, b ServerInfo) bool {
 		a.Addr().Network() == b.Addr().Network()
 }
 
+func serverInfoSyncEqual(a, b ServerInfo) bool {
+	if !ServerInfoEqual(a, b) {
+		return false
+	}
+	_, aVia := a.(*viaServerInfo)
+	_, bVia := b.(*viaServerInfo)
+	return aVia == bVia
+}
+
 type serverInfo struct {
 	name string
 	addr net.Addr
@@ -225,17 +234,21 @@ type serverConnection struct {
 	gracefulDisconnect atomic.Bool
 	pendingPings       *lru.SyncCache[int64, time.Time]
 
+	entityID int // entity ID of the player on this server connection
+
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
 	connPhase  phase.BackendConnectionPhase
 }
+
+const pendingKeepAliveCapacity = 64
 
 func newServerConnection(server *registeredServer, previousServer *registeredServer, player *connectedPlayer) *serverConnection {
 	return &serverConnection{
 		server:         server,
 		player:         player,
 		previousServer: previousServer,
-		pendingPings:   lru.NewSync[int64, time.Time](lru.WithCapacity(5)),
+		pendingPings:   lru.NewSync[int64, time.Time](lru.WithCapacity(pendingKeepAliveCapacity)),
 		log: player.log.WithName("serverConn").WithValues(
 			"serverName", server.info.Name(),
 			"serverAddr", server.info.Addr()),
@@ -354,27 +367,78 @@ type HandshakeAddresser interface {
 	HandshakeAddr(defaultPlayerVirtualHost string, player Player) (newPlayerVirtualHost string)
 }
 
-func (s *serverConnection) handshakeAddr(vHost string, player Player) string {
+// ForwardingModeProvider lets dynamic ServerInfo implementations select the
+// backend forwarding mode for this specific server registration.
+type ForwardingModeProvider interface {
+	ForwardingMode() config.ForwardingMode
+}
+
+// BackendVersionProvider lets dynamic ServerInfo implementations select the
+// backend Minecraft version used by protocol translation.
+type BackendVersionProvider interface {
+	BackendVersion() string
+}
+
+// ClientProtocolProvider lets dynamic ServerInfo implementations expose the
+// already-connected client protocol for per-player backend registration.
+type ClientProtocolProvider interface {
+	ClientProtocol() proto.Protocol
+}
+
+// BackendHandshakeAddresser provides the ServerAddress sent with the packet.Handshake
+// for integrations that need the target backend server context.
+type BackendHandshakeAddresser interface {
+	BackendHandshakeAddr(defaultServerAddress string, player Player, target RegisteredServer) (newServerAddress string, err error)
+}
+
+func (s *serverConnection) handshakeAddr(vHost string, player Player) (string, error) {
 	var ha HandshakeAddresser
 	var ok bool
+	usedForwarding := false
 	if ha, ok = s.Server().ServerInfo().(HandshakeAddresser); !ok {
 		if ha, ok = s.Server().(HandshakeAddresser); !ok {
 			switch s.config().Forwarding.Mode {
 			case config.LegacyForwardingMode:
-				return s.createLegacyForwardingAddress()
+				vHost = s.createLegacyForwardingAddress()
+				usedForwarding = true
 			case config.BungeeGuardForwardingMode:
 				secret := s.config().Forwarding.BungeeGuardSecret
-				return s.createBungeeGuardForwardingAddress(secret)
+				vHost = s.createBungeeGuardForwardingAddress(secret)
+				usedForwarding = true
 			}
 		}
 	}
 	if ha != nil {
 		vHost = ha.HandshakeAddr(vHost, player)
 	}
+	forgeTokenSource := vHost
+	if !usedForwarding {
+		if backendAddresser := s.player.proxy.backendHandshakeAddresserSnapshot(); backendAddresser != nil {
+			var err error
+			vHost, err = backendAddresser.BackendHandshakeAddr(backendHandshakeBaseHost(vHost, s.player.Type()), player, s.Server())
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	if usedForwarding {
+		return vHost, nil
+	}
 	if s.player.Type() == phase.LegacyForge {
 		vHost += forge.HandshakeHostnameToken
 	} else if s.player.Type() == phase.ModernForge {
-		vHost = modernforge.ModernToken(vHost)
+		// Forge joins the hostname and the token (String.join("\0", hostName, MARKER)),
+		// so the token must be appended, never replace the host. Assigning it drops the
+		// virtual host, which breaks forced hosts and, behind another proxy, leaves the
+		// next hop with an empty virtual host that matches no route.
+		vHost = backendHandshakeBaseHost(vHost, phase.ModernForge) + modernforge.ModernToken(forgeTokenSource)
+	}
+	return vHost, nil
+}
+
+func backendHandshakeBaseHost(vHost string, connType phase.ConnectionType) string {
+	if connType == phase.LegacyForge || connType == phase.ModernForge {
+		return strings.SplitN(vHost, "\x00", 2)[0]
 	}
 	return vHost
 }
@@ -408,6 +472,7 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		time.Duration(s.config().ReadTimeout)*time.Millisecond,
 		time.Duration(s.config().ConnectionTimeout)*time.Millisecond,
 		s.config().Compression.Level,
+		nil, // backend connections are trusted; no serverbound rate limit
 	)
 	resultChan := make(chan *connResponse, 1)
 
@@ -420,6 +485,16 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 		serverMc.SetActiveSessionHandler(state.Handshake, handler)
 		serverMc.AddSessionHandler(state.Login, handler)
 	}
+
+	// For Modern Forge server switches: set up replay relay using cached
+	// FML exchanges from the initial connection. This allows the proxy to
+	// respond to the new backend's fml:loginwrapper messages on behalf of
+	// the client (which is already in PLAY state).
+	s.player.mu.Lock()
+	if s.player.forgeLoginCache != nil && s.player.connectedServer_ != nil {
+		s.player.forgeReplayRelay = newModernForgeReplayRelay(s.player.forgeLoginCache)
+	}
+	s.player.mu.Unlock()
 
 	// Set the connection phase, which may, for future forge (or whatever), be
 	// determined at this point already
@@ -455,7 +530,11 @@ func (s *serverConnection) startHandshake(
 		if playerVHost == "" {
 			playerVHost = netutil.Host(s.server.ServerInfo().Addr())
 		}
-		handshake.ServerAddress = s.handshakeAddr(playerVHost, s.player)
+		serverAddress, err := s.handshakeAddr(playerVHost, s.player)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving backend handshake address: %w", err)
+		}
+		handshake.ServerAddress = serverAddress
 	}
 	if err := serverMc.BufferPacket(handshake); err != nil {
 		return nil, fmt.Errorf("error buffer handshake packet in server connection: %w", err)
@@ -503,7 +582,12 @@ func (s *serverConnection) createLegacyForwardingAddress() string {
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(s.player.profile.Properties)
+	// Add BungeeForge extraData property for Forge client compatibility.
+	properties := s.player.profile.Properties
+	if marker := s.forgeExtraDataProperty(); marker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: marker})
+	}
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
@@ -523,13 +607,35 @@ func (s *serverConnection) createBungeeGuardForwardingAddress(secret string) str
 	b.WriteString(sep)
 	b.WriteString(s.player.profile.ID.Undashed())
 	b.WriteString(sep)
-	props, err := json.Marshal(
-		append(s.player.profile.Properties, profile.Property{Name: "bungeeguard-token", Value: secret}))
+	// Add BungeeForge extraData property for Forge client compatibility.
+	properties := s.player.profile.Properties
+	if marker := s.forgeExtraDataProperty(); marker != "" {
+		properties = append(properties, profile.Property{Name: "extraData", Value: marker})
+	}
+	properties = append(properties, profile.Property{Name: "bungeeguard-token", Value: secret})
+	props, err := json.Marshal(properties)
 	if err != nil { // should never happen
 		panic(err)
 	}
 	b.WriteString(string(props)) // first convert props to string
 	return b.String()
+}
+
+// forgeExtraDataProperty returns the Forge marker for BungeeForge's extraData property.
+// BungeeForge expects a property named "extraData" with a value starting with "\x01FML"
+// (for Forge 1.8-1.20.1) or "\x01FORGE" (for 1.20.2+).
+func (s *serverConnection) forgeExtraDataProperty() string {
+	if s.player.Type() == phase.ModernForge {
+		vHost := netutil.Host(s.player.virtualHost)
+		for _, pt := range strings.Split(vHost, "\000") {
+			if strings.HasPrefix(pt, "FML2") || strings.HasPrefix(pt, "FML3") || strings.HasPrefix(pt, "FORGE") {
+				return "\x01" + pt
+			}
+		}
+	} else if s.player.Type() == phase.LegacyForge {
+		return "\x01FML\x00"
+	}
+	return ""
 }
 
 // Returns the active backend server connection or false if inactive.

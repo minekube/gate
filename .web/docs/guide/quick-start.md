@@ -76,7 +76,13 @@ Gate supports:
 
 Gate connects to your Minecraft servers and forwards client connections to them.
 
-You can do this by creating and editing the `config.yml` file.
+You can generate a simple configuration file using:
+
+```sh console
+$ gate config -t simple -w
+```
+
+Then edit the `config.yml` file to configure your backend servers:
 
 ```yaml config.yml
 <!--@include: ../../../config-simple.yml -->
@@ -91,19 +97,19 @@ There are many more options to configure, see [Configuration](/guide/config/) fo
 
 <div class="next-steps">
   <a href="/guide/bedrock" class="next-card" style="text-decoration: none;">
-    🎮 Bedrock Support
+    Bedrock Support
     <span>Enable cross-play with mobile and console players</span>
   </a>
   <a href="/guide/lite" class="next-card" style="text-decoration: none;">
-    ⚡ Lite Mode
+    Lite Mode
     <span>Lightweight reverse proxy setup</span>
   </a>
   <a href="/guide/config/" class="next-card" style="text-decoration: none;">
-    📖 Configuration Guide
+    Configuration Guide
     <span>Learn about all configuration options</span>
   </a>
   <a href="/developers/" class="next-card" style="text-decoration: none;">
-    💻 Developer Guide
+    Developer Guide
     <span>Extend Gate with custom code</span>
   </a>
 </div>

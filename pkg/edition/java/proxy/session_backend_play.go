@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -120,7 +119,7 @@ func (b *backendPlaySessionHandler) shouldHandle() bool {
 
 func (b *backendPlaySessionHandler) Activated() {
 	b.serverConn.server.players.add(b.serverConn.player)
-	if b.proxy().cfg.BungeePluginChannelEnabled {
+	if b.proxy().config().BungeePluginChannelEnabled {
 		serverMc, ok := b.serverConn.ensureConnected()
 		if ok {
 			protocol := serverMc.Protocol()
@@ -144,7 +143,7 @@ func (b *backendPlaySessionHandler) Disconnected() {
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *proto.PacketContext) {
-	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
+	recordBackendKeepAlive(b.serverConn, p)
 	b.forwardToPlayer(pc, nil) // forward on
 }
 
@@ -170,15 +169,18 @@ func (b *backendPlaySessionHandler) handleClientSettings(p *packet.ClientSetting
 }
 
 func (b *backendPlaySessionHandler) handleBossBar(p *bossbar.BossBar, pc *proto.PacketContext) {
-	b.playerSessionHandler.mu.Lock()
-	switch p.Action {
-	case bossbar.AddAction:
-		b.playerSessionHandler.mu.serverBossBars[p.ID] = struct{}{}
-	case bossbar.RemoveAction:
-		delete(b.playerSessionHandler.mu.serverBossBars, p.ID)
-	default:
+	// Only track server boss bars for versions below 1.20.2.
+	// For 1.20.2+, the client clears boss bars during config phase anyway.
+	if b.serverConn.player.Protocol().Lower(version.Minecraft_1_20_2) {
+		b.playerSessionHandler.mu.Lock()
+		switch p.Action {
+		case bossbar.AddAction:
+			b.playerSessionHandler.mu.serverBossBars[p.ID] = struct{}{}
+		case bossbar.RemoveAction:
+			delete(b.playerSessionHandler.mu.serverBossBars, p.ID)
+		}
+		b.playerSessionHandler.mu.Unlock()
 	}
-	b.playerSessionHandler.mu.Unlock()
 	b.forwardToPlayer(pc, nil) // forward on
 }
 
@@ -187,11 +189,9 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 		return
 	}
 
-	// Register and unregister packets are simply forwarded to the server as-is.
+	// Register and unregister packets from the backend must be forwarded to the client as-is.
 	if plugin.IsRegister(packet) || plugin.IsUnregister(packet) {
-		if serverMc, ok := b.serverConn.ensureConnected(); ok {
-			_ = serverMc.WritePacket(packet)
-		}
+		b.forwardToPlayer(pc, packet)
 		return
 	}
 
@@ -370,13 +370,30 @@ func handleResourcePacketRequest_(
 }
 
 func (b *backendPlaySessionHandler) handleRemoveResourcePack(p *packet.RemoveResourcePack) {
-	handler := b.serverConn.player.resourcePackHandler
+	if handleRemoveResourcePack(p, b.serverConn, b.proxy().Event()) {
+		b.forwardToPlayer(nil, p)
+	}
+}
+
+func handleRemoveResourcePack(
+	p *packet.RemoveResourcePack,
+	serverConn *serverConnection,
+	eventMgr event.Manager,
+) bool {
+	e := newServerResourcePackRemoveEvent(p.ID, serverConn)
+	eventMgr.Fire(e)
+
+	if netmc.Closed(serverConn.player) || !e.Allowed() {
+		return false
+	}
+
+	handler := serverConn.player.resourcePackHandler
 	if p.ID != uuid.Nil {
 		handler.Remove(p.ID)
 	} else {
 		handler.ClearAppliedResourcePacks()
 	}
-	b.forwardToPlayer(nil, p)
+	return true
 }
 
 func (b *backendPlaySessionHandler) handleTransfer(p *packet.Transfer) {
@@ -427,7 +444,7 @@ func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove,
 
 func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
 	rootNode := p.RootNode
-	if b.proxy().cfg.AnnounceProxyCommands {
+	if b.proxy().config().AnnounceProxyCommands {
 		// Inject commands from the proxy.
 		dispatcherRootNode := filterNode(&b.proxy().command.Root, b.serverConn.player)
 		if dispatcherRootNode == nil {

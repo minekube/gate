@@ -33,6 +33,9 @@ type Config struct {
 	Connect connect.Config `json:"connect,omitempty" yaml:"connect,omitempty"`
 	// See API struct.
 	API API `json:"api,omitempty" yaml:"api,omitempty"`
+	// NoAutoReload disables automatic config file reloading.
+	// This is useful in environments where file watching causes issues.
+	NoAutoReload bool `json:"noAutoReload,omitempty" yaml:"noAutoReload,omitempty"`
 }
 
 // HealthService is a GRPC health probe service for use with Kubernetes pods.

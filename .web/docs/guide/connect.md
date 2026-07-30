@@ -34,8 +34,8 @@ connect:
   # This feature is disabled by default, but you are encouraged to
   # enable it and get empowered by the additional network services
   # and by the growing community in this ecosystem.
-  enabled: false // [!code --]
-  enabled: true // [!code ++]
+  enabled: false # [!code --]
+  enabled: true # [!code ++]
   # The endpoint name is a globally unique identifier of your server.
   # If Connect is enabled, but no name is specified a random name is
   # generated on every restart (only recommended for testing).
@@ -43,7 +43,7 @@ connect:
   # It is supported to run multiple Gates on the same endpoint name for load balancing
   # (use the same connect.json token file from first Gate instance).
   #name: your-endpoint-name // [!code --]
-  name: my-server-name // [!code ++]
+  name: my-server-name # [!code ++]
 ```
 
 ```json [connect.json]
@@ -69,7 +69,7 @@ connect:
   enabled: true
   name: my-server-name
   # Allow offline mode (cracked) players to join through Connect
-  allowOfflineModePlayers: true // [!code ++]
+  allowOfflineModePlayers: true # [!code ++]
 ```
 
 :::

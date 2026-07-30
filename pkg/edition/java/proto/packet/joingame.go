@@ -32,6 +32,7 @@ type JoinGame struct {
 	LastDeathPosition    *DeathPosition         // 1.19+
 	PortalCooldown       int                    // 1.20+
 	SeaLevel             int                    // 1.21.2+
+	OnlineMode           bool                   // 26.2+
 	EnforcesSecureChat   bool                   // 1.20.5+
 }
 
@@ -212,10 +213,13 @@ func (j *JoinGame) encode1202Up(c *proto.PacketContext, wr io.Writer) error {
 	} else {
 		w.Bool(false)
 	}
+	w.VarInt(j.PortalCooldown)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
 		w.VarInt(j.SeaLevel)
 	}
-	w.VarInt(j.PortalCooldown)
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		w.Bool(j.OnlineMode)
+	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
 		w.Bool(j.EnforcesSecureChat)
 	}
@@ -396,11 +400,14 @@ func (j *JoinGame) decode1202Up(c *proto.PacketContext, rd io.Reader) error {
 		}
 	}
 
+	r.VarInt(&j.PortalCooldown)
 	if c.Protocol.GreaterEqual(version.Minecraft_1_21_2) {
 		r.VarInt(&j.SeaLevel)
 	}
 
-	r.VarInt(&j.PortalCooldown)
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		r.Bool(&j.OnlineMode)
+	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_20_5) {
 		r.Bool(&j.EnforcesSecureChat)
 	}

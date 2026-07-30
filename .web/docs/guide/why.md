@@ -7,7 +7,7 @@ description: "Discover why Gate is the best BungeeCord/Velocity alternative with
 
 <div class="why-cards">
   <div class="why-card">
-    <h3>🚀 Performance First</h3>
+    <h3>Performance First</h3>
     <ul>
       <li>Minimal resource footprint (10MB RAM)</li>
       <li>Optimized for high throughput</li>
@@ -17,7 +17,7 @@ description: "Discover why Gate is the best BungeeCord/Velocity alternative with
   </div>
 
   <div class="why-card">
-    <h3>🎮 Protocol Support</h3>
+    <h3>Protocol Support</h3>
     <ul>
       <li>Minecraft 1.7 to latest</li>
       <li>Forge mod support</li>
@@ -27,7 +27,7 @@ description: "Discover why Gate is the best BungeeCord/Velocity alternative with
   </div>
 
   <div class="why-card">
-    <h3>💻 Developer Experience</h3>
+    <h3>Developer Experience</h3>
     <ul>
       <li>Modern Go-based architecture</li>
       <li>Clean, documented APIs</li>
@@ -59,11 +59,11 @@ If your existing codebase is in Java or you need BungeeCord/Velocity plugins, yo
 
 Gate leverages Go's strengths to deliver:
 
-- 🏃‍♂️ Fast compilation and deployment
-- 🔧 Simple dependency management
-- 🌐 Excellent networking capabilities
-- ☁️ First-class cloud integration
-- 📦 Single binary distribution
+- Fast compilation and deployment
+- Simple dependency management
+- Excellent networking capabilities
+- First-class cloud integration
+- Single binary distribution
 
 <style>
 .why-cards {

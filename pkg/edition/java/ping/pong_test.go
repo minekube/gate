@@ -2,12 +2,15 @@ package ping
 
 import (
 	"encoding/json"
-	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/common/minecraft/key"
+	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/uuid"
+	"gopkg.in/yaml.v3"
 )
 
 func TestServerPing_JSON(t *testing.T) {
@@ -67,4 +70,52 @@ func TestServerPing_UnmarshalJSON_description_string(t *testing.T) {
 
 	const exp = `{"extra":[{"color":"yellow","text":"Gate Proxy\n             "},{"color":"gold","extra":[{"bold":true,"text":"Hello World"}],"text":""}],"text":"                "}`
 	require.Equal(t, exp, string(js))
+}
+
+func TestServerPing_JSON_ModernObjectDescription(t *testing.T) {
+	blocks := key.New(key.MinecraftNamespace, "blocks")
+	diamond := key.New(key.MinecraftNamespace, "item/diamond")
+	description := component.AtlasSprite(blocks, diamond)
+	description.Fallback = &component.Text{Content: "diamond"}
+
+	p := &ServerPing{
+		Version: Version{
+			Protocol: version.Minecraft_1_21_11.Protocol,
+			Name:     "1.21.11",
+		},
+		Description: description,
+	}
+
+	b, err := json.Marshal(p)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"version":{"protocol":774,"name":"1.21.11"},
+		"description":{"atlas":"minecraft:blocks","fallback":{"text":"diamond"},"sprite":"minecraft:item/diamond"}
+	}`, string(b))
+
+	var decoded ServerPing
+	require.NoError(t, json.Unmarshal(b, &decoded))
+	require.Equal(t, p, &decoded)
+}
+
+func TestServerPing_YAML_ModernObjectDescription(t *testing.T) {
+	blocks := key.New(key.MinecraftNamespace, "blocks")
+	diamond := key.New(key.MinecraftNamespace, "item/diamond")
+	description := component.AtlasSprite(blocks, diamond)
+	description.Fallback = &component.Text{Content: "diamond"}
+
+	p := &ServerPing{
+		Version: Version{
+			Protocol: version.Minecraft_1_21_11.Protocol,
+			Name:     "1.21.11",
+		},
+		Description: description,
+	}
+
+	b, err := yaml.Marshal(p)
+	require.NoError(t, err)
+
+	var decoded map[string]any
+	require.NoError(t, yaml.Unmarshal(b, &decoded))
+	require.JSONEq(t, `{"atlas":"minecraft:blocks","fallback":{"text":"diamond"},"sprite":"minecraft:item/diamond"}`, decoded["description"].(string))
 }

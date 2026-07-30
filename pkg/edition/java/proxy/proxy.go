@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -18,7 +19,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec/legacy"
@@ -27,11 +27,13 @@ import (
 	"go.minekube.com/gate/pkg/command"
 	"go.minekube.com/gate/pkg/edition/java/auth"
 	"go.minekube.com/gate/pkg/edition/java/config"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
+	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/internal/reload"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -41,8 +43,12 @@ import (
 
 // Proxy is Gate's Java edition Minecraft proxy.
 type Proxy struct {
-	log              logr.Logger
+	log logr.Logger
+	// cfg remains the construction-time configuration for compatibility with
+	// package-local setup code; all runtime readers use currentCfg via config().
 	cfg              *config.Config
+	currentCfg       atomic.Pointer[runtimeConfigSnapshot]
+	liveConfigMu     sync.Mutex
 	event            event.Manager
 	command          command.Manager
 	channelRegistrar *message.ChannelRegistrar
@@ -63,10 +69,25 @@ type Proxy struct {
 	playerNames map[string]*connectedPlayer    // lower case usernames map
 	playerIDs   map[uuid.UUID]*connectedPlayer // uuids map
 
+	sessionIDMu      sync.Mutex
+	currentSessionID uuid.UUID
+
+	backendHandshakeAddresserMu sync.RWMutex
+	backendHandshakeAddresser   BackendHandshakeAddresser
+	backendHandshakeAddresserID uint64
+
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
+	proxyProtocol atomic.Pointer[proxyProtocol] // PROXY protocol wrapper for accepted connections
+
 	lite *lite.Lite // lite mode functionality
+	via  *viaManagedRunner
+}
+
+type runtimeConfigSnapshot struct {
+	cfg        *config.Config
+	generation uint64
 }
 
 // Options are the options for a new Java edition Proxy.
@@ -104,8 +125,8 @@ func New(options Options) (p *Proxy, err error) {
 	}
 
 	p = &Proxy{
-		log:              logr.Discard(), // updated by Proxy.Start
 		cfg:              options.Config,
+		log:              logr.Discard(), // updated by Proxy.Start
 		event:            eventMgr,
 		channelRegistrar: message.NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
@@ -114,10 +135,18 @@ func New(options Options) (p *Proxy, err error) {
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
 		lite:             lite.NewLite(), // create lite mode functionality for this proxy instance
+		via:              newViaManagedRunner(options.Config),
 	}
+	p.currentCfg.Store(&runtimeConfigSnapshot{cfg: options.Config})
 
 	// Connection & login rate limiters
 	p.initQuota(&options.Config.Quota)
+
+	pp, err := newProxyProtocol(options.Config)
+	if err != nil {
+		return nil, err
+	}
+	p.proxyProtocol.Store(pp)
 
 	if err = p.initMeter(); err != nil {
 		return nil, fmt.Errorf("error initializing meter: %w", err)
@@ -169,6 +198,13 @@ func (p *Proxy) Start(ctx context.Context) error {
 	defer p.cancelStart()
 	p.closeMu.Unlock()
 
+	if p.via != nil && p.via.enabled() {
+		if err := p.via.Start(ctx); err != nil {
+			return fmt.Errorf("error starting vialite: %w", err)
+		}
+		defer p.via.Stop()
+	}
+
 	if err := p.init(); err != nil {
 		return fmt.Errorf("pre-initialization error: %w", err)
 	}
@@ -179,17 +215,18 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 
 	logInfo := func() {
-		if p.cfg.Debug {
+		if p.config().Debug {
 			p.log.Info("running in debug mode")
 		}
-		if p.cfg.Lite.Enabled {
+		if p.config().Lite.Enabled {
 			p.log.Info("running in lite mode")
 		}
-		if p.cfg.ProxyProtocol {
-			p.log.Info("proxy protocol enabled")
+		if p.config().ProxyProtocol {
+			p.log.Info("proxy protocol enabled",
+				"trustedProxies", p.proxyProtocol.Load().trustedNetworks())
 		}
-		if p.cfg.Auth.SessionServerURL != nil {
-			p.log.Info("using custom authentication server", "url", p.cfg.Auth.SessionServerURL)
+		if p.config().Auth.SessionServerURL != nil {
+			p.log.Info("using custom authentication server", "url", p.config().Auth.SessionServerURL)
 		}
 	}
 	logInfo()
@@ -208,48 +245,86 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return stop
 	}
 
-	stopLn := listen(p.cfg.Bind)
+	_ = listen(p.config().Bind)
 
 	// Listen for config reloads until we exit
 	defer reload.Subscribe(p.event, func(e *javaConfigUpdateEvent) {
-		*p.cfg = *e.Config
-		p.initQuota(&e.Config.Quota)
-		if e.PrevConfig.Bind != e.Config.Bind {
-			p.closeMu.Lock()
-			stopLn()
-			stopLn = listen(e.Config.Bind)
-			p.closeMu.Unlock()
+		if e == nil || e.Config == nil {
+			return
 		}
-		if err := p.init(); err != nil {
-			p.log.Error(err, "re-initialization error")
+		if err := p.ApplyLiveConfig(e.Config); err != nil {
+			p.log.V(1).Info("rejected legacy config update", "reason", "unsupported")
 		}
-		if e.Config.Lite.Enabled {
-			// reset whole cache if routes have changed because
-			// backend addrs might have moved to another route or a cacheTTL changed
-			if func() bool {
-				if len(e.Config.Lite.Routes) != len(e.PrevConfig.Lite.Routes) {
-					return true
-				}
-				for i, route := range e.Config.Lite.Routes {
-					if !route.Equal(&e.PrevConfig.Lite.Routes[i]) {
-						return true
-					}
-				}
-				return false
-			}() {
-				lite.ResetPingCache()
-				p.log.Info("lite ping cache was reset")
-			}
-		} else {
-			lite.ResetPingCache()
-		}
-		logInfo()
 	})()
 
 	return eg.Wait()
 }
 
 type javaConfigUpdateEvent = reload.ConfigUpdateEvent[config.Config]
+
+func liteRoutesChanged(current, previous []liteconfig.Route) bool {
+	if len(current) != len(previous) {
+		return true
+	}
+	for i, route := range current {
+		if !route.Equal(&previous[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+// ApplyLiveConfig atomically publishes a new immutable Java configuration when it
+// changes Lite routes only. Existing Lite connections are direct pipes and retain
+// their already-selected backend; subsequent handshakes read the new snapshot.
+func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
+	p.liveConfigMu.Lock()
+	defer p.liveConfigMu.Unlock()
+
+	current, generation := p.configSnapshot()
+	if candidate == nil || !current.Lite.Enabled || !candidate.Lite.Enabled {
+		return errors.New("unsupported live configuration")
+	}
+	if reflect.DeepEqual(current, candidate) {
+		return nil
+	}
+	currentWithoutRoutes := *current
+	candidateWithoutRoutes := *candidate
+	currentWithoutRoutes.Lite.Routes = nil
+	candidateWithoutRoutes.Lite.Routes = nil
+	if !reflect.DeepEqual(currentWithoutRoutes, candidateWithoutRoutes) {
+		return errors.New("unsupported live configuration")
+	}
+	if _, errs := candidate.Validate(); len(errs) != 0 {
+		return errors.New("invalid live configuration")
+	}
+	routes, err := cloneLiteRoutes(candidate.Lite.Routes)
+	if err != nil {
+		return errors.New("invalid live configuration")
+	}
+	published := *current
+	published.Lite = current.Lite
+	published.Lite.Routes = routes
+	if liteRoutesChanged(candidate.Lite.Routes, current.Lite.Routes) {
+		lite.ResetPingCache()
+		p.log.Info("lite ping cache was reset")
+		generation++
+	}
+	p.currentCfg.Store(&runtimeConfigSnapshot{cfg: &published, generation: generation})
+	return nil
+}
+
+func cloneLiteRoutes(routes []liteconfig.Route) ([]liteconfig.Route, error) {
+	encoded, err := json.Marshal(routes)
+	if err != nil {
+		return nil, err
+	}
+	var cloned []liteconfig.Route
+	if err := json.Unmarshal(encoded, &cloned); err != nil {
+		return nil, err
+	}
+	return cloned, nil
+}
 
 // Shutdown stops the Proxy and/or blocks until the Proxy has finished shutdown.
 //
@@ -297,7 +372,7 @@ func (p *Proxy) Shutdown(reason component.Component) {
 
 // called before starting to actually run the proxy
 func (p *Proxy) init() (err error) {
-	c := p.cfg
+	c := p.config()
 
 	// No need to check, nil default to mojang's session server
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
@@ -318,11 +393,14 @@ func (p *Proxy) init() (err error) {
 				return fmt.Errorf("error parsing server %q address %q: %w", name, addr, err)
 			}
 			info := NewServerInfo(name, pAddr)
+			if p.via != nil && p.via.backendEnabled(name) {
+				info = newViaServerInfo(info, p.via)
+			}
 			expectedServers[strings.ToLower(name)] = info
 
 			// Check if server is already registered
 			if rs := p.Server(name); rs != nil {
-				if ServerInfoEqual(rs.ServerInfo(), info) {
+				if serverInfoSyncEqual(rs.ServerInfo(), info) {
 					// Server exists and is identical - mark as config-managed and continue
 					p.muS.Lock()
 					p.configServers[strings.ToLower(name)] = true
@@ -399,18 +477,50 @@ func (p *Proxy) Command() *command.Manager {
 	return &p.command
 }
 
-// Config returns the cfg used by the Proxy.
+// Config returns the current runtime configuration snapshot used by the Proxy.
 func (p *Proxy) Config() config.Config {
-	return *p.cfg
+	return *p.config()
 }
 
 func (p *Proxy) config() *config.Config {
-	return p.cfg
+	cfg, _ := p.configSnapshot()
+	return cfg
+}
+
+func (p *Proxy) configSnapshot() (*config.Config, uint64) {
+	if current := p.currentCfg.Load(); current != nil {
+		return current.cfg, current.generation
+	}
+	return p.cfg, 0
 }
 
 // Lite returns the proxy's lite mode functionality.
 func (p *Proxy) Lite() *lite.Lite {
 	return p.lite
+}
+
+// SetBackendHandshakeAddresser sets a low-level hook applied to backend handshakes.
+// It returns an unregister function that only clears this registration.
+func (p *Proxy) SetBackendHandshakeAddresser(ha BackendHandshakeAddresser) func() {
+	p.backendHandshakeAddresserMu.Lock()
+	p.backendHandshakeAddresserID++
+	id := p.backendHandshakeAddresserID
+	p.backendHandshakeAddresser = ha
+	p.backendHandshakeAddresserMu.Unlock()
+
+	return func() {
+		p.backendHandshakeAddresserMu.Lock()
+		defer p.backendHandshakeAddresserMu.Unlock()
+		if p.backendHandshakeAddresserID == id {
+			p.backendHandshakeAddresser = nil
+		}
+	}
+}
+
+func (p *Proxy) backendHandshakeAddresserSnapshot() BackendHandshakeAddresser {
+	p.backendHandshakeAddresserMu.RLock()
+	defer p.backendHandshakeAddresserMu.RUnlock()
+	return p.backendHandshakeAddresser
 }
 
 // Server gets a backend server registered with the proxy by name.
@@ -480,16 +590,49 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	name := strings.ToLower(info.Name())
 
 	p.muS.Lock()
-	defer p.muS.Unlock()
 	if exists, ok := p.servers[name]; ok {
+		p.muS.Unlock()
 		return exists, ErrServerAlreadyExists
 	}
+	p.muS.Unlock()
+
+	var viaAdded bool
+	if _, alreadyVia := info.(*viaServerInfo); !alreadyVia && p.via != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		enabled, err := p.via.AddBackend(ctx, info)
+		if err != nil {
+			return nil, fmt.Errorf("error adding via backend %q: %w", info.Name(), err)
+		}
+		if enabled {
+			viaAdded = true
+			info = newViaServerInfo(info, p.via)
+		}
+	}
+
+	p.muS.Lock()
+	if exists, ok := p.servers[name]; ok {
+		p.muS.Unlock()
+		if viaAdded {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := p.via.RemoveBackend(ctx, info.Name()); err != nil {
+				p.log.Error(err, "could not remove duplicate via backend", "server", info.Name())
+			}
+		}
+		return exists, ErrServerAlreadyExists
+	}
+	defer p.muS.Unlock()
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
 	// Note: We don't mark API-registered servers as config-managed
 	// so they won't be unregistered during config reloads
 
 	p.log.Info("registered new server", "name", info.Name(), "addr", info.Addr())
+
+	// Fire ServerRegisteredEvent
+	p.event.Fire(&ServerRegisteredEvent{server: rs})
+
 	return rs, nil
 }
 
@@ -508,9 +651,20 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 	}
 	delete(p.servers, name)
 	delete(p.configServers, name) // Clean up config tracking
+	if p.via != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := p.via.RemoveBackend(ctx, info.Name()); err != nil {
+			p.log.Error(err, "could not remove via backend", "server", info.Name())
+		}
+	}
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
+
+	// Fire ServerUnregisteredEvent
+	p.event.Fire(&ServerUnregisteredEvent{server: info})
+
 	return true
 }
 
@@ -565,8 +719,8 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 			return fmt.Errorf("error accepting new connection: %w", err)
 		}
 
-		if p.cfg.ProxyProtocol {
-			conn = proxyproto.NewConn(conn)
+		if p.config().ProxyProtocol {
+			conn = p.proxyProtocol.Load().wrapConn(conn)
 		}
 
 		go p.HandleConn(conn)
@@ -613,12 +767,16 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		raw = e.Connection()
 	}
 
-	// Create client connection
+	// Create client connection. Client connections are serverbound (untrusted),
+	// so apply the configured per-connection packet rate limiter.
+	pl := p.config().PacketLimiter
+	limiter := packetlimiter.New(pl.PacketsPerSecond, pl.BytesPerSecond, time.Duration(pl.Interval))
 	conn, readLoop := netmc.NewMinecraftConn(
 		ctx, raw, proto.ServerBound,
-		time.Duration(p.cfg.ReadTimeout)*time.Millisecond,
-		time.Duration(p.cfg.ConnectionTimeout)*time.Millisecond,
-		p.cfg.Compression.Level,
+		time.Duration(p.config().ReadTimeout)*time.Millisecond,
+		time.Duration(p.config().ConnectionTimeout)*time.Millisecond,
+		p.config().Compression.Level,
+		limiter,
 	)
 	conn.SetActiveSessionHandler(state.Handshake, newHandshakeSessionHandler(conn, &sessionHandlerDeps{
 		proxy:          p,
@@ -682,7 +840,7 @@ func (p *Proxy) playerByName(username string) *connectedPlayer {
 }
 
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
-	c := p.cfg
+	c := p.config()
 	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
 		return true
 	}
@@ -695,7 +853,7 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 // Attempts to register the connection with the proxy.
 func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
-	c := p.cfg
+	c := p.config()
 
 retry:
 	p.muP.Lock()
@@ -739,11 +897,43 @@ retry:
 // unregisters a connected player
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
 	p.muP.Lock()
-	defer p.muP.Unlock()
 	_, found = p.playerIDs[player.ID()]
 	delete(p.playerNames, strings.ToLower(player.Username()))
 	delete(p.playerIDs, player.ID())
+	empty := len(p.playerIDs) == 0
+	p.muP.Unlock()
+	if empty {
+		p.resetSessionIDIfEmpty()
+	}
 	return found
+}
+
+func (p *Proxy) sessionID() uuid.UUID {
+	p.sessionIDMu.Lock()
+	defer p.sessionIDMu.Unlock()
+	if p.currentSessionID == uuid.Nil {
+		p.currentSessionID = uuid.New()
+	}
+	return p.currentSessionID
+}
+
+func (p *Proxy) resetSessionIDIfEmpty() {
+	p.muP.RLock()
+	empty := len(p.playerIDs) == 0
+	p.muP.RUnlock()
+	if !empty {
+		return
+	}
+
+	p.sessionIDMu.Lock()
+	defer p.sessionIDMu.Unlock()
+
+	p.muP.RLock()
+	empty = len(p.playerIDs) == 0
+	p.muP.RUnlock()
+	if empty {
+		p.currentSessionID = uuid.Nil
+	}
 }
 
 //

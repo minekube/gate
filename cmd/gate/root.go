@@ -49,11 +49,16 @@ func App() *cli.App {
 
 Visit the website https://gate.minekube.com/ for more information.`
 
+	app.Commands = []*cli.Command{
+		configCommand(),
+	}
+
 	var (
-		debug       bool
-		configFile  string
-		verbosity   int
-		showVersion bool
+		debug        bool
+		configFile   string
+		verbosity    int
+		showVersion  bool
+		noAutoReload bool
 	)
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
@@ -82,6 +87,12 @@ Visit the website https://gate.minekube.com/ for more information.`
 			Aliases:     []string{"V"},
 			Usage:       "Show version information",
 			Destination: &showVersion,
+		},
+		&cli.BoolFlag{
+			Name:        "no-auto-reload",
+			Usage:       "Disable automatic config file reloading",
+			Destination: &noAutoReload,
+			EnvVars:     []string{"GATE_NO_AUTO_RELOAD"},
 		},
 	}
 
@@ -134,11 +145,15 @@ Visit the website https://gate.minekube.com/ for more information.`
 		log.Info("logging verbosity", "verbosity", verbosity)
 		log.Info("using config file", "config", v.ConfigFileUsed())
 
+		// Check if auto reload is disabled (via flag, env var, or config)
+		disableAutoReload := noAutoReload || cfg.NoAutoReload
+
 		// Start Gate
-		if err = gate.Start(c.Context,
-			gate.WithConfig(*cfg),
-			gate.WithAutoConfigReload(v.ConfigFileUsed()),
-		); err != nil {
+		startOpts := []gate.StartOption{gate.WithConfig(*cfg)}
+		if !disableAutoReload && v.ConfigFileUsed() != "" {
+			startOpts = append(startOpts, gate.WithAutoConfigReload(v.ConfigFileUsed()))
+		}
+		if err = gate.Start(c.Context, startOpts...); err != nil {
 			return cli.Exit(fmt.Errorf("error running Gate: %w", err), 1)
 		}
 		return nil
@@ -158,6 +173,16 @@ func initViper(c *cli.Context, configFile string) (*viper.Viper, error) {
 	v.SetEnvPrefix("GATE")
 	v.AutomaticEnv() // read in environment variables that match
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// Bind custom environment variables for forwarding secrets
+	if err := v.BindEnv("velocitySecret", "GATE_VELOCITY_SECRET"); err != nil {
+		return nil, fmt.Errorf("error binding environment variable 'GATE_VELOCITY_SECRET': %w", err)
+	}
+
+	if err := v.BindEnv("bungeeGuardSecret", "GATE_BUNGEEGUARD_SECRET"); err != nil {
+		return nil, fmt.Errorf("error binding environment variable 'GATE_BUNGEEGUARD_SECRET': %w", err)
+	}
+
 	return v, nil
 }
 

@@ -12,11 +12,196 @@ const ogUrl = 'https://gate.minekube.com';
 const ogImage = `${ogUrl}/og-image.png`;
 const ogTitle = 'Gate Proxy';
 const ogDescription = 'Next Generation Minecraft Proxy';
+const numberFromEnv = (value: string | undefined, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
+const communityStats = {
+  discordMembers: numberFromEnv(process.env.GATE_DOCS_DISCORD_MEMBERS, 1650),
+  githubStars: numberFromEnv(process.env.GATE_DOCS_GITHUB_STARS, 1050),
+};
+
+const guideSidebar = [
+  {
+    text: 'Getting Started',
+    items: [
+      { text: 'Introduction', link: '/guide/' },
+      { text: 'Quick Start', link: '/guide/quick-start' },
+      { text: 'Why', link: '/guide/why' },
+      { text: 'Feedback', link: '/guide/feedback' },
+    ],
+  },
+  {
+    text: 'Installation',
+    items: [
+      {
+        text: 'Prebuilt Binaries',
+        link: '/guide/install/binaries',
+      },
+      {
+        text: 'Go Install',
+        link: '/guide/install/go',
+      },
+      {
+        text: 'Docker',
+        link: '/guide/install/docker',
+      },
+      {
+        text: 'Kubernetes',
+        link: '/guide/install/kubernetes',
+      },
+    ],
+  },
+  {
+    text: 'Core Features',
+    items: [
+      {
+        text: 'Bedrock Support',
+        link: '/guide/bedrock',
+      },
+      {
+        text: 'GeyserLite',
+        link: '/geyserlite/',
+      },
+      {
+        text: 'Compatibility',
+        link: '/guide/compatibility',
+      },
+      {
+        text: 'Multi-Version Support',
+        link: '/guide/multi-version',
+      },
+      {
+        text: 'ViaLite',
+        link: '/vialite/',
+      },
+      {
+        text: 'Lite Mode',
+        link: '/guide/lite',
+      },
+      {
+        text: 'Modded Servers',
+        link: '/guide/modded-servers',
+      },
+    ],
+  },
+  {
+    text: 'Developers & API',
+    items: [
+      {
+        text: 'Developers Guide',
+        link: '/developers/',
+      },
+      {
+        text: 'API & SDKs',
+        link: '/developers/api/',
+      },
+      {
+        text: 'Events',
+        link: '/developers/events',
+      },
+      {
+        text: 'Commands',
+        link: '/developers/commands',
+      },
+      {
+        text: 'Examples',
+        link: '/developers/examples/simple-proxy',
+      },
+    ],
+  },
+  {
+    text: 'Configuration',
+    items: [
+      {
+        text: 'Configuration & Templates',
+        link: '/guide/config/',
+      },
+      {
+        text: 'Auto Reload',
+        link: '/guide/config/reload',
+      },
+      {
+        text: 'Builtin Commands',
+        link: '/guide/builtin-commands',
+      },
+      {
+        text: 'Rate Limiting',
+        link: '/guide/rate-limiting',
+      },
+      {
+        text: 'Enabling Connect',
+        link: '/guide/connect',
+      },
+      {
+        text: 'ForcedHosts Routing',
+        link: '/guide/forced-hosts',
+      },
+    ],
+  },
+  {
+    text: 'OpenTelemetry',
+    items: [
+      {
+        text: 'Overview',
+        link: '/guide/otel/',
+      },
+      {
+        text: 'Grafana',
+        items: [
+          {
+            text: 'Grafana Cloud',
+            link: '/guide/otel/grafana-cloud/',
+          },
+          {
+            text: 'Self-hosted Grafana Stack',
+            link: '/guide/otel/self-hosted/grafana-stack.md',
+          },
+          {
+            text: 'Grafana Dashboards',
+            link: '/guide/otel/self-hosted/dashboard',
+          },
+        ],
+      },
+      {
+        text: 'Honeycomb',
+        link: '/guide/otel/honeycomb/',
+      },
+      {
+        text: 'Self-hosted Jaeger',
+        link: '/guide/otel/self-hosted/jaeger',
+      },
+      {
+        text: 'FAQ',
+        link: '/guide/otel/faq/',
+      },
+    ],
+  },
+  {
+    text: 'Security',
+    items: [
+      {
+        text: 'Cybersecurity',
+        link: '/guide/security/',
+      },
+      {
+        text: 'DDoS Protection',
+        link: '/guide/security/ddos',
+      },
+    ],
+  },
+];
 
 export default defineConfig({
   title: `Gate Proxy${additionalTitle}`,
   description: ogDescription,
   appearance: 'dark',
+
+  vite: {
+    define: {
+      __COMMUNITY_STATS__: communityStats,
+    },
+  },
 
   sitemap: {
     hostname: ogUrl,
@@ -38,6 +223,10 @@ export default defineConfig({
     ['meta', { property: 'og:image', content: ogImage }],
     ['meta', { property: 'og:url', content: ogUrl }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
+    [
+      'script',
+      { src: 'https://cdn.jsdelivr.net/npm/@widgetbot/html-embed', defer: '' },
+    ],
     // [
     //     'script',
     //     {
@@ -57,6 +246,11 @@ export default defineConfig({
 
   vue: {
     // reactivityTransform: true, // This option is deprecated
+    template: {
+      compilerOptions: {
+        isCustomElement: (tag) => tag === 'widgetbot',
+      },
+    },
   },
 
   ignoreDeadLinks: 'localhostLinks',
@@ -95,7 +289,6 @@ export default defineConfig({
       { text: 'Bedrock', link: '/guide/bedrock' },
       { text: 'Lite Mode', link: '/guide/lite' },
       { text: 'API & SDKs', link: '/developers/api/' },
-      { text: 'Developers', link: '/developers/' },
       { text: 'Config', link: '/guide/config/' },
       { text: 'Downloads', link: '/guide/install/' },
       { text: 'Extensions', link: '/extensions' },
@@ -110,168 +303,7 @@ export default defineConfig({
     ],
 
     sidebar: {
-      '/guide/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Introduction', link: '/guide/' },
-            { text: 'Quick Start', link: '/guide/quick-start' },
-            { text: 'Why', link: '/guide/why' },
-            { text: 'Feedback', link: '/guide/feedback' },
-          ],
-        },
-        {
-          text: '📦 Installation',
-          items: [
-            {
-              text: 'Prebuilt Binaries',
-              link: '/guide/install/binaries',
-            },
-            {
-              text: 'Go Install',
-              link: '/guide/install/go',
-            },
-            {
-              text: 'Docker',
-              link: '/guide/install/docker',
-            },
-            {
-              text: 'Kubernetes',
-              link: '/guide/install/kubernetes',
-            },
-          ],
-        },
-        {
-          text: 'Core Features',
-          items: [
-            {
-              text: '🎮 Bedrock Support',
-              link: '/guide/bedrock',
-            },
-            {
-              text: '⚡ Lite Mode',
-              link: '/guide/lite',
-            },
-            {
-              text: '🔧 Modded Servers',
-              link: '/guide/modded-servers',
-            },
-            {
-              text: '🔗 Compatibility',
-              link: '/guide/compatibility',
-            },
-          ],
-        },
-        {
-          text: 'Developers & API',
-          items: [
-            {
-              text: '👨‍💻 Developers Guide',
-              link: '/developers/',
-            },
-            {
-              text: '🚀 API & SDKs',
-              link: '/developers/api/',
-            },
-            {
-              text: '📚 Events',
-              link: '/developers/events',
-            },
-            {
-              text: '⚡ Commands',
-              link: '/developers/commands',
-            },
-            {
-              text: '💡 Examples',
-              link: '/developers/examples/simple-proxy',
-            },
-          ],
-        },
-        {
-          text: 'Configuration',
-          items: [
-            {
-              text: '📋 Complete Configuration',
-              link: '/guide/config/',
-            },
-            {
-              text: '🔄 Auto Reload',
-              link: '/guide/config/reload',
-            },
-            {
-              text: '⚙️ Builtin Commands',
-              link: '/guide/builtin-commands',
-            },
-            {
-              text: '🛡️ Rate Limiting',
-              link: '/guide/rate-limiting',
-            },
-            {
-              text: '🌐 Enabling Connect',
-              link: '/guide/connect',
-            },
-            {
-              text: '🔧 Modded Servers Config',
-              link: '/guide/config/modded-servers',
-            },
-            {
-              text: '🌐 ForcedHosts Routing',
-              link: '/guide/forced-hosts',
-            },
-          ],
-        },
-        {
-          text: 'OpenTelemetry',
-          items: [
-            {
-              text: 'Overview',
-              link: '/guide/otel/',
-            },
-            {
-              text: 'Grafana',
-              items: [
-                {
-                  text: 'Grafana Cloud',
-                  link: '/guide/otel/grafana-cloud/',
-                },
-                {
-                  text: 'Self-hosted Grafana Stack',
-                  link: '/guide/otel/self-hosted/grafana-stack.md',
-                },
-                {
-                  text: 'Grafana Dashboards',
-                  link: '/guide/otel/self-hosted/dashboard',
-                },
-              ],
-            },
-            {
-              text: 'Honeycomb',
-              link: '/guide/otel/honeycomb/',
-            },
-            {
-              text: 'Self-hosted Jaeger',
-              link: '/guide/otel/self-hosted/jaeger',
-            },
-            {
-              text: 'FAQ',
-              link: '/guide/otel/faq/',
-            },
-          ],
-        },
-        {
-          text: 'Security',
-          items: [
-            {
-              text: 'Cybersecurity',
-              link: '/guide/security/',
-            },
-            {
-              text: 'DDoS Protection',
-              link: '/guide/security/ddos',
-            },
-          ],
-        },
-      ],
+      '/guide/': guideSidebar,
       '/developers/': [
         {
           text: 'Developers Guide',
@@ -287,6 +319,10 @@ export default defineConfig({
             {
               text: 'Commands',
               link: '/developers/commands',
+            },
+            {
+              text: 'Sounds',
+              link: '/developers/sound',
             },
           ],
         },
@@ -341,6 +377,10 @@ export default defineConfig({
               link: '/developers/api/definition',
             },
             {
+              text: 'OpenAPI',
+              link: '/developers/api/openapi',
+            },
+            {
               text: 'Glossary',
               link: '/developers/api/glossary',
             },
@@ -356,10 +396,12 @@ export default defineConfig({
           ],
         },
         {
-          text: '← Back to Guides',
+          text: 'Back to Guides',
           link: '/guide/',
         },
       ],
+      '/geyserlite/': guideSidebar,
+      '/vialite/': guideSidebar,
       // '/config/': [
       //     {
       //         text: 'Configuration',

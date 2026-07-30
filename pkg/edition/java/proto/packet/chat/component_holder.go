@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -118,7 +119,9 @@ func (c *ComponentHolder) AsComponent() (component.Component, error) {
 // AsJson returns the component as a JSON raw message.
 func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 	if len(c.JSON) != 0 {
-		return c.JSON, nil
+		var err error
+		c.JSON, err = componentObjectJSON(c.JSON)
+		return c.JSON, err
 	}
 	if len(c.BinaryTag.Data) != 0 {
 		var err error
@@ -130,7 +133,56 @@ func (c *ComponentHolder) AsJson() (json.RawMessage, error) {
 		return nil, err
 	}
 	c.JSON, err = util.Marshal(c.Protocol, comp)
+	if err != nil {
+		return c.JSON, err
+	}
+	c.JSON, err = componentObjectJSON(c.JSON)
 	return c.JSON, err
+}
+
+func componentObjectJSON(j json.RawMessage) (json.RawMessage, error) {
+	if len(j) == 0 {
+		return j, nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(j))
+	dec.UseNumber()
+	var value any
+	if err := dec.Decode(&value); err != nil {
+		return nil, err
+	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("invalid component JSON: trailing value")
+		}
+		return nil, err
+	}
+	return json.Marshal(componentObjectValue(value))
+}
+
+func componentObjectValue(value any) any {
+	switch v := value.(type) {
+	case string:
+		return map[string]any{"text": v}
+	case []any:
+		for i, item := range v {
+			v[i] = componentObjectValue(item)
+		}
+		return v
+	case map[string]any:
+		for _, key := range []string{"extra", "with"} {
+			if item, ok := v[key]; ok {
+				v[key] = componentObjectValue(item)
+			}
+		}
+		for _, key := range []string{"separator"} {
+			if item, ok := v[key]; ok && item != nil {
+				v[key] = componentObjectValue(item)
+			}
+		}
+		return v
+	default:
+		return value
+	}
 }
 
 func (c *ComponentHolder) AsJsonOrNil() json.RawMessage {

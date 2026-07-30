@@ -87,9 +87,7 @@ To address the identified threats, that Minekube Gate has implemented a range of
     - The use of an LRU cache for storing rate limiters per IP address ensures efficient memory usage by retaining only
       the most recently accessed limiters, automatically purging the least active ones when the cache reaches its
       maximum capacity. This approach balances the need for active quota management with system resource constraints.
-    - By grouping IP addresses with similar low-order bytes, the system can manage quotas for a range of IPs, reducing
-      the granularity of control but improving performance and memory usage. This trade-off is often acceptable in
-      scenarios where strict per-IP rate limiting is not required.
+    - Quota bucket granularity and configuration details are documented in the [Rate limiting guide](/guide/rate-limiting).
 
 - **Authentication**: Ensuring secure client verification for online mode
   connections. ([ref](https://github.com/minekube/gate/blob/0b3b733dc3bdede11873fce5f52704ef2ec519cf/pkg/edition/java/auth/authenticator.go#L28))
@@ -130,12 +128,14 @@ To address the identified threats, that Minekube Gate has implemented a range of
     - **Risk Management**: By proactively warning users of insecure settings in the console, the system minimizes risks,
       reduces its attack surface, and builds user trust through demonstrated commitment to security.
 
-- **Proxy Protocol Support**: Support for the HAProxy PROXY protocol to preserve client IP addresses securely.
+- **Proxy Protocol Support**: Support for the HAProxy PROXY protocol to preserve client IP addresses securely. Client
+  headers are honored only from an upstream listed in `proxyProtocolTrustedProxies`; configure that trust boundary in
+  the [configuration template](/guide/config/).
     - **Enhanced Backend Server Security**: By maintaining the integrity of client IP information, backend servers can
       utilize accurate IP data for security measures such as logging, rate limiting, and banning malicious users. This
       support is crucial for traceability and accountability in user actions, contributing to a more secure and
       manageable server environment. (
-      refs: [backend](https://github.com/minekube/gate/blob/0b3b733dc3bdede11873fce5f52704ef2ec519cf/pkg/edition/java/proxy/server.go#L367), [client](https://github.com/minekube/gate/blob/0b3b733dc3bdede11873fce5f52704ef2ec519cf/pkg/edition/java/proxy/proxy.go#L466))
+      refs: [backend](https://github.com/minekube/gate/blob/0b3b733dc3bdede11873fce5f52704ef2ec519cf/pkg/edition/java/proxy/server.go#L367), [client](https://github.com/minekube/gate/blob/1a46e3d9b6b0dda72f018dc507e57aca6b78d5b7/pkg/edition/java/proxy/proxy_protocol.go#L24))
 
 - **Connection Management**: Secure management of client connections, including proper session handling and timeout
   configurations.

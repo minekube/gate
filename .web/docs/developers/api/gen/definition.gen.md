@@ -1,8 +1,3 @@
----
-title: "Gate Protocol Documentation - Generated API Reference"
-description: "Generated protocol documentation for Gate Minecraft proxy API. Complete reference for all API endpoints, messages, and data structures."
----
-
 # Protocol Documentation
 <a name="top"></a>
 

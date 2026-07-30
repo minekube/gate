@@ -1,18 +1,27 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Colors for terminal output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+RED=''
+GREEN=''
+YELLOW=''
+NC=''
+
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m'
+fi
 
 # Constants
 REPO_OWNER="minekube"
 REPO_NAME="gate"
 INSTALL_DIR="${GATE_INSTALL_DIR:-$HOME/.local/bin}"
-TEMP_DIR="/tmp/gate-installer"
+TEMP_DIR=""
+INSTALL_STAGING_PATH=""
 REQUIRED_SPACE_MB=50
+LINUX_LIBC=""
 
 # Functions
 
@@ -27,6 +36,20 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}$1${NC}"
+}
+
+cleanup() {
+    if [ -n "${TEMP_DIR:-}" ] && [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+    if [ -n "${INSTALL_STAGING_PATH:-}" ] && [ -f "$INSTALL_STAGING_PATH" ]; then
+        rm -f "$INSTALL_STAGING_PATH"
+    fi
+}
+
+make_temp_dir() {
+    TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gate-installer.XXXXXX")
+    trap cleanup EXIT
 }
 
 # Detect system architecture
@@ -58,6 +81,60 @@ detect_os() {
     esac
 }
 
+detect_linux_libc() {
+    [ "$OS" = "linux" ] || return 0
+
+    if [ "${GATE_INSTALLER_ASSUME_GLIBC:-}" = "1" ]; then
+        LINUX_LIBC="glibc"
+        return 0
+    fi
+
+    case "${GATE_INSTALLER_LINUX_LIBC:-}" in
+        glibc|musl)
+            LINUX_LIBC="$GATE_INSTALLER_LINUX_LIBC"
+            return 0
+            ;;
+        "")
+            ;;
+        *)
+            print_error "Unsupported GATE_INSTALLER_LINUX_LIBC=$GATE_INSTALLER_LINUX_LIBC (want glibc or musl)."
+            exit 1
+            ;;
+    esac
+
+    if [ -f /etc/alpine-release ]; then
+        LINUX_LIBC="musl"
+        return 0
+    fi
+
+    case "$ARCH" in
+        amd64)
+            if [ -e /lib64/ld-linux-x86-64.so.2 ] || [ -e /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 ]; then
+                LINUX_LIBC="glibc"
+                return 0
+            fi
+            ;;
+        arm64)
+            if [ -e /lib/ld-linux-aarch64.so.1 ] || [ -e /lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ]; then
+                LINUX_LIBC="glibc"
+                return 0
+            fi
+            ;;
+        386)
+            if [ -e /lib/ld-linux.so.2 ] || [ -e /lib/i386-linux-gnu/ld-linux.so.2 ]; then
+                LINUX_LIBC="glibc"
+                return 0
+            fi
+            ;;
+    esac
+
+    if command -v ldd >/dev/null && ldd --version 2>&1 | grep -qi 'glibc\|gnu libc'; then
+        LINUX_LIBC="glibc"
+    else
+        LINUX_LIBC="musl"
+    fi
+}
+
 # Check available disk space
 check_disk_space() {
     local install_dir="$1"
@@ -79,14 +156,101 @@ download() {
     mkdir -p "$TEMP_DIR"
 
     if command -v curl >/dev/null; then
-        curl -L "$url" --output "$output" && return 0
+        curl --fail --location --progress-bar --output "$output" "$url" && return 0
     elif command -v wget >/dev/null; then
         wget -q "$url" -O "$output" && return 0
     fi
 
     print_error "Failed to download from $url using curl or wget."
-    rm -rf "$TEMP_DIR"
     return 1
+}
+
+fetch_url() {
+    local url="$1"
+
+    if command -v curl >/dev/null; then
+        curl -fsSL "$url" && return 0
+    elif command -v wget >/dev/null; then
+        wget -qO- "$url" && return 0
+    fi
+
+    return 1
+}
+
+# Check whether a release asset exists before selecting it. GitHub releases can
+# briefly be published before GoReleaser has uploaded the binaries.
+url_exists() {
+    local url="$1"
+
+    if command -v curl >/dev/null; then
+        curl -fsSIL "$url" >/dev/null 2>&1
+        return $?
+    elif command -v wget >/dev/null; then
+        wget -q --spider "$url" >/dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+binary_name() {
+    local version="$1"
+    local os="$2"
+    local arch="$3"
+    local name
+
+    name="gate_${version}_${os}_${arch}"
+    if [ "$os" = "windows" ]; then
+        name="${name}.exe"
+    elif [ "$os" = "linux" ] && [ "$LINUX_LIBC" = "musl" ]; then
+        name="${name}_musl"
+    fi
+
+    echo "$name"
+}
+
+resolve_release_artifacts() {
+    local releases_json
+    local candidate_version
+    local candidate_binary
+    local candidate_download_url
+    local candidate_checksums_url
+
+    if ! releases_json=$(fetch_url "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases?per_page=10"); then
+        print_error "Failed to fetch Gate release information from GitHub."
+        exit 1
+    fi
+
+    for candidate_version in $(printf '%s\n' "$releases_json" | awk '
+        /"tag_name":/ {
+            tag = $0
+            sub(/.*"tag_name":[[:space:]]*"/, "", tag)
+            sub(/".*/, "", tag)
+        }
+        /"prerelease":/ {
+            if (tag != "" && $0 ~ /false/) {
+                sub(/^v/, "", tag)
+                print tag
+            }
+            tag = ""
+        }
+    '); do
+        candidate_binary=$(binary_name "$candidate_version" "$OS" "$ARCH")
+        candidate_download_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${candidate_version}/${candidate_binary}"
+        candidate_checksums_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${candidate_version}/checksums.txt"
+
+        if url_exists "$candidate_download_url" && url_exists "$candidate_checksums_url"; then
+            VERSION="$candidate_version"
+            BINARY_NAME="$candidate_binary"
+            DOWNLOAD_URL="$candidate_download_url"
+            CHECKSUMS_URL="$candidate_checksums_url"
+            return 0
+        fi
+    done
+
+    print_error "Failed to find a Gate release with binaries for ${OS}-${ARCH}."
+    print_error "If a release was just published, wait a minute for release assets to finish uploading and retry."
+    exit 1
 }
 
 # Verify the checksum of the downloaded file
@@ -98,15 +262,22 @@ verify_checksum() {
     local actual_checksum
 
     filename=$(basename "$file")
-    expected_checksum=$(grep "$filename" "$checksum_file" | awk '{print $1}')
+    if ! expected_checksum=$(awk -v filename="$filename" '$2 == filename { print $1; found = 1; exit } END { if (!found) exit 1 }' "$checksum_file"); then
+        print_error "Checksum for $filename was not found in checksums.txt."
+        rm -f "$file" "$checksum_file"
+        exit 1
+    fi
 
     if command -v sha256sum >/dev/null; then
         actual_checksum=$(sha256sum "$file" | awk '{print $1}')
     elif command -v shasum >/dev/null; then
         actual_checksum=$(shasum -a 256 "$file" | awk '{print $1}')
+    elif command -v openssl >/dev/null; then
+        actual_checksum=$(openssl dgst -sha256 "$file" | awk '{print $NF}')
     else
-        print_warning "No SHA256 checksum tool found. Skipping verification."
-        return 0
+        print_error "No SHA256 checksum tool found. Install sha256sum, shasum, or openssl and retry."
+        rm -f "$file" "$checksum_file"
+        exit 1
     fi
 
     if [ "$expected_checksum" != "$actual_checksum" ]; then
@@ -119,6 +290,37 @@ verify_checksum() {
 
     print_info "✅ Checksum verified for $filename"
     rm -f "$checksum_file"
+}
+
+verify_executable() {
+    local file="$1"
+    local verify_output
+
+    verify_output="$TEMP_DIR/gate-version.out"
+    if "$file" --version >"$verify_output" 2>&1; then
+        return 0
+    fi
+
+    print_error "Installed Gate binary failed to run."
+    if [ -s "$verify_output" ]; then
+        cat "$verify_output" >&2
+    fi
+    if [ "$OS" = "linux" ]; then
+        print_error "The selected Linux binary did not run on this system. If libc detection was wrong, set GATE_INSTALLER_LINUX_LIBC=glibc or GATE_INSTALLER_LINUX_LIBC=musl and retry."
+    fi
+    exit 1
+}
+
+install_verified_binary() {
+    local source="$1"
+    local install_path="$2"
+
+    INSTALL_STAGING_PATH=$(mktemp "${install_path}.tmp.XXXXXX")
+    cp "$source" "$INSTALL_STAGING_PATH"
+    chmod 755 "$INSTALL_STAGING_PATH"
+    verify_executable "$INSTALL_STAGING_PATH"
+    mv -f "$INSTALL_STAGING_PATH" "$install_path"
+    INSTALL_STAGING_PATH=""
 }
 
 # Get installation path
@@ -145,19 +347,14 @@ install_gate() {
     print_info "✨ Installing Gate..."
 
     mkdir -p "$INSTALL_DIR"
-    mkdir -p "$TEMP_DIR"
+    make_temp_dir
 
     check_disk_space "$INSTALL_DIR"
 
     OS=$(detect_os)
     ARCH=$(detect_arch)
-
-    # Fetch the latest version from GitHub API
-    VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
-    if [ -z "$VERSION" ]; then
-        print_error "Failed to detect the latest version."
-        exit 1
-    fi
+    detect_linux_libc
+    resolve_release_artifacts
 
     INSTALL_PATH=$(get_install_path)
 
@@ -171,30 +368,14 @@ install_gate() {
         fi
     fi
 
-    # Set download URLs
-    BINARY_NAME="gate_${VERSION}_${OS}_${ARCH}"
-    if [ "$OS" = "windows" ]; then
-        BINARY_NAME="${BINARY_NAME}.exe"
-    fi
-
-    DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${VERSION}/${BINARY_NAME}"
-    CHECKSUMS_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v${VERSION}/checksums.txt"
-
     print_info "⚡ Downloading Gate ${VERSION} for ${OS}-${ARCH}..."
     echo "📥 From: $DOWNLOAD_URL"
     
-    # ✨ Change: Download binary with original name to TEMP_DIR
     download "$DOWNLOAD_URL" "$TEMP_DIR/$BINARY_NAME"
-    
-    # ✨ Change: Download checksums file
     download "$CHECKSUMS_URL" "$TEMP_DIR/checksums.txt"
-    
-    # ✨ Change: Verify checksum using the correctly named binary
     verify_checksum "$TEMP_DIR/$BINARY_NAME" "$TEMP_DIR/checksums.txt"
-    
-    # ✨ Change: Move the verified binary to the installation path as 'gate'
-    mv "$TEMP_DIR/$BINARY_NAME" "$INSTALL_PATH"
-    chmod +x "$INSTALL_PATH"
+
+    install_verified_binary "$TEMP_DIR/$BINARY_NAME" "$INSTALL_PATH"
 
     # Update PATH for the current session
     update_path_session
@@ -209,7 +390,7 @@ install_gate() {
     echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
     echo
     print_warning "Or add it permanently by running:"
-    echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> \"\$HOME/.$(basename $SHELL)rc\" && source \"\$HOME/.$(basename $SHELL)rc\""
+    echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> \"\$HOME/.$(basename "${SHELL:-sh}")rc\" && source \"\$HOME/.$(basename "${SHELL:-sh}")rc\""
     echo
     print_info "🚀 Run gate to start the proxy"
 }

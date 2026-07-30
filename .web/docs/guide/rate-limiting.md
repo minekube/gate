@@ -17,8 +17,9 @@ There are two rate limiters:
   - triggered just before authenticating player with Mojang
     to prevent flooding the Mojang API
 
-Each rate limiter is IP block based but cutting off
-the last numbers (/24 block) as in 255.255.255`.xxx`.
+Each rate limiter uses an IP-prefix bucket: IPv4 addresses share a /24 bucket
+(`255.255.255.xxx`), while IPv6 addresses share a /64 bucket (the first four
+hextets). IPv4-mapped IPv6 addresses are treated as IPv4 addresses.
 
 Too many connections from the same IP-block (as configured)
 will be simply disconnected, and the default settings should

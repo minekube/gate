@@ -308,6 +308,7 @@ type ServerLoginSuccess struct {
 	UUID       uuid.UUID
 	Username   string
 	Properties []profile.Property // 1.19+
+	SessionID  uuid.UUID          // 26.2+
 }
 
 const serverLoginSuccessStrictErrorHandling = true
@@ -340,6 +341,12 @@ func (s *ServerLoginSuccess) Encode(c *proto.PacketContext, wr io.Writer) (err e
 	}
 	if c.Protocol == version.Minecraft_1_20_5.Protocol || c.Protocol == version.Minecraft_1_21.Protocol {
 		err = util.WriteBool(wr, serverLoginSuccessStrictErrorHandling)
+		if err != nil {
+			return err
+		}
+	}
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		err = util.WriteUUID(wr, s.SessionID)
 		if err != nil {
 			return err
 		}
@@ -386,6 +393,12 @@ func (s *ServerLoginSuccess) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			return
 		}
 	}
+	if c.Protocol.GreaterEqual(version.Minecraft_26_2) {
+		s.SessionID, err = util.ReadUUID(rd)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -412,15 +425,18 @@ func (l *LoginPluginMessage) Encode(_ *proto.PacketContext, wr io.Writer) error 
 	w := util.PanicWriter(wr)
 	w.VarInt(l.ID)
 	w.String(l.Channel)
-	w.Bytes(l.Data)
-	return nil
+	// Data is the remaining bytes in the packet (not length-prefixed),
+	// same format as LoginPluginResponse.Data.
+	return util.WriteRawBytes(wr, l.Data)
 }
 
 func (l *LoginPluginMessage) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 	r := util.PanicReader(rd)
 	r.VarInt(&l.ID)
 	r.String(&l.Channel)
-	l.Data, err = util.ReadBytes(rd)
+	// Data is the remaining bytes in the packet (not length-prefixed),
+	// same format as LoginPluginResponse.Data.
+	l.Data, err = util.ReadRawBytes(rd)
 	if errors.Is(err, io.EOF) {
 		// Ignore if we couldn't read data
 		return nil

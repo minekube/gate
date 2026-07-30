@@ -38,6 +38,12 @@ Gate includes built-in **Bedrock Edition support** through Geyser enabling cross
 Java Edition (PC) and Bedrock Edition (Mobile, Console, Windows) players
 through integrated Geyser & Floodgate technology - **zero plugins required**!
 
+Enable managed Bedrock support with one config line:
+
+```yaml
+bedrock: true
+```
+
 See the [Bedrock Guide](https://gate.minekube.com/guide/bedrock/) for setup instructions.
 
 ```mermaid
@@ -53,6 +59,30 @@ graph LR
     style D fill:#2e8b57,stroke:#222,stroke-width:2px
     style E fill:#a0526d,stroke:#222,stroke-width:2px
 ```
+
+## Java Version Compatibility
+
+Gate can start **Via-powered backend protocol translation** through managed
+vialite, so Java clients can join configured or API-registered backend servers
+running different Minecraft versions without running a separate Via sidecar.
+
+Enable managed Via in classic proxy mode with:
+
+```yaml
+config:
+  via:
+    enabled: true
+```
+
+Gate starts the native vialite subprocess, resolves the latest stable vialite
+release automatically, downloads the checksummed artifact into the local cache,
+and routes backend connections through it. Dynamic backends registered through
+Gate's Go API are added to vialite at runtime, which lets Connect-style session
+backends use the same version compatibility path as static config servers. Exact
+release pins, offline mode, and local artifact paths remain available for
+controlled deployments, but no manual version setting is required for the
+default path. Dynamic API-registered backend translation uses the default
+subprocess mode; embedded mode is limited to configured servers.
 
 ## Gate Lite Mode
 
@@ -79,4 +109,4 @@ graph LR
 ## Developers Starter Template
 
 The starter template is designed to help you get started with your own Gate powered project.
-Fork it! 🚀 - [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)
+Fork it: [minekube/gate-plugin-template](https://github.com/minekube/gate-plugin-template)

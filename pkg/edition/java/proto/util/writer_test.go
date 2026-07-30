@@ -4,7 +4,67 @@ import (
 	"bytes"
 	"math"
 	"testing"
+
+	"go.minekube.com/common/minecraft/key"
 )
+
+func TestReadKeyRejectsInvalidResourceLocations(t *testing.T) {
+	for _, raw := range []string{
+		"MineKube:cookie",
+		"minecraft:BadCookie",
+		"mine kube:cookie",
+		"..:cookie",
+	} {
+		t.Run(raw, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := WriteString(&buf, raw); err != nil {
+				t.Fatalf("failed to write raw key string: %v", err)
+			}
+
+			if got, err := ReadKey(&buf); err == nil {
+				t.Fatalf("ReadKey(%q) = %q, want error", raw, got)
+			}
+		})
+	}
+}
+
+func TestReadKeyDefaultsMissingNamespaceToMinecraft(t *testing.T) {
+	for raw, want := range map[string]key.Key{
+		"cookie":  key.New(key.MinecraftNamespace, "cookie"),
+		":cookie": key.New(key.MinecraftNamespace, "cookie"),
+	} {
+		t.Run(raw, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := WriteString(&buf, raw); err != nil {
+				t.Fatalf("failed to write raw key string: %v", err)
+			}
+
+			got, err := ReadKey(&buf)
+			if err != nil {
+				t.Fatalf("ReadKey(%q) returned error: %v", raw, err)
+			}
+			if got.String() != want.String() {
+				t.Fatalf("ReadKey(%q) = %q, want %q", raw, got, want)
+			}
+		})
+	}
+}
+
+func TestWriteKeyRejectsInvalidResourceLocations(t *testing.T) {
+	for _, invalid := range []key.Key{
+		key.New("MineKube", "cookie"),
+		key.New("minecraft", "BadCookie"),
+		key.New("mine kube", "cookie"),
+		key.New("..", "cookie"),
+	} {
+		t.Run(invalid.String(), func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := WriteKey(&buf, invalid); err == nil {
+				t.Fatalf("WriteKey(%q) succeeded, want error", invalid)
+			}
+		})
+	}
+}
 
 // TestWriteBytes17_NonExtended tests WriteBytes17 with allowExtended=false
 // This is the case that was failing for 1.7.x clients with encryption requests

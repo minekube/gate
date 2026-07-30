@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -16,7 +15,6 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/tablist"
 	"go.minekube.com/gate/pkg/gate/proto"
-	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 // backendConfigSessionHandler is a special session handler that catches "last minute" disconnects.
@@ -85,10 +83,16 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		b.handlePluginMessage(pc, p)
 	case *packet.Disconnect:
 		b.serverConn.disconnect()
-		result := disconnectResultForPacket(b.log.V(1), p,
-			b.serverConn.player.Protocol(), b.serverConn.server, true,
-		)
-		b.requestCtx.result(result, nil)
+		// If the player receives a DisconnectPacket without a connection to a server in progress,
+		// it means that the backend server has kicked the player during reconfiguration
+		if b.serverConn.player.connectionInFlight() != nil {
+			result := disconnectResultForPacket(b.log.V(1), p,
+				b.serverConn.player.Protocol(), b.serverConn.server, true,
+			)
+			b.requestCtx.result(result, nil)
+		} else {
+			b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
+		}
 	case *packet.Transfer:
 		b.handleTransfer(p)
 	case *cookie.CookieStore:
@@ -131,14 +135,9 @@ func (b *backendConfigSessionHandler) handleResourcePackRequest(p *packet.Resour
 func (b *backendConfigSessionHandler) handleRemoveResourcePackRequest(p *packet.RemoveResourcePack) {
 	player := b.serverConn.player
 
-	// TODO add ServerResourcePackRemoveEvent
-	handler := player.resourcePackHandler
-	if p.ID != uuid.Nil {
-		handler.Remove(p.ID)
-	} else {
-		handler.ClearAppliedResourcePacks()
+	if handleRemoveResourcePack(p, b.serverConn, b.proxy().Event()) {
+		_ = player.WritePacket(p)
 	}
-	_ = player.WritePacket(p)
 }
 
 func (b *backendConfigSessionHandler) handleFinishedUpdate(p *config.FinishedUpdate) {
@@ -242,7 +241,7 @@ func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContex
 }
 
 func (b *backendConfigSessionHandler) handleKeepAlive(p *packet.KeepAlive) {
-	b.serverConn.pendingPings.Set(p.RandomID, time.Now())
+	recordBackendKeepAlive(b.serverConn, p)
 	_ = b.serverConn.player.WritePacket(p)
 }
 

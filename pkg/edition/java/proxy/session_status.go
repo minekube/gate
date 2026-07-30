@@ -2,7 +2,11 @@ package proxy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"net"
+	"syscall"
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
@@ -83,7 +87,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		protocol = version.MaximumVersion.Protocol
 	}
 	var modInfo *modinfo.ModInfo
-	if p.cfg.AnnounceForge {
+	if p.config().AnnounceForge {
 		modInfo = modinfo.Default
 	}
 	return &ping.ServerPing{
@@ -93,10 +97,10 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		},
 		Players: &ping.Players{
 			Online: p.PlayerCount(),
-			Max:    p.cfg.Status.ShowMaxPlayers,
+			Max:    p.config().Status.ShowMaxPlayers,
 		},
-		Description: p.cfg.Status.Motd.T(),
-		Favicon:     p.cfg.Status.Favicon,
+		Description: p.config().Status.Motd.C(),
+		Favicon:     p.config().Status.Favicon,
 		ModInfo:     modInfo,
 	}
 }
@@ -127,7 +131,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		}
 		if !h.eventMgr.HasSubscriber(e) {
 			// Fast path: No event handler, just send response
-			_ = h.conn.WritePacket(res)
+			h.writeStatusResponse(log, res)
 			return
 		}
 		// Need to unmarshal status response to ping struct for event handlers
@@ -147,6 +151,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		return
 	}
 	if !h.inbound.Active() {
+		log.V(1).Info("status response not sent because inbound is inactive")
 		return
 	}
 
@@ -156,9 +161,26 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 		log.Error(err, "error marshaling ping response to json")
 		return
 	}
-	_ = h.conn.WritePacket(&packet.StatusResponse{
+	h.writeStatusResponse(log, &packet.StatusResponse{
 		Status: string(response),
 	})
+}
+
+func (h *statusSessionHandler) writeStatusResponse(log logr.Logger, response *packet.StatusResponse) {
+	if err := h.conn.WritePacket(response); err != nil {
+		statusResponseWriteErrorLog(log, err).Info("error writing status response", "error", err)
+		return
+	}
+	log.V(1).Info("sent status response")
+}
+
+func statusResponseWriteErrorLog(log logr.Logger, err error) logr.Logger {
+	var netErr net.Error
+	if errors.Is(err, netmc.ErrClosedConn) || errors.Is(err, io.ErrClosedPipe) ||
+		errs.IsConnClosedErr(err) || errors.Is(err, syscall.EPIPE) || errors.As(err, &netErr) {
+		return log.V(1)
+	}
+	return log
 }
 
 func (h *statusSessionHandler) handleStatusPing(p *proto.PacketContext) {

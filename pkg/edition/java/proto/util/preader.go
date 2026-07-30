@@ -1,6 +1,10 @@
 package util
 
-import "io"
+import (
+	"io"
+
+	"go.minekube.com/common/minecraft/key"
+)
 
 type PReader struct {
 	r io.Reader
@@ -53,6 +57,18 @@ func (r *PReader) Strings(i *[]string) {
 
 func (r *PReader) Byte(b *byte) {
 	PReadByte(r.r, b)
+}
+
+func (r *PReader) Float32(f *float32) {
+	PReadFloat32(r.r, f)
+}
+
+func (r *PReader) Key(k *key.Key) {
+	PReadKey(r.r, k)
+}
+
+func (r *PReader) MinimalKey(k *key.Key) {
+	PReadMinimalKey(r.r, k)
 }
 
 func PReadStrings(r io.Reader, i *[]string) {
@@ -181,4 +197,28 @@ func PReadBoolVal(rd io.Reader) bool {
 		panic(err)
 	}
 	return v
+}
+
+func PReadFloat32(rd io.Reader, f *float32) {
+	v, err := ReadFloat32(rd)
+	if err != nil {
+		panic(err)
+	}
+	*f = v
+}
+
+func PReadKey(rd io.Reader, k *key.Key) {
+	v, err := ReadKey(rd)
+	if err != nil {
+		panic(err)
+	}
+	*k = v
+}
+
+func PReadMinimalKey(rd io.Reader, k *key.Key) {
+	v, err := ReadMinimalKey(rd)
+	if err != nil {
+		panic(err)
+	}
+	*k = v
 }

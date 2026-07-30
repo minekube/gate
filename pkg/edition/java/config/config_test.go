@@ -1,17 +1,363 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.minekube.com/common/minecraft/component"
 	"gopkg.in/yaml.v3"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/util/configutil"
 )
 
 func Test_texts(t *testing.T) {
 	require.NotNil(t, defaultMotd())
 	require.NotNil(t, defaultShutdownReason())
+}
+
+func TestStatusMotdAcceptsObjectRootComponent(t *testing.T) {
+	var cfg Config
+	require.NoError(t, yaml.Unmarshal([]byte(`
+status:
+  motd: '{"fallback":"diamond","sprite":"minecraft:item/diamond"}'
+`), &cfg))
+
+	require.IsType(t, &component.Object{}, cfg.Status.Motd.C())
+}
+
+func TestViaConfigValidate(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"Lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"Lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Mode:    "embedded",
+	}
+
+	_, errs := cfg.Validate()
+	require.Empty(t, errs)
+}
+
+func TestViaConfigHasNoBackendOverrideSetting(t *testing.T) {
+	typ := reflect.TypeOf(Via{})
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		yamlName, _, _ := strings.Cut(field.Tag.Get("yaml"), ",")
+		require.NotEqual(t, "backends", yamlName, "via config should stay automatic and not expose per-backend overrides")
+	}
+}
+
+func TestViaConfigRejectsInvalidMode(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Mode:    "native",
+	}
+
+	_, errs := cfg.Validate()
+	require.NotEmpty(t, errs)
+}
+
+func TestViaConfigRejectsInvalidBind(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+	cfg.Try = []string{"lobby"}
+	cfg.Via = Via{
+		Enabled: true,
+		Bind:    "127.0.0.1",
+	}
+
+	_, errs := cfg.Validate()
+	require.NotEmpty(t, errs)
+}
+
+func TestViaConfigIgnoredInLiteMode(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Lite = liteconfig.Config{
+		Enabled: true,
+		Routes: []liteconfig.Route{{
+			Host:    []string{"example.com"},
+			Backend: []string{"127.0.0.1:25566"},
+		}},
+	}
+	cfg.Via = Via{
+		Enabled: true,
+	}
+
+	_, errs := cfg.Validate()
+	require.Empty(t, errs)
+}
+
+// TestLiteIgnoredSettingsWarn covers https://github.com/minekube/gate/issues/929: Lite mode
+// pipes the connection through unchanged, so full proxy settings are inert and Gate must say
+// so instead of silently accepting them.
+func TestLiteIgnoredSettingsWarn(t *testing.T) {
+	liteConfig := func() Config {
+		cfg := DefaultConfig
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		return cfg
+	}
+
+	t.Run("velocity forwarding warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = VelocityForwardingMode
+		cfg.Forwarding.VelocitySecret = "secret"
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+		requireWarnContains(t, warns, `"you need to be running velocity, or a velocity proxy with modern forwarding"`)
+	})
+
+	t.Run("bungeeguard forwarding warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = BungeeGuardForwardingMode
+		cfg.Forwarding.BungeeGuardSecret = "secret"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("unknown forwarding mode warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.Mode = "modern"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("velocity secret alone warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Forwarding.VelocitySecret = "secret"
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores player info forwarding")
+	})
+
+	t.Run("servers try and forcedHosts warn", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+		cfg.ForcedHosts = ForcedHosts{"example.com": []string{"lobby"}}
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores servers, try and forcedHosts")
+	})
+
+	t.Run("offline mode warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.OnlineMode = false
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores onlineMode")
+	})
+
+	t.Run("compression warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.Compression.Threshold = 0
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores compression")
+	})
+
+	t.Run("announceForge warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.AnnounceForge = true
+
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "Lite mode ignores announceForge")
+	})
+
+	t.Run("lite defaults do not warn", func(t *testing.T) {
+		cfg := liteConfig()
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireNoWarnContains(t, warns, "Lite mode ignores")
+	})
+
+	t.Run("full mode is unaffected", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.Forwarding.Mode = VelocityForwardingMode
+		cfg.Forwarding.VelocitySecret = "secret"
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+		cfg.ForcedHosts = ForcedHosts{"example.com": []string{"lobby"}}
+		cfg.AnnounceForge = true
+		cfg.OnlineMode = false
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireNoWarnContains(t, warns, "Lite mode ignores")
+	})
+}
+
+func requireWarnContains(t *testing.T, warns []error, want string) {
+	t.Helper()
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), want) {
+			return
+		}
+	}
+	t.Fatalf("expected warning containing %q, got %v", want, warns)
+}
+
+func requireNoWarnContains(t *testing.T, warns []error, unwanted string) {
+	t.Helper()
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), unwanted) {
+			t.Fatalf("unexpected warning containing %q: %v", unwanted, warn)
+		}
+	}
+}
+
+func TestBackendFloodgateValidation(t *testing.T) {
+	t.Run("disabled by default", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.Forwarding.Mode = NoneForwardingMode
+		cfg.Servers = map[string]string{"lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"lobby"}
+
+		_, errs := cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("enabled requires bedrock", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.Enabled = false
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires bedrock.enabled")
+	})
+
+	t.Run("enabled requires bedrock in lite mode", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		cfg.Bedrock.Enabled = false
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires bedrock.enabled")
+	})
+
+	t.Run("enabled requires allowed servers", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = nil
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate.allowedServers must not be empty")
+	})
+
+	t.Run("allowed servers must exist", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = []string{"missing"}
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, `bedrock.backendFloodgate.allowedServers server "missing" must be registered under servers`)
+	})
+
+	t.Run("allowed servers are case-normalized", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.BackendFloodgate.AllowedServers = []string{"Lobby"}
+
+		_, errs := cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("enabled requires floodgate key unless managed can generate it", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Bedrock.FloodgateKeyPath = filepath.Join(t.TempDir(), "missing.key")
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires readable floodgateKeyPath")
+
+		cfg.Bedrock.Managed = bconfig.BoolOrManagedGeyser{}
+		cfg.Bedrock.Managed = configutil.NewBoolOrStructBool[bconfig.ManagedGeyser](true)
+		_, errs = cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("forwarding mode compatibility", func(t *testing.T) {
+		for _, mode := range []ForwardingMode{NoneForwardingMode, VelocityForwardingMode} {
+			cfg := validBackendFloodgateConfig(t)
+			cfg.Forwarding.Mode = mode
+			_, errs := cfg.Validate()
+			require.Empty(t, errs, "mode %q should be allowed", mode)
+		}
+
+		for _, mode := range []ForwardingMode{LegacyForwardingMode, BungeeGuardForwardingMode} {
+			cfg := validBackendFloodgateConfig(t)
+			cfg.Forwarding.Mode = mode
+			_, errs := cfg.Validate()
+			requireErrorContains(t, errs, "bedrock.backendFloodgate is incompatible with forwarding.mode")
+		}
+	})
+
+	t.Run("unknown forwarding mode is rejected in lite mode", func(t *testing.T) {
+		cfg := validBackendFloodgateConfig(t)
+		cfg.Lite = liteconfig.Config{
+			Enabled: true,
+			Routes: []liteconfig.Route{{
+				Host:    []string{"example.com"},
+				Backend: []string{"127.0.0.1:25566"},
+			}},
+		}
+		cfg.Forwarding.Mode = "typo"
+
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "bedrock.backendFloodgate requires forwarding.mode none or velocity")
+	})
+}
+
+func validBackendFloodgateConfig(t *testing.T) Config {
+	t.Helper()
+
+	keyPath := filepath.Join(t.TempDir(), "floodgate.key")
+	require.NoError(t, os.WriteFile(keyPath, []byte("0123456789abcdef"), 0o600))
+
+	cfg := DefaultConfig
+	cfg.Forwarding.Mode = NoneForwardingMode
+	cfg.Servers = map[string]string{
+		"lobby":    "127.0.0.1:25566",
+		"survival": "127.0.0.1:25567",
+	}
+	cfg.Try = []string{"lobby"}
+	cfg.Bedrock.Enabled = true
+	cfg.Bedrock.FloodgateKeyPath = keyPath
+	cfg.Bedrock.BackendFloodgate = bconfig.BackendFloodgate{
+		Enabled:        true,
+		AllowedServers: []string{"lobby"},
+	}
+	return cfg
+}
+
+func requireErrorContains(t *testing.T, errs []error, want string) {
+	t.Helper()
+	for _, err := range errs {
+		if strings.Contains(err.Error(), want) {
+			return
+		}
+	}
+	t.Fatalf("expected error containing %q, got %v", want, errs)
 }
 
 func TestBedrockConfig_ManagedShorthand(t *testing.T) {
@@ -42,6 +388,106 @@ bedrock:
 
 	if !cfg.Bedrock.Managed.IsBool() || !cfg.Bedrock.Managed.BoolValue() {
 		t.Errorf("Expected Bedrock.Managed to be true, got %v", cfg.Bedrock.Managed.BoolValue())
+	}
+}
+
+func TestBedrockConfig_TopLevelBoolEnablesManagedGeyserlite(t *testing.T) {
+	yamlConfig := `
+bedrock: true
+`
+
+	type testConfig struct {
+		Bedrock bconfig.BedrockConfig `yaml:"bedrock"`
+	}
+
+	var cfg testConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("Failed to unmarshal config: %v", err)
+	}
+
+	if !cfg.Bedrock.Enabled {
+		t.Fatal("Expected Bedrock.Enabled to be true when bedrock: true")
+	}
+	if cfg.Bedrock.Managed.IsNil() {
+		t.Fatal("Expected Bedrock.Managed to be set when bedrock: true")
+	}
+	if !cfg.Bedrock.Managed.IsBool() || !cfg.Bedrock.Managed.BoolValue() {
+		t.Fatalf("Expected Bedrock.Managed to be true, got %v", cfg.Bedrock.Managed)
+	}
+
+	bedrockConfig := cfg.Bedrock.ToConfig()
+	managedConfig := bedrockConfig.GetManaged()
+	if !managedConfig.Enabled {
+		t.Fatal("Expected resolved managed config to be enabled")
+	}
+	if managedConfig.Engine != bconfig.ManagedEngineGeyserlite {
+		t.Fatalf("Expected bedrock: true to default to geyserlite engine, got %q", managedConfig.Engine)
+	}
+}
+
+func TestBedrockConfig_ManagedJavaEngine(t *testing.T) {
+	yamlConfig := `
+bedrock:
+  managed:
+    enabled: true
+    engine: java
+`
+
+	type testConfig struct {
+		Bedrock bconfig.BedrockConfig `yaml:"bedrock"`
+	}
+
+	var cfg testConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("Failed to unmarshal config: %v", err)
+	}
+
+	bedrockConfig := cfg.Bedrock.ToConfig()
+	managedConfig := bedrockConfig.GetManaged()
+	if managedConfig.Engine != bconfig.ManagedEngineJava {
+		t.Fatalf("Expected managed engine java, got %q", managedConfig.Engine)
+	}
+}
+
+func TestBedrockConfig_ManagedNestedEngineConfig(t *testing.T) {
+	yamlConfig := `
+bedrock:
+  managed:
+    enabled: true
+    engine: geyserlite
+    geyserlite:
+      mode: embedded
+      version: v0.2.1
+    java:
+      dataDir: /srv/geyser
+      autoUpdate: false
+`
+
+	type testConfig struct {
+		Bedrock bconfig.BedrockConfig `yaml:"bedrock"`
+	}
+
+	var cfg testConfig
+	if err := yaml.Unmarshal([]byte(yamlConfig), &cfg); err != nil {
+		t.Fatalf("Failed to unmarshal config: %v", err)
+	}
+
+	bedrockConfig := cfg.Bedrock.ToConfig()
+	managedConfig := bedrockConfig.GetManaged()
+	if managedConfig.Engine != bconfig.ManagedEngineGeyserlite {
+		t.Fatalf("Expected managed engine geyserlite, got %q", managedConfig.Engine)
+	}
+	if managedConfig.Mode != "embedded" {
+		t.Fatalf("Expected geyserlite mode embedded, got %q", managedConfig.Mode)
+	}
+	if managedConfig.Version != "v0.2.1" {
+		t.Fatalf("Expected geyserlite version v0.2.1, got %q", managedConfig.Version)
+	}
+	if managedConfig.DataDir != bconfig.DefaultManaged.DataDir {
+		t.Fatalf("Expected inactive java dataDir to be ignored, got %q", managedConfig.DataDir)
+	}
+	if !managedConfig.AutoUpdate {
+		t.Fatal("Expected inactive java autoUpdate false to be ignored")
 	}
 }
 
@@ -161,4 +607,67 @@ bedrock:
 	if bedrockConfig.GeyserListenAddr != bconfig.DefaultConfig.GeyserListenAddr {
 		t.Errorf("Expected default GeyserListenAddr to be applied")
 	}
+}
+
+func TestProxyProtocolTrustedProxiesValidate(t *testing.T) {
+	base := func() Config {
+		cfg := DefaultConfig
+		cfg.Servers = map[string]string{"Lobby": "127.0.0.1:25566"}
+		cfg.Try = []string{"Lobby"}
+		return cfg
+	}
+
+	t.Run("defaults are valid", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocol = true
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		require.Empty(t, warnsContaining(warns, "proxyProtocolTrustedProxies"))
+	})
+
+	t.Run("malformed entries are rejected even while disabled", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocolTrustedProxies = []string{"10.0.0.0/8", "not-an-ip"}
+		_, errs := cfg.Validate()
+		require.Len(t, errsContaining(errs, "proxyProtocolTrustedProxies"), 1)
+	})
+
+	t.Run("trusting every upstream warns", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocol = true
+		cfg.ProxyProtocolTrustedProxies = []string{"0.0.0.0/0"}
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		require.Len(t, warnsContaining(warns, "proxyProtocolTrustedProxies"), 1)
+	})
+
+	t.Run("trusting every upstream while disabled does not warn", func(t *testing.T) {
+		cfg := base()
+		cfg.ProxyProtocolTrustedProxies = []string{"::/0"}
+		warns, _ := cfg.Validate()
+		require.Empty(t, warnsContaining(warns, "proxyProtocolTrustedProxies"))
+	})
+}
+
+func TestResolveProxyProtocolTrustedProxies(t *testing.T) {
+	require.Equal(t, DefaultProxyProtocolTrustedProxies(), ResolveProxyProtocolTrustedProxies(nil))
+	require.Equal(t, DefaultProxyProtocolTrustedProxies(), ResolveProxyProtocolTrustedProxies([]string{}))
+	require.Equal(t, []string{"10.0.0.0/8"}, ResolveProxyProtocolTrustedProxies([]string{"10.0.0.0/8"}))
+
+	// The defaults must never be shared, so a caller cannot widen them for everyone.
+	defaults := DefaultProxyProtocolTrustedProxies()
+	defaults[0] = "0.0.0.0/0"
+	require.NotContains(t, DefaultProxyProtocolTrustedProxies(), "0.0.0.0/0")
+}
+
+func warnsContaining(warns []error, substr string) []error { return errsContaining(warns, substr) }
+
+func errsContaining(errs []error, substr string) []error {
+	var found []error
+	for _, err := range errs {
+		if strings.Contains(err.Error(), substr) {
+			found = append(found, err)
+		}
+	}
+	return found
 }

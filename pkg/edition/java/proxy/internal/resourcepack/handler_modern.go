@@ -149,16 +149,18 @@ func (m *modernHandler) OnResourcePackResponse(bundle *ResponseBundle) (bool, er
 		}
 	}
 
-	e := newPlayerResourcePackStatusEvent(m.player, bundle.Status, queued.ID, *queued)
-	event.FireParallel(m.eventMgr, e, func(e *PlayerResourcePackStatusEvent) {
-		if e.Status() == packet.DeclinedResourcePackResponseStatus &&
-			e.PackInfo().ShouldForce &&
-			!e.OverwriteKick() {
-			m.player.Disconnect(&component.Translation{
-				Key: "multiplayer.requiredTexturePrompt.disconnect",
-			})
-		}
-	})
+	if queued != nil {
+		e := newPlayerResourcePackStatusEvent(m.player, bundle.Status, id, *queued)
+		event.FireParallel(m.eventMgr, e, func(e *PlayerResourcePackStatusEvent) {
+			if e.Status() == packet.DeclinedResourcePackResponseStatus &&
+				e.PackInfo().ShouldForce &&
+				!e.OverwriteKick() {
+				m.player.Disconnect(&component.Translation{
+					Key: "multiplayer.requiredTexturePrompt.disconnect",
+				})
+			}
+		})
+	}
 
 	switch bundle.Status {
 	// The player has accepted the resource pack and will proceed to download it.

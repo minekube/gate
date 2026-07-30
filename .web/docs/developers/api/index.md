@@ -31,27 +31,27 @@ The HTTP API enables you to build and deploy functionality independently from yo
 
 <div class="vp-features">
   <div class="vp-feature">
-    <div class="title">🚀 Independent Updates</div>
+    <div class="title">Independent Updates</div>
     <div class="details">Ship updates without restarting Gate or disconnecting players</div>
   </div>
   <div class="vp-feature">
-    <div class="title">🌐 Cross-Language Support</div>
+    <div class="title">Cross-Language Support</div>
     <div class="details">Access Gate's core functionality from any programming language</div>
   </div>
   <div class="vp-feature">
-    <div class="title">🔌 Plugin Development</div>
+    <div class="title">Plugin Development</div>
     <div class="details">Build extensions and plugins in your preferred language</div>
   </div>
   <div class="vp-feature">
-    <div class="title">🤖 Automation</div>
+    <div class="title">Automation</div>
     <div class="details">Automate server registration and management tasks</div>
   </div>
   <div class="vp-feature">
-    <div class="title">🎮 Custom Tools</div>
+    <div class="title">Custom Tools</div>
     <div class="details">Create administrative interfaces and management tools</div>
   </div>
   <div class="vp-feature">
-    <div class="title">🔄 Integration</div>
+    <div class="title">Integration</div>
     <div class="details">Connect Gate with external systems and services</div>
   </div>
 </div>

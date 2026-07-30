@@ -53,8 +53,8 @@ func (i *initialConnectSessionHandler) handlePluginMessage(packet *plugin.Messag
 	clone := make([]byte, len(packet.Data))
 	copy(clone, packet.Data)
 	event.FireParallel(i.player.eventMgr, &PluginMessageEvent{
-		source:     serverConn,
-		target:     serverConn.player,
+		source:     i.player,
+		target:     serverConn,
 		identifier: id,
 		data:       clone,
 		forward:    true,

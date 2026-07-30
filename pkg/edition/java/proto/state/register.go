@@ -62,6 +62,12 @@ func init() {
 	Config.ServerBound.Register(&config.KnownPacks{},
 		m(0x07, version.Minecraft_1_20_5),
 	)
+	Config.ServerBound.Register(&p.CustomClickActionPacket{},
+		m(0x08, version.Minecraft_1_21_6),
+	)
+	Config.ServerBound.Register(&config.CodeOfConductAcceptPacket{},
+		m(0x09, version.Minecraft_1_21_9),
+	)
 	Config.ServerBound.Register(&cookie.CookieResponse{},
 		m(0x01, version.Minecraft_1_20_5),
 	)
@@ -133,6 +139,9 @@ func init() {
 	Config.ClientBound.Register(&p.DialogShow{},
 		m(0x12, version.Minecraft_1_21_6),
 	)
+	Config.ClientBound.Register(&config.CodeOfConductPacket{},
+		m(0x13, version.Minecraft_1_21_9),
+	)
 
 	Login.ServerBound.Register(&p.ServerLogin{},
 		m(0x00, version.Minecraft_1_7_2))
@@ -180,6 +189,7 @@ func init() {
 		m(0x18, version.Minecraft_1_20_5),
 		m(0x1A, version.Minecraft_1_21_2),
 		m(0x1B, version.Minecraft_1_21_6),
+		m(0x1C, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&plugin.Message{},
 		m(0x17, version.Minecraft_1_7_2),
@@ -198,6 +208,7 @@ func init() {
 		m(0x12, version.Minecraft_1_20_5),
 		m(0x14, version.Minecraft_1_21_2),
 		m(0x15, version.Minecraft_1_21_6),
+		m(0x16, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&p.ClientSettings{},
 		m(0x15, version.Minecraft_1_7_2),
@@ -213,6 +224,7 @@ func init() {
 		m(0x0A, version.Minecraft_1_20_5),
 		m(0x0C, version.Minecraft_1_21_2),
 		m(0x0D, version.Minecraft_1_21_6),
+		m(0x0E, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&chat.LegacyChat{},
 		m(0x01, version.Minecraft_1_7_2),
@@ -225,6 +237,7 @@ func init() {
 		m(0x03, version.Minecraft_1_19_3),
 		m(0x04, version.Minecraft_1_21_2),
 		m(0x05, version.Minecraft_1_21_6),
+		m(0x06, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&chat.KeyedPlayerCommand{},
 		m(0x03, version.Minecraft_1_19),
@@ -239,17 +252,20 @@ func init() {
 		m(0x05, version.Minecraft_1_20_5),
 		m(0x06, version.Minecraft_1_21_2),
 		m(0x07, version.Minecraft_1_21_6),
+		m(0x08, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&chat.UnsignedPlayerCommand{},
 		m(0x04, version.Minecraft_1_20_5),
 		m(0x05, version.Minecraft_1_21_2),
 		m(0x06, version.Minecraft_1_21_6),
+		m(0x07, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&chat.SessionPlayerChat{},
 		m(0x05, version.Minecraft_1_19_3),
 		m(0x06, version.Minecraft_1_20_5),
 		m(0x07, version.Minecraft_1_21_2),
 		m(0x08, version.Minecraft_1_21_6),
+		m(0x09, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&p.TabCompleteRequest{},
 		m(0x14, version.Minecraft_1_7_2),
@@ -266,6 +282,7 @@ func init() {
 		m(0x0B, version.Minecraft_1_20_5),
 		m(0x0D, version.Minecraft_1_21_2),
 		m(0x0E, version.Minecraft_1_21_6),
+		m(0x0F, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&p.ResourcePackResponse{},
 		m(0x19, version.Minecraft_1_8),
@@ -283,17 +300,20 @@ func init() {
 		m(0x2D, version.Minecraft_1_21_2),
 		m(0x2F, version.Minecraft_1_21_4),
 		m(0x30, version.Minecraft_1_21_6),
+		m(0x31, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&config.FinishedUpdate{},
 		m(0x0B, version.Minecraft_1_20_2),
 		m(0x0C, version.Minecraft_1_20_5),
 		m(0x0E, version.Minecraft_1_21_2),
 		m(0x0F, version.Minecraft_1_21_6),
+		m(0x10, version.Minecraft_26_1),
 	)
 	Play.ServerBound.Register(&cookie.CookieResponse{},
 		m(0x11, version.Minecraft_1_20_5),
 		m(0x13, version.Minecraft_1_21_2),
 		m(0x14, version.Minecraft_1_21_6),
+		m(0x15, version.Minecraft_26_1),
 	)
 
 	Play.ClientBound.Register(&p.KeepAlive{},
@@ -313,6 +333,8 @@ func init() {
 		m(0x26, version.Minecraft_1_20_5),
 		m(0x27, version.Minecraft_1_21_2),
 		m(0x26, version.Minecraft_1_21_5),
+		m(0x2B, version.Minecraft_1_21_9),
+		m(0x2C, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.JoinGame{},
 		m(0x01, version.Minecraft_1_7_2),
@@ -331,6 +353,8 @@ func init() {
 		m(0x2B, version.Minecraft_1_20_5),
 		m(0x2C, version.Minecraft_1_21_2),
 		m(0x2B, version.Minecraft_1_21_5),
+		m(0x30, version.Minecraft_1_21_9),
+		m(0x31, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.Respawn{},
 		m(0x07, version.Minecraft_1_7_2),
@@ -352,6 +376,8 @@ func init() {
 		m(0x47, version.Minecraft_1_20_5),
 		m(0x4C, version.Minecraft_1_21_2),
 		m(0x4B, version.Minecraft_1_21_5),
+		m(0x50, version.Minecraft_1_21_9),
+		m(0x52, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.Disconnect{},
 		m(0x40, version.Minecraft_1_7_2),
@@ -369,6 +395,7 @@ func init() {
 		m(0x1B, version.Minecraft_1_20_2),
 		m(0x1D, version.Minecraft_1_20_5),
 		m(0x1C, version.Minecraft_1_21_5),
+		m(0x20, version.Minecraft_1_21_9),
 	)
 	Play.ClientBound.Register(&bossbar.BossBar{},
 		m(0x0C, version.Minecraft_1_9),
@@ -409,6 +436,8 @@ func init() {
 		m(0x6D, version.Minecraft_1_20_5),
 		m(0x74, version.Minecraft_1_21_2),
 		m(0x73, version.Minecraft_1_21_5),
+		m(0x78, version.Minecraft_1_21_9),
+		m(0x7A, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&legacytablist.PlayerListItem{},
 		m(0x38, version.Minecraft_1_7_2),
@@ -444,6 +473,8 @@ func init() {
 		m(0x63, version.Minecraft_1_20_5),
 		m(0x6A, version.Minecraft_1_21_2),
 		m(0x69, version.Minecraft_1_21_5),
+		m(0x6E, version.Minecraft_1_21_9),
+		m(0x70, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&title.Text{},
 		m(0x59, version.Minecraft_1_17),
@@ -456,6 +487,8 @@ func init() {
 		m(0x65, version.Minecraft_1_20_5),
 		m(0x6C, version.Minecraft_1_21_2),
 		m(0x6B, version.Minecraft_1_21_5),
+		m(0x70, version.Minecraft_1_21_9),
+		m(0x72, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&title.Actionbar{},
 		m(0x41, version.Minecraft_1_17),
@@ -468,6 +501,8 @@ func init() {
 		m(0x4C, version.Minecraft_1_20_5),
 		m(0x51, version.Minecraft_1_21_2),
 		m(0x50, version.Minecraft_1_21_5),
+		m(0x55, version.Minecraft_1_21_9),
+		m(0x57, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&title.Times{},
 		m(0x5A, version.Minecraft_1_17),
@@ -480,6 +515,8 @@ func init() {
 		m(0x66, version.Minecraft_1_20_5),
 		m(0x6D, version.Minecraft_1_21_2),
 		m(0x6C, version.Minecraft_1_21_5),
+		m(0x71, version.Minecraft_1_21_9),
+		m(0x73, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&title.Clear{},
 		m(0x10, version.Minecraft_1_17),
@@ -511,6 +548,8 @@ func init() {
 		m(0x45, version.Minecraft_1_20_5),
 		m(0x4A, version.Minecraft_1_21_2),
 		m(0x49, version.Minecraft_1_21_5),
+		m(0x4E, version.Minecraft_1_21_9),
+		m(0x50, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.ResourcePackRequest{},
 		m(0x48, version.Minecraft_1_8),
@@ -532,6 +571,8 @@ func init() {
 		m(0x46, version.Minecraft_1_20_5),
 		m(0x4B, version.Minecraft_1_21_2),
 		m(0x4A, version.Minecraft_1_21_5),
+		m(0x4F, version.Minecraft_1_21_9),
+		m(0x51, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.TabCompleteResponse{},
 		m(0x3A, version.Minecraft_1_7_2),
@@ -566,6 +607,8 @@ func init() {
 		m(0x3D, version.Minecraft_1_20_5),
 		m(0x3F, version.Minecraft_1_21_2),
 		m(0x3E, version.Minecraft_1_21_5),
+		m(0x43, version.Minecraft_1_21_9),
+		m(0x45, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&playerinfo.Upsert{},
 		m(0x36, version.Minecraft_1_19_3),
@@ -574,6 +617,8 @@ func init() {
 		m(0x3E, version.Minecraft_1_20_5),
 		m(0x40, version.Minecraft_1_21_2),
 		m(0x3F, version.Minecraft_1_21_5),
+		m(0x44, version.Minecraft_1_21_9),
+		m(0x46, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&chat.SystemChat{},
 		m(0x5F, version.Minecraft_1_19),
@@ -585,6 +630,8 @@ func init() {
 		m(0x6C, version.Minecraft_1_20_5),
 		m(0x73, version.Minecraft_1_21_2),
 		m(0x72, version.Minecraft_1_21_5),
+		m(0x77, version.Minecraft_1_21_9),
+		m(0x79, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.PlayerChatCompletion{},
 		m(0x15, version.Minecraft_1_19_1),
@@ -604,6 +651,8 @@ func init() {
 		m(0x4B, version.Minecraft_1_20_5),
 		m(0x50, version.Minecraft_1_21_2),
 		m(0x4F, version.Minecraft_1_21_5),
+		m(0x54, version.Minecraft_1_21_9),
+		m(0x56, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&config.StartUpdate{},
 		m(0x65, version.Minecraft_1_20_2),
@@ -611,23 +660,51 @@ func init() {
 		m(0x69, version.Minecraft_1_20_5),
 		m(0x70, version.Minecraft_1_21_2),
 		m(0x6F, version.Minecraft_1_21_5),
+		m(0x74, version.Minecraft_1_21_9),
+		m(0x76, version.Minecraft_26_1),
 	)
-	// For now, we do not process the BundleDelimiter packet on the proxy (therefore the BundleDelimiterHandler is inactive code),
-	// as there are many, many such 0x00 packets and resourcepack request only has one resource pack for us
-	//Play.ClientBound.Register(&p.BundleDelimiter{},
-	//	m(0x00, version.Minecraft_1_19_4),
-	//)
+	Play.ClientBound.Register(&p.BundleDelimiter{},
+		m(0x00, version.Minecraft_1_19_4),
+	)
 	Play.ClientBound.Register(&p.Transfer{},
 		m(0x73, version.Minecraft_1_20_5),
 		m(0x7A, version.Minecraft_1_21_2),
+		m(0x7F, version.Minecraft_1_21_9),
+		m(0x81, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.CustomReportDetails{},
 		m(0x7A, version.Minecraft_1_21),
 		m(0x81, version.Minecraft_1_21_2),
+		m(0x86, version.Minecraft_1_21_9),
+		m(0x88, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&p.ServerLinks{},
 		m(0x7B, version.Minecraft_1_21),
 		m(0x82, version.Minecraft_1_21_2),
+		m(0x87, version.Minecraft_1_21_9),
+		m(0x89, version.Minecraft_26_1),
+	)
+	Play.ClientBound.Register(&p.SoundEntityPacket{},
+		m(0x5D, version.Minecraft_1_19_3),
+		m(0x61, version.Minecraft_1_19_4),
+		m(0x63, version.Minecraft_1_20_2),
+		m(0x65, version.Minecraft_1_20_3),
+		m(0x67, version.Minecraft_1_20_5),
+		m(0x6E, version.Minecraft_1_21_2),
+		m(0x6D, version.Minecraft_1_21_5),
+		m(0x72, version.Minecraft_1_21_9),
+		m(0x74, version.Minecraft_26_1),
+	)
+	Play.ClientBound.Register(&p.StopSoundPacket{},
+		m(0x5F, version.Minecraft_1_19_3),
+		m(0x63, version.Minecraft_1_19_4),
+		m(0x66, version.Minecraft_1_20_2),
+		m(0x68, version.Minecraft_1_20_3),
+		m(0x6A, version.Minecraft_1_20_5),
+		m(0x71, version.Minecraft_1_21_2),
+		m(0x70, version.Minecraft_1_21_5),
+		m(0x75, version.Minecraft_1_21_9),
+		m(0x77, version.Minecraft_26_1),
 	)
 	Play.ClientBound.Register(&cookie.CookieRequest{},
 		m(0x16, version.Minecraft_1_20_5),
@@ -637,5 +714,7 @@ func init() {
 		m(0x6B, version.Minecraft_1_20_5),
 		m(0x72, version.Minecraft_1_21_2),
 		m(0x71, version.Minecraft_1_21_5),
+		m(0x76, version.Minecraft_1_21_9),
+		m(0x78, version.Minecraft_26_1),
 	)
 }

@@ -10,8 +10,10 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 	"go.minekube.com/gate/pkg/edition/java/forge/modinfo"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
+	protoversion "go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/componentutil"
+	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/uuid"
 	"gopkg.in/yaml.v3"
@@ -19,11 +21,11 @@ import (
 
 // ServerPing is a 1.7 and above server list ping response.
 type ServerPing struct {
-	Version     Version          `json:"version,omitempty" yaml:"version,omitempty"`
-	Players     *Players         `json:"players,omitempty" yaml:"players,omitempty"`
-	Description *component.Text  `json:"description" yaml:"description"`
-	Favicon     favicon.Favicon  `json:"favicon,omitempty" yaml:"favicon,omitempty"`
-	ModInfo     *modinfo.ModInfo `json:"modinfo,omitempty" yaml:"modinfo,omitempty"`
+	Version     Version             `json:"version,omitempty" yaml:"version,omitempty"`
+	Players     *Players            `json:"players,omitempty" yaml:"players,omitempty"`
+	Description component.Component `json:"description" yaml:"description"`
+	Favicon     favicon.Favicon     `json:"favicon,omitempty" yaml:"favicon,omitempty"`
+	ModInfo     *modinfo.ModInfo    `json:"modinfo,omitempty" yaml:"modinfo,omitempty"`
 }
 
 // Make sure ServerPing implements the interfaces at compile time.
@@ -61,10 +63,15 @@ func (p *ServerPing) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("error decoding json: %w", err)
 	}
 
-	var err error
-	out.Alias.Description, err = componentutil.ParseTextComponent(out.Version.Protocol, string(out.Description))
-	if err != nil {
-		return fmt.Errorf("error decoding description: %w", err)
+	// Handle null or missing description (e.g., from backend server ping passthrough)
+	if len(out.Description) == 0 || string(out.Description) == "null" {
+		out.Alias.Description = &component.Text{} // empty component
+	} else {
+		var err error
+		out.Alias.Description, err = componentutil.ParseComponent(out.Version.Protocol, string(out.Description))
+		if err != nil {
+			return fmt.Errorf("error decoding description: %w", err)
+		}
 	}
 
 	*p = ServerPing(out.Alias)
@@ -79,12 +86,12 @@ func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
 	}{
 		Alias: (*Alias)(p),
 	}
-	if err := value.Decode(out); err != nil {
+	if err := configutil.DecodeYAMLStrict(value, out); err != nil {
 		return fmt.Errorf("error decoding yaml: %w", err)
 	}
 
 	var err error
-	p.Description, err = componentutil.ParseTextComponent(out.Version.Protocol, out.Description)
+	p.Description, err = componentutil.ParseComponent(out.Version.Protocol, out.Description)
 	if err != nil {
 		return fmt.Errorf("error decoding description: %w", err)
 	}
@@ -94,10 +101,23 @@ func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (p *ServerPing) MarshalYAML() (any, error) {
-	b := new(strings.Builder)
-	err := (&legacy.Legacy{}).Marshal(b, p.Description)
-	if err != nil {
-		return nil, fmt.Errorf("error encoding description: %w", err)
+	description := ""
+	if text, ok := p.Description.(*component.Text); ok {
+		b := new(strings.Builder)
+		if err := (&legacy.Legacy{}).Marshal(b, text); err == nil {
+			description = b.String()
+		} else {
+			description, err = p.marshalDescriptionJSON()
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else if p.Description != nil {
+		var err error
+		description, err = p.marshalDescriptionJSON()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	type Alias ServerPing
@@ -105,9 +125,21 @@ func (p *ServerPing) MarshalYAML() (any, error) {
 		Description string
 		*Alias
 	}{
-		Description: b.String(),
+		Description: description,
 		Alias:       (*Alias)(p),
 	}, nil
+}
+
+func (p *ServerPing) marshalDescriptionJSON() (string, error) {
+	protocol := p.Version.Protocol
+	if protocol == 0 {
+		protocol = protoversion.MaximumVersion.Protocol
+	}
+	b, err := util.Marshal(protocol, p.Description)
+	if err != nil {
+		return "", fmt.Errorf("error encoding description: %w", err)
+	}
+	return string(b), nil
 }
 
 type Version struct {

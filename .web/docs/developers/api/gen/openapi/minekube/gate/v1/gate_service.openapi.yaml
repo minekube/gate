@@ -1,0 +1,678 @@
+openapi: 3.1.0
+info:
+  title: minekube.gate.v1
+paths:
+  /minekube.gate.v1.GateService/ConnectPlayer:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: ConnectPlayer connects a player to a specified server.  Returns NOT_FOUND if either the player or target server doesn't exist.  Returns FAILED_PRECONDITION if the connection attempt fails.
+      description: |-
+        ConnectPlayer connects a player to a specified server.
+         Returns NOT_FOUND if either the player or target server doesn't exist.
+         Returns FAILED_PRECONDITION if the connection attempt fails.
+      operationId: minekube.gate.v1.GateService.ConnectPlayer
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.ConnectPlayerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.ConnectPlayerResponse'
+  /minekube.gate.v1.GateService/DisconnectPlayer:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: DisconnectPlayer disconnects a player from the proxy.  Returns NOT_FOUND if the player doesn't exist.  Returns INVALID_ARGUMENT if the reason text is malformed.
+      description: |-
+        DisconnectPlayer disconnects a player from the proxy.
+         Returns NOT_FOUND if the player doesn't exist.
+         Returns INVALID_ARGUMENT if the reason text is malformed.
+      operationId: minekube.gate.v1.GateService.DisconnectPlayer
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.DisconnectPlayerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.DisconnectPlayerResponse'
+  /minekube.gate.v1.GateService/GetPlayer:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: GetPlayer returns the player by the given id or username.  Returns NOT_FOUND if the player is not online.  Returns INVALID_ARGUMENT if neither id nor username is provided, or if the id format is invalid.
+      description: |-
+        GetPlayer returns the player by the given id or username.
+         Returns NOT_FOUND if the player is not online.
+         Returns INVALID_ARGUMENT if neither id nor username is provided, or if the id format is invalid.
+      operationId: minekube.gate.v1.GateService.GetPlayer
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.GetPlayerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.GetPlayerResponse'
+  /minekube.gate.v1.GateService/ListPlayers:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: ListPlayers returns all online players.  If servers are specified in the request, only returns players on those servers.
+      description: |-
+        ListPlayers returns all online players.
+         If servers are specified in the request, only returns players on those servers.
+      operationId: minekube.gate.v1.GateService.ListPlayers
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.ListPlayersRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.ListPlayersResponse'
+  /minekube.gate.v1.GateService/ListServers:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: ListServers returns all registered servers.
+      description: ListServers returns all registered servers.
+      operationId: minekube.gate.v1.GateService.ListServers
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.ListServersRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.ListServersResponse'
+  /minekube.gate.v1.GateService/RegisterServer:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: RegisterServer adds a server to the proxy.  Returns ALREADY_EXISTS if a server with the same name is already registered.  Returns INVALID_ARGUMENT if the server name or address is invalid.
+      description: |-
+        RegisterServer adds a server to the proxy.
+         Returns ALREADY_EXISTS if a server with the same name is already registered.
+         Returns INVALID_ARGUMENT if the server name or address is invalid.
+      operationId: minekube.gate.v1.GateService.RegisterServer
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.RegisterServerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.RegisterServerResponse'
+  /minekube.gate.v1.GateService/RequestCookie:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: RequestCookie requests a cookie from a player's client.  The payload in RequestCookieResponse may be empty if the cookie is not found.
+      description: |-
+        RequestCookie requests a cookie from a player's client.
+         The payload in RequestCookieResponse may be empty if the cookie is not found.
+      operationId: minekube.gate.v1.GateService.RequestCookie
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.RequestCookieRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.RequestCookieResponse'
+  /minekube.gate.v1.GateService/StoreCookie:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: StoreCookie stores a cookie on a player's client.  Returns NOT_FOUND if the player doesn't exist.  Passing an empty payload will remove the cookie.
+      description: |-
+        StoreCookie stores a cookie on a player's client.
+         Returns NOT_FOUND if the player doesn't exist.
+         Passing an empty payload will remove the cookie.
+      operationId: minekube.gate.v1.GateService.StoreCookie
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.StoreCookieRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.StoreCookieResponse'
+  /minekube.gate.v1.GateService/UnregisterServer:
+    post:
+      tags:
+        - minekube.gate.v1.GateService
+      summary: UnregisterServer removes a server from the proxy.  Returns NOT_FOUND if no matching server is found.  Returns INVALID_ARGUMENT if neither name nor address is provided.
+      description: |-
+        UnregisterServer removes a server from the proxy.
+         Returns NOT_FOUND if no matching server is found.
+         Returns INVALID_ARGUMENT if neither name nor address is provided.
+      operationId: minekube.gate.v1.GateService.UnregisterServer
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/minekube.gate.v1.UnregisterServerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/minekube.gate.v1.UnregisterServerResponse'
+components:
+  schemas:
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/connect.error_details.Any'
+          description: A list of messages that carry the error details. There is no limit on the number of messages.
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    connect.error_details.Any:
+      type: object
+      properties:
+        type:
+          type: string
+          description: 'A URL that acts as a globally unique identifier for the type of the serialized message. For example: `type.googleapis.com/google.rpc.ErrorInfo`. This is used to determine the schema of the data in the `value` field and is the discriminator for the `debug` field.'
+        value:
+          type: string
+          format: binary
+          description: The Protobuf message, serialized as bytes and base64-encoded. The specific message type is identified by the `type` field.
+        debug:
+          oneOf:
+            - type: object
+              title: Any
+              additionalProperties: true
+              description: Detailed error information.
+          discriminator:
+            propertyName: type
+          title: Debug
+          description: Deserialized error detail payload. The 'type' field indicates the schema. This field is for easier debugging and should not be relied upon for application logic.
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message, with an additional debug field for ConnectRPC error details.
+    minekube.gate.v1.ConnectPlayerRequest:
+      type: object
+      properties:
+        player:
+          type: string
+          title: player
+          description: The player's username or ID to connect
+        server:
+          type: string
+          title: server
+          description: The target server name to connect the player to
+      title: ConnectPlayerRequest
+      additionalProperties: false
+      description: ConnectPlayerRequest is the request for ConnectPlayer method.
+    minekube.gate.v1.ConnectPlayerResponse:
+      type: object
+      title: ConnectPlayerResponse
+      additionalProperties: false
+      description: ConnectPlayerResponse is the response for ConnectPlayer method.
+    minekube.gate.v1.DisconnectPlayerRequest:
+      type: object
+      properties:
+        player:
+          type: string
+          title: player
+          description: The player's username or ID to disconnect
+        reason:
+          type: string
+          title: reason
+          description: |-
+            The reason displayed to the player when they are disconnected.
+
+             Formats:
+
+             - `{"text":"Hello, world!"}` - JSON text component. See https://wiki.vg/Text_formatting for details.
+
+             - `§aHello,\n§bworld!` - Simple color codes. See https://wiki.vg/Text_formatting#Colors
+
+             Optional, if empty no reason will be shown.
+      title: DisconnectPlayerRequest
+      additionalProperties: false
+      description: DisconnectPlayerRequest is the request for DisconnectPlayer method.
+    minekube.gate.v1.DisconnectPlayerResponse:
+      type: object
+      title: DisconnectPlayerResponse
+      additionalProperties: false
+      description: DisconnectPlayerResponse is the response for DisconnectPlayer method.
+    minekube.gate.v1.GetPlayerRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: |-
+            Gets the player by their Minecraft UUID.
+             Optional, if not set the username will be used.
+             If both id and username are set, the id will be used.
+             Must be a valid Minecraft UUID format (e.g. "550e8400-e29b-41d4-a716-446655440000")
+        username:
+          type: string
+          title: username
+          description: |-
+            Gets the player by their username.
+             Optional, if not set the id will be used.
+             Case-sensitive.
+      title: GetPlayerRequest
+      additionalProperties: false
+      description: GetPlayerRequest is the request for GetPlayer method.
+    minekube.gate.v1.GetPlayerResponse:
+      type: object
+      properties:
+        player:
+          title: player
+          description: The player matching the request criteria
+          $ref: '#/components/schemas/minekube.gate.v1.Player'
+      title: GetPlayerResponse
+      additionalProperties: false
+      description: GetPlayerResponse is the response for GetPlayer method.
+    minekube.gate.v1.ListPlayersRequest:
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            type: string
+          title: servers
+          description: |-
+            Filter players by server names.
+             Optional, if empty all online players are returned.
+             If specified, only returns players on the listed servers.
+      title: ListPlayersRequest
+      additionalProperties: false
+      description: ListPlayersRequest is the request for ListPlayers method.
+    minekube.gate.v1.ListPlayersResponse:
+      type: object
+      properties:
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/minekube.gate.v1.Player'
+          title: players
+      title: ListPlayersResponse
+      additionalProperties: false
+      description: ListPlayersResponse is the response for ListPlayers method.
+    minekube.gate.v1.ListServersRequest:
+      type: object
+      title: ListServersRequest
+      additionalProperties: false
+      description: ListServersRequest is the request for ListServers method.
+    minekube.gate.v1.ListServersResponse:
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/minekube.gate.v1.Server'
+          title: servers
+      title: ListServersResponse
+      additionalProperties: false
+      description: ListServersResponse is the response for ListServers method.
+    minekube.gate.v1.Player:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: The player's Minecraft UUID
+        username:
+          type: string
+          title: username
+          description: The player's username
+      title: Player
+      additionalProperties: false
+      description: Player represents an online player on the proxy.
+    minekube.gate.v1.RegisterServerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: The unique name of the server
+        address:
+          type: string
+          title: address
+          description: The network address of the server (e.g. "localhost:25565")
+      title: RegisterServerRequest
+      additionalProperties: false
+      description: RegisterServerRequest is the request for RegisterServer method.
+    minekube.gate.v1.RegisterServerResponse:
+      type: object
+      title: RegisterServerResponse
+      additionalProperties: false
+      description: RegisterServerResponse is the response for RegisterServer method.
+    minekube.gate.v1.RequestCookieRequest:
+      type: object
+      properties:
+        player:
+          type: string
+          title: player
+          description: The player's username or ID
+        key:
+          type: string
+          title: key
+          description: The key of the cookie in format `namespace:key`
+      title: RequestCookieRequest
+      additionalProperties: false
+      description: RequestCookieRequest is the request for RequestCookie method.
+    minekube.gate.v1.RequestCookieResponse:
+      type: object
+      properties:
+        payload:
+          type: string
+          title: payload
+          format: byte
+          description: |-
+            The payload of the cookie.
+             May be empty if the cookie is not found.
+      title: RequestCookieResponse
+      additionalProperties: false
+      description: RequestCookieResponse is the response for RequestCookie method.
+    minekube.gate.v1.Server:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: The unique name of the server.
+        address:
+          type: string
+          title: address
+          description: The network address of the server.
+        players:
+          type: integer
+          title: players
+          format: int32
+          description: The number of players currently on the server.
+      title: Server
+      additionalProperties: false
+      description: Server represents a backend server where Gate can connect players to.
+    minekube.gate.v1.StoreCookieRequest:
+      type: object
+      properties:
+        player:
+          type: string
+          title: player
+          description: The player's username or ID
+        key:
+          type: string
+          title: key
+          description: The key of the cookie in format `namespace:key`
+        payload:
+          type: string
+          title: payload
+          format: byte
+          description: |-
+            The payload to store.
+             Passing an empty payload will remove the cookie.
+      title: StoreCookieRequest
+      additionalProperties: false
+      description: StoreCookieRequest is the request for StoreCookie method.
+    minekube.gate.v1.StoreCookieResponse:
+      type: object
+      title: StoreCookieResponse
+      additionalProperties: false
+      description: StoreCookieResponse is the response for StoreCookie method.
+    minekube.gate.v1.UnregisterServerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: |-
+            The name of the server.
+             Optional, if not set, the address will be used to match servers.
+        address:
+          type: string
+          title: address
+          description: |-
+            The address of the server.
+             Optional, if not set, the name will be used to match servers.
+             If both name and address are set, only the server that matches both properties exactly will be unregistered.
+             If only the address is set, the first server matching that address will be unregistered.
+      title: UnregisterServerRequest
+      additionalProperties: false
+      description: UnregisterServerRequest is the request for UnregisterServer method.
+    minekube.gate.v1.UnregisterServerResponse:
+      type: object
+      title: UnregisterServerResponse
+      additionalProperties: false
+      description: UnregisterServerResponse is the response for UnregisterServer method.
+security: []
+tags:
+  - name: minekube.gate.v1.GateService
+    description: |-
+      GateService is the service API for managing a Gate proxy instance.
+       It provides methods for managing players and servers.
+       All methods follow standard gRPC error codes and include detailed error messages.

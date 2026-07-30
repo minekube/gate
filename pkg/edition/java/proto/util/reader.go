@@ -46,12 +46,19 @@ func readStringMax(rd io.Reader, max, length int) (string, error) {
 	return string(str), nil
 }
 
+// MaxPreAllocSize is the maximum pre-allocation size for collections
+// decoded from untrusted packet data to prevent memory exhaustion.
+const MaxPreAllocSize = 1 << 15 // 32768 (math.MaxInt16)
+
 func ReadStringArray(rd io.Reader) ([]string, error) {
 	length, err := ReadVarInt(rd)
 	if err != nil {
 		return nil, err
 	}
-	a := make([]string, 0, length)
+	if length < 0 {
+		return nil, fmt.Errorf("got a negative-length array (%d)", length)
+	}
+	a := make([]string, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
 		s, err := ReadString(rd)
 		if err != nil {
@@ -157,12 +164,13 @@ func ReadVarIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	array := make([]int, length)
+	array := make([]int, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
-		array[i], err = ReadVarInt(rd)
+		v, err := ReadVarInt(rd)
 		if err != nil {
 			return nil, err
 		}
+		array = append(array, v)
 	}
 	return array, nil
 }
@@ -238,12 +246,13 @@ func ReadIntArray(rd io.Reader) ([]int, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got negative-length int array (%d)", length)
 	}
-	a := make([]int, length)
+	a := make([]int, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
-		a[i], err = ReadVarInt(rd)
+		v, err := ReadVarInt(rd)
 		if err != nil {
 			return nil, err
 		}
+		a = append(a, v)
 	}
 	return a, nil
 }
@@ -369,7 +378,7 @@ func ReadProperties(rd io.Reader) (props []profile.Property, err error) {
 	if err != nil {
 		return
 	}
-	props = make([]profile.Property, 0, size)
+	props = make([]profile.Property, 0, min(size, MaxPreAllocSize))
 	var name, value, signature string
 	for i := 0; i < size; i++ {
 		name, err = ReadString(rd)
@@ -428,7 +437,19 @@ func ReadUnixMilli(rd io.Reader) (time.Time, error) {
 //
 //
 
-const defaultKeySeparator = ":"
+// ValidateKey verifies that a key is a valid Minecraft resource location.
+func ValidateKey(k key.Key) error {
+	if k == nil {
+		return errors.New("key is nil")
+	}
+	if k.Namespace() == ".." {
+		return fmt.Errorf("invalid key %q: namespace must not be ..", k.String())
+	}
+	if !key.NamespaceValid(k.Namespace()) || !key.ValueValid(k.Value()) {
+		return fmt.Errorf("invalid key %q", k.String())
+	}
+	return nil
+}
 
 // ReadKey reads a standard Mojang Text namespaced:key from the reader.
 func ReadKey(rd io.Reader) (key.Key, error) {
@@ -436,15 +457,30 @@ func ReadKey(rd io.Reader) (key.Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	parts := strings.SplitN(str, defaultKeySeparator, 2)
-	if len(parts) != 2 {
-		return nil, errors.New("invalid key format")
+	k := parseIdentifierKey(str)
+	if err := ValidateKey(k); err != nil {
+		return nil, err
 	}
-	return key.New(parts[0], parts[1]), nil
+	return k, nil
+}
+
+func parseIdentifierKey(str string) key.Key {
+	namespace := key.MinecraftNamespace
+	value := str
+	if separatorIndex := strings.IndexByte(str, ':'); separatorIndex >= 0 {
+		value = str[separatorIndex+1:]
+		if separatorIndex != 0 {
+			namespace = str[:separatorIndex]
+		}
+	}
+	return key.New(namespace, value)
 }
 
 // WriteKey writes a standard Mojang Text namespaced:key to the writer.
 func WriteKey(wr io.Writer, k key.Key) error {
+	if err := ValidateKey(k); err != nil {
+		return err
+	}
 	return WriteString(wr, k.String())
 }
 
@@ -457,12 +493,13 @@ func ReadKeyArray(rd io.Reader) ([]key.Key, error) {
 	if length < 0 {
 		return nil, fmt.Errorf("got a negative-length array (%d)", length)
 	}
-	keys := make([]key.Key, length)
+	keys := make([]key.Key, 0, min(length, MaxPreAllocSize))
 	for i := 0; i < length; i++ {
-		keys[i], err = ReadKey(rd)
+		k, err := ReadKey(rd)
 		if err != nil {
 			return nil, err
 		}
+		keys = append(keys, k)
 	}
 	return keys, nil
 }
@@ -480,4 +517,12 @@ func WriteKeyArray(wr io.Writer, keys []key.Key) error {
 		}
 	}
 	return nil
+}
+
+func ReadMinimalKey(rd io.Reader) (key.Key, error) {
+	str, err := ReadString(rd)
+	if err != nil {
+		return nil, err
+	}
+	return key.New(key.MinecraftNamespace, str), nil
 }

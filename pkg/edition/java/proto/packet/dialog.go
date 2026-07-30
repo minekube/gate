@@ -29,6 +29,10 @@ type DialogShow struct {
 
 var _ proto.Packet = (*DialogShow)(nil)
 
+func (d *DialogShow) SetState(state states.State) {
+	d.State = state
+}
+
 func (d *DialogShow) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if d.State == states.ConfigState {
 		return util.WriteBinaryTag(wr, c.Protocol, d.BinaryTag)

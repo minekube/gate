@@ -95,6 +95,12 @@ type Viewer interface {
 
 // SendHeaderFooter updates the tab list header and footer for a Viewer.
 func SendHeaderFooter(viewer Viewer, header, footer component.Component) error {
+	if header == nil {
+		header = &component.Text{}
+	}
+	if footer == nil {
+		footer = &component.Text{}
+	}
 	return viewer.WritePacket(&packet.HeaderAndFooter{
 		Header: *chat.FromComponentProtocol(header, viewer.Protocol()),
 		Footer: *chat.FromComponentProtocol(footer, viewer.Protocol()),

@@ -54,9 +54,68 @@ type clientPlaySessionHandler struct {
 
 	mu struct {
 		sync.RWMutex
-		loginPluginMessages deque.Deque[*plugin.Message]
-		serverBossBars      map[uuid.UUID]struct{}
+		loginPluginMessages           deque.Deque[*plugin.Message]
+		loginPluginMessagesBytes      int
+		loginPluginMessagesOverflowed bool
+		serverBossBars                map[uuid.UUID]struct{}
 	}
+}
+
+// Caps on the pre-join plugin-message queue (loginPluginMessages). A client that
+// never completes its login/FML handshake phase could otherwise queue plugin
+// messages without bound. The count/byte limits mirror Velocity's.
+const (
+	maxQueuedLoginPluginMessages     = 1024
+	maxQueuedLoginPluginMessageBytes = 4 * 1024 * 1024 // 4 MiB
+)
+
+// enqueueLoginPluginMessage queues a plugin message received before the player
+// has joined a server, enforcing per-connection count and byte caps. It returns
+// true if the message was queued, or false if a cap was exceeded — in which case
+// the queue is dropped, the player disconnected, and the overflow latched so
+// subsequent messages are rejected without further work.
+func (c *clientPlaySessionHandler) enqueueLoginPluginMessage(msg *plugin.Message) bool {
+	c.mu.Lock()
+	if c.mu.loginPluginMessagesOverflowed {
+		c.mu.Unlock()
+		return false
+	}
+	newBytes := c.mu.loginPluginMessagesBytes + len(msg.Data)
+	newCount := c.mu.loginPluginMessages.Len() + 1
+	if newBytes > maxQueuedLoginPluginMessageBytes || newCount > maxQueuedLoginPluginMessages {
+		c.mu.loginPluginMessagesOverflowed = true
+		c.mu.loginPluginMessages.Clear()
+		c.mu.loginPluginMessagesBytes = 0
+		c.mu.Unlock()
+		c.log.Info("disconnecting player: pre-join plugin message queue exceeded its limits",
+			"messages", newCount, "bytes", newBytes)
+		c.player.Disconnect(&component.Text{
+			Content: "Too many plugin messages were sent before joining a server",
+		})
+		return false
+	}
+	c.mu.loginPluginMessages.PushBack(msg)
+	c.mu.loginPluginMessagesBytes = newBytes
+	c.mu.Unlock()
+	return true
+}
+
+// drainQueuedLoginPluginMessages removes and returns all queued pre-join plugin
+// messages, resetting the byte counter so the queue caps start fresh. Returns
+// nil if the queue is empty.
+func (c *clientPlaySessionHandler) drainQueuedLoginPluginMessages() []*plugin.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.mu.loginPluginMessagesBytes = 0
+	n := c.mu.loginPluginMessages.Len()
+	if n == 0 {
+		return nil
+	}
+	msgs := make([]*plugin.Message, 0, n)
+	for c.mu.loginPluginMessages.Len() != 0 {
+		msgs = append(msgs, c.mu.loginPluginMessages.PopFront())
+	}
+	return msgs
 }
 
 func newClientPlaySessionHandler(player *connectedPlayer) *clientPlaySessionHandler {
@@ -97,9 +156,9 @@ func (c *clientPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *chat.KeyedPlayerCommand:
 		c.handleKeyedPlayerCommand(p)
 	case *chat.SessionPlayerCommand:
-		c.handleSessionPlayerCommand(p)
+		c.handleSessionPlayerCommand(p, p)
 	case *chat.UnsignedPlayerCommand:
-		c.handleSessionPlayerCommand(&p.SessionPlayerCommand)
+		c.handleSessionPlayerCommand(&p.SessionPlayerCommand, p)
 	case *packet.TabCompleteRequest:
 		c.handleTabCompleteRequest(p, pc)
 	case *plugin.Message:
@@ -128,6 +187,8 @@ func (c *clientPlaySessionHandler) Deactivated() {
 	c.mu.Lock()
 	c.player.discardChatQueue()
 	c.mu.loginPluginMessages.Clear()
+	c.mu.loginPluginMessagesBytes = 0
+	c.mu.loginPluginMessagesOverflowed = false
 	c.mu.Unlock()
 }
 
@@ -177,10 +238,7 @@ func (c *clientPlaySessionHandler) FlushQueuedPluginMessages() {
 	if !ok {
 		return
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for c.mu.loginPluginMessages.Len() != 0 {
-		pm := c.mu.loginPluginMessages.PopFront()
+	for _, pm := range c.drainQueuedLoginPluginMessages() {
 		_ = serverMc.BufferPacket(pm)
 	}
 	_ = serverMc.Flush()
@@ -232,16 +290,47 @@ func forwardKeepAlive(p *packet.KeepAlive, player *connectedPlayer) {
 }
 
 func sendKeepAliveToBackend(serverConn *serverConnection, player *connectedPlayer, p *packet.KeepAlive) bool {
-	if serverConn != nil {
-		if sentTime, ok := serverConn.pendingPings.Get(p.RandomID); ok {
-			serverConn.pendingPings.Delete(p.RandomID)
-			if serverMc := serverConn.conn(); serverMc != nil {
-				player.ping.Store(time.Since(sentTime))
-				return serverMc.WritePacket(p) == nil
-			}
+	if serverConn == nil {
+		return false
+	}
+	sentTime, ok := consumePendingKeepAlive(serverConn, p.RandomID)
+	if !ok {
+		return false
+	}
+	// A matching pending ID proves this reply belongs to this backend. Encode it
+	// with the backend connection state; during 1.20.2+ switches the client and
+	// backend can briefly be in different CONFIG/PLAY states.
+	serverMc := serverConn.conn()
+	if serverMc != nil && !netmc.Closed(serverMc) {
+		backendState := serverMc.State()
+		if backendState == state.Config || backendState == state.Play {
+			player.ping.Store(time.Since(sentTime))
+			_ = serverMc.WritePacket(p)
 		}
 	}
-	return false
+	return true
+}
+
+func consumePendingKeepAlive(serverConn *serverConnection, randomID int64) (time.Time, bool) {
+	serverConn.mu.Lock()
+	defer serverConn.mu.Unlock()
+
+	sentTime, ok := serverConn.pendingPings.Get(randomID)
+	if !ok {
+		return time.Time{}, false
+	}
+	// We removed this pending ping, so it is ours: consume it regardless of
+	// whether it can be forwarded, so it is not re-dispatched to another
+	// connection or forwarded twice by concurrent handlers.
+	serverConn.pendingPings.Delete(randomID)
+	return sentTime, true
+}
+
+func recordBackendKeepAlive(serverConn *serverConnection, p *packet.KeepAlive) {
+	serverConn.mu.Lock()
+	defer serverConn.mu.Unlock()
+
+	serverConn.pendingPings.Set(p.RandomID, time.Now())
 }
 
 func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
@@ -275,8 +364,12 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 			})
 		}
 	} else if plugin.IsUnregister(packet) {
-		_, channels := c.getChannels(0, packet, c.player.Protocol())
+		channelIDs, channels := c.getChannels(0, packet, c.player.Protocol())
 		c.player.clientsideChannels.Remove(channels...)
+		c.proxy().event.FireParallel(&PlayerChannelUnregisterEvent{
+			channels: channelIDs,
+			player:   c.player,
+		})
 		_ = backendConn.WritePacket(packet)
 	} else if plugin.McBrand(packet) {
 		brand := plugin.ReadBrandMessage(packet.Data)
@@ -330,10 +423,9 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		// JoinGame packet has been received by the proxy, whichever comes first.
 		//
 		// We also need to make sure to retain these packets, so they can be flushed
-		// appropriately.
-		c.mu.Lock()
-		c.mu.loginPluginMessages.PushBack(packet)
-		c.mu.Unlock()
+		// appropriately. The queue is bounded to prevent a client that never
+		// completes its handshake phase from growing it without limit.
+		c.enqueueLoginPluginMessage(packet)
 	}
 }
 
@@ -435,20 +527,31 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 		}
 	}
 
-	// Remove previous boss bars. These don't get cleared when sending JoinGame, thus the need to
-	// track them.
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for barID := range c.mu.serverBossBars {
-		deletePacket := &bossbar.BossBar{
-			ID:     barID,
-			Action: bossbar.RemoveAction,
+	// Store the entity ID for sound API
+	destination.entityID = joinGame.EntityID
+
+	// Handle boss bars based on protocol version
+	if playerVersion.GreaterEqual(version.Minecraft_1_20_2) {
+		// For 1.20.2+, re-send proxy-level boss bars that the player had before the switch.
+		// Server boss bars are not tracked for these versions (client clears them during config phase).
+		c.player.bossBarManager.SendBossBars()
+	} else {
+		// For older versions, we need to manually remove boss bars as they don't get cleared
+		// when sending JoinGame.
+		c.mu.Lock()
+		for barID := range c.mu.serverBossBars {
+			deletePacket := &bossbar.BossBar{
+				ID:     barID,
+				Action: bossbar.RemoveAction,
+			}
+			if err = c.player.BufferPacket(deletePacket); err != nil {
+				c.mu.Unlock()
+				return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
+			}
 		}
-		if err = c.player.BufferPacket(deletePacket); err != nil {
-			return fmt.Errorf("error buffering boss bar remove packet for player: %w", err)
-		}
+		c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
+		c.mu.Unlock()
 	}
-	c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
 
 	// Tell the server about the proxy's plugin message channels.
 	serverVersion := serverMc.Protocol()
@@ -468,8 +571,7 @@ func (c *clientPlaySessionHandler) handleBackendJoinGame(pc *proto.PacketContext
 	}
 
 	// If we had plugin messages queued during login/FML handshake, send them now.
-	for c.mu.loginPluginMessages.Len() != 0 {
-		pm := c.mu.loginPluginMessages.PopFront()
+	for _, pm := range c.drainQueuedLoginPluginMessages() {
 		if err = serverMc.BufferPacket(pm); err != nil {
 			return fmt.Errorf("error buffering %T for backend: %w", pm, err)
 		}
@@ -610,7 +712,7 @@ func (c *clientPlaySessionHandler) handleLegacyChat(p *chat.LegacyChat) {
 	}
 }
 
-func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPlayerCommand) {
+func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPlayerCommand, original proto.Packet) {
 	_, ok := c.player.ensureBackendConnection()
 	if !ok {
 		return
@@ -622,7 +724,7 @@ func (c *clientPlaySessionHandler) handleSessionPlayerCommand(p *chat.SessionPla
 		return
 	}
 
-	err := c.chatHandler.handleCommand(p)
+	err := c.chatHandler.handleCommand(original)
 	if err != nil {
 		c.log.Error(err, "error handling session player command")
 	}
@@ -700,11 +802,6 @@ func (c *clientPlaySessionHandler) handleTabCompleteRequest(p *packet.TabComplet
 }
 
 func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabCompleteRequest, pc *proto.PacketContext) {
-	startPos := strings.LastIndex(p.Command, " ") + 1
-	if !(startPos > 0) {
-		return
-	}
-
 	// In 1.13+, we need to do additional work for the richer suggestions available.
 	cmd := strings.TrimPrefix(p.Command, "/")
 	cmdEndPosition := strings.Index(cmd, " ")
@@ -725,32 +822,50 @@ func (c *clientPlaySessionHandler) handleCommandTabComplete(p *packet.TabComplet
 
 	ctx, cancel := context.WithCancel(c.player.Context())
 	defer cancel()
-	suggestions, err := c.proxy().command.OfferSuggestions(ctx, c.player, cmd)
+	suggestions, err := c.proxy().command.OfferBrigodierSuggestions(ctx, c.player, cmd)
 	if err != nil {
 		c.log.Error(err, "Error while handling command tab completion for player",
 			"command", cmd)
 		return
 	}
-	if len(suggestions) == 0 {
+	if len(suggestions.Suggestions) == 0 {
 		return
 	}
 	if c.log1.Enabled() {
-		c.log1.Info("Response to TabCompleteRequest", "cmd", cmd, "suggestions", suggestions)
+		c.log1.Info("Response to TabCompleteRequest", "cmd", cmd, "suggestions", suggestions.Suggestions)
 	}
 
-	offers := make([]packet.TabCompleteOffer, 0, len(suggestions))
-	for _, suggestion := range suggestions {
+	// Calculate the minimum start position from all suggestions
+	startPos := -1
+	for _, s := range suggestions.Suggestions {
+		if startPos == -1 || s.Range.Start < startPos {
+			startPos = s.Range.Start
+		}
+	}
+	if startPos < 0 {
+		return
+	}
+
+	// Build offers, adjusting text for suggestions with different start positions
+	offers := make([]packet.TabCompleteOffer, 0, len(suggestions.Suggestions))
+	for _, s := range suggestions.Suggestions {
+		offerText := s.Text
+		// If this suggestion starts after the minimum start position,
+		// prepend the text between startPos and this suggestion's start
+		if s.Range.Start > startPos {
+			offerText = cmd[startPos:s.Range.Start] + s.Text
+		}
 		offers = append(offers, packet.TabCompleteOffer{
-			Text: suggestion,
+			Text: offerText,
 			// TODO support brigadier tooltip
 		})
 	}
 
-	// Send suggestions
+	// Send suggestions with the correct offset (+1 for the leading '/')
 	_ = c.player.WritePacket(&packet.TabCompleteResponse{
 		TransactionID: p.TransactionID,
-		Start:         startPos,
-		Length:        len(p.Command) - startPos,
+		Start:         startPos + 1, // +1 for the leading '/'
+		Length:        len(p.Command) - startPos - 1,
 		Offers:        offers,
 	})
 }
@@ -918,11 +1033,18 @@ func (c *clientPlaySessionHandler) doSwitch() *future.Future[any] {
 
 		// Config state clears everything in the client. No need to clear later.
 		c.spawned.Store(false)
-		c.mu.Lock()
-		c.mu.serverBossBars = make(map[uuid.UUID]struct{}) // clear
-		c.mu.Unlock()
 		_ = c.player.tabList.RemoveAll()
 		_ = tablist.ClearTabListHeaderFooter(c.player.tabList)
+		if c.player.Protocol().GreaterEqual(version.Minecraft_1_20_2) {
+			// For 1.20.2+, start dropping proxy-level boss bar updates during transition.
+			// Server boss bars are not tracked for these versions (handled in handleBossBar).
+			c.player.bossBarManager.StartDropping()
+		} else {
+			// For older versions, clear server boss bar tracking.
+			c.mu.Lock()
+			c.mu.serverBossBars = make(map[uuid.UUID]struct{})
+			c.mu.Unlock()
+		}
 	}
 
 	c.player.switchToConfigState()

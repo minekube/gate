@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/common/minecraft/key"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -269,4 +270,8 @@ func WriteComponent(wr io.Writer, protocol proto.Protocol, c component.Component
 		return err
 	}
 	return WriteString(wr, buf.String())
+}
+
+func WriteMinimalKey(wr io.Writer, k key.Key) error {
+	return WriteString(wr, key.Minimal(k))
 }

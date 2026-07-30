@@ -283,6 +283,22 @@ func (e *PreLoginEvent) Conn() Inbound {
 	return e.connection
 }
 
+// SetVirtualHost replaces the virtual host for the connecting player.
+// It is intended for integrations that decode proxy metadata from the
+// handshake host and need later routing/backend handshakes to see the
+// original clean host.
+func (e *PreLoginEvent) SetVirtualHost(addr net.Addr) bool {
+	type virtualHostSetter interface {
+		setVirtualHost(net.Addr)
+	}
+	setter, ok := e.connection.(virtualHostSetter)
+	if !ok {
+		return false
+	}
+	setter.setVirtualHost(addr)
+	return true
+}
+
 // Result returns the current result of the PreLoginEvent.
 func (e *PreLoginEvent) Result() PreLoginResult {
 	return e.result
@@ -324,10 +340,17 @@ func (e *PreLoginEvent) ForceOfflineMode() {
 //
 
 type LoginEvent struct {
-	player Player
+	player       Player
+	serverIDHash string // server ID hash sent to Mojang for authentication, empty if offline-mode
 
 	denied bool
 	reason component.Component
+}
+
+// ServerIDHash returns the server ID hash that was sent to Mojang to authenticate the player.
+// Returns empty string if the connection was in offline-mode.
+func (e *LoginEvent) ServerIDHash() string {
+	return e.serverIDHash
 }
 
 func (e *LoginEvent) Player() Player {
@@ -1041,6 +1064,54 @@ func (e *ServerResourcePackSendEvent) SetProvidedResourcePack(pack ResourcePackI
 //
 //
 
+// ServerResourcePackRemoveEvent is fired when the downstream server tries to remove a
+// resource pack from the player. If PackID returns uuid.Nil, the downstream server
+// requested that all resource packs should be removed. If this event is denied, the
+// remove packet is not forwarded to the client and the proxy keeps its applied
+// resource pack state unchanged.
+type ServerResourcePackRemoveEvent struct {
+	denied     bool
+	packID     uuid.UUID
+	serverConn *serverConnection
+}
+
+// newServerResourcePackRemoveEvent creates a new ServerResourcePackRemoveEvent.
+func newServerResourcePackRemoveEvent(
+	packID uuid.UUID,
+	serverConn *serverConnection,
+) *ServerResourcePackRemoveEvent {
+	return &ServerResourcePackRemoveEvent{
+		packID:     packID,
+		serverConn: serverConn,
+	}
+}
+
+// Allowed indicates whether removing the resource pack from the client is allowed.
+func (e *ServerResourcePackRemoveEvent) Allowed() bool {
+	return !e.denied
+}
+
+// SetAllowed allows or denies removing the resource pack from the client.
+func (e *ServerResourcePackRemoveEvent) SetAllowed(allowed bool) {
+	e.denied = !allowed
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerResourcePackRemoveEvent) ServerConnection() ServerConnection {
+	return e.serverConn
+}
+
+// PackID returns the resource pack ID requested for removal, or uuid.Nil when
+// all resource packs should be removed.
+func (e *ServerResourcePackRemoveEvent) PackID() uuid.UUID {
+	return e.packID
+}
+
+//
+//
+//
+//
+
 // PlayerChannelRegisterEvent is fired when a client Player sends a plugin message through the
 // register channel. The proxy will not wait on this event to finish firing.
 type PlayerChannelRegisterEvent struct {
@@ -1061,6 +1132,26 @@ func (e *PlayerChannelRegisterEvent) Player() Player {
 //
 //
 
+// PlayerChannelUnregisterEvent is fired when a client Player sends a plugin message through the
+// unregister channel. The proxy will not wait on this event to finish firing.
+type PlayerChannelUnregisterEvent struct {
+	channels []message.ChannelIdentifier
+	player   Player
+}
+
+func (e *PlayerChannelUnregisterEvent) Channels() []message.ChannelIdentifier {
+	return e.channels
+}
+
+func (e *PlayerChannelUnregisterEvent) Player() Player {
+	return e.player
+}
+
+//
+//
+//
+//
+
 // ServerLoginPluginMessageEvent is fired when a server sends a login plugin message to the proxy.
 // Plugins have the opportunity to respond to the messages as needed. The proxy will wait on this
 // event to finish. The server will be responsible for continuing the login process once the server
@@ -1069,6 +1160,7 @@ type ServerLoginPluginMessageEvent struct {
 	id         message.ChannelIdentifier
 	contents   []byte
 	sequenceID int
+	serverConn *serverConnection
 
 	result ServerLoginPluginMessageResult
 }
@@ -1081,6 +1173,11 @@ func (e *ServerLoginPluginMessageEvent) Contents() []byte {
 // SequenceID returns the sequence id of the login plugin message sent by the server.
 func (e *ServerLoginPluginMessageEvent) SequenceID() int {
 	return e.sequenceID
+}
+
+// ServerConnection returns the associated server connection.
+func (e *ServerLoginPluginMessageEvent) ServerConnection() ServerConnection {
+	return e.serverConn
 }
 
 func (e *ServerLoginPluginMessageEvent) Result() *ServerLoginPluginMessageResult {
@@ -1131,8 +1228,12 @@ func (e *PlayerClientBrandEvent) Brand() string {
 //
 //
 
-// PreShutdownEvent is fired before the proxy begins to shut down by
-// stopping to accept new connections and disconnect all players.
+// PreShutdownEvent is fired by the proxy after it has stopped accepting new connections,
+// but before any players are disconnected. This is the last opportunity to interact with
+// currently connected players, such as transferring them to another proxy or performing
+// cleanup tasks.
+//
+// The proxy will wait for all event listeners to complete before disconnecting players.
 type PreShutdownEvent struct {
 	reason component.Component // may be nil
 }
@@ -1326,3 +1427,37 @@ func (e *CookieRequestEvent) Allowed() bool { return !e.denied }
 
 // SetAllowed sets whether the cookie request is allowed to be forwarded to the client.
 func (e *CookieRequestEvent) SetAllowed(allowed bool) { e.denied = !allowed }
+
+//
+//
+//
+//
+//
+
+// ServerRegisteredEvent is fired when a backend server is registered with the proxy.
+// This allows plugins to react to dynamically added servers and perform necessary setup.
+type ServerRegisteredEvent struct {
+	server RegisteredServer
+}
+
+// Server returns the server that was registered.
+func (e *ServerRegisteredEvent) Server() RegisteredServer {
+	return e.server
+}
+
+//
+//
+//
+//
+//
+
+// ServerUnregisteredEvent is fired when a backend server is unregistered from the proxy.
+// This allows plugins to react to removed servers and perform necessary cleanup.
+type ServerUnregisteredEvent struct {
+	server ServerInfo
+}
+
+// ServerInfo returns the server info of the server that was unregistered.
+func (e *ServerUnregisteredEvent) ServerInfo() ServerInfo {
+	return e.server
+}
