@@ -25,6 +25,7 @@ type assetWorkflow struct {
 }
 
 type assetWorkflowJob struct {
+	Needs []string            `yaml:"needs"`
 	Steps []assetWorkflowStep `yaml:"steps"`
 }
 
@@ -35,7 +36,7 @@ type assetWorkflowStep struct {
 	Run  string `yaml:"run"`
 }
 
-func readReleaseJobSteps(t *testing.T) []assetWorkflowStep {
+func readReleaseJob(t *testing.T) assetWorkflowJob {
 	t.Helper()
 
 	// Gate publishes from the tag-gated releaser job in ci.yml rather than a
@@ -61,7 +62,13 @@ func readReleaseJobSteps(t *testing.T) []assetWorkflowStep {
 		t.Fatal("releaser job has no steps")
 	}
 
-	return release.Steps
+	return release
+}
+
+func readReleaseJobSteps(t *testing.T) []assetWorkflowStep {
+	t.Helper()
+
+	return readReleaseJob(t).Steps
 }
 
 func stepIndex(steps []assetWorkflowStep, name string) int {
@@ -71,6 +78,18 @@ func stepIndex(steps []assetWorkflowStep, name string) int {
 		}
 	}
 	return -1
+}
+
+// TestReleaseRunsIndependentlyOfCIJobs pins the release job's scheduling
+// boundary. A tag's downloadable release must still be attempted when an
+// unrelated lint, platform-test, Docker smoke or image-build job flakes.
+func TestReleaseRunsIndependentlyOfCIJobs(t *testing.T) {
+	release := readReleaseJob(t)
+
+	if len(release.Needs) != 0 {
+		t.Fatalf("releaser depends on %q; a failure in that CI chain would skip the release upload",
+			release.Needs)
+	}
 }
 
 // TestReleaseVerifiesPublishedAssets is the core regression guard: the
