@@ -35,12 +35,12 @@
     - [UnregisterServerResponse](#minekube-gate-v1-UnregisterServerResponse)
     - [ValidateConfigRequest](#minekube-gate-v1-ValidateConfigRequest)
     - [ValidateConfigResponse](#minekube-gate-v1-ValidateConfigResponse)
-  
+
     - [BedrockDeviceOS](#minekube-gate-v1-BedrockDeviceOS)
     - [BedrockInputMode](#minekube-gate-v1-BedrockInputMode)
     - [BedrockUIProfile](#minekube-gate-v1-BedrockUIProfile)
     - [ProxyMode](#minekube-gate-v1-ProxyMode)
-  
+
     - [GateService](#minekube-gate-v1-GateService)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -640,4 +640,3 @@ All methods follow standard gRPC error codes and include detailed error messages
 | <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
 | <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
 | <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
-

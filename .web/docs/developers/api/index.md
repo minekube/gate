@@ -21,6 +21,12 @@ api:
 
 :::
 
+Configuration management is versioned: `GetConfig` returns an opaque version,
+and `ApplyConfig` requires a matching `if_match` value. It accepts either a
+complete YAML/JSON configuration or an RFC 7396 JSON Merge Patch. Runtime
+application is limited to route changes in an already-enabled Java Lite
+configuration; restart-required changes are rejected.
+
 <!--@include: ./sdks.md-->
 
 ## Features
@@ -32,7 +38,7 @@ The HTTP API enables you to build and deploy functionality independently from yo
 <div class="vp-features">
   <div class="vp-feature">
     <div class="title">Independent Updates</div>
-    <div class="details">Ship updates without restarting Gate or disconnecting players</div>
+    <div class="details">Apply proven live-safe changes without restarting Gate or disconnecting players</div>
   </div>
   <div class="vp-feature">
     <div class="title">Cross-Language Support</div>
