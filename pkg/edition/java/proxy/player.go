@@ -700,6 +700,12 @@ func (p *connectedPlayer) config() *config.Config {
 
 // switchToConfigState switches the connection of the client into config state.
 func (p *connectedPlayer) switchToConfigState() {
+	if p.bundleHandler.InBundleSession() {
+		p.bundleHandler.ToggleBundleSession()
+		if err := p.BufferPacket(new(packet.BundleDelimiter)); err != nil {
+			p.log.Error(err, "error writing bundle delimiter")
+		}
+	}
 	if err := p.BufferPacket(new(cfgpacket.StartUpdate)); err != nil {
 		p.log.Error(err, "error writing config packet")
 	}

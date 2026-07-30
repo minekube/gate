@@ -7,10 +7,13 @@ import (
 
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
@@ -49,6 +52,31 @@ func TestBackendPlayRegisterForwardsToPlayer(t *testing.T) {
 	}
 	if string(got.Data) != string(register.Data) {
 		t.Fatalf("expected payload %q, got %q", string(register.Data), string(got.Data))
+	}
+}
+
+func TestSwitchToConfigStateClosesOpenBundle(t *testing.T) {
+	playerConn := &testMinecraftConn{}
+	player := &connectedPlayer{
+		MinecraftConn: playerConn,
+		log:           logr.Discard(),
+	}
+	player.bundleHandler = &resourcepack.BundleDelimiterHandler{Player: player}
+	player.bundleHandler.ToggleBundleSession()
+
+	player.switchToConfigState()
+
+	if len(playerConn.writtenPackets) != 2 {
+		t.Fatalf("expected closing delimiter and start-configuration packet, got %d packets", len(playerConn.writtenPackets))
+	}
+	if _, ok := playerConn.writtenPackets[0].(*packet.BundleDelimiter); !ok {
+		t.Fatalf("expected first packet to be BundleDelimiter, got %T", playerConn.writtenPackets[0])
+	}
+	if _, ok := playerConn.writtenPackets[1].(*config.StartUpdate); !ok {
+		t.Fatalf("expected second packet to be StartUpdate, got %T", playerConn.writtenPackets[1])
+	}
+	if player.bundleHandler.InBundleSession() {
+		t.Fatal("expected bundle session to be closed")
 	}
 }
 
