@@ -266,7 +266,9 @@ func WithAutoShutdownOnSignal(enabled bool) StartOption {
 type LoadConfigFunc func() (*config.Config, error)
 
 // WithAutoConfigReload is a StartOption for Start
-// that automatically reloads the config when a file change is detected.
+// that watches the config file and applies supported live changes when a file
+// change is detected. Currently, only Lite routes in an already-enabled Lite
+// configuration are applied; invalid or unsupported candidates are rejected.
 //
 // This setting is disabled by default.
 func WithAutoConfigReload(path string) StartOption {

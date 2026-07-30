@@ -23,9 +23,7 @@ func TestResolveStatusResponseRetainsPublicSignature(t *testing.T) {
 		*proto.PacketContext,
 		*StrategyManager,
 	) (logr.Logger, *packet.StatusResponse, error) = ResolveStatusResponse
-	if resolve == nil {
-		t.Fatal("ResolveStatusResponse is nil")
-	}
+	_ = resolve
 }
 
 func TestPingStatusCacheSeparatesRouteGenerationsAfterReset(t *testing.T) {

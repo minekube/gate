@@ -477,7 +477,7 @@ func (p *Proxy) Command() *command.Manager {
 	return &p.command
 }
 
-// Config returns the cfg used by the Proxy.
+// Config returns the current runtime configuration snapshot used by the Proxy.
 func (p *Proxy) Config() config.Config {
 	return *p.config()
 }
