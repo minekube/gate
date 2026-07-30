@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -185,14 +186,27 @@ func TestLocalFileModificationTime(t *testing.T) {
 }
 
 func TestDownloadIfNewer(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping network test in short mode")
-	}
+	const (
+		etag         = `"test-geyser-etag"`
+		jarContents  = "test geyser jar"
+		lastModified = "Wed, 30 Jul 2025 12:00:00 GMT"
+	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Last-Modified", lastModified)
+		if r.Header.Get("If-None-Match") == etag || r.Header.Get("If-Modified-Since") != "" {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+		_, _ = w.Write([]byte(jarContents))
+	}))
+	defer server.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	geyserURL := "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+	geyserURL := server.URL
 
 	t.Run("download new file", func(t *testing.T) {
 		// Each subtest gets its own temp directory and file to avoid conflicts on Windows
