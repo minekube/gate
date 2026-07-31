@@ -4,12 +4,13 @@ name: Release Please
 # This workflow turns those conventional commits on master into normal Gate
 # GitHub releases. The release-please tag is created with GITHUB_TOKEN, so it
 # will not recursively trigger ci.yml by tag push; the trigger-release job
-# explicitly dispatches ci.yml on the new tag so GoReleaser uploads artifacts.
+# calls the trusted release-publish workflow from this default-branch file.
 
 on:
   push:
     branches: [master]
-  workflow_dispatch:
+  repository_dispatch:
+    types: [release-please-rerun]
 
 permissions:
   contents: write
@@ -43,22 +44,21 @@ jobs:
           # Merges done with GITHUB_TOKEN do not trigger a new push workflow.
           # Run this workflow again on master so release-please observes the
           # merged release PR and creates the tag/GitHub release.
-          gh workflow run release-please.yml \
-            --repo "${{ github.repository }}" \
-            --ref "${{ github.ref_name }}"
+          gh api \
+            --method POST \
+            "/repos/${{ github.repository }}/dispatches" \
+            -f event_type=release-please-rerun
 
   trigger-release:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dispatch ci.yml on the new tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run ci.yml \
-            --repo "${{ github.repository }}" \
-            --ref "${{ needs.release-please.outputs.tag_name }}"
+    uses: ./.github/workflows/release-publish.yml
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+    with:
+      release_tag: ${{ needs.release-please.outputs.tag_name }}
 
   dispatch-moxy-bump:
     needs: release-please

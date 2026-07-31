@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -9,15 +10,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// The release job used to end at "run GoReleaser and hope". A release whose
-// upload silently produced nothing still looked green, because nothing ever
-// re-read the release that actually landed. geyserlite shipped several such
-// empty releases (and one carrying only a C header) before it grew this
-// guard; these tests pin the same guard here.
+// The release publisher must re-read the release that actually landed. These
+// tests pin that guard and its ordering.
 
 const (
 	verifyAssetsStepName  = "Verify published release assets"
-	createReleaseStepName = "Run GoReleaser"
+	publishAssetsStepName = "Publish staged release artifacts"
 )
 
 type assetWorkflow struct {
@@ -25,8 +23,42 @@ type assetWorkflow struct {
 }
 
 type assetWorkflowJob struct {
-	Needs []string            `yaml:"needs"`
+	Needs assetWorkflowNeeds  `yaml:"needs"`
 	Steps []assetWorkflowStep `yaml:"steps"`
+}
+
+type assetWorkflowNeeds []string
+
+func (n *assetWorkflowNeeds) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.ScalarNode:
+		*n = []string{node.Value}
+		return nil
+	case yaml.SequenceNode:
+		var needs []string
+		if err := node.Decode(&needs); err != nil {
+			return err
+		}
+		*n = needs
+		return nil
+	default:
+		return fmt.Errorf("needs must be a string or list, got YAML kind %d", node.Kind)
+	}
+}
+
+func TestAssetWorkflowAcceptsScalarAndListNeeds(t *testing.T) {
+	for _, raw := range []string{
+		"jobs:\n  release:\n    needs: build\n",
+		"jobs:\n  release:\n    needs:\n      - build\n",
+	} {
+		var workflow assetWorkflow
+		if err := yaml.Unmarshal([]byte(raw), &workflow); err != nil {
+			t.Fatalf("unmarshal %q: %v", raw, err)
+		}
+		if got := workflow.Jobs["release"].Needs; len(got) != 1 || got[0] != "build" {
+			t.Fatalf("needs = %v; want [build]", got)
+		}
+	}
 }
 
 type assetWorkflowStep struct {
@@ -39,10 +71,7 @@ type assetWorkflowStep struct {
 func readReleaseJob(t *testing.T) assetWorkflowJob {
 	t.Helper()
 
-	// Gate publishes from the tag-gated releaser job in ci.yml rather than a
-	// dedicated release.yml; the guard is API-side, so the publish mechanism
-	// (GoReleaser here) is irrelevant to it.
-	const workflowPath = ".github/workflows/ci.yml"
+	const workflowPath = ".github/workflows/release-publish.yml"
 
 	workflowBytes, err := os.ReadFile(workflowPath)
 	if err != nil {
@@ -54,12 +83,12 @@ func readReleaseJob(t *testing.T) assetWorkflowJob {
 		t.Fatal(err)
 	}
 
-	release, ok := workflow.Jobs["releaser"]
+	release, ok := workflow.Jobs["publish-release"]
 	if !ok {
-		t.Fatal("releaser job is missing")
+		t.Fatal("publish-release job is missing")
 	}
 	if len(release.Steps) == 0 {
-		t.Fatal("releaser job has no steps")
+		t.Fatal("publish-release job has no steps")
 	}
 
 	return release
@@ -86,21 +115,23 @@ func stepIndex(steps []assetWorkflowStep, name string) int {
 func TestReleaseRunsIndependentlyOfCIJobs(t *testing.T) {
 	release := readReleaseJob(t)
 
-	if len(release.Needs) != 0 {
-		t.Fatalf("releaser depends on %q; a failure in that CI chain would skip the release upload",
+	if len(release.Needs) != 2 ||
+		release.Needs[0] != "release-build" ||
+		release.Needs[1] != "verify-release-tag" {
+		t.Fatalf("releaser depends on %q; it must only await its verified release chain",
 			release.Needs)
 	}
 }
 
 // TestReleaseVerifiesPublishedAssets is the core regression guard: the
-// release job must fail when the published release carries no downloadable
-// artifact.
+// publish-release job must fail when the published release carries no
+// downloadable artifact.
 func TestReleaseVerifiesPublishedAssets(t *testing.T) {
 	steps := readReleaseJobSteps(t)
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step; a release that publishes "+
+		t.Fatalf("publish-release job is missing the %q step; a release that publishes "+
 			"no asset would ship green again", verifyAssetsStepName)
 	}
 
@@ -123,7 +154,7 @@ func TestReleaseVerificationReadsPublishedRelease(t *testing.T) {
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step", verifyAssetsStepName)
+		t.Fatalf("publish-release job is missing the %q step", verifyAssetsStepName)
 	}
 	script := steps[verifyAt].Run
 
@@ -157,7 +188,7 @@ func TestReleaseVerificationRequiresRealBuildArtifact(t *testing.T) {
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step", verifyAssetsStepName)
+		t.Fatalf("publish-release job is missing the %q step", verifyAssetsStepName)
 	}
 	script := steps[verifyAt].Run
 
@@ -198,13 +229,13 @@ func TestReleaseVerificationRunsAfterUpload(t *testing.T) {
 	steps := readReleaseJobSteps(t)
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
-	createAt := stepIndex(steps, createReleaseStepName)
-	if verifyAt < 0 || createAt < 0 {
-		t.Fatalf("expected both %q (%d) and %q (%d) in the releaser job",
-			createReleaseStepName, createAt, verifyAssetsStepName, verifyAt)
+	publishAt := stepIndex(steps, publishAssetsStepName)
+	if verifyAt < 0 || publishAt < 0 {
+		t.Fatalf("expected both %q (%d) and %q (%d) in the publish-release job",
+			publishAssetsStepName, publishAt, verifyAssetsStepName, verifyAt)
 	}
-	if verifyAt < createAt {
+	if verifyAt < publishAt {
 		t.Errorf("%q runs before %q; it would always see an empty release",
-			verifyAssetsStepName, createReleaseStepName)
+			verifyAssetsStepName, publishAssetsStepName)
 	}
 }

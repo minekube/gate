@@ -1,0 +1,718 @@
+name: release-publish
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Release tag to build and publish (e.g. v0.48.0).
+        required: true
+        type: string
+
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io
+
+concurrency:
+  group: release-publish-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.release_tag }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
+      - name: golangci-lint
+        run: golangci-lint run --timeout 3m0s
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release_tag }}
+
+      - name: Setup Go with cache
+        uses: actions/setup-go@v6
+        with:
+          cache: true
+          go-version-file: go.mod
+
+      - name: Test
+        run: make test
+
+      - name: Smoke test - Geyserlite Windows auto-download starts
+        if: matrix.platform == 'windows-latest'
+        run: go test ./pkg/edition/bedrock/geyser -tags=geyserlite_smoke -run TestLiteManagedRunnerWindowsAutoDownloadSmoke -count=1 -timeout 6m -v
+
+  docker-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release_tag }}
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build gate image (host arch, load)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          target: gate
+          build-args: |
+            VERSION=smoke-test
+          tags: gate:smoke
+
+      - name: Smoke test - gate binary execs in distroless image
+        run: |
+          out="$(docker run --rm gate:smoke --version)"
+          echo "$out"
+          echo "$out" | grep -q "gate version smoke-test"
+
+      - name: Smoke test - managed Bedrock starts in read-only distroless image
+        run: |
+          cid=$(docker run -d --read-only --tmpfs /tmp \
+            -v "$PWD/.github/testdata/managed-bedrock.yml:/config.yml:ro" \
+            gate:smoke --config /config.yml)
+          trap 'docker logs "$cid" 2>&1 || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+
+          for _ in $(seq 1 180); do
+            logs=$(docker logs "$cid" 2>&1)
+            if grep -q "geyser integration started" <<<"$logs"; then
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != "true" ]; then
+              exit 1
+            fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Build jre variant image (host arch, load)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          target: jre
+          build-args: |
+            VERSION=smoke-test
+          tags: gate-jre:smoke
+
+      - name: Smoke test - gate binary execs in jre image
+        run: |
+          out="$(docker run --rm gate-jre:smoke --version)"
+          echo "$out"
+          echo "$out" | grep -q "gate version smoke-test"
+
+  image-build:
+    needs:
+      - lint
+      - test
+      - docker-smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      image: ${{ steps.image-ref.outputs.image }}
+      image_latest: ${{ steps.image-ref.outputs.image_latest }}
+      image_jre: ${{ steps.image-ref.outputs.image_jre }}
+      image_jre_latest: ${{ steps.image-ref.outputs.image_jre_latest }}
+      image_version: ${{ steps.image-ref.outputs.image_version }}
+      image_jre_version: ${{ steps.image-ref.outputs.image_jre_version }}
+      image_tag: ${{ steps.image-ref.outputs.image_tag }}
+      tag_sha: ${{ steps.verify-tag.outputs.tag_sha }}
+      gate_digest: ${{ steps.gate-image.outputs.digest }}
+      gate_jre_digest: ${{ steps.gate-jre-image.outputs.digest }}
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release_tag }}
+
+      - name: Confirm the checkout is the tagged commit
+        id: verify-tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          TAG_SHA=$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" || true)
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [ -z "$TAG_SHA" ] || [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+            echo "::error::Checked-out HEAD ($HEAD_SHA) is not release tag $RELEASE_TAG ($TAG_SHA)."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Release tag is not a valid container tag: $RELEASE_TAG"
+            exit 1
+          fi
+          echo "tag_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Create image ref and version
+        id: image-ref
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          REF=$(git rev-parse --short HEAD)
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev-${REF}")
+          IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${REF}
+          IMAGE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}:latest
+          IMAGE_JRE=${{ env.REGISTRY }}/${{ github.repository }}/jre:${REF}
+          IMAGE_JRE_LATEST=${{ env.REGISTRY }}/${{ github.repository }}/jre:latest
+          IMAGE_VERSION=${{ env.REGISTRY }}/${{ github.repository }}:${RELEASE_TAG}
+          IMAGE_JRE_VERSION=${{ env.REGISTRY }}/${{ github.repository }}/jre:${RELEASE_TAG}
+
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "image_latest=${IMAGE_LATEST}" >> "$GITHUB_OUTPUT"
+          echo "image_jre=${IMAGE_JRE}" >> "$GITHUB_OUTPUT"
+          echo "image_jre_latest=${IMAGE_JRE_LATEST}" >> "$GITHUB_OUTPUT"
+          echo "image_version=${IMAGE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "image_jre_version=${IMAGE_JRE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${REF}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build gate OCI image
+        id: gate-image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_latest }}
+          cache-to: type=inline
+          build-args: |
+            VERSION=${{ steps.image-ref.outputs.version }}
+          target: gate
+          tags: |
+            ${{ steps.image-ref.outputs.image }}
+            ${{ steps.image-ref.outputs.image_latest }}
+            ${{ steps.image-ref.outputs.image_version }}
+          outputs: type=oci,dest=${{ runner.temp }}/gate-container-images/gate-image.tar,oci-mediatypes=true
+
+      - name: Build gate JRE OCI image
+        id: gate-jre-image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ steps.image-ref.outputs.image_jre_latest }}
+          cache-to: type=inline
+          build-args: |
+            VERSION=${{ steps.image-ref.outputs.version }}
+          target: jre
+          tags: |
+            ${{ steps.image-ref.outputs.image_jre }}
+            ${{ steps.image-ref.outputs.image_jre_latest }}
+            ${{ steps.image-ref.outputs.image_jre_version }}
+          outputs: type=oci,dest=${{ runner.temp }}/gate-container-images/gate-jre-image.tar,oci-mediatypes=true
+
+      - name: Upload staged container images
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-container-images
+          path: ${{ runner.temp }}/gate-container-images
+          if-no-files-found: error
+          retention-days: 1
+
+  release-build:
+    needs: image-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag_sha: ${{ steps.verify-release.outputs.tag_sha }}
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.image-build.outputs.tag_sha }}
+
+      - name: Confirm the release build commit
+        id: verify-release
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
+        run: |
+          set -euo pipefail
+
+          HEAD_SHA=$(git rev-parse HEAD)
+          CURRENT_TAG_SHA=$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" || true)
+          if [ "$HEAD_SHA" != "$TAG_SHA" ] || [ "$CURRENT_TAG_SHA" != "$TAG_SHA" ]; then
+            echo "::error::Release build commit ($HEAD_SHA) no longer matches $RELEASE_TAG ($CURRENT_TAG_SHA) or the verified commit ($TAG_SHA)."
+            exit 1
+          fi
+          echo "tag_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: latest
+          args: release --clean --skip=publish,announce
+
+      - name: Stage release artifacts from the manifest
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f dist/checksums.txt ]; then
+            echo "::error::GoReleaser produced no dist/checksums.txt for $RELEASE_TAG."
+            exit 1
+          fi
+
+          rm -rf upload
+          mkdir -p upload
+          COUNT=0
+          while read -r _ name; do
+            [ -n "$name" ] || continue
+            path=$(jq -r --arg n "$name" \
+              'map(select(.name == $n and (.path // "") != "")) | first | .path // empty' \
+              dist/artifacts.json)
+            if [ -z "$path" ] || [ ! -f "$path" ]; then
+              echo "::error::checksums.txt names $name but GoReleaser produced no such file."
+              exit 1
+            fi
+            cp "$path" "upload/$name"
+            COUNT=$((COUNT + 1))
+          done < dist/checksums.txt
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::dist/checksums.txt for $RELEASE_TAG describes no artifacts."
+            exit 1
+          fi
+          cp dist/checksums.txt upload/checksums.txt
+
+      - name: Upload staged release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-release-assets
+          path: |
+            upload
+            dist/checksums.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-release-tag:
+    needs: release-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag_sha: ${{ steps.verify-tag.outputs.tag_sha }}
+    steps:
+      - name: Verify remote release tag identity
+        id: verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ needs.release-build.outputs.tag_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Invalid release tag: $RELEASE_TAG"
+            exit 1
+          fi
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid expected release commit: $EXPECTED_SHA"
+            exit 1
+          fi
+
+          if ! REF_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG"); then
+            echo "::error::Unable to resolve remote release tag $RELEASE_TAG."
+            exit 1
+          fi
+          if ! REF_TYPE=$(printf '%s' "$REF_JSON" | jq -er '.object.type // empty') || \
+            ! REF_OBJECT_SHA=$(printf '%s' "$REF_JSON" | jq -er '.object.sha // empty'); then
+            echo "::error::Remote release tag $RELEASE_TAG has no usable Git object."
+            exit 1
+          fi
+
+          case "$REF_TYPE" in
+            commit)
+              ACTUAL_SHA="$REF_OBJECT_SHA"
+              ;;
+            tag)
+              if [[ ! "$REF_OBJECT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "::error::Remote release tag $RELEASE_TAG has an invalid annotated tag object."
+                exit 1
+              fi
+              if ! TAG_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/git/tags/$REF_OBJECT_SHA"); then
+                echo "::error::Unable to resolve annotated release tag $RELEASE_TAG."
+                exit 1
+              fi
+              if ! TAG_TYPE=$(printf '%s' "$TAG_JSON" | jq -er '.object.type // empty') || \
+                ! ACTUAL_SHA=$(printf '%s' "$TAG_JSON" | jq -er '.object.sha // empty') || \
+                [ "$TAG_TYPE" != "commit" ]; then
+                echo "::error::Annotated release tag $RELEASE_TAG does not resolve directly to a commit."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Remote release tag $RELEASE_TAG has unsupported object type $REF_TYPE."
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "$ACTUAL_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Remote release tag $RELEASE_TAG resolved to an invalid commit."
+            exit 1
+          fi
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::Remote release tag $RELEASE_TAG does not match the expected commit."
+            exit 1
+          fi
+          echo "tag_sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
+
+  publish-images:
+    needs:
+      - image-build
+      - release-build
+      - verify-release-tag
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      packages: write
+    steps:
+      - name: Download staged container images
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-container-images
+          path: release-images
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Login to Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Publish staged container images
+        env:
+          GATE_DIGEST: ${{ needs.image-build.outputs.gate_digest }}
+          GATE_JRE_DIGEST: ${{ needs.image-build.outputs.gate_jre_digest }}
+          IMAGE_TAG: ${{ needs.image-build.outputs.image_tag }}
+          IMAGE_TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
+          RELEASE_TAG_SHA: ${{ needs.release-build.outputs.tag_sha }}
+          VERIFIED_TAG_SHA: ${{ needs.verify-release-tag.outputs.tag_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          for path in release-images/gate-image.tar release-images/gate-jre-image.tar; do
+            if [ ! -f "$path" ] || [ -L "$path" ]; then
+              echo "::error::Expected staged OCI archive $path is missing or is not a regular file."
+              exit 1
+            fi
+          done
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              release-images/gate-image.tar|release-images/gate-jre-image.tar) ;;
+              *)
+                echo "::error::unexpected file $path in the staged container artifact."
+                exit 1
+                ;;
+            esac
+          done < <(find release-images -mindepth 1 -maxdepth 1 -print0)
+
+          for digest in "$GATE_DIGEST" "$GATE_JRE_DIGEST"; do
+            if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Invalid staged image digest: $digest"
+              exit 1
+            fi
+          done
+
+          if [[ ! "$IMAGE_TAG" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Invalid staged image tag: $IMAGE_TAG"
+            exit 1
+          fi
+          for tag_sha in "$IMAGE_TAG_SHA" "$RELEASE_TAG_SHA" "$VERIFIED_TAG_SHA"; do
+            if [[ ! "$tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Invalid verified tag commit: $tag_sha"
+              exit 1
+            fi
+          done
+          if [ "$IMAGE_TAG_SHA" != "$RELEASE_TAG_SHA" ] || [ "$RELEASE_TAG_SHA" != "$VERIFIED_TAG_SHA" ]; then
+            echo "::error::Image and release artifacts came from different tag commits."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Invalid release tag: $RELEASE_TAG"
+            exit 1
+          fi
+
+          TAGS="${IMAGE_TAG},latest,${RELEASE_TAG}"
+          IMAGE="${REGISTRY}/${GITHUB_REPOSITORY}"
+          IMAGE_JRE="${IMAGE}/jre"
+          oras cp --from-oci-layout "release-images/gate-image.tar@${GATE_DIGEST}" "${IMAGE}:${TAGS}"
+          oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
+
+  publish-release:
+    needs:
+      - release-build
+      - verify-release-tag
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download staged release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gate-release-assets
+
+      - name: Publish staged release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_TAG_SHA: ${{ needs.verify-release-tag.outputs.tag_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERIFIED_TAG_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid verified release commit: $VERIFIED_TAG_SHA"
+            exit 1
+          fi
+
+          MANIFEST=dist/checksums.txt
+          STAGED=upload
+          if [ ! -f "$MANIFEST" ] || [ -L "$MANIFEST" ]; then
+            echo "::error::Downloaded artifact has no regular dist/checksums.txt allowlist."
+            exit 1
+          fi
+          if [ ! -d "$STAGED" ] || [ -L "$STAGED" ]; then
+            echo "::error::Downloaded artifact has no regular upload directory."
+            exit 1
+          fi
+
+          while IFS= read -r -d '' file; do
+            if [ ! -f "$file" ] || [ -L "$file" ]; then
+              echo "::error::unexpected file $file in release artifact; it is not a regular staged asset."
+              exit 1
+            fi
+            base="$(basename "$file")"
+            if [ "$base" != "checksums.txt" ] && ! awk -v n="$base" \
+              'NF >= 2 && $2 == n { found = 1 } END { exit !found }' "$MANIFEST"; then
+              echo "::error::unexpected file $file in release artifact; checksums.txt does not name it."
+              exit 1
+            fi
+          done < <(find "$STAGED" -mindepth 1 -maxdepth 1 -print0)
+
+          UPLOAD_FILES=()
+          while read -r _ name; do
+            if [ -z "$name" ]; then
+              echo "::error::checksums.txt contains an empty asset name."
+              exit 1
+            fi
+            name_base="$(basename -- "$name")"
+            if [ "$name" != "$name_base" ] || [ "$name" = "." ] || [ "$name" = ".." ] \
+              || [[ "$name" == *\\* ]] || [[ "$name" == -* ]]; then
+              echo "::error::checksums.txt contains invalid asset name '$name'; expected a plain basename."
+              exit 1
+            fi
+            file="$STAGED/$name"
+            if [ ! -f "$file" ] || [ -L "$file" ]; then
+              echo "::error::checksums.txt names $name but the downloaded artifact has no regular file."
+              exit 1
+            fi
+            UPLOAD_FILES+=("$file")
+          done < "$MANIFEST"
+
+          if [ "${#UPLOAD_FILES[@]}" -eq 0 ]; then
+            echo "::error::$MANIFEST describes no build artifacts."
+            exit 1
+          fi
+          if [ ! -f "$STAGED/checksums.txt" ] || [ -L "$STAGED/checksums.txt" ]; then
+            echo "::error::Downloaded artifact has no regular checksums.txt asset."
+            exit 1
+          fi
+          if ! cmp -s "$MANIFEST" "$STAGED/checksums.txt"; then
+            echo "::error::Staged checksums.txt differs from the publisher allowlist."
+            exit 1
+          fi
+          UPLOAD_FILES+=("$STAGED/checksums.txt")
+
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --title "$RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" --clobber --repo "$GITHUB_REPOSITORY" -- "${UPLOAD_FILES[@]}"
+
+      - name: Verify published release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          ASSET_COUNT=0
+          BUILD_COUNT=0
+          BUILD_NAMES=""
+          CHECKSUMS_ID=""
+          CHECKSUMS_READ=false
+          MISSING=""
+          MANIFEST_BUILDS=0
+          PROBE=""
+          PROBE_URL=""
+          PROBE_CODE=""
+          CHECKSUMS_FILE=/tmp/published-checksums.txt
+
+          BUILD_FILTER='[.assets[]
+            | select(.state == "uploaded")
+            | select(.name | test(
+                "^checksums\\.txt$|^SHA(256|512)SUMS$|^LICENSE|^README|"
+                + "\\.sig$|\\.sigstore\\.json$|\\.attest\\.spdx\\.json$|"
+                + "\\.spdx\\.json$|\\.asc$|\\.pem$|\\.sha256$|"
+                + "\\.h$|\\.hpp$|\\.md$|\\.txt$"
+              ) | not)
+            | select(.size > 0)]'
+
+          for attempt in $(seq 1 12); do
+            RELEASE_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+            ASSET_COUNT=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.state == "uploaded")] | length')
+            BUILD_COUNT=$(echo "$RELEASE_JSON" | jq "$BUILD_FILTER | length")
+            BUILD_NAMES=$(echo "$RELEASE_JSON" | jq -r "$BUILD_FILTER | .[].name")
+            CHECKSUMS_ID=$(echo "$RELEASE_JSON" \
+              | jq -r '.assets[] | select(.name == "checksums.txt" and .state == "uploaded") | .id' \
+              | head -n1)
+            CHECKSUMS_READ=false
+            MISSING=""
+            : > "$CHECKSUMS_FILE"
+
+            if [ -n "$CHECKSUMS_ID" ] && gh api "/repos/$GITHUB_REPOSITORY/releases/assets/$CHECKSUMS_ID" \
+              -H 'Accept: application/octet-stream' > "$CHECKSUMS_FILE"; then
+              CHECKSUMS_READ=true
+
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                present=$(echo "$RELEASE_JSON" \
+                  | jq -r --arg n "$name" \
+                    '[.assets[] | select(.name == $n and .state == "uploaded")] | length')
+                if [ "$present" -eq 0 ]; then
+                  MISSING="$MISSING $name"
+                fi
+              done < "$CHECKSUMS_FILE"
+            fi
+
+            MANIFEST_BUILDS=0
+            PROBE=""
+            PROBE_URL=""
+            PROBE_CODE=""
+            if [ "$BUILD_COUNT" -gt 0 ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ]; then
+              while read -r _ name; do
+                [ -n "$name" ] || continue
+                if echo "$BUILD_NAMES" | grep -Fxq "$name"; then
+                  MANIFEST_BUILDS=$((MANIFEST_BUILDS + 1))
+                fi
+              done < "$CHECKSUMS_FILE"
+
+              PROBE=$(echo "$BUILD_NAMES" | head -n1)
+              PROBE_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$PROBE"
+              if ! PROBE_CODE=$(curl -sSL -o /dev/null -w '%{http_code}' -r 0-0 "$PROBE_URL"); then
+                PROBE_CODE="000"
+              fi
+            fi
+
+            if [ "$ASSET_COUNT" -gt 0 ] && [ "$BUILD_COUNT" -gt 0 ] \
+              && [ -n "$CHECKSUMS_ID" ] && [ "$CHECKSUMS_READ" = true ] \
+              && [ -z "$MISSING" ] && [ "$MANIFEST_BUILDS" -gt 0 ]; then
+              case "$PROBE_CODE" in
+                200|206) break ;;
+              esac
+            fi
+
+            echo "Published assets are incomplete on $RELEASE_TAG (attempt $attempt); waiting..."
+            sleep 10
+          done
+
+          echo "$RELEASE_JSON" | jq -r '.assets[] | "\(.name)\t\(.size)\t\(.state)"'
+          if [ "$CHECKSUMS_READ" = true ]; then
+            cat "$CHECKSUMS_FILE"
+          else
+            echo "checksums.txt contents unavailable."
+          fi
+
+          if [ "$ASSET_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG published with ZERO downloadable assets."
+            exit 1
+          fi
+          if [ "$BUILD_COUNT" -eq 0 ]; then
+            echo "::error::Release $RELEASE_TAG has $ASSET_COUNT asset(s) but NO real build artifact."
+            exit 1
+          fi
+          if [ -z "$CHECKSUMS_ID" ]; then
+            echo "::error::Release $RELEASE_TAG has no uploaded checksums.txt."
+            exit 1
+          fi
+          if [ "$CHECKSUMS_READ" != true ]; then
+            echo "::error::Uploaded checksums.txt on $RELEASE_TAG could not be downloaded."
+            exit 1
+          fi
+          if [ -n "$MISSING" ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references unpublished assets:$MISSING"
+            exit 1
+          fi
+          if [ "$MANIFEST_BUILDS" -eq 0 ]; then
+            echo "::error::checksums.txt on $RELEASE_TAG references no real build artifact."
+            exit 1
+          fi
+          if [ "$PROBE_CODE" != "200" ] && [ "$PROBE_CODE" != "206" ]; then
+            echo "::error::Build artifact $PROBE is not downloadable (HTTP $PROBE_CODE)."
+            exit 1
+          fi
+
+          echo "OK: $RELEASE_TAG publishes $BUILD_COUNT real build artifact(s) of $ASSET_COUNT assets."
