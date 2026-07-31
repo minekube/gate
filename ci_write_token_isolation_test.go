@@ -152,6 +152,13 @@ func TestReleasePublishUsesTrustedDefaultBranchWorkflow(t *testing.T) {
 	}
 
 	contents := string(releasePlease)
+	if strings.Contains(contents, "  workflow_dispatch:") {
+		t.Fatal("release-please must not be dispatchable from a tag-selected workflow file")
+	}
+	if !strings.Contains(contents, "repository_dispatch:") ||
+		!strings.Contains(contents, "release-please-rerun") {
+		t.Fatal("release-please must use a default-branch repository dispatch for reruns")
+	}
 	if !strings.Contains(contents, "uses: ./.github/workflows/release-publish.yml") {
 		t.Fatal("release-please must call the trusted reusable release-publish workflow")
 	}

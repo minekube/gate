@@ -9,7 +9,8 @@ name: Release Please
 on:
   push:
     branches: [master]
-  workflow_dispatch:
+  repository_dispatch:
+    types: [release-please-rerun]
 
 permissions:
   contents: write
@@ -43,9 +44,10 @@ jobs:
           # Merges done with GITHUB_TOKEN do not trigger a new push workflow.
           # Run this workflow again on master so release-please observes the
           # merged release PR and creates the tag/GitHub release.
-          gh workflow run release-please.yml \
-            --repo "${{ github.repository }}" \
-            --ref "${{ github.ref_name }}"
+          gh api \
+            --method POST \
+            "/repos/${{ github.repository }}/dispatches" \
+            -f event_type=release-please-rerun
 
   trigger-release:
     needs: release-please
