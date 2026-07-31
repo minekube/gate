@@ -202,6 +202,47 @@ func TestReleaseBuildUsesVerifiedTagCommit(t *testing.T) {
 	}
 }
 
+func TestReleasePublishRevalidatesRemoteTagBeforePublish(t *testing.T) {
+	workflow, raw := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
+	verify := ciIsolationJob(t, workflow, "verify-release-tag")
+	if got := verify.Permissions; len(got) != 1 || got["contents"] != "read" {
+		t.Errorf("release tag verification permissions are %v; it must have contents: read only", got)
+	}
+	if len(verify.Needs) != 1 || verify.Needs[0] != "release-build" {
+		t.Errorf("release tag verification needs %v; it must follow release-build", verify.Needs)
+	}
+	verifyRaw := fmt.Sprint(verify.Steps)
+	for _, want := range []string{
+		"GH_TOKEN",
+		"git/ref/tags/",
+		"git/tags/",
+		"object.type",
+		"tag_sha=",
+		"does not match the expected commit",
+	} {
+		if !strings.Contains(verifyRaw, want) {
+			t.Errorf("release tag verification does not contain %q", want)
+		}
+	}
+	if !strings.Contains(raw, "EXPECTED_SHA: ${{ needs.release-build.outputs.tag_sha }}") {
+		t.Error("release tag verification must use the verified release-build commit")
+	}
+
+	for _, name := range []string{"publish-images", "publish-release"} {
+		job := ciIsolationJob(t, workflow, name)
+		found := false
+		for _, need := range job.Needs {
+			if need == "verify-release-tag" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("%s must wait for verify-release-tag; needs %v", name, job.Needs)
+		}
+	}
+}
+
 func TestCISeparatesContainerBuildFromRegistryWrite(t *testing.T) {
 	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
 	build := ciIsolationJob(t, workflow, "image-build")
@@ -211,7 +252,8 @@ func TestCISeparatesContainerBuildFromRegistryWrite(t *testing.T) {
 		got["actions"] != "read" || got["packages"] != "write" {
 		t.Errorf("container publisher permissions are %v; expected actions: read and packages: write only", got)
 	}
-	if len(publish.Needs) != 2 || publish.Needs[0] != "image-build" || publish.Needs[1] != "release-build" {
+	if len(publish.Needs) != 3 || publish.Needs[0] != "image-build" ||
+		publish.Needs[1] != "release-build" || publish.Needs[2] != "verify-release-tag" {
 		t.Errorf("container publisher needs %v; it must await both verified build jobs", publish.Needs)
 	}
 	if got := fmt.Sprint(publish.Steps[0].With["name"]); got != "gate-container-images" {
@@ -252,8 +294,8 @@ func TestCISeparatesReleaseBuildFromContentsWrite(t *testing.T) {
 		got["actions"] != "read" || got["contents"] != "write" {
 		t.Errorf("release publisher permissions are %v; expected actions: read and contents: write only", got)
 	}
-	if len(publish.Needs) != 1 || publish.Needs[0] != "release-build" {
-		t.Errorf("release publisher needs %v; it must consume only release-build", publish.Needs)
+	if len(publish.Needs) != 2 || publish.Needs[0] != "release-build" || publish.Needs[1] != "verify-release-tag" {
+		t.Errorf("release publisher needs %v; it must await release-build and tag verification", publish.Needs)
 	}
 
 	goreleaserAt := -1

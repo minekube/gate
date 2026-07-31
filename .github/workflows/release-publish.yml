@@ -342,10 +342,83 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  verify-release-tag:
+    needs: release-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag_sha: ${{ steps.verify-tag.outputs.tag_sha }}
+    steps:
+      - name: Verify remote release tag identity
+        id: verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ needs.release-build.outputs.tag_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::Invalid release tag: $RELEASE_TAG"
+            exit 1
+          fi
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid expected release commit: $EXPECTED_SHA"
+            exit 1
+          fi
+
+          if ! REF_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG"); then
+            echo "::error::Unable to resolve remote release tag $RELEASE_TAG."
+            exit 1
+          fi
+          if ! REF_TYPE=$(printf '%s' "$REF_JSON" | jq -er '.object.type // empty') || \
+            ! REF_OBJECT_SHA=$(printf '%s' "$REF_JSON" | jq -er '.object.sha // empty'); then
+            echo "::error::Remote release tag $RELEASE_TAG has no usable Git object."
+            exit 1
+          fi
+
+          case "$REF_TYPE" in
+            commit)
+              ACTUAL_SHA="$REF_OBJECT_SHA"
+              ;;
+            tag)
+              if [[ ! "$REF_OBJECT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "::error::Remote release tag $RELEASE_TAG has an invalid annotated tag object."
+                exit 1
+              fi
+              if ! TAG_JSON=$(gh api "/repos/$GITHUB_REPOSITORY/git/tags/$REF_OBJECT_SHA"); then
+                echo "::error::Unable to resolve annotated release tag $RELEASE_TAG."
+                exit 1
+              fi
+              if ! TAG_TYPE=$(printf '%s' "$TAG_JSON" | jq -er '.object.type // empty') || \
+                ! ACTUAL_SHA=$(printf '%s' "$TAG_JSON" | jq -er '.object.sha // empty') || \
+                [ "$TAG_TYPE" != "commit" ]; then
+                echo "::error::Annotated release tag $RELEASE_TAG does not resolve directly to a commit."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Remote release tag $RELEASE_TAG has unsupported object type $REF_TYPE."
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "$ACTUAL_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Remote release tag $RELEASE_TAG resolved to an invalid commit."
+            exit 1
+          fi
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::Remote release tag $RELEASE_TAG does not match the expected commit."
+            exit 1
+          fi
+          echo "tag_sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
+
   publish-images:
     needs:
       - image-build
       - release-build
+      - verify-release-tag
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -374,6 +447,7 @@ jobs:
           IMAGE_TAG: ${{ needs.image-build.outputs.image_tag }}
           IMAGE_TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
           RELEASE_TAG_SHA: ${{ needs.release-build.outputs.tag_sha }}
+          VERIFIED_TAG_SHA: ${{ needs.verify-release-tag.outputs.tag_sha }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
@@ -405,13 +479,13 @@ jobs:
             echo "::error::Invalid staged image tag: $IMAGE_TAG"
             exit 1
           fi
-          for tag_sha in "$IMAGE_TAG_SHA" "$RELEASE_TAG_SHA"; do
+          for tag_sha in "$IMAGE_TAG_SHA" "$RELEASE_TAG_SHA" "$VERIFIED_TAG_SHA"; do
             if [[ ! "$tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
               echo "::error::Invalid verified tag commit: $tag_sha"
               exit 1
             fi
           done
-          if [ "$IMAGE_TAG_SHA" != "$RELEASE_TAG_SHA" ]; then
+          if [ "$IMAGE_TAG_SHA" != "$RELEASE_TAG_SHA" ] || [ "$RELEASE_TAG_SHA" != "$VERIFIED_TAG_SHA" ]; then
             echo "::error::Image and release artifacts came from different tag commits."
             exit 1
           fi
@@ -427,7 +501,9 @@ jobs:
           oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
 
   publish-release:
-    needs: release-build
+    needs:
+      - release-build
+      - verify-release-tag
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -441,9 +517,15 @@ jobs:
       - name: Publish staged release artifacts
         env:
           GH_TOKEN: ${{ github.token }}
+          VERIFIED_TAG_SHA: ${{ needs.verify-release-tag.outputs.tag_sha }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
+
+          if [[ ! "$VERIFIED_TAG_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid verified release commit: $VERIFIED_TAG_SHA"
+            exit 1
+          fi
 
           MANIFEST=dist/checksums.txt
           STAGED=upload
