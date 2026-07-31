@@ -152,33 +152,22 @@ func TestReleasePublishUsesTrustedDefaultBranchWorkflow(t *testing.T) {
 	}
 
 	contents := string(releasePlease)
-	if !strings.Contains(contents, "gh workflow run release-publish.yml") {
-		t.Fatal("release-please must dispatch the trusted release-publish workflow")
+	if !strings.Contains(contents, "uses: ./.github/workflows/release-publish.yml") {
+		t.Fatal("release-please must call the trusted reusable release-publish workflow")
 	}
-	if !strings.Contains(contents, "--ref master") {
-		t.Fatal("release-please must dispatch release-publish.yml from master")
-	}
-	if strings.Contains(contents, "gh workflow run ci.yml") {
-		t.Fatal("release-please must not dispatch the tag-selected ci.yml workflow")
+	if strings.Contains(contents, "gh workflow run release-publish.yml") {
+		t.Fatal("release-please must not dispatch the publisher workflow at a selectable ref")
 	}
 
 	workflow, err := os.ReadFile(".github/workflows/release-publish.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(workflow), "release_tag:") {
+	workflowContents := string(workflow)
+	if !strings.Contains(workflowContents, "workflow_call:") ||
+		strings.Contains(workflowContents, "workflow_dispatch:") ||
+		!strings.Contains(workflowContents, "release_tag:") {
 		t.Fatal("release-publish.yml must receive the release tag as an input")
-	}
-}
-
-func TestReleasePublishRequiresTrustedWorkflowRef(t *testing.T) {
-	workflow, _ := readCIIsolationWorkflowAt(t, trustedReleaseWorkflowPath)
-	want := "github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)"
-
-	for name, job := range workflow.Jobs {
-		if job.If != want {
-			t.Errorf("%s has if %q; release-publish must fail closed outside the trusted master workflow", name, job.If)
-		}
 	}
 }
 
@@ -190,6 +179,9 @@ func TestReleaseBuildUsesVerifiedTagCommit(t *testing.T) {
 	}
 
 	releaseBuild := ciIsolationJob(t, workflow, "release-build")
+	if got := releaseBuild.Outputs["tag_sha"]; got != "${{ steps.verify-release.outputs.tag_sha }}" {
+		t.Fatalf("release-build tag_sha output is %q; it must propagate the revalidated release identity", got)
+	}
 	checkoutAt := ciIsolationStepIndex(releaseBuild.Steps, "Checkout the release tag")
 	if checkoutAt < 0 {
 		t.Fatal("release-build has no tag checkout")
@@ -212,8 +204,11 @@ func TestCISeparatesContainerBuildFromRegistryWrite(t *testing.T) {
 		got["actions"] != "read" || got["packages"] != "write" {
 		t.Errorf("container publisher permissions are %v; expected actions: read and packages: write only", got)
 	}
-	if len(publish.Needs) != 1 || publish.Needs[0] != "image-build" {
-		t.Errorf("container publisher needs %v; it must consume only image-build", publish.Needs)
+	if len(publish.Needs) != 2 || publish.Needs[0] != "image-build" || publish.Needs[1] != "release-build" {
+		t.Errorf("container publisher needs %v; it must await both verified build jobs", publish.Needs)
+	}
+	if got := fmt.Sprint(publish.Steps[0].With["name"]); got != "gate-container-images" {
+		t.Errorf("container publisher artifact name is %q; it must consume the allowlisted image artifact", got)
 	}
 
 	buildRaw := fmt.Sprint(build.Steps)

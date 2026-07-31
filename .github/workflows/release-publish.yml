@@ -1,7 +1,7 @@
 name: release-publish
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       release_tag:
         description: Release tag to build and publish (e.g. v0.48.0).
@@ -19,7 +19,6 @@ concurrency:
 
 jobs:
   lint:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,7 +42,6 @@ jobs:
         run: golangci-lint run --timeout 3m0s
 
   test:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +70,6 @@ jobs:
         run: go test ./pkg/edition/bedrock/geyser -tags=geyserlite_smoke -run TestLiteManagedRunnerWindowsAutoDownloadSmoke -count=1 -timeout 6m -v
 
   docker-smoke:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     strategy:
       fail-fast: false
       matrix:
@@ -144,7 +141,6 @@ jobs:
           echo "$out" | grep -q "gate version smoke-test"
 
   image-build:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs:
       - lint
       - test
@@ -262,11 +258,12 @@ jobs:
           retention-days: 1
 
   release-build:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs: image-build
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      tag_sha: ${{ steps.verify-release.outputs.tag_sha }}
     steps:
       - name: Checkout the release tag
         uses: actions/checkout@v6
@@ -276,6 +273,7 @@ jobs:
           ref: ${{ needs.image-build.outputs.tag_sha }}
 
       - name: Confirm the release build commit
+        id: verify-release
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
           TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
@@ -288,6 +286,7 @@ jobs:
             echo "::error::Release build commit ($HEAD_SHA) no longer matches $RELEASE_TAG ($CURRENT_TAG_SHA) or the verified commit ($TAG_SHA)."
             exit 1
           fi
+          echo "tag_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -344,8 +343,9 @@ jobs:
           retention-days: 1
 
   publish-images:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
-    needs: image-build
+    needs:
+      - image-build
+      - release-build
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -365,13 +365,15 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Publish staged container images
         env:
           GATE_DIGEST: ${{ needs.image-build.outputs.gate_digest }}
           GATE_JRE_DIGEST: ${{ needs.image-build.outputs.gate_jre_digest }}
           IMAGE_TAG: ${{ needs.image-build.outputs.image_tag }}
+          IMAGE_TAG_SHA: ${{ needs.image-build.outputs.tag_sha }}
+          RELEASE_TAG_SHA: ${{ needs.release-build.outputs.tag_sha }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
@@ -403,6 +405,16 @@ jobs:
             echo "::error::Invalid staged image tag: $IMAGE_TAG"
             exit 1
           fi
+          for tag_sha in "$IMAGE_TAG_SHA" "$RELEASE_TAG_SHA"; do
+            if [[ ! "$tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Invalid verified tag commit: $tag_sha"
+              exit 1
+            fi
+          done
+          if [ "$IMAGE_TAG_SHA" != "$RELEASE_TAG_SHA" ]; then
+            echo "::error::Image and release artifacts came from different tag commits."
+            exit 1
+          fi
           if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
             echo "::error::Invalid release tag: $RELEASE_TAG"
             exit 1
@@ -415,7 +427,6 @@ jobs:
           oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
 
   publish-release:
-    if: github.ref == 'refs/heads/master' && github.workflow_ref == format('{0}/.github/workflows/release-publish.yml@refs/heads/master', github.repository)
     needs: release-build
     runs-on: ubuntu-latest
     permissions:
@@ -429,7 +440,7 @@ jobs:
 
       - name: Publish staged release artifacts
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
@@ -500,7 +511,7 @@ jobs:
 
       - name: Verify published release assets
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
