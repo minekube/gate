@@ -94,7 +94,7 @@ func TestReleaseVerifiesPublishedAssets(t *testing.T) {
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step; a release that publishes "+
+		t.Fatalf("publish-release job is missing the %q step; a release that publishes "+
 			"no asset would ship green again", verifyAssetsStepName)
 	}
 
@@ -117,7 +117,7 @@ func TestReleaseVerificationReadsPublishedRelease(t *testing.T) {
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step", verifyAssetsStepName)
+		t.Fatalf("publish-release job is missing the %q step", verifyAssetsStepName)
 	}
 	script := steps[verifyAt].Run
 
@@ -151,7 +151,7 @@ func TestReleaseVerificationRequiresRealBuildArtifact(t *testing.T) {
 
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	if verifyAt < 0 {
-		t.Fatalf("releaser job is missing the %q step", verifyAssetsStepName)
+		t.Fatalf("publish-release job is missing the %q step", verifyAssetsStepName)
 	}
 	script := steps[verifyAt].Run
 
@@ -194,7 +194,7 @@ func TestReleaseVerificationRunsAfterUpload(t *testing.T) {
 	verifyAt := stepIndex(steps, verifyAssetsStepName)
 	publishAt := stepIndex(steps, publishAssetsStepName)
 	if verifyAt < 0 || publishAt < 0 {
-		t.Fatalf("expected both %q (%d) and %q (%d) in the releaser job",
+		t.Fatalf("expected both %q (%d) and %q (%d) in the publish-release job",
 			publishAssetsStepName, publishAt, verifyAssetsStepName, verifyAt)
 	}
 	if verifyAt < publishAt {
