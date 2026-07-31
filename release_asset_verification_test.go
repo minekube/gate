@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -22,8 +23,42 @@ type assetWorkflow struct {
 }
 
 type assetWorkflowJob struct {
-	Needs []string            `yaml:"needs"`
+	Needs assetWorkflowNeeds  `yaml:"needs"`
 	Steps []assetWorkflowStep `yaml:"steps"`
+}
+
+type assetWorkflowNeeds []string
+
+func (n *assetWorkflowNeeds) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.ScalarNode:
+		*n = []string{node.Value}
+		return nil
+	case yaml.SequenceNode:
+		var needs []string
+		if err := node.Decode(&needs); err != nil {
+			return err
+		}
+		*n = needs
+		return nil
+	default:
+		return fmt.Errorf("needs must be a string or list, got YAML kind %d", node.Kind)
+	}
+}
+
+func TestAssetWorkflowAcceptsScalarAndListNeeds(t *testing.T) {
+	for _, raw := range []string{
+		"jobs:\n  release:\n    needs: build\n",
+		"jobs:\n  release:\n    needs:\n      - build\n",
+	} {
+		var workflow assetWorkflow
+		if err := yaml.Unmarshal([]byte(raw), &workflow); err != nil {
+			t.Fatalf("unmarshal %q: %v", raw, err)
+		}
+		if got := workflow.Jobs["release"].Needs; len(got) != 1 || got[0] != "build" {
+			t.Fatalf("needs = %v; want [build]", got)
+		}
+	}
 }
 
 type assetWorkflowStep struct {
@@ -80,8 +115,10 @@ func stepIndex(steps []assetWorkflowStep, name string) int {
 func TestReleaseRunsIndependentlyOfCIJobs(t *testing.T) {
 	release := readReleaseJob(t)
 
-	if len(release.Needs) != 0 {
-		t.Fatalf("releaser depends on %q; a failure in that CI chain would skip the release upload",
+	if len(release.Needs) != 2 ||
+		release.Needs[0] != "release-build" ||
+		release.Needs[1] != "verify-release-tag" {
+		t.Fatalf("releaser depends on %q; it must only await its verified release chain",
 			release.Needs)
 	}
 }
