@@ -87,8 +87,8 @@ func TestReleaseRunsIndependentlyOfCIJobs(t *testing.T) {
 }
 
 // TestReleaseVerifiesPublishedAssets is the core regression guard: the
-// release job must fail when the published release carries no downloadable
-// artifact.
+// publish-release job must fail when the published release carries no
+// downloadable artifact.
 func TestReleaseVerifiesPublishedAssets(t *testing.T) {
 	steps := readReleaseJobSteps(t)
 

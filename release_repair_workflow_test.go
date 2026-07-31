@@ -14,12 +14,12 @@ import (
 // release's own tagged source. Two properties make that safe, and neither is
 // self-evident from reading the file, so they are pinned here:
 //
-//  1. It cannot move a container pointer. ci.yml's build job pushes
-//     ghcr.io/minekube/gate:latest; re-running it at an old tag would drag
-//     :latest backwards and silently downgrade every puller. The repair path
-//     holds no registry credential at all, so that is not "guarded against" -
-//     it is unrepresentable. These tests fail the moment anything grants the
-//     capability back.
+//  1. It cannot move a container pointer. release-publish.yml's trusted
+//     publisher pushes ghcr.io/minekube/gate:latest; re-running the release
+//     path at an old tag would drag :latest backwards and silently downgrade
+//     every puller. The repair path holds no registry credential at all, so
+//     that is not "guarded against" - it is unrepresentable. These tests fail
+//     the moment anything grants the capability back.
 //
 //  2. It runs on the TAG's toolchain. `go-version-file: go.mod` resolves
 //     against the checked-out tag, so an old release rebuilds under the Go it
@@ -488,7 +488,7 @@ func TestReleaseRepairRefusesCompleteReleasesAndVerifiesTheLandedResult(t *testi
 		t.Errorf("%q is conditional (if: %q); the guard must always run", verifyStep, publishSteps[verifyAt].If)
 	}
 
-	// Same assertion ci.yml's releaser job makes, so a repaired release is
+	// Same assertion release-publish.yml's publisher makes, so a repaired release is
 	// held to the release path's standard rather than a weaker one.
 	verify := publishSteps[verifyAt].Run
 	for _, want := range []string{
