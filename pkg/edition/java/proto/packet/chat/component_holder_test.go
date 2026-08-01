@@ -115,3 +115,226 @@ func TestComponentHolderAsBinaryTagHandlesModernStyledTextWithChildren(t *testin
 	_, err = holder.AsBinaryTag()
 	require.NoError(t, err)
 }
+
+func TestComponentHolderAsBinaryTagExpandsCompactHoverTextChildren(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_26_2.Protocol,
+		JSON: []byte(`{
+			"text":"question",
+			"hover_event":{
+				"action":"show_text",
+				"contents":{
+					"text":"answer",
+					"extra":[
+						{"bold":true,"text":"styled answer"},
+						"plain answer"
+					]
+				}
+			}
+		}`),
+	}
+
+	tag, err := holder.AsBinaryTag()
+	require.NoError(t, err)
+
+	got, err := nbtconv.BinaryTagToJSON(&tag)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"text":"question",
+		"hover_event":{
+			"action":"show_text",
+			"contents":{
+				"text":"answer",
+				"extra":[
+					{"bold":true,"text":"styled answer"},
+					{"text":"plain answer"}
+				]
+			}
+		}
+	}`, string(got))
+}
+
+func TestComponentHolderAsBinaryTagExpandsCompactLegacyHoverTextChildren(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_26_2.Protocol,
+		JSON: []byte(`{
+			"text":"question",
+			"hover_event":{
+				"action":"show_text",
+				"value":{
+					"text":"answer",
+					"extra":[
+						{"italic":true,"text":"styled answer"},
+						"plain answer"
+					]
+				}
+			}
+		}`),
+	}
+
+	tag, err := holder.AsBinaryTag()
+	require.NoError(t, err)
+
+	got, err := nbtconv.BinaryTagToJSON(&tag)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"text":"question",
+		"hover_event":{
+			"action":"show_text",
+			"value":{
+				"text":"answer",
+				"extra":[
+					{"italic":true,"text":"styled answer"},
+					{"text":"plain answer"}
+				]
+			}
+		}
+	}`, string(got))
+}
+
+func TestComponentHolderAsBinaryTagExpandsCompactCamelCaseHoverTextChildren(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_26_2.Protocol,
+		JSON: []byte(`{
+			"text":"question",
+			"hoverEvent":{
+				"action":"show_text",
+				"value":{
+					"text":"answer",
+					"extra":[
+						{"italic":true,"text":"styled answer"},
+						"plain answer"
+					]
+				},
+				"contents":[
+					{"bold":true,"text":"styled contents"},
+					"plain contents"
+				]
+			}
+		}`),
+	}
+
+	tag, err := holder.AsBinaryTag()
+	require.NoError(t, err)
+
+	got, err := nbtconv.BinaryTagToJSON(&tag)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"text":"question",
+		"hoverEvent":{
+			"action":"show_text",
+			"value":{
+				"text":"answer",
+				"extra":[
+					{"italic":true,"text":"styled answer"},
+					{"text":"plain answer"}
+				]
+			},
+			"contents":[
+				{"bold":true,"text":"styled contents"},
+				{"text":"plain contents"}
+			]
+		}
+	}`, string(got))
+}
+
+func TestComponentHolderAsJsonDoesNotRewriteNonTextHoverPayloads(t *testing.T) {
+	tests := map[string]string{
+		"item": `{
+			"text":"item",
+			"hover_event":{
+				"action":"show_item",
+				"value":"minecraft:stone",
+				"contents":{"id":"minecraft:stone","count":1}
+			}
+		}`,
+		"entity": `{
+			"text":"entity",
+			"hover_event":{
+				"action":"show_entity",
+				"value":"unchanged entity payload",
+				"contents":{
+					"type":"minecraft:player",
+					"id":"12345678-1234-1234-1234-123456789abc",
+					"name":"unchanged entity name"
+				}
+			}
+		}`,
+	}
+
+	for name, input := range tests {
+		t.Run(name, func(t *testing.T) {
+			holder := &ComponentHolder{
+				Protocol: version.Minecraft_26_2.Protocol,
+				JSON:     []byte(input),
+			}
+
+			got, err := holder.AsJson()
+			require.NoError(t, err)
+			require.JSONEq(t, input, string(got))
+		})
+	}
+}
+
+func TestComponentHolderAsJsonDoesNotRewriteCamelCaseNonTextHoverPayloads(t *testing.T) {
+	tests := map[string]string{
+		"item": `{
+			"text":"item",
+			"hoverEvent":{
+				"action":"show_item",
+				"value":"minecraft:stone",
+				"contents":{"id":"minecraft:stone","count":1}
+			}
+		}`,
+		"entity": `{
+			"text":"entity",
+			"hoverEvent":{
+				"action":"show_entity",
+				"value":"unchanged entity payload",
+				"contents":{
+					"type":"minecraft:player",
+					"id":"12345678-1234-1234-1234-123456789abc",
+					"name":"unchanged entity name"
+				}
+			}
+		}`,
+	}
+
+	for name, input := range tests {
+		t.Run(name, func(t *testing.T) {
+			holder := &ComponentHolder{
+				Protocol: version.Minecraft_26_2.Protocol,
+				JSON:     []byte(input),
+			}
+
+			got, err := holder.AsJson()
+			require.NoError(t, err)
+			require.JSONEq(t, input, string(got))
+		})
+	}
+}
+
+func TestComponentHolderAsJsonDoesNotRewriteUnrelatedStrings(t *testing.T) {
+	holder := &ComponentHolder{
+		Protocol: version.Minecraft_26_2.Protocol,
+		JSON: []byte(`{
+			"text":"link",
+			"custom":"leave unchanged",
+			"click_event":{
+				"action":"open_url",
+				"url":"https://example.com/path"
+			}
+		}`),
+	}
+
+	got, err := holder.AsJson()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"text":"link",
+		"custom":"leave unchanged",
+		"click_event":{
+			"action":"open_url",
+			"url":"https://example.com/path"
+		}
+	}`, string(got))
+}
