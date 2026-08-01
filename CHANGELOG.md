@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.1](https://github.com/minekube/gate/compare/v0.70.0...v0.70.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* **chat:** normalize compact show_text hover components for NBT ([#956](https://github.com/minekube/gate/issues/956)) ([d425c73](https://github.com/minekube/gate/commit/d425c7372b79dc9d32a629a6c7a3c56b8545bf8d))
+
 ## [0.70.0](https://github.com/minekube/gate/compare/v0.69.1...v0.70.0) (2026-07-30)
 
 
