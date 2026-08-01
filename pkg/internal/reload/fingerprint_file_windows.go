@@ -7,9 +7,26 @@ import (
 )
 
 func openFingerprintFile(path string) (*os.File, error) {
-	pathp, err := syscall.UTF16PtrFromString(fixFingerprintPath(path))
+	handle, err := createFingerprintHandle(path)
+	if err != nil {
+		// Match os.Open's long-path behavior on modern Windows first. Older
+		// environments still need the extended form when the ordinary open
+		// exceeds the legacy path limit.
+		longPath := fixFingerprintPath(path)
+		if longPath != path {
+			handle, err = createFingerprintHandle(longPath)
+		}
+	}
 	if err != nil {
 		return nil, &os.PathError{Op: "open", Path: path, Err: err}
+	}
+	return os.NewFile(uintptr(handle), path), nil
+}
+
+func createFingerprintHandle(path string) (syscall.Handle, error) {
+	pathp, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return syscall.InvalidHandle, err
 	}
 	// An editor may replace the config while reconciliation hashes it. Windows
 	// permits that only when every open handle opts into delete sharing.
@@ -23,9 +40,9 @@ func openFingerprintFile(path string) (*os.File, error) {
 		0,
 	)
 	if err != nil {
-		return nil, &os.PathError{Op: "open", Path: path, Err: err}
+		return syscall.InvalidHandle, err
 	}
-	return os.NewFile(uintptr(handle), path), nil
+	return handle, nil
 }
 
 func fixFingerprintPath(path string) string {
