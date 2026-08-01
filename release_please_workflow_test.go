@@ -40,6 +40,7 @@ func TestReleasePleaseMergeToReleasePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	contents := normalizeWorkflowLineEndings(string(workflowBytes))
+	workflowBytes = []byte(contents)
 	if !strings.Contains(contents, mergeToReleasePolicy) {
 		t.Fatal("release-please workflow must state the authoritative merge-to-release policy")
 	}
@@ -116,6 +117,7 @@ func TestReleasePleaseMoxyDispatchWorkflowContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	workflowBytes = []byte(normalizeWorkflowLineEndings(string(workflowBytes)))
 
 	var workflow struct {
 		Jobs map[string]struct {
