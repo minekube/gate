@@ -54,8 +54,12 @@ func TestWatchCoalescesAtomicRenameAndRecreatedFile(t *testing.T) {
 	require.Equal(t, int32(2), calls.Load())
 }
 
-func TestFingerprintReadAllowsAtomicReplacement(t *testing.T) {
+func TestFingerprintReadAllowsAtomicReplacementAtLongPath(t *testing.T) {
 	dir := t.TempDir()
+	for range 10 {
+		dir = filepath.Join(dir, "fingerprint-long-path")
+	}
+	require.NoError(t, os.MkdirAll(dir, 0o700))
 	path := filepath.Join(dir, "config.yml")
 	temporary := filepath.Join(dir, "config.yml.tmp")
 	require.NoError(t, os.WriteFile(path, []byte("initial"), 0o600))
