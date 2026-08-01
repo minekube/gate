@@ -174,6 +174,15 @@ func componentObjectValue(value any) any {
 				v[key] = componentObjectValue(item)
 			}
 		}
+		if hoverEvent, ok := v["hover_event"].(map[string]any); ok {
+			if action, ok := hoverEvent["action"].(string); ok && action == "show_text" {
+				for _, key := range []string{"value", "contents"} {
+					if item, ok := hoverEvent[key]; ok {
+						hoverEvent[key] = componentObjectValue(item)
+					}
+				}
+			}
+		}
 		for _, key := range []string{"separator"} {
 			if item, ok := v[key]; ok && item != nil {
 				v[key] = componentObjectValue(item)
