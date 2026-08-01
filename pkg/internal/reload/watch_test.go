@@ -26,8 +26,12 @@ func TestWatchCoalescesAtomicRenameAndRecreatedFile(t *testing.T) {
 	var calls atomic.Int32
 	done := make(chan struct{}, 2)
 	require.NoError(t, Watch(ctx, path, func() error {
-		call := calls.Add(1)
-		if call <= 2 {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return Reject("read_failed")
+		}
+		calls.Add(1)
+		if string(content) == "replacement" || string(content) == "recreated" {
 			done <- struct{}{}
 		}
 		return nil
