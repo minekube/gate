@@ -65,7 +65,7 @@ func TestFingerprintReadAllowsAtomicReplacement(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, file.Close()) })
 
-	require.NoError(t, os.Rename(temporary, path))
+	require.NoError(t, replaceFingerprintTestFile(temporary, path))
 	content, err := os.ReadFile(path)
 	require.NoError(t, err)
 	require.Equal(t, "replacement", string(content))
