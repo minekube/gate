@@ -23,12 +23,23 @@ const mergeToReleasePolicy = `# Merge-to-release policy (authoritative):
 
 var immutableWorkflowRef = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
+func normalizeWorkflowLineEndings(contents string) string {
+	return strings.ReplaceAll(contents, "\r\n", "\n")
+}
+
+func TestNormalizeWorkflowLineEndings(t *testing.T) {
+	const workflow = "name: Release Please\n\n# Merge-to-release policy (authoritative):\n"
+	if got := normalizeWorkflowLineEndings(strings.ReplaceAll(workflow, "\n", "\r\n")); got != workflow {
+		t.Fatalf("normalized workflow = %q, want %q", got, workflow)
+	}
+}
+
 func TestReleasePleaseMergeToReleasePolicy(t *testing.T) {
 	workflowBytes, err := os.ReadFile(".github/workflows/release-please.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
-	contents := string(workflowBytes)
+	contents := normalizeWorkflowLineEndings(string(workflowBytes))
 	if !strings.Contains(contents, mergeToReleasePolicy) {
 		t.Fatal("release-please workflow must state the authoritative merge-to-release policy")
 	}
