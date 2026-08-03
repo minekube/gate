@@ -229,17 +229,30 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		return status.Errorf(codes.Aborted, "could not connect to tunnel service: %v", err)
 	}
 
-	var conn connectutil.TunnelSession = &tunnelConnWithSession{Tunnel: tunnel, s: proposal.Session()}
-	if gp != nil {
-		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp}
-	}
-	if principal != nil {
-		conn = &tunnelConnWithPrincipal{TunnelSession: conn, principal: principal}
-	}
+	conn := wrapTunnelSession(tunnel, proposal.Session(), gp, principal)
 
 	log.Info("established tunnel for session")
 	t.connHandler(conn)
 	return nil
+}
+
+// wrapTunnelSession layers the session, game profile and verified principal
+// onto the tunnel connection. The outermost wrapper must keep the game profile
+// visible to netmc.Assert, which only unwraps via a Conn() net.Conn method.
+func wrapTunnelSession(
+	tunnel connect.Tunnel,
+	s *connect.Session,
+	gp *profile.GameProfile,
+	principal bedrockprincipal.VerifiedBedrockPrincipal,
+) connectutil.TunnelSession {
+	var conn connectutil.TunnelSession = &tunnelConnWithSession{Tunnel: tunnel, s: s}
+	switch {
+	case principal != nil:
+		conn = &tunnelConnWithPrincipal{TunnelSession: conn, gp: gp, principal: principal}
+	case gp != nil:
+		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp}
+	}
+	return conn
 }
 
 type (
@@ -253,16 +266,19 @@ type (
 	}
 	tunnelConnWithPrincipal struct {
 		connectutil.TunnelSession
+		gp        *profile.GameProfile
 		principal bedrockprincipal.VerifiedBedrockPrincipal
 	}
 )
 
 var (
 	_ proxy.GameProfileProvider             = (*tunnelConnWithGameProfile)(nil)
+	_ proxy.GameProfileProvider             = (*tunnelConnWithPrincipal)(nil)
 	_ connectutil.VerifiedPrincipalProvider = (*tunnelConnWithPrincipal)(nil)
 )
 
 func (t *tunnelConnWithGameProfile) GameProfile() *profile.GameProfile { return t.gp }
+func (t *tunnelConnWithPrincipal) GameProfile() *profile.GameProfile   { return t.gp }
 func (t *tunnelConnWithSession) Session() *connect.Session             { return t.s }
 func (t *tunnelConnWithPrincipal) VerifiedPrincipal() bedrockprincipal.VerifiedBedrockPrincipal {
 	return t.principal

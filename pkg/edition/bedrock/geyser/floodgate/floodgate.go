@@ -59,7 +59,10 @@ func (f *Floodgate) Encrypt(data []byte) ([]byte, error) {
 func (f *Floodgate) ReadHostname(hostname string) (string, *BedrockData, error) {
 	parts := strings.Split(hostname, "\u0000")
 	if len(parts) != 2 {
-		return "", nil, fmt.Errorf("invalid hostname format: %s", hostname)
+		// The raw hostname can embed Floodgate identity data and must never
+		// appear in the error; report only structural information.
+		return "", nil, fmt.Errorf("invalid hostname format: expected 2 NUL-separated parts, got %d (hostname length %d)",
+			len(parts), len(hostname))
 	}
 
 	originalHostname := parts[0]
