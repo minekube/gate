@@ -6,22 +6,12 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 const (
 	// GeyserMC API for linked accounts and skins
 	GEYSER_API_URL = "https://api.geysermc.org/v2/"
 )
-
-// LinkedAccountResult represents a linked Java account from GeyserMC API.
-type LinkedAccountResult struct {
-	BedrockID      int64     `json:"bedrock_id"`
-	JavaID         uuid.UUID `json:"java_id"`
-	JavaName       string    `json:"java_name"`
-	LastNameUpdate int64     `json:"last_name_update"`
-}
 
 // SkinResult represents skin data from GeyserMC API.
 type SkinResult struct {
@@ -46,17 +36,12 @@ func NewProfileManager() *ProfileManager {
 	}
 }
 
-// GetLinkedAccount retrieves linked Java account information for a Bedrock XUID.
-func (pm *ProfileManager) GetLinkedAccount(xuid int64) (*LinkedAccountResult, error) {
-	var result LinkedAccountResult
-	err := pm.geyserApiGet("link/bedrock/"+strconv.FormatInt(xuid, 10), &result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get linked account: %w", err)
-	}
-	return &result, nil
-}
-
 // GetSkin retrieves skin data for a Bedrock XUID.
+//
+// Note: the GeyserMC global API's account-link lookup is deliberately not
+// exposed here. It is an unauthenticated hint and must never be treated as
+// authority for a linked Java identity; only signed authoritative provenance
+// (a verified Bedrock principal) may do that.
 func (pm *ProfileManager) GetSkin(xuid int64) (*SkinResult, error) {
 	var result SkinResult
 	err := pm.geyserApiGet("skin/"+strconv.FormatInt(xuid, 10), &result)
