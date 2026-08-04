@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.70.2](https://github.com/minekube/gate/compare/v0.70.1...v0.70.2) (2026-08-04)
+
+
+### Bug Fixes
+
+* **reload:** allow Windows atomic config replacement during fingerprinting ([#959](https://github.com/minekube/gate/issues/959)) ([523fbe4](https://github.com/minekube/gate/commit/523fbe41dcb1bc90a457c8778995e7ccb761d031))
+
 ## [0.70.1](https://github.com/minekube/gate/compare/v0.70.0...v0.70.1) (2026-08-01)
 
 
