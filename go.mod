@@ -11,6 +11,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dboslee/lru v0.0.1
 	github.com/edwingeng/deque/v2 v2.1.1
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gammazero/deque v1.2.1
 	github.com/go-faker/faker/v4 v4.9.0
 	github.com/go-logr/logr v1.4.3
@@ -20,7 +21,6 @@ require (
 	github.com/gookit/color v1.6.1
 	github.com/honeycombio/otel-config-go v1.17.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
-	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.13.0
 	github.com/robinbraemer/event v0.1.1
@@ -33,7 +33,7 @@ require (
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
-	go.minekube.com/connect v0.6.2
+	go.minekube.com/connect v0.6.3-0.20260803141147-8001cda93b1d
 	go.minekube.com/geyserlite v0.4.9
 	go.minekube.com/vialite v0.3.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
@@ -61,7 +61,6 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-gl/mathgl v1.1.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect

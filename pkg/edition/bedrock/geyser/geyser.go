@@ -92,9 +92,8 @@ type GeyserConnection struct {
 	context.Context
 	net.Conn
 	*floodgate.BedrockData
-	OriginalHost  string
-	LinkedAccount *LinkedAccountResult
-	closeCb       func()
+	OriginalHost string
+	closeCb      func()
 }
 
 func (c *GeyserConnection) Close() error {
@@ -304,8 +303,8 @@ func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {
 	if hostname := e.Conn().VirtualHost(); hostname != nil {
 		originalHost, bedrockData, err := i.floodgate.ReadHostname(hostname.String())
 		if err != nil || originalHost == "" || bedrockData == nil {
-			i.log.Info("disconnecting bedrock player: failed to read hostname",
-				"error", err, "hostname", hostname.String())
+			// The raw hostname may embed Floodgate identity data and is never logged.
+			i.log.Info("disconnecting bedrock player: failed to read hostname", "error", err)
 			e.Deny(&component.Text{Content: "Failed to read bedrock hostname"})
 			return
 		}
@@ -317,9 +316,8 @@ func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {
 		// Force offline mode for Bedrock players (Floodgate handles auth)
 		e.ForceOfflineMode()
 
+		// No raw identity (username, XUID, linked Java identity) in logs.
 		i.log.Info("bedrock player connecting",
-			"username", bedrockData.Username,
-			"xuid", bedrockData.Xuid,
 			"device_os", bedrockData.DeviceOS,
 			"language", bedrockData.Language,
 			"original_host", originalHost)
@@ -338,8 +336,7 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	// Generate UUID from XUID
 	uid, err := bedrockData.JavaUuid()
 	if err != nil || uid == uuid.Nil {
-		i.log.Info("disconnecting bedrock player: failed to get UUID from XUID",
-			"error", err, "xuid", bedrockData.Xuid)
+		i.log.Info("disconnecting bedrock player: failed to get UUID from XUID", "error", err)
 		geyserConn.Close()
 		return
 	}
@@ -363,24 +360,13 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 			Value:     skin.Value,
 			Signature: skin.Signature,
 		})
-		i.log.V(1).Info("applied bedrock skin", "username", formattedName, "texture_id", skin.TextureID)
+		i.log.V(1).Info("applied bedrock skin", "texture_id", skin.TextureID)
 	}
 
-	// Check for linked Java account
-	if linkedAccount, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid); err == nil && linkedAccount != nil && linkedAccount.JavaID != uuid.Nil {
-		geyserConn.LinkedAccount = linkedAccount
-		bedrockData.LinkedPlayer = linkedAccount.JavaName
-
-		// Use linked Java account details
-		i.log.Info("bedrock player using linked java account",
-			"bedrock_name", bedrockData.Username,
-			"java_name", linkedAccount.JavaName,
-			"java_uuid", linkedAccount.JavaID)
-
-		gameProfile.ID = linkedAccount.JavaID
-		gameProfile.Name = linkedAccount.JavaName
-		// TODO: Get skin for linked Java account if needed
-	}
+	// The unauthenticated GeyserMC link-lookup hint is deliberately not
+	// consulted here: it must never grant a linked Java UUID or name. Linked
+	// Java identity is only ever applied from signed authoritative provenance
+	// (the verified Bedrock principal on the Connect proposal path).
 
 	e.SetGameProfile(gameProfile)
 }

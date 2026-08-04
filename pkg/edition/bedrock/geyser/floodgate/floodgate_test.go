@@ -217,3 +217,24 @@ func TestGenerateKeyToFile(t *testing.T) {
 		t.Fatalf("file key encrypt/decrypt failed: got %q, want %q", decrypted, testMessage)
 	}
 }
+
+func TestReadHostnameInvalidFormatErrorOmitsHostname(t *testing.T) {
+	key := bytes.Repeat([]byte{0x42}, 16)
+	fg, err := NewFloodgate(key)
+	if err != nil {
+		t.Fatalf("NewFloodgate: %v", err)
+	}
+
+	// A malformed hostname can still embed Floodgate identity data; the
+	// error must report only structural information, never the raw value.
+	const sentinel = "SENTINEL_IDENTITY_HOSTNAME"
+	for _, hostname := range []string{sentinel, sentinel + "\x00a\x00b"} {
+		_, _, err := fg.ReadHostname(hostname)
+		if err == nil {
+			t.Fatalf("ReadHostname accepted malformed hostname %q", hostname)
+		}
+		if strings.Contains(err.Error(), sentinel) {
+			t.Fatalf("ReadHostname error leaks raw hostname: %v", err)
+		}
+	}
+}

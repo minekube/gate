@@ -26,7 +26,33 @@ type Config struct {
 	WatchServiceAddr        string `yaml:"watchServiceAddr,omitempty" json:"watchServiceAddr,omitempty"`               // The address of the WatchService
 	TokenFilePath           string `yaml:"tokenFilePath,omitempty" json:"tokenFilePath,omitempty"`                     // Path to the token file
 
+	// BedrockPrincipal configures verification of signed Bedrock principal v2
+	// envelopes on session proposals.
+	BedrockPrincipal BedrockPrincipal `yaml:"bedrockPrincipal,omitempty" json:"bedrockPrincipal,omitempty"`
+
 	Service Service
+}
+
+// BedrockPrincipal configures the Bedrock principal v2 verifier
+// (Connect capability "bedrock-verified-principal-v2").
+//
+// When Mode is "require" and the verifier is operational, Gate advertises the
+// capability on the Watch connection and applies exactly one verified game
+// profile per Bedrock session proposal, produced by the Connect SDK verifier.
+// When the verifier is not ready the capability is not advertised and
+// proposals carrying an envelope are rejected instead of downgraded to
+// unverified profile data.
+type BedrockPrincipal struct {
+	// Mode is "off" (default) or "require".
+	Mode string `yaml:"mode,omitempty" json:"mode,omitempty"`
+	// Issuer, TrustDomain and Audience are the exact trusted values every
+	// envelope must be bound to.
+	Issuer      string `yaml:"issuer,omitempty" json:"issuer,omitempty"`
+	TrustDomain string `yaml:"trustDomain,omitempty" json:"trustDomain,omitempty"`
+	Audience    string `yaml:"audience,omitempty" json:"audience,omitempty"`
+	// Keys maps a key ID (kid) to an unpadded base64url-encoded raw Ed25519
+	// public key that is eligible to sign principal envelopes.
+	Keys map[string]string `yaml:"keys,omitempty" json:"keys,omitempty"`
 }
 
 // Service is a config for defining self-hosted
