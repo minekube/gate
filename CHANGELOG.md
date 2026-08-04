@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.0](https://github.com/minekube/gate/compare/v0.70.2...v0.71.0) (2026-08-04)
+
+
+### Features
+
+* **connect:** consume frozen Bedrock principal v2 and remove raw-identity logging ([#961](https://github.com/minekube/gate/issues/961)) ([e89634a](https://github.com/minekube/gate/commit/e89634ad4590f31fbfbf5839a667ae15844d4ad0))
+
 ## [0.70.2](https://github.com/minekube/gate/compare/v0.70.1...v0.70.2) (2026-08-04)
 
 
