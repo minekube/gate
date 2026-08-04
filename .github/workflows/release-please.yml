@@ -1,5 +1,14 @@
 name: Release Please
 
+# Merge-to-release policy (authoritative):
+# - Every push to master runs Release Please. When it finds a release-eligible
+#   change, this workflow merges the generated release PR, reruns itself on
+#   master, creates the tag and GitHub release, and calls release-publish.yml.
+# - Merging a release-eligible change to master therefore approves that release.
+#   PR text, labels, and task-local instructions such as "do not release" do not
+#   suppress it. A release hold must first be implemented in this workflow and
+#   protected by matching regression coverage.
+
 # Renovate can now auto-merge geyserlite bumps with a fix(deps): commit.
 # This workflow turns those conventional commits on master into normal Gate
 # GitHub releases. The release-please tag is created with GITHUB_TOKEN, so it
