@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -117,9 +118,14 @@ type contentFingerprint struct {
 }
 
 func fingerprint(path string) contentFingerprint {
-	content, err := os.ReadFile(path)
+	file, err := openFingerprintFile(path)
 	if err == nil {
-		return contentFingerprint{state: 1, sum: sha256.Sum256(content)}
+		defer file.Close()
+		content, readErr := io.ReadAll(file)
+		if readErr == nil {
+			return contentFingerprint{state: 1, sum: sha256.Sum256(content)}
+		}
+		err = readErr
 	}
 	if errors.Is(err, os.ErrNotExist) {
 		return contentFingerprint{state: 2}

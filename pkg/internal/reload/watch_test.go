@@ -54,6 +54,23 @@ func TestWatchCoalescesAtomicRenameAndRecreatedFile(t *testing.T) {
 	require.Equal(t, int32(2), calls.Load())
 }
 
+func TestFingerprintReadAllowsAtomicReplacement(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	temporary := filepath.Join(dir, "config.yml.tmp")
+	require.NoError(t, os.WriteFile(path, []byte("initial"), 0o600))
+	require.NoError(t, os.WriteFile(temporary, []byte("replacement"), 0o600))
+
+	file, err := openFingerprintFile(path)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, file.Close()) })
+
+	require.NoError(t, replaceFingerprintTestFile(temporary, path))
+	content, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, "replacement", string(content))
+}
+
 func TestWatchReportsOnlyRedactedAndRateBoundedRejections(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yml")
