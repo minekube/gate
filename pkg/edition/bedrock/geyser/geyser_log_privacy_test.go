@@ -85,7 +85,7 @@ func TestOnGameProfileLogsNoIdentityAndAppliesNoLinkHint(t *testing.T) {
 	// The unauthenticated GeyserMC link lookup no longer exists, so the
 	// profile can never be promoted to a linked Java UUID or name here.
 	applied := e.GameProfile()
-	require.Equal(t, ".SentinelGamertag", applied.Name)
+	require.Equal(t, "_SentinelGamerta", applied.Name)
 	expectedID, err := bedrockData.JavaUuid()
 	require.NoError(t, err)
 	require.Equal(t, expectedID, applied.ID)
