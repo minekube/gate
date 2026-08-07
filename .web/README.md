@@ -43,10 +43,11 @@ served using any static content hosting service.
 
 ### Deployment
 
-Our docs are deployed as Cloudflare Workers Static Assets. The route-free
-canary uses `wrangler.canary.jsonc` and a `workers.dev` URL. The production
-configuration in `wrangler.jsonc` attaches the `gate.minekube.com` custom
-domain; deploy it only after canary verification passes.
+Our docs are deployed as Cloudflare Workers Static Assets. The isolated canary
+uses `wrangler.canary.jsonc` and the `gate-docs-canary.minekube.com` custom
+domain. The production configuration in `wrangler.jsonc` attaches the
+`gate.minekube.com` custom domain; deploy it only after canary verification
+passes.
 
 The previous Cloudflare Pages deployment remains available as the rollback
 target until the Worker is verified in production.

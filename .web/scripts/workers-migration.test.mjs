@@ -22,7 +22,7 @@ test('production and canary Workers preserve the Pages runtime contract', async 
   );
 
   const shared = {
-    compatibility_date: '2022-11-29',
+    compatibility_date: '2026-08-07',
     main: 'worker.mjs',
     vars: { GITHUB_APP_ID: '2305701' },
     kv_namespaces: [
@@ -52,8 +52,10 @@ test('production and canary Workers preserve the Pages runtime contract', async 
   ]);
 
   assert.equal(canary.name, 'gate-minekube-worker-canary');
-  assert.equal(canary.workers_dev, true);
-  assert.deepEqual(canary.routes, []);
+  assert.equal(canary.workers_dev, false);
+  assert.deepEqual(canary.routes, [
+    { pattern: 'gate-docs-canary.minekube.com', custom_domain: true },
+  ]);
 
   const deployment = createDeploymentConfig(
     production,
