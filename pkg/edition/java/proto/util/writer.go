@@ -180,11 +180,12 @@ func WriteProperties(wr io.Writer, properties []profile.Property) error {
 		if err != nil {
 			return err
 		}
-		if len(p.Signature) != 0 {
-			err = WriteBool(wr, true)
-			if err != nil {
-				return err
-			}
+		hasSignature := len(p.Signature) != 0
+		err = WriteBool(wr, hasSignature)
+		if err != nil {
+			return err
+		}
+		if hasSignature {
 			err = WriteString(wr, p.Signature)
 			if err != nil {
 				return err
