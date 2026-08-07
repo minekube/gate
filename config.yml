@@ -287,9 +287,10 @@ config:
 
     # Bedrock player username format to avoid conflicts with Java players.
     # Use %s as placeholder for the original Bedrock username.
-    # Examples: ".%s" (prefix dot), "[BE]%s" (prefix tag), "%s_BE" (suffix tag)
-    # Default: ".%s"
-    #usernameFormat: ".%s"
+    # Examples: "_%s" (prefix underscore), "BE_%s" (prefix tag), "%s_BE" (suffix tag)
+    # Existing formats are normalized to Java's username rules at login.
+    # Default: "_%s"
+    #usernameFormat: "_%s"
 
     # Path to the Floodgate encryption key file (shared between Geyser and Gate).
     # Gate can auto-generate this key in managed mode.

@@ -346,6 +346,7 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	if i.config.UsernameFormat != "" {
 		formattedName = fmt.Sprintf(i.config.UsernameFormat, bedrockData.Username)
 	}
+	formattedName = javaCompatibleUsername(formattedName)
 
 	// Create base game profile
 	gameProfile := profile.GameProfile{
@@ -369,6 +370,33 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	// (the verified Bedrock principal on the Connect proposal path).
 
 	e.SetGameProfile(gameProfile)
+}
+
+// javaCompatibleUsername makes a Bedrock gamertag safe for the Java profile
+// boundary. Bedrock names may contain spaces and other characters that modern
+// Java servers reject, while Java profile names are limited to 16 ASCII
+// letters, digits, and underscores.
+func javaCompatibleUsername(name string) string {
+	const maxJavaUsernameLen = 16
+
+	var normalized strings.Builder
+	normalized.Grow(min(len(name), maxJavaUsernameLen))
+	for _, r := range name {
+		if normalized.Len() == maxJavaUsernameLen {
+			break
+		}
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '_':
+			normalized.WriteByte(byte(r))
+		default:
+			normalized.WriteByte('_')
+		}
+	}
+
+	if normalized.Len() == 0 {
+		return "_"
+	}
+	return normalized.String()
 }
 
 func cleanedVirtualHost(current net.Addr, originalHost string) net.Addr {
