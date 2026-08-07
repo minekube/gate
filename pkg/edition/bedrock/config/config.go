@@ -14,7 +14,7 @@ import (
 // - Floodgate: Authentication system for offline Bedrock players
 var DefaultConfig = Config{
 	GeyserListenAddr: "localhost:25567", // TCP address where Gate listens for Geyser connections (localhost recommended)
-	UsernameFormat:   ".%s",             // Prefix Bedrock usernames with "." to avoid conflicts
+	UsernameFormat:   "_%s",             // Prefix Bedrock usernames with a Java-compatible underscore
 	FloodgateKeyPath: "floodgate.pem",   // Shared encryption key for Floodgate authentication
 	Managed:          nil,               // Will use DefaultManaged when any managed field is specified
 }
@@ -59,7 +59,7 @@ type Config struct {
 	GeyserListenAddr string `yaml:"geyserListenAddr,omitempty" json:"geyserListenAddr,omitempty"` // TCP address where Gate listens for Geyser connections
 
 	// Bedrock player settings
-	UsernameFormat string `yaml:"usernameFormat,omitempty" json:"usernameFormat,omitempty"` // Format for Bedrock player usernames to avoid conflicts with Java players (e.g., ".%s")
+	UsernameFormat string `yaml:"usernameFormat,omitempty" json:"usernameFormat,omitempty"` // Format for Bedrock player usernames to avoid conflicts with Java players (e.g., "_%s")
 
 	// Floodgate authentication (enables offline Bedrock players)
 	FloodgateKeyPath string `yaml:"floodgateKeyPath,omitempty" json:"floodgateKeyPath,omitempty"` // Path to Floodgate AES encryption key shared with backend servers
