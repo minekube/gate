@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const approvedDispatchWorkflow = "minekube/actions/.github/workflows/dispatch-workflow.yml@1965ed6ae602a602f9f98edcb31fe177403e8d77"
+const approvedDispatchWorkflow = "minekube/actions/.github/workflows/dispatch-workflow.yml@0d24c686ae9c5df7841e2158f2f0942cd452f870"
 
 const mergeToReleasePolicy = `# Merge-to-release policy (authoritative):
 # - Every push to master runs Release Please. When it finds a release-eligible
