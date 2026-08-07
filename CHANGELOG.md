@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.1](https://github.com/minekube/gate/compare/v0.71.0...v0.71.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* **bedrock:** current-client production compatibility ([#967](https://github.com/minekube/gate/issues/967)) ([2095355](https://github.com/minekube/gate/commit/209535567dc854f004e902ca045cf86ceb78e539))
+
 ## [0.71.0](https://github.com/minekube/gate/compare/v0.70.2...v0.71.0) (2026-08-04)
 
 
