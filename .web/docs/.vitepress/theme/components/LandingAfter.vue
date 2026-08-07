@@ -310,7 +310,7 @@
                     {{
                       showWindowsCommand
                         ? 'powershell -c "irm https://gate.minekube.com/install.ps1 | iex"'
-                        : 'curl -sSL https://gate.minekube.com/install.sh | sh'
+                        : 'curl -sSL https://gate.minekube.com/install | sh'
                     }}
                   </code>
                 </div>
@@ -1239,7 +1239,7 @@ const showWindowsCommand = ref(isWindows);
 const copyInstallCommand = () => {
   const command = showWindowsCommand.value
     ? 'powershell -c "irm https://gate.minekube.com/install.ps1 | iex"'
-    : 'curl -sSL https://gate.minekube.com/install.sh | sh';
+    : 'curl -sSL https://gate.minekube.com/install | sh';
   navigator.clipboard.writeText(command);
 };
 

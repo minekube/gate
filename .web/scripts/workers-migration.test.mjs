@@ -97,6 +97,21 @@ test('deployment instructions provision the GitHub App private key as a Worker s
   assert.match(readme, /openssl pkcs8 -topk8 -nocrypt/);
 });
 
+test('the landing page uses the published Unix installer path', async () => {
+  const landingPage = await readFile(
+    new URL('../docs/.vitepress/theme/components/LandingAfter.vue', import.meta.url),
+    'utf8'
+  );
+  const installer = await readFile(
+    new URL('../docs/public/install', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(landingPage, /https:\/\/gate\.minekube\.com\/install \| sh/);
+  assert.doesNotMatch(landingPage, /gate\.minekube\.com\/install\.sh/);
+  assert.match(installer, /^#!\/usr\/bin\/env bash/);
+});
+
 test('the Worker preserves Pages response headers for static assets and custom 404s', async () => {
   const html = normalizePagesResponse(
     new Response('<!doctype html>', {
