@@ -6,7 +6,39 @@ import (
 	"testing"
 
 	"go.minekube.com/common/minecraft/key"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 )
+
+func TestWritePropertiesWritesSignaturePresence(t *testing.T) {
+	tests := []struct {
+		name       string
+		properties []profile.Property
+		want       []byte
+	}{
+		{
+			name:       "unsigned",
+			properties: []profile.Property{{Name: "n", Value: "v"}},
+			want:       []byte{1, 1, 'n', 1, 'v', 0},
+		},
+		{
+			name:       "signed",
+			properties: []profile.Property{{Name: "n", Value: "v", Signature: "s"}},
+			want:       []byte{1, 1, 'n', 1, 'v', 1, 1, 's'},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := WriteProperties(&buf, tt.properties); err != nil {
+				t.Fatalf("WriteProperties() error = %v", err)
+			}
+			if got := buf.Bytes(); !bytes.Equal(got, tt.want) {
+				t.Fatalf("WriteProperties() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestReadKeyRejectsInvalidResourceLocations(t *testing.T) {
 	for _, raw := range []string{
