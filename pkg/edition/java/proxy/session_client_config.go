@@ -65,6 +65,9 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		forwardKeepAlive(p, h.player)
 	case *packet.ClientSettings:
 		h.player.setClientSettings(p)
+	case *config.CodeOfConductAcceptPacket:
+		h.markCodeOfConductAccepted()
+		forwardToServer(pc, h.player)
 	case *packet.ResourcePackResponse:
 		if !handleResourcePackResponse(p, h.player.resourcePackHandler, h.log) {
 			forwardToServer(pc, h.player)
@@ -107,6 +110,16 @@ func (h *clientConfigSessionHandler) handleBackendFinishUpdate(serverConn *serve
 	h.player.SetOutboundState(state.Play)
 
 	return &h.configSwitchDone
+}
+
+func (h *clientConfigSessionHandler) markCodeOfConductAccepted() {
+	if serverConn := h.player.connectionInFlightOrConnectedServer(); serverConn != nil {
+		if smc, ok := serverConn.ensureConnected(); ok {
+			if backendConfig, ok := smc.ActiveSessionHandler().(*backendConfigSessionHandler); ok {
+				backendConfig.releaseCodeOfConductHold()
+			}
+		}
+	}
 }
 
 func handleResourcePackResponse(p *packet.ResourcePackResponse, handler resourcepack.Handler, log logr.Logger) bool {
