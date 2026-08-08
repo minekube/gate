@@ -112,7 +112,7 @@ test('the landing page uses the published Unix installer path', async () => {
   assert.match(installer, /^#!\/usr\/bin\/env bash/);
 });
 
-test('the Worker preserves Pages response headers for static assets and custom 404s', async () => {
+test('the Worker preserves safe response headers without caching HTML shells', async () => {
   const html = normalizePagesResponse(
     new Response('<!doctype html>', {
       headers: { 'content-type': 'text/html' },
@@ -120,6 +120,7 @@ test('the Worker preserves Pages response headers for static assets and custom 4
   );
   assert.equal(html.headers.get('access-control-allow-origin'), '*');
   assert.equal(html.headers.get('content-type'), 'text/html; charset=utf-8');
+  assert.equal(html.headers.get('cache-control'), 'no-store');
   assert.equal(html.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(
     html.headers.get('referrer-policy'),
@@ -132,6 +133,7 @@ test('the Worker preserves Pages response headers for static assets and custom 4
     })
   );
   assert.equal(css.headers.get('content-type'), 'text/css; charset=utf-8');
+  assert.equal(css.headers.get('cache-control'), null);
 
   const missing = normalizePagesResponse(
     new Response('missing', {

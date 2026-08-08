@@ -52,6 +52,10 @@ passes.
 The previous Cloudflare Pages deployment remains available as the rollback
 target until the Worker is verified in production.
 
+The Worker marks HTML and custom 404 responses `no-store` so a deployment
+cannot leave an old HTML shell pointing at retired content-hashed assets.
+Hashed static assets retain the cache policy supplied by Workers Static Assets.
+
 Worker deployments use the pinned Wrangler toolchain. Set
 `GITHUB_CACHE_KV_NAMESPACE_ID` to the existing `GITHUB_CACHE` Workers KV
 namespace ID in the deployment environment. Before the first uncached API
