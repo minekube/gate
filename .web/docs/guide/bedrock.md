@@ -179,8 +179,12 @@ config:
 
 When enabled, Gate re-attaches freshly encrypted Floodgate player data only for verified Bedrock players and only when they connect to a listed backend. Java clients cannot spoof this data through the hostname, and unlisted backends continue to receive the normal clean Java hostname.
 
+When the Floodgate handshake carries a linked Java account and `backendFloodgate.enabled` is `true`, Gate applies that linked identity to the player's profile: the linked Java UUID and username replace the XUID-derived UUID and Bedrock gamertag before the handshake to the backend. The promotion is only trusted when the handshake's linked-player triplet provably belongs to the connecting Bedrock player (its Bedrock UUID must match the connection's own XUID-derived Floodgate UUID), so a link can never be grafted onto a different Bedrock connection. This matters for linked-account setups: with Velocity forwarding the backend trusts the proxy-set profile, so without this promotion a linked Bedrock player would keep the XUID-derived identity even though the backend Floodgate plugin knows about the link.
+
+When the handshake carries **no** triplet (e.g. standalone Geyser, which does not place a link in the handshake), Gate falls back to the official GeyserMC global link API (`api.geysermc.org/v2/link/bedrock/<xuid>` — the same `GlobalPlayerLinking` service backend Floodgate plugins use, `enable-global-linking` defaults to `true`) to resolve the linked Java account. This fallback is also gated on `backendFloodgate.enabled` and is fail-closed: an API error or "not linked" response leaves the XUID-derived identity untouched.
+
 ::: warning Trust boundary
-Only allow backends that you operate and trust with the same Floodgate key. Do not enable this for third-party, shared, or untrusted backend servers.
+Only allow backends that you operate and trust with the same Floodgate key. Do not enable this for third-party, shared, or untrusted backend servers. Enabling `backendFloodgate` means a linked Bedrock account is presented as its linked Java account (UUID and username) to the allowlisted backends; anyone who can produce a valid Floodgate handshake — that is, anyone holding the shared key — controls the linked identity Gate will apply. The GeyserMC link API fallback adds the same external trust as the skin API: HTTPS to a GeyserMC-operated service, no per-connection signature, and the XUID is sent to `api.geysermc.org`.
 :::
 
 Requirements:

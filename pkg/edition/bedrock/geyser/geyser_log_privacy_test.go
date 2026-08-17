@@ -82,8 +82,10 @@ func TestOnGameProfileLogsNoIdentityAndAppliesNoLinkHint(t *testing.T) {
 	i.onGameProfile(e)
 
 	// Exactly one profile is applied: the XUID-derived offline identity.
-	// The unauthenticated GeyserMC link lookup no longer exists, so the
-	// profile can never be promoted to a linked Java UUID or name here.
+	// The GeyserMC link lookup is only consulted for identity promotion when
+	// the operator explicitly opted in via backendFloodgate (default off),
+	// so with the default config the profile can never be promoted to a
+	// linked Java UUID or name here.
 	applied := e.GameProfile()
 	require.Equal(t, "_SentinelGamerta", applied.Name)
 	expectedID, err := bedrockData.JavaUuid()
