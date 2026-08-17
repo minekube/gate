@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.3](https://github.com/minekube/gate/compare/v0.71.2...v0.71.3) (2026-08-17)
+
+
+### Bug Fixes
+
+* **bedrock:** apply linked Floodgate Java identity on the direct listener ([#977](https://github.com/minekube/gate/issues/977)) ([fc908de](https://github.com/minekube/gate/commit/fc908de35dec6a17a14a859c01de1f32fbca1449))
+
 ## [0.71.2](https://github.com/minekube/gate/compare/v0.71.1...v0.71.2) (2026-08-13)
 
 
