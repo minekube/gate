@@ -348,6 +348,38 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	}
 	formattedName = javaCompatibleUsername(formattedName)
 
+	// Opt-in linked Java identity, gated on the backendFloodgate trust switch
+	// (default off). Two sources, in priority order:
+	//
+	//  1. AES-authenticated Floodgate handshake triplet. Only parties holding
+	//     the shared Floodgate key can produce it; it needs no network and is
+	//     the authoritative data for this connection. It is cross-checked so a
+	//     link can only ever be applied to the Bedrock connection it was
+	//     issued for: the triplet's Bedrock UUID must equal this connection's
+	//     own Floodgate bedrock UUID (new UUID(0, xuid)).
+	//  2. GeyserMC global link API fallback (used when the handshake carries
+	//     no triplet, e.g. standalone Geyser). This is the official Floodgate
+	//     linking service (GlobalPlayerLinking, enable-global-linking default
+	//     true) that backend Floodgate plugins use in production; HTTPS,
+	//     operated by GeyserMC, same trust basis as the skin API below.
+	//     Fail-closed: an API error leaves the XUID-derived identity.
+	//
+	// The unauthenticated GeyserMC hint is never consulted outside this opt-in
+	// boundary, and linked identity from signed authoritative provenance (the
+	// verified Bedrock principal on the Connect proposal path) is applied
+	// separately and is untouched.
+	if i.config.BackendFloodgate.Enabled {
+		if link := floodgate.ParseLinkedPlayer(bedrockData.LinkedPlayer); link != nil &&
+			link.BedrockUUID == bedrockData.FloodgateJavaUuid() {
+			uid = link.JavaUUID
+			formattedName = javaCompatibleUsername(link.JavaUsername)
+		} else if linked, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid); err == nil &&
+			linked != nil && linked.JavaID != uuid.Nil {
+			uid = linked.JavaID
+			formattedName = javaCompatibleUsername(linked.JavaName)
+		}
+	}
+
 	// Create base game profile
 	gameProfile := profile.GameProfile{
 		Name: formattedName,
@@ -363,11 +395,6 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 		})
 		i.log.V(1).Info("applied bedrock skin", "texture_id", skin.TextureID)
 	}
-
-	// The unauthenticated GeyserMC link-lookup hint is deliberately not
-	// consulted here: it must never grant a linked Java UUID or name. Linked
-	// Java identity is only ever applied from signed authoritative provenance
-	// (the verified Bedrock principal on the Connect proposal path).
 
 	e.SetGameProfile(gameProfile)
 }
