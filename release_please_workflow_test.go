@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const approvedDispatchWorkflow = "minekube/actions/.github/workflows/dispatch-workflow.yml@0d24c686ae9c5df7841e2158f2f0942cd452f870"
+const approvedDispatchWorkflow = "minekube/actions/.github/workflows/dispatch-workflow.yml@d4feba8071a6decbf86dfef0da4b4ab1a2a5d730"
 
 const mergeToReleasePolicy = `# Merge-to-release policy (authoritative):
 # - Every push to master runs Release Please. When it finds a release-eligible
@@ -55,7 +55,7 @@ func TestReleasePleaseMergeToReleasePolicy(t *testing.T) {
 			} `yaml:"repository_dispatch"`
 		} `yaml:"on"`
 		Jobs map[string]struct {
-			Needs string `yaml:"needs"`
+			Needs any    `yaml:"needs"`
 			If    string `yaml:"if"`
 			Uses  string `yaml:"uses"`
 			Steps []struct {
@@ -121,7 +121,7 @@ func TestReleasePleaseMoxyDispatchWorkflowContract(t *testing.T) {
 
 	var workflow struct {
 		Jobs map[string]struct {
-			Needs       string            `yaml:"needs"`
+			Needs       any               `yaml:"needs"`
 			If          string            `yaml:"if"`
 			Uses        string            `yaml:"uses"`
 			Permissions map[string]string `yaml:"permissions"`
@@ -140,11 +140,18 @@ func TestReleasePleaseMoxyDispatchWorkflowContract(t *testing.T) {
 	if dispatch.Uses != approvedDispatchWorkflow {
 		t.Fatalf("dispatch workflow = %q, want %q", dispatch.Uses, approvedDispatchWorkflow)
 	}
-	if dispatch.Needs != "release-please" || dispatch.If != "needs.release-please.outputs.release_created == 'true'" {
-		t.Fatalf("dispatch release gate = needs %q, if %q", dispatch.Needs, dispatch.If)
+	// The moxy bump must be sequenced AFTER the release is published and
+	// verified: it may only run once release-publish (trigger-release) has
+	// concluded successfully, so moxy never consumes a release that is still
+	// building or that failed its verification.
+	if !reflect.DeepEqual(dispatch.Needs, []any{"release-please", "trigger-release"}) {
+		t.Fatalf("dispatch needs = %#v, want [release-please trigger-release]", dispatch.Needs)
 	}
-	if !reflect.DeepEqual(dispatch.Permissions, map[string]string{"contents": "read", "id-token": "write"}) {
-		t.Fatalf("dispatch permissions = %#v", dispatch.Permissions)
+	if dispatch.If != "needs.release-please.result == 'success' && needs.release-please.outputs.release_created == 'true' && needs.trigger-release.result == 'success'" {
+		t.Fatalf("dispatch release gate = if %q", dispatch.If)
+	}
+	if !reflect.DeepEqual(dispatch.Permissions, map[string]string{"contents": "read"}) {
+		t.Fatalf("dispatch permissions = %#v, want only contents: read (no id-token: the shared workflow runs on GH-hosted runners now)", dispatch.Permissions)
 	}
 	if dispatch.Secrets != "inherit" {
 		t.Fatalf("dispatch secrets = %q, want inherit", dispatch.Secrets)
