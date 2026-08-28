@@ -3,6 +3,9 @@
   "extends": [
     "config:recommended"
   ],
+  "description": "Release-chain updates (geyserlite -> gate -> moxy) must never be starved by the global PR backlog: the chain package rules get prPriority 100 so they are created first, and the concurrent limit keeps headroom above the stale-PR backlog that previously rate-limited geyserlite (Dependency Dashboard #119, v0.5.22 stuck for days behind 11 stale PRs at the default prConcurrentLimit of 10).",
+  "prConcurrentLimit": 25,
+  "prHourlyLimit": 5,
   "packageRules": [
     {
       "matchManagers": [
@@ -24,7 +27,8 @@
       ],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "prPriority": 100
     },
     {
       "matchUpdateTypes": [

@@ -70,12 +70,14 @@ jobs:
       release_tag: ${{ needs.release-please.outputs.tag_name }}
 
   dispatch-moxy-bump:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    uses: minekube/actions/.github/workflows/dispatch-workflow.yml@0d24c686ae9c5df7841e2158f2f0942cd452f870
+    # Sequence the downstream handoff after the release is durably
+    # published: moxy must only consume a Gate release that release-publish
+    # has verified, never one that is still building or that failed.
+    needs: [release-please, trigger-release]
+    if: needs.release-please.result == 'success' && needs.release-please.outputs.release_created == 'true' && needs.trigger-release.result == 'success'
+    uses: minekube/actions/.github/workflows/dispatch-workflow.yml@d4feba8071a6decbf86dfef0da4b4ab1a2a5d730
     permissions:
       contents: read
-      id-token: write
     with:
       target-repository: moxy
       target-workflow: bump-gate.yml
