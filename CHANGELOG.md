@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.71.5](https://github.com/minekube/gate/compare/v0.71.4...v0.71.5) (2026-08-28)
+
+
+### Bug Fixes
+
+* **ci:** sequence moxy bump after verified release publish ([#983](https://github.com/minekube/gate/issues/983)) ([68e0e2e](https://github.com/minekube/gate/commit/68e0e2e9e9b8c0ed5d850178e834dd38aac91a54))
+* **ci:** sequence moxy bump after verified release publish ([#983](https://github.com/minekube/gate/issues/983)) ([68e0e2e](https://github.com/minekube/gate/commit/68e0e2e9e9b8c0ed5d850178e834dd38aac91a54))
+
 ## [0.71.4](https://github.com/minekube/gate/compare/v0.71.3...v0.71.4) (2026-08-28)
 
 
