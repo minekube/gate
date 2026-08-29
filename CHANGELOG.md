@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.8](https://github.com/minekube/gate/compare/v0.71.7...v0.71.8) (2026-08-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/go-logr/logr to v1.4.4 ([#992](https://github.com/minekube/gate/issues/992)) ([870727d](https://github.com/minekube/gate/commit/870727da2e8794686db2322000acb02e198351a4))
+
 ## [0.71.7](https://github.com/minekube/gate/compare/v0.71.6...v0.71.7) (2026-08-29)
 
 
