@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.10](https://github.com/minekube/gate/compare/v0.71.9...v0.71.10) (2026-08-29)
+
+
+### Bug Fixes
+
+* **deps:** update module google.golang.org/protobuf to v1.36.12 ([#993](https://github.com/minekube/gate/issues/993)) ([9a8f9cf](https://github.com/minekube/gate/commit/9a8f9cff31c9932ad4e3c487c08ddaae2e6c8a23))
+
 ## [0.71.9](https://github.com/minekube/gate/compare/v0.71.8...v0.71.9) (2026-08-29)
 
 
