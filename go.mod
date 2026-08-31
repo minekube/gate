@@ -11,7 +11,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dboslee/lru v0.0.1
 	github.com/edwingeng/deque/v2 v2.1.1
-	github.com/fsnotify/fsnotify v1.9.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gammazero/deque v1.2.1
 	github.com/go-faker/faker/v4 v4.9.0
 	github.com/go-logr/logr v1.4.4
