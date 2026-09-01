@@ -1,3 +1,1 @@
-# pkg/edition/java agent notes
-
-The handshake `ServerAddress` Gate writes to a backend is also the virtual host the *next* proxy routes on (Gate behind Connect/Gate Lite is a real topology), so anything appended to it - Forge tokens, forwarding data, TCPShield real IP - must keep the host as the first `\0`-part. `pkg/edition/java/proxy/server.go` (`handshakeAddr`, `backendHandshakeBaseHost`) owns that invariant; `lite.ClearVirtualHost` is the consumer that reads the host back out. Upstream Forge scans every `\0`-part, so a mangled address still works with a single proxy and only breaks one hop down - test the chained form, not just the backend's tolerance (`backend_handshake_addresser_test.go`, `lite/forge_route_test.go`).
+AGENTS.md
