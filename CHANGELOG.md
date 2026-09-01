@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.14](https://github.com/minekube/gate/compare/v0.71.13...v0.71.14) (2026-09-01)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/fsnotify/fsnotify to v1.10.1 ([#1004](https://github.com/minekube/gate/issues/1004)) ([6e493ef](https://github.com/minekube/gate/commit/6e493ef3a20ad58480f8772cb03f8e62e9e08e69))
+
 ## [0.71.13](https://github.com/minekube/gate/compare/v0.71.12...v0.71.13) (2026-08-31)
 
 
