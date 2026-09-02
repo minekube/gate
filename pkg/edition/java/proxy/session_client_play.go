@@ -194,17 +194,22 @@ func (c *clientPlaySessionHandler) Deactivated() {
 }
 
 func (c *clientPlaySessionHandler) Activated() {
-	if observation, ok := connectiontelemetry.FromContext(c.player.Context()); ok {
-		// Full proxy sessions become gameplay only when their client handler
-		// actually enters PLAY (rather than merely requesting login).
-		observation.SetKind(connectiontelemetry.Gameplay)
-		observation.Observe(c.player.Context(), connectiontelemetry.Play, connectiontelemetry.Success)
-	}
+	observeFullGameplay(c.player.Context())
 	protocol := c.player.Protocol()
 	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(protocol)
 	if len(channels) != 0 {
 		register := plugin.ConstructChannelsPacket(protocol, channels.UnsortedList()...)
 		_ = c.player.WritePacket(register)
+	}
+}
+
+// observeFullGameplay marks the actual Full-proxy PLAY transition. It is kept
+// separate from the handler's channel registration so the bounded lifecycle
+// classification remains directly regression-testable.
+func observeFullGameplay(ctx context.Context) {
+	if observation, ok := connectiontelemetry.FromContext(ctx); ok {
+		observation.SetKind(connectiontelemetry.Gameplay)
+		observation.Observe(ctx, connectiontelemetry.Play, connectiontelemetry.Success)
 	}
 }
 
