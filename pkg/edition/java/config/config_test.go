@@ -96,6 +96,26 @@ func TestViaConfigIgnoredInLiteMode(t *testing.T) {
 	require.Empty(t, errs)
 }
 
+func TestOfflineModeUsernameBlacklistValidation(t *testing.T) {
+	t.Run("accepts distinct Minecraft usernames", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.OfflineModeUsernameBlacklist = []string{"AdminName", "Owner_2"}
+
+		_, errs := cfg.Validate()
+		require.Empty(t, errs)
+	})
+
+	t.Run("rejects invalid and case-insensitive duplicate usernames", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.OfflineModeUsernameBlacklist = []string{"AdminName", "adminname", "not valid"}
+
+		_, errs := cfg.Validate()
+		require.Len(t, errs, 2)
+		require.Contains(t, errs[0].Error(), "case-insensitively identical")
+		require.Contains(t, errs[1].Error(), "2-16 character Minecraft username")
+	})
+}
+
 // TestLiteIgnoredSettingsWarn covers https://github.com/minekube/gate/issues/929: Lite mode
 // pipes the connection through unchanged, so full proxy settings are inert and Gate must say
 // so instead of silently accepting them.
@@ -180,6 +200,15 @@ func TestLiteIgnoredSettingsWarn(t *testing.T) {
 
 		warns, _ := cfg.Validate()
 		requireWarnContains(t, warns, "Lite mode ignores announceForge")
+	})
+
+	t.Run("offline username blacklist warns", func(t *testing.T) {
+		cfg := liteConfig()
+		cfg.OfflineModeUsernameBlacklist = []string{"AdminName"}
+
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "Lite mode ignores offlineModeUsernameBlacklist")
 	})
 
 	t.Run("lite defaults do not warn", func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"regexp"
+	"strings"
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/common/minecraft/color"
 	"go.minekube.com/common/minecraft/component"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
@@ -151,6 +153,14 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		_ = l.inbound.disconnect(e.Reason())
 		return
 	}
+	if offlineModeUsernameBlocked(l.config(), e.Result(), l.login.Username) {
+		reason := l.config().OfflineModeUsernameBlacklistReason
+		if reason == nil {
+			reason = config.DefaultConfig.OfflineModeUsernameBlacklistReason
+		}
+		_ = l.inbound.disconnect(reason.T())
+		return
+	}
 
 	_ = l.inbound.loginEventFired(func() error {
 		if netmc.Closed(l.conn) {
@@ -184,6 +194,20 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		l.conn.SetActiveSessionHandler(state.Login, sh)
 		return nil
 	})
+}
+
+func offlineModeUsernameBlocked(cfg *config.Config, result PreLoginResult, username string) bool {
+	offline := result == ForceOfflineModePreLogin ||
+		(result != ForceOnlineModePreLogin && !cfg.OnlineMode)
+	if !offline {
+		return false
+	}
+	for _, blocked := range cfg.OfflineModeUsernameBlacklist {
+		if strings.EqualFold(blocked, username) {
+			return true
+		}
+	}
+	return false
 }
 
 func (l *initialLoginSessionHandler) newAuthSessionHandler(
