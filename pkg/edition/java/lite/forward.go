@@ -52,7 +52,7 @@ func Forward(
 	log, src, route, routeHost, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
 		if observed {
-			observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.BackendFailed)
+			observation.Observe(client.Context(), connectiontelemetry.BackendStage, connectiontelemetry.BackendFailed)
 		}
 		// A player connection that matches no route is silently dropped, so log it at
 		// the default verbosity: it is always an operator-actionable misconfiguration,
@@ -63,7 +63,7 @@ func Forward(
 
 	// Find a backend to dial successfully.
 	if observed {
-		observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.OutcomeUnknown)
+		observation.Observe(client.Context(), connectiontelemetry.BackendStage, connectiontelemetry.OutcomeUnknown)
 	}
 	backendAddr, log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
@@ -71,7 +71,7 @@ func Forward(
 	})
 	if err != nil {
 		if observed {
-			observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.BackendFailed)
+			observation.Observe(client.Context(), connectiontelemetry.BackendStage, connectiontelemetry.BackendFailed)
 		}
 		return
 	}

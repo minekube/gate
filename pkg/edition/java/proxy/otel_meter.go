@@ -14,7 +14,7 @@ var (
 )
 
 func (p *Proxy) initMeter() error {
-	observations, err := connectiontelemetry.NewMeterObserver(meter)
+	observations, err := connectiontelemetry.DefaultObserver(meter)
 	if err != nil {
 		return err
 	}

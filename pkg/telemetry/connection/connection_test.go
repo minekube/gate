@@ -2,15 +2,48 @@ package connection
 
 import (
 	"context"
+	"io"
 	"net"
 	"sync"
 	"testing"
+	"time"
 )
 
 type collected struct {
 	mu     sync.Mutex
 	events []Event
 }
+
+func TestTrackedConnCountsPartialBytesReturnedWithError(t *testing.T) {
+	tracked := Wrap(&partialConn{})
+	buf := make([]byte, 8)
+	if n, err := tracked.Read(buf); n != 3 || err != io.EOF {
+		t.Fatalf("partial read = %d, %v", n, err)
+	}
+	if n, err := tracked.Write([]byte("abcd")); n != 2 || err != io.ErrUnexpectedEOF {
+		t.Fatalf("partial write = %d, %v", n, err)
+	}
+	read, written := tracked.Bytes()
+	if read != 3 || written != 2 {
+		t.Fatalf("partial n+err must be counted, got rx=%d tx=%d", read, written)
+	}
+}
+
+type partialConn struct{}
+
+func (partialConn) Read(p []byte) (int, error)       { copy(p, "abc"); return 3, io.EOF }
+func (partialConn) Write(_ []byte) (int, error)      { return 2, io.ErrUnexpectedEOF }
+func (partialConn) Close() error                     { return nil }
+func (partialConn) LocalAddr() net.Addr              { return testAddr("local") }
+func (partialConn) RemoteAddr() net.Addr             { return testAddr("remote") }
+func (partialConn) SetDeadline(time.Time) error      { return nil }
+func (partialConn) SetReadDeadline(time.Time) error  { return nil }
+func (partialConn) SetWriteDeadline(time.Time) error { return nil }
+
+type testAddr string
+
+func (a testAddr) Network() string { return "test" }
+func (a testAddr) String() string  { return string(a) }
 
 func (c *collected) Observe(_ context.Context, event Event) {
 	c.mu.Lock()
@@ -99,7 +132,7 @@ func TestBoundedLifecycleCoversStatusLoginTimeoutRateLimitAndBackendFailure(t *t
 		{"login-play", Login, Play, Success},
 		{"timeout", Login, Closed, Timeout},
 		{"rate-limit", Login, Closed, RateLimited},
-		{"backend", Gameplay, Backend, BackendFailed},
+		{"backend", Gameplay, BackendStage, BackendFailed},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			collector := new(collected)

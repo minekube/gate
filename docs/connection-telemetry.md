@@ -1,23 +1,27 @@
 # Connection telemetry contract
 
-Gate exports `gate.connection.events` and `gate.connection.bytes` as the
-versioned `gate.connection.v1` consumer contract. Every event has only these
-bounded dimensions: `gate.connection.schema`, `gate.connection.kind`,
-`gate.connection.stage`, `gate.connection.outcome`; byte observations add the
-bounded `gate.connection.direction` (`read` or `write`).
+Gate exports the bounded, privacy-safe metric contract shared with Moxy and
+Minekube monitoring:
 
-Kinds are `status`, `login`, `transfer`, `gameplay`, and `unknown`. Stages are
-`accepted`, `handshake`, `auth`, `backend`, `play`, and `closed`. Outcomes are
-`unknown`, `success`, `failed`, `timeout`, `rate_limited`, `backend_failed`,
-and `closed`.
+- `gate_connection_events_total{protocol,connection_kind,stage,outcome}`
+- `gate_network_bytes_total{boundary,protocol,connection_kind,direction,stage}`
+- `gate_connection_duration_seconds{protocol,connection_kind,outcome}`
+- `gate_active_connections{protocol,connection_kind,stage}`
 
-This is an export-only Gate contract: it has no Moxy runtime dependency. In
-particular it never emits addresses, hosts, ports, endpoints, session or player
-identifiers, XUIDs, packet labels, or error text.
+`protocol` is `java` or `bedrock`; `connection_kind` is `unknown`, `status`,
+`login`, `transfer`, or `gameplay`; `direction` is `rx` or `tx`; and boundary
+is `client_edge`, `connector_tunnel`, `bedrock_loopback`, or `backend`. Stages
+and outcomes are closed enums in `pkg/telemetry/connection`.
 
-The Java proxy attaches exactly one raw-socket counter after connection-event
-replacement. Lite's two `io.Copy` directions therefore contribute through that
-same client wrapper; route lookup, backend dial, and pipe failures only advance
-the bounded lifecycle outcome and never create a second byte counter. Geyser's
-in-process loopback marker preserves that same session across its PROXY wrapper
-and is deliberately not a metric attribute.
+The Java front door attaches exactly one raw-socket counter after connection
+event replacement. Lite's two `io.Copy` directions therefore contribute through
+that same client wrapper; route lookup, backend dial, and pipe failures only
+advance the bounded lifecycle outcome. Geyser's in-process handoff is explicitly
+marked `bedrock_loopback`, preserving one session rather than double counting.
+
+Gate sends the same schema to its configured OTel meter and to the process-wide
+Prometheus registry. Moxy's private health server exposes that registry at
+`0.0.0.0:8086/metrics`; `deploy/fly/fly.toml` declares this exact endpoint for
+Fly scraping. GitOps federates only the four families above. No metric label or
+event field can contain an address, host, port, endpoint, session/player ID,
+XUID, packet name, or error text.

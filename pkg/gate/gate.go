@@ -382,6 +382,15 @@ func Start(ctx context.Context, opts ...StartOption) error {
 		return err
 	}
 
+	// Initialize OpenTelemetry before New: Proxy.initMeter creates its bounded
+	// connection instruments, which must bind to the configured SDK rather than
+	// the process's no-op provider.
+	otelShutdown, err := otelutil.Init(ctx)
+	if err != nil {
+		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
+	}
+	defer otelShutdown()
+
 	// Setup new Gate instance with loaded config.
 	eventMgr := event.New(event.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
@@ -406,13 +415,6 @@ func Start(ctx context.Context, opts ...StartOption) error {
 			}
 		}()
 	}
-
-	// Initialize OpenTelemetry
-	otelShutdown, err := otelutil.Init(ctx)
-	if err != nil {
-		return fmt.Errorf("error initializing OpenTelemetry: %w", err)
-	}
-	defer otelShutdown()
 
 	// Setup auto config reload if enabled.
 	err = setupAutoConfigReload(

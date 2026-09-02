@@ -84,7 +84,7 @@ type Proxy struct {
 
 	lite                   *lite.Lite // lite mode functionality
 	via                    *viaManagedRunner
-	connectionObservations *connectiontelemetry.MeterObserver
+	connectionObservations connectiontelemetry.Observer
 }
 
 type runtimeConfigSnapshot struct {
