@@ -94,6 +94,22 @@ func (c *TrackedConn) Write(p []byte) (int, error) {
 func (c *TrackedConn) Bytes() (read, written int64) { return c.read.Load(), c.written.Load() }
 
 type contextKey struct{}
+type loopbackContextKey struct{}
+
+// WithLoopbackBoundary marks a trusted in-process Bedrock-to-Java handoff.
+// It carries no identity, address, or protocol payload and lets the Java front
+// door retain one Session/TrackedConn around the proxy-protocol wrapper rather
+// than creating a second byte counter at the Geyser boundary.
+func WithLoopbackBoundary(ctx context.Context) context.Context {
+	return context.WithValue(ctx, loopbackContextKey{}, struct{}{})
+}
+
+// IsLoopbackBoundary reports whether ctx came from the in-process Bedrock
+// loopback handoff. It is deliberately not exported as a metric dimension.
+func IsLoopbackBoundary(ctx context.Context) bool {
+	_, ok := ctx.Value(loopbackContextKey{}).(struct{})
+	return ok
+}
 
 // Session owns one accepted socket's sanitized observation lifecycle.
 type Session struct {

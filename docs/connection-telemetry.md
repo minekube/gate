@@ -14,3 +14,10 @@ and `closed`.
 This is an export-only Gate contract: it has no Moxy runtime dependency. In
 particular it never emits addresses, hosts, ports, endpoints, session or player
 identifiers, XUIDs, packet labels, or error text.
+
+The Java proxy attaches exactly one raw-socket counter after connection-event
+replacement. Lite's two `io.Copy` directions therefore contribute through that
+same client wrapper; route lookup, backend dial, and pipe failures only advance
+the bounded lifecycle outcome and never create a second byte counter. Geyser's
+in-process loopback marker preserves that same session across its PROXY wrapper
+and is deliberately not a metric attribute.

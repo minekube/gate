@@ -23,6 +23,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"golang.org/x/sync/singleflight"
@@ -46,9 +47,13 @@ func Forward(
 	strategyManager *StrategyManager,
 ) {
 	defer func() { _ = client.Close() }()
+	observation, observed := connectiontelemetry.FromContext(client.Context())
 
 	log, src, route, routeHost, nextBackend, err := findRoute(routes, log, client, handshake, strategyManager)
 	if err != nil {
+		if observed {
+			observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.BackendFailed)
+		}
 		// A player connection that matches no route is silently dropped, so log it at
 		// the default verbosity: it is always an operator-actionable misconfiguration,
 		// unlike the status pings that findRoute marks as debug-only.
@@ -57,16 +62,25 @@ func Forward(
 	}
 
 	// Find a backend to dial successfully.
+	if observed {
+		observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.OutcomeUnknown)
+	}
 	backendAddr, log, dst, err := tryBackends(nextBackend, func(log logr.Logger, backendAddr string) (logr.Logger, net.Conn, error) {
 		conn, err := dialRoute(client.Context(), dialTimeout, src.RemoteAddr(), route, backendAddr, handshake, pc, false)
 		return log, conn, err
 	})
 	if err != nil {
+		if observed {
+			observation.Observe(client.Context(), connectiontelemetry.Backend, connectiontelemetry.BackendFailed)
+		}
 		return
 	}
 	defer func() { _ = dst.Close() }()
 
 	if err = emptyReadBuff(client, dst); err != nil {
+		if observed {
+			observation.Observe(client.Context(), connectiontelemetry.Closed, connectiontelemetry.Failed)
+		}
 		errs.V(log, err).Info("failed to empty client buffer", "error", err)
 		return
 	}
@@ -76,6 +90,10 @@ func Forward(
 	defer decrementConnection()
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
+	if observed {
+		observation.SetKind(connectiontelemetry.Gameplay)
+		observation.Observe(client.Context(), connectiontelemetry.Play, connectiontelemetry.Success)
+	}
 	pipe(log, src, dst)
 }
 

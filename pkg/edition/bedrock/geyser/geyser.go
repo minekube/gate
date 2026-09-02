@@ -20,6 +20,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proxy"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -282,7 +283,7 @@ func (i *Integration) handleConnection(conn net.Conn) {
 			_ = conn.Close()
 		},
 	}
-	geyserConn.Context = withBedrockContext(i.ctx, geyserConn)
+	geyserConn.Context = withBedrockContext(connectiontelemetry.WithLoopbackBoundary(i.ctx), geyserConn)
 
 	i.mu.Lock()
 	i.connections[geyserConn.RemoteAddr()] = geyserConn

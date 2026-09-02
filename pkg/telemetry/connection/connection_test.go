@@ -57,3 +57,42 @@ func TestObservationSchemaNormalizesUnknownValuesAndCannotCarryPII(t *testing.T)
 		t.Fatalf("unbounded values escaped normalization: %#v", got)
 	}
 }
+
+func TestLoopbackBoundaryIsOpaqueAndDoesNotCreateAnotherSession(t *testing.T) {
+	ctx, session := Start(context.Background(), nil)
+	loopback := WithLoopbackBoundary(ctx)
+	if !IsLoopbackBoundary(loopback) || IsLoopbackBoundary(context.Background()) {
+		t.Fatal("loopback boundary marker must be explicit and context-local")
+	}
+	got, ok := FromContext(loopback)
+	if !ok || got != session {
+		t.Fatal("loopback boundary must preserve the original byte-counting session")
+	}
+}
+
+func TestBoundedLifecycleCoversStatusLoginTimeoutRateLimitAndBackendFailure(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		kind    Kind
+		stage   Stage
+		outcome Outcome
+	}{
+		{"status", Status, Play, Success},
+		{"failed-login", Login, Auth, Failed},
+		{"login-play", Login, Play, Success},
+		{"timeout", Login, Closed, Timeout},
+		{"rate-limit", Login, Closed, RateLimited},
+		{"backend", Gameplay, Backend, BackendFailed},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			collector := new(collected)
+			ctx, session := Start(context.Background(), collector)
+			session.SetKind(tc.kind)
+			session.Observe(ctx, tc.stage, tc.outcome)
+			got := collector.events[1]
+			if got.Kind != tc.kind || got.Stage != tc.stage || got.Outcome != tc.outcome {
+				t.Fatalf("event = %#v", got)
+			}
+		})
+	}
+}
