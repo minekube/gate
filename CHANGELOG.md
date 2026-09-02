@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.0](https://github.com/minekube/gate/compare/v0.71.16...v0.72.0) (2026-09-02)
+
+
+### Features
+
+* **telemetry:** observe privacy-safe Java connection bytes ([#1045](https://github.com/minekube/gate/issues/1045)) ([10e7c0e](https://github.com/minekube/gate/commit/10e7c0e83f3d6070cec8a64bdb52ff9209214723))
+
 ## [0.71.16](https://github.com/minekube/gate/compare/v0.71.15...v0.71.16) (2026-09-02)
 
 
