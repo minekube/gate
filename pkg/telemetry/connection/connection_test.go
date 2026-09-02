@@ -70,6 +70,23 @@ func TestLoopbackBoundaryIsOpaqueAndDoesNotCreateAnotherSession(t *testing.T) {
 	}
 }
 
+func TestTerminalOutcomeIsEmittedExactlyOnce(t *testing.T) {
+	collector := new(collected)
+	ctx, session := Start(context.Background(), collector)
+	session.SetKind(Login)
+	session.Observe(ctx, Closed, RateLimited)
+	// Proxy's unconditional close must not overwrite a more specific quota
+	// result, nor create a second terminal event.
+	session.Observe(ctx, Closed, ConnectionClosed)
+	if len(collector.events) != 2 || collector.events[1].Outcome != RateLimited {
+		t.Fatalf("terminal events = %#v", collector.events)
+	}
+	_, same := Start(ctx, collector)
+	if same != session || len(collector.events) != 2 {
+		t.Fatal("Start must reuse an existing loopback session without another accepted event")
+	}
+}
+
 func TestBoundedLifecycleCoversStatusLoginTimeoutRateLimitAndBackendFailure(t *testing.T) {
 	for _, tc := range []struct {
 		name    string

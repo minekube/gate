@@ -84,9 +84,6 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, pc *proto.PacketContext) {
-	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
-		observation.Observe(h.conn.Context(), connectiontelemetry.Handshake, connectiontelemetry.OutcomeUnknown)
-	}
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
 	if nextState == nil {
@@ -98,6 +95,19 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
+	handshakeIntent := handshake.Intent()
+	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+		switch {
+		case handshakeIntent == packet.TransferHandshakeIntent:
+			observation.SetKind(connectiontelemetry.Transfer)
+		case nextState == state.Status:
+			observation.SetKind(connectiontelemetry.Status)
+		default:
+			observation.SetKind(connectiontelemetry.Login)
+		}
+		// Classification must precede this event: Lite returns directly below.
+		observation.Observe(h.conn.Context(), connectiontelemetry.Handshake, connectiontelemetry.OutcomeUnknown)
+	}
 
 	cfg, routeGeneration := h.proxy.configSnapshot()
 
@@ -121,17 +131,6 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
 	)
-	handshakeIntent := handshake.Intent()
-	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
-		switch {
-		case handshakeIntent == packet.TransferHandshakeIntent:
-			observation.SetKind(connectiontelemetry.Transfer)
-		case nextState == state.Status:
-			observation.SetKind(connectiontelemetry.Status)
-		default:
-			observation.SetKind(connectiontelemetry.Login)
-		}
-	}
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {

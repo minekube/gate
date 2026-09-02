@@ -736,6 +736,17 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 	if !ok {
 		ctx = context.Background()
 	}
+	p.handleConn(ctx, raw)
+}
+
+// HandleLoopbackConn is the explicit trusted Bedrock-to-Java boundary.  The
+// caller supplies its marked context so the one Java session is started here,
+// around the actual socket, rather than at Geyser and again at this front door.
+func (p *Proxy) HandleLoopbackConn(ctx context.Context, raw net.Conn) {
+	p.handleConn(connectiontelemetry.WithLoopbackBoundary(ctx), raw)
+}
+
+func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
 	ctx, observation := connectiontelemetry.Start(ctx, p.connectionObservations)
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.RateLimited)

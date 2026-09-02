@@ -117,12 +117,16 @@ type Session struct {
 	mu                    sync.Mutex
 	conn                  *TrackedConn
 	kind                  Kind
+	terminal              bool
 	lastRead, lastWritten int64
 }
 
 // Start records acceptance and adds the session to ctx. Attach must be called
 // before protocol I/O to make byte accounting active.
 func Start(ctx context.Context, observer Observer) (context.Context, *Session) {
+	if existing, ok := FromContext(ctx); ok {
+		return ctx, existing
+	}
 	s := &Session{observer: observer, kind: Unknown}
 	ctx = context.WithValue(ctx, contextKey{}, s)
 	s.Observe(ctx, Accepted, OutcomeUnknown)
@@ -156,6 +160,16 @@ func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
 	if s.observer == nil {
 		return
 	}
+	stage, outcome = normalizeStage(stage), normalizeOutcome(outcome)
+	// A socket has one terminal result.  Several layers can notice the same
+	// close (quota, Lite forwarding, and the read loop); retain the first,
+	// most-specific outcome and suppress the generic close that follows.
+	if stage == Closed {
+		if s.terminal {
+			return
+		}
+		s.terminal = true
+	}
 	var read, written int64
 	if s.conn != nil {
 		read, written = s.conn.Bytes()
@@ -164,7 +178,7 @@ func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
 	// observations cannot make its counters go backwards or double count.
 	deltaRead, deltaWritten := read-s.lastRead, written-s.lastWritten
 	s.lastRead, s.lastWritten = read, written
-	s.observer.Observe(ctx, Event{Kind: normalizeKind(s.kind), Stage: normalizeStage(stage), Outcome: normalizeOutcome(outcome), BytesRead: deltaRead, BytesWritten: deltaWritten})
+	s.observer.Observe(ctx, Event{Kind: normalizeKind(s.kind), Stage: stage, Outcome: outcome, BytesRead: deltaRead, BytesWritten: deltaWritten})
 }
 
 func normalizeKind(v Kind) Kind {
