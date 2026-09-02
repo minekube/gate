@@ -124,10 +124,3 @@ func newLiteTelemetryCollector() *liteTelemetryCollector { return &liteTelemetry
 func (c *liteTelemetryCollector) Observe(_ context.Context, event connectiontelemetry.Event) {
 	c.events = append(c.events, event)
 }
-func (c *liteTelemetryCollector) last(t *testing.T) connectiontelemetry.Event {
-	t.Helper()
-	if len(c.events) == 0 {
-		t.Fatal("no telemetry events")
-	}
-	return c.events[len(c.events)-1]
-}
