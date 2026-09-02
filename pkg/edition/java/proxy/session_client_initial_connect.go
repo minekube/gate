@@ -7,6 +7,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proxy/bungeecord"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 )
 
 type initialConnectSessionHandler struct {
@@ -76,6 +77,9 @@ func (i *initialConnectSessionHandler) Disconnected() {
 	// the user canceled login process or
 	// we did not find an initial server to connect the player to
 	// or due to something else.
+	if observation, ok := connectiontelemetry.FromContext(i.player.Context()); ok {
+		observation.Observe(i.player.Context(), connectiontelemetry.Closed, connectiontelemetry.Failed)
+	}
 	i.player.teardown()
 }
 

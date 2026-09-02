@@ -3,6 +3,7 @@ package connwrap
 import (
 	"net"
 
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.uber.org/atomic"
 )
 
@@ -19,4 +20,16 @@ func (c *Conn) Close() error {
 
 func (c *Conn) Closed() bool {
 	return c.closed.Load()
+}
+
+// TelemetryWireConn forwards the raw-wire counter through ConnectionEvent's
+// close-tracking wrapper, so event subscribers cannot accidentally erase the
+// PROXY-header accounting boundary by retaining the original connection.
+func (c *Conn) TelemetryWireConn() *connectiontelemetry.TrackedConn {
+	if carrier, ok := c.Conn.(interface {
+		TelemetryWireConn() *connectiontelemetry.TrackedConn
+	}); ok {
+		return carrier.TelemetryWireConn()
+	}
+	return nil
 }

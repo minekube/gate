@@ -75,14 +75,19 @@ func activeAttrs(event Event) metric.MeasurementOption {
 
 func (m *MeterObserver) Observe(ctx context.Context, event Event) {
 	m.events.Add(ctx, 1, eventAttrs(event))
+	m.ObserveBytes(ctx, event)
+	if event.Terminal {
+		m.duration.Record(ctx, event.Duration.Seconds(), durationAttrs(event))
+	}
+}
+
+// ObserveBytes records only byte counters for a lifecycle snapshot flush.
+func (m *MeterObserver) ObserveBytes(ctx context.Context, event Event) {
 	if event.BytesRead > 0 {
 		m.bytes.Add(ctx, event.BytesRead, bytesAttrs(event, "rx"))
 	}
 	if event.BytesWritten > 0 {
 		m.bytes.Add(ctx, event.BytesWritten, bytesAttrs(event, "tx"))
-	}
-	if event.Terminal {
-		m.duration.Record(ctx, event.Duration.Seconds(), durationAttrs(event))
 	}
 }
 
@@ -114,6 +119,16 @@ func (f *fanoutObserver) ObserveActive(ctx context.Context, event Event, delta i
 	for _, observer := range f.observers {
 		if active, ok := observer.(activeObserver); ok {
 			active.ObserveActive(ctx, event, delta)
+		}
+	}
+}
+
+func (f *fanoutObserver) ObserveBytes(ctx context.Context, event Event) {
+	for _, observer := range f.observers {
+		if bytes, ok := observer.(byteObserver); ok {
+			bytes.ObserveBytes(ctx, event)
+		} else {
+			observer.Observe(ctx, event)
 		}
 	}
 }
@@ -151,14 +166,19 @@ func newPrometheusObserver(registerer prometheus.Registerer) *prometheusObserver
 
 func (o *prometheusObserver) Observe(_ context.Context, event Event) {
 	o.events.WithLabelValues(string(normalizeProtocol(event.Protocol)), string(normalizeKind(event.Kind)), string(normalizeStage(event.Stage)), string(normalizeOutcome(event.Outcome))).Inc()
+	o.ObserveBytes(context.Background(), event)
+	if event.Terminal {
+		o.duration.WithLabelValues(string(normalizeProtocol(event.Protocol)), string(normalizeKind(event.Kind)), string(normalizeOutcome(event.Outcome))).Observe(event.Duration.Seconds())
+	}
+}
+
+// ObserveBytes records only byte counters for a lifecycle snapshot flush.
+func (o *prometheusObserver) ObserveBytes(_ context.Context, event Event) {
 	if event.BytesRead > 0 {
 		o.bytes.WithLabelValues(string(normalizeBoundary(event.Boundary)), string(normalizeProtocol(event.Protocol)), string(normalizeKind(event.Kind)), "rx", string(normalizeStage(event.Stage))).Add(float64(event.BytesRead))
 	}
 	if event.BytesWritten > 0 {
 		o.bytes.WithLabelValues(string(normalizeBoundary(event.Boundary)), string(normalizeProtocol(event.Protocol)), string(normalizeKind(event.Kind)), "tx", string(normalizeStage(event.Stage))).Add(float64(event.BytesWritten))
-	}
-	if event.Terminal {
-		o.duration.WithLabelValues(string(normalizeProtocol(event.Protocol)), string(normalizeKind(event.Kind)), string(normalizeOutcome(event.Outcome))).Observe(event.Duration.Seconds())
 	}
 }
 

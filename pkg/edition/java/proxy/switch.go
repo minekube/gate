@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	. "go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	util2 "go.minekube.com/gate/pkg/edition/java/proto/util"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 )
 
 // ConnectionRequest can send a connection request to another server on the proxy.
@@ -139,6 +141,11 @@ func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, erro
 func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
 	result, err := c.internalConnect(ctx)
 	if err != nil {
+		outcome := connectiontelemetry.Failed
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			outcome = connectiontelemetry.Timeout
+		}
+		observeInitialBackendTerminal(c.player, outcome)
 		c.player.handleConnectionErr(c.server, err, true)
 		return false
 	}
@@ -151,6 +158,7 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 	case CanceledConnectionStatus:
 		// Ignore, event subscriber probably handled this.
 	case ServerDisconnectedConnectionStatus:
+		observeInitialBackendTerminal(c.player, connectiontelemetry.Failed)
 		reason := result.Reason()
 		if reason == nil {
 			reason = internalServerConnectionError
@@ -161,6 +169,17 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 	}
 
 	return result.Status().Successful()
+}
+
+// observeInitialBackendTerminal applies only before PLAY. Backend reconnects
+// after gameplay must not terminate the client-edge lifecycle.
+func observeInitialBackendTerminal(player *connectedPlayer, outcome connectiontelemetry.Outcome) {
+	if _, initial := player.ActiveSessionHandler().(*initialConnectSessionHandler); !initial {
+		return
+	}
+	if observation, ok := connectiontelemetry.FromContext(player.Context()); ok {
+		observation.Observe(player.Context(), connectiontelemetry.Closed, outcome)
+	}
 }
 
 // Handles unexpected disconnects.

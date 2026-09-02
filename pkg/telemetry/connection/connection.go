@@ -95,6 +95,12 @@ type activeObserver interface {
 	ObserveActive(context.Context, Event, int64)
 }
 
+// byteObserver receives a snapshot flush without turning it into another
+// lifecycle event. Implementations must only update byte instruments.
+type byteObserver interface {
+	ObserveBytes(context.Context, Event)
+}
+
 // TrackedConn counts bytes actually accepted by the socket, including partial
 // reads and writes. It deliberately counts n rather than len(p).
 type TrackedConn struct {
@@ -122,6 +128,16 @@ func (c *TrackedConn) Write(p []byte) (int, error) {
 }
 
 func (c *TrackedConn) Bytes() (read, written int64) { return c.read.Load(), c.written.Load() }
+
+// CloseWrite preserves TCP half-close support through the production byte
+// wrapper. Callers can distinguish unsupported/failed half-closes from a
+// successful one and fall back to a full close.
+func (c *TrackedConn) CloseWrite() error {
+	if conn, ok := c.Conn.(interface{ CloseWrite() error }); ok {
+		return conn.CloseWrite()
+	}
+	return net.ErrClosed
+}
 
 type contextKey struct{}
 type loopbackContextKey struct{}
@@ -186,8 +202,10 @@ func (s *Session) Attach(conn net.Conn) net.Conn {
 		// PROXY header). Keep the counter at the wire boundary when it supplies
 		// one, while returning the decoder-facing connection unchanged.
 		if carrier, ok := conn.(interface{ TelemetryWireConn() *TrackedConn }); ok {
-			s.conn = carrier.TelemetryWireConn()
-			return conn
+			if wire := carrier.TelemetryWireConn(); wire != nil {
+				s.conn = wire
+				return conn
+			}
 		}
 		if tracked, ok := conn.(*TrackedConn); ok {
 			s.conn = tracked
@@ -274,10 +292,18 @@ func (s *Session) flushLocked(ctx context.Context) {
 	if (read == 0 && written == 0) || s.observer == nil {
 		return
 	}
-	s.observer.Observe(ctx, Event{
+	event := Event{
 		Protocol: s.protocol, Boundary: s.boundary, Kind: normalizeKind(s.kind),
 		Stage: s.stage, Outcome: OutcomeUnknown, BytesRead: read, BytesWritten: written,
-	})
+	}
+	if observer, ok := s.observer.(byteObserver); ok {
+		observer.ObserveBytes(ctx, event)
+		return
+	}
+	// Custom observers without the optional byte-only path retain the original
+	// Event contract; built-in Prometheus and OTel observers never take this
+	// branch, so their lifecycle counters remain exact.
+	s.observer.Observe(ctx, event)
 }
 
 // byteDeltaLocked advances the byte snapshot and returns the delta. The caller

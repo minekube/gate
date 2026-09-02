@@ -193,8 +193,7 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 
 func closeWrite(conn net.Conn) bool {
 	if cw, ok := conn.(interface{ CloseWrite() error }); ok {
-		_ = cw.CloseWrite()
-		return true
+		return cw.CloseWrite() == nil
 	}
 	return false
 }

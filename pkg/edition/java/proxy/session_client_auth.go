@@ -16,6 +16,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -69,6 +70,12 @@ func newAuthSessionHandler(
 
 func (a *authSessionHandler) Disconnected() {
 	defer a.inbound.cleanup()
+	if observation, ok := connectiontelemetry.FromContext(a.inbound.Context()); ok {
+		// Until PLAY takes over, any client-side auth disconnect/reject is a
+		// failed login. Session terminal de-duplication preserves a timeout if
+		// the reader already recorded that more specific outcome.
+		observation.Observe(a.inbound.Context(), connectiontelemetry.Closed, connectiontelemetry.Failed)
+	}
 	if a.connectedPlayer != nil {
 		a.connectedPlayer.teardown()
 	}
@@ -255,6 +262,11 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	if chooseServer.InitialServer() == nil {
 		player.Disconnect(noAvailableServers) // Will call Disconnected() in InitialConnectSessionHandler
 		return
+	}
+	if observation, ok := connectiontelemetry.FromContext(player.Context()); ok {
+		// Full mode has no io.Copy path; the initial backend request is its
+		// concrete backend lifecycle boundary.
+		observation.Observe(player.Context(), connectiontelemetry.BackendStage, connectiontelemetry.OutcomeUnknown)
 	}
 	ctx, cancel := withConnectionTimeout(player.Context(), a.config())
 	defer cancel()

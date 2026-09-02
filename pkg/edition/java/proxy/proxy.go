@@ -762,6 +762,10 @@ func (p *Proxy) HandleLoopbackConn(ctx context.Context, raw net.Conn) {
 
 func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
 	ctx, observation := connectiontelemetry.Start(ctx, p.connectionObservations)
+	// Attach before any RemoteAddr call. For PROXY protocol connections that
+	// first address lookup consumes the v1/v2 header, so this is the only point
+	// that reliably counts the complete raw wire -- including rate-limit exits.
+	raw = observation.Attach(raw)
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
 		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.RateLimited)
 		p.log.Info("connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
@@ -796,8 +800,6 @@ func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
 		}
 		raw = e.Connection()
 	}
-	raw = observation.Attach(raw)
-
 	// Create client connection. Client connections are serverbound (untrusted),
 	// so apply the configured per-connection packet rate limiter.
 	pl := p.config().PacketLimiter
