@@ -96,6 +96,8 @@ func TestActiveGaugeKindMigrationBalancesPrometheusAndOTel(t *testing.T) {
 	session.Observe(ctx, Handshake, OutcomeUnknown)
 	session.SetKind(Gameplay)
 	session.Observe(ctx, Closed, ConnectionClosed)
+	session.SetKind(Login)
+	session.Observe(ctx, Play, Success)
 	metrics, err := reg.Gather()
 	if err != nil {
 		t.Fatal(err)
@@ -123,6 +125,8 @@ func TestActiveGaugeKindMigrationBalancesPrometheusAndOTel(t *testing.T) {
 	session.Observe(ctx, Handshake, OutcomeUnknown)
 	session.SetKind(Gameplay)
 	session.Observe(ctx, Closed, ConnectionClosed)
+	session.SetKind(Login)
+	session.Observe(ctx, Play, Success)
 	var collected metricdata.ResourceMetrics
 	if err := reader.Collect(context.Background(), &collected); err != nil {
 		t.Fatal(err)

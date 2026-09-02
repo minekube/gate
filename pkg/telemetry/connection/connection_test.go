@@ -120,6 +120,18 @@ func TestTerminalOutcomeIsEmittedExactlyOnce(t *testing.T) {
 	}
 }
 
+func TestTerminalSessionCannotReactivateAfterFallback(t *testing.T) {
+	collector := new(collected)
+	ctx, session := Start(context.Background(), collector)
+	session.SetKind(Login)
+	session.Observe(ctx, Closed, Failed)
+	session.SetKind(Gameplay)
+	session.Observe(ctx, Play, Success)
+	if len(collector.events) != 2 {
+		t.Fatalf("terminal session emitted fallback lifecycle events: %#v", collector.events)
+	}
+}
+
 func TestBoundedLifecycleCoversStatusLoginTimeoutRateLimitAndBackendFailure(t *testing.T) {
 	for _, tc := range []struct {
 		name    string

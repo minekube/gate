@@ -101,6 +101,15 @@ func (p *connectedPlayer) CreateConnectionRequest(server RegisteredServer) Conne
 func (p *connectedPlayer) createConnectionRequest(server RegisteredServer) *connectionRequest {
 	return p.createConnectionRequestWith(server, p.connectedServer())
 }
+
+// createInitialConnectionRequest explicitly marks the pre-PLAY backend
+// attempt. Handler identity is not stable across 1.20.2 CONFIG and Modern
+// Forge relay flows, while this intent remains correct through both.
+func (p *connectedPlayer) createInitialConnectionRequest(server RegisteredServer) *connectionRequest {
+	request := p.createConnectionRequestWith(server, p.connectedServer())
+	request.initialAttempt = true
+	return request
+}
 func (p *connectedPlayer) createConnectionRequestWith(server RegisteredServer, previousConn *serverConnection) *connectionRequest {
 	var previousServer *registeredServer
 	if previousConn != nil {
@@ -113,6 +122,7 @@ type connectionRequest struct {
 	server         RegisteredServer  // the target server to connect to
 	player         *connectedPlayer  // the player to connect to the server
 	previousServer *registeredServer // nil-able
+	initialAttempt bool
 }
 
 func (c *connectionRequest) connect(ctx context.Context) (*connectionResult, error) {
@@ -139,13 +149,18 @@ func (c *connectionRequest) Connect(ctx context.Context) (ConnectionResult, erro
 
 // ConnectWithIndication - See ConnectionRequest interface.
 func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successful bool) {
+	if c.initialAttempt {
+		observeInitialBackendAttempt(c.player, connectiontelemetry.OutcomeUnknown)
+	}
 	result, err := c.internalConnect(ctx)
 	if err != nil {
-		outcome := connectiontelemetry.Failed
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			outcome = connectiontelemetry.Timeout
+		if c.initialAttempt {
+			outcome := connectiontelemetry.BackendFailed
+			if ctx != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				outcome = connectiontelemetry.Timeout
+			}
+			observeInitialBackendAttempt(c.player, outcome)
 		}
-		observeInitialBackendTerminal(c.player, outcome)
 		c.player.handleConnectionErr(c.server, err, true)
 		return false
 	}
@@ -158,7 +173,9 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 	case CanceledConnectionStatus:
 		// Ignore, event subscriber probably handled this.
 	case ServerDisconnectedConnectionStatus:
-		observeInitialBackendTerminal(c.player, connectiontelemetry.Failed)
+		if c.initialAttempt {
+			observeInitialBackendAttempt(c.player, connectiontelemetry.BackendFailed)
+		}
 		reason := result.Reason()
 		if reason == nil {
 			reason = internalServerConnectionError
@@ -171,14 +188,9 @@ func (c *connectionRequest) ConnectWithIndication(ctx context.Context) (successf
 	return result.Status().Successful()
 }
 
-// observeInitialBackendTerminal applies only before PLAY. Backend reconnects
-// after gameplay must not terminate the client-edge lifecycle.
-func observeInitialBackendTerminal(player *connectedPlayer, outcome connectiontelemetry.Outcome) {
-	if _, initial := player.ActiveSessionHandler().(*initialConnectSessionHandler); !initial {
-		return
-	}
+func observeInitialBackendAttempt(player *connectedPlayer, outcome connectiontelemetry.Outcome) {
 	if observation, ok := connectiontelemetry.FromContext(player.Context()); ok {
-		observation.Observe(player.Context(), connectiontelemetry.Closed, outcome)
+		observation.Observe(player.Context(), connectiontelemetry.BackendStage, outcome)
 	}
 }
 

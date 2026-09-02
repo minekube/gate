@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync"
 
@@ -20,6 +21,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/future"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 )
 
 type clientConfigSessionHandler struct {
@@ -52,7 +54,17 @@ func newClientConfigSessionHandler(
 
 // Disconnected is called when the player disconnects.
 func (h *clientConfigSessionHandler) Disconnected() {
+	// CONFIG still belongs to the initial login lifecycle. A backend reject or
+	// timeout here is terminal only when the player is actually disconnected;
+	// connection-request fallback remains free to continue beforehand.
+	observeConfigDisconnect(h.player.Context())
 	h.player.teardown()
+}
+
+func observeConfigDisconnect(ctx context.Context) {
+	if observation, ok := connectiontelemetry.FromContext(ctx); ok {
+		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.Failed)
+	}
 }
 
 func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {

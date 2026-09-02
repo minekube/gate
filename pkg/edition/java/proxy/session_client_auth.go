@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -70,14 +71,18 @@ func newAuthSessionHandler(
 
 func (a *authSessionHandler) Disconnected() {
 	defer a.inbound.cleanup()
-	if observation, ok := connectiontelemetry.FromContext(a.inbound.Context()); ok {
+	observeAuthDisconnect(a.inbound.Context())
+	if a.connectedPlayer != nil {
+		a.connectedPlayer.teardown()
+	}
+}
+
+func observeAuthDisconnect(ctx context.Context) {
+	if observation, ok := connectiontelemetry.FromContext(ctx); ok {
 		// Until PLAY takes over, any client-side auth disconnect/reject is a
 		// failed login. Session terminal de-duplication preserves a timeout if
 		// the reader already recorded that more specific outcome.
-		observation.Observe(a.inbound.Context(), connectiontelemetry.Closed, connectiontelemetry.Failed)
-	}
-	if a.connectedPlayer != nil {
-		a.connectedPlayer.teardown()
+		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.Failed)
 	}
 }
 
@@ -263,14 +268,9 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 		player.Disconnect(noAvailableServers) // Will call Disconnected() in InitialConnectSessionHandler
 		return
 	}
-	if observation, ok := connectiontelemetry.FromContext(player.Context()); ok {
-		// Full mode has no io.Copy path; the initial backend request is its
-		// concrete backend lifecycle boundary.
-		observation.Observe(player.Context(), connectiontelemetry.BackendStage, connectiontelemetry.OutcomeUnknown)
-	}
 	ctx, cancel := withConnectionTimeout(player.Context(), a.config())
 	defer cancel()
-	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
+	player.createInitialConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 
 func (a *authSessionHandler) Deactivated() {}

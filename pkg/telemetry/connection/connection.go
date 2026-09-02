@@ -219,6 +219,9 @@ func (s *Session) Attach(conn net.Conn) net.Conn {
 func (s *Session) SetKind(kind Kind) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.terminal {
+		return
+	}
 	kind = normalizeKind(kind)
 	if s.kind == kind {
 		return
@@ -244,7 +247,10 @@ func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
 		return
 	}
 	stage, outcome = normalizeStage(stage), normalizeOutcome(outcome)
-	if stage == Closed && s.terminal {
+	// A terminal outcome is irreversible. In particular, an asynchronous
+	// backend fallback may complete after a failed attempt; it must not revive
+	// lifecycle events or active-gauge labels for an already closed session.
+	if s.terminal {
 		return
 	}
 	if s.activeCtx == nil {

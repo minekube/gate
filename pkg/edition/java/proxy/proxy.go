@@ -98,6 +98,16 @@ type telemetryWireConn struct {
 
 func (c telemetryWireConn) TelemetryWireConn() *connectiontelemetry.TrackedConn { return c.wire }
 
+// CloseWrite must reach the raw TCP transport even though the outer connection
+// may be a PROXY decoder. Lite's tunnel uses this to preserve the other copy
+// direction after a peer half-closes.
+func (c telemetryWireConn) CloseWrite() error {
+	if c.wire == nil {
+		return net.ErrClosed
+	}
+	return c.wire.CloseWrite()
+}
+
 type runtimeConfigSnapshot struct {
 	cfg        *config.Config
 	generation uint64

@@ -18,6 +18,15 @@ func (c *Conn) Close() error {
 	return c.Conn.Close()
 }
 
+// CloseWrite preserves TCP half-close semantics for a connection that has
+// passed through ConnectionEvent's close-tracking wrapper.
+func (c *Conn) CloseWrite() error {
+	if conn, ok := c.Conn.(interface{ CloseWrite() error }); ok {
+		return conn.CloseWrite()
+	}
+	return net.ErrClosed
+}
+
 func (c *Conn) Closed() bool {
 	return c.closed.Load()
 }
