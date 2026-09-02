@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,10 +19,11 @@ import (
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
-	Bind:                          "0.0.0.0:25565",
-	OnlineMode:                    true,
-	Auth:                          Auth{},
-	OnlineModeKickExistingPlayers: false,
+	Bind:                               "0.0.0.0:25565",
+	OnlineMode:                         true,
+	Auth:                               Auth{},
+	OnlineModeKickExistingPlayers:      false,
+	OfflineModeUsernameBlacklistReason: text("§cThis username is reserved for its authenticated owner."),
 	Forwarding: Forwarding{
 		Mode:           LegacyForwardingMode,
 		VelocitySecret: "",
@@ -129,6 +131,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	OnlineMode                    bool `yaml:"onlineMode,omitempty" json:"onlineMode,omitempty"`                                       // Whether to enable online mode.
 	Auth                          Auth `yaml:"auth,omitempty" json:"auth,omitempty"`                                                   // Authentication settings.
 	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers,omitempty" json:"onlineModeKickExistingPlayers,omitempty"` // Kicks existing players when a premium player with the same name joins.
+	// OfflineModeUsernameBlacklist reserves names only on login paths that are effectively
+	// offline mode. Authenticated direct joins remain allowed to use the same names.
+	OfflineModeUsernameBlacklist       []string                  `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
+	OfflineModeUsernameBlacklistReason *configutil.TextComponent `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
@@ -290,6 +296,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	validateProxyProtocol(c, e, w)
 
 	validateBackendFloodgate(c, e)
+	validateOfflineModeUsernameBlacklist(c, e)
 	if c.Lite.Enabled {
 		warnLiteIgnoredSettings(c, w)
 		warns2, errs2 := c.Lite.Validate()
@@ -357,6 +364,24 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	return
 }
 
+var minecraftUsernamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
+
+func validateOfflineModeUsernameBlacklist(c *Config, e func(string, ...any)) {
+	seen := make(map[string]string, len(c.OfflineModeUsernameBlacklist))
+	for _, username := range c.OfflineModeUsernameBlacklist {
+		if !minecraftUsernamePattern.MatchString(username) {
+			e("Invalid offlineModeUsernameBlacklist entry %q: use a 2-16 character Minecraft username", username)
+			continue
+		}
+		folded := strings.ToLower(username)
+		if previous, exists := seen[folded]; exists {
+			e("Duplicate offlineModeUsernameBlacklist entries %q and %q are case-insensitively identical", previous, username)
+			continue
+		}
+		seen[folded] = username
+	}
+}
+
 // warnLiteIgnoredSettings warns about full proxy settings that Lite mode ignores.
 //
 // Lite pipes the player connection through to the backend unchanged, so Gate never takes
@@ -402,6 +427,10 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if c.AnnounceForge {
 		w("Lite mode ignores announceForge: status responses are proxied from the backend, " +
 			"which announces its own mods.")
+	}
+
+	if len(c.OfflineModeUsernameBlacklist) != 0 {
+		w("Lite mode ignores offlineModeUsernameBlacklist: Lite forwards login unchanged, so configure username protection on the backend or disable lite.enabled.")
 	}
 }
 

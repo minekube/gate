@@ -4,6 +4,12 @@ config:
   bind: 0.0.0.0:25565
   # Whether to use the proxy in online (authenticate players with Mojang API) or offline mode (not recommended).
   onlineMode: true
+  # Reserve authenticated account names on offline-mode login paths, including a Connect
+  # integration that deliberately marks its already-authenticated inner connection offline.
+  # Matching is case-insensitive. Direct online-mode joins with these names remain allowed.
+  offlineModeUsernameBlacklist: []
+  # Either simple legacy '§' text or a modern text component JSON object.
+  offlineModeUsernameBlacklistReason: "§cThis username is reserved for its authenticated owner."
   # Registers servers with the proxy by giving the address of backend server a custom reference name.
   servers:
     # Server name: server address
