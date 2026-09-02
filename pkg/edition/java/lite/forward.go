@@ -141,7 +141,9 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	_ = src.SetDeadline(zero)
 	_ = dst.SetDeadline(zero)
 
+	backendToClientDone := make(chan struct{})
 	go func() {
+		defer close(backendToClientDone)
 		i, err := io.Copy(src, dst)
 		if log.Enabled() {
 			log.V(1).Info("done copying backend -> client", "bytes", i, "error", err)
@@ -151,6 +153,15 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	if log.Enabled() {
 		log.V(1).Info("done copying client -> backend", "bytes", i, "error", err)
 	}
+
+	// Ending either half ends the tunnel. Close both sockets to unblock the
+	// opposite copy, then wait for it before returning. Besides preventing a
+	// goroutine leak, this makes the final connection observation include bytes
+	// that the client already received but whose net.Conn.Write had not yet
+	// returned (notably with synchronous connections such as net.Pipe).
+	_ = src.Close()
+	_ = dst.Close()
+	<-backendToClientDone
 }
 
 type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)
