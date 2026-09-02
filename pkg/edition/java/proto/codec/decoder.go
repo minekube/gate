@@ -191,7 +191,7 @@ func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
 	}
 
 	payload = make([]byte, length)
-	m, err := rd.Read(payload)
+	m, err := io.ReadFull(rd, payload)
 	if err != nil {
 		return nil, n, fmt.Errorf("error reading payload: %w", err)
 	}

@@ -10,6 +10,15 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 )
 
+type oneByteReader struct{ bytes.Reader }
+
+func (r *oneByteReader) Read(p []byte) (int, error) {
+	if len(p) > 1 {
+		p = p[:1]
+	}
+	return r.Reader.Read(p)
+}
+
 // vanillaMaxFrameLength is the largest frame vanilla's Varint21FrameDecoder
 // accepts: its length prefix is a VarInt of at most 21 bits, so 2^21-1 bytes.
 // Spelled out literally rather than derived from MaximumFrameLength so these
@@ -41,6 +50,15 @@ func TestReadVarIntFrameAcceptsVanillaMaximum(t *testing.T) {
 	payload, err := readFrame(buildFrame(vanillaMaxFrameLength))
 	require.NoError(t, err, "a %d byte frame is legal for vanilla and must be accepted", vanillaMaxFrameLength)
 	require.Len(t, payload, vanillaMaxFrameLength)
+}
+
+func TestReadVarIntFrameCompletesFragmentedPrefixAndPayload(t *testing.T) {
+	frame := buildFrame(300) // a multi-byte VarInt prefix and fragmented payload
+	reader := &oneByteReader{*bytes.NewReader(frame)}
+	payload, n, err := readVarIntFrame(reader)
+	require.NoError(t, err)
+	require.Len(t, payload, 300)
+	require.Equal(t, len(frame), n)
 }
 
 func TestReadVarIntFrameRejectsOverVanillaMaximum(t *testing.T) {

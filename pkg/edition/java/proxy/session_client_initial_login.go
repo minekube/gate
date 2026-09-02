@@ -24,6 +24,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -96,6 +97,9 @@ type GameProfileProvider interface {
 }
 
 func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin) {
+	if observation, ok := connectiontelemetry.FromContext(l.conn.Context()); ok {
+		observation.Observe(l.conn.Context(), connectiontelemetry.Auth, connectiontelemetry.OutcomeUnknown)
+	}
 	if !l.assertState(loginPacketExpectedLoginState) {
 		return
 	}

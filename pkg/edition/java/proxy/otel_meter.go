@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -13,8 +14,13 @@ var (
 )
 
 func (p *Proxy) initMeter() error {
+	observations, err := connectiontelemetry.NewMeterObserver(meter)
+	if err != nil {
+		return err
+	}
+	p.connectionObservations = observations
 	// player count metric
-	_, err := meter.Int64ObservableGauge(
+	_, err = meter.Int64ObservableGauge(
 		"gate.player_count",
 		metric.WithInt64Callback(func(ctx context.Context, o metric.Int64Observer) error {
 			o.Observe(int64(p.PlayerCount()))

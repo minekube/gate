@@ -24,6 +24,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -83,6 +84,9 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 }
 
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, pc *proto.PacketContext) {
+	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+		observation.Observe(h.conn.Context(), connectiontelemetry.Handshake, connectiontelemetry.OutcomeUnknown)
+	}
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
 	if nextState == nil {
@@ -118,6 +122,16 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		h.conn.LocalAddr().Network(),
 	)
 	handshakeIntent := handshake.Intent()
+	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+		switch {
+		case handshakeIntent == packet.TransferHandshakeIntent:
+			observation.SetKind(connectiontelemetry.Transfer)
+		case nextState == state.Status:
+			observation.SetKind(connectiontelemetry.Status)
+		default:
+			observation.SetKind(connectiontelemetry.Login)
+		}
+	}
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {
@@ -149,6 +163,9 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
 	if h.loginsQuota != nil && h.loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
+		if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+			observation.Observe(h.conn.Context(), connectiontelemetry.Closed, connectiontelemetry.RateLimited)
+		}
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},

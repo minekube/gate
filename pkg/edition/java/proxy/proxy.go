@@ -35,6 +35,7 @@ import (
 	"go.minekube.com/gate/pkg/internal/connwrap"
 	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/internal/reload"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -81,8 +82,9 @@ type Proxy struct {
 
 	proxyProtocol atomic.Pointer[proxyProtocol] // PROXY protocol wrapper for accepted connections
 
-	lite *lite.Lite // lite mode functionality
-	via  *viaManagedRunner
+	lite                   *lite.Lite // lite mode functionality
+	via                    *viaManagedRunner
+	connectionObservations *connectiontelemetry.MeterObserver
 }
 
 type runtimeConfigSnapshot struct {
@@ -730,17 +732,19 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 // HandleConn handles a just-accepted client connection
 // that has not had any I/O performed on it yet.
 func (p *Proxy) HandleConn(raw net.Conn) {
+	ctx, ok := raw.(context.Context)
+	if !ok {
+		ctx = context.Background()
+	}
+	ctx, observation := connectiontelemetry.Start(ctx, p.connectionObservations)
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
+		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.RateLimited)
 		p.log.Info("connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()
 		return
 	}
 
 	// Create context for connection
-	ctx, ok := raw.(context.Context)
-	if !ok {
-		ctx = context.Background()
-	}
 	ctx = logr.NewContext(ctx, p.log)
 	ctx = trace.ContextWithSpan(ctx, trace.SpanFromContext(p.startCtx))
 
@@ -760,12 +764,14 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		}
 		p.event.Fire(e)
 		if conn.Closed() || e.Connection() == nil {
+			observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.Failed)
 			_ = conn.Close()
 			p.log.V(1).Info("connection closed by ConnectionEvent subscriber", "remoteAddr", raw.RemoteAddr())
 			return
 		}
 		raw = e.Connection()
 	}
+	raw = observation.Attach(raw)
 
 	// Create client connection. Client connections are serverbound (untrusted),
 	// so apply the configured per-connection packet rate limiter.
@@ -787,6 +793,7 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		loginsQuota:    p.loginsQuota,
 	}))
 	readLoop()
+	observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.ConnectionClosed)
 }
 
 // PlayerCount returns the number of players on the proxy.
