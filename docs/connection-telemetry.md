@@ -22,6 +22,7 @@ marked `bedrock_loopback`, preserving one session rather than double counting.
 Gate sends the same schema to its configured OTel meter and to the process-wide
 Prometheus registry. Moxy's private health server exposes that registry at
 `0.0.0.0:8086/metrics`; `deploy/fly/fly.toml` declares this exact endpoint for
-Fly scraping. GitOps federates only the four families above. No metric label or
-event field can contain an address, host, port, endpoint, session/player ID,
-XUID, packet name, or error text.
+Fly scraping. GitOps federation is producer-gated and pending the separate
+delivery change; this repository does not claim it is already deployed. No
+metric label or event field can contain an address, host, port, endpoint,
+session/player ID, XUID, packet name, or error text.

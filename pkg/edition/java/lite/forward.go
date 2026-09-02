@@ -141,27 +141,62 @@ func pipe(log logr.Logger, src, dst net.Conn) {
 	_ = src.SetDeadline(zero)
 	_ = dst.SetDeadline(zero)
 
-	backendToClientDone := make(chan struct{})
-	go func() {
-		defer close(backendToClientDone)
-		i, err := io.Copy(src, dst)
-		if log.Enabled() {
-			log.V(1).Info("done copying backend -> client", "bytes", i, "error", err)
-		}
-	}()
-	i, err := io.Copy(dst, src)
-	if log.Enabled() {
-		log.V(1).Info("done copying client -> backend", "bytes", i, "error", err)
+	type copyResult struct {
+		direction string
+		err       error
+		bytes     int64
 	}
+	results := make(chan copyResult, 2)
+	copyOne := func(direction string, to, from net.Conn) {
+		n, err := io.Copy(to, from)
+		if log.Enabled() {
+			log.V(1).Info("done copying "+direction, "bytes", n, "error", err)
+		}
+		results <- copyResult{direction: direction, bytes: n, err: err}
+	}
+	go copyOne("client -> backend", dst, src)
+	go copyOne("backend -> client", src, dst)
 
-	// Ending either half ends the tunnel. Close both sockets to unblock the
-	// opposite copy, then wait for it before returning. Besides preventing a
-	// goroutine leak, this makes the final connection observation include bytes
-	// that the client already received but whose net.Conn.Write had not yet
-	// returned (notably with synchronous connections such as net.Pipe).
+	first := <-results
+	// EOF is a TCP half-close, not an instruction to discard bytes travelling in
+	// the other direction. Propagate it with CloseWrite when supported, then
+	// join both copy workers. An actual copy error makes the tunnel unusable, so
+	// close both ends immediately to unblock its peer.
+	if first.err == nil {
+		var halfClosed bool
+		if first.direction == "client -> backend" {
+			halfClosed = closeWrite(dst)
+		} else {
+			halfClosed = closeWrite(src)
+		}
+		// net.Pipe and other non-TCP transports cannot half-close. Their only
+		// safe completion policy is a full close so the peer copy can join.
+		if !halfClosed {
+			_ = src.Close()
+			_ = dst.Close()
+		}
+	} else {
+		_ = src.Close()
+		_ = dst.Close()
+	}
+	second := <-results
+	if second.err != nil {
+		_ = src.Close()
+		_ = dst.Close()
+	}
+	// A successful half-close has now propagated in both directions. Closing
+	// releases transports which do not implement CloseWrite and guarantees no
+	// worker survives this function.
 	_ = src.Close()
 	_ = dst.Close()
-	<-backendToClientDone
+}
+
+func closeWrite(conn net.Conn) bool {
+	if cw, ok := conn.(interface{ CloseWrite() error }); ok {
+		_ = cw.CloseWrite()
+		return true
+	}
+	return false
 }
 
 type nextBackendFunc func() (backendAddr string, log logr.Logger, ok bool)

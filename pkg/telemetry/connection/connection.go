@@ -153,6 +153,7 @@ type Session struct {
 	terminal              bool
 	started               time.Time
 	lastRead, lastWritten int64
+	activeCtx             context.Context
 }
 
 // Start records acceptance and adds the session to ctx. Attach must be called
@@ -181,6 +182,17 @@ func (s *Session) Attach(conn net.Conn) net.Conn {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.conn == nil {
+		// A protocol decoder may wrap the transport (for example to consume a
+		// PROXY header). Keep the counter at the wire boundary when it supplies
+		// one, while returning the decoder-facing connection unchanged.
+		if carrier, ok := conn.(interface{ TelemetryWireConn() *TrackedConn }); ok {
+			s.conn = carrier.TelemetryWireConn()
+			return conn
+		}
+		if tracked, ok := conn.(*TrackedConn); ok {
+			s.conn = tracked
+			return conn
+		}
 		s.conn = Wrap(conn)
 	}
 	return s.conn
@@ -188,8 +200,23 @@ func (s *Session) Attach(conn net.Conn) net.Conn {
 
 func (s *Session) SetKind(kind Kind) {
 	s.mu.Lock()
-	s.kind = normalizeKind(kind)
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+	kind = normalizeKind(kind)
+	if s.kind == kind {
+		return
+	}
+	// Bytes accrued before reclassification belong to the prior lifecycle
+	// snapshot, never to the newly inferred kind.
+	s.flushLocked(s.activeCtx)
+	if s.active {
+		if active, ok := s.observer.(activeObserver); ok {
+			old := Event{Protocol: s.protocol, Boundary: s.boundary, Kind: s.kind, Stage: s.stage}
+			active.ObserveActive(s.activeCtx, old, -1)
+			old.Kind = kind
+			active.ObserveActive(s.activeCtx, old, 1)
+		}
+	}
+	s.kind = kind
 }
 
 func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
@@ -202,17 +229,24 @@ func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
 	if stage == Closed && s.terminal {
 		return
 	}
-	terminal := stage == Closed
-	var read, written int64
-	if s.conn != nil {
-		read, written = s.conn.Bytes()
+	if s.activeCtx == nil {
+		s.activeCtx = ctx
 	}
+	// A stage boundary is also a byte-label boundary. Flush before changing the
+	// snapshot so handshake/auth/play bytes retain the stage in which they were
+	// observed; the lifecycle event below then starts the new snapshot at zero.
+	if stage != s.stage {
+		s.flushLocked(ctx)
+	}
+	terminal := stage == Closed
 	event := Event{
 		Protocol: s.protocol, Boundary: s.boundary, Kind: normalizeKind(s.kind),
-		Stage: stage, Outcome: outcome, BytesRead: read - s.lastRead, BytesWritten: written - s.lastWritten,
+		Stage: stage, Outcome: outcome,
 		Terminal: terminal,
 	}
-	s.lastRead, s.lastWritten = read, written
+	if stage == s.stage {
+		event.BytesRead, event.BytesWritten = s.byteDeltaLocked()
+	}
 	if terminal {
 		event.Duration = time.Since(s.started)
 	}
@@ -231,6 +265,32 @@ func (s *Session) Observe(ctx context.Context, stage Stage, outcome Outcome) {
 		s.terminal = true
 	}
 	s.observer.Observe(ctx, event)
+}
+
+// flushLocked records a byte delta under the current lifecycle snapshot. The
+// caller holds s.mu. It intentionally emits no zero-byte event.
+func (s *Session) flushLocked(ctx context.Context) {
+	read, written := s.byteDeltaLocked()
+	if (read == 0 && written == 0) || s.observer == nil {
+		return
+	}
+	s.observer.Observe(ctx, Event{
+		Protocol: s.protocol, Boundary: s.boundary, Kind: normalizeKind(s.kind),
+		Stage: s.stage, Outcome: OutcomeUnknown, BytesRead: read, BytesWritten: written,
+	})
+}
+
+// byteDeltaLocked advances the byte snapshot and returns the delta. The caller
+// holds s.mu.
+func (s *Session) byteDeltaLocked() (read, written int64) {
+	if s.conn == nil {
+		return 0, 0
+	}
+	read, written = s.conn.Bytes()
+	read, written = read-s.lastRead, written-s.lastWritten
+	s.lastRead += read
+	s.lastWritten += written
+	return read, written
 }
 
 func normalizeProtocol(v Protocol) Protocol {

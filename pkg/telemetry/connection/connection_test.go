@@ -70,13 +70,13 @@ func TestTrackedConnCountsActualPipeBytesAndSessionDeltasAreMonotone(t *testing.
 	session.SetKind(Login)
 	session.Observe(ctx, Handshake, OutcomeUnknown)
 	session.Observe(ctx, Closed, ConnectionClosed)
-	if len(collector.events) != 3 {
+	if len(collector.events) != 4 {
 		t.Fatalf("events = %#v", collector.events)
 	}
-	if collector.events[1].BytesRead != 2 || collector.events[1].BytesWritten != 3 {
-		t.Fatalf("first byte delta = %#v", collector.events[1])
+	if got := collector.events[1]; got.Kind != Unknown || got.Stage != Accepted || got.BytesRead != 2 || got.BytesWritten != 3 {
+		t.Fatalf("bytes must flush under their prior snapshot, got %#v", got)
 	}
-	if collector.events[2].BytesRead != 0 || collector.events[2].BytesWritten != 0 {
+	if collector.events[2].BytesRead != 0 || collector.events[2].BytesWritten != 0 || collector.events[2].Kind != Login || collector.events[2].Stage != Handshake {
 		t.Fatalf("repeated observation must have zero byte delta: %#v", collector.events[2])
 	}
 }

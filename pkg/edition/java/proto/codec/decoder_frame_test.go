@@ -61,6 +61,15 @@ func TestReadVarIntFrameCompletesFragmentedPrefixAndPayload(t *testing.T) {
 	require.Equal(t, len(frame), n)
 }
 
+func TestReadVarIntFrameReturnsPartialPayloadBytesWithError(t *testing.T) {
+	// Announce five payload bytes but provide only two. Accounting must include
+	// both the one-byte length prefix and the partial io.ReadFull result.
+	payload, n, err := readVarIntFrame(bytes.NewReader([]byte{5, 'o', 'k'}))
+	require.Nil(t, payload)
+	require.Error(t, err)
+	require.Equal(t, 3, n)
+}
+
 func TestReadVarIntFrameRejectsOverVanillaMaximum(t *testing.T) {
 	over := vanillaMaxFrameLength + 1
 

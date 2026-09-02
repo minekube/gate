@@ -86,6 +86,63 @@ func TestPrometheusBridgeExposesOnlyCanonicalFamilies(t *testing.T) {
 	}
 }
 
+func TestActiveGaugeKindMigrationBalancesPrometheusAndOTel(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	prom := newPrometheusObserver(reg)
+	ctx, session := Start(context.Background(), prom)
+	session.SetKind(Login)
+	session.Observe(ctx, Handshake, OutcomeUnknown)
+	session.SetKind(Gameplay)
+	session.Observe(ctx, Closed, ConnectionClosed)
+	metrics, err := reg.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, family := range metrics {
+		if family.GetName() != "gate_active_connections" {
+			continue
+		}
+		for _, point := range family.Metric {
+			if got := point.GetGauge().GetValue(); got != 0 {
+				t.Fatalf("Prometheus active gauge leaked %v for %#v", got, point.Label)
+			}
+		}
+	}
+
+	reader := metric.NewManualReader()
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
+	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+	otelObserver, err := NewMeterObserver(provider.Meter("active-migration"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, session = Start(context.Background(), otelObserver)
+	session.SetKind(Login)
+	session.Observe(ctx, Handshake, OutcomeUnknown)
+	session.SetKind(Gameplay)
+	session.Observe(ctx, Closed, ConnectionClosed)
+	var collected metricdata.ResourceMetrics
+	if err := reader.Collect(context.Background(), &collected); err != nil {
+		t.Fatal(err)
+	}
+	for _, scope := range collected.ScopeMetrics {
+		for _, got := range scope.Metrics {
+			if got.Name != "gate_active_connections" {
+				continue
+			}
+			sum, ok := got.Data.(metricdata.Sum[int64])
+			if !ok {
+				t.Fatalf("active metric has type %T", got.Data)
+			}
+			for _, point := range sum.DataPoints {
+				if point.Value != 0 {
+					t.Fatalf("OTel active gauge leaked %d for %v", point.Value, point.Attributes)
+				}
+			}
+		}
+	}
+}
+
 func assertBoundedPoints(t *testing.T, name string, data metricdata.Aggregation) {
 	t.Helper()
 	var points []metricdata.DataPoint[int64]

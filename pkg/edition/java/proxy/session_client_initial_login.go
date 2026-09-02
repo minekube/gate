@@ -389,6 +389,11 @@ var (
 )
 
 func (l *initialLoginSessionHandler) Disconnected() {
+	// This handler is active only until authentication has handed the client to
+	// the auth session, so its disconnect is a bounded failed-login outcome.
+	if observation, ok := connectiontelemetry.FromContext(l.conn.Context()); ok {
+		observation.Observe(l.conn.Context(), connectiontelemetry.Closed, connectiontelemetry.Failed)
+	}
 	l.inbound.cleanup()
 }
 

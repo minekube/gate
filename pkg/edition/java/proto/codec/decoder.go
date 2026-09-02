@@ -193,7 +193,9 @@ func readVarIntFrame(rd io.Reader) (payload []byte, n int, err error) {
 	payload = make([]byte, length)
 	m, err := io.ReadFull(rd, payload)
 	if err != nil {
-		return nil, n, fmt.Errorf("error reading payload: %w", err)
+		// io.ReadFull may return useful bytes together with EOF. Preserve them
+		// for packet-limit and raw-byte accounting just as we do on success.
+		return nil, n + m, fmt.Errorf("error reading payload: %w", err)
 	}
 	return payload, n + m, nil
 }

@@ -87,6 +87,17 @@ type Proxy struct {
 	connectionObservations connectiontelemetry.Observer
 }
 
+// telemetryWireConn keeps the byte counter on the accepted transport while a
+// protocol wrapper above it consumes framing such as a PROXY v1/v2 header.
+// Session.Attach recognizes this tiny carrier and still returns the outer
+// connection to the Minecraft decoder.
+type telemetryWireConn struct {
+	net.Conn
+	wire *connectiontelemetry.TrackedConn
+}
+
+func (c telemetryWireConn) TelemetryWireConn() *connectiontelemetry.TrackedConn { return c.wire }
+
 type runtimeConfigSnapshot struct {
 	cfg        *config.Config
 	generation uint64
@@ -722,7 +733,10 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 		}
 
 		if p.config().ProxyProtocol {
-			conn = p.proxyProtocol.Load().wrapConn(conn)
+			// Count raw wire bytes before the decoder strips a trusted PROXY v1/v2
+			// header. This also makes flood accounting observably match the socket.
+			wire := connectiontelemetry.Wrap(conn)
+			conn = telemetryWireConn{Conn: p.proxyProtocol.Load().wrapConn(wire), wire: wire}
 		}
 
 		go p.HandleConn(conn)

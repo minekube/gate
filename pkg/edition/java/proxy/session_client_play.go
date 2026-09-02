@@ -37,6 +37,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -193,6 +194,12 @@ func (c *clientPlaySessionHandler) Deactivated() {
 }
 
 func (c *clientPlaySessionHandler) Activated() {
+	if observation, ok := connectiontelemetry.FromContext(c.player.Context()); ok {
+		// Full proxy sessions become gameplay only when their client handler
+		// actually enters PLAY (rather than merely requesting login).
+		observation.SetKind(connectiontelemetry.Gameplay)
+		observation.Observe(c.player.Context(), connectiontelemetry.Play, connectiontelemetry.Success)
+	}
 	protocol := c.player.Protocol()
 	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(protocol)
 	if len(channels) != 0 {
