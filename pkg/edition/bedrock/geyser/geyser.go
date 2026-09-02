@@ -289,7 +289,7 @@ func (i *Integration) handleConnection(conn net.Conn) {
 	i.mu.Unlock()
 
 	// Handle the connection through Gate's Java proxy
-	i.proxy.HandleConn(geyserConn)
+	i.proxy.HandleLoopbackConn(geyserConn.Context, geyserConn)
 }
 
 func (i *Integration) onPreLogin(e *proxy.PreLoginEvent) {

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 )
 
 func newTestConfigHandler(t *testing.T) (*clientConfigSessionHandler, *connectedPlayer, *serverConnection, *testMinecraftConn) {
@@ -31,6 +33,16 @@ func newTestConfigHandler(t *testing.T) (*clientConfigSessionHandler, *connected
 	player.sessionHandlerDeps = &sessionHandlerDeps{proxy: proxy}
 
 	return newClientConfigSessionHandler(player), player, serverConn, backendConn
+}
+
+func TestClientConfigDisconnectTerminatesInitialLifecycle(t *testing.T) {
+	var events telemetryEvents
+	ctx, _ := connectiontelemetry.Start(context.Background(), &events)
+	observeConfigDisconnect(ctx)
+	got := events[len(events)-1]
+	if !got.Terminal || got.Outcome != connectiontelemetry.Failed {
+		t.Fatalf("config disconnect telemetry = %#v", got)
+	}
 }
 
 func TestClientConfigQueuesPluginMessagesUntilBackendReady(t *testing.T) {

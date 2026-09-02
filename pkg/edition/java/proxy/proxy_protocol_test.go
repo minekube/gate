@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/netutil"
@@ -67,6 +69,49 @@ func TestProxyProtocolHeaderFromTrustedUpstreamIsHonored(t *testing.T) {
 
 	require.Equal(t, "1.2.3.4", netutil.Host(gate.observedRemoteAddr(t)),
 		"PROXY header from a trusted upstream must set the client address")
+}
+
+func TestProxyProtocolRawWireTelemetryCountsV1BeforeRemoteAddr(t *testing.T) {
+	collector := newLockedTelemetryEvents()
+	gate := startProxyProtocolProxyWithObserver(t, func(c *config.Config) {
+		c.ProxyProtocol = true
+		c.ProxyProtocolTrustedProxies = []string{"127.0.0.0/8"}
+	}, collector)
+	conn := gate.dial(t)
+	const header = "PROXY TCP4 1.2.3.4 10.0.0.1 43210 25565\r\n"
+	_, err := conn.Write([]byte(header))
+	require.NoError(t, err)
+	require.NoError(t, writeStatusHandshake(conn, gate.bind, "localhost", 765))
+	_, err = readStatusResponse(conn)
+	require.NoError(t, err)
+	require.NoError(t, conn.Close())
+	collector.waitTerminals(t, 1)
+	if got := collector.readBytes(); got < int64(len(header)) {
+		t.Fatalf("raw telemetry read bytes = %d, want at least PROXY v1 header %d", got, len(header))
+	}
+}
+
+func TestProxyProtocolRateLimitedReturnCountsV2Header(t *testing.T) {
+	collector := newLockedTelemetryEvents()
+	gate := startProxyProtocolProxyWithObserver(t, func(c *config.Config) {
+		c.ProxyProtocol = true
+		c.ProxyProtocolTrustedProxies = []string{"127.0.0.0/8"}
+		c.Quota.Connections.Enabled = true
+		c.Quota.Connections.OPS = 0.01
+		c.Quota.Connections.Burst = 1
+	}, collector)
+	first := gate.dial(t)
+	writeProxyHeader(t, first) // consumes the only token for spoofedClientAddr
+	require.NoError(t, first.Close())
+	collector.waitTerminals(t, 1)
+	before := collector.readBytes()
+	second := gate.dial(t)
+	writeProxyHeader(t, second)
+	require.NoError(t, second.Close())
+	collector.waitTerminals(t, 2)
+	if got := collector.readBytes() - before; got < 28 { // fixed v2 header, excluding address payload
+		t.Fatalf("rate-limited raw telemetry bytes = %d, want PROXY v2 header", got)
+	}
 }
 
 // TestProxyProtocolUntrustedClientWithoutHeaderIsUnaffected makes sure the
@@ -175,6 +220,10 @@ type proxyProtocolProxy struct {
 }
 
 func startProxyProtocolProxy(t *testing.T, configure func(*config.Config)) *proxyProtocolProxy {
+	return startProxyProtocolProxyWithObserver(t, configure, nil)
+}
+
+func startProxyProtocolProxyWithObserver(t *testing.T, configure func(*config.Config), observer connectiontelemetry.Observer) *proxyProtocolProxy {
 	t.Helper()
 
 	motd, err := componentutil.ParseComponent(version.MaximumVersion.Protocol, proxyProtocolTestMotd)
@@ -210,6 +259,9 @@ func startProxyProtocolProxy(t *testing.T, configure func(*config.Config)) *prox
 
 	p, err := New(Options{Config: &cfg, EventMgr: events})
 	require.NoError(t, err)
+	if observer != nil {
+		p.connectionObservations = observer
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	startResult := make(chan error, 1)
@@ -231,6 +283,46 @@ func startProxyProtocolProxy(t *testing.T, configure func(*config.Config)) *prox
 	})
 
 	return gate
+}
+
+type lockedTelemetryEvents struct {
+	mu     sync.Mutex
+	events []connectiontelemetry.Event
+}
+
+func newLockedTelemetryEvents() *lockedTelemetryEvents { return new(lockedTelemetryEvents) }
+func (c *lockedTelemetryEvents) Observe(_ context.Context, event connectiontelemetry.Event) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.events = append(c.events, event)
+}
+func (c *lockedTelemetryEvents) readBytes() int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var total int64
+	for _, event := range c.events {
+		total += event.BytesRead
+	}
+	return total
+}
+func (c *lockedTelemetryEvents) waitTerminals(t *testing.T, want int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		c.mu.Lock()
+		count := 0
+		for _, event := range c.events {
+			if event.Terminal {
+				count++
+			}
+		}
+		c.mu.Unlock()
+		if count >= want {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for %d terminal telemetry events", want)
 }
 
 func (g *proxyProtocolProxy) dial(t *testing.T) net.Conn {

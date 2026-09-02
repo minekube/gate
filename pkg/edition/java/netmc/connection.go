@@ -167,7 +167,7 @@ func NewMinecraftConn(
 		c:             base,
 		ctx:           ctx,
 		cancelCtx:     cancel,
-		rd:            NewReader(base, in, readTimeout, log),
+		rd:            NewReaderWithContext(ctx, base, in, readTimeout, log),
 		wr:            NewWriter(base, out, writeTimeout, compressionLevel, log),
 		state:         state.Handshake,
 		protocol:      version.Minecraft_1_7_2.Protocol,

@@ -13,6 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.minekube.com/gate/pkg/edition/java/proto/codec"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/errs"
 )
 
@@ -31,11 +32,18 @@ type Reader interface {
 // ErrReadPacketRetry is returned by ReadPacket when the reader should retry reading the next packet.
 var ErrReadPacketRetry = errors.New("error reading packet, retry")
 
-// NewReader returns a new packet reader.
+// NewReader returns a new packet reader. Callers that own a connection
+// lifecycle can use NewReaderWithContext to expose a bounded timeout outcome.
 func NewReader(conn net.Conn, direction proto.Direction, readTimeout time.Duration, log logr.Logger) Reader {
+	return NewReaderWithContext(context.Background(), conn, direction, readTimeout, log)
+}
+
+// NewReaderWithContext returns a new packet reader associated with ctx.
+func NewReaderWithContext(ctx context.Context, conn net.Conn, direction proto.Direction, readTimeout time.Duration, log logr.Logger) Reader {
 	readBuf := bufio.NewReader(conn)
 	return &reader{
 		c:           conn,
+		ctx:         ctx,
 		direction:   direction,
 		readTimeout: readTimeout,
 		log:         log.WithName("reader"),
@@ -46,6 +54,7 @@ func NewReader(conn net.Conn, direction proto.Direction, readTimeout time.Durati
 
 type reader struct {
 	log         logr.Logger
+	ctx         context.Context
 	readTimeout time.Duration
 	c           net.Conn // underlying connection
 	// direction of the packets being read: ClientBound means this reader reads
@@ -64,6 +73,12 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 		if r.handleReadErr(err) {
 			r.log.V(1).Info("error reading packet, recovered", "error", err)
 			return nil, ErrReadPacketRetry
+		}
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			if observation, ok := connectiontelemetry.FromContext(r.ctx); ok {
+				observation.Observe(r.ctx, connectiontelemetry.Closed, connectiontelemetry.Timeout)
+			}
 		}
 		r.logCloseErr(err)
 		return nil, err

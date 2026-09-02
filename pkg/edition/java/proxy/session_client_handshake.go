@@ -24,6 +24,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/netutil"
 )
 
@@ -94,6 +95,19 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 
 	// Update connection to requested state and protocol sent in the packet.
 	h.conn.SetProtocol(proto.Protocol(handshake.ProtocolVersion))
+	handshakeIntent := handshake.Intent()
+	if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+		switch {
+		case handshakeIntent == packet.TransferHandshakeIntent:
+			observation.SetKind(connectiontelemetry.Transfer)
+		case nextState == state.Status:
+			observation.SetKind(connectiontelemetry.Status)
+		default:
+			observation.SetKind(connectiontelemetry.Login)
+		}
+		// Classification must precede this event: Lite returns directly below.
+		observation.Observe(h.conn.Context(), connectiontelemetry.Handshake, connectiontelemetry.OutcomeUnknown)
+	}
 
 	cfg, routeGeneration := h.proxy.configSnapshot()
 
@@ -117,7 +131,6 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
 		h.conn.LocalAddr().Network(),
 	)
-	handshakeIntent := handshake.Intent()
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {
@@ -149,6 +162,9 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 
 	// Client IP-block rate limiter preventing too fast logins hitting the Mojang API
 	if h.loginsQuota != nil && h.loginsQuota.Blocked(netutil.Host(inbound.RemoteAddr())) {
+		if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
+			observation.Observe(h.conn.Context(), connectiontelemetry.Closed, connectiontelemetry.RateLimited)
+		}
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},

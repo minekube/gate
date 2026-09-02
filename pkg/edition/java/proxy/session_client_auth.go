@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/go-logr/logr"
@@ -16,6 +17,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy/crypto"
 	"go.minekube.com/gate/pkg/edition/java/proxy/phase"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -69,8 +71,18 @@ func newAuthSessionHandler(
 
 func (a *authSessionHandler) Disconnected() {
 	defer a.inbound.cleanup()
+	observeAuthDisconnect(a.inbound.Context())
 	if a.connectedPlayer != nil {
 		a.connectedPlayer.teardown()
+	}
+}
+
+func observeAuthDisconnect(ctx context.Context) {
+	if observation, ok := connectiontelemetry.FromContext(ctx); ok {
+		// Until PLAY takes over, any client-side auth disconnect/reject is a
+		// failed login. Session terminal de-duplication preserves a timeout if
+		// the reader already recorded that more specific outcome.
+		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.Failed)
 	}
 }
 
@@ -258,7 +270,7 @@ func (a *authSessionHandler) connectToInitialServer(player *connectedPlayer) {
 	}
 	ctx, cancel := withConnectionTimeout(player.Context(), a.config())
 	defer cancel()
-	player.CreateConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
+	player.createInitialConnectionRequest(chooseServer.InitialServer()).ConnectWithIndication(ctx)
 }
 
 func (a *authSessionHandler) Deactivated() {}

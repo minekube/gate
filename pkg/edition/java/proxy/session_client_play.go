@@ -37,6 +37,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -193,11 +194,22 @@ func (c *clientPlaySessionHandler) Deactivated() {
 }
 
 func (c *clientPlaySessionHandler) Activated() {
+	observeFullGameplay(c.player.Context())
 	protocol := c.player.Protocol()
 	channels := c.player.proxy.ChannelRegistrar().ChannelsForProtocol(protocol)
 	if len(channels) != 0 {
 		register := plugin.ConstructChannelsPacket(protocol, channels.UnsortedList()...)
 		_ = c.player.WritePacket(register)
+	}
+}
+
+// observeFullGameplay marks the actual Full-proxy PLAY transition. It is kept
+// separate from the handler's channel registration so the bounded lifecycle
+// classification remains directly regression-testable.
+func observeFullGameplay(ctx context.Context) {
+	if observation, ok := connectiontelemetry.FromContext(ctx); ok {
+		observation.SetKind(connectiontelemetry.Gameplay)
+		observation.Observe(ctx, connectiontelemetry.Play, connectiontelemetry.Success)
 	}
 }
 

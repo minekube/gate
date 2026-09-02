@@ -81,13 +81,19 @@ func TestSwitchToConfigStateClosesOpenBundle(t *testing.T) {
 }
 
 type testMinecraftConn struct {
+	ctx            context.Context
 	writtenPackets []proto.Packet
 	connType       phase.ConnectionType
 	activeHandler  netmc.SessionHandler
 	writer         netmc.Writer
 }
 
-func (t *testMinecraftConn) Context() context.Context { return context.Background() }
+func (t *testMinecraftConn) Context() context.Context {
+	if t.ctx != nil {
+		return t.ctx
+	}
+	return context.Background()
+}
 func (t *testMinecraftConn) Close() error             { return nil }
 func (t *testMinecraftConn) State() *state.Registry   { return state.Play }
 func (t *testMinecraftConn) Protocol() proto.Protocol { return version.Minecraft_1_20_3.Protocol }

@@ -35,6 +35,7 @@ import (
 	"go.minekube.com/gate/pkg/internal/connwrap"
 	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/internal/reload"
+	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/errs"
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/uuid"
@@ -81,8 +82,30 @@ type Proxy struct {
 
 	proxyProtocol atomic.Pointer[proxyProtocol] // PROXY protocol wrapper for accepted connections
 
-	lite *lite.Lite // lite mode functionality
-	via  *viaManagedRunner
+	lite                   *lite.Lite // lite mode functionality
+	via                    *viaManagedRunner
+	connectionObservations connectiontelemetry.Observer
+}
+
+// telemetryWireConn keeps the byte counter on the accepted transport while a
+// protocol wrapper above it consumes framing such as a PROXY v1/v2 header.
+// Session.Attach recognizes this tiny carrier and still returns the outer
+// connection to the Minecraft decoder.
+type telemetryWireConn struct {
+	net.Conn
+	wire *connectiontelemetry.TrackedConn
+}
+
+func (c telemetryWireConn) TelemetryWireConn() *connectiontelemetry.TrackedConn { return c.wire }
+
+// CloseWrite must reach the raw TCP transport even though the outer connection
+// may be a PROXY decoder. Lite's tunnel uses this to preserve the other copy
+// direction after a peer half-closes.
+func (c telemetryWireConn) CloseWrite() error {
+	if c.wire == nil {
+		return net.ErrClosed
+	}
+	return c.wire.CloseWrite()
 }
 
 type runtimeConfigSnapshot struct {
@@ -720,7 +743,10 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 		}
 
 		if p.config().ProxyProtocol {
-			conn = p.proxyProtocol.Load().wrapConn(conn)
+			// Count raw wire bytes before the decoder strips a trusted PROXY v1/v2
+			// header. This also makes flood accounting observably match the socket.
+			wire := connectiontelemetry.Wrap(conn)
+			conn = telemetryWireConn{Conn: p.proxyProtocol.Load().wrapConn(wire), wire: wire}
 		}
 
 		go p.HandleConn(conn)
@@ -730,17 +756,34 @@ func (p *Proxy) listenAndServe(ctx context.Context, addr string) error {
 // HandleConn handles a just-accepted client connection
 // that has not had any I/O performed on it yet.
 func (p *Proxy) HandleConn(raw net.Conn) {
+	ctx, ok := raw.(context.Context)
+	if !ok {
+		ctx = context.Background()
+	}
+	p.handleConn(ctx, raw)
+}
+
+// HandleLoopbackConn is the explicit trusted Bedrock-to-Java boundary.  The
+// caller supplies its marked context so the one Java session is started here,
+// around the actual socket, rather than at Geyser and again at this front door.
+func (p *Proxy) HandleLoopbackConn(ctx context.Context, raw net.Conn) {
+	p.handleConn(connectiontelemetry.WithLoopbackBoundary(ctx), raw)
+}
+
+func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
+	ctx, observation := connectiontelemetry.Start(ctx, p.connectionObservations)
+	// Attach before any RemoteAddr call. For PROXY protocol connections that
+	// first address lookup consumes the v1/v2 header, so this is the only point
+	// that reliably counts the complete raw wire -- including rate-limit exits.
+	raw = observation.Attach(raw)
 	if p.connectionsQuota != nil && p.connectionsQuota.Blocked(netutil.Host(raw.RemoteAddr())) {
+		observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.RateLimited)
 		p.log.Info("connection exceeded rate limit, closed", "remoteAddr", raw.RemoteAddr())
 		_ = raw.Close()
 		return
 	}
 
 	// Create context for connection
-	ctx, ok := raw.(context.Context)
-	if !ok {
-		ctx = context.Background()
-	}
 	ctx = logr.NewContext(ctx, p.log)
 	ctx = trace.ContextWithSpan(ctx, trace.SpanFromContext(p.startCtx))
 
@@ -760,13 +803,13 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		}
 		p.event.Fire(e)
 		if conn.Closed() || e.Connection() == nil {
+			observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.Failed)
 			_ = conn.Close()
 			p.log.V(1).Info("connection closed by ConnectionEvent subscriber", "remoteAddr", raw.RemoteAddr())
 			return
 		}
 		raw = e.Connection()
 	}
-
 	// Create client connection. Client connections are serverbound (untrusted),
 	// so apply the configured per-connection packet rate limiter.
 	pl := p.config().PacketLimiter
@@ -787,6 +830,7 @@ func (p *Proxy) HandleConn(raw net.Conn) {
 		loginsQuota:    p.loginsQuota,
 	}))
 	readLoop()
+	observation.Observe(ctx, connectiontelemetry.Closed, connectiontelemetry.ConnectionClosed)
 }
 
 // PlayerCount returns the number of players on the proxy.
