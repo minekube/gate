@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.16](https://github.com/minekube/gate/compare/v0.71.15...v0.71.16) (2026-09-02)
+
+
+### Bug Fixes
+
+* **java:** block unsafe offline usernames ([#1041](https://github.com/minekube/gate/issues/1041)) ([5cbb170](https://github.com/minekube/gate/commit/5cbb170a590c9507203d683ce32783d662736ed4))
+
 ## [0.71.15](https://github.com/minekube/gate/compare/v0.71.14...v0.71.15) (2026-09-01)
 
 
