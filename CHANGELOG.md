@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.2](https://github.com/minekube/gate/compare/v0.72.1...v0.72.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* **connect:** back off watch 401s with recoverable cold probes ([#976](https://github.com/minekube/gate/issues/976)) ([3b877c1](https://github.com/minekube/gate/commit/3b877c17e4bcbe0c59e008731135d3439735942d))
+
 ## [0.72.1](https://github.com/minekube/gate/compare/v0.72.0...v0.72.1) (2026-09-03)
 
 
