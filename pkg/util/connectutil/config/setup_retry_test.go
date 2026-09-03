@@ -46,8 +46,8 @@ func (r *sleepRecorder) snapshot() []time.Duration {
 
 // TestRetryingRunnableBacksOffOnAuthRejected proves the watch retry loop
 // backs off exponentially on 401 (5s → 10s → ...) instead of the historical
-// fixed 5s interval, and stops retrying entirely after
-// maxConsecutiveAuthRejections consecutive rejections.
+// fixed 5s interval, then switches to a cold recovery probe without making a
+// token rotation or released endpoint name require a Gate restart.
 func TestRetryingRunnableBacksOffOnAuthRejected(t *testing.T) {
 	rec := &sleepRecorder{}
 	rec.install(t)
@@ -55,25 +55,22 @@ func TestRetryingRunnableBacksOffOnAuthRejected(t *testing.T) {
 	var attempts int
 	r := process.RunnableFunc(func(context.Context) error {
 		attempts++
+		if attempts == 5 {
+			return nil
+		}
 		return &authRejectedError{endpoint: "displaced-1", err: errors.New("401 unauthorized")}
 	})
 
 	err := retryingRunnable(r).Start(context.Background())
-	require.Error(t, err)
-	var authErr *authRejectedError
-	require.ErrorAs(t, err, &authErr, "terminal error must be the auth-rejected marker")
-	require.Equal(t, "displaced-1", authErr.endpoint)
-
-	require.Equal(t, maxConsecutiveAuthRejections, attempts,
-		"must stop retrying after %d consecutive 401s", maxConsecutiveAuthRejections)
-	require.Equal(t, []time.Duration{5 * time.Second, 10 * time.Second}, rec.snapshot(),
-		"must back off exponentially on 401 (not fixed-interval)")
+	require.NoError(t, err)
+	require.Equal(t, 5, attempts)
+	require.Equal(t, []time.Duration{5 * time.Second, 10 * time.Second, 15 * time.Minute, 15 * time.Minute}, rec.snapshot(),
+		"must back off exponentially before entering the cold recovery cadence")
 }
 
 // TestRetryingRunnableDoesNotHammerPermanentlyRejected proves a
-// permanently-rejected (endpoint, token) is not hammered: the loop makes
-// exactly maxConsecutiveAuthRejections attempts and then stops, even though
-// the context is never canceled.
+// repeatedly rejected (endpoint, token) is not hammered, but remains able to
+// recover automatically when the endpoint or token becomes valid.
 func TestRetryingRunnableDoesNotHammerPermanentlyRejected(t *testing.T) {
 	rec := &sleepRecorder{}
 	rec.install(t)
@@ -81,14 +78,20 @@ func TestRetryingRunnableDoesNotHammerPermanentlyRejected(t *testing.T) {
 	var attempts int
 	r := process.RunnableFunc(func(context.Context) error {
 		attempts++
+		if attempts == 20 {
+			return nil
+		}
 		return &authRejectedError{endpoint: "org-owned", err: errors.New("401 unauthorized")}
 	})
 
 	err := retryingRunnable(r).Start(context.Background())
-	require.Error(t, err)
-	require.ErrorAs(t, err, new(*authRejectedError))
-	require.Equal(t, maxConsecutiveAuthRejections, attempts,
-		"permanently-rejected endpoint must not be hammered: exactly %d attempts", maxConsecutiveAuthRejections)
+	require.NoError(t, err)
+	require.Equal(t, 20, attempts)
+	delays := rec.snapshot()
+	require.Equal(t, []time.Duration{5 * time.Second, 10 * time.Second}, delays[:2])
+	for _, delay := range delays[2:] {
+		require.Equal(t, authRejectedRetryAfter, delay)
+	}
 }
 
 // TestRetryingRunnableExponentialBackoffOnTransientError proves non-401
@@ -174,12 +177,10 @@ func TestRetryingRunnableResetsBackoffAfterHealthySession(t *testing.T) {
 	<-done
 }
 
-// TestWatchClientStopsOnPermanent401 is the end-to-end regression: the real
-// watch client, dialing a fake watch service that permanently rejects with
-// HTTP 401, must make exactly maxConsecutiveAuthRejections handshake
-// attempts and then stop (no hammering), with exponential backoff between
-// attempts.
-func TestWatchClientStopsOnPermanent401(t *testing.T) {
+// TestWatchClientColdProbesOnPersistent401 is the end-to-end regression: the
+// real watch client enters the cold cadence after repeated HTTP 401s and stops
+// promptly when its lifecycle context is canceled.
+func TestWatchClientColdProbesOnPersistent401(t *testing.T) {
 	rec := &sleepRecorder{}
 	rec.install(t)
 
@@ -203,16 +204,20 @@ func TestWatchClientStopsOnPermanent401(t *testing.T) {
 	runnable, err := connectClient(c, connHandlerFunc(func(net.Conn) {}))
 	require.NoError(t, err)
 
-	err = runnable.Start(context.Background())
-	require.Error(t, err)
-	var authErr *authRejectedError
-	require.ErrorAs(t, err, &authErr, "watch client must return the auth-rejected error")
+	ctx, cancel := context.WithCancel(context.Background())
+	originalSleep := sleep
+	sleep = func(ctx context.Context, d time.Duration) {
+		originalSleep(ctx, d)
+		if len(rec.snapshot()) == 4 {
+			cancel()
+		}
+	}
+	err = runnable.Start(ctx)
+	require.NoError(t, err)
 
 	mu.Lock()
 	got := attempts
 	mu.Unlock()
-	require.Equal(t, maxConsecutiveAuthRejections, got,
-		"watch client must not hammer a permanently-rejected endpoint: %d handshake attempts", maxConsecutiveAuthRejections)
-	require.Equal(t, []time.Duration{5 * time.Second, 10 * time.Second}, rec.snapshot(),
-		"watch client must back off exponentially on 401")
+	require.Equal(t, 4, got)
+	require.Equal(t, []time.Duration{5 * time.Second, 10 * time.Second, 15 * time.Minute, 15 * time.Minute}, rec.snapshot())
 }

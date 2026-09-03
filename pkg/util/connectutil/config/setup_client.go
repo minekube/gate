@@ -100,17 +100,17 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 				go ph.handle(ctx, proposal)
 				return nil
 			})
-			// A 401 from the watch service means the server permanently
-			// rejects this (endpoint, token) — e.g. a displaced connector.
-			// Mark it so retryingRunnable stops retrying after a few
-			// consecutive rejections instead of hammering the server.
+			// A 401 from the watch service means the server currently rejects
+			// this (endpoint, token) — e.g. a displaced connector. Mark it so
+			// retryingRunnable switches to a cold recovery probe instead of
+			// hammering the server.
 			if res, ok := ws.DialErrorResponse(err); ok && res.StatusCode == http.StatusUnauthorized {
 				err = &authRejectedError{endpoint: c.Name, err: err}
 			}
 			if ctx.Err() == nil {
 				// Reconnect to WatchService. retryingRunnable backs off
 				// exponentially and stops logging after 5 consecutive
-				// failures; a 401 is terminal after 3 consecutive rejections.
+				// failures; repeated 401s use a much slower recovery cadence.
 				if err == nil {
 					err = errors.New("disconnected by watch service")
 					log.Info("session watcher disconnected by server, reconnecting", "after", time.Since(t))

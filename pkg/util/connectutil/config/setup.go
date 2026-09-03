@@ -21,12 +21,12 @@ const (
 	// retryAfterMax caps the exponential backoff.
 	retryAfterMax = 2 * time.Minute
 	// maxConsecutiveAuthRejections is the number of consecutive HTTP 401
-	// rejections after which the watch client stops retrying for an
-	// endpoint. A 401 means the server permanently rejects the
-	// (endpoint, token) pair — retrying at any short interval only
-	// produces a 401 storm (displaced connectors) without any chance of
-	// success until the operator fixes the endpoint/token.
+	// rejections after which the watch client switches to a cold probe cadence.
 	maxConsecutiveAuthRejections = 3
+	// authRejectedRetryAfter keeps displaced connectors from producing an auth
+	// storm while still allowing a rotated token or newly released endpoint name
+	// to recover without an operator restarting Gate.
+	authRejectedRetryAfter = 15 * time.Minute
 )
 
 // healthySessionDuration is the minimum uptime of a watch session after
@@ -36,9 +36,8 @@ const (
 var healthySessionDuration = time.Minute
 
 // authRejectedError marks a watch failure caused by the server permanently
-// rejecting this endpoint's credentials (HTTP 401). retryingRunnable treats
-// it as terminal for the endpoint after maxConsecutiveAuthRejections
-// consecutive rejections and stops retrying.
+// rejecting this endpoint's credentials (HTTP 401). retryingRunnable uses it
+// to enter a low-frequency recovery probe after repeated rejections.
 type authRejectedError struct {
 	endpoint string
 	err      error
@@ -80,22 +79,14 @@ func retryingRunnable(r process.Runnable, afterFns ...func()) process.Runnable {
 				var authErr *authRejectedError
 				if errors.As(err, &authErr) {
 					consecutiveAuthRejections++
-					if consecutiveAuthRejections >= maxConsecutiveAuthRejections {
-						// Terminal-ish: the server permanently rejects this
-						// (endpoint, token). Stop retrying so we stop
-						// hammering the server. The error propagates up and
-						// only stops the Connect watch subsystem (Gate keeps
-						// running); a config reload or restart re-creates
-						// the client once the operator fixed the endpoint.
-						log.Error(err, "Watch endpoint permanently rejected (401); stopping retries until endpoint/token is fixed",
-							"endpoint", authErr.endpoint)
-						return err
-					}
 				} else {
 					consecutiveAuthRejections = 0
 				}
 
 				after := jitter(backoffDelay(consecutiveFailures))
+				if consecutiveAuthRejections >= maxConsecutiveAuthRejections {
+					after = jitter(authRejectedRetryAfter)
+				}
 				// Backoff reconnect without logging an error after 5 times.
 				if consecutiveFailures <= 5 {
 					log.Info("Error while running process, retrying...",
