@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.4](https://github.com/minekube/gate/compare/v0.72.3...v0.72.4) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.84.0 ([#1047](https://github.com/minekube/gate/issues/1047)) ([ca49f73](https://github.com/minekube/gate/commit/ca49f7302b62089b887c0742465531195ad1d54f))
+
 ## [0.72.3](https://github.com/minekube/gate/compare/v0.72.2...v0.72.3) (2026-09-03)
 
 
