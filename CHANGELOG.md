@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.3](https://github.com/minekube/gate/compare/v0.72.2...v0.72.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_model to v0.6.3 ([#1054](https://github.com/minekube/gate/issues/1054)) ([958cc29](https://github.com/minekube/gate/commit/958cc29a51aaa2d71f50113b1c88cd7c02cb3764))
+
 ## [0.72.2](https://github.com/minekube/gate/compare/v0.72.1...v0.72.2) (2026-09-03)
 
 
