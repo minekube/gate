@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.5](https://github.com/minekube/gate/compare/v0.72.4...v0.72.5) (2026-09-04)
+
+
+### Bug Fixes
+
+* **deps:** update module buf.build/gen/go/minekube/gate/protocolbuffers/go to v1.36.12-20250516132630-2a0c7768e191.2 ([#1059](https://github.com/minekube/gate/issues/1059)) ([53fbbc8](https://github.com/minekube/gate/commit/53fbbc8fba980d0f772a99425e8fdb007923be7f))
+
 ## [0.72.4](https://github.com/minekube/gate/compare/v0.72.3...v0.72.4) (2026-09-03)
 
 
