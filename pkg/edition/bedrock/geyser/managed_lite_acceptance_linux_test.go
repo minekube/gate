@@ -74,18 +74,10 @@ func TestGateManagedGeyserliteAcceptanceHelper(t *testing.T) {
 		return
 	}
 
-	listen := os.Getenv("GATE_GEYSERLITE_ACCEPTANCE_LISTEN")
 	upstream := os.Getenv("GATE_GEYSERLITE_ACCEPTANCE_UPSTREAM")
 	phasePath := os.Getenv("GATE_GEYSERLITE_ACCEPTANCE_PHASES")
-	if listen == "" || upstream == "" || phasePath == "" {
-		os.Exit(2)
-	}
-	_, portText, err := net.SplitHostPort(listen)
-	if err != nil {
-		os.Exit(2)
-	}
-	port, err := strconv.Atoi(portText)
-	if err != nil {
+	listenPath := os.Getenv("GATE_GEYSERLITE_ACCEPTANCE_LISTEN_PATH")
+	if upstream == "" || phasePath == "" || listenPath == "" {
 		os.Exit(2)
 	}
 
@@ -96,6 +88,19 @@ func TestGateManagedGeyserliteAcceptanceHelper(t *testing.T) {
 
 	phaseHandler := newGateManagedAcceptancePhaseHandler(phasePath)
 	slog.SetDefault(slog.New(phaseHandler))
+	listen, err := gateManagedPublishUDPListenCandidate(listenPath)
+	if err != nil {
+		os.Exit(1)
+	}
+	_, portText, err := net.SplitHostPort(listen)
+	if err != nil {
+		os.Exit(2)
+	}
+	port, err := strconv.Atoi(portText)
+	if err != nil {
+		os.Exit(2)
+	}
+	phaseHandler.markListenCandidatePublished()
 	runner := newLiteManagedRunner(&config.Config{
 		GeyserListenAddr: upstream,
 		FloodgateKeyPath: keyPath,
@@ -129,17 +134,17 @@ func TestGateManagedGeyserliteAcceptanceHelper(t *testing.T) {
 
 func runGateManagedAcceptance(t *testing.T, cacheHome, mirror string, budget time.Duration) {
 	t.Helper()
-	listen := gateManagedReserveUDPAddr(t)
 	upstream := gateManagedReserveTCPAddr(t)
 	phasePath := filepath.Join(t.TempDir(), "phases.json")
+	listenPath := filepath.Join(t.TempDir(), "listen")
 
 	cmd := exec.Command(os.Args[0], "-test.run=^TestGateManagedGeyserliteAcceptanceHelper$")
 	cmd.Env = append(os.Environ(),
 		"GATE_GEYSERLITE_ACCEPTANCE_HELPER=1",
-		"GATE_GEYSERLITE_ACCEPTANCE_LISTEN="+listen,
 		"GATE_GEYSERLITE_ACCEPTANCE_UPSTREAM="+upstream,
 		"GATE_GEYSERLITE_ACCEPTANCE_MIRROR="+mirror,
 		"GATE_GEYSERLITE_ACCEPTANCE_PHASES="+phasePath,
+		"GATE_GEYSERLITE_ACCEPTANCE_LISTEN_PATH="+listenPath,
 		"XDG_CACHE_HOME="+cacheHome,
 		"GEYSERLITE_BINARY=",
 		"GEYSERLITE_LIBRARY=",
@@ -149,32 +154,63 @@ func runGateManagedAcceptance(t *testing.T, cacheHome, mirror string, budget tim
 		t.Fatalf("start %s Gate-managed acceptance child: %v", gateManagedAcceptancePhase(mirror), err)
 	}
 
+	listen, published := gateManagedWaitForListenCandidate(listenPath, 10*time.Second)
+	if !published {
+		_ = gateManagedStopAcceptanceChild(cmd)
+		phases := readGateManagedAcceptancePhases(phasePath)
+		encoded, _ := json.Marshal(phases)
+		t.Fatalf("%s Gate-managed child did not publish a safe UDP listener candidate; phases=%s", gateManagedAcceptancePhase(mirror), encoded)
+	}
 	probeCtx, cancelProbe := context.WithTimeout(context.Background(), budget)
 	reached := gateManagedWaitForRakNetStatus(probeCtx, listen)
 	cancelProbe()
 	if !reached {
-		_ = cmd.Process.Signal(syscall.SIGTERM)
-		_ = cmd.Wait()
+		_ = gateManagedStopAcceptanceChild(cmd)
 		phases := readGateManagedAcceptancePhases(phasePath)
 		phases.CacheBinaryPresent = gateManagedCacheBinaryPresent(cacheHome)
 		encoded, _ := json.Marshal(phases)
 		t.Fatalf("%s Gate-managed cache did not reach a RakNet status reply within %s; phases=%s", gateManagedAcceptancePhase(mirror), budget, encoded)
 	}
 
-	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		t.Fatalf("stop %s Gate-managed acceptance child: %v", gateManagedAcceptancePhase(mirror), err)
+	if err := gateManagedStopAcceptanceChild(cmd); err != nil {
+		t.Fatalf("%s Gate-managed acceptance child did not stop cleanly", gateManagedAcceptancePhase(mirror))
 	}
+}
+
+const gateManagedChildStopTimeout = 30 * time.Second
+
+// gateManagedStopAcceptanceChild is the sole child reaper. Every wait is
+// bounded: a SIGTERM gets one grace window, then SIGKILL gets one final grace
+// window. This keeps failures from hanging an AgentOS workflow indefinitely.
+func gateManagedStopAcceptanceChild(cmd *exec.Cmd) error {
+	if cmd.Process == nil {
+		return errors.New("acceptance child was not started")
+	}
+	signalErr := cmd.Process.Signal(syscall.SIGTERM)
+
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
 	select {
 	case err := <-done:
-		if err != nil {
-			t.Fatalf("%s Gate-managed acceptance child stopped uncleanly: %v", gateManagedAcceptancePhase(mirror), err)
+		if signalErr != nil && !errors.Is(signalErr, os.ErrProcessDone) {
+			return signalErr
 		}
-	case <-time.After(30 * time.Second):
-		_ = cmd.Process.Kill()
-		_ = cmd.Wait()
-		t.Fatalf("%s Gate-managed acceptance child did not stop within 30s", gateManagedAcceptancePhase(mirror))
+		return err
+	case <-time.After(gateManagedChildStopTimeout):
+	}
+
+	killErr := cmd.Process.Kill()
+	select {
+	case err := <-done:
+		if killErr != nil && !errors.Is(killErr, os.ErrProcessDone) {
+			return killErr
+		}
+		if signalErr != nil && !errors.Is(signalErr, os.ErrProcessDone) {
+			return signalErr
+		}
+		return err
+	case <-time.After(gateManagedChildStopTimeout):
+		return errors.New("acceptance child did not exit after SIGKILL")
 	}
 }
 
@@ -186,6 +222,7 @@ type gateManagedAcceptancePhases struct {
 	SubprocessStarted  bool `json:"subprocess_started"`
 	NativeReadyLog     bool `json:"native_ready_log"`
 	RestartObserved    bool `json:"restart_observed"`
+	ListenPublished    bool `json:"listen_candidate_published"`
 	GateRunnerHealthy  bool `json:"gate_runner_healthy"`
 	CacheBinaryPresent bool `json:"cache_binary_present"`
 }
@@ -250,6 +287,16 @@ func (h *gateManagedAcceptancePhaseHandler) markGateRunnerHealthy() {
 	gateManagedWriteAcceptancePhasesLocked(h.state.path, h.state.data)
 }
 
+func (h *gateManagedAcceptancePhaseHandler) markListenCandidatePublished() {
+	h.state.mu.Lock()
+	defer h.state.mu.Unlock()
+	if h.state.data.ListenPublished {
+		return
+	}
+	h.state.data.ListenPublished = true
+	gateManagedWriteAcceptancePhasesLocked(h.state.path, h.state.data)
+}
+
 func gateManagedNativeReady(message string) bool {
 	// Keep this diagnostic in lockstep with geyserlite's Healthy marker. The
 	// native logger may prefix a line, but only this fixed boolean is retained.
@@ -303,6 +350,23 @@ func TestGateManagedAcceptancePhaseLoggerEmitsOnlyFixedBooleans(t *testing.T) {
 	}
 }
 
+func TestGateManagedListenCandidateIsPrivateLoopbackOnly(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "listen")
+	addr, err := gateManagedPublishUDPListenCandidate(path)
+	if err != nil {
+		t.Fatalf("publish UDP candidate: %v", err)
+	}
+	got, ok := gateManagedWaitForListenCandidate(path, time.Second)
+	if !ok || got != addr {
+		t.Fatalf("published candidate = %q, ok=%t; want %q, true", got, ok, addr)
+	}
+	for _, invalid := range []string{"127.0.0.1:0", "0.0.0.0:19132", "[::1]:19132", "127.0.0.1:not-a-port"} {
+		if gateManagedValidLoopbackUDPAddr(invalid) {
+			t.Fatalf("invalid candidate %q accepted", invalid)
+		}
+	}
+}
+
 func gateManagedAcceptancePhase(mirror string) string {
 	if mirror == "" {
 		return "cold"
@@ -310,17 +374,68 @@ func gateManagedAcceptancePhase(mirror string) string {
 	return "warm"
 }
 
-func gateManagedReserveUDPAddr(t *testing.T) string {
-	t.Helper()
+// gateManagedPublishUDPListenCandidate allocates a UDP port from inside the
+// child and publishes it before immediately constructing the Gate runner.
+// This removes the parent-to-child scheduling window in reserve-close-bind.
+// GeyserLite's public API deliberately accepts an address/port rather than a
+// pre-bound FD, so holding this socket until Geyser starts would prevent the
+// native process from binding it; complete race elimination needs a future FD
+// handoff API in GeyserLite/Geyser itself.
+func gateManagedPublishUDPListenCandidate(path string) (string, error) {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1")})
 	if err != nil {
-		t.Fatalf("reserve Bedrock UDP port: %v", err)
+		return "", err
 	}
 	addr := conn.LocalAddr().String()
-	if err := conn.Close(); err != nil {
-		t.Fatalf("release Bedrock UDP port: %v", err)
+	if !gateManagedValidLoopbackUDPAddr(addr) {
+		_ = conn.Close()
+		return "", errors.New("candidate is not a loopback UDP address")
 	}
-	return addr
+
+	// Write while the candidate is still reserved. The parent may start its
+	// probe immediately, but only Geyser receives traffic after Close below.
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, []byte(addr), 0o600); err != nil {
+		_ = conn.Close()
+		return "", err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = conn.Close()
+		return "", err
+	}
+	if err := conn.Close(); err != nil {
+		return "", err
+	}
+	return addr, nil
+}
+
+func gateManagedWaitForListenCandidate(path string, budget time.Duration) (string, bool) {
+	deadline := time.NewTimer(budget)
+	defer deadline.Stop()
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if data, err := os.ReadFile(path); err == nil {
+			addr := string(data)
+			if gateManagedValidLoopbackUDPAddr(addr) {
+				return addr, true
+			}
+		}
+		select {
+		case <-deadline.C:
+			return "", false
+		case <-ticker.C:
+		}
+	}
+}
+
+func gateManagedValidLoopbackUDPAddr(addr string) bool {
+	host, portText, err := net.SplitHostPort(addr)
+	if err != nil || host != "127.0.0.1" {
+		return false
+	}
+	port, err := strconv.Atoi(portText)
+	return err == nil && port > 0 && port <= 65535
 }
 
 func gateManagedReserveTCPAddr(t *testing.T) string {
