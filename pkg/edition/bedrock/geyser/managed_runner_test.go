@@ -4,6 +4,7 @@ package geyser
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -231,17 +232,106 @@ func TestLiteManagedRunnerStartWaitsUntilHealthy(t *testing.T) {
 	runner.Stop()
 }
 
+func TestLiteManagedRunnerReportsExitAfterHealthy(t *testing.T) {
+	tempDir := t.TempDir()
+	keyPath := filepath.Join(tempDir, "floodgate.key")
+	if err := os.WriteFile(keyPath, []byte("0123456789abcdef"), 0o600); err != nil {
+		t.Fatalf("write key: %v", err)
+	}
+
+	fake := &fakeGeyserliteServer{
+		started: make(chan struct{}),
+		crash:   make(chan error, 1),
+	}
+	runner := newLiteManagedRunner(&config.Config{
+		GeyserListenAddr: "localhost:25567",
+		FloodgateKeyPath: keyPath,
+		Managed:          &config.ManagedGeyser{Enabled: true, Engine: config.ManagedEngineGeyserlite},
+	})
+	runner.newServer = func(geyserlite.Options) (geyserliteServer, error) { return fake, nil }
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- runner.Start(context.Background()) }()
+	select {
+	case <-fake.started:
+	case <-time.After(time.Second):
+		t.Fatal("geyserlite server did not start")
+	}
+	fake.healthy.Store(true)
+	if err := <-errCh; err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+
+	done := runner.Done()
+	if done == nil {
+		t.Fatal("Done() = nil after successful startup")
+	}
+	want := errors.New("simulated GeyserLite crash")
+	fake.crash <- want
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Done() did not close after server exit")
+	}
+	if !errors.Is(runner.Err(), want) {
+		t.Fatalf("Err() = %v, want %v", runner.Err(), want)
+	}
+}
+
+func TestIntegrationReportsManagedRuntimeExit(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	want := errors.New("simulated GeyserLite crash")
+	manager := &fakeManagedRunner{done: make(chan struct{}), err: want}
+	integration := &Integration{
+		ctx:        ctx,
+		manager:    manager,
+		runtimeErr: make(chan error, 1),
+	}
+
+	integration.watchManagedRuntime()
+	close(manager.done)
+	select {
+	case got := <-integration.RuntimeErrors():
+		if !errors.Is(got, want) {
+			t.Fatalf("RuntimeErrors() = %v, want %v", got, want)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("RuntimeErrors() did not report managed runtime exit")
+	}
+}
+
 type fakeGeyserliteServer struct {
 	healthy atomic.Bool
 	started chan struct{}
+	crash   chan error
 }
 
 func (f *fakeGeyserliteServer) Start(ctx context.Context) error {
 	close(f.started)
-	<-ctx.Done()
-	return ctx.Err()
+	if f.crash == nil {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-f.crash:
+		return err
+	}
 }
 
 func (f *fakeGeyserliteServer) Stop(context.Context) error { return nil }
 
 func (f *fakeGeyserliteServer) Healthy() bool { return f.healthy.Load() }
+
+type fakeManagedRunner struct {
+	done chan struct{}
+	err  error
+}
+
+func (f *fakeManagedRunner) EnsureKey(context.Context) error { return nil }
+func (f *fakeManagedRunner) Start(context.Context) error     { return nil }
+func (f *fakeManagedRunner) Stop()                           {}
+func (f *fakeManagedRunner) Done() <-chan struct{}           { return f.done }
+func (f *fakeManagedRunner) Err() error                      { return f.err }

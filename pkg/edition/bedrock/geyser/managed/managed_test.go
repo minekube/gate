@@ -1,13 +1,85 @@
 package managed
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	"gopkg.in/yaml.v3"
 )
+
+func init() {
+	if os.Getenv("GO_WANT_MANAGED_JAVA_HELPER") == "" {
+		return
+	}
+	fmt.Println("Done (0.01s)! Run /geyser help for help!")
+	if os.Getenv("GO_WANT_MANAGED_JAVA_HELPER") == "crash" {
+		time.Sleep(100 * time.Millisecond)
+		os.Exit(17)
+	}
+	for {
+		time.Sleep(time.Second)
+	}
+}
+
+func TestRunnerReportsUnexpectedExitAfterReady(t *testing.T) {
+	t.Setenv("GO_WANT_MANAGED_JAVA_HELPER", "crash")
+	runner := newTestRunner(t)
+	if err := runner.Start(context.Background(), filepath.Join(t.TempDir(), "geyser.jar")); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	done := runner.Done()
+	if done == nil {
+		t.Fatal("Done() = nil after successful startup")
+	}
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Done() did not close after unexpected process exit")
+	}
+	if err := runner.Err(); err == nil {
+		t.Fatal("Err() = nil after unexpected process exit")
+	}
+}
+
+func TestRunnerCleanStopHasNoTerminalError(t *testing.T) {
+	t.Setenv("GO_WANT_MANAGED_JAVA_HELPER", "block")
+	runner := newTestRunner(t)
+	if err := runner.Start(context.Background(), filepath.Join(t.TempDir(), "geyser.jar")); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	done := runner.Done()
+	runner.Stop()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Done() did not close after Stop()")
+	}
+	if err := runner.Err(); err != nil {
+		t.Fatalf("Err() = %v after requested clean stop, want nil", err)
+	}
+}
+
+func newTestRunner(t *testing.T) *Runner {
+	t.Helper()
+	dataDir := t.TempDir()
+	keyPath := filepath.Join(dataDir, "floodgate.pem")
+	if err := os.WriteFile(keyPath, []byte("test-key"), 0o600); err != nil {
+		t.Fatalf("write floodgate key: %v", err)
+	}
+	return New(&bconfig.Config{
+		GeyserListenAddr: "127.0.0.1:25567",
+		FloodgateKeyPath: keyPath,
+		Managed: &bconfig.ManagedGeyser{
+			DataDir:  dataDir,
+			JavaPath: os.Args[0],
+		},
+	})
+}
 
 func TestWriteGeyserConfigForwardsHostnameByDefault(t *testing.T) {
 	dataDir := t.TempDir()

@@ -24,3 +24,10 @@ func (r *liteManagedRunner) Start(context.Context) error {
 }
 
 func (r *liteManagedRunner) Stop() {}
+
+// Done and Err preserve the managedRunner lifecycle contract on musl builds.
+// The runtime never starts on this platform, so it has no terminal lifecycle
+// signal to report.
+func (r *liteManagedRunner) Done() <-chan struct{} { return nil }
+
+func (r *liteManagedRunner) Err() error { return nil }

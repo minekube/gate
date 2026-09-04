@@ -21,7 +21,8 @@ type liteManagedRunner struct {
 	newServer func(geyserlite.Options) (geyserliteServer, error)
 	server    geyserliteServer
 	cancel    context.CancelFunc
-	done      chan error
+	done      chan struct{}
+	err       error
 	mu        sync.Mutex
 }
 
@@ -64,32 +65,41 @@ func (r *liteManagedRunner) EnsureKey(ctx context.Context) error {
 
 func (r *liteManagedRunner) Start(ctx context.Context) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	if r.server != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("geyserlite already running")
 	}
 
 	opts, err := r.options()
 	if err != nil {
+		r.mu.Unlock()
 		return err
 	}
 	server, err := r.newServer(opts)
 	if err != nil {
+		r.mu.Unlock()
 		return err
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)
-	done := make(chan error, 1)
+	done := make(chan struct{})
 	r.server = server
 	r.cancel = cancel
 	r.done = done
+	r.err = nil
+	r.mu.Unlock()
 
 	go func() {
 		err := server.Start(runCtx)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			err = nil
 		}
-		done <- err
+		r.mu.Lock()
+		if r.done == done {
+			r.err = err
+		}
+		r.mu.Unlock()
+		close(done)
 	}()
 
 	ticker := time.NewTicker(liteManagedReadyPoll)
@@ -99,10 +109,9 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 
 	for {
 		select {
-		case err := <-done:
-			r.server = nil
-			r.cancel = nil
-			r.done = nil
+		case <-done:
+			err := r.runErr(done)
+			r.clearRun(done)
 			if err != nil {
 				return err
 			}
@@ -113,18 +122,49 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 			}
 		case <-timeout.C:
 			cancel()
-			r.server = nil
-			r.cancel = nil
-			r.done = nil
+			r.clearRun(done)
 			return fmt.Errorf("timed out after %s waiting for geyserlite to become healthy", liteManagedStartupTimeout)
 		case <-ctx.Done():
 			cancel()
-			r.server = nil
-			r.cancel = nil
-			r.done = nil
+			r.clearRun(done)
 			return ctx.Err()
 		}
 	}
+}
+
+func (r *liteManagedRunner) clearRun(done <-chan struct{}) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.done != done {
+		return
+	}
+	r.server = nil
+	r.cancel = nil
+	r.done = nil
+}
+
+// Done closes once the managed GeyserLite runtime has stopped. It remains safe
+// for more than one observer to wait on it, unlike the old one-consumer error
+// channel.
+func (r *liteManagedRunner) Done() <-chan struct{} {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.done
+}
+
+func (r *liteManagedRunner) Err() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.err
+}
+
+func (r *liteManagedRunner) runErr(done <-chan struct{}) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.done != done {
+		return nil
+	}
+	return r.err
 }
 
 func (r *liteManagedRunner) Stop() {

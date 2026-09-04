@@ -3,10 +3,12 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/robinbraemer/event"
 
@@ -15,6 +17,43 @@ import (
 	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	jproxy "go.minekube.com/gate/pkg/edition/java/proxy"
 )
+
+func TestWatchRuntimeSignalsStopsOnCleanIntegrationShutdown(t *testing.T) {
+	p := &Proxy{runtimeFailures: make(chan error, 1)}
+	runtimeErrors := make(chan error)
+	done := make(chan struct{})
+	stopped := p.watchRuntimeSignals(runtimeErrors, done, func(err error) {
+		p.runtimeFailures <- err
+	})
+	close(done)
+
+	select {
+	case <-stopped:
+	case <-time.After(time.Second):
+		t.Fatal("runtime watcher did not exit after clean integration shutdown")
+	}
+	select {
+	case err := <-p.runtimeFailures:
+		t.Fatalf("clean shutdown reported runtime failure: %v", err)
+	default:
+	}
+}
+
+func TestReportReloadFailureOnlyForCurrentGeneration(t *testing.T) {
+	p := &Proxy{runtimeFailures: make(chan error, 1), reloadGeneration: 7}
+	want := errors.New("replacement failed")
+	p.reportReloadFailure(7, want)
+	if got := <-p.runtimeFailures; !errors.Is(got, want) {
+		t.Fatalf("current reload failure = %v, want %v", got, want)
+	}
+
+	p.reportReloadFailure(6, errors.New("stale replacement failed"))
+	select {
+	case err := <-p.runtimeFailures:
+		t.Fatalf("stale reload reported runtime failure: %v", err)
+	default:
+	}
+}
 
 func TestRequiresRestart(t *testing.T) {
 	// Base configuration for comparison

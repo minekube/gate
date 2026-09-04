@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -414,8 +415,14 @@ func TestGeyserReadyDetection(t *testing.T) {
 			// Create a runner (we don't need a real config for this test)
 			runner := &Runner{}
 
-			// Start handleOutput in a goroutine
-			go runner.handleOutput(r, "[GEYSER] ", &outputBuffer, readyCh)
+			// Start handleOutput in a goroutine and wait for it before reading
+			// outputBuffer; strings.Builder itself is not synchronization-safe.
+			var outputDone sync.WaitGroup
+			outputDone.Add(1)
+			go func() {
+				defer outputDone.Done()
+				runner.handleOutput(r, "[GEYSER] ", &outputBuffer, readyCh)
+			}()
 
 			// Write test log lines
 			go func() {
@@ -440,6 +447,7 @@ func TestGeyserReadyDetection(t *testing.T) {
 			if gotReady != tt.expectReady {
 				t.Errorf("Ready detection: got %v, want %v. %s", gotReady, tt.expectReady, tt.description)
 			}
+			outputDone.Wait()
 
 			// Verify output was properly prefixed
 			output := outputBuffer.String()

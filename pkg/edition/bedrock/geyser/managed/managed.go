@@ -26,10 +26,12 @@ import (
 
 // Runner manages a managed Geyser Standalone process.
 type Runner struct {
-	cfg    *bconfig.Config
-	cmd    *exec.Cmd
-	mu     sync.Mutex
-	cancel context.CancelFunc
+	cfg           *bconfig.Config
+	cmd           *exec.Cmd
+	mu            sync.Mutex
+	done          chan struct{}
+	err           error
+	stopRequested bool
 }
 
 func New(cfg *bconfig.Config) *Runner { return &Runner{cfg: cfg} }
@@ -90,8 +92,8 @@ func (r *Runner) Ensure(ctx context.Context) (string, error) {
 // Start runs the Geyser process with provided config.
 func (r *Runner) Start(ctx context.Context, jarPath string, extraArgs ...string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	if r.cmd != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("geyser already running")
 	}
 
@@ -101,16 +103,19 @@ func (r *Runner) Start(ctx context.Context, jarPath string, extraArgs ...string)
 	// Create Geyser config file in the data directory
 	configPath, err := r.writeGeyserConfig(managed)
 	if err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to write geyser config: %w", err)
 	}
 
 	// Convert to absolute paths to avoid working directory issues
 	absJarPath, err := filepath.Abs(jarPath)
 	if err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to get absolute jar path: %w", err)
 	}
 	absConfigPath, err := filepath.Abs(configPath)
 	if err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to get absolute config path: %w", err)
 	}
 
@@ -132,19 +137,31 @@ func (r *Runner) Start(ctx context.Context, jarPath string, extraArgs ...string)
 	// Create pipes to capture output and wait for ready signal
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to create stderr pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
+		r.mu.Unlock()
 		return fmt.Errorf("failed to start geyser process: %w", err)
 	}
 
 	r.cmd = cmd
+	done := make(chan struct{})
+	r.done = done
+	r.err = nil
+	r.stopRequested = false
+	r.mu.Unlock()
 	log.Info("geyser standalone process started", "pid", cmd.Process.Pid)
+
+	// Wait is called in exactly one place. Its close-only completion signal is
+	// safe for both Stop and the Bedrock integration watcher to observe.
+	go r.waitForExit(ctx, cmd, done)
 
 	// Start goroutines to handle output and wait for ready signal
 	readyCtx, readyCancel := context.WithTimeout(ctx, 30*time.Second)
@@ -167,7 +184,42 @@ func (r *Runner) Start(ctx context.Context, jarPath string, extraArgs ...string)
 		return nil // Don't fail, just continue
 	case <-ctx.Done():
 		return ctx.Err()
+	case <-done:
+		if err := r.Err(); err != nil {
+			return fmt.Errorf("geyser exited before becoming ready: %w", err)
+		}
+		return fmt.Errorf("geyser exited before becoming ready")
 	}
+}
+
+func (r *Runner) waitForExit(ctx context.Context, cmd *exec.Cmd, done chan struct{}) {
+	err := cmd.Wait()
+	r.mu.Lock()
+	if r.done == done {
+		if r.stopRequested || ctx.Err() != nil {
+			err = nil
+		}
+		r.err = err
+		r.cmd = nil
+	}
+	r.mu.Unlock()
+	close(done)
+}
+
+// Done closes once the current or most recently started managed Java runtime
+// exits. It is safe for more than one observer to wait on it.
+func (r *Runner) Done() <-chan struct{} {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.done
+}
+
+// Err is the terminal process error, if the managed Java runtime exited
+// unexpectedly. It is nil for a requested clean stop.
+func (r *Runner) Err() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.err
 }
 
 // handleOutput reads from a pipe, writes to destination with prefix, and optionally signals when ready
@@ -197,17 +249,22 @@ func (r *Runner) handleOutput(pipe io.ReadCloser, prefix string, dest io.Writer,
 // Stop stops the process if running.
 func (r *Runner) Stop() {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.cmd == nil {
+	cmd := r.cmd
+	done := r.done
+	if cmd == nil {
+		r.mu.Unlock()
 		return
 	}
+	r.stopRequested = true
+	r.mu.Unlock()
 
 	log := logr.FromContextOrDiscard(context.Background()).WithName("managed")
-	log.Info("stopping geyser standalone process", "pid", r.cmd.Process.Pid)
+	log.Info("stopping geyser standalone process", "pid", cmd.Process.Pid)
 
-	_ = r.cmd.Process.Kill()
-	_ = r.cmd.Wait()
-	r.cmd = nil
+	_ = cmd.Process.Kill()
+	if done != nil {
+		<-done
+	}
 
 	log.Info("geyser standalone process stopped")
 }
