@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.6](https://github.com/minekube/gate/compare/v0.72.5...v0.72.6) (2026-09-04)
+
+
+### Bug Fixes
+
+* **bedrock:** fail closed when managed listener exits ([#1063](https://github.com/minekube/gate/issues/1063)) ([67ec00d](https://github.com/minekube/gate/commit/67ec00dd6445d64b4a2d5a8dc9b43c50ea519bc5))
+
 ## [0.72.5](https://github.com/minekube/gate/compare/v0.72.4...v0.72.5) (2026-09-04)
 
 
