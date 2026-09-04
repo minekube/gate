@@ -29,6 +29,8 @@ type managedRunner interface {
 	EnsureKey(context.Context) error
 	Start(context.Context) error
 	Stop()
+	Done() <-chan struct{}
+	Err() error
 }
 
 type javaManagedRunner struct {
@@ -58,6 +60,10 @@ func (r *javaManagedRunner) Stop() {
 	r.runner.Stop()
 }
 
+func (r *javaManagedRunner) Done() <-chan struct{} { return r.runner.Done() }
+
+func (r *javaManagedRunner) Err() error { return r.runner.Err() }
+
 func newManagedRunner(cfg *config.Config) (managedRunner, error) {
 	managedConfig := cfg.GetManaged()
 	switch managedConfig.Engine {
@@ -85,6 +91,8 @@ type Integration struct {
 	unsubs         []func()
 	unregisterHook func()
 	manager        managedRunner
+	runtimeErr     chan error
+	runtimeErrOnce sync.Once
 }
 
 // GeyserConnection represents a connection from Geyser.
@@ -121,6 +129,7 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 		config:         cfg,
 		profileManager: NewProfileManager(),
 		connections:    make(map[net.Addr]*GeyserConnection),
+		runtimeErr:     make(chan error, 1),
 	}
 
 	managedConfig := cfg.GetManaged()
@@ -175,7 +184,7 @@ func (i *Integration) Start() error {
 	}
 	go func() {
 		if err := i.serve(ln); err != nil {
-			i.log.Error(err, "geyser listener failed")
+			i.reportRuntimeError(fmt.Errorf("geyser listener failed: %w", err))
 		}
 	}()
 
@@ -185,10 +194,54 @@ func (i *Integration) Start() error {
 			_ = ln.Close()
 			return fmt.Errorf("managed geyser start failed: %w", err)
 		}
+		i.watchManagedRuntime()
 	}
 
 	i.log.Info("geyser integration started", "addr", i.config.GeyserListenAddr)
 	return nil
+}
+
+// RuntimeErrors reports an unexpected failure of the managed Bedrock runtime
+// or the local Geyser listener. Consumers must stop the enclosing proxy when
+// they receive an error: a healthy Java/TCP listener alone does not prove that
+// the public Bedrock UDP listener is still accepting players.
+func (i *Integration) RuntimeErrors() <-chan error { return i.runtimeErr }
+
+// Done closes when the integration is intentionally stopped. Runtime-error
+// observers use it to leave cleanly during a reload instead of waiting for an
+// error that is never meant to arrive.
+func (i *Integration) Done() <-chan struct{} { return i.ctx.Done() }
+
+func (i *Integration) watchManagedRuntime() {
+	done := i.manager.Done()
+	if done == nil {
+		return
+	}
+	go func() {
+		select {
+		case <-i.ctx.Done():
+			return
+		case <-done:
+			if i.ctx.Err() != nil {
+				return
+			}
+			err := i.manager.Err()
+			if err == nil {
+				err = fmt.Errorf("managed geyserlite exited unexpectedly")
+			}
+			i.reportRuntimeError(fmt.Errorf("managed geyser runtime failed: %w", err))
+		}
+	}()
+}
+
+func (i *Integration) reportRuntimeError(err error) {
+	if err == nil || i.ctx.Err() != nil {
+		return
+	}
+	i.runtimeErrOnce.Do(func() {
+		i.log.Error(err, "bedrock runtime failed")
+		i.runtimeErr <- err
+	})
 }
 
 // Stop stops the Geyser integration listener and unsubscribes events.

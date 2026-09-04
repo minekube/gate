@@ -29,6 +29,12 @@ func TestNoGeyserliteBuildRejectsGeyserliteEngine(t *testing.T) {
 	if !strings.Contains(err.Error(), "managed geyserlite engine is not available") {
 		t.Fatalf("EnsureKey() error = %q, want unavailable geyserlite error", err)
 	}
+	if runner.Done() != nil {
+		t.Fatal("Done() != nil for unavailable musl GeyserLite runtime")
+	}
+	if runner.Err() != nil {
+		t.Fatalf("Err() = %v, want nil for unavailable musl GeyserLite runtime", runner.Err())
+	}
 }
 
 func TestNoGeyserliteBuildKeepsJavaEngine(t *testing.T) {
