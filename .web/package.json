@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "author": "Minekube",
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@12.3.4",
   "engines": {
     "node": ">=22.0.0"
   },
