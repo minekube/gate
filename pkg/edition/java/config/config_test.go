@@ -114,6 +114,23 @@ func TestOfflineModeUsernameBlacklistValidation(t *testing.T) {
 		require.Contains(t, errs[0].Error(), "case-insensitively identical")
 		require.Contains(t, errs[1].Error(), "2-16 character Minecraft username")
 	})
+
+	t.Run("accepts all and connect scopes, rejects other values", func(t *testing.T) {
+		cfg := DefaultConfig
+		for _, scope := range []OfflineModeUsernameBlacklistScope{
+			OfflineModeUsernameBlacklistScopeAll,
+			OfflineModeUsernameBlacklistScopeConnect,
+			"", // omitted in older configurations means all
+		} {
+			cfg.OfflineModeUsernameBlacklistScope = scope
+			_, errs := cfg.Validate()
+			require.Empty(t, errs, "scope %q", scope)
+		}
+
+		cfg.OfflineModeUsernameBlacklistScope = "tunnel"
+		_, errs := cfg.Validate()
+		requireErrorContains(t, errs, "Invalid offlineModeUsernameBlacklistScope")
+	})
 }
 
 // TestLiteIgnoredSettingsWarn covers https://github.com/minekube/gate/issues/929: Lite mode

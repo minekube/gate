@@ -157,7 +157,7 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		_ = l.inbound.disconnect(e.Reason())
 		return
 	}
-	if offlineModeUsernameBlocked(l.config(), e.Result(), l.login.Username) {
+	if offlineModeUsernameBlocked(l.config(), e.Result(), connectTunnelIngress(l.conn), l.login.Username) {
 		reason := l.config().OfflineModeUsernameBlacklistReason
 		if reason == nil {
 			reason = config.DefaultConfig.OfflineModeUsernameBlacklistReason
@@ -200,10 +200,30 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 	})
 }
 
-func offlineModeUsernameBlocked(cfg *config.Config, result PreLoginResult, username string) bool {
+// ConnectTunnelIngress is a provenance marker installed only by Gate's
+// authenticated Connect tunnel adapter. It is intentionally independent of a
+// player's address and handshake, both of which are player-controlled inputs.
+type ConnectTunnelIngress interface {
+	IsConnectTunnelIngress() bool
+}
+
+func connectTunnelIngress(conn netmc.MinecraftConn) bool {
+	ingress, ok := netmc.Assert[ConnectTunnelIngress](conn)
+	return ok && ingress.IsConnectTunnelIngress()
+}
+
+func offlineModeUsernameBlocked(
+	cfg *config.Config,
+	result PreLoginResult,
+	connectIngress bool,
+	username string,
+) bool {
 	offline := result == ForceOfflineModePreLogin ||
 		(result != ForceOnlineModePreLogin && !cfg.OnlineMode)
 	if !offline {
+		return false
+	}
+	if cfg.OfflineModeUsernameBlacklistScope == config.OfflineModeUsernameBlacklistScopeConnect && !connectIngress {
 		return false
 	}
 	for _, blocked := range cfg.OfflineModeUsernameBlacklist {
