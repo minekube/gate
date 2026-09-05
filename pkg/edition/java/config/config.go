@@ -23,6 +23,7 @@ var DefaultConfig = Config{
 	OnlineMode:                         true,
 	Auth:                               Auth{},
 	OnlineModeKickExistingPlayers:      false,
+	OfflineModeUsernameBlacklistScope:  OfflineModeUsernameBlacklistScopeAll,
 	OfflineModeUsernameBlacklistReason: text("§cThis username is reserved for its authenticated owner."),
 	Forwarding: Forwarding{
 		Mode:           LegacyForwardingMode,
@@ -132,9 +133,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Auth                          Auth `yaml:"auth,omitempty" json:"auth,omitempty"`                                                   // Authentication settings.
 	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers,omitempty" json:"onlineModeKickExistingPlayers,omitempty"` // Kicks existing players when a premium player with the same name joins.
 	// OfflineModeUsernameBlacklist reserves names only on login paths that are effectively
-	// offline mode. Authenticated direct joins remain allowed to use the same names.
-	OfflineModeUsernameBlacklist       []string                  `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
-	OfflineModeUsernameBlacklistReason *configutil.TextComponent `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
+	// offline mode. Authenticated joins remain allowed to use the same names.
+	OfflineModeUsernameBlacklist       []string                          `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
+	OfflineModeUsernameBlacklistScope  OfflineModeUsernameBlacklistScope `yaml:"offlineModeUsernameBlacklistScope,omitempty" json:"offlineModeUsernameBlacklistScope,omitempty"`
+	OfflineModeUsernameBlacklistReason *configutil.TextComponent         `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
@@ -185,6 +187,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 }
 
 type (
+	// OfflineModeUsernameBlacklistScope selects which offline-mode login paths
+	// apply OfflineModeUsernameBlacklist.
+	OfflineModeUsernameBlacklistScope string
+
 	ForcedHosts map[string][]string // virtualhost:server names
 	Status      struct {
 		ShowMaxPlayers  int                   `yaml:"showMaxPlayers"`
@@ -242,6 +248,15 @@ type (
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
 		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
 	}
+)
+
+const (
+	// OfflineModeUsernameBlacklistScopeAll is deliberately the default for
+	// compatibility with configurations created before this setting existed.
+	OfflineModeUsernameBlacklistScopeAll OfflineModeUsernameBlacklistScope = "all"
+	// OfflineModeUsernameBlacklistScopeConnect applies the reservation only to
+	// connections created by Gate's authenticated Connect tunnel adapter.
+	OfflineModeUsernameBlacklistScopeConnect OfflineModeUsernameBlacklistScope = "connect"
 )
 
 // ForwardingMode is a player info forwarding mode.
@@ -367,6 +382,13 @@ func (c *Config) Validate() (warns []error, errs []error) {
 var minecraftUsernamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
 
 func validateOfflineModeUsernameBlacklist(c *Config, e func(string, ...any)) {
+	switch c.OfflineModeUsernameBlacklistScope {
+	case "", OfflineModeUsernameBlacklistScopeAll, OfflineModeUsernameBlacklistScopeConnect:
+		// An omitted key is "all", preserving pre-scope behaviour.
+	default:
+		e("Invalid offlineModeUsernameBlacklistScope %q, must be one of all,connect", c.OfflineModeUsernameBlacklistScope)
+	}
+
 	seen := make(map[string]string, len(c.OfflineModeUsernameBlacklist))
 	for _, username := range c.OfflineModeUsernameBlacklist {
 		if !minecraftUsernamePattern.MatchString(username) {

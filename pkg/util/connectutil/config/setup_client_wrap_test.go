@@ -42,6 +42,10 @@ func TestWrapTunnelSessionExposesVerifiedProfile(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, principal, pp.VerifiedPrincipal())
 
+	ingress, ok := netmc.Assert[proxy.ConnectTunnelIngress](conn)
+	require.True(t, ok, "a verified Connect tunnel must keep its trusted ingress marker")
+	require.True(t, ingress.IsConnectTunnelIngress())
+
 	require.Equal(t, "sess-wrap-1", conn.Session().GetId())
 }
 
@@ -55,8 +59,14 @@ func TestWrapTunnelSessionWithoutPrincipal(t *testing.T) {
 	require.Equal(t, gp, gpp.GameProfile())
 	_, ok = netmc.Assert[connectutil.VerifiedPrincipalProvider](conn)
 	require.False(t, ok)
+	ingress, ok := netmc.Assert[proxy.ConnectTunnelIngress](conn)
+	require.True(t, ok, "a proposed-profile Connect tunnel still originates at Connect")
+	require.True(t, ingress.IsConnectTunnelIngress())
 
 	passthrough := wrapTunnelSession(nil, session, nil, nil)
 	_, ok = netmc.Assert[proxy.GameProfileProvider](passthrough)
 	require.False(t, ok)
+	ingress, ok = netmc.Assert[proxy.ConnectTunnelIngress](passthrough)
+	require.True(t, ok, "a passthrough Connect tunnel must not lose its ingress provenance")
+	require.True(t, ingress.IsConnectTunnelIngress())
 }

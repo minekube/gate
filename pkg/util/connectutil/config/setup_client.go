@@ -282,12 +282,18 @@ type (
 var (
 	_ proxy.GameProfileProvider             = (*tunnelConnWithGameProfile)(nil)
 	_ proxy.GameProfileProvider             = (*tunnelConnWithPrincipal)(nil)
+	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithSession)(nil)
+	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithGameProfile)(nil)
+	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithPrincipal)(nil)
 	_ connectutil.VerifiedPrincipalProvider = (*tunnelConnWithPrincipal)(nil)
 )
 
 func (t *tunnelConnWithGameProfile) GameProfile() *profile.GameProfile { return t.gp }
 func (t *tunnelConnWithPrincipal) GameProfile() *profile.GameProfile   { return t.gp }
 func (t *tunnelConnWithSession) Session() *connect.Session             { return t.s }
+func (*tunnelConnWithSession) IsConnectTunnelIngress() bool            { return true }
+func (*tunnelConnWithGameProfile) IsConnectTunnelIngress() bool        { return true }
+func (*tunnelConnWithPrincipal) IsConnectTunnelIngress() bool          { return true }
 func (t *tunnelConnWithPrincipal) VerifiedPrincipal() bedrockprincipal.VerifiedBedrockPrincipal {
 	return t.principal
 }
