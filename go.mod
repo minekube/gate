@@ -1,6 +1,6 @@
 module go.minekube.com/gate
 
-go 1.26
+go 1.26.0
 
 require (
 	connectrpc.com/connect v1.20.0
@@ -13,7 +13,7 @@ require (
 	github.com/edwingeng/deque/v2 v2.1.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gammazero/deque v1.2.1
-	github.com/go-faker/faker/v4 v4.9.0
+	github.com/go-faker/faker/v4 v4.11.0
 	github.com/go-logr/logr v1.4.4
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
@@ -47,8 +47,8 @@ require (
 	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 	golang.org/x/net v0.53.0
-	golang.org/x/sync v0.21.0
-	golang.org/x/text v0.38.0
+	golang.org/x/sync v0.22.0
+	golang.org/x/text v0.40.0
 	golang.org/x/time v0.14.0
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.12
