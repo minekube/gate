@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.0](https://github.com/minekube/gate/compare/v0.72.6...v0.73.0) (2026-09-05)
+
+
+### Features
+
+* scope offline username blacklist to Connect ([#1069](https://github.com/minekube/gate/issues/1069)) ([8a45711](https://github.com/minekube/gate/commit/8a45711b547fbe6b5033c525119dc77e463a377f))
+
 ## [0.72.6](https://github.com/minekube/gate/compare/v0.72.5...v0.72.6) (2026-09-04)
 
 
