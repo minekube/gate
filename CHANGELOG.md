@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.4](https://github.com/minekube/gate/compare/v0.73.3...v0.73.4) (2026-09-05)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/time to v0.15.0 ([#1010](https://github.com/minekube/gate/issues/1010)) ([a8e2677](https://github.com/minekube/gate/commit/a8e26774b9e47de69e84254422d16da37da227bf))
+
 ## [0.73.3](https://github.com/minekube/gate/compare/v0.73.2...v0.73.3) (2026-09-05)
 
 
