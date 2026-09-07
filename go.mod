@@ -32,6 +32,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v2 v2.27.7
+	github.com/urfave/cli/v3 v3.11.0
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
