@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.6](https://github.com/minekube/gate/compare/v0.73.5...v0.73.6) (2026-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update module buf.build/gen/go/minekube/gate/connectrpc/go to v1.21.0-20250516132630-2a0c7768e191.1 ([#1089](https://github.com/minekube/gate/issues/1089)) ([8e200bb](https://github.com/minekube/gate/commit/8e200bba268a3c96c30af8abd8fd810193733755))
+
 ## [0.73.5](https://github.com/minekube/gate/compare/v0.73.4...v0.73.5) (2026-09-08)
 
 
