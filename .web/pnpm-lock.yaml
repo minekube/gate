@@ -16,7 +16,7 @@ importers:
         version: 7.0.8
       posthog-js:
         specifier: ^1.93.3
-        version: 1.428.3
+        version: 1.428.7
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 5.20260908.1
@@ -783,8 +783,8 @@ packages:
   '@posthog/core@1.51.0':
     resolution: {integrity: sha512-LilmmtjcrjV1LgaVNQXrAUt4IXcWIYMrwEtx6VJUUFDeBBdmeI99jshKGtAWugYeB3Wkcp9xQIVCrxIYRpNiRA==}
 
-  '@posthog/types@1.409.1':
-    resolution: {integrity: sha512-lA2sSGQUdVknSQl93uN9eUXDwkCMjAuthq24GONGHzMWwVygsKNHlWCnlJsVv2giDokj2p1NopO4zsE2S7gYjA==}
+  '@posthog/types@1.409.2':
+    resolution: {integrity: sha512-hZ4EXZ1+BstMaxUkmAEg3qvgMR/S00Xb+wEwY/Tx2Dr9dBgiBWrERxaq2UwICh/Fh/vVXpKZT/0SkRtO8JKQ2A==}
 
   '@rollup/rollup-android-arm-eabi@4.50.0':
     resolution: {integrity: sha512-lVgpeQyy4fWN5QYebtW4buT/4kn4p4IJ+kDNB4uYNT5b8c8DLJDg6titg20NIg7E8RWwdWZORW6vUFfrLyG3KQ==}
@@ -1461,8 +1461,8 @@ packages:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-js@1.428.3:
-    resolution: {integrity: sha512-39BloFeL5koaAC8FmbDFx1RQGUwZkqO46M2d1wCi2vVkmiv+TrjC37t5hT9QjAszAeGn7gXeBX7E+MgND5Tygw==}
+  posthog-js@1.428.7:
+    resolution: {integrity: sha512-ztFOoipQ1eOEl1xkkEldy1x8TEPKhNRb6ZZbuODoXqILqcHgHCUF1hATENY36HBuSV7TwXq16pQ3QYYI1rBCuQ==}
     peerDependencies:
       '@types/react': '>=16.8.0'
       react: '>=16.8.0'
@@ -2333,13 +2333,13 @@ snapshots:
   '@posthog/browser-common@0.8.2':
     dependencies:
       '@posthog/core': 1.51.0
-      '@posthog/types': 1.409.1
+      '@posthog/types': 1.409.2
 
   '@posthog/core@1.51.0':
     dependencies:
-      '@posthog/types': 1.409.1
+      '@posthog/types': 1.409.2
 
-  '@posthog/types@1.409.1': {}
+  '@posthog/types@1.409.2': {}
 
   '@rollup/rollup-android-arm-eabi@4.50.0':
     optional: true
@@ -2997,11 +2997,11 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  posthog-js@1.428.3:
+  posthog-js@1.428.7:
     dependencies:
       '@posthog/browser-common': 0.8.2
       '@posthog/core': 1.51.0
-      '@posthog/types': 1.409.1
+      '@posthog/types': 1.409.2
       core-js: 3.50.0
       dompurify: 3.4.15
       fflate: 0.4.9
