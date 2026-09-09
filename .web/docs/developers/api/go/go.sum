@@ -4,6 +4,8 @@ buf.build/gen/go/minekube/gate/connectrpc/go v1.19.1-20250516132630-2a0c7768e191
 buf.build/gen/go/minekube/gate/connectrpc/go v1.19.1-20250516132630-2a0c7768e191.2/go.mod h1:5lrQiIdS2Pli/pDrOfy8oaFLBuJe3C6msDYiENWw/Ys=
 buf.build/gen/go/minekube/gate/connectrpc/go v1.20.0-20250516132630-2a0c7768e191.1 h1:O1gMm/bLYvdkVXTKf2Z9YNSOvgprOd23Rp2SV1aKzhg=
 buf.build/gen/go/minekube/gate/connectrpc/go v1.20.0-20250516132630-2a0c7768e191.1/go.mod h1:LvrXgxuOgq2aKAOIOhy0RPhne4JkAx7nxHTf0FOa87A=
+buf.build/gen/go/minekube/gate/connectrpc/go v1.21.0-20250516132630-2a0c7768e191.1 h1:KPVONDbvgOMxf3u1zI/qBIh5vLUzHKxQUJFrFlzAMgY=
+buf.build/gen/go/minekube/gate/connectrpc/go v1.21.0-20250516132630-2a0c7768e191.1/go.mod h1:FyaIgGmycBLPilUk2S8sYY8LtSS+SzM9y/uABuQB2OU=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.4-20241120101512-f1a10b5029ce.1 h1:9RRIrPwloMUUazjKzNzO4LuRwtDXpD8nsdfuic4pN9o=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.4-20241120101512-f1a10b5029ce.1/go.mod h1:j+b++y5YbvLdPCPTBhMar20pkbDZlv9Rocf5qkqej3I=
 buf.build/gen/go/minekube/gate/protocolbuffers/go v1.36.6-20241120101512-f1a10b5029ce.1 h1:DALaWCbIwHfr0jR9ssHAhyIrjqhrUBKJDhJoEj0tKkw=
@@ -20,6 +22,8 @@ connectrpc.com/connect v1.19.1 h1:R5M57z05+90EfEvCY1b7hBxDVOUl45PrtXtAV2fOC14=
 connectrpc.com/connect v1.19.1/go.mod h1:tN20fjdGlewnSFeZxLKb0xwIZ6ozc3OQs2hTXy4du9w=
 connectrpc.com/connect v1.20.0 h1:6TNDAB+WeNd2uolWNlYczB5E0KNNaVMNUEx8JEUsPmQ=
 connectrpc.com/connect v1.20.0/go.mod h1:A2ygJrukXwWy32vkCAAHNVguZrqZ+jeZ9rGRnGR4dN4=
+connectrpc.com/connect v1.21.0 h1:LhqSJt7jHf5NJBo9Jq/t/9FjcYAideif0mg+qe2jCUs=
+connectrpc.com/connect v1.21.0/go.mod h1:A2ygJrukXwWy32vkCAAHNVguZrqZ+jeZ9rGRnGR4dN4=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 golang.org/x/net v0.23.0 h1:7EYJ93RZ9vYSZAIb2x3lnuvqO5zneoD6IvWjuhfxjTs=
