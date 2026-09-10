@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0 || ^7.0.0"
   },
   "dependencies": {
     "@buf/minekube_gate.connectrpc_es": "^1.6.1-20241118150055-50fffb007499.1",
