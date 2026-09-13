@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.12](https://github.com/minekube/gate/compare/v0.73.11...v0.73.12) (2026-09-13)
+
+
+### Bug Fixes
+
+* **proxy:** keep accepted-connection wrappers transparent to interface probing ([#1111](https://github.com/minekube/gate/issues/1111)) ([c0bd031](https://github.com/minekube/gate/commit/c0bd03134edf73503e0c7e240e30962b336d2edb)), closes [#1081](https://github.com/minekube/gate/issues/1081)
+
 ## [0.73.11](https://github.com/minekube/gate/compare/v0.73.10...v0.73.11) (2026-09-13)
 
 
