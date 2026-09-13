@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.13](https://github.com/minekube/gate/compare/v0.73.12...v0.73.13) (2026-09-13)
+
+
+### Bug Fixes
+
+* **proxy:** block reserved names for unauthenticated offline identities ([#1116](https://github.com/minekube/gate/issues/1116)) ([8532ded](https://github.com/minekube/gate/commit/8532dedd3d679788f277772ce12c28554b0f151d)), closes [#1113](https://github.com/minekube/gate/issues/1113)
+
 ## [0.73.12](https://github.com/minekube/gate/compare/v0.73.11...v0.73.12) (2026-09-13)
 
 
