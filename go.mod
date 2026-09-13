@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_model v0.6.3
 	github.com/robinbraemer/event v0.1.1
 	github.com/rs/xid v1.6.0
-	github.com/sandertv/go-raknet v1.13.0
+	github.com/sandertv/go-raknet v1.15.1
 	github.com/sandertv/gophertunnel v1.37.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
