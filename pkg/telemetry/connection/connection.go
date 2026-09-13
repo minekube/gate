@@ -129,6 +129,14 @@ func (c *TrackedConn) Write(p []byte) (int, error) {
 
 func (c *TrackedConn) Bytes() (read, written int64) { return c.read.Load(), c.written.Load() }
 
+// Unwrap exposes the counted transport. The wrapper only embeds net.Conn, which
+// promotes net.Conn's methods and hides every other interface the transport
+// implements (a Connect tunnel's GameProfileProvider, for example), so callers
+// that probe the connection must be able to reach the wire connection. Byte
+// accounting is unaffected: all reads and writes still pass through this
+// wrapper.
+func (c *TrackedConn) Unwrap() net.Conn { return c.Conn }
+
 // CloseWrite preserves TCP half-close support through the production byte
 // wrapper. Callers can distinguish unsupported/failed half-closes from a
 // successful one and fall back to a full close.

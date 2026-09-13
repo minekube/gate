@@ -705,22 +705,41 @@ func (c *minecraftConn) Conn() net.Conn {
 	return c.c
 }
 
+// maxUnwrapDepth bounds how far Assert descends through connection wrappers.
+// The deepest production stack is a handful of layers (telemetry byte counter,
+// ConnectionEvent close tracker, Connect tunnel session), so this only guards
+// against a wrapper that unwraps to itself.
+const maxUnwrapDepth = 16
+
 // Assert is a utility func that asserts a connection implements an interface T.
 //
 // e.g. usage `Assert[GameProfileProvider](connection)`
+//
+// A wrapper that only embeds net.Conn promotes net.Conn's methods and nothing
+// else, which hides every other interface the wrapped connection implements.
+// Such wrappers must therefore expose the connection they wrap, and Assert
+// descends through that accessor until it finds T, so wrapping stays invisible
+// to interface probing.
 func Assert[T any](c any) (T, bool) {
-	i, ok := c.(T)
-	if ok {
-		return i, true
+	var t T
+	for depth := 0; depth < maxUnwrapDepth; depth++ {
+		if i, ok := c.(T); ok {
+			return i, true
+		}
+		switch underlying := c.(type) {
+		// Conn is a hidden method used to export the underlying connection.
+		case interface{ Conn() net.Conn }:
+			c = underlying.Conn()
+		// Unwrap is the accessor for wrappers that embed net.Conn and therefore
+		// cannot declare a Conn method (Go forbids a field and a method with the
+		// same name).
+		case interface{ Unwrap() net.Conn }:
+			c = underlying.Unwrap()
+		default:
+			return t, false
+		}
 	}
-	// Conn is a hidden method used to export the underlying connection.
-	// Also need to check if underlying implements T.
-	underlying, ok := c.(interface{ Conn() net.Conn })
-	if !ok {
-		var t T
-		return t, false
-	}
-	return Assert[T](underlying.Conn())
+	return t, false
 }
 
 // SendKeepAlive sends a keep-alive packet to the connection if in Play state.
