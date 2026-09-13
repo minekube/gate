@@ -16,8 +16,9 @@ import (
 
 // TestWrapTunnelSessionExposesVerifiedProfile proves an envelope session's
 // connection keeps the verifier-produced game profile visible to
-// netmc.Assert, which only unwraps via a Conn() net.Conn method and would
-// otherwise silently drop the verified profile at login.
+// netmc.Assert, which unwraps via a Conn() net.Conn method (and, for wrappers
+// that only embed net.Conn, via Unwrap() net.Conn) and would otherwise
+// silently drop the verified profile at login.
 func TestWrapTunnelSessionExposesVerifiedProfile(t *testing.T) {
 	pub, priv := testKeyPair(t)
 	p, err := newPrincipalVerifier(testPrincipalConfig(pub))

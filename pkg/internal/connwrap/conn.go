@@ -31,6 +31,15 @@ func (c *Conn) Closed() bool {
 	return c.closed.Load()
 }
 
+// Unwrap exposes the accepted connection this wrapper only tracks Close on. The
+// wrapper embeds net.Conn, which promotes net.Conn's methods and hides every
+// other interface the accepted connection implements (a Connect tunnel's
+// GameProfileProvider, for example), so interface probing must be able to reach
+// past it.
+func (c *Conn) Unwrap() net.Conn {
+	return c.Conn
+}
+
 // TelemetryWireConn forwards the raw-wire counter through ConnectionEvent's
 // close-tracking wrapper, so event subscribers cannot accidentally erase the
 // PROXY-header accounting boundary by retaining the original connection.

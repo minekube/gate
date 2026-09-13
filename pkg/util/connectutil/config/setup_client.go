@@ -246,7 +246,8 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 
 // wrapTunnelSession layers the session, game profile and verified principal
 // onto the tunnel connection. The outermost wrapper must keep the game profile
-// visible to netmc.Assert, which only unwraps via a Conn() net.Conn method.
+// visible to netmc.Assert, which unwraps via a Conn() net.Conn method and, for
+// wrappers that only embed net.Conn, via Unwrap() net.Conn.
 func wrapTunnelSession(
 	tunnel connect.Tunnel,
 	s *connect.Session,
