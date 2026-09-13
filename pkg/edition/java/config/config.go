@@ -134,6 +134,11 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	OnlineModeKickExistingPlayers bool `yaml:"onlineModeKickExistingPlayers,omitempty" json:"onlineModeKickExistingPlayers,omitempty"` // Kicks existing players when a premium player with the same name joins.
 	// OfflineModeUsernameBlacklist reserves names only on login paths that are effectively
 	// offline mode. Authenticated joins remain allowed to use the same names.
+	// A login is effectively offline mode when the proxy runs offline mode or when the
+	// session's identity is an unauthenticated offline identity (e.g. an offline/cracked
+	// player arriving through Connect with the offline UUID of the requested name), so
+	// the reservation also applies on an online-mode proxy for names claimed without
+	// Mojang authentication.
 	OfflineModeUsernameBlacklist       []string                          `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
 	OfflineModeUsernameBlacklistScope  OfflineModeUsernameBlacklistScope `yaml:"offlineModeUsernameBlacklistScope,omitempty" json:"offlineModeUsernameBlacklistScope,omitempty"`
 	OfflineModeUsernameBlacklistReason *configutil.TextComponent         `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
