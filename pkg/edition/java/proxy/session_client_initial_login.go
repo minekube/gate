@@ -26,6 +26,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 	"go.minekube.com/gate/pkg/util/netutil"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
 
 type initialLoginSessionHandler struct {
@@ -157,7 +158,8 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		_ = l.inbound.disconnect(e.Reason())
 		return
 	}
-	if offlineModeUsernameBlocked(l.config(), e.Result(), connectTunnelIngress(l.conn), l.login.Username) {
+	if offlineModeUsernameBlocked(l.config(), e.Result(),
+		connectTunnelIngress(l.conn), l.login.Username, sessionIdentity(l.conn)) {
 		reason := l.config().OfflineModeUsernameBlacklistReason
 		if reason == nil {
 			reason = config.DefaultConfig.OfflineModeUsernameBlacklistReason
@@ -212,14 +214,54 @@ func connectTunnelIngress(conn netmc.MinecraftConn) bool {
 	return ok && ingress.IsConnectTunnelIngress()
 }
 
+// sessionIdentity returns the game profile the connection supplies, if any. A
+// Connect tunnel supplies the profile its TunnelService authenticated — or, for
+// an offline session, the offline identity derived from the requested name. A
+// direct connection has none: it authenticates with Mojang (online mode) or
+// completes with profile.NewOffline (offline mode).
+func sessionIdentity(conn netmc.MinecraftConn) *profile.GameProfile {
+	p, ok := netmc.Assert[GameProfileProvider](conn)
+	if !ok {
+		return nil
+	}
+	return p.GameProfile()
+}
+
+// isOfflineIdentity reports whether a session's identity is an unauthenticated
+// offline-mode identity: an identity whose UUID is the offline UUID (the v3
+// digest of a name) — either of the name this login claims or of the name the
+// identity itself carries. Mojang-authenticated identities are random UUIDs and
+// never match an offline digest. Comparing against both names keeps the
+// determination fail-closed when a login path renames or re-cases the player.
+// A nil identity is NOT offline: such a join still has to authenticate before it
+// can complete login (and under online mode a client that cannot answer the
+// EncryptionRequest never completes).
+func isOfflineIdentity(username string, identity *profile.GameProfile) bool {
+	if identity == nil {
+		return false
+	}
+	if identity.ID == uuid.OfflinePlayerUUID(username) {
+		return true
+	}
+	return identity.Name != "" && identity.ID == uuid.OfflinePlayerUUID(identity.Name)
+}
+
+// offlineModeUsernameBlocked reports whether the reserved-name list applies to
+// this login. A login is "effectively offline mode" when the player is not
+// authenticated: either the proxy runs offline mode, or the session's identity
+// is an offline-mode identity (a cracked join, e.g. through Connect, whose
+// supplied profile is the offline identity for the requested name).
+// Mojang-authenticated joins keep the reserved names.
 func offlineModeUsernameBlocked(
 	cfg *config.Config,
 	result PreLoginResult,
 	connectIngress bool,
 	username string,
+	identity *profile.GameProfile,
 ) bool {
 	offline := result == ForceOfflineModePreLogin ||
-		(result != ForceOnlineModePreLogin && !cfg.OnlineMode)
+		(result != ForceOnlineModePreLogin && !cfg.OnlineMode) ||
+		isOfflineIdentity(username, identity)
 	if !offline {
 		return false
 	}
