@@ -113,10 +113,20 @@ bedrock:
 
 | Option             | Description                                                 | Default              |
 | ------------------ | ----------------------------------------------------------- | -------------------- |
-| `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `".%s"`              |
+| `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `"_%s"`              |
 | `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
 | `backendFloodgate` | Optional allowlist for backend Floodgate plugin compatibility | disabled             |
+
+::: info Java-safe username normalization
+
+Gate renders the name through `usernameFormat` and then normalizes it to Java's `[A-Za-z0-9_]` alphabet, capped at 16
+characters, before login. The delivered username can therefore differ from the format string: a `.` prefix is delivered
+as `_`, and so is every space or non-ASCII character in the gamertag. The normalization is deliberate rather than a
+constraint of Java itself: the backend server validates the login name, Paper's own check also accepts `.`, but
+vanilla's check is only the narrower `[A-Za-z0-9_]` alphabet, and Gate cannot know which implementation a backend runs.
+
+:::
 
 ::: tip geyserListenAddr Network Configuration
 
