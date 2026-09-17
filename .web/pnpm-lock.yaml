@@ -22,8 +22,8 @@ importers:
         specifier: 5.20260917.1
         version: 5.20260917.1
       '@types/node':
-        specifier: ^20.14.0
-        version: 20.19.43
+        specifier: ^22.0.0
+        version: 22.20.3
       autoprefixer:
         specifier: ^10.4.13
         version: 10.6.1(postcss@8.5.28)
@@ -38,13 +38,13 @@ importers:
         version: 5.9.3
       vitepress:
         specifier: ^1.6.4
-        version: 1.6.4(@algolia/client-search@5.37.0)(@types/node@20.19.43)(postcss@8.5.28)(search-insights@2.17.3)(typescript@5.9.3)
+        version: 1.6.4(@algolia/client-search@5.37.0)(@types/node@22.20.3)(postcss@8.5.28)(search-insights@2.17.3)(typescript@5.9.3)
       vue:
         specifier: ^3.2.45
         version: 3.5.42(typescript@5.9.3)
       wrangler:
         specifier: 4.132.0
-        version: 4.132.0(@cloudflare/workers-types@5.20260917.1)(@types/node@20.19.43)
+        version: 4.132.0(@cloudflare/workers-types@5.20260917.1)(@types/node@22.20.3)
 
 packages:
 
@@ -951,8 +951,8 @@ packages:
   '@types/mdurl@2.0.0':
     resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
-  '@types/node@20.19.43':
-    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+  '@types/node@22.20.3':
+    resolution: {integrity: sha512-DZmzkmwHzXrLPAXPyKNDzlIwMMUZCVacoD25ywdy5YTKGbOx/2ld+Q38Im2zJ0vBuZP5Prd3VZutKZyXwkOS8A==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -2475,7 +2475,7 @@ snapshots:
 
   '@types/mdurl@2.0.0': {}
 
-  '@types/node@20.19.43':
+  '@types/node@22.20.3':
     dependencies:
       undici-types: 6.21.0
 
@@ -2488,9 +2488,9 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitejs/plugin-vue@5.2.4(vite@5.4.19(@types/node@20.19.43))(vue@3.5.42(typescript@5.9.3))':
+  '@vitejs/plugin-vue@5.2.4(vite@5.4.19(@types/node@22.20.3))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
-      vite: 5.4.19(@types/node@20.19.43)
+      vite: 5.4.19(@types/node@22.20.3)
       vue: 3.5.42(typescript@5.9.3)
 
   '@vue/compiler-core@3.5.42':
@@ -2911,10 +2911,10 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.1
 
-  miniflare@5.20260915.0-alpha(@types/node@20.19.43):
+  miniflare@5.20260915.0-alpha(@types/node@22.20.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      sharp: 0.35.4(@types/node@20.19.43)
+      sharp: 0.35.4(@types/node@22.20.3)
       undici: 7.29.0
       workerd: 1.20260915.1
       ws: 8.21.0
@@ -3092,7 +3092,7 @@ snapshots:
 
   semver@7.8.5: {}
 
-  sharp@0.35.4(@types/node@20.19.43):
+  sharp@0.35.4(@types/node@22.20.3):
     dependencies:
       '@img/colour': 1.1.0
       detect-libc: 2.1.2
@@ -3123,7 +3123,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.4
       '@img/sharp-win32-ia32': 0.35.4
       '@img/sharp-win32-x64': 0.35.4
-      '@types/node': 20.19.43
+      '@types/node': 22.20.3
 
   shiki@2.5.0:
     dependencies:
@@ -3276,16 +3276,16 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@5.4.19(@types/node@20.19.43):
+  vite@5.4.19(@types/node@22.20.3):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.28
       rollup: 4.50.0
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.3
       fsevents: 2.3.3
 
-  vitepress@1.6.4(@algolia/client-search@5.37.0)(@types/node@20.19.43)(postcss@8.5.28)(search-insights@2.17.3)(typescript@5.9.3):
+  vitepress@1.6.4(@algolia/client-search@5.37.0)(@types/node@22.20.3)(postcss@8.5.28)(search-insights@2.17.3)(typescript@5.9.3):
     dependencies:
       '@docsearch/css': 3.8.2
       '@docsearch/js': 3.8.2(@algolia/client-search@5.37.0)(search-insights@2.17.3)
@@ -3294,7 +3294,7 @@ snapshots:
       '@shikijs/transformers': 2.5.0
       '@shikijs/types': 2.5.0
       '@types/markdown-it': 14.1.2
-      '@vitejs/plugin-vue': 5.2.4(vite@5.4.19(@types/node@20.19.43))(vue@3.5.42(typescript@5.9.3))
+      '@vitejs/plugin-vue': 5.2.4(vite@5.4.19(@types/node@22.20.3))(vue@3.5.42(typescript@5.9.3))
       '@vue/devtools-api': 7.7.7
       '@vue/shared': 3.5.21
       '@vueuse/core': 12.8.2(typescript@5.9.3)
@@ -3303,7 +3303,7 @@ snapshots:
       mark.js: 8.11.1
       minisearch: 7.1.2
       shiki: 2.5.0
-      vite: 5.4.19(@types/node@20.19.43)
+      vite: 5.4.19(@types/node@22.20.3)
       vue: 3.5.42(typescript@5.9.3)
     optionalDependencies:
       postcss: 8.5.28
@@ -3357,13 +3357,13 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260915.1
       '@cloudflare/workerd-windows-64': 1.20260915.1
 
-  wrangler@4.132.0(@cloudflare/workers-types@5.20260917.1)(@types/node@20.19.43):
+  wrangler@4.132.0(@cloudflare/workers-types@5.20260917.1)(@types/node@22.20.3):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260915.1)
       blake3-wasm: 2.1.5
       esbuild: 0.28.1
-      miniflare: 5.20260915.0-alpha(@types/node@20.19.43)
+      miniflare: 5.20260915.0-alpha(@types/node@22.20.3)
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
       workerd: 1.20260915.1
