@@ -153,6 +153,13 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *initialInbound) {
 	// Check for supported client version.
 	if !version.Protocol(p.ProtocolVersion).Supported() {
+		// The client is already in the login state (it asked for it in the
+		// handshake), but Gate's own connection is still in the handshake state,
+		// whose clientbound registry has no packets at all. Move to the login state
+		// first so the reason actually reaches the client: the login clientbound
+		// registry owns the Disconnect packet (0x00), and Disconnect encodes the
+		// login reason as JSON for every client that can still read it.
+		h.conn.SetActiveSessionHandler(state.Login, nopSessionHandler{})
 		_ = inbound.disconnect(&component.Translation{
 			Key:  "multiplayer.disconnect.outdated_client",
 			With: []component.Component{&component.Text{Content: version.SupportedVersionsString}},

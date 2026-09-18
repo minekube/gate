@@ -54,6 +54,7 @@ var (
 	Minecraft_1_21_11 = v(774, "1.21.11")
 	Minecraft_26_1    = v(775, "26.1", "26.1.1", "26.1.2")
 	Minecraft_26_2    = v(776, "26.2")
+	Minecraft_26_3    = v(777, "26.3")
 
 	// Versions ordered from lowest to highest
 	Versions = []*proto.Version{
@@ -74,7 +75,7 @@ var (
 		Minecraft_1_19, Minecraft_1_19_1, Minecraft_1_19_3, Minecraft_1_19_4,
 		Minecraft_1_20, Minecraft_1_20_2, Minecraft_1_20_3, Minecraft_1_20_5,
 		Minecraft_1_21, Minecraft_1_21_2, Minecraft_1_21_4, Minecraft_1_21_5, Minecraft_1_21_6, Minecraft_1_21_7, Minecraft_1_21_9, Minecraft_1_21_11,
-		Minecraft_26_1, Minecraft_26_2,
+		Minecraft_26_1, Minecraft_26_2, Minecraft_26_3,
 	}
 )
 
@@ -130,8 +131,15 @@ func (p Protocol) String() string {
 }
 
 // Supported returns true if the protocol is a supported Minecraft Java edition version.
+//
+// A protocol that is not in the version table (a release we do not know yet, a
+// snapshot, or garbage) is not supported: it must be refused with a
+// "multiplayer.disconnect.outdated_client" disconnect instead of being negotiated,
+// because such a connection has no packet registry of its own and would silently
+// fall back to the oldest wire format.
 func (p Protocol) Supported() bool {
-	return !p.Unknown()
+	_, known := ProtocolToVersion[proto.Protocol(p)]
+	return known && !p.Unknown() && !p.Legacy()
 }
 
 func (p Protocol) Legacy() bool {
