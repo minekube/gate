@@ -55,9 +55,19 @@ func NewPacketRegistry(state states.State, direction proto.Direction) *PacketReg
 }
 
 // ProtocolRegistry gets the ProtocolRegistry for a protocol.
+//
+// An unknown protocol maps to the nearest known version instead of always to the
+// minimum one: a client below the minimum is served by the oldest known layout,
+// but a client above the maximum (a release or snapshot newer than this build of
+// Gate) must be served by the newest known layout. Falling back to the minimum for
+// both made Gate answer e.g. protocol 777 with 1.7.2-format login packets, which
+// the client cannot decode.
 func (p *PacketRegistry) ProtocolRegistry(protocol proto.Protocol) *ProtocolRegistry {
 	r := p.Protocols[protocol]
 	if r == nil && p.Fallback {
+		if protocol > version.MaximumVersion.Protocol {
+			return p.ProtocolRegistry(version.MaximumVersion.Protocol)
+		}
 		return p.ProtocolRegistry(version.MinimumVersion.Protocol)
 	}
 	return r // nil if not found
