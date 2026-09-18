@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.0](https://github.com/minekube/gate/compare/v0.73.14...v0.74.0) (2026-09-18)
+
+
+### Features
+
+* add Minecraft 26.3 (protocol 777) support + fail-closed unknown-protocol handling ([#1139](https://github.com/minekube/gate/issues/1139)) ([37e1c80](https://github.com/minekube/gate/commit/37e1c80370f30e755495c989855845dae7909440))
+
 ## [0.73.14](https://github.com/minekube/gate/compare/v0.73.13...v0.73.14) (2026-09-18)
 
 
