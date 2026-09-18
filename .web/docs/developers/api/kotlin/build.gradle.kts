@@ -14,7 +14,7 @@ repositories {
 val grpcVersion = "1.84.0"
 val grpcKotlinVersion = "1.5.0"
 val connectVersion = "0.7.1"
-val protobufVersion = "4.36.1"
+val protobufVersion = "4.36.2"
 
 dependencies {
     // Kotlin
