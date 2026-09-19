@@ -102,7 +102,10 @@ func TestCIGrantsNoAmbientWritePermission(t *testing.T) {
 		t.Fatalf("workflow permissions are %v; ci.yml must have no ambient token grant", workflow.Permissions)
 	}
 
-	for _, name := range []string{"lint", "test", "docker-smoke"} {
+	// pinned-tools runs the pinned-tool toolchain guard
+	// (.github/scripts/check-pinned-go-tools.sh): checkout without persisted
+	// credentials + contents: read only, like the other code-running jobs.
+	for _, name := range []string{"lint", "test", "docker-smoke", "pinned-tools"} {
 		job := ciIsolationJob(t, workflow, name)
 		if got := job.Permissions; len(got) != 1 || got["contents"] != "read" {
 			t.Errorf("%s permissions are %v; code-running jobs must have contents: read only", name, got)
