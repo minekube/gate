@@ -32,6 +32,9 @@ jobs:
       - name: golangci-lint
         run: golangci-lint run --timeout 3m0s
 
+      - name: Run gohawk
+        run: go run github.com/kojah/gohawk@v0.3.2 -enable-all -disable=goroutineownership ./...
+
   test:
     strategy:
       fail-fast: false

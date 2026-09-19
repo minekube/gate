@@ -924,10 +924,12 @@ retry:
 	} else {
 		_, exists := p.playerNames[lowerName]
 		if exists {
+			p.muP.Unlock()
 			return false
 		}
 		_, exists = p.playerIDs[player.ID()]
 		if exists {
+			p.muP.Unlock()
 			return false
 		}
 	}
