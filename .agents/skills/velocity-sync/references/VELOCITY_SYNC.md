@@ -28,13 +28,13 @@ nobody notices, so do not introduce it, or any paraphrase of it, anywhere in thi
 verified; say plainly what was not. The log is designed to grow forward from a point we can actually
 stand behind, so coverage becomes provable going forward rather than asserted retroactively.
 
-`velocity_sync_test.go` enforces this with an exact-match blocklist of phrasings. The banned phrasings
+`upstream_sync_test.go` enforces this with an exact-match blocklist of phrasings. The banned phrasings
 are deliberately spelled out in the test rather than here, so this file never contains the sentence it
 forbids.
 
 ## Verified sync point as of
 
-<!-- Machine-readable record. Parsed by TestVelocitySyncRecord* in velocity_sync_test.go.
+<!-- Machine-readable record. Parsed by TestVelocitySyncRecord* in upstream_sync_test.go.
      Keep this the first ```yaml block in the file. -->
 
 ```yaml
@@ -76,6 +76,18 @@ log:
       builder method, upstream already sets the same flag via JSONOptions.EMIT_RGB=FALSE, and Gate
       downsamples at the same <1.16 boundary via codec.JsonPre1_16 (NoDownsampleColor: false). No Gate
       change was made, so the verified sync point above is unchanged by this review.
+
+  - date: 2026-09-19
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Rechecked official PaperMC/Velocity for Gate PR #1139 (Minecraft 26.3). Its dev/3.0.0 head
+      resolves to 843a47e2; the compared range is the same 11 commits assessed on 2026-07-28,
+      with no later commits or 26.3 protocol work in that branch. The prior review explains the
+      per-commit decisions. PR #1139 obtained protocol 777 and packet mappings from Mojang's 26.3
+      client artifact, so this check required no further port.
 ```
 
 ## The log
@@ -107,8 +119,12 @@ Gate commit should demonstrably implement the upstream commit's behavior, ideall
 
 ### Reviewing an upstream range
 
-`robinbraemer/Velocity` is the fork; `PaperMC/Velocity@dev/3.0.0` is upstream. A GitHub compare
-between them gives the outstanding range.
+`PaperMC/Velocity@dev/3.0.0` is the upstream reference. Compare its resolved head with the last
+reviewed head in the log to identify new work.
+
+For new Minecraft Java versions and Velocity-derived Gate changes, follow
+`.agents/skills/velocity-sync/SKILL.md` and record the resolved comparison head, not only a moving
+branch name.
 
 One filter is worth knowing up front: Gate does not track Adventure's **Java API**. It uses its own Go
 stack (`go.minekube.com/common/minecraft/component`), kept aligned with Adventure by hand at the
@@ -119,5 +135,5 @@ non-portable and can be filtered out on sight; only wire-format and protocol cha
 ## Related
 
 - `AGENTS.md` — Gate's project agent memory, which points here.
-- `velocity_sync_test.go` — the guard over this file. It checks shape, not truth; read its header
+- `upstream_sync_test.go` at the repo root — the guard over this file. It checks shape, not truth; read its header
   comment for exactly what it does and does not prove.
