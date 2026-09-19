@@ -76,6 +76,18 @@ log:
       builder method, upstream already sets the same flag via JSONOptions.EMIT_RGB=FALSE, and Gate
       downsamples at the same <1.16 boundary via codec.JsonPre1_16 (NoDownsampleColor: false). No Gate
       change was made, so the verified sync point above is unchanged by this review.
+
+  - date: 2026-09-19
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Rechecked Velocity for Gate PR #1139 (Minecraft 26.3). The robinbraemer/Velocity and
+      PaperMC/Velocity dev/3.0.0 heads both resolve to 843a47e2; the compared range is the same
+      11 commits assessed on 2026-07-28, with no later commits or 26.3 protocol work in either
+      branch. The prior review explains the per-commit decisions. PR #1139 obtained protocol 777
+      and packet mappings from Mojang's 26.3 client artifact, so this check required no further port.
 ```
 
 ## The log
@@ -109,6 +121,9 @@ Gate commit should demonstrably implement the upstream commit's behavior, ideall
 
 `robinbraemer/Velocity` is the fork; `PaperMC/Velocity@dev/3.0.0` is upstream. A GitHub compare
 between them gives the outstanding range.
+For new Minecraft Java versions and Velocity-derived Gate changes, follow
+`.agents/skills/velocity-sync/SKILL.md` and record the resolved comparison head, not only a moving
+branch name.
 
 One filter is worth knowing up front: Gate does not track Adventure's **Java API**. It uses its own Go
 stack (`go.minekube.com/common/minecraft/component`), kept aligned with Adventure by hand at the
