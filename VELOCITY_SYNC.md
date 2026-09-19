@@ -83,11 +83,11 @@ log:
     upstream_commit_count: 11
     ported: none
     summary: >-
-      Rechecked Velocity for Gate PR #1139 (Minecraft 26.3). The robinbraemer/Velocity and
-      PaperMC/Velocity dev/3.0.0 heads both resolve to 843a47e2; the compared range is the same
-      11 commits assessed on 2026-07-28, with no later commits or 26.3 protocol work in either
-      branch. The prior review explains the per-commit decisions. PR #1139 obtained protocol 777
-      and packet mappings from Mojang's 26.3 client artifact, so this check required no further port.
+      Rechecked official PaperMC/Velocity for Gate PR #1139 (Minecraft 26.3). Its dev/3.0.0 head
+      resolves to 843a47e2; the compared range is the same 11 commits assessed on 2026-07-28,
+      with no later commits or 26.3 protocol work in that branch. The prior review explains the
+      per-commit decisions. PR #1139 obtained protocol 777 and packet mappings from Mojang's 26.3
+      client artifact, so this check required no further port.
 ```
 
 ## The log
@@ -119,8 +119,9 @@ Gate commit should demonstrably implement the upstream commit's behavior, ideall
 
 ### Reviewing an upstream range
 
-`robinbraemer/Velocity` is the fork; `PaperMC/Velocity@dev/3.0.0` is upstream. A GitHub compare
-between them gives the outstanding range.
+`PaperMC/Velocity@dev/3.0.0` is the upstream reference. Compare its resolved head with the last
+reviewed head in the log to identify new work.
+
 For new Minecraft Java versions and Velocity-derived Gate changes, follow
 `.agents/skills/velocity-sync/SKILL.md` and record the resolved comparison head, not only a moving
 branch name.
