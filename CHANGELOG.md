@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.4](https://github.com/minekube/gate/compare/v0.74.3...v0.74.4) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_golang to v1.24.1 ([#1049](https://github.com/minekube/gate/issues/1049)) ([1e7152f](https://github.com/minekube/gate/commit/1e7152f366fe9423d01b1b2a6f8190686211237b))
+
 ## [0.74.3](https://github.com/minekube/gate/compare/v0.74.2...v0.74.3) (2026-09-19)
 
 
