@@ -13,7 +13,7 @@ test('production and canary Workers preserve the Pages runtime contract', async 
   const packageJson = JSON.parse(
     await readFile(new URL('../package.json', import.meta.url), 'utf8')
   );
-  assert.equal(packageJson.packageManager, 'pnpm@10.11.0');
+  assert.equal(packageJson.packageManager, 'pnpm@10.34.5');
   assert.equal(packageJson.engines?.node, '>=22.0.0');
   assert.equal(packageJson.scripts['deploy:worker'], 'node scripts/deploy-worker.mjs');
   assert.equal(
@@ -76,10 +76,10 @@ test('the Worker toolchain is reproducible and permits only required install scr
     await readFile(new URL('../package.json', import.meta.url), 'utf8')
   );
 
-  assert.equal(packageJson.devDependencies.wrangler, '4.115.0');
+  assert.equal(packageJson.devDependencies.wrangler, '4.135.0');
   assert.equal(
     packageJson.devDependencies['@cloudflare/workers-types'],
-    '5.20260722.1'
+    '5.20260918.1'
   );
   assert.deepEqual(packageJson.pnpm?.onlyBuiltDependencies, [
     'core-js',
