@@ -12,6 +12,8 @@ name: web
 
 on:
   push:
+    branches:
+      - master
     paths:
       - .web/**
       - .github/workflows/web.yml

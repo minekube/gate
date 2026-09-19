@@ -47,7 +47,8 @@ type webWorkflowTriggers struct {
 }
 
 type webWorkflowPathFilter struct {
-	Paths []string `yaml:"paths"`
+	Paths    []string `yaml:"paths"`
+	Branches []string `yaml:"branches"`
 	// Types defaults to [opened, synchronize, reopened]. A workflow that
 	// narrows it (as ci.yml does) never re-runs on the push that fixes a red
 	// docs check.
@@ -235,6 +236,14 @@ func TestWebWorkflowIsPathFilteredToDotWeb(t *testing.T) {
 			t.Errorf("%s: %s paths = %v, want it to include %s so editing the workflow itself runs it",
 				webWorkflowPath, name, trigger.Paths, webWorkflowPath)
 		}
+	}
+
+	// PRs already run on open/synchronize/reopen. Restricting push to master
+	// preserves a post-merge/direct-push gate without scheduling the same
+	// workflow twice for every feature-branch commit.
+	if branches := workflow.On.Push.Branches; len(branches) != 1 || branches[0] != "master" {
+		t.Errorf("%s: push branches = %v, want [master]; unrestricted push duplicates the pull_request run on every feature-branch commit",
+			webWorkflowPath, branches)
 	}
 
 	// Unlike ci.yml's [opened, reopened] filter, a fix pushed to the same PR
