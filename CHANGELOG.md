@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.1](https://github.com/minekube/gate/compare/v0.74.0...v0.74.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** refresh the vulnerable dependency set (grpc 1.84.0, x/net 0.59.0, x/image 0.46.0, otel exporters 1.46.0, docs/example lockfiles) ([#1144](https://github.com/minekube/gate/issues/1144)) ([b5d23f0](https://github.com/minekube/gate/commit/b5d23f0b298e4bf626e6c13995b3af9c6c1ca4d7))
+
 ## [0.74.0](https://github.com/minekube/gate/compare/v0.73.14...v0.74.0) (2026-09-18)
 
 
