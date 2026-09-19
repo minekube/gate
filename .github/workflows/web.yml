@@ -1,0 +1,81 @@
+# The `.web` VitePress site + Cloudflare Worker carries its own checks -
+# `node --test scripts/*.test.mjs` (the Worker/deployment contract suite) and
+# `pnpm run build` (the site build) - and no other workflow runs them. They sat
+# red on master across several Renovate bumps because nothing executed them
+# (minekube/gate#1144: the contract test still pinned pnpm@10.11.0/wrangler
+# 4.115.0 after the bumps landed). This workflow wires both up for `.web/**`
+# changes only, so unrelated PRs do not pay for a docs job.
+#
+# ci.yml still owns the Go gate; `make test` continues to shell out to
+# .web/docs/public/install_test.sh and build_tags_test.sh.
+name: web
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .web/**
+      - .github/workflows/web.yml
+  # Default pull_request types (opened, synchronize, reopened): a push that
+  # fixes a red docs check must retrigger this workflow. ci.yml deliberately
+  # narrows to [opened, reopened] and would not.
+  pull_request:
+    paths:
+      - .web/**
+      - .github/workflows/web.yml
+
+# Empty at workflow level; the job narrows to the read scope it needs.
+permissions: {}
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: docs build + contract tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .web
+    steps:
+      - name: Checkout
+        # v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      # Corepack is no longer bundled on the runners' Node 25+, so pnpm is
+      # installed explicitly. The version is read from `packageManager` in
+      # .web/package.json, so CI cannot drift from what `pnpm build` uses
+      # locally.
+      - name: Set up pnpm
+        # v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          package_json_file: .web/package.json
+          cache: true
+          cache_dependency_path: .web/pnpm-lock.yaml
+
+      - name: Set up Node
+        # v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Worker/deployment contract suite (package.json "test"). It pins the
+      # wrangler/workers-types/pnpm versions the docs toolchain must ship, so a
+      # Renovate bump without the matching test update fails here.
+      - name: Contract tests
+        run: node --test scripts/*.test.mjs
+
+      # scripts/build-with-community-stats.mjs spawns a bare `pnpm`, so pnpm
+      # has to be on PATH (the step above, not npx) - and Node >= 22.
+      - name: Build docs site
+        run: pnpm run build
