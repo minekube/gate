@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.2](https://github.com/minekube/gate/compare/v0.74.1...v0.74.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* **ci:** run gohawk on a pinned Go 1.27 toolchain and guard pinned tool toolchains ([#1145](https://github.com/minekube/gate/issues/1145)) ([3b43a98](https://github.com/minekube/gate/commit/3b43a98e04e46b241907a89a51b419d3911710f2))
+
 ## [0.74.1](https://github.com/minekube/gate/compare/v0.74.0...v0.74.1) (2026-09-19)
 
 
