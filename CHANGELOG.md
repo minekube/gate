@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.6](https://github.com/minekube/gate/compare/v0.74.5...v0.74.6) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** update module go.uber.org/atomic to v1.12.0 ([#1138](https://github.com/minekube/gate/issues/1138)) ([c20bc6d](https://github.com/minekube/gate/commit/c20bc6d5b7bbb472c77bc1655e4cde02fb70a47c))
+
 ## [0.74.5](https://github.com/minekube/gate/compare/v0.74.4...v0.74.5) (2026-09-19)
 
 
