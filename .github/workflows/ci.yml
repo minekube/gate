@@ -32,8 +32,51 @@ jobs:
       - name: golangci-lint
         run: golangci-lint run --timeout 3m0s
 
+      # gohawk@v0.3.2 requires go >= 1.27.0, while this repo declares `go 1.26.0`
+      # and every job pins its toolchain to go.mod's version. The runner sets
+      # GOTOOLCHAIN=local, so without the explicit pin below the step dies with
+      #   go: github.com/kojah/gohawk@v0.3.2: requires go >= 1.27.0
+      #       (running go 1.26.0; GOTOOLCHAIN=local)
+      # before gohawk analyses anything. The pin is an exact toolchain rather
+      # than `auto` so the version stays deterministic, and it is scoped to this
+      # step so golangci-lint keeps running on the toolchain the module declares.
+      # .github/scripts/check-pinned-go-tools.sh fails the build if this pairing
+      # ever drifts (see the pinned-tools job below).
       - name: Run gohawk
+        env:
+          GOTOOLCHAIN: go1.27.1
         run: go run github.com/kojah/gohawk@v0.3.2 -enable-all -disable=goroutineownership ./...
+
+  # Regression guard for the breakage that red-lit every branch on 2026-09-19
+  # (see the Run gohawk step above and minekube/gate#1133): a tool pinned as
+  # `go run <module>@<version>` gaining a higher `go` directive than the
+  # toolchain its step runs with kills CI before the tool does any work, and
+  # every PR waiting on ci.yml (incl. the release cascade's bump PRs) stalls.
+  pinned-tools:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Verify pinned Go tools run with their step toolchain
+        run: .github/scripts/check-pinned-go-tools.sh
+
+      # The guard is only as good as its parser: this runs its hermetic
+      # fixture suite (no network) covering the toolchain scopes it must
+      # honour — step/job/workflow GOTOOLCHAIN, setup-go go-versions, pins in
+      # the final step of the final file, flags before the package spec,
+      # comments, floating refs.
+      - name: Self-test the pinned-tool guard
+        run: .github/scripts/check-pinned-go-tools.sh --self-test
 
   test:
     strategy:
