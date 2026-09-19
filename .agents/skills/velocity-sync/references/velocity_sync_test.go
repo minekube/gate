@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -55,6 +57,16 @@ import (
 // stronger-looking one that could not fail for the reason it exists.
 
 const velocitySyncPath = ".agents/skills/velocity-sync/references/VELOCITY_SYNC.md"
+
+// A direct `go test` of this file starts in references/. Run the record checks
+// from the repository root so their paths and git assertions retain their meaning.
+func TestMain(m *testing.M) {
+	if err := os.Chdir(filepath.Join("..", "..", "..", "..")); err != nil {
+		fmt.Fprintln(os.Stderr, "change to Gate repository root:", err)
+		os.Exit(1)
+	}
+	os.Exit(m.Run())
+}
 
 type velocitySyncRecord struct {
 	VerifiedSyncPoint velocitySyncPoint `yaml:"verified_sync_point"`
