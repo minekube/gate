@@ -28,13 +28,13 @@ nobody notices, so do not introduce it, or any paraphrase of it, anywhere in thi
 verified; say plainly what was not. The log is designed to grow forward from a point we can actually
 stand behind, so coverage becomes provable going forward rather than asserted retroactively.
 
-`velocity_sync_test.go` enforces this with an exact-match blocklist of phrasings. The banned phrasings
+`upstream_sync_test.go` enforces this with an exact-match blocklist of phrasings. The banned phrasings
 are deliberately spelled out in the test rather than here, so this file never contains the sentence it
 forbids.
 
 ## Verified sync point as of
 
-<!-- Machine-readable record. Parsed by TestVelocitySyncRecord* in velocity_sync_test.go.
+<!-- Machine-readable record. Parsed by TestVelocitySyncRecord* in upstream_sync_test.go.
      Keep this the first ```yaml block in the file. -->
 
 ```yaml
@@ -135,5 +135,5 @@ non-portable and can be filtered out on sight; only wire-format and protocol cha
 ## Related
 
 - `AGENTS.md` — Gate's project agent memory, which points here.
-- `velocity_sync_test.go` — the guard over this file. It checks shape, not truth; read its header
+- `upstream_sync_test.go` at the repo root — the guard over this file. It checks shape, not truth; read its header
   comment for exactly what it does and does not prove.

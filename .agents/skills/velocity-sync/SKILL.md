@@ -12,4 +12,4 @@ Before implementing a new Minecraft Java version or a Velocity-derived Gate beha
 3. Port relevant behavior with regression coverage, or explain why each plausible change does not apply. Append a `sync` or `review` entry to `references/VELOCITY_SYNC.md` with an immutable compared head/range and the decision. Advance `verified_sync_point` only when a specific upstream commit demonstrably landed in Gate.
 4. Keep the Gate PR title about the Gate change, without mentioning Velocity. Add only a short upstream reference in the body: the resolved PaperMC/Velocity head, compared range, and whether anything relevant was ported. Link the record update for details. If upstream has no new commits, say so for a new-version PR.
 
-Do not claim general parity with Velocity. Follow the record's schema and run `go test -run TestVelocitySyncReferenceSuite .` after editing it; the same entry point runs under `go test ./...`.
+Do not claim general parity with Velocity. Follow the record's schema and run `go test .` after editing it; the root tests are discovered by `go test ./...`.
