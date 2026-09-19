@@ -11,12 +11,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Guard over VELOCITY_SYNC.md, the committed record of Gate's verified Velocity
+// Guard over the skill reference VELOCITY_SYNC.md, the committed record of Gate's verified Velocity
 // sync point.
 //
 // WHAT THESE TESTS PROVE
 //
-//   - VELOCITY_SYNC.md exists at the repo root and its machine-readable block
+//   - VELOCITY_SYNC.md exists under the skill's references directory and its machine-readable block
 //     parses as YAML, so the record cannot silently rot into an unparseable state.
 //   - The required fields are present and well-formed: 40-hex SHAs, ISO dates, a
 //     positive PR number, a non-empty upstream repo/branch/subject.
@@ -54,7 +54,7 @@ import (
 // This is the weak-but-honest guard, shipped deliberately in preference to a
 // stronger-looking one that could not fail for the reason it exists.
 
-const velocitySyncPath = "VELOCITY_SYNC.md"
+const velocitySyncPath = ".agents/skills/velocity-sync/references/VELOCITY_SYNC.md"
 
 type velocitySyncRecord struct {
 	VerifiedSyncPoint velocitySyncPoint `yaml:"verified_sync_point"`
