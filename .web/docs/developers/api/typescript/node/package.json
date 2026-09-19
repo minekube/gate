@@ -12,5 +12,10 @@
     "@bufbuild/protobuf": "^1.0.0",
     "@connectrpc/connect": "^1.0.0",
     "@connectrpc/connect-node": "^1.6.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "undici": "^6.28.1"
+    }
   }
 }
