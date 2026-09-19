@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.5](https://github.com/minekube/gate/compare/v0.74.4...v0.74.5) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/pires/go-proxyproto to v0.15.0 ([#907](https://github.com/minekube/gate/issues/907)) ([f2479d9](https://github.com/minekube/gate/commit/f2479d9ff582ec5cb8d1e7327924d581074c9cc8))
+
 ## [0.74.4](https://github.com/minekube/gate/compare/v0.74.3...v0.74.4) (2026-09-19)
 
 
