@@ -31,8 +31,8 @@ func TestWebWorkflowRejectsWeakeningMutations(t *testing.T) {
 
 	mutations := []webWorkflowMutation{
 		replaceMutation("drop-install", []string{"run: pnpm install --frozen-lockfile"}, "run: pnpm install"),
-		replaceMutation("drop-contract-test", []string{"run: node --test scripts/*.test.mjs"}, "run: true # contract test removed"),
-		replaceMutation("drop-build", []string{"run: pnpm run build"}, "run: true # build removed"),
+		replaceMutation("drop-contract-test", []string{"run: node --test scripts/*.test.mjs"}, "run: 'true' # contract test removed"),
+		replaceMutation("drop-build", []string{"run: pnpm run build"}, "run: 'true' # build removed"),
 		replaceMutation("install-echo-inert", []string{"run: pnpm install --frozen-lockfile"}, "run: echo 'pnpm install --frozen-lockfile'"),
 		replaceMutation("test-echo-inert", []string{"run: node --test scripts/*.test.mjs"}, "run: echo 'node --test scripts/*.test.mjs'"),
 		replaceMutation("build-echo-inert", []string{"run: pnpm run build"}, "run: echo 'pnpm run build'"),
@@ -80,7 +80,7 @@ func TestWebWorkflowRejectsWeakeningMutations(t *testing.T) {
 		replaceMutation("checkout-bracket-secret-token", []string{"          persist-credentials: false"}, "          persist-credentials: false\n          token: ${{ secrets['DEPLOY_TOKEN'] }}"),
 		insertBeforeMutation("workflow-bracket-secret-env", "\nconcurrency:", "\nenv:\n  LEAK: ${{ secrets['DEPLOY_TOKEN'] }}\n"),
 		replaceMutation("step-dot-secret-reference", []string{"        run: pnpm run build"}, "        env:\n          EXAMPLE: ${{ secrets.EXAMPLE }}\n        run: pnpm run build"),
-		insertBeforeMutation("extra-job", "\n  web:\n", "\n  unrelated:\n    runs-on: ubuntu-latest\n    steps:\n      - run: true\n"),
+		insertBeforeMutation("extra-job", "\n  web:\n", "\n  unrelated:\n    runs-on: ubuntu-latest\n    steps:\n      - run: 'true'\n"),
 	}
 
 	executable, err := os.Executable()
@@ -119,6 +119,7 @@ func TestWebWorkflowRejectsWeakeningMutations(t *testing.T) {
 			if !bytes.Contains(output, []byte("web workflow policy:")) {
 				t.Fatalf("weakening failed for the wrong reason; want a policy assertion\n%s", output)
 			}
+			t.Logf("MUTATION_REJECTED|%s|reason=web-workflow-policy", mutation.id)
 		})
 	}
 }
