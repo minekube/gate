@@ -5,8 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "minekube-gate-grpc-python>=1.68.0.1.20241118150055",
-    "minekube-gate-protocolbuffers-python>=28.3.0.2.20241118150055",
+    "minekube-gate-grpc-python>=1.84.0.1.20250516132630",
+    "minekube-gate-protocolbuffers-python>=36.2.0.1.20250516132630",
 ]
 
 [[tool.uv.index]]

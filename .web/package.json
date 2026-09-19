@@ -43,6 +43,9 @@
       "core-js",
       "esbuild",
       "workerd"
-    ]
+    ],
+    "overrides": {
+      "vite": "^6.4.3"
+    }
   }
 }
