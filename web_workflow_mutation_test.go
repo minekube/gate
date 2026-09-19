@@ -24,6 +24,10 @@ func TestWebWorkflowRejectsWeakeningMutations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// actions/checkout uses CRLF in the Windows matrix checkout. Normalize the
+	// in-memory candidate so exact one-match mutations exercise identical YAML
+	// bytes on every runner without weakening the source replacement checks.
+	baseline = bytes.ReplaceAll(baseline, []byte("\r\n"), []byte("\n"))
 
 	mutations := []webWorkflowMutation{
 		replaceMutation("drop-install", []string{"run: pnpm install --frozen-lockfile"}, "run: pnpm install"),
