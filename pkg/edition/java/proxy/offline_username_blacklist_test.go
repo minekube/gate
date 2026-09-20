@@ -21,19 +21,19 @@ func TestOfflineModeUsernameBlacklist(t *testing.T) {
 
 	// all is the default, so direct and Connect offline sessions retain the
 	// original protection behaviour.
-	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, false, "adminname", nil))
-	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, true, "adminname", nil))
-	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, false, "AdminName", nil),
+	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, false, "adminname", nil,false))
+	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, true, "adminname", nil,false))
+	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, false, "AdminName", nil,false),
 		"ForceOnline must stay authenticated even if the listener defaults offline")
-	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", nil),
+	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", nil,false),
 		"Connect ingress must not override ForceOnline")
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil),
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil,false),
 		"the proxy-wide online-mode default must remain authenticated")
 
 	cfg.OnlineMode = false
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "ADMINNAME", nil))
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "ADMINNAME", nil))
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AnotherPlayer", nil))
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "ADMINNAME", nil,false))
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "ADMINNAME", nil,false))
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AnotherPlayer", nil,false))
 }
 
 func TestOfflineModeUsernameBlacklistConnectScope(t *testing.T) {
@@ -42,17 +42,17 @@ func TestOfflineModeUsernameBlacklistConnectScope(t *testing.T) {
 	cfg.OfflineModeUsernameBlacklist = []string{"AdminName"}
 	cfg.OfflineModeUsernameBlacklistScope = config.OfflineModeUsernameBlacklistScopeConnect
 
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil),
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil,false),
 		"a direct offline join must not be classified from its hostname, IP, or handshake")
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", nil),
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", nil,false),
 		"only the authenticated Connect tunnel provenance marker enables this scope")
-	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", nil),
+	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", nil,false),
 		"Mojang-authenticated joins remain exempt")
-	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, false, "AdminName", nil))
+	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, false, "AdminName", nil,false))
 
 	// A Connect session explicitly forced offline is still an offline session.
-	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, true, "AdminName", nil))
-	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, false, "AdminName", nil))
+	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, true, "AdminName", nil,false))
+	require.False(t, offlineModeUsernameBlocked(&cfg, ForceOfflineModePreLogin, false, "AdminName", nil,false))
 }
 
 // TestOfflineModeUsernameBlacklistOfflineIdentity pins the #1113 determination:
@@ -67,42 +67,42 @@ func TestOfflineModeUsernameBlacklistOfflineIdentity(t *testing.T) {
 	offlineIdentity := profile.NewOffline("AdminName")
 
 	// The reporter's configuration: online-mode proxy, scope connect.
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", offlineIdentity),
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", offlineIdentity, false),
 		"a Connect tunnel's offline identity is an offline login path")
 	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName",
-		&profile.GameProfile{ID: uuid.New(), Name: "AdminName"}),
+		&profile.GameProfile{ID: uuid.New(), Name: "AdminName"}, false),
 		"a Connect-verified identity must keep the reserved name")
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", nil),
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", nil, false),
 		"no supplied identity means the join still has to authenticate")
 
 	// The list match stays case-insensitive, and the identity comparison must not
 	// become fail-open when a login path re-cases the claimed name.
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "ADMINNAME", offlineIdentity))
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AnotherName", profile.NewOffline("AnotherName")))
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "ADMINNAME", offlineIdentity, false))
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AnotherName", profile.NewOffline("AnotherName"), false))
 
 	// Any identity carrying an offline UUID digest is unauthenticated, so it is
 	// an offline login path even when the identity's own name is not the claimed
 	// one (fail-closed: never let an unauthenticated identity claim a reserved
 	// name through a renaming/rewriting login path).
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", profile.NewOffline("SomeoneElse")))
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName", profile.NewOffline("SomeoneElse"), false))
 
 	// An authenticated identity (random UUID) keeps the name, even when the
 	// claimed login name differs in case or the profile carries no name.
 	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "ADMINNAME",
-		&profile.GameProfile{ID: uuid.New(), Name: "AdminName"}))
+		&profile.GameProfile{ID: uuid.New(), Name: "AdminName"}, false))
 	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, true, "AdminName",
-		&profile.GameProfile{ID: uuid.New()}))
+		&profile.GameProfile{ID: uuid.New()}, false))
 
 	// Fail-closed: forcing online mode does not authenticate an identity that
 	// arrives with the offline UUID — login would still complete with it.
-	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", offlineIdentity))
+	require.True(t, offlineModeUsernameBlocked(&cfg, ForceOnlineModePreLogin, true, "AdminName", offlineIdentity, false))
 
 	// The scope still decides which ingress the reservation covers.
-	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", offlineIdentity),
+	require.False(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", offlineIdentity, false),
 		"scope connect excludes a non-Connect ingress even for an offline identity")
 
 	cfg.OfflineModeUsernameBlacklistScope = config.OfflineModeUsernameBlacklistScopeAll
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", offlineIdentity))
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", offlineIdentity, false))
 }
 
 func TestOfflineModeUsernameBlacklistScopeEmptyIsCompatible(t *testing.T) {
@@ -111,7 +111,7 @@ func TestOfflineModeUsernameBlacklistScopeEmptyIsCompatible(t *testing.T) {
 	cfg.OfflineModeUsernameBlacklist = []string{"AdminName"}
 	cfg.OfflineModeUsernameBlacklistScope = ""
 
-	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil),
+	require.True(t, offlineModeUsernameBlocked(&cfg, AllowedPreLogin, false, "AdminName", nil, false),
 		"an omitted key in an older config must continue to mean all")
 }
 
@@ -127,7 +127,7 @@ func TestOfflineModeUsernameBlacklistConcurrentReads(t *testing.T) {
 		wg.Add(1)
 		go func(connectIngress bool) {
 			defer wg.Done()
-			got := offlineModeUsernameBlocked(&cfg, AllowedPreLogin, connectIngress, "AdminName", nil)
+			got := offlineModeUsernameBlocked(&cfg, AllowedPreLogin, connectIngress, "AdminName", nil, false)
 			errs <- got == connectIngress
 		}(i%2 == 0)
 	}
@@ -154,4 +154,40 @@ func TestConnectTunnelIngressUsesAdapterMarker(t *testing.T) {
 	t.Cleanup(func() { _ = tunnelClient.Close() })
 	tunnel, _ := netmc.NewMinecraftConn(context.Background(), markedConnectTunnelConn{tunnelServer}, proto.ServerBound, time.Second, time.Second, -1, nil)
 	require.True(t, connectTunnelIngress(tunnel), "only a trusted adapter marker reaches login through netmc")
+}
+
+func TestOfflineModeUsernameBlacklistOnlinePlayers(t *testing.T) {
+    cfg := config.DefaultConfig
+    cfg.OfflineModeUsernameBlacklistOnlinePlayers = true
+
+    offlineIdentity := profile.NewOffline("Alice")
+
+    require.True(t, offlineModeUsernameBlocked(
+        &cfg,
+        AllowedPreLogin,
+        true,
+        "Alice",
+        offlineIdentity,
+        true,
+    ))
+
+    require.False(t, offlineModeUsernameBlocked(
+        &cfg,
+        AllowedPreLogin,
+        true,
+        "Alice",
+        offlineIdentity,
+        false,
+    ))
+
+    cfg.OfflineModeUsernameBlacklistOnlinePlayers = false
+
+    require.False(t, offlineModeUsernameBlocked(
+        &cfg,
+        AllowedPreLogin,
+        true,
+        "Alice",
+        offlineIdentity,
+        true,
+    ))
 }
