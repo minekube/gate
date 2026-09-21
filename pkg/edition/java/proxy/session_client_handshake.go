@@ -83,6 +83,18 @@ func (h *handshakeSessionHandler) HandlePacket(p *proto.PacketContext) {
 	}
 }
 
+// handshakeVirtualHost builds the virtual host (the client-declared
+// "host:port") this connection routes on. Forced hosts, virtual host
+// forwarding, the backend handshake address and the Lite forwarding path all
+// read it back.
+//
+// The handshake port is an unsigned 16-bit value on the wire (see
+// packet.Handshake), so it must never be formatted from a sign-extended value:
+// that is how a declared port of 65535 could reach routing as "host:-1".
+func handshakeVirtualHost(handshake *packet.Handshake, network string) net.Addr {
+	return netutil.NewAddr(fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port), network)
+}
+
 func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, pc *proto.PacketContext) {
 	// The client sends the next wanted state in the Handshake packet.
 	nextState := stateForProtocol(handshake.NextStatus)
@@ -127,10 +139,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		}
 	}
 
-	vHost := netutil.NewAddr(
-		fmt.Sprintf("%s:%d", handshake.ServerAddress, handshake.Port),
-		h.conn.LocalAddr().Network(),
-	)
+	vHost := handshakeVirtualHost(handshake, h.conn.LocalAddr().Network())
 	inbound := newInitialInbound(h.conn, vHost, handshakeIntent)
 
 	if handshakeIntent == packet.TransferHandshakeIntent && !cfg.AcceptTransfers {
