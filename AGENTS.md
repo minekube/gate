@@ -13,6 +13,7 @@
 - Bedrock gamertags must be normalized to Java's username alphabet (`javaCompatibleUsername` in `pkg/edition/bedrock/geyser/geyser.go`): see `pkg/edition/bedrock/geyser/CLAUDE.md`.
 - Java profile properties encode the optional signature with an always-present boolean. `WriteProperties` must write `false` for unsigned properties; omitting it shifts the following 26.2 login `SessionID` into the property decoder and breaks Geyser. Preserve the signed and unsigned wire fixtures in `writer_test.go`.
 - HTTP config writes share the versioned reload boundary (`GetConfig`/`ApplyConfig` in `pkg/gate/gate.go`): see `pkg/gate/CLAUDE.md`.
+- Scanner findings against Gate's SHA-1/MD5 use are accepted, not defects: the four sites, each site's protocol/spec justification and the scanner-suppression guidance live in `docs/accepted-crypto-primitives.md` (Mojang `hasJoined` serverId, vanilla offline UUIDv3, the Gate/Connect Bedrock XUID v5 mapping shared with moxy's `connect/bedrockauth/xuid.go`, and `JsonHash`'s in-process config fingerprint). Never "fix" one by swapping the digest - dismiss the alert and link that record; guarded by the root `accepted_crypto_doc_test.go`.
 
 ## Maintaining this file
 

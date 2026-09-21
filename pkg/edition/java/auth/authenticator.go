@@ -255,6 +255,14 @@ func (a *authenticator) AuthenticateJoin(ctx context.Context, serverID, username
 	}, nil
 }
 
+// GenerateServerID returns the Mojang `hasJoined` serverId.
+//
+// SHA-1 over (decrypted shared secret ‖ server public key) is required by the
+// session protocol: the client hashes the same inputs to the same digest and
+// sends it to Mojang, and the two's-complement/negative rendering below is how
+// vanilla renders that digest. Both are protocol constants - changing the
+// digest or the rendering breaks online-mode login.
+// Accepted scanner finding: see docs/accepted-crypto-primitives.md.
 func (a *authenticator) GenerateServerID(decryptedSharedSecret []byte) (string, error) {
 	hash, err := func() (hash []byte, err error) {
 		h := sha1.New()
