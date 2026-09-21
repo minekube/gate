@@ -19,7 +19,7 @@ importers:
         version: 7.0.8
       posthog-js:
         specifier: ^1.93.3
-        version: 1.434.3
+        version: 1.434.4
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.14
@@ -1571,8 +1571,8 @@ packages:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-js@1.434.3:
-    resolution: {integrity: sha512-+/pJ0D4Tlmj4uKlH1pGpttzlTER2QSpAeBeejkaRaX3yktPIfOL9y4ana2AMqak9qDNqbNsFYRP7CHd7G9IkbQ==}
+  posthog-js@1.434.4:
+    resolution: {integrity: sha512-gsyult9qyScG0+Wqcqw6VXnb1a25QELnerQ44hStku6amEKndo8JLJleRaaQhkNn1A9xJ6awqQm1xF79WPkLRA==}
     peerDependencies:
       '@types/react': '>=16.8.0'
       react: '>=16.8.0'
@@ -3187,7 +3187,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  posthog-js@1.434.3:
+  posthog-js@1.434.4:
     dependencies:
       '@posthog/browser-common': 0.9.0
       '@posthog/core': 1.55.1
