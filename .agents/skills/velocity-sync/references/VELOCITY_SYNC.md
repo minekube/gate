@@ -88,6 +88,24 @@ log:
       with no later commits or 26.3 protocol work in that branch. The prior review explains the
       per-commit decisions. PR #1139 obtained protocol 777 and packet mappings from Mojang's 26.3
       client artifact, so this check required no further port.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate handshake-port fix (port decoded as signed int16, so a declared port
+      >= 32768 reached routing as a negative port). dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the 2026-09-19 review - so there was no new upstream work to
+      assess. The comparison for this change: upstream HandshakePacket.decode reads the field with
+      buf.readUnsignedShort() and encode writes it with writeShort(), i.e. unsigned 16-bit semantics
+      with Netty's silent truncation on an out-of-range write. Gate now reads/writes the field with
+      util.ReadUint16/WriteUint16 (same wire bytes for 0-32767) and additionally rejects an
+      out-of-range port in Encode rather than truncating it. Upstream cannot show the routing symptom
+      because its virtual host is the cleaned host alone (cleanVhost(handshake.getServerAddress())),
+      while Gate deliberately keeps the client-declared host:port in the virtual host, so Gate depends
+      on the unsigned decode. No upstream behavior was ported, so the verified sync point is unchanged.
 ```
 
 ## The log
