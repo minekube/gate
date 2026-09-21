@@ -125,6 +125,27 @@ log:
       same caps and has now lifted them to maxLoginEncryptionBytes (1024 bytes, one 8192 bit RSA
       ciphertext) so the configurable key size is usable. No upstream behavior was ported, so the
       verified sync point is unchanged.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate netutil port-range fix (splitHostPort narrowed an unbounded
+      strconv.Atoi result into a uint16, so "host:70000" wrapped to port 4464, "host:-1" to 65535
+      and "host:99999999999999999999" to 65535). dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the two review entries above - so there was no new upstream
+      work to assess. Gate's pkg/util/netutil accessors (HostStr/Port/PortStr/HostPort/Parse) have
+      no upstream counterpart to diff against: Velocity keeps addresses as java.net.InetSocketAddress
+      and com.velocitypowered.proxy.util.AddressUtil parses them from a java.net.URI into a Java int
+      port, so no uint16 narrowing exists there. The comparison this change did need: upstream hands
+      that int to new InetSocketAddress(address, port), which for 70000 and 65536 throws
+      IllegalArgumentException("port out of range:70000"), i.e. upstream fails closed rather than
+      reporting a different port (a literal "-1" is read by URI as "no port", so upstream falls back
+      to 25565). Gate used to wrap the value and report a port that was never in the address; it now
+      rejects an out-of-range port, matching upstream's fail-closed outcome. No upstream behavior was
+      ported, so the verified sync point is unchanged.
 ```
 
 ## The log
