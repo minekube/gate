@@ -32,3 +32,4 @@ export function normalizePagesResponse(response) {
     statusText: response.statusText,
   });
 }
+const unusedProbeVariable = 1;
