@@ -246,6 +246,15 @@ func (d *BedrockData) FloodgateJavaUuid() uuid.UUID {
 
 // JavaUuid generates a Java Edition UUID from the Bedrock XUID.
 // This creates a deterministic UUID that's consistent across sessions.
+//
+// It is a version 5 UUID, which RFC 4122 defines as SHA-1 over
+// "FloodgateXUID:"+XUID - "SHA-1" and "v5 UUID" are the same statement here.
+// The value is the shared Bedrock XUID identity contract: Moxy derives the same
+// UUID from the same namespace in connect/bedrockauth/xuid.go, so Gate and Moxy
+// must agree byte for byte or the same Bedrock player becomes two identities.
+// (Distinct from FloodgateJavaUuid above: that is Floodgate's own
+// new UUID(0, xuid) zero-MSB rule and uses no digest.)
+// Accepted scanner finding: see docs/accepted-crypto-primitives.md.
 func (d *BedrockData) JavaUuid() (uuid.UUID, error) {
 	// Namespaced deterministic UUID (v5-like) based on XUID
 	h := sha1.New()
