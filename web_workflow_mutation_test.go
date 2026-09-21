@@ -46,6 +46,22 @@ func TestWebWorkflowRejectsWeakeningMutations(t *testing.T) {
 		replaceMutation("job-unreachable-if", []string{"  web:\n    name: docs build + contract tests"}, "  web:\n    name: docs build + contract tests\n    if: github.repository == 'attacker/not-gate'"),
 		replaceMutation("contract-step-unreachable-if", []string{"      - name: Contract tests\n        run: node --test scripts/*.test.mjs"}, "      - name: Contract tests\n        if: github.repository == 'attacker/not-gate'\n        run: node --test scripts/*.test.mjs"),
 		replaceMutation("build-continue-on-error", []string{"      - name: Build docs site\n        run: pnpm run build"}, "      - name: Build docs site\n        continue-on-error: true\n        run: pnpm run build"),
+
+		// The Biome lint step is the third check the docs job owns; every
+		// weakening below must stay a policy failure, exactly like the install,
+		// contract-test and build steps above.
+		replaceMutation("drop-lint", []string{"run: pnpm run lint"}, "run: 'true' # lint removed"),
+		replaceMutation("lint-echo-inert", []string{"run: pnpm run lint"}, "run: echo 'pnpm run lint'"),
+		replaceMutation("lint-comment-decoy", []string{"run: pnpm run lint"}, "run: |\n          # pnpm run lint\n          true"),
+		replaceMutation("lint-or-true", []string{"run: pnpm run lint"}, "run: pnpm run lint || true"),
+		replaceMutation("lint-dead-shell-branch", []string{"run: pnpm run lint"}, "run: if false; then pnpm run lint; fi"),
+		replaceMutation("lint-bypasses-package-script", []string{"run: pnpm run lint"}, "run: pnpm exec biome lint ."),
+		replaceMutation("lint-continue-on-error", []string{"      - name: Lint\n        run: pnpm run lint"}, "      - name: Lint\n        continue-on-error: true\n        run: pnpm run lint"),
+		replaceMutation("lint-step-unreachable-if", []string{"      - name: Lint\n        run: pnpm run lint"}, "      - name: Lint\n        if: github.repository == 'attacker/not-gate'\n        run: pnpm run lint"),
+		replaceMutation("lint-step-root-working-directory", []string{"      - name: Lint\n        run: pnpm run lint"}, "      - name: Lint\n        working-directory: .\n        run: pnpm run lint"),
+		replaceMutation("duplicate-lint-command", []string{"      - name: Lint\n        run: pnpm run lint"}, "      - name: Lint\n        run: pnpm run lint\n      - name: Decoy lint\n        run: pnpm run lint"),
+		replaceMutation("lint-before-install", []string{"      - name: Install dependencies\n        run: pnpm install --frozen-lockfile\n\n      # Biome over the JS/TS surface of `.web`: the deployed Worker\n      # (`worker.mjs`, `worker-response.mjs`, `functions/**`), the build/deploy\n      # scripts and the VitePress site source. The rules, scope and the reasons\n      # for every exclusion live in `.web/biome.jsonc`.\n      - name: Lint\n        run: pnpm run lint"}, "      - name: Lint\n        run: pnpm run lint\n\n      - name: Install dependencies\n        run: pnpm install --frozen-lockfile"),
+		replaceMutation("lint-after-contract-tests", []string{"      - name: Lint\n        run: pnpm run lint\n\n      # Worker/deployment contract suite (package.json \"test\"). It pins the\n      # wrangler/workers-types/pnpm versions the docs toolchain must ship, so a\n      # Renovate bump without the matching test update fails here.\n      - name: Contract tests\n        run: node --test scripts/*.test.mjs"}, "      - name: Contract tests\n        run: node --test scripts/*.test.mjs\n\n      - name: Lint\n        run: pnpm run lint"),
 		replaceMutation("contract-step-root-working-directory", []string{"      - name: Contract tests\n        run: node --test scripts/*.test.mjs"}, "      - name: Contract tests\n        working-directory: .\n        run: node --test scripts/*.test.mjs"),
 		replaceMutation("duplicate-contract-command", []string{"      - name: Contract tests\n        run: node --test scripts/*.test.mjs"}, "      - name: Contract tests\n        run: node --test scripts/*.test.mjs\n      - name: Decoy contract tests\n        run: node --test scripts/*.test.mjs"),
 		replaceMutation("build-before-test", []string{"      - name: Contract tests\n        run: node --test scripts/*.test.mjs\n\n      # scripts/build-with-community-stats.mjs spawns a bare `pnpm`, so pnpm\n      # has to be on PATH (the step above, not npx) - and Node >= 22.\n      - name: Build docs site\n        run: pnpm run build"}, "      - name: Build docs site\n        run: pnpm run build\n\n      - name: Contract tests\n        run: node --test scripts/*.test.mjs"),

@@ -14,7 +14,7 @@ const router = useRouter();
 if (typeof window !== 'undefined' && window.posthog) {
   watch(
     () => router.route.data.relativePath,
-    (path) => {
+    () => {
       posthog.capture('$pageview');
     },
     { immediate: true }

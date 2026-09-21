@@ -20,6 +20,7 @@ const webWorkflowPath = ".github/workflows/web.yml"
 
 const (
 	webInstallCommand = "pnpm install --frozen-lockfile"
+	webLintCommand    = "pnpm run lint"
 	webTestCommand    = "node --test scripts/*.test.mjs"
 	webBuildCommand   = "pnpm run build"
 
@@ -141,8 +142,8 @@ func validateWebSteps(node *yaml.Node) error {
 	if node == nil || node.Kind != yaml.SequenceNode {
 		return fmt.Errorf("workflow.jobs.web.steps must be a sequence")
 	}
-	if len(node.Content) != 6 {
-		return fmt.Errorf("workflow.jobs.web.steps has %d entries, want exactly 6", len(node.Content))
+	if len(node.Content) != 7 {
+		return fmt.Errorf("workflow.jobs.web.steps has %d entries, want exactly 7", len(node.Content))
 	}
 
 	checkout, err := exactMapping(node.Content[0], "workflow.jobs.web.steps[0]", "name", "uses", "with")
@@ -210,6 +211,7 @@ func validateWebSteps(node *yaml.Node) error {
 		command string
 	}{
 		{"Install dependencies", webInstallCommand},
+		{"Lint", webLintCommand},
 		{"Contract tests", webTestCommand},
 		{"Build docs site", webBuildCommand},
 	} {

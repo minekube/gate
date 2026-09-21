@@ -32,6 +32,20 @@ $ pnpm run dev
 This command starts a local development server and opens up a browser window.
 Most changes are reflected live without having to restart the server.
 
+### Lint
+
+```sh console
+$ pnpm run lint
+```
+
+The docs site source, the build/deploy scripts and the Worker
+(`worker.mjs`, `worker-response.mjs`, `functions/**`) are linted with
+[Biome](https://biomejs.dev). `biome.jsonc` holds the rule set and the analysed
+scope. Generated mermaid exports under `docs/`, the standalone example projects
+in `docs/developers/` and the static assets in `docs/public/` are excluded
+there, each with the reason why. The `web` workflow runs this check - together
+with `pnpm run test` and `pnpm run build` - for every change under `.web/`.
+
 ### Build
 
 ```sh console

@@ -48,7 +48,7 @@ const maxHeight = computed(() => Math.max(...props.nodes.map(node => node.y), ..
       </template>
     </div>
 
-    <svg :height="maxHeight" :width="maxWidth">
+    <svg aria-hidden="true" :height="maxHeight" :width="maxWidth">
       <!-- Create paths for each connection -->
       <path v-for="(d, index) in paths" :key="index" :d="d" class="dashed-line" fill="none"/>
     </svg>
