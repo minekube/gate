@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.9](https://github.com/minekube/gate/compare/v0.74.8...v0.74.9) (2026-09-21)
+
+
+### Bug Fixes
+
+* **netutil:** reject an out-of-range port instead of wrapping it into a uint16 ([#1168](https://github.com/minekube/gate/issues/1168)) ([63608cd](https://github.com/minekube/gate/commit/63608cd85e08630b06fd2f044869f30ca8f522ed))
+
 ## [0.74.8](https://github.com/minekube/gate/compare/v0.74.7...v0.74.8) (2026-09-21)
 
 
