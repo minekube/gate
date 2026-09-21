@@ -252,6 +252,78 @@ func TestLiteIgnoredSettingsWarn(t *testing.T) {
 	})
 }
 
+// TestAuthPrivateKeyBitsStrictYAML proves the login key size is reachable from
+// the config file through the same strict decoder the loader uses
+// (known-fields on), so an unknown field cannot silently swallow it.
+func TestAuthPrivateKeyBitsStrictYAML(t *testing.T) {
+	var node yaml.Node
+	require.NoError(t, yaml.Unmarshal([]byte("auth:\n  privateKeyBits: 2048\n"), &node))
+	require.NotEmpty(t, node.Content)
+
+	var cfg Config
+	require.NoError(t, configutil.DecodeYAMLStrict(node.Content[0], &cfg))
+	require.Equal(t, 2048, cfg.Auth.PrivateKeyBits)
+
+	// Unset stays unset: 0 means "use the built-in default".
+	var emptyNode yaml.Node
+	require.NoError(t, yaml.Unmarshal([]byte("auth: {}\n"), &emptyNode))
+	var unset Config
+	require.NoError(t, configutil.DecodeYAMLStrict(emptyNode.Content[0], &unset))
+	require.Zero(t, unset.Auth.PrivateKeyBits)
+}
+
+// TestAuthPrivateKeyBitsValidate pins the accepted range of
+// auth.privateKeyBits: unset (0) means the built-in default, an explicit size
+// must be one crypto/rsa can generate (>= 1024 bits), and the upper bound is
+// bounded so a typo cannot stall startup with an enormous key.
+func TestAuthPrivateKeyBitsValidate(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		bits    int
+		wantErr string
+	}{
+		{name: "unset uses the default"},
+		{name: "1024 is the vanilla size", bits: 1024},
+		{name: "2048", bits: 2048},
+		{name: "3072", bits: 3072},
+		{name: "8192 is the upper bound", bits: 8192},
+		{name: "below the rsa minimum", bits: 512, wantErr: "privateKeyBits"},
+		{name: "negative", bits: -2048, wantErr: "privateKeyBits"},
+		{name: "absurdly large", bits: 65536, wantErr: "privateKeyBits"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := DefaultConfig
+			cfg.Bind = "127.0.0.1:25577"
+			cfg.Auth.PrivateKeyBits = tt.bits
+
+			_, errs := cfg.Validate()
+			if tt.wantErr == "" {
+				require.Empty(t, errs)
+				return
+			}
+			require.Len(t, errsContaining(errs, tt.wantErr), 1)
+		})
+	}
+}
+
+// TestAuthPrivateKeyBitsIgnoredByLite proves the key size is not another
+// silently inert setting in Lite mode, which never takes part in login.
+func TestAuthPrivateKeyBitsIgnoredByLite(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Lite = liteconfig.Config{
+		Enabled: true,
+		Routes: []liteconfig.Route{{
+			Host:    []string{"example.com"},
+			Backend: []string{"127.0.0.1:25566"},
+		}},
+	}
+	cfg.Auth.PrivateKeyBits = 2048
+
+	warns, errs := cfg.Validate()
+	require.Empty(t, errs)
+	requireWarnContains(t, warns, "Lite mode ignores auth.privateKeyBits")
+}
+
 func requireWarnContains(t *testing.T, warns []error, want string) {
 	t.Helper()
 	for _, warn := range warns {
