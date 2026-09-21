@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.7](https://github.com/minekube/gate/compare/v0.74.6...v0.74.7) (2026-09-21)
+
+
+### Bug Fixes
+
+* **java:** read the handshake port as an unsigned 16-bit value ([#1160](https://github.com/minekube/gate/issues/1160)) ([e6cdb95](https://github.com/minekube/gate/commit/e6cdb95fef1253bf16661d536127ffa0f81d863d))
+
 ## [0.74.6](https://github.com/minekube/gate/compare/v0.74.5...v0.74.6) (2026-09-19)
 
 
