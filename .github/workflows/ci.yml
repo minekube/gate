@@ -40,7 +40,7 @@ jobs:
       # before gohawk analyses anything. The pin is an exact toolchain rather
       # than `auto` so the version stays deterministic, and it is scoped to this
       # step so golangci-lint keeps running on the toolchain the module declares.
-      # .github/scripts/check-pinned-go-tools.sh fails the build if this pairing
+      # .github/scripts/check-pinned-go-tools.go fails the build if this pairing
       # ever drifts (see the pinned-tools job below).
       - name: Run gohawk
         env:
@@ -67,16 +67,13 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Verify pinned Go tools run with their step toolchain
-        run: .github/scripts/check-pinned-go-tools.sh
+      # Parse workflow YAML structurally and model setup-go in execution order;
+      # the old Bash line/indent scanner could silently mis-scope valid YAML.
+      - name: Test the pinned-tool guard
+        run: go test .github/scripts/check-pinned-go-tools.go .github/scripts/check-pinned-go-tools_test.go
 
-      # The guard is only as good as its parser: this runs its hermetic
-      # fixture suite (no network) covering the toolchain scopes it must
-      # honour — step/job/workflow GOTOOLCHAIN, setup-go go-versions, pins in
-      # the final step of the final file, flags before the package spec,
-      # comments, floating refs.
-      - name: Self-test the pinned-tool guard
-        run: .github/scripts/check-pinned-go-tools.sh --self-test
+      - name: Verify pinned Go tools run with their step toolchain
+        run: go run .github/scripts/check-pinned-go-tools.go
 
   test:
     strategy:

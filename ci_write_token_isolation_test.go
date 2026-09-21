@@ -103,7 +103,7 @@ func TestCIGrantsNoAmbientWritePermission(t *testing.T) {
 	}
 
 	// pinned-tools runs the pinned-tool toolchain guard
-	// (.github/scripts/check-pinned-go-tools.sh): checkout without persisted
+	// (.github/scripts/check-pinned-go-tools.go): checkout without persisted
 	// credentials + contents: read only, like the other code-running jobs.
 	for _, name := range []string{"lint", "test", "docker-smoke", "pinned-tools"} {
 		job := ciIsolationJob(t, workflow, name)
