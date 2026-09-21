@@ -13,10 +13,12 @@
     "build:worker": "pnpm run build && wrangler pages functions build --outdir .worker-dist",
     "deploy:worker": "node scripts/deploy-worker.mjs",
     "deploy:worker:canary": "node scripts/deploy-worker.mjs --canary",
+    "lint": "biome lint --error-on-warnings .",
     "serve": "pnpm exec vitepress serve docs",
     "test": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
     "@cloudflare/workers-types": "5.20260919.1",
     "@types/node": "^20.14.0",
     "autoprefixer": "^10.4.13",

@@ -30,7 +30,7 @@
         <div
           class="inline-flex rounded-lg bg-vp-c-brand dark:bg-vp-c-brand p-1"
         >
-          <button
+          <button type="button"
             @click="
               () => {
                 searchMode = 'extensions';
@@ -44,7 +44,7 @@
             }"
             class="px-6 py-2.5 rounded-md transition-all duration-200 cursor-pointer flex items-center gap-2"
           >
-            <svg
+            <svg aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               class="h-5 w-5"
               viewBox="0 0 20 20"
@@ -58,7 +58,7 @@
             </svg>
             Extensions
           </button>
-          <button
+          <button type="button"
             @click="
               () => {
                 searchMode = 'go-modules';
@@ -72,7 +72,7 @@
             }"
             class="px-6 py-2.5 rounded-md transition-all duration-200 cursor-pointer flex items-center gap-2"
           >
-            <svg
+            <svg aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               class="h-5 w-5"
               viewBox="0 0 20 20"
@@ -173,7 +173,7 @@
           class="inline-flex items-center gap-2 px-6 py-3 bg-[#24292e] text-white rounded-lg hover:bg-[#2f363d] transition-colors font-medium shadow-sm"
         >
           <!-- GitHub Icon -->
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
             <path
               fill-rule="evenodd"
               clip-rule="evenodd"
@@ -182,7 +182,7 @@
           </svg>
           Browse Awesome List
           <!-- External Link Arrow -->
-          <svg
+          <svg aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5"
             viewBox="0 0 20 20"
@@ -255,7 +255,7 @@ export default {
 
         // Cache the data if API request is successful (only if window is available)
         if (typeof window !== 'undefined' && window.localStorage) {
-          const currentTime = new Date().getTime();
+          const currentTime = Date.now();
           localStorage.setItem(
             cacheKey,
             JSON.stringify({

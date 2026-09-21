@@ -1,10 +1,12 @@
 # The `.web` VitePress site + Cloudflare Worker carries its own checks -
-# `node --test scripts/*.test.mjs` (the Worker/deployment contract suite) and
-# `pnpm run build` (the site build) - and no other workflow runs them. They sat
-# red on master across several Renovate bumps because nothing executed them
-# (minekube/gate#1144: the contract test still pinned pnpm@10.11.0/wrangler
-# 4.115.0 after the bumps landed). This workflow wires both up for `.web/**`
-# changes only, so unrelated PRs do not pay for a docs job.
+# `pnpm run lint` (Biome over the Worker, the build/deploy scripts and the site
+# source), `node --test scripts/*.test.mjs` (the Worker/deployment contract
+# suite) and `pnpm run build` (the site build) - and no other workflow runs
+# them. They sat red on master across several Renovate bumps because nothing
+# executed them (minekube/gate#1144: the contract test still pinned
+# pnpm@10.11.0/wrangler 4.115.0 after the bumps landed). This workflow wires
+# all three up for `.web/**` changes only, so unrelated PRs do not pay for a
+# docs job.
 #
 # ci.yml still owns the Go gate; `make test` continues to shell out to
 # .web/docs/public/install_test.sh and build_tags_test.sh.
@@ -68,6 +70,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Biome over the JS/TS surface of `.web`: the deployed Worker
+      # (`worker.mjs`, `worker-response.mjs`, `functions/**`), the build/deploy
+      # scripts and the VitePress site source. The rules, scope and the reasons
+      # for every exclusion live in `.web/biome.jsonc`.
+      - name: Lint
+        run: pnpm run lint
 
       # Worker/deployment contract suite (package.json "test"). It pins the
       # wrangler/workers-types/pnpm versions the docs toolchain must ship, so a

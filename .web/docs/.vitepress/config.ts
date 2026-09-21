@@ -1,4 +1,4 @@
-import { defineConfig, HeadConfig } from 'vitepress';
+import { defineConfig } from 'vitepress';
 
 import {
   additionalTitle,

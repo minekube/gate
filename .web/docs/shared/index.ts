@@ -1,4 +1,4 @@
-import { DefaultTheme } from 'vitepress';
+import type { DefaultTheme } from 'vitepress';
 
 export const discordLink = 'https://minekube.com/discord';
 export const gitHubLink = 'https://github.com/minekube';
