@@ -106,6 +106,25 @@ log:
       because its virtual host is the cleaned host alone (cleanVhost(handshake.getServerAddress())),
       while Gate deliberately keeps the client-declared host:port in the virtual host, so Gate depends
       on the unsigned decode. No upstream behavior was ported, so the verified sync point is unchanged.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate login RSA key size fix (auth.Options.PrivateKeyBits was inert and
+      the login key size was not reachable from Gate's config; auth.privateKeyBits now sets it, and
+      the login encryption packet bounds were raised so a bigger key can complete a login at all).
+      dev/3.0.0 still resolves to 843a47e2 - the same head and the same 11 commits as the review entry
+      above - so there was no new upstream work to assess. The comparison this change needed is the
+      login encryption packet decoding: upstream EncryptionRequestPacket.decode reads the public key
+      with readByteArray(buf, 256) and EncryptionResponsePacket.decode reads the shared secret with
+      readByteArray(buf, 128) and the verify token with 128/256, i.e. exactly one 1024 bit RSA block.
+      Upstream therefore cannot complete a login with a larger server key either - Gate inherited the
+      same caps and has now lifted them to maxLoginEncryptionBytes (1024 bytes, one 8192 bit RSA
+      ciphertext) so the configurable key size is usable. No upstream behavior was ported, so the
+      verified sync point is unchanged.
 ```
 
 ## The log

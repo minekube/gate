@@ -191,6 +191,11 @@ config:
     # Customize the base URL for the Mojang session server to authenticate online mode players using different authentication servers.
     # Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
     #sessionServerUrl: https://example.com/mitm/session/minecraft/hasJoined
+    # The bit size of the RSA key Gate generates at startup to encrypt the login handshake
+    # of online mode players. Allowed values: 1024-8192.
+    # Defaults to 1024, the size vanilla Minecraft servers use, and is only generated once
+    # at startup, so a change takes effect on the next restart.
+    #privateKeyBits: 2048
 
   # Lite mode is a lightweight reverse proxy mode that acts as thin layer between the client and the backend server.
   # Full documentation: https://gate.minekube.com/guide/lite

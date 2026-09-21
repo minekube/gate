@@ -252,6 +252,12 @@ type (
 		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
 		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
+		// PrivateKeyBits is the bit size of the RSA key Gate generates at startup to
+		// encrypt the login handshake of online mode players.
+		// Defaults to 1024 bits, the size vanilla Minecraft servers use.
+		// Raise it to 2048 or 3072 if your clients and tools accept a larger key;
+		// note the key is generated once at startup, so changing this requires a restart.
+		PrivateKeyBits int `yaml:"privateKeyBits" json:"privateKeyBits,omitempty"`
 	}
 )
 
@@ -326,6 +332,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	validateVia(c, e)
+	validateAuthPrivateKeyBits(c, e)
 
 	if !c.OnlineMode {
 		w("Proxy is running in offline mode!")
@@ -459,6 +466,11 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if len(c.OfflineModeUsernameBlacklist) != 0 {
 		w("Lite mode ignores offlineModeUsernameBlacklist: Lite forwards login unchanged, so configure username protection on the backend or disable lite.enabled.")
 	}
+
+	if c.Auth.PrivateKeyBits != 0 {
+		w("Lite mode ignores auth.privateKeyBits: Lite forwards the login to the backend, so " +
+			"Gate never generates a login key. Configure the key size on the backend instead.")
+	}
 }
 
 // validateProxyProtocol validates the trusted upstreams allowed to send a PROXY
@@ -550,6 +562,30 @@ func validateVia(c *Config, e func(string, ...any)) {
 		if err := validation.ValidHostPort(c.Via.Bind); err != nil {
 			e("Invalid via bind %q: %v", c.Via.Bind, err)
 		}
+	}
+}
+
+// Bounds for the operator-configurable login RSA key size. The lower bound is
+// crypto/rsa's own minimum (rsa.GenerateKey rejects anything smaller); the
+// upper bound keeps a typo from stalling startup with an enormous key
+// generation. auth.DefaultPrivateKeyBits stays the default.
+const (
+	MinPrivateKeyBits = 1024
+	MaxPrivateKeyBits = 8192
+)
+
+// validateAuthPrivateKeyBits rejects auth.privateKeyBits values that cannot
+// produce a usable login key, so a misconfiguration fails at config load
+// instead of at key generation (or silently, as before the setting existed).
+// Unset (0) is valid and means the built-in default.
+func validateAuthPrivateKeyBits(c *Config, e func(string, ...any)) {
+	bits := c.Auth.PrivateKeyBits
+	if bits == 0 {
+		return
+	}
+	if bits < MinPrivateKeyBits || bits > MaxPrivateKeyBits {
+		e("Invalid auth.privateKeyBits %d, must be between %d and %d (or unset for the default)",
+			bits, MinPrivateKeyBits, MaxPrivateKeyBits)
 	}
 }
 

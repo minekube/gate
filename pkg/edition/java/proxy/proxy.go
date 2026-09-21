@@ -140,6 +140,7 @@ func New(options Options) (p *Proxy, err error) {
 		opts := auth.Options{
 			// Default to mojang's session server
 			HasJoinedURLFn: auth.CustomHasJoinedURL(options.Config.Auth.SessionServerURL.T()),
+			PrivateKeyBits: options.Config.Auth.PrivateKeyBits,
 		}
 		authn, err = auth.New(opts)
 		if err != nil {
@@ -250,6 +251,9 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 		if p.config().Auth.SessionServerURL != nil {
 			p.log.Info("using custom authentication server", "url", p.config().Auth.SessionServerURL)
+		}
+		if bits := p.config().Auth.PrivateKeyBits; bits > 0 {
+			p.log.Info("using custom login RSA key size", "bits", bits)
 		}
 	}
 	logInfo()
