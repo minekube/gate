@@ -169,14 +169,16 @@ Evidence still missing before the default can move:
    the scanner configuration or the check. For GitHub code scanning that is
    `PATCH /repos/{owner}/{repo}/code-scanning/alerts/{number}` with
    `{"state": "dismissed", "dismissed_reason": "<reason>", "dismissed_comment": "<link to this file>"}`;
-   `dismissed_reason` is one of `false positive`, `won't fix`, `used in tests`
-   (and the UI offers the same three). Each site's reason has to be the honest
-   one: `won't fix` means the alert is real but the change is one we have
-   decided not to make, `false positive` means the alert's premise does not
-   hold here, and `used in tests` is not applicable to any site above, because
-   all five are production code. `JsonHash` is the one `false positive`: the
-   rule there is about hashing *sensitive data*, and the digest is an
-   in-process change fingerprint with no security consequence.
+   `dismissed_reason` accepts four values - `false positive`, `won't fix`,
+   `used in tests`, `mitigated` (GitHub's REST schema). Each site's reason has to
+   be the honest one: `won't fix` means the alert is real but the change is one
+   we have decided not to make, `false positive` means the alert's premise does
+   not hold here. `used in tests` is not applicable to any site above, because
+   all five are production code, and `mitigated` is not used either: none of
+   these sites has a control that removes the weakness, and claiming one would
+   make the record harder to defend rather than easier. `JsonHash` is the one
+   `false positive`: the rule there is about hashing *sensitive data*, and the
+   digest is an in-process change fingerprint with no security consequence.
 4. Anything not on this list - including the same primitives used elsewhere,
    for a new purpose - is a normal finding and should be triaged on its own
    merits, not dismissed by association with this list.
