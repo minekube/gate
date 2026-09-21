@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.10](https://github.com/minekube/gate/compare/v0.74.9...v0.74.10) (2026-09-21)
+
+
+### Bug Fixes
+
+* **bungeecord:** write the ServerIP port as the unsigned 16-bit value it is ([#1172](https://github.com/minekube/gate/issues/1172)) ([2464457](https://github.com/minekube/gate/commit/24644571eb4d1460175b2ae6bbb5d2933a99c9a7))
+
 ## [0.74.9](https://github.com/minekube/gate/compare/v0.74.8...v0.74.9) (2026-09-21)
 
 
