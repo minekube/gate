@@ -145,6 +145,8 @@ func TestAcceptedCryptoRecordNamesEverySite(t *testing.T) {
 		"DefaultPrivateKeyBits",
 		"won't fix",
 		"false positive",
+		"used in tests",
+		"mitigated",
 		"dismissed_reason",
 	} {
 		if !strings.Contains(record, anchor) {
