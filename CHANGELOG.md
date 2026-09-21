@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.8](https://github.com/minekube/gate/compare/v0.74.7...v0.74.8) (2026-09-21)
+
+
+### Bug Fixes
+
+* **java:** make the login RSA key size configurable (auth.privateKeyBits) and lift the packet bounds that pinned it to 1024 bits ([#1162](https://github.com/minekube/gate/issues/1162)) ([439925e](https://github.com/minekube/gate/commit/439925eecf3195c095ed66e4f2682f495063dc0f))
+
 ## [0.74.7](https://github.com/minekube/gate/compare/v0.74.6...v0.74.7) (2026-09-21)
 
 
