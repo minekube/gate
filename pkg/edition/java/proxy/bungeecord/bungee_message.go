@@ -398,7 +398,7 @@ func (r *bungeeCordMessageResponder) processServerIP(in io.Reader) {
 		_ = util.WriteUTF(b, "ServerIP")
 		_ = util.WriteUTF(b, server.Name())
 		_ = util.WriteUTF(b, host)
-		_ = util.WriteInt16(b, int16(port))
+		_ = util.WriteUint16(b, port)
 		r.sendServerResponse(b.Bytes())
 	})
 }
