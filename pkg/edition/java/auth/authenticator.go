@@ -132,6 +132,9 @@ func New(options Options) (Authenticator, error) {
 	var err error
 	private := options.PrivateKey
 	if private == nil {
+		// The key size here resolves to DefaultPrivateKeyBits (vanilla's 1024
+		// bits) unless the operator raised auth.privateKeyBits.
+		// Accepted scanner finding (weak key): see docs/accepted-crypto-primitives.md.
 		private, err = rsa.GenerateKey(rand.Reader, privateKeyBits(options))
 		if err != nil {
 			return nil, fmt.Errorf("error generate private key: %v", err)

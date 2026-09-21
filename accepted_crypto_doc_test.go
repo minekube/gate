@@ -18,13 +18,21 @@ import (
 //     record names still exists there. A record that outlives the code it describes is
 //     worse than none: the next triager trusts a stale exemption. This catches a site
 //     being renamed, deleted, or regenerated without the pointer moving with it.
+//   - The weak-key exemption's pointer sits on the key generation itself, not merely
+//     somewhere in a file that also mentions the record.
 //   - The three protocol-mandated primitives (Mojang hasJoined serverId, vanilla offline
 //     UUIDv3, Floodgate's v5 mapping) are still the primitives the record accepts. Those
 //     are protocol constants: a change there is an interoperability change, not a hygiene
-//     cleanup, so it must update this record deliberately. The fourth site (JsonHash, an
-//     in-process change fingerprint with no security consequence) is intentionally NOT
-//     pinned to SHA-1 - the record explicitly allows swapping it for SHA-256, and this
-//     test must not forbid what the record permits.
+//     cleanup, so it must update this record deliberately. The config-fingerprint site
+//     (JsonHash, an in-process change fingerprint with no security consequence) is
+//     intentionally NOT pinned to SHA-1 - the record explicitly allows swapping it for
+//     SHA-256, and this test must not forbid what the record permits.
+//   - The login RSA key default is still 1024 bits. That default is a compatibility
+//     decision (vanilla's size) with the cost of changing it written down in the record
+//     and the missing client-compatibility evidence named there, so raising it has to
+//     update the record in the same change instead of drifting in unreviewed.
+//   - The record still states the suppression mapping a triager needs (the per-site
+//     code-scanning dismissal reasons), not just the list of files.
 //
 // WHAT THEY DO NOT PROVE
 //
@@ -33,7 +41,7 @@ import (
 
 const acceptedCryptoDocPath = "docs/accepted-crypto-primitives.md"
 
-// acceptedCryptoSites lists the four accepted sites: the source file, the symbol the
+// acceptedCryptoSites lists the five accepted sites: the source file, the symbol the
 // pointer comment must sit on, and (where the record pins the primitive) a marker that
 // must still be present in that file. An empty marker means the record permits changing
 // the primitive, so nothing is asserted about it.
@@ -67,6 +75,34 @@ var acceptedCryptoSites = []struct {
 		symbol: "JsonHash",
 		marker: "", // SHA-256 swap is explicitly permitted by the record
 	},
+	{
+		// Not a protocol constant like the three above: the 1024-bit login RSA key is
+		// a compatibility default (vanilla's size) that an operator can raise with
+		// auth.privateKeyBits. The marker pins the default, so raising it is a
+		// deliberate change that has to update the record in the same commit.
+		name:   "login RSA key default",
+		file:   "pkg/edition/java/auth/authenticator.go",
+		symbol: "DefaultPrivateKeyBits",
+		marker: "DefaultPrivateKeyBits = 1024",
+	},
+}
+
+// TestLoginKeyPointerSitsAtTheGenerationSite pins the weak-key exemption to the line the
+// scanner flags. authenticator.go carries two accepted sites (GenerateServerID's SHA-1 and
+// the login key default), so the file-level pointer check above cannot tell them apart: the
+// serverId pointer alone would satisfy it even if the key generation lost its comment. This
+// keeps the rationale attached to the key size itself, where a triager arriving from the
+// alert actually lands.
+func TestLoginKeyPointerSitsAtTheGenerationSite(t *testing.T) {
+	src := readRepoFile(t, "pkg/edition/java/auth/authenticator.go")
+
+	const want = "// Accepted scanner finding (weak key): see docs/accepted-crypto-primitives.md.\n" +
+		"\t\tprivate, err = rsa.GenerateKey(rand.Reader, privateKeyBits(options))"
+	if !strings.Contains(src, want) {
+		t.Errorf("pkg/edition/java/auth/authenticator.go no longer carries the weak-key pointer "+
+			"comment immediately above the login key generation, so the flagged line has no "+
+			"rationale next to it; see %s", acceptedCryptoDocPath)
+	}
 }
 
 func readRepoFile(t *testing.T, path string) string {
@@ -96,13 +132,20 @@ func TestAcceptedCryptoRecordNamesEverySite(t *testing.T) {
 	}
 
 	// The point of the record is the justification, not the list. Require the protocol
-	// anchors a future triager has to be able to cite.
+	// anchors a future triager has to be able to cite, the knob that makes the login key
+	// size a choice rather than an oversight, and the dismissal mapping (GitHub's reason
+	// enum values, picked per site) that makes the eventual suppressions mechanical.
 	for _, anchor := range []string{
 		"hasJoined",
 		"UUIDv3",
 		"UUIDv5",
 		"RFC 4122",
 		"suppress",
+		"privateKeyBits",
+		"DefaultPrivateKeyBits",
+		"won't fix",
+		"false positive",
+		"dismissed_reason",
 	} {
 		if !strings.Contains(record, anchor) {
 			t.Errorf("%s no longer states %q; the record must keep the protocol justification "+
@@ -139,8 +182,8 @@ func TestAcceptedCryptoSitesCarryPointerComment(t *testing.T) {
 				"the rationale there, not only in AGENTS.md", site.file, acceptedCryptoDocPath, site.name)
 		}
 		if site.marker != "" && !strings.Contains(src, site.marker) {
-			t.Errorf("%s no longer contains %q (%s). The record accepts this primitive because the "+
-				"protocol fixes it, so a change here has to update %s in the same change",
+			t.Errorf("%s no longer contains %q (%s). The record accepts this primitive as "+
+				"deliberate, so a change here has to update %s in the same change",
 				site.file, site.marker, site.name, acceptedCryptoDocPath)
 		}
 	}
