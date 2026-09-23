@@ -6,3 +6,6 @@ tmp
 ./gate
 .DS_Store
 config-forge-test.yml
+
+# Player identity store (identityStore.path) and its SQLite WAL files.
+data/
