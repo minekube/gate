@@ -17,6 +17,32 @@ config:
   # against offline-mode logins.
   offlineModeUsernameBlacklistOnlinePlayers: false
 
+  # Not used in lite mode, where it should stay disabled; changing this section
+  # otherwise requires a Gate restart.
+  identityStore:
+    enabled: false
+    path: tmp/identities.db
+    failOpen: false
+    # Disconnect the session that is already online when the same username
+    # logs in again, instead of rejecting the new login.
+    kickExistingPlayers: false
+    # Premium account protection. It only works while the proxy authenticates
+    # logins (onlineMode: true): with onlineMode: false every login resolves to
+    # an offline identity, so a protected account is refused for everyone,
+    # including its owner.
+    #   none = no protection (identities are still merged into one UUID)
+    #   list = only the names and UUIDs in `names`
+    #   all  = every account that has authenticated at least once, plus `names`
+    # A protected account only accepts a login that resolves to the UUID it
+    # authenticated with, so every cracked login path is refused.
+    premiumProtection:
+      mode: none
+      # Required for mode: list; with mode: all it protects these accounts
+      # immediately (may stay empty). Entries are usernames (matched exactly,
+      # case-sensitively: names differing only in case are different accounts)
+      # and/or UUIDs (a UUID survives a rename).
+      names: []
+
   servers:
     # Server name: server address
     server1: localhost:25566

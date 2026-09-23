@@ -52,7 +52,11 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 			localAddr:          nil,
 			connHandler:        connHandler.HandleConn,
 			enforcePassthrough: c.EnforcePassthrough,
-			principal:          principal,
+			// Declaring the endpoint does not accept offline-mode players is what
+			// makes a proposed profile an authenticated identity: the tunnel
+			// service has no reason to propose an unauthenticated player here.
+			vouchedIdentity: !c.AllowOfflineModePlayers,
+			principal:       principal,
 		}
 		ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("proposal"))
 
@@ -129,7 +133,13 @@ type proposalHandler struct {
 	localAddr          net.Addr
 	connHandler        func(net.Conn) // Called in parallel when a new tunnel connection is successfully established.
 	enforcePassthrough bool
-	principal          *principalVerifier
+	// vouchedIdentity reports whether a game profile this connector supplies
+	// comes from authenticated players only: the endpoint declared that it does
+	// not accept offline-mode players. Gate cannot verify that claim, but the
+	// tunnel service routes by the same declaration, so a connector that accepts
+	// offline-mode players vouches for nothing.
+	vouchedIdentity bool
+	principal       *principalVerifier
 }
 
 func (h *proposalHandler) handle(ctx context.Context, proposal connect.SessionProposal) {
@@ -237,7 +247,7 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		return status.Errorf(codes.Aborted, "could not connect to tunnel service: %v", err)
 	}
 
-	conn := wrapTunnelSession(tunnel, proposal.Session(), gp, principal)
+	conn := wrapTunnelSession(tunnel, proposal.Session(), gp, principal, t.vouchedIdentity)
 
 	log.Info("established tunnel for session")
 	t.connHandler(conn)
@@ -248,18 +258,25 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 // onto the tunnel connection. The outermost wrapper must keep the game profile
 // visible to netmc.Assert, which unwraps via a Conn() net.Conn method and, for
 // wrappers that only embed net.Conn, via Unwrap() net.Conn.
+//
+// vouchedIdentity travels with the game profile because it is a claim about that
+// profile: the endpoint declared that it does not accept offline-mode players,
+// so the profile it supplies is an authenticated identity. Only the wrapper that
+// carries a proposed profile gets it - a verified principal is not a claim but a
+// proof, and a pass-through session has no profile at all.
 func wrapTunnelSession(
 	tunnel connect.Tunnel,
 	s *connect.Session,
 	gp *profile.GameProfile,
 	principal bedrockprincipal.VerifiedBedrockPrincipal,
+	vouchedIdentity bool,
 ) connectutil.TunnelSession {
 	var conn connectutil.TunnelSession = &tunnelConnWithSession{Tunnel: tunnel, s: s}
 	switch {
 	case principal != nil:
 		conn = &tunnelConnWithPrincipal{TunnelSession: conn, gp: gp, principal: principal}
 	case gp != nil:
-		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp}
+		conn = &tunnelConnWithGameProfile{TunnelSession: conn, gp: gp, vouched: vouchedIdentity}
 	}
 	return conn
 }
@@ -272,6 +289,10 @@ type (
 	tunnelConnWithGameProfile struct {
 		connectutil.TunnelSession
 		gp *profile.GameProfile
+		// vouched reports whether the endpoint declared that it does not accept
+		// offline-mode players, which makes the profile it supplies an
+		// authenticated identity as far as the ingress is concerned.
+		vouched bool
 	}
 	tunnelConnWithPrincipal struct {
 		connectutil.TunnelSession
@@ -286,6 +307,7 @@ var (
 	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithSession)(nil)
 	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithGameProfile)(nil)
 	_ proxy.ConnectTunnelIngress            = (*tunnelConnWithPrincipal)(nil)
+	_ proxy.ConnectAuthenticatedIdentity    = (*tunnelConnWithGameProfile)(nil)
 	_ connectutil.VerifiedPrincipalProvider = (*tunnelConnWithPrincipal)(nil)
 )
 
@@ -295,6 +317,9 @@ func (t *tunnelConnWithSession) Session() *connect.Session             { return 
 func (*tunnelConnWithSession) IsConnectTunnelIngress() bool            { return true }
 func (*tunnelConnWithGameProfile) IsConnectTunnelIngress() bool        { return true }
 func (*tunnelConnWithPrincipal) IsConnectTunnelIngress() bool          { return true }
+func (t *tunnelConnWithGameProfile) IsConnectAuthenticatedIdentity() bool {
+	return t.vouched
+}
 func (t *tunnelConnWithPrincipal) VerifiedPrincipal() bedrockprincipal.VerifiedBedrockPrincipal {
 	return t.principal
 }

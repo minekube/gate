@@ -159,11 +159,8 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		return
 	}
 
-	existing := l.proxy.playerByName(l.login.Username)
-	authenticatedNameInUse := existing != nil && existing.OnlineMode()
-
 	if offlineModeUsernameBlocked(l.config(), e.Result(),
-		connectTunnelIngress(l.conn), l.login.Username, sessionIdentity(l.conn), authenticatedNameInUse) {
+		connectTunnelIngress(l.conn), l.login.Username, sessionIdentity(l.conn)) {
 		reason := l.config().OfflineModeUsernameBlacklistReason
 		if reason == nil {
 			reason = config.DefaultConfig.OfflineModeUsernameBlacklistReason
@@ -181,7 +178,8 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 			(e.Result() == ForceOnlineModePreLogin || l.config().OnlineMode) {
 
 			if p, ok := netmc.Assert[GameProfileProvider](l.conn); ok {
-				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false, "")
+				sh := l.newAuthSessionHandler(l.inbound, p.GameProfile(), false,
+					suppliedIdentityTrustOf(l.conn), "")
 				l.conn.SetActiveSessionHandler(state.Login, sh)
 				return nil
 			}
@@ -200,7 +198,8 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		}
 
 		// Offline mode login
-		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false, "")
+		sh := l.newAuthSessionHandler(l.inbound, profile.NewOffline(l.login.Username), false,
+			unvouchedSuppliedIdentity, "")
 		l.conn.SetActiveSessionHandler(state.Login, sh)
 		return nil
 	})
@@ -216,6 +215,34 @@ type ConnectTunnelIngress interface {
 func connectTunnelIngress(conn netmc.MinecraftConn) bool {
 	ingress, ok := netmc.Assert[ConnectTunnelIngress](conn)
 	return ok && ingress.IsConnectTunnelIngress()
+}
+
+// ConnectAuthenticatedIdentity is implemented by connections whose supplied
+// game profile was vouched for by the ingress that supplied it: a Connect
+// endpoint that declared it does not accept offline-mode players
+// (connect.allowOfflineModePlayers false). Like ConnectTunnelIngress, it is
+// installed only by Gate's own tunnel adapter and is independent of anything the
+// player controls.
+//
+// That declaration is the operator's own, and it is what the tunnel service
+// routes by, so an endpoint that accepts offline-mode players never vouches for
+// anything. It remains a declaration rather than something the proxy verified:
+// nothing in the session proposal lets the proxy check that the identity belongs
+// to the account it names.
+type ConnectAuthenticatedIdentity interface {
+	IsConnectAuthenticatedIdentity() bool
+}
+
+// suppliedIdentityTrustOf reports what is known about an identity this
+// connection supplied. A connection that vouches for its identity supplies an
+// authenticated one; every other connection supplies an identity nothing
+// vouched for, which is the only safe assumption.
+func suppliedIdentityTrustOf(conn netmc.MinecraftConn) suppliedIdentityTrust {
+	vouched, ok := netmc.Assert[ConnectAuthenticatedIdentity](conn)
+	if !ok || !vouched.IsConnectAuthenticatedIdentity() {
+		return unvouchedSuppliedIdentity
+	}
+	return vouchedSuppliedIdentity
 }
 
 // sessionIdentity returns the game profile the connection supplies, if any. A
@@ -262,7 +289,6 @@ func offlineModeUsernameBlocked(
 	connectIngress bool,
 	username string,
 	identity *profile.GameProfile,
-	authenticatedNameInUse bool,
 ) bool {
 	offline := result == ForceOfflineModePreLogin ||
 		(result != ForceOnlineModePreLogin && !cfg.OnlineMode) ||
@@ -272,9 +298,6 @@ func offlineModeUsernameBlocked(
 	}
 	if cfg.OfflineModeUsernameBlacklistScope == config.OfflineModeUsernameBlacklistScopeConnect && !connectIngress {
 		return false
-	}
-	if cfg.OfflineModeUsernameBlacklistOnlinePlayers && authenticatedNameInUse {
-		return true
 	}
 	for _, blocked := range cfg.OfflineModeUsernameBlacklist {
 		if strings.EqualFold(blocked, username) {
@@ -288,12 +311,14 @@ func (l *initialLoginSessionHandler) newAuthSessionHandler(
 	inbound *loginInboundConn,
 	profile *profile.GameProfile,
 	onlineMode bool,
+	supplied suppliedIdentityTrust,
 	serverIDHash string,
 ) netmc.SessionHandler {
 	return newAuthSessionHandler(
 		inbound,
 		profile,
 		onlineMode,
+		supplied,
 		serverIDHash,
 		l.sessionHandlerDeps,
 	)
@@ -416,8 +441,10 @@ func (l *initialLoginSessionHandler) handleEncryptionResponse(resp *packet.Encry
 		return
 	}
 
-	// All went well, initialize the session.
-	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true, serverID)
+	// All went well, initialize the session. The proxy authenticated this login
+	// with Mojang itself, so how much an ingress vouches for its identity does
+	// not matter here.
+	sh := l.newAuthSessionHandler(l.inbound, gameProfile, true, unvouchedSuppliedIdentity, serverID)
 	l.conn.SetActiveSessionHandler(state.Login, sh)
 }
 

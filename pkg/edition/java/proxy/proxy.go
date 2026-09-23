@@ -33,6 +33,7 @@ import (
 	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/internal/addrquota"
 	"go.minekube.com/gate/pkg/internal/connwrap"
+	"go.minekube.com/gate/pkg/internal/identity"
 	"go.minekube.com/gate/pkg/internal/packetlimiter"
 	"go.minekube.com/gate/pkg/internal/reload"
 	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
@@ -72,6 +73,11 @@ type Proxy struct {
 
 	sessionIDMu      sync.Mutex
 	currentSessionID uuid.UUID
+
+	// identityStore decides the UUID a player is known by on the backend
+	// servers. It is nil while config.IdentityStore.Enabled is false.
+	identityStore     *identity.Store
+	identityStoreOnce sync.Once
 
 	backendHandshakeAddresserMu sync.RWMutex
 	backendHandshakeAddresser   BackendHandshakeAddresser
@@ -176,7 +182,27 @@ func New(options Options) (p *Proxy, err error) {
 		return nil, fmt.Errorf("error initializing meter: %w", err)
 	}
 
+	if ic := options.Config.IdentityStore; ic.Enabled {
+		store, err := identity.Open(ic.Path)
+		if err != nil {
+			return nil, fmt.Errorf("error opening the player identity store: %w", err)
+		}
+		p.identityStore = store
+	}
+
 	return p, nil
+}
+
+// closeIdentityStore closes the player identity store, if one is open.
+func (p *Proxy) closeIdentityStore() {
+	p.identityStoreOnce.Do(func() {
+		if p.identityStore == nil {
+			return
+		}
+		if err := p.identityStore.Close(); err != nil {
+			p.log.Error(err, "error closing the player identity store")
+		}
+	})
 }
 
 func (p *Proxy) initQuota(quota *config.Quota) {
@@ -254,6 +280,16 @@ func (p *Proxy) Start(ctx context.Context) error {
 		}
 		if bits := p.config().Auth.PrivateKeyBits; bits > 0 {
 			p.log.Info("using custom login RSA key size", "bits", bits)
+		}
+		if s := p.identityStore; s != nil {
+			p.log.Info("player identity store enabled",
+				"path", s.Path(), "failOpen", p.config().IdentityStore.FailOpen,
+				"kickExistingPlayers", p.config().IdentityStore.KickExistingPlayers,
+				"protectPremiumAccounts", p.config().IdentityStore.ProtectPremiumAccounts)
+			if !p.config().OnlineMode {
+				p.log.Info("players are registered under the UUID their first login resolves to; " +
+					"in offline mode usernames are unverified, so the first login to a name owns it")
+			}
 		}
 	}
 	logInfo()
@@ -359,6 +395,7 @@ func cloneLiteRoutes(routes []liteconfig.Route) ([]liteconfig.Route, error) {
 // all existing connections with the given reason (nil = blank reason)
 // and waits for all event subscribers to finish.
 func (p *Proxy) Shutdown(reason component.Component) {
+	p.closeIdentityStore()
 	p.closeMu.Lock()
 	defer p.closeMu.Unlock()
 	if !p.started {
@@ -877,6 +914,7 @@ func (p *Proxy) PlayerByName(username string) Player {
 	}
 	return player
 }
+
 func (p *Proxy) playerByName(username string) *connectedPlayer {
 	p.muP.RLock()
 	defer p.muP.RUnlock()
@@ -887,9 +925,21 @@ func (p *Proxy) playerByName(username string) *connectedPlayer {
 	return player
 }
 
+// identityKicksDuplicateLogins reports whether a duplicate login displaces the
+// player who is already online under the same username. It requires the
+// identity store: the store is what makes one username mean one account, so
+// without it the same name can be two accounts and kicking by name could let an
+// offline login displace the authenticated player.
+func identityKicksDuplicateLogins(c *config.Config) bool {
+	return c.IdentityStore.Enabled && c.IdentityStore.KickExistingPlayers
+}
+
 func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 	c := p.config()
 	if c.OnlineMode && c.OnlineModeKickExistingPlayers {
+		return true
+	}
+	if identityKicksDuplicateLogins(c) {
 		return true
 	}
 	lowerName := strings.ToLower(player.Username())
@@ -898,58 +948,98 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 	return p.playerNames[lowerName] == nil && p.playerIDs[player.ID()] == nil
 }
 
+// duplicateLoginKickAttempts bounds how often one registration displaces an
+// existing session. In the normal case the displaced session is unregistered
+// synchronously and the first retry succeeds; the bound only keeps a session
+// that never tears down from spinning here forever.
+const duplicateLoginKickAttempts = 8
+
+// errDuplicateLoginStuck reports a player who is still registered after being
+// disconnected, so the incoming login cannot be registered safely.
+var errDuplicateLoginStuck = errors.New("player already online with this identity could not be displaced")
+
 // Attempts to register the connection with the proxy.
 func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	c := p.config()
+	kickByName := identityKicksDuplicateLogins(c)
 
-retry:
-	p.muP.Lock()
-	if c.OnlineModeKickExistingPlayers {
-		existing, ok := p.playerIDs[player.ID()]
-		if ok {
-			// Make sure we disconnect existing duplicate
-			// player connection before we register the new one.
-			//
-			// Disconnecting the existing connection will call p.unregisterConnection in the
-			// teardown needing the p.muP.Lock() so we unlock.
-			p.muP.Unlock()
-			existing.disconnectDueToDuplicateConnection.Store(true)
-			existing.Disconnect(&component.Translation{
-				Key: "multiplayer.disconnect.duplicate_login",
-			})
-			// Now we can retry in case another duplicate connection
-			// occurred before we could acquire the lock at `retry`.
-			//
-			// Meaning we keep disconnecting incoming duplicates until
-			// we can register our connection, but this shall be uncommon anyway. :)
-			goto retry
+	for attempt := 0; ; attempt++ {
+		p.muP.Lock()
+		var existing *connectedPlayer
+		switch {
+		case kickByName:
+			// One username means one account here, so the newer login displaces
+			// the older session instead of being rejected.
+			existing = p.playerNames[lowerName]
+			if existing == nil {
+				existing = p.playerIDs[player.ID()]
+			}
+		case c.OnlineModeKickExistingPlayers:
+			existing = p.playerIDs[player.ID()]
+		default:
+			if _, exists := p.playerNames[lowerName]; exists {
+				p.muP.Unlock()
+				return false
+			}
+			if _, exists := p.playerIDs[player.ID()]; exists {
+				p.muP.Unlock()
+				return false
+			}
 		}
-	} else {
-		_, exists := p.playerNames[lowerName]
-		if exists {
+		if existing == nil {
+			p.playerIDs[player.ID()] = player
+			p.playerNames[lowerName] = player
 			p.muP.Unlock()
+			return true
+		}
+		p.muP.Unlock()
+
+		if attempt >= duplicateLoginKickAttempts {
+			p.log.Error(errDuplicateLoginStuck, "could not displace the player already online",
+				"player", player.Username(), "id", player.ID())
 			return false
 		}
-		_, exists = p.playerIDs[player.ID()]
-		if exists {
-			p.muP.Unlock()
-			return false
-		}
+
+		// Make sure we disconnect existing duplicate
+		// player connection before we register the new one.
+		//
+		// Disconnecting the existing connection will call p.unregisterConnection in the
+		// teardown needing the p.muP.Lock() so we unlocked above.
+		existing.disconnectDueToDuplicateConnection.Store(true)
+		existing.Disconnect(&component.Translation{
+			Key: "multiplayer.disconnect.duplicate_login",
+		})
+		// Now we can retry in case another duplicate connection
+		// occurred before we could acquire the lock again.
+		//
+		// Meaning we keep disconnecting incoming duplicates until
+		// we can register our connection, but this shall be uncommon anyway. :)
 	}
-
-	p.playerIDs[player.ID()] = player
-	p.playerNames[lowerName] = player
-	p.muP.Unlock()
-	return true
 }
 
-// unregisters a connected player
+// unregisters a connected player and reports whether it was registered at all.
+//
+// Both keys are derived from the player's own username and UUID, and a
+// connection that never registered tears down through here too: a login that
+// canRegisterConnection or registerConnection rejected still disconnects, and
+// that disconnect runs this. With the identity store enabled, another live
+// session can hold exactly these keys - the store assigns one UUID per username
+// - so an entry is only removed while it still points at this player. Deleting
+// unconditionally would unregister the player who is actually online and leave
+// them playing as a ghost: absent from PlayerByName, from the duplicate login
+// check and from the reserved name protection.
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
+	lowerName := strings.ToLower(player.Username())
+
 	p.muP.Lock()
-	_, found = p.playerIDs[player.ID()]
-	delete(p.playerNames, strings.ToLower(player.Username()))
-	delete(p.playerIDs, player.ID())
+	if existing, ok := p.playerIDs[player.ID()]; ok && existing == player {
+		delete(p.playerIDs, player.ID())
+		found = true
+	}
+	if existing, ok := p.playerNames[lowerName]; ok && existing == player {
+		delete(p.playerNames, lowerName)
+	}
 	empty := len(p.playerIDs) == 0
 	p.muP.Unlock()
 	if empty {

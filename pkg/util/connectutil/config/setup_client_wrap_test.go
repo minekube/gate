@@ -33,7 +33,7 @@ func TestWrapTunnelSessionExposesVerifiedProfile(t *testing.T) {
 	gp := &profile.GameProfile{ID: uuid.UUID(verified.UUID), Name: verified.Name}
 	session := &connect.Session{Id: "sess-wrap-1"}
 
-	conn := wrapTunnelSession(nil, session, gp, principal)
+	conn := wrapTunnelSession(nil, session, gp, principal, true)
 
 	gpp, ok := netmc.Assert[proxy.GameProfileProvider](conn)
 	require.True(t, ok, "envelope session connection must implement proxy.GameProfileProvider")
@@ -47,6 +47,11 @@ func TestWrapTunnelSessionExposesVerifiedProfile(t *testing.T) {
 	require.True(t, ok, "a verified Connect tunnel must keep its trusted ingress marker")
 	require.True(t, ingress.IsConnectTunnelIngress())
 
+	// A verified principal is a proof, not a claim: it must not be published as
+	// a vouch for a proposed profile, whatever the endpoint declared.
+	_, ok = netmc.Assert[proxy.ConnectAuthenticatedIdentity](conn)
+	require.False(t, ok, "a verified-principal session must not carry the vouch claim")
+
 	require.Equal(t, "sess-wrap-1", conn.Session().GetId())
 }
 
@@ -54,7 +59,7 @@ func TestWrapTunnelSessionWithoutPrincipal(t *testing.T) {
 	session := &connect.Session{Id: "sess-wrap-2"}
 	gp := &profile.GameProfile{Name: "SomeName"}
 
-	conn := wrapTunnelSession(nil, session, gp, nil)
+	conn := wrapTunnelSession(nil, session, gp, nil, true)
 	gpp, ok := netmc.Assert[proxy.GameProfileProvider](conn)
 	require.True(t, ok)
 	require.Equal(t, gp, gpp.GameProfile())
@@ -64,9 +69,23 @@ func TestWrapTunnelSessionWithoutPrincipal(t *testing.T) {
 	require.True(t, ok, "a proposed-profile Connect tunnel still originates at Connect")
 	require.True(t, ingress.IsConnectTunnelIngress())
 
-	passthrough := wrapTunnelSession(nil, session, nil, nil)
+	// The vouch claim travels with the proposed profile, so it is only visible
+	// to the proxy for the wrapper that carries one.
+	vouched, ok := netmc.Assert[proxy.ConnectAuthenticatedIdentity](conn)
+	require.True(t, ok, "a proposed-profile tunnel must publish whether it vouches")
+	require.True(t, vouched.IsConnectAuthenticatedIdentity())
+
+	unvouched := wrapTunnelSession(nil, session, gp, nil, false)
+	claim, ok := netmc.Assert[proxy.ConnectAuthenticatedIdentity](unvouched)
+	require.True(t, ok, "an endpoint that accepts offline players still publishes the claim")
+	require.False(t, claim.IsConnectAuthenticatedIdentity(),
+		"an endpoint that accepts offline players vouches for nothing")
+
+	passthrough := wrapTunnelSession(nil, session, nil, nil, true)
 	_, ok = netmc.Assert[proxy.GameProfileProvider](passthrough)
 	require.False(t, ok)
+	_, ok = netmc.Assert[proxy.ConnectAuthenticatedIdentity](passthrough)
+	require.False(t, ok, "a session with no supplied profile has nothing to vouch for")
 	ingress, ok = netmc.Assert[proxy.ConnectTunnelIngress](passthrough)
 	require.True(t, ok, "a passthrough Connect tunnel must not lose its ingress provenance")
 	require.True(t, ingress.IsConnectTunnelIngress())
