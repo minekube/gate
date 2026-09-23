@@ -13,36 +13,6 @@ config:
   # Either simple legacy '§' text or a modern text component JSON object.
   offlineModeUsernameBlacklistReason: "§cThis username is reserved for its authenticated owner."
   # Registers servers with the proxy by giving the address of backend server a custom reference name.
-  # Also reserve the names of currently connected authenticated players
-  # against offline-mode logins.
-  offlineModeUsernameBlacklistOnlinePlayers: false
-
-  # Not used in lite mode, where it should stay disabled; changing this section
-  # otherwise requires a Gate restart.
-  identityStore:
-    enabled: false
-    path: tmp/identities.db
-    failOpen: false
-    # Disconnect the session that is already online when the same username
-    # logs in again, instead of rejecting the new login.
-    kickExistingPlayers: false
-    # Premium account protection. It only works while the proxy authenticates
-    # logins (onlineMode: true): with onlineMode: false every login resolves to
-    # an offline identity, so a protected account is refused for everyone,
-    # including its owner.
-    #   none = no protection (identities are still merged into one UUID)
-    #   list = only the names and UUIDs in `names`
-    #   all  = every account that has authenticated at least once, plus `names`
-    # A protected account only accepts a login that resolves to the UUID it
-    # authenticated with, so every cracked login path is refused.
-    premiumProtection:
-      mode: none
-      # Required for mode: list; with mode: all it protects these accounts
-      # immediately (may stay empty). Entries are usernames (matched exactly,
-      # case-sensitively: names differing only in case are different accounts)
-      # and/or UUIDs (a UUID survives a rename).
-      names: []
-
   servers:
     # Server name: server address
     server1: localhost:25566
@@ -132,6 +102,82 @@ config:
     # The secret used if the mode is bungeeguard.
     # Can also be set via environment variable: GATE_BUNGEEGUARD_SECRET
     #bungeeGuardSecret: secret_here
+  # Keeps the UUID each player is known by on your servers, so one account keeps
+  # a single UUID whether it logs in authenticated (online mode) or offline.
+  # The UUID is decided by the account's first login: it takes whatever identity
+  # that login resolved to, and every later login - offline or authenticated -
+  # is assigned that same UUID. This is what lets an authenticated login inherit
+  # the state an offline login accumulated, and the other way around.
+  #
+  # Signed chat depends on the UUID the backend assigns matching the UUID the
+  # client's profile public key is signed for, which only holds when a login is
+  # assigned the UUID it resolved to. Accounts registered on the other login path
+  # therefore join with an unsigned profile: set enforce-secure-profile=false in
+  # the backend's server.properties, or their chat is rejected.
+  #
+  # Not used in lite mode, where it should stay disabled; changing this section
+  # otherwise requires a Gate restart.
+  identityStore:
+    # Whether to store player identities in a SQLite database.
+    enabled: false
+    # The SQLite database file, relative to Gate's working directory unless
+    # absolute. Its directory is created if it is missing. Prefer an absolute
+    # path: starting Gate from another working directory would otherwise open a
+    # different, empty database and every player would be registered again.
+    # data/ is ignored by this repository's .gitignore.
+    path: data/gate-identities.db
+    # Whether a login may continue with the UUID the login flow resolved to when
+    # the store cannot be read. By default the login is rejected instead, because
+    # a login that cannot be looked up cannot be given the right UUID.
+    failOpen: false
+    # Whether logging in with a username that is already online disconnects that
+    # player instead of rejecting the new login. Requires the store above: it is
+    # what makes one username mean one account, so without it the same name can
+    # be two accounts and an offline login could displace the authenticated one.
+    kickExistingPlayers: false
+    # Which accounts may only be used by an authenticated login.
+    # Requires onlineMode: true (see the notes at the end of this section).
+    #
+    # The store records, per username, whether it has ever been logged in with
+    # an authenticated identity. Whether a login may use a protected account
+    # then depends on one thing only: was this session authenticated? An
+    # authenticated login is the authority on who holds a username, so it is
+    # accepted, and it marks the username as authenticated for good. Everything
+    # else is refused: the username's offline UUID (the cracked login path) and
+    # an identity a connection type supplied without vouching for it, which only
+    # means "this UUID is not the username's offline UUID".
+    #
+    # Two sources count as authenticated: the proxy verifying the login with
+    # Mojang itself, and an identity a Connect endpoint supplied that declared it
+    # does not accept offline-mode players (connect.allowOfflineModePlayers
+    # false). The second is a declaration rather than a verification - a session
+    # proposal carries no proof that the identity belongs to the account it
+    # names - so an endpoint that accepts offline-mode players vouches for
+    # nothing and its identities stay refused.
+    #
+    # Requires the store above, which is what remembers the authenticated UUID.
+    premiumProtection:
+      # none - no protection; identities are still merged into one UUID
+      # list - only the names and UUIDs listed below
+      # all  - every account that has authenticated at least once, plus the
+      #        names and UUIDs listed below
+      mode: none   # only none, list and all are valid
+      # Usernames (exact, case-sensitive) and/or UUIDs to protect. A username
+      # protects that name; a UUID protects whichever account holds it, so it
+      # keeps protecting an account that is renamed. Required for mode: list.
+      names: []
+      # A username that was never authenticated is not protected by mode: all;
+      # mode: list protects a listed name from the start, where only an
+      # authenticated login is accepted.
+      #
+      # Protection only works while the proxy authenticates logins, so
+      # onlineMode must be true: with onlineMode: false every login resolves to
+      # an offline identity and a protected account is refused for everyone,
+      # including its owner. A vouched Connect identity does not lift this,
+      # because a supplied identity is only consulted on the online-mode login
+      # path.
+      #
+      #protectPremiumAccounts: true  # deprecated shorthand for mode: all
   # Via backend protocol translation for Gate classic mode.
   # This starts vialite at startup and routes configured or API-registered classic
   # backend connections through Via-compatible translation before Gate dials the backend.
