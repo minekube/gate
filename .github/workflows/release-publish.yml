@@ -24,7 +24,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -51,7 +51,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           ref: ${{ inputs.release_tag }}
@@ -79,7 +79,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           ref: ${{ inputs.release_tag }}
@@ -161,7 +161,7 @@ jobs:
       gate_jre_digest: ${{ steps.gate-jre-image.outputs.digest }}
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           ref: ${{ inputs.release_tag }}
@@ -266,7 +266,7 @@ jobs:
       tag_sha: ${{ steps.verify-release.outputs.tag_sha }}
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
