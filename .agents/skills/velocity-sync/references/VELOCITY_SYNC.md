@@ -90,6 +90,7 @@ log:
       client artifact, so this check required no further port.
 
   - date: 2026-09-21
+  
     kind: review
     upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
     upstream_commit_count: 11
@@ -146,8 +147,37 @@ log:
       to 25565). Gate used to wrap the value and report a port that was never in the address; it now
       rejects an out-of-range port, matching upstream's fail-closed outcome. No upstream behavior was
       ported, so the verified sync point is unchanged.
-```
 
+  - date: 2026-09-22
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Considered and not adopted: keying the player registry by the exact username, so that names
+      differing only in case are separate sessions to match the Gate-only identity store (upstream
+      keys them case-insensitively). The change was prototyped and reverted before landing, because
+      it also moves PlayerByName's documented case-insensitive search and the reserved-name check in
+      session_client_initial_login.go. Gate therefore keeps upstream keying for now; if the
+      divergence is ever taken, it belongs in the PR body as a Gate extension. No upstream commit in
+      the compared range covers registry keying, so nothing was ported.
+
+  - date: 2026-09-22
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Rechecked official PaperMC/Velocity while landing the Gate-local identity store, premium
+      protection and duplicate-login registry fixes. dev/3.0.0 still resolves to 843a47e2, the head
+      of the 2026-09-19 review, so the compared range is unchanged and holds no commit this work
+      could port; the per-commit decisions remain those recorded there. Nothing upstream covers a
+      persistent player identity. The registry changes stay within behaviour Gate already had:
+      onlineModeKickExistingPlayers keeps kicking by UUID, and the ownership check in
+      unregisterConnection only stops a login that was rejected from unregistering the session that
+      owns the same name or UUID.
+```
+  
 ## The log
 
 The `log` list answers the question a single SHA cannot: **"was upstream commit X ever considered?"**

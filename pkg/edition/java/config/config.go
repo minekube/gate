@@ -14,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/util/configutil"
 	"go.minekube.com/gate/pkg/util/favicon"
 	"go.minekube.com/gate/pkg/util/netutil"
+	"go.minekube.com/gate/pkg/util/uuid"
 	"go.minekube.com/gate/pkg/util/validation"
 )
 
@@ -28,6 +29,10 @@ var DefaultConfig = Config{
 	Forwarding: Forwarding{
 		Mode:           LegacyForwardingMode,
 		VelocitySecret: "",
+	},
+	IdentityStore: IdentityStore{
+		Enabled: false,
+		Path:    "data/gate-identities.db",
 	},
 	Status: Status{
 		ShowMaxPlayers: 1000,
@@ -144,8 +149,12 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	OfflineModeUsernameBlacklistReason *configutil.TextComponent         `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
-	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
-	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
+	// IdentityStore keeps the UUID each player is known by on the backend
+	// servers, so one account keeps a single UUID across online and offline
+	// logins instead of ending up with one identity per login path.
+	IdentityStore IdentityStore `yaml:"identityStore,omitempty" json:"identityStore,omitempty"`
+	Status        Status        `yaml:"status,omitempty" json:"status,omitempty"` // Status response settings.
+	Query         Query         `yaml:"query,omitempty" json:"query,omitempty"`   // Query settings.
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
@@ -213,7 +222,90 @@ type (
 		VelocitySecret    string         `yaml:"velocitySecret"`    // Used with "velocity" mode
 		BungeeGuardSecret string         `yaml:"bungeeGuardSecret"` // Used with "bungeeguard" mode
 	}
-	Via struct {
+	// IdentityStore stores the UUID a player is known by on the backend
+	// servers in a SQLite database, so that a single account keeps one UUID
+	// whether it logs in authenticated or offline.
+	//
+	// The UUID is decided by the account's first login: it takes whatever
+	// identity that login resolved to (the Mojang UUID, the offline UUID, or a
+	// connection type's supplied identity) and every later login - offline or
+	// authenticated - is assigned that same UUID. A login that resolves to a
+	// UUID no stored account owns registers a new account.
+	IdentityStore struct {
+		Enabled bool `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		// Path is the SQLite database file, relative to Gate's working
+		// directory unless absolute. Its directory is created if missing.
+		// Prefer an absolute path: starting Gate from another working
+		// directory would otherwise open a different, empty database and every
+		// player would be registered again.
+		Path string `yaml:"path,omitempty" json:"path,omitempty"`
+		// FailOpen lets a login continue with the UUID the login flow resolved
+		// to when the store cannot be read. The default (false) rejects the
+		// login instead, because a caller that cannot read its identity cannot
+		// be given the right one.
+		FailOpen bool `yaml:"failOpen,omitempty" json:"failOpen,omitempty"`
+		// KickExistingPlayers disconnects the player who is already online when
+		// the same username logs in again, instead of rejecting the new login.
+		//
+		// It only applies while the store is Enabled: the store is what makes
+		// one username mean one account. Without it the same name can be two
+		// different accounts (an authenticated and an offline one), so kicking
+		// by name could let an offline login displace the authenticated player.
+		KickExistingPlayers bool `yaml:"kickExistingPlayers,omitempty" json:"kickExistingPlayers,omitempty"`
+		// PremiumProtection limits which logins may use an account that is
+		// protected. See PremiumProtection for the modes.
+		PremiumProtection PremiumProtection `yaml:"premiumProtection,omitempty" json:"premiumProtection,omitempty"`
+		// ProtectPremiumAccounts is the deprecated shorthand for
+		// premiumProtection.mode: all. It applies only while
+		// premiumProtection.mode is unset; setting both makes mode win and
+		// Validate warns about it.
+		ProtectPremiumAccounts bool `yaml:"protectPremiumAccounts,omitempty" json:"protectPremiumAccounts,omitempty"`
+	}
+	// PremiumProtection decides which accounts may only be used by an
+	// authenticated login.
+	//
+	// The store records, per username, whether it has ever been logged in with
+	// an authenticated identity. Whether a login may use a protected account
+	// then depends on one thing only: was this session authenticated? An
+	// authenticated login is the authority on who holds a username, so it is
+	// accepted and it marks the username as authenticated for good. Two sources
+	// count as authenticated: the proxy verifying the login with Mojang itself,
+	// and an identity a Connect endpoint that declared it does not accept
+	// offline-mode players supplied (connect.allowOfflineModePlayers false,
+	// which is what makes the tunnel service route only authenticated players
+	// here). Every other login is refused - the username's offline UUID (the
+	// cracked login path, whatever route produced it) and an identity a
+	// connection type supplied without vouching for it, which only means "this
+	// UUID is not the username's offline UUID". Usernames that were never
+	// authenticated are not protected by mode: all, so their owners can still
+	// reach them.
+	//
+	// Two requirements:
+	//   - identityStore.Enabled: the store remembers which accounts have
+	//     authenticated.
+	//   - OnlineMode: the proxy must authenticate logins. With OnlineMode false
+	//     every direct login resolves to an offline identity, so a protected
+	//     account is refused for everyone whose identity is not vouched for by a
+	//     trusted connection type. Validate warns about this combination.
+	PremiumProtection struct {
+		// Mode selects which accounts are protected:
+		//
+		//	none - no protection; identities are still merged into one UUID
+		//	list - only the names and UUIDs in Names
+		//	all  - every account that has authenticated at least once, plus
+		//	       anything in Names
+		//
+		Mode PremiumProtectionMode `yaml:"mode,omitempty" json:"mode,omitempty"`
+		// Names lists usernames and/or UUIDs to protect. Usernames are matched
+		// exactly (case-sensitively), like the accounts in the store, so names
+		// that differ only in case are different accounts. A username protects
+		// that name; a UUID protects whichever account holds it, so it keeps
+		// protecting an account that is renamed.
+		Names []string `yaml:"names,omitempty" json:"names,omitempty"`
+	}
+	// PremiumProtectionMode is a PremiumProtection mode.
+	PremiumProtectionMode string
+	Via                   struct {
 		Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 		Mode        string `yaml:"mode,omitempty" json:"mode,omitempty"`
 		Bind        string `yaml:"bind,omitempty" json:"bind,omitempty"`
@@ -269,6 +361,32 @@ const (
 	// connections created by Gate's authenticated Connect tunnel adapter.
 	OfflineModeUsernameBlacklistScopeConnect OfflineModeUsernameBlacklistScope = "connect"
 )
+
+const (
+	// PremiumProtectionNone protects no account.
+	PremiumProtectionNone PremiumProtectionMode = "none"
+	// PremiumProtectionList protects only the names and UUIDs in
+	// PremiumProtection.Names.
+	PremiumProtectionList PremiumProtectionMode = "list"
+	// PremiumProtectionAll protects every account that has authenticated at
+	// least once, plus anything in PremiumProtection.Names.
+	PremiumProtectionAll PremiumProtectionMode = "all"
+)
+
+// NormalizePremiumProtectionMode maps an unset mode onto none and returns the
+// canonical spelling of the documented modes, ignoring surrounding space and
+// case. Any other value is returned unchanged for Validate to reject: none,
+// list and all are the only modes, and there is no off or false spelling of one.
+func NormalizePremiumProtectionMode(mode PremiumProtectionMode) PremiumProtectionMode {
+	normalized := PremiumProtectionMode(strings.ToLower(strings.TrimSpace(string(mode))))
+	switch normalized {
+	case "":
+		return PremiumProtectionNone
+	case PremiumProtectionNone, PremiumProtectionList, PremiumProtectionAll:
+		return normalized
+	}
+	return mode
+}
 
 // ForwardingMode is a player info forwarding mode.
 type ForwardingMode string
@@ -347,6 +465,21 @@ func (c *Config) Validate() (warns []error, errs []error) {
 		e("Unknown forwarding mode %q, must be one of none,legacy,velocity,bungeeguard", c.Forwarding.Mode)
 	}
 
+	if c.IdentityStore.Enabled && strings.TrimSpace(c.IdentityStore.Path) == "" {
+		e("identityStore.path must not be empty when identityStore.enabled is true")
+	}
+	if c.IdentityStore.KickExistingPlayers && !c.IdentityStore.Enabled {
+		w("identityStore.kickExistingPlayers is ignored while identityStore.enabled is false: " +
+			"without the store the same username can be two accounts, so displacing the player who " +
+			"is already online could let an offline login kick the authenticated player.")
+	}
+	if c.IdentityStore.ProtectPremiumAccounts && !c.IdentityStore.Enabled {
+		w("identityStore.protectPremiumAccounts is ignored while identityStore.enabled is false: " +
+			"without the store nothing remembers which usernames have been authenticated, so an " +
+			"offline login cannot be refused for them.")
+	}
+	validatePremiumProtection(c, e, w)
+
 	if len(c.Servers) == 0 {
 		w("No backend servers configured.")
 	}
@@ -392,6 +525,62 @@ func (c *Config) Validate() (warns []error, errs []error) {
 }
 
 var minecraftUsernamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{2,16}$`)
+
+// validatePremiumProtection checks identityStore.premiumProtection and its
+// deprecated protectPremiumAccounts shorthand.
+func validatePremiumProtection(c *Config, e, w func(string, ...any)) {
+	store := c.IdentityStore
+	protection := store.PremiumProtection
+	mode := protection.Mode
+
+	switch NormalizePremiumProtectionMode(mode) {
+	case PremiumProtectionNone, PremiumProtectionList, PremiumProtectionAll:
+	default:
+		e("Invalid identityStore.premiumProtection.mode %q, must be one of none,list,all", mode)
+	}
+
+	if store.ProtectPremiumAccounts {
+		if mode == "" {
+			w("identityStore.protectPremiumAccounts is deprecated; use " +
+				"identityStore.premiumProtection.mode: all instead.")
+		} else {
+			w("identityStore.protectPremiumAccounts is ignored because " +
+				"identityStore.premiumProtection.mode is set; remove it.")
+		}
+	}
+
+	effective := NormalizePremiumProtectionMode(mode)
+	if mode == "" && store.ProtectPremiumAccounts {
+		effective = PremiumProtectionAll
+	}
+
+	if effective == PremiumProtectionList && len(protection.Names) == 0 {
+		e("identityStore.premiumProtection.names must not be empty when the mode is list")
+	}
+	if effective == PremiumProtectionNone && len(protection.Names) != 0 {
+		w("identityStore.premiumProtection.names is ignored while the mode is none")
+	}
+	for _, entry := range protection.Names {
+		if _, err := uuid.Parse(entry); err == nil {
+			continue
+		}
+		if !minecraftUsernamePattern.MatchString(entry) {
+			e("Invalid identityStore.premiumProtection.names entry %q, "+
+				"must be a Minecraft username or a UUID", entry)
+		}
+	}
+
+	if effective != PremiumProtectionNone && !store.Enabled {
+		w("identityStore.premiumProtection is ignored while identityStore.enabled is false: " +
+			"without the store nothing remembers which accounts have authenticated.")
+	}
+	if effective != PremiumProtectionNone && store.Enabled && !c.OnlineMode {
+		w("identityStore.premiumProtection needs onlineMode: true to work: with onlineMode " +
+			"false every direct login resolves to an offline identity, so protected accounts are " +
+			"refused for everyone, including their owner. Set onlineMode: true, or let a plugin " +
+			"force online mode for the connections that should authenticate.")
+	}
+}
 
 func validateOfflineModeUsernameBlacklist(c *Config, e func(string, ...any)) {
 	switch c.OfflineModeUsernameBlacklistScope {
@@ -461,6 +650,11 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if c.AnnounceForge {
 		w("Lite mode ignores announceForge: status responses are proxied from the backend, " +
 			"which announces its own mods.")
+	}
+
+	if c.IdentityStore.Enabled || c.IdentityStore.Path != DefaultConfig.IdentityStore.Path || c.IdentityStore.FailOpen {
+		w("Lite mode ignores identityStore: Lite pipes the connection through unchanged, so " +
+			"Gate never completes a login and cannot assign a stored UUID. ")
 	}
 
 	if len(c.OfflineModeUsernameBlacklist) != 0 {

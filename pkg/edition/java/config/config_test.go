@@ -789,3 +789,127 @@ func errsContaining(errs []error, substr string) []error {
 	}
 	return found
 }
+
+func TestValidatePremiumProtection(t *testing.T) {
+	validIdentityStore := func() Config {
+		cfg := DefaultConfig
+		cfg.IdentityStore.Enabled = true
+		cfg.IdentityStore.Path = "identities.db"
+		return cfg
+	}
+
+	t.Run("list requires names", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionList
+		_, errs := cfg.Validate()
+		require.Len(t, errsContaining(errs, "premiumProtection.names must not be empty"), 1)
+	})
+
+	t.Run("unknown mode is an error", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.PremiumProtection.Mode = "bogus"
+		_, errs := cfg.Validate()
+		require.Len(t, errsContaining(errs, "premiumProtection.mode"), 1)
+	})
+
+	t.Run("invalid name entry is an error", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionList
+		cfg.IdentityStore.PremiumProtection.Names = []string{"not a name!"}
+		_, errs := cfg.Validate()
+		require.Len(t, errsContaining(errs, "premiumProtection.names entry"), 1)
+	})
+
+	t.Run("uuid entries are accepted", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionList
+		cfg.IdentityStore.PremiumProtection.Names = []string{"8707e474-7b5c-4d02-bba7-e577504c7656"}
+		_, errs := cfg.Validate()
+		require.Empty(t, errsContaining(errs, "premiumProtection"))
+	})
+
+	t.Run("names are ignored while the mode is none", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.PremiumProtection.Names = []string{"Steve"}
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "premiumProtection.names is ignored while the mode is none")
+	})
+
+	t.Run("deprecated alias warns and still applies", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.ProtectPremiumAccounts = true
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "protectPremiumAccounts is deprecated")
+	})
+
+	t.Run("mode wins over the deprecated alias", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.IdentityStore.ProtectPremiumAccounts = true
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionList
+		cfg.IdentityStore.PremiumProtection.Names = []string{"Steve"}
+		warns, errs := cfg.Validate()
+		require.Empty(t, errs)
+		requireWarnContains(t, warns, "protectPremiumAccounts is ignored")
+	})
+
+	t.Run("offline mode cannot authenticate protected accounts", func(t *testing.T) {
+		cfg := validIdentityStore()
+		cfg.OnlineMode = false
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionAll
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "needs onlineMode: true to work")
+	})
+
+	t.Run("protection without the store warns", func(t *testing.T) {
+		cfg := DefaultConfig
+		cfg.IdentityStore.PremiumProtection.Mode = PremiumProtectionAll
+		warns, _ := cfg.Validate()
+		requireWarnContains(t, warns, "while identityStore.enabled is false")
+	})
+}
+
+// The mode has exactly three values. The boolean spellings such a field invites
+// (off, false, no, 0) are configuration errors rather than synonyms, while an
+// unset mode means none and the spelling of a valid mode may vary in case and
+// surrounding space.
+func TestPremiumProtectionModeSpellings(t *testing.T) {
+	cfgWithMode := func(mode PremiumProtectionMode) Config {
+		cfg := DefaultConfig
+		cfg.IdentityStore.Enabled = true
+		cfg.IdentityStore.Path = "identities.db"
+		cfg.IdentityStore.PremiumProtection.Mode = mode
+		cfg.IdentityStore.PremiumProtection.Names = []string{"Steve"}
+		return cfg
+	}
+
+	t.Run("valid modes normalize", func(t *testing.T) {
+		for written, want := range map[string]PremiumProtectionMode{
+			"":       PremiumProtectionNone,
+			"none":   PremiumProtectionNone,
+			"list":   PremiumProtectionList,
+			"all":    PremiumProtectionAll,
+			" none ": PremiumProtectionNone,
+			"ALL":    PremiumProtectionAll,
+			"List":   PremiumProtectionList,
+		} {
+			cfg := cfgWithMode(PremiumProtectionMode(written))
+			_, errs := cfg.Validate()
+			require.Empty(t, errsContaining(errs, "premiumProtection.mode"), "%q must be accepted", written)
+			require.Equal(t, want, NormalizePremiumProtectionMode(PremiumProtectionMode(written)))
+		}
+	})
+
+	t.Run("everything else is rejected", func(t *testing.T) {
+		for _, written := range []string{"off", "OFF", "false", "true", "no", "0", "enabled", "bogus"} {
+			cfg := cfgWithMode(PremiumProtectionMode(written))
+			_, errs := cfg.Validate()
+			require.Len(t, errsContaining(errs, "must be one of none,list,all"), 1,
+				"%q must be a configuration error", written)
+			require.Equal(t, PremiumProtectionMode(written),
+				NormalizePremiumProtectionMode(PremiumProtectionMode(written)),
+				"an invalid mode must stay unchanged for Validate to reject")
+		}
+	})
+}
