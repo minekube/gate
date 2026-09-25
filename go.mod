@@ -36,7 +36,7 @@ require (
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
 	go.minekube.com/connect v0.6.3-0.20260803141147-8001cda93b1d
-	go.minekube.com/geyserlite v0.5.29
+	go.minekube.com/geyserlite v0.5.30
 	go.minekube.com/vialite v0.3.2
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
 	go.opentelemetry.io/otel v1.46.0
@@ -60,7 +60,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
-	github.com/ebitengine/purego v0.11.0 // indirect
+	github.com/ebitengine/purego v0.11.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
