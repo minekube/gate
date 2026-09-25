@@ -763,6 +763,22 @@ func TestViaManagedRunnerOptionsAllowDynamicBackendsWithoutConfiguredServers(t *
 	}
 }
 
+// The ViaLite runtime's "resolved runtime" startup line (artifact version +
+// provenance) only reaches the Gate console when Gate hands it a logger.
+func TestViaManagedRunnerOptionsPassRuntimeLogger(t *testing.T) {
+	cfg := &config.Config{
+		Via: config.Via{Enabled: true},
+	}
+
+	opts, err := newViaManagedRunner(cfg).options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	if opts.Logger == nil {
+		t.Fatal("options().Logger = nil, want the Gate logger so the runtime can report the resolved version and provenance")
+	}
+}
+
 func TestViaModeDefaults(t *testing.T) {
 	tests := []struct {
 		name        string
