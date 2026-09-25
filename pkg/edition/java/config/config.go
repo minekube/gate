@@ -213,15 +213,37 @@ type (
 		VelocitySecret    string         `yaml:"velocitySecret"`    // Used with "velocity" mode
 		BungeeGuardSecret string         `yaml:"bungeeGuardSecret"` // Used with "bungeeguard" mode
 	}
+	// Via configures managed ViaLite support: Via-powered Java protocol
+	// translation for backend connections, Gate classic only. Gate accepts the
+	// player and picks a backend; ViaLite translates the backend-facing protocol
+	// when client and backend versions differ.
 	Via struct {
-		Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty"`
-		Mode        string `yaml:"mode,omitempty" json:"mode,omitempty"`
-		Bind        string `yaml:"bind,omitempty" json:"bind,omitempty"`
+		// Enabled starts the managed ViaLite runtime for backend connections.
+		Enabled bool `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		// Mode is "subprocess" (portable default) or "embedded" (in-process
+		// shared library). Empty means subprocess.
+		Mode string `yaml:"mode,omitempty" json:"mode,omitempty"`
+		// Bind is the runtime's internal loopback bind address. Empty picks a
+		// free port on 127.0.0.1.
+		Bind string `yaml:"bind,omitempty" json:"bind,omitempty"`
+		// LibraryPath uses that shared library instead of resolving one.
 		LibraryPath string `yaml:"libraryPath,omitempty" json:"libraryPath,omitempty"`
-		BinaryPath  string `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`
-		Version     string `yaml:"version,omitempty" json:"version,omitempty"`
-		Mirror      string `yaml:"mirror,omitempty" json:"mirror,omitempty"`
-		Offline     bool   `yaml:"offline,omitempty" json:"offline,omitempty"`
+		// BinaryPath uses that vialite binary for subprocess mode.
+		BinaryPath string `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`
+		// Version selects the runtime release. Empty, "auto" and "latest" all
+		// mean the newest stable ViaLite release, resolved once at startup, so a
+		// newly published runtime applies on the next Gate restart (there is no
+		// hot swap). This is independent of the Go module version Gate links.
+		// With Mirror set, the mirror's own latest release is used; a mirror that
+		// cannot report one falls back to a compiled-in release and logs a
+		// warning. Set an exact tag such as "v0.3.1" to pin a rollout.
+		Version string `yaml:"version,omitempty" json:"version,omitempty"`
+		// Mirror overrides the release download base (GitHub release URL layout,
+		// optionally serving <mirror>/latest for version resolution).
+		Mirror string `yaml:"mirror,omitempty" json:"mirror,omitempty"`
+		// Offline disables runtime downloads entirely: BinaryPath/LibraryPath, an
+		// embedded artifact, or one on $PATH must be present.
+		Offline bool `yaml:"offline,omitempty" json:"offline,omitempty"`
 	}
 	Compression struct {
 		Threshold int `yaml:"threshold"`

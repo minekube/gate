@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"runtime"
 	"strings"
@@ -345,6 +346,7 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		Version:              r.cfg.Via.Version,
 		Mirror:               r.cfg.Via.Mirror,
 		Offline:              r.cfg.Via.Offline,
+		Logger:               viaLogger(),
 		AllowDynamicBackends: true,
 		Backends:             make([]vialite.Backend, 0, len(r.cfg.Servers)),
 	}
@@ -356,6 +358,15 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		})
 	}
 	return opts, nil
+}
+
+// viaLogger is the logger handed to the ViaLite runtime. The runtime logs one
+// "resolved runtime" line per start naming the artifact version and where it
+// came from (download, cache, embedded, local path), which is how an operator
+// or supporter tells which runtime - and therefore which ViaVersion protocol
+// ceiling - the proxy is actually running.
+func viaLogger() *slog.Logger {
+	return slog.Default().With("component", "vialite")
 }
 
 func viaMode(mode, goos, libraryPath string) vialite.Mode {
