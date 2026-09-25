@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.12](https://github.com/minekube/gate/compare/v0.74.11...v0.74.12) (2026-09-25)
+
+
+### Bug Fixes
+
+* **via:** document runtime resolution + log the resolved ViaLite runtime ([#1179](https://github.com/minekube/gate/issues/1179)) ([04466a4](https://github.com/minekube/gate/commit/04466a48c362ee43f6c73dc84ba34f9e98c028a1))
+
 ## [0.74.11](https://github.com/minekube/gate/compare/v0.74.10...v0.74.11) (2026-09-22)
 
 
