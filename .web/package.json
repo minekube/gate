@@ -20,7 +20,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@cloudflare/workers-types": "5.20260919.1",
-    "@types/node": "^20.14.0",
+    "@types/node": "^24.0.0",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.20",
     "tailwindcss": "^3.2.4",
