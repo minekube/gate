@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.16](https://github.com/minekube/gate/compare/v0.74.15...v0.74.16) (2026-09-26)
+
+
+### Bug Fixes
+
+* **bedrock:** fail fast when the managed Bedrock UDP port is already in use ([#1190](https://github.com/minekube/gate/issues/1190)) ([189bf79](https://github.com/minekube/gate/commit/189bf7901156ab230cffacfae1b78cc77a8e2d50))
+
 ## [0.74.15](https://github.com/minekube/gate/compare/v0.74.14...v0.74.15) (2026-09-26)
 
 
