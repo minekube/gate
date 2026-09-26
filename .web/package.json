@@ -27,7 +27,7 @@
     "typescript": "^5.9.3",
     "vitepress": "^1.6.4",
     "vue": "^3.2.45",
-    "wrangler": "4.135.0"
+    "wrangler": "4.141.0"
   },
   "postcss": {
     "plugins": {
