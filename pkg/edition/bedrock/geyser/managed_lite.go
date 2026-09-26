@@ -24,11 +24,17 @@ type liteManagedRunner struct {
 	done      chan struct{}
 	err       error
 	mu        sync.Mutex
+	// startupTimeout bounds how long Start waits for the runtime to become
+	// healthy. It is a field rather than the liteManagedStartupTimeout constant
+	// so tests can exercise the backstop without waiting ten minutes; production
+	// always uses the constant.
+	startupTimeout time.Duration
 }
 
 func newLiteManagedRunner(cfg *config.Config) *liteManagedRunner {
 	return &liteManagedRunner{
-		cfg: cfg,
+		cfg:            cfg,
+		startupTimeout: liteManagedStartupTimeout,
 		newServer: func(opts geyserlite.Options) (geyserliteServer, error) {
 			return geyserlite.New(opts)
 		},
@@ -69,6 +75,14 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 		r.mu.Unlock()
 		return fmt.Errorf("geyserlite already running")
 	}
+	// A foreign listener on the Bedrock UDP port is knowable before the runtime
+	// is spawned. Report it now instead of letting the runtime spin unbound
+	// until liteManagedStartupTimeout, which only delays the proxy shutdown
+	// that drops every connected Java player.
+	if err := r.checkBedrockListenPort(); err != nil {
+		r.mu.Unlock()
+		return err
+	}
 
 	opts, err := r.options()
 	if err != nil {
@@ -104,7 +118,7 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 
 	ticker := time.NewTicker(liteManagedReadyPoll)
 	defer ticker.Stop()
-	timeout := time.NewTimer(liteManagedStartupTimeout)
+	timeout := time.NewTimer(r.startupTimeout)
 	defer timeout.Stop()
 
 	for {
@@ -123,7 +137,7 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 		case <-timeout.C:
 			cancel()
 			r.clearRun(done)
-			return fmt.Errorf("timed out after %s waiting for geyserlite to become healthy", liteManagedStartupTimeout)
+			return fmt.Errorf("timed out after %s waiting for geyserlite to become healthy", r.startupTimeout)
 		case <-ctx.Done():
 			cancel()
 			r.clearRun(done)

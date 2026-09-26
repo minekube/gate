@@ -197,6 +197,11 @@ func TestLiteManagedRunnerStartWaitsUntilHealthy(t *testing.T) {
 	}
 
 	fake := &fakeGeyserliteServer{started: make(chan struct{})}
+	// A free port keeps the fail-fast Bedrock port check honest without
+	// depending on the host's default Bedrock port being unbound.
+	cfg.Managed.ConfigOverrides = map[string]any{
+		"bedrock": map[string]any{"port": freeUDPPort(t)},
+	}
 	runner := newLiteManagedRunner(cfg)
 	runner.newServer = func(geyserlite.Options) (geyserliteServer, error) {
 		return fake, nil
@@ -246,7 +251,14 @@ func TestLiteManagedRunnerReportsExitAfterHealthy(t *testing.T) {
 	runner := newLiteManagedRunner(&config.Config{
 		GeyserListenAddr: "localhost:25567",
 		FloodgateKeyPath: keyPath,
-		Managed:          &config.ManagedGeyser{Enabled: true, Engine: config.ManagedEngineGeyserlite},
+		Managed: &config.ManagedGeyser{
+			Enabled: true,
+			Engine:  config.ManagedEngineGeyserlite,
+			// See TestLiteManagedRunnerStartWaitsUntilHealthy.
+			ConfigOverrides: map[string]any{
+				"bedrock": map[string]any{"port": freeUDPPort(t)},
+			},
+		},
 	})
 	runner.newServer = func(geyserlite.Options) (geyserliteServer, error) { return fake, nil }
 
