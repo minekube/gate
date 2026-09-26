@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	connectrpc.com/connect v1.21.0
-	connectrpc.com/otelconnect v0.9.0
+	connectrpc.com/otelconnect v0.10.0
 	github.com/Tnze/go-mc v1.20.2
 	github.com/agext/levenshtein v1.2.3
 	github.com/coder/websocket v1.8.15
