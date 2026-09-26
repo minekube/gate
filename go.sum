@@ -185,8 +185,12 @@ github.com/sagikazarmark/locafero v0.12.0 h1:/NQhBAkUb4+fH1jivKHWusDYFjMOOKU88ee
 github.com/sagikazarmark/locafero v0.12.0/go.mod h1:sZh36u/YSZ918v0Io+U9ogLYQJ9tLLBmM4eneO6WwsI=
 github.com/sandertv/go-raknet v1.13.0 h1:Jkovqz4FrBP7PCIBBirBRoWm7mQKNP/UTYbOOyBK1TY=
 github.com/sandertv/go-raknet v1.13.0/go.mod h1:E/DgMFQUMvWOvXwQRLEsTNOoYqzNubfcgzqL0nMoPso=
+github.com/sandertv/go-raknet v1.15.2-0.20260705184311-0d1fd09e2cf6 h1:Oj7QsiwWTOLmCpOjjmW0Qwde4BE8F5+Kjz817qzICyk=
+github.com/sandertv/go-raknet v1.15.2-0.20260705184311-0d1fd09e2cf6/go.mod h1:/yysjwfCXm2+2OY8mBazLzcxJ3irnylKCyG3FLgUPVU=
 github.com/sandertv/gophertunnel v1.37.0 h1:yPzOp4W1GahLjtxldXa5K25saJK/XG7SiyEt6oMjm0I=
 github.com/sandertv/gophertunnel v1.37.0/go.mod h1:4El8ZfEpUmOMIJhPt5SCc1PyLNiuQ2+grWczrBvSGVs=
+github.com/sandertv/gophertunnel v1.62.0 h1:n+CBO0ngnlURV3DMCe9uq9KtZbr8sK1/Z5mYhGO9Wq4=
+github.com/sandertv/gophertunnel v1.62.0/go.mod h1:LZsch9elPoPzsJGDbx7ClWEHFjgHZ/lONvXF7m16Qn8=
 github.com/segmentio/fasthash v1.0.3 h1:EI9+KE1EwvMLBWwjpRDc+fEM+prwxDYbslddQGtrmhM=
 github.com/segmentio/fasthash v1.0.3/go.mod h1:waKX8l2N8yckOgmSsXJi7x1ZfdKZ4x7KRMzBtS3oedY=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
