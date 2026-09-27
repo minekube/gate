@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.20](https://github.com/minekube/gate/compare/v0.74.19...v0.74.20) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** do not start a Connect runtime after Gate was asked to stop ([#1199](https://github.com/minekube/gate/issues/1199)) ([fb95a13](https://github.com/minekube/gate/commit/fb95a137d6879abd8164469fc32988d52180b651))
+
 ## [0.74.19](https://github.com/minekube/gate/compare/v0.74.18...v0.74.19) (2026-09-27)
 
 
