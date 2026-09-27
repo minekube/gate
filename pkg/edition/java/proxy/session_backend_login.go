@@ -359,6 +359,13 @@ func (b *backendLoginSessionHandler) Disconnected() {
 	// A backend that accepted the connection and never answered otherwise ends
 	// here as a generic, silent disconnect; name it instead.
 	b.serverConn.reportStalledBackend(b.log)
+	// A dynamic backend behind the translation bridge never answered because the
+	// bridge could not reach it: report what the bridge saw (backend, bridge
+	// address, stage) instead of the generic closed-connection message.
+	if failure := b.serverConn.bridgeDialFailed(); failure != nil {
+		b.requestCtx.result(nil, errs.WrapSilent(failure))
+		return
+	}
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode || b.config().Forwarding.Mode == config.BungeeGuardForwardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
