@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.27](https://github.com/minekube/gate/compare/v0.74.26...v0.74.27) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** read the discovered config file with delete sharing too ([#1218](https://github.com/minekube/gate/issues/1218)) ([0322ec1](https://github.com/minekube/gate/commit/0322ec107698cdd763a564692e2a645df985b090))
+
 ## [0.74.26](https://github.com/minekube/gate/compare/v0.74.25...v0.74.26) (2026-09-27)
 
 
