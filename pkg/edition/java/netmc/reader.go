@@ -97,6 +97,9 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 // This fires at most once per connection, immediately before it is closed, so a
 // misbehaving backend cannot flood the log with it either.
 func (r *reader) logCloseErr(err error) {
+	class, observed, limit := classifyTerminalReadError(err)
+	observeMinecraftTerminalIO(r.c, terminalIODirectionRead, class, observed, limit)
+
 	var frameErr *codec.FrameTooLargeError
 	if r.direction == proto.ClientBound && errors.As(err, &frameErr) {
 		r.log.Error(err, "backend server sent a packet frame larger than the maximum allowed, closing connection",

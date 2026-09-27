@@ -392,6 +392,7 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	if err == nil {
 		return
 	}
+	observeMinecraftTerminalIO(c.c, terminalIODirectionWrite, classifyTerminalWriteError(err), 0, 0)
 	_ = c.Close()
 	if errors.Is(err, ErrClosedConn) {
 		return // Don't log this error
