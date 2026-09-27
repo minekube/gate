@@ -96,6 +96,13 @@ func retryingRunnable(r process.Runnable, afterFns ...func()) process.Runnable {
 						"error", err, "retryAfter", after.String())
 				}
 				sleep(ctx, after)
+				if ctx.Err() != nil {
+					// The context ended while backing off: do not start another
+					// attempt. A stopped watch client must not keep running, e.g.
+					// re-provision its token file after Gate asked it to stop. It
+					// stopped because it was asked to, so it reports no error.
+					return nil
+				}
 				continue // retry
 			}
 			return nil

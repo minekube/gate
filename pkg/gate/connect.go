@@ -3,7 +3,9 @@ package gate
 import (
 	"bytes"
 	"context"
+	"errors"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -14,6 +16,27 @@ import (
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 )
+
+// connectStopTimeout bounds how long a Connect runtime is given to stop before
+// Gate stops waiting for it. It stays well below the process collection's own
+// graceful shutdown period (30s) so a Connect runtime that cannot stop does not
+// push Gate's own shutdown past its grace period.
+const connectStopTimeout = 10 * time.Second
+
+// errConnectStopTimeout reports a Connect runtime that did not stop in time.
+var errConnectStopTimeout = errors.New("Connect did not stop within the shutdown timeout")
+
+// newConnectRuntime builds the Connect runtime for a config. It is a variable so
+// tests can substitute a runtime whose shutdown they control.
+var newConnectRuntime = connectcfg.New
+
+// connectRuntime is a running Connect runtime (watch client, optionally the
+// self-hosted Connect service) whose shutdown can be awaited.
+type connectRuntime struct {
+	stop context.CancelFunc
+	// done is closed once the runtime's runnable returned.
+	done chan struct{}
+}
 
 // Setup Connect with reload support
 func setupConnect(
@@ -27,11 +50,34 @@ func setupConnect(
 		ctx = logr.NewContext(ctx, log)
 
 		var (
-			mu          sync.Mutex
-			stopConnect context.CancelFunc
+			mu sync.Mutex
+			// running is the runtime started for the current Connect config,
+			// nil if none is running.
+			running *connectRuntime
 			// keep track of current config hash to avoid unnecessary restarts when config didn't change
 			currentConfigHash []byte
 		)
+
+		// stopRunning stops the current runtime and waits (bounded) for it to
+		// return, so a stopped or superseded connector can never keep running:
+		// it would keep dialing the watch service and rewriting the token file
+		// after Gate reported that it stopped. Callers hold mu.
+		stopRunning := func() {
+			if running == nil {
+				return
+			}
+			r := running
+			running = nil
+			r.stop()
+			select {
+			case <-r.done:
+			case <-time.After(connectStopTimeout):
+				log.Error(errConnectStopTimeout,
+					"Connect is still running after the stop timeout",
+					"timeout", connectStopTimeout.String())
+			}
+		}
+
 		trigger := func(c *config.Config) {
 			connect := c.Connect
 			// Connect is always supported now that Java is embedded
@@ -54,24 +100,25 @@ func setupConnect(
 			}
 			currentConfigHash = newConfigHash
 
-			// stop current Connect if running
-			if stopConnect != nil {
-				stopConnect()
-				stopConnect = nil
-			}
+			// Stop the current Connect and wait for it before starting its
+			// replacement: two connectors must never watch for the same
+			// endpoint (and provision the same token file) at once.
+			stopRunning()
 
-			runnable, err := connectcfg.New(connect, instance)
+			runnable, err := newConnectRuntime(connect, instance)
 			if err != nil {
 				log.Error(err, "error setting up Connect")
 				return
 			}
 
-			var runCtx context.Context
-			runCtx, stopConnect = context.WithCancel(ctx)
+			runCtx, stop := context.WithCancel(ctx)
+			r := &connectRuntime{stop: stop, done: make(chan struct{})}
+			running = r
 
 			go func() {
-				defer stopConnect()
-				if err = runnable.Start(runCtx); err != nil {
+				defer close(r.done)
+				defer stop()
+				if err := runnable.Start(runCtx); err != nil {
 					log.Error(err, "error with Connect")
 					return
 				}
@@ -86,6 +133,10 @@ func setupConnect(
 		trigger(c)
 
 		<-ctx.Done()
+		mu.Lock()
+		defer mu.Unlock()
+		// Gate is stopped only after the Connect runtime it started returned.
+		stopRunning()
 		return nil
 	}))
 }
