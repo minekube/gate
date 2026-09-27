@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.28](https://github.com/minekube/gate/compare/v0.74.27...v0.74.28) (2026-09-27)
+
+
+### Bug Fixes
+
+* **netmc:** name the packet that closes a backend connection ([#1221](https://github.com/minekube/gate/issues/1221)) ([0a3f8e7](https://github.com/minekube/gate/commit/0a3f8e7ab87d4a1adb8246f5b3919b94f4498689))
+
 ## [0.74.27](https://github.com/minekube/gate/compare/v0.74.26...v0.74.27) (2026-09-27)
 
 
