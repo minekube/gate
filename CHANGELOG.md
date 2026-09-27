@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.26](https://github.com/minekube/gate/compare/v0.74.25...v0.74.26) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** read config content with delete sharing so a Windows editor's save is not refused ([#1215](https://github.com/minekube/gate/issues/1215)) ([25a1c6f](https://github.com/minekube/gate/commit/25a1c6febb663a221d6383abbf1dc38cf1b4f48c))
+
 ## [0.74.25](https://github.com/minekube/gate/compare/v0.74.24...v0.74.25) (2026-09-27)
 
 
