@@ -128,6 +128,27 @@ func (s *serverConnection) reportStalledBackend(log logr.Logger) {
 	}
 }
 
+// bridgeDialFailed reports why the translation bridge could not reach the
+// dynamic backend this connection was dialled for, if this join went through a
+// bridge and the bridge could not dial it.
+//
+// The bridge's own failure names the backend, the bridge address the hop dials
+// and the stage, which is strictly more useful than the generic
+// closed-connection message every other backend teardown gets - and it is the
+// only report of a dial that never answered at all.
+func (s *serverConnection) bridgeDialFailed() error {
+	if s == nil {
+		return nil
+	}
+	s.mu.RLock()
+	failure := s.bridgeDialFailure
+	s.mu.RUnlock()
+	if failure == nil {
+		return nil
+	}
+	return failure()
+}
+
 // logStalledBackend logs the two shapes of a stalled backend that used to be
 // silent:
 //

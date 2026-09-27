@@ -359,7 +359,7 @@ func TestViaServerInfoDialCloseSkipsUnclaimedRequestOnRetry(t *testing.T) {
 		connections: make(chan net.Conn, 2),
 		dialed:      make(chan Player, 2),
 	}
-	bridge, err := newViaBackendBridge(original)
+	bridge, err := newViaBackendBridge(original, original.Name(), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -427,7 +427,7 @@ func TestViaBackendBridgeClaimSurvivesRequestContextCancellation(t *testing.T) {
 		connections: make(chan net.Conn, 1),
 		dialed:      make(chan Player, 1),
 	}
-	bridge, err := newViaBackendBridge(original)
+	bridge, err := newViaBackendBridge(original, original.Name(), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,7 +435,7 @@ func TestViaBackendBridgeClaimSurvivesRequestContextCancellation(t *testing.T) {
 
 	requestCtx, cancelRequest := context.WithCancel(context.Background())
 	defer cancelRequest()
-	cancelBridge, err := bridge.Prepare(requestCtx, nil)
+	cancelBridge, _, err := bridge.Prepare(requestCtx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -633,13 +633,13 @@ func TestViaBackendBridgePrepareHonorsCallerCancelWhenQueueFull(t *testing.T) {
 		addr:        mustParseAddr("127.0.0.1:25566"),
 		connections: make(chan net.Conn, 1),
 		dialed:      make(chan Player, 1),
-	})
+	}, "connect-session-1", 0)
 	if err != nil {
 		t.Fatalf("newViaBackendBridge: %v", err)
 	}
 	defer bridge.Close()
 	for i := 0; i < cap(bridge.requests); i++ {
-		cancel, err := bridge.Prepare(context.Background(), nil)
+		cancel, _, err := bridge.Prepare(context.Background(), nil)
 		if err != nil {
 			t.Fatalf("fill request %d: %v", i, err)
 		}
@@ -647,7 +647,7 @@ func TestViaBackendBridgePrepareHonorsCallerCancelWhenQueueFull(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := bridge.Prepare(ctx, nil); !errors.Is(err, context.Canceled) {
+	if _, _, err := bridge.Prepare(ctx, nil); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Prepare with full queue and canceled context = %v, want context.Canceled", err)
 	}
 }
@@ -839,6 +839,13 @@ type fakeVialiteServer struct {
 	viaAddr  string
 	addErr   error
 
+	// useBackendAddress makes AddBackend report the address the runner asked to
+	// register (vialite.Backend.Address) instead of viaAddr. A dynamic backend
+	// backed by a ServerDialer is registered under the bridge's loopback address,
+	// and a real runtime reports exactly that address back, so Gate dials the
+	// bridge. Tests that drive the bridge set this.
+	useBackendAddress bool
+
 	// Runtime-death simulation: when die is set, Start blocks until die is closed
 	// (or the context ends) and then returns startErr - exactly what the runtime
 	// module does when the native process exits. Dead backends then report
@@ -893,6 +900,9 @@ func (f *fakeVialiteServer) AddBackend(ctx context.Context, backend vialite.Back
 		f.added = map[string]vialite.Backend{}
 	}
 	addr := f.viaAddr
+	if addr == "" && f.useBackendAddress {
+		addr = backend.Address
+	}
 	if addr == "" {
 		addr = "127.0.0.1:25590"
 	}

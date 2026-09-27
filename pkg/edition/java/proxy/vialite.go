@@ -16,6 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	"go.minekube.com/gate/pkg/edition/java/config"
 	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
 	vialite "go.minekube.com/vialite"
@@ -390,7 +392,7 @@ func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, int
 	}
 	var cleanup interface{ Close() error }
 	if dialer, ok := info.(ServerDialer); ok {
-		bridge, err := newViaBackendBridge(dialer)
+		bridge, err := newViaBackendBridge(dialer, info.Name(), r.bridgeDialTimeout())
 		if err != nil {
 			return vialite.Backend{}, nil, err
 		}
@@ -438,17 +440,61 @@ func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error
 	return nil
 }
 
-func (r *viaManagedRunner) prepareBackendDial(ctx context.Context, name string, player Player) (func(), error) {
+func (r *viaManagedRunner) prepareBackendDial(ctx context.Context, name string, player Player) (*viaBridgeDial, error) {
 	if r == nil {
-		return func() {}, nil
+		return &viaBridgeDial{}, nil
 	}
 	r.mu.Lock()
 	dynamic := r.dynamicBackends[strings.ToLower(name)]
 	r.mu.Unlock()
 	if dynamic == nil || dynamic.bridge == nil {
-		return func() {}, nil
+		return &viaBridgeDial{}, nil
 	}
-	return dynamic.bridge.Prepare(ctx, player)
+	release, failure, err := dynamic.bridge.Prepare(ctx, player)
+	if err != nil {
+		return nil, err
+	}
+	return &viaBridgeDial{cancel: release, failure: failure}, nil
+}
+
+// viaBridgeDial is the per-join state of a translation bridge request: releasing
+// an unclaimed request, and reading the failure the bridge recorded for it.
+type viaBridgeDial struct {
+	cancel  func()
+	failure func() error
+}
+
+func (d *viaBridgeDial) Cancel() {
+	if d != nil && d.cancel != nil {
+		d.cancel()
+	}
+}
+
+func (d *viaBridgeDial) Failure() error {
+	if d == nil || d.failure == nil {
+		return nil
+	}
+	return d.failure()
+}
+
+// bridgeDialTimeout is the budget for the bridge's dial of a dynamic backend,
+// in the units `connectionTimeout` is documented in.
+//
+// The bridge cannot inherit that budget from the join: a bridge request context
+// is deliberately detached from the join (context.WithoutCancel in Prepare, so a
+// claimed bridge is not cancelled when the connection request context ends),
+// and that detachment drops the join's deadline with it. Left unbounded, a
+// dynamic backend that never answers keeps the bridge - and therefore the join -
+// waiting with nothing naming the backend, the bridge address or the stage.
+// Zero (unset or explicitly disabled) keeps the historical unbounded behaviour.
+func (r *viaManagedRunner) bridgeDialTimeout() time.Duration {
+	if r == nil || r.cfg == nil {
+		return 0
+	}
+	if d := time.Duration(r.cfg.ConnectionTimeout); d > 0 {
+		return d
+	}
+	return 0
 }
 
 func (r *viaManagedRunner) options() (vialite.Options, error) {
@@ -633,22 +679,22 @@ func newViaServerInfo(info ServerInfo, via *viaManagedRunner) ServerInfo {
 }
 
 func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, error) {
-	cancelBridge, err := i.via.prepareBackendDial(ctx, i.Name(), player)
+	dial, err := i.via.prepareBackendDial(ctx, i.Name(), player)
 	if err != nil {
 		return nil, err
 	}
 	addr, err := i.via.BackendDialAddress(i.Name())
 	if err != nil {
-		cancelBridge()
+		dial.Cancel()
 		return nil, err
 	}
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
-		cancelBridge()
+		dial.Cancel()
 		return nil, err
 	}
-	return &viaBridgeDialConn{Conn: conn, cancelBridge: cancelBridge}, nil
+	return &viaBridgeDialConn{Conn: conn, cancelBridge: dial.Cancel, bridgeFailure: dial.Failure}, nil
 }
 
 // viaBridgeDialConn cancels an unclaimed bridge request when the corresponding
@@ -656,12 +702,24 @@ func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, erro
 // connection-request contexts can end after a backend bridge is claimed.
 type viaBridgeDialConn struct {
 	net.Conn
-	cancelBridge context.CancelFunc
+	cancelBridge  context.CancelFunc
+	bridgeFailure func() error
 }
 
 func (c *viaBridgeDialConn) Close() error {
 	c.cancelBridge()
 	return c.Conn.Close()
+}
+
+// BridgeDialFailure reports why the translation bridge could not reach the
+// dynamic backend behind this connection, if it could not. The join that was
+// waiting on the bridge turns this into its own failure message instead of the
+// generic closed-connection one.
+func (c *viaBridgeDialConn) BridgeDialFailure() error {
+	if c.bridgeFailure == nil {
+		return nil
+	}
+	return c.bridgeFailure()
 }
 
 type viaBridgeRequest struct {
@@ -671,6 +729,43 @@ type viaBridgeRequest struct {
 
 	mu      sync.Mutex
 	claimed bool
+
+	// failure is the bridge's dial failure for this request, if any. It travels
+	// with the request so the join waiting on it reports the cause the bridge
+	// saw instead of a generic closed connection.
+	failure atomic.Pointer[viaBridgeRequestFailure]
+}
+
+type viaBridgeRequestFailure struct {
+	err error
+}
+
+func (r *viaBridgeRequest) fail(err error) {
+	if err != nil {
+		r.failure.Store(&viaBridgeRequestFailure{err: err})
+	}
+}
+
+func (r *viaBridgeRequest) err() error {
+	if f := r.failure.Load(); f != nil {
+		return f.err
+	}
+	return nil
+}
+
+// viaBridgeDialStage names the phase a dynamic backend's bridge dial belongs to,
+// so a failed or stalled dial is reported as a stage of the join rather than as
+// an unexplained closed connection.
+const viaBridgeDialStage = "bridge-dial"
+
+// bridgeDialFailureError is the failure a join gets when the translation bridge
+// could not reach its dynamic backend. It names the backend, the bridge address
+// the hop dials and the stage, which is what separates it from a backend that
+// spoke and stopped (reported by its own stall diagnostic) and from a runtime
+// that is not running at all.
+func bridgeDialFailureError(name, address string, cause error) error {
+	return fmt.Errorf("vialite: the translation bridge could not reach dynamic backend %q "+
+		"(bridge address %s, stage: %s): %w", name, address, viaBridgeDialStage, cause)
 }
 
 func (r *viaBridgeRequest) cancelIfUnclaimed() {
@@ -692,23 +787,27 @@ func (r *viaBridgeRequest) claim() bool {
 }
 
 type viaBackendBridge struct {
-	ln       net.Listener
-	dialer   ServerDialer
-	requests chan *viaBridgeRequest
-	done     chan struct{}
-	close    sync.Once
+	ln          net.Listener
+	dialer      ServerDialer
+	name        string
+	dialTimeout time.Duration
+	requests    chan *viaBridgeRequest
+	done        chan struct{}
+	close       sync.Once
 }
 
-func newViaBackendBridge(dialer ServerDialer) (*viaBackendBridge, error) {
+func newViaBackendBridge(dialer ServerDialer, name string, dialTimeout time.Duration) (*viaBackendBridge, error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
 	b := &viaBackendBridge{
-		ln:       ln,
-		dialer:   dialer,
-		requests: make(chan *viaBridgeRequest, 1024),
-		done:     make(chan struct{}),
+		ln:          ln,
+		dialer:      dialer,
+		name:        name,
+		dialTimeout: dialTimeout,
+		requests:    make(chan *viaBridgeRequest, 1024),
+		done:        make(chan struct{}),
 	}
 	go b.accept()
 	return b, nil
@@ -718,18 +817,20 @@ func (b *viaBackendBridge) Addr() net.Addr {
 	return b.ln.Addr()
 }
 
-func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
+// Prepare queues one join's bridge request and returns the release function for
+// an unclaimed request plus the reader of the bridge's dial failure for it.
+func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), func() error, error) {
 	streamCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	req := &viaBridgeRequest{ctx: streamCtx, player: player, cancel: cancel}
 	select {
 	case b.requests <- req:
-		return req.cancelIfUnclaimed, nil
+		return req.cancelIfUnclaimed, req.err, nil
 	case <-b.done:
 		cancel()
-		return nil, net.ErrClosed
+		return nil, nil, net.ErrClosed
 	case <-ctx.Done():
 		cancel()
-		return nil, ctx.Err()
+		return nil, nil, ctx.Err()
 	}
 }
 
@@ -765,8 +866,9 @@ func (b *viaBackendBridge) handle(conn net.Conn) {
 			break
 		}
 	}
-	backend, err := b.dialer.Dial(req.ctx, req.player)
+	backend, err := b.dialBackend(req)
 	if err != nil {
+		b.reportDialFailure(req, err)
 		return
 	}
 	defer backend.Close()
@@ -785,4 +887,41 @@ func (b *viaBackendBridge) handle(conn net.Conn) {
 	case <-req.ctx.Done():
 	case <-b.done:
 	}
+}
+
+// dialBackend dials the dynamic backend behind this bridge. The stream context
+// stays detached from the join (see Prepare); only the dial is bounded, and it
+// is bounded by the configured connection timeout in the units the operator
+// wrote it in.
+func (b *viaBackendBridge) dialBackend(req *viaBridgeRequest) (net.Conn, error) {
+	ctx := req.ctx
+	if b.dialTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, b.dialTimeout)
+		defer cancel()
+	}
+	return b.dialer.Dial(ctx, req.player)
+}
+
+// reportDialFailure names a dynamic backend the bridge could not reach, both on
+// the join that was waiting for it and in the log. Without it the bridge
+// discarded the error: the join ended as a closed connection and nothing named
+// the backend, the bridge address or the stage.
+func (b *viaBackendBridge) reportDialFailure(req *viaBridgeRequest, err error) {
+	address := ""
+	if b.ln != nil && b.ln.Addr() != nil {
+		address = b.ln.Addr().String()
+	}
+	named := bridgeDialFailureError(b.name, address, err)
+	req.fail(named)
+
+	log := logr.Discard()
+	if req.player != nil {
+		log = logr.FromContextOrDiscard(req.player.Context())
+	}
+	log.Error(named, "dynamic backend dial behind the vialite bridge failed",
+		"backend", b.name,
+		"address", address,
+		"stage", viaBridgeDialStage,
+	)
 }
