@@ -110,9 +110,10 @@ func (s *serverConnection) backendStallSnapshot() (backendStall, bool) {
 	return stall, true
 }
 
-// backendReadTimeout is the read timeout an operator configured. It is the
-// reference an operator compares a stall against, which is why the diagnostics
-// below use it rather than the deadline the connection layer installs.
+// backendReadTimeout is the read timeout an operator configured, and the
+// deadline the connection layer installs on the backend connection: the two are
+// the same value, so the diagnostics below report what the operator configured
+// and what was actually enforced.
 func (s *serverConnection) backendReadTimeout() time.Duration {
 	if s == nil || s.player == nil {
 		return 0
@@ -148,21 +149,6 @@ func logStalledBackend(log logr.Logger, stall backendStall) {
 		log.Error(stall.err, "backend server stopped sending packets and the backend connection ended",
 			stallAttrs(stall, "silentFor", stall.silentFor, "bytesRead", stall.bytesRead)...)
 	}
-}
-
-// reportSilentBackend logs a backend that has not sent a single packet while Gate
-// is still waiting for it, i.e. before the join has ended.
-//
-// This is log only. It deliberately changes no deadline and closes nothing:
-// dynamic Connect backends may legitimately need longer, so the stall is
-// reported for the operator instead of being turned into a new timeout.
-func (s *serverConnection) reportSilentBackend(log logr.Logger) {
-	stall, ok := s.backendStallSnapshot()
-	if !ok || stall.bytesRead != 0 || stall.readTimeout <= 0 {
-		return
-	}
-	log.Error(nil, "backend server has not sent a single packet since the connection was established",
-		stallAttrs(stall, "waited", stall.silentFor)...)
 }
 
 // stallAttrs builds the shared key/value part of a stall diagnostic.
