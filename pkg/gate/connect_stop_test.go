@@ -313,10 +313,10 @@ func TestConnectReloadInFlightAtShutdownStartsNoRuntime(t *testing.T) {
 	// unsubscribed itself before the handler ran.
 	//
 	// The probe subscribes to the manager's any-event list on purpose, and
-	// filters by event: Gate's own handler must stay the only subscriber of the
-	// config-update event, because the event manager's unsubscribe mutates the
-	// subscriber slice of a multi-subscriber list — a data race with the Fire
-	// that is iterating it.
+	// filters by event: a typed second subscriber of the config-update event
+	// is safe since Gate runs on `pkg/util/eventmgr` (see its package doc),
+	// but the any-list form also keeps this probe independent of whatever
+	// else subscribes to that type.
 	events := event.New()
 	events.Subscribe(nil, 0, func(e event.Event) {
 		if _, ok := e.(*reload.ConfigUpdateEvent[config.Config]); ok {
