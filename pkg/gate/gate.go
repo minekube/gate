@@ -33,6 +33,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errorsutil "go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/eventmgr"
 	"go.minekube.com/gate/pkg/util/interrupt"
 )
 
@@ -63,10 +64,14 @@ func New(options Options) (gate *Gate, err error) {
 			"(errors: %d, warns: %d)", len(errs), len(warns))
 	}
 
-	eventMgr := options.EventMgr
-	if eventMgr == nil {
-		eventMgr = event.Nop
-	}
+	// Wrap the manager: Gate's own subscribers unsubscribe when their runnable
+	// returns, so a config update delivered at that moment overlaps an
+	// unsubscribe of a sibling subscriber of the same event type. The event
+	// manager Gate depends on is not safe against that (it rewrites the
+	// subscriber slice of a multi-subscriber list in place and drops the rest
+	// of the delivery), so Gate runs on pkg/util/eventmgr.
+	// A nil manager stays "no events" (event.Nop).
+	eventMgr := eventmgr.Safe(options.EventMgr)
 	reload.Map(eventMgr, func(c *config.Config) *jconfig.Config {
 		return &c.Config
 	})
@@ -392,7 +397,10 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	defer otelShutdown()
 
 	// Setup new Gate instance with loaded config.
-	eventMgr := event.New(event.WithLogger(log.WithName("event")))
+	// The manager is safe against an unsubscribe concurrent with a delivery of
+	// the same event type (see New and pkg/util/eventmgr), and reports
+	// recovered subscriber panics to the "event" logger.
+	eventMgr := eventmgr.New(eventmgr.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
 		Config:         c.conf,
 		EventMgr:       eventMgr,
