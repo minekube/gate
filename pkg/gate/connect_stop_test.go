@@ -257,3 +257,111 @@ func TestConnectReloadStopsPreviousRuntimeFirst(t *testing.T) {
 		steps.list(),
 		"the previous Connect runtime must stop before its replacement starts")
 }
+
+// TestConnectReloadInFlightAtShutdownStartsNoRuntime proves Gate cannot start a
+// Connect runtime after it was asked to stop. A config update that is already in
+// flight when shutdown begins still reaches its subscriber: the event manager
+// hands the handler the subscriber list it captured before the deferred
+// unsubscribe ran. That handler then runs with Gate's context already done, so
+// without a fail-safe it starts a connector nothing ever joins — one doomed dial
+// plus one token-file (re)provision during shutdown, exactly the kind of write
+// that raced the temp-dir cleanup.
+//
+// The interleaving is forced, not raced: the test subscribes to the same event
+// at a higher priority, so its probe is called in the same synchronous delivery
+// immediately before Gate's handler, and waiting for that probe proves the
+// update is being delivered (its subscriber list captured) while Gate's shutdown
+// holds the runtime the test owns. No sleeps.
+func TestConnectReloadInFlightAtShutdownStartsNoRuntime(t *testing.T) {
+	var (
+		created        atomic.Int32
+		steps          stepLog
+		delivering     = make(chan struct{})
+		deliveringOnce = sync.OnceFunc(func() { close(delivering) })
+		release        = make(chan struct{})
+		releaseOnce    = sync.OnceFunc(func() { close(release) })
+	)
+	defer releaseOnce()
+
+	stubConnectRuntime(t, func(connectcfg.Config, connectcfg.Instance) (process.Runnable, error) {
+		n := int(created.Add(1))
+		steps.add(fmt.Sprintf("create %d", n))
+		return process.RunnableFunc(func(ctx context.Context) error {
+			steps.add(fmt.Sprintf("start %d", n))
+			if n > 1 {
+				// A runtime started after the stop request is unjoined by
+				// design, so report it instead of blocking.
+				return nil
+			}
+			<-ctx.Done()
+			steps.add("stopping 1")
+			<-release // held by the test: the runtime cannot stop on its own
+			steps.add("stopped 1")
+			return nil
+		}), nil
+	})
+
+	cfg := loadTestConfig(t, configs.MinimalConfigBytes)
+	cfg.Config.Bind = reserveAddr(t)
+	cfg.Connect.Enabled = true
+	cfg.Connect.Name = "gate-connect-shutdown-reload-a"
+
+	// The probe runs before Gate's subscriber in the same synchronous Fire, so
+	// waiting for it proves the config update is in flight and Gate's handler is
+	// next in that delivery — a `Fire` reads the subscriber lists up front and
+	// then hands the handler the list it captured, even if the subscriber
+	// unsubscribed itself before the handler ran.
+	//
+	// The probe subscribes to the manager's any-event list on purpose, and
+	// filters by event: Gate's own handler must stay the only subscriber of the
+	// config-update event, because the event manager's unsubscribe mutates the
+	// subscriber slice of a multi-subscriber list — a data race with the Fire
+	// that is iterating it.
+	events := event.New()
+	events.Subscribe(nil, 0, func(e event.Event) {
+		if _, ok := e.(*reload.ConfigUpdateEvent[config.Config]); ok {
+			deliveringOnce()
+		}
+	})
+
+	run := startGate(t, cfg, events)
+	steps.waitFor(t, "start 1", startupTimeout)
+
+	// Gate is asked to stop while its runtime is running: the shutdown path
+	// takes mu and then waits for the runtime, which the test holds.
+	run.Cancel()
+	steps.waitFor(t, "stopping 1", startupTimeout)
+
+	// A config update that is already in flight when shutdown begins still
+	// reaches Gate's handler, with a done context: either it waits for the
+	// shutdown path to release mu (running is already nil) or it is the one that
+	// stops the runtime. Neither may start another connector.
+	updated := *cfg
+	updated.Connect.Name = "gate-connect-shutdown-reload-b"
+	reloadDone := make(chan struct{})
+	go func() {
+		defer close(reloadDone)
+		reload.FireConfigUpdate(events, &updated, cfg)
+	}()
+
+	select {
+	case <-delivering:
+	case <-time.After(shutdownTimeout):
+		t.Fatal("the config update was never delivered to its subscribers")
+	}
+
+	releaseOnce()
+	steps.waitFor(t, "stopped 1", shutdownTimeout)
+	select {
+	case <-reloadDone:
+	case <-time.After(shutdownTimeout):
+		t.Fatal("the in-flight config update never returned")
+	}
+
+	require.Equal(t, int32(1), created.Load(),
+		"Gate started a Connect runtime after it was asked to stop (steps: %v)", steps.list())
+	require.Equal(t,
+		[]string{"create 1", "start 1", "stopping 1", "stopped 1"},
+		steps.list(),
+		"no Connect runtime may start after Gate was asked to stop")
+}
