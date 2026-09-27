@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.21](https://github.com/minekube/gate/compare/v0.74.20...v0.74.21) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** run Gate's event manager on a race-free wrapper ([#1201](https://github.com/minekube/gate/issues/1201)) ([ea61218](https://github.com/minekube/gate/commit/ea6121888ab872780d8445ba46a5441e6a262579))
+
 ## [0.74.20](https://github.com/minekube/gate/compare/v0.74.19...v0.74.20) (2026-09-27)
 
 
