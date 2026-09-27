@@ -239,6 +239,13 @@ type serverConnection struct {
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
 	connPhase  phase.BackendConnectionPhase
+	// backendRead observes the backend socket so that a backend which never
+	// answers can be reported with its name, address and the stage the
+	// connection reached; backendStage names that stage and
+	// backendConnectedAt is when the backend socket was established.
+	backendRead        *backendReadMonitor
+	backendStage       string
+	backendConnectedAt time.Time
 }
 
 const pendingKeepAliveCapacity = 64
@@ -447,10 +454,20 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	// Connect proxy -> server
 	debug := s.log.V(1)
 	debug.Info("dialing backend server...")
+	s.setBackendStage(backendStageHandshake)
 	conn, err := s.dial(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to backend server %q: %w", s.server.ServerInfo().Name(), err)
 	}
+	// Observe the backend socket so a backend that accepts the connection and
+	// never speaks can be named (with address and stage) instead of ending in a
+	// silent, generic disconnect.
+	monitor := &backendReadMonitor{Conn: conn}
+	conn = monitor
+	s.mu.Lock()
+	s.backendRead = monitor
+	s.backendConnectedAt = time.Now()
+	s.mu.Unlock()
 
 	if s.config().ProxyProtocolBackend {
 		header := protoutil.ProxyHeader(s.player.RemoteAddr(), conn.RemoteAddr())
@@ -562,6 +579,7 @@ func (s *serverConnection) startHandshake(
 	if err := serverMc.WritePacket(serverLogin); err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}
+	s.setBackendStage(backendStageLogin)
 	go readLoop()
 
 	// Block until we get a result
