@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.22](https://github.com/minekube/gate/compare/v0.74.21...v0.74.22) (2026-09-27)
+
+
+### Bug Fixes
+
+* **release:** don't let a merged commit's apostrophe stall the release-please auto-merge step ([#1203](https://github.com/minekube/gate/issues/1203)) ([6ed064e](https://github.com/minekube/gate/commit/6ed064e7b596def82d7e875a67ba42ce9e82422b))
+
 ## [0.74.21](https://github.com/minekube/gate/compare/v0.74.20...v0.74.21) (2026-09-27)
 
 
