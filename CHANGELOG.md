@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.23](https://github.com/minekube/gate/compare/v0.74.22...v0.74.23) (2026-09-27)
+
+
+### Bug Fixes
+
+* **vialite:** bound and name a dynamic backend the translation bridge cannot reach ([#1205](https://github.com/minekube/gate/issues/1205)) ([8518bd6](https://github.com/minekube/gate/commit/8518bd6b9814dc7f9f7c2e6a632ea68a97c652a7))
+
 ## [0.74.22](https://github.com/minekube/gate/compare/v0.74.21...v0.74.22) (2026-09-27)
 
 
