@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.19](https://github.com/minekube/gate/compare/v0.74.18...v0.74.19) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** stop and join the Connect runtime on shutdown and reload ([#1196](https://github.com/minekube/gate/issues/1196)) ([985ed44](https://github.com/minekube/gate/commit/985ed447dcede63e26ebca6bdef9c7040f4a134a))
+
 ## [0.74.18](https://github.com/minekube/gate/compare/v0.74.17...v0.74.18) (2026-09-27)
 
 
