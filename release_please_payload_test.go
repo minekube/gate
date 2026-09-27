@@ -381,8 +381,15 @@ func TestReleasePleaseDetectionCatchesShellInterpolatedPayload(t *testing.T) {
 	if runErr == nil {
 		t.Fatalf("a shell-interpolated payload must fail; the harness reported success:\n%s", output)
 	}
-	if !strings.Contains(output, "syntax error") {
+	// The shell never got as far as running the script: nothing was merged and no
+	// rerun was dispatched. Assert on that, not on one bash wording — Linux bash
+	// reports `syntax error near unexpected token `('` while macOS bash 3.2
+	// reports `unexpected EOF while looking for matching `"'`.
+	if loweredOutput := strings.ToLower(output); !strings.Contains(loweredOutput, "syntax error") && !strings.Contains(loweredOutput, "unexpected eof") {
 		t.Fatalf("the shell-interpolated payload must fail while the shell parses the script, got %v:\n%s", runErr, output)
+	}
+	if !strings.HasSuffix(output, "recorded gh calls:\n") {
+		t.Fatalf("the historical shape must not reach gh at all:\n%s", output)
 	}
 
 	quoteFreePayload := releasePleasePayload(t, 1203, "chore(master): release 0.74.22", releasePleasePRBodyQuoteFree)
