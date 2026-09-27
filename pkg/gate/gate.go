@@ -310,7 +310,24 @@ func (g *Gate) Start(ctx context.Context) error {
 }
 
 // Viper is the default viper instance used by Start to load in a config.Config.
-var Viper = viper.New()
+// It is a NewViper, i.e. it reads config files with delete sharing.
+var Viper = NewViper()
+
+// NewViper returns a viper for loading a Gate config: a default viper whose file
+// system reads files the way Gate's config reads do (reload.ConfigFileSystem), so
+// that a read Gate does not control - viper's own discovery read, which happens
+// when the file is not where viper's search expects it - cannot refuse an editor's
+// atomic replacement of the config on Windows for as long as it is in flight.
+// Everything else about it is viper's default, so which file discovery picks,
+// what a read returns and what a write produces are unchanged.
+//
+// Load config with a Viper from here: a plain viper.New() reads through
+// os.ReadFile, whose handle does not share delete.
+func NewViper() *viper.Viper {
+	v := viper.New()
+	v.SetFs(reload.ConfigFileSystem())
+	return v
+}
 
 // StartOption is an option for Start.
 type StartOption func(o *startOptions)
