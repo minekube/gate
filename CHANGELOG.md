@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.25](https://github.com/minekube/gate/compare/v0.74.24...v0.74.25) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** print the goroutine dump command on the SIGQUIT shutdown line ([#1210](https://github.com/minekube/gate/issues/1210)) ([eafaa5d](https://github.com/minekube/gate/commit/eafaa5dcccc5c5d28af13c51d24794d1846d6d2c))
+
 ## [0.74.24](https://github.com/minekube/gate/compare/v0.74.23...v0.74.24) (2026-09-27)
 
 
