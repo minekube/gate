@@ -105,6 +105,16 @@ func setupConnect(
 			// endpoint (and provision the same token file) at once.
 			stopRunning()
 
+			// Gate is stopping. This trigger is a config update that was already
+			// in flight when Gate was asked to stop (the event manager calls the
+			// subscribers it captured before the deferred unsubscribe ran). A
+			// connector started now would outlive the join above: nothing stops
+			// it again, so it would perform one doomed dial and (re)provision its
+			// token file after Gate reported that it stopped.
+			if ctx.Err() != nil {
+				return
+			}
+
 			runnable, err := newConnectRuntime(connect, instance)
 			if err != nil {
 				log.Error(err, "error setting up Connect")
