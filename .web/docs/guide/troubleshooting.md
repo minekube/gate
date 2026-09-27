@@ -62,8 +62,8 @@ A shutdown that *looks* like a dump in a pasted log - `Received os signal`
 followed by `disconnecting all players` - is the graceful path, not a dump. If
 you asked for a goroutine dump and see those lines, no stacks were produced, and
 `kill -ABRT` is what you want instead. Newer Gate releases say so on the shutdown
-line itself, next to the signal:
+line itself, next to the signal (source file and line vary by release):
 
 ```text
-INFO gate/root.go:422 Received os signal {"signal": "quit", "hint": "SIGQUIT is a graceful shutdown and prints no goroutine dump; for a goroutine dump use `kill -ABRT <pid>` (it ends the Gate run, so capture the console first)"}
+INFO Received os signal {"signal": "quit", "hint": "SIGQUIT is a graceful shutdown and prints no goroutine dump; for a goroutine dump use kill -ABRT <pid> (it ends the Gate run, so capture the console first)"}
 ```
