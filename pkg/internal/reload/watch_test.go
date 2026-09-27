@@ -37,10 +37,19 @@ func TestWatchCoalescesAtomicRenameAndRecreatedFile(t *testing.T) {
 		return nil
 	}))
 
+	// The burst has to be a replacement that keeps the destination present at
+	// every instant - what rename means on POSIX and what MoveFileEx with
+	// MOVEFILE_REPLACE_EXISTING means on Windows. Windows refuses that
+	// replacement while the watcher is holding the destination open to
+	// fingerprint it, so a bare os.Rename here races the watcher's read instead
+	// of testing it (measured on windows-latest: 1319/3000 iterations failed
+	// with "Access is denied" with the watcher running, 0/3000 with it
+	// stopped). replaceConfigFile rides out that transient sharing violation,
+	// as an editor replacing a watched config must.
 	for range 4 {
 		temporary := filepath.Join(dir, "config.yml.tmp")
 		require.NoError(t, os.WriteFile(temporary, []byte("replacement"), 0o600))
-		require.NoError(t, os.Rename(temporary, path))
+		require.NoError(t, replaceConfigFile(temporary, path))
 	}
 	waitWatchCall(t, done)
 	time.Sleep(3 * debounceDuration)
