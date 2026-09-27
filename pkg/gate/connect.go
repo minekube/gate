@@ -15,6 +15,10 @@ import (
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 )
 
+// newConnectRuntime builds the Connect runtime for a config. It is a variable so
+// tests can substitute a runtime whose shutdown they control.
+var newConnectRuntime = connectcfg.New
+
 // Setup Connect with reload support
 func setupConnect(
 	coll process.Collection,
@@ -60,7 +64,7 @@ func setupConnect(
 				stopConnect = nil
 			}
 
-			runnable, err := connectcfg.New(connect, instance)
+			runnable, err := newConnectRuntime(connect, instance)
 			if err != nil {
 				log.Error(err, "error setting up Connect")
 				return
