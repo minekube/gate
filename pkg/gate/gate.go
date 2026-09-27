@@ -487,7 +487,7 @@ func setupAutoConfigReload(
 // Viper applies defaults or environment overrides. Errors never leave this
 // function so reload diagnostics cannot disclose config contents.
 func validateConfigFileSyntax(configPath string) error {
-	b, err := os.ReadFile(configPath)
+	b, err := reload.ReadConfigFile(configPath)
 	if err != nil {
 		return err
 	}
@@ -566,7 +566,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 // loadLiveConfigCandidate reads and strictly parses one complete file image.
 // The candidate is built independently from the current runtime configuration.
 func loadLiveConfigCandidate(v *viper.Viper, configPath string) (*config.Config, error) {
-	b, err := os.ReadFile(configPath)
+	b, err := reload.ReadConfigFile(configPath)
 	if err != nil {
 		return nil, reload.Reject("read_failed")
 	}
@@ -676,7 +676,7 @@ func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
 	default:
 		return fmt.Errorf("unsupported config file format %q", configFile)
 	}
-	b, err := os.ReadFile(configFile)
+	b, err := reload.ReadConfigFile(configFile)
 	if err != nil {
 		return fmt.Errorf("error reading config file %q: %w", configFile, err)
 	}
