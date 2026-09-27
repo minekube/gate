@@ -190,6 +190,15 @@ const guideSidebar = [
       },
     ],
   },
+  {
+    text: 'Troubleshooting',
+    items: [
+      {
+        text: 'Diagnostics',
+        link: '/guide/troubleshooting',
+      },
+    ],
+  },
 ];
 
 export default defineConfig({
