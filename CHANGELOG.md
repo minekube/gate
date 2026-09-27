@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.18](https://github.com/minekube/gate/compare/v0.74.17...v0.74.18) (2026-09-27)
+
+
+### Bug Fixes
+
+* name a dead ViaLite runtime and a backend that never answers ([#1194](https://github.com/minekube/gate/issues/1194)) ([1f07cf8](https://github.com/minekube/gate/commit/1f07cf848c010d93a3b1272508aa09c3a054a24a))
+
 ## [0.74.17](https://github.com/minekube/gate/compare/v0.74.16...v0.74.17) (2026-09-27)
 
 
