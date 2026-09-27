@@ -146,6 +146,29 @@ log:
       to 25565). Gate used to wrap the value and report a port that was never in the address; it now
       rejects an out-of-range port, matching upstream's fail-closed outcome. No upstream behavior was
       ported, so the verified sync point is unchanged.
+  - date: 2026-09-27
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for Gate's stalled-backend diagnostics: a backend that accepts the TCP connection
+      and never sends a packet, or stops sending for longer than readTimeout, is now reported with the
+      backend name, its address and the stage the connection reached, instead of only ending in a
+      generic disconnect. PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and
+      the same 11 commits as the review entries above - so there is no new upstream work to assess.
+      The comparison this change needed is upstream's own stalled-backend reporting:
+      MinecraftConnection.exceptionCaught logs "{}: read timed out" at ERROR, but only for a
+      connection that registered an association, and a backend connection's association renders as
+      "[server connection] <player> -> <serverName>" (VelocityServerConnection.toString), while
+      unassociated frontline connections stay quiet. Upstream therefore names the player and the
+      backend server when the channel read timeout fires, but has no counterpart for the backend
+      address or the connection stage, and no way to distinguish a backend that never sent a single
+      byte (its stall just waits for the channel read timeout, which Gate's own connection layer does
+      not enforce as documented either). Gate's log for this path was netmc's bare "read timeout";
+      the new diagnostics add the backend name, address and stage plus the never-answered shape. No
+      upstream behavior was ported, so the verified sync point is unchanged.
+
 ```
 
 ## The log

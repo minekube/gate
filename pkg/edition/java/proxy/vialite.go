@@ -10,8 +10,10 @@ import (
 	"log/slog"
 	"net"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
@@ -34,7 +36,10 @@ type viaManagedRunner struct {
 	newServer       func(vialite.Options) (vialiteServer, error)
 	server          vialiteServer
 	cancel          context.CancelFunc
-	done            chan error
+	done            chan struct{}
+	exit            *viaRuntimeExit
+	resolution      *viaRuntimeResolution
+	death           *viaRuntimeDeath
 	activeBackends  map[string]struct{}
 	dynamicBackends map[string]*viaDynamicBackend
 	mu              sync.Mutex
@@ -46,7 +51,8 @@ type viaDynamicBackend struct {
 
 func newViaManagedRunner(cfg *config.Config) *viaManagedRunner {
 	return &viaManagedRunner{
-		cfg: cfg,
+		cfg:        cfg,
+		resolution: &viaRuntimeResolution{},
 		newServer: func(opts vialite.Options) (vialiteServer, error) {
 			return vialite.New(opts)
 		},
@@ -89,21 +95,24 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		activeBackends[strings.ToLower(backend.Name)] = struct{}{}
 	}
 	runCtx, cancel := context.WithCancel(ctx)
-	done := make(chan error, 1)
+	done := make(chan struct{})
+	exit := &viaRuntimeExit{}
 	r.server = server
 	r.cancel = cancel
 	r.done = done
-	go func() { done <- server.Start(runCtx) }()
+	r.exit = exit
+	r.death = nil
+	go func() {
+		exit.set(server.Start(runCtx))
+		close(done)
+	}()
 
 	readyCtx, cancelReady := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancelReady()
 	select {
-	case err := <-done:
-		r.server = nil
-		r.cancel = nil
-		r.done = nil
-		r.activeBackends = nil
-		r.dynamicBackends = nil
+	case <-done:
+		err := exit.get()
+		r.clearRuntimeLocked()
 		if err != nil {
 			return err
 		}
@@ -119,16 +128,111 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		case <-done:
 		case <-time.After(30 * time.Second):
 		}
-		r.server = nil
-		r.cancel = nil
-		r.done = nil
-		r.activeBackends = nil
-		r.dynamicBackends = nil
+		r.clearRuntimeLocked()
 		return err
 	}
 	r.activeBackends = activeBackends
 	r.dynamicBackends = make(map[string]*viaDynamicBackend)
+	// Startup succeeded. A runtime that dies afterwards used to be invisible:
+	// Gate kept serving, and every join failed with the runtime's "server not
+	// started" error while the backend was never contacted.
+	go r.watchRuntimeDeath(server, runCtx, done, exit)
 	return nil
+}
+
+// clearRuntimeLocked forgets the current runtime. Callers must hold r.mu.
+func (r *viaManagedRunner) clearRuntimeLocked() {
+	r.server = nil
+	r.cancel = nil
+	r.done = nil
+	r.exit = nil
+	r.death = nil
+	r.activeBackends = nil
+	r.dynamicBackends = nil
+}
+
+// watchRuntimeDeath reports a runtime that exited while Gate kept serving.
+//
+// It returns without reporting when Gate itself stopped the runtime (shutdown)
+// or replaced it, and it reports at most once per runtime: the exit is recorded
+// so that later joins fail with an actionable error instead of the runtime
+// module's "server not started", which reads like a configuration mistake.
+func (r *viaManagedRunner) watchRuntimeDeath(
+	server vialiteServer,
+	runCtx context.Context,
+	done <-chan struct{},
+	exit *viaRuntimeExit,
+) {
+	select {
+	case <-done:
+	case <-runCtx.Done():
+		return // Gate is stopping the runtime; the shutdown path owns this.
+	}
+	if runCtx.Err() != nil {
+		return // A deliberate stop raced with the runtime exiting.
+	}
+	cause := exit.get()
+	if errors.Is(cause, context.Canceled) {
+		cause = nil
+	}
+	r.mu.Lock()
+	if r.server != server {
+		r.mu.Unlock()
+		return // A new runtime took over in the meantime.
+	}
+	backends := make([]string, 0, len(r.activeBackends))
+	for name := range r.activeBackends {
+		backends = append(backends, name)
+	}
+	sort.Strings(backends)
+	death := &viaRuntimeDeath{
+		version:  r.runtimeVersionLocked(),
+		backends: backends,
+		cause:    cause,
+		at:       time.Now(),
+	}
+	r.death = death
+	version := death.version
+	r.mu.Unlock()
+
+	attrs := []any{
+		"version", version,
+		"backends", strings.Join(backends, ","),
+		"hint", "restart Gate to start a runtime again",
+	}
+	if cause != nil {
+		attrs = append(attrs, "cause", cause.Error())
+	}
+	viaLogger().Error(
+		"vialite: the managed runtime exited while Gate was serving; translated joins to its backends will fail",
+		attrs...,
+	)
+}
+
+// runtimeVersionLocked names the runtime artifact Gate is (or was) running: the
+// version the runtime module reported on its "vialite: resolved runtime" line,
+// falling back to the configured pin when the runtime never reported one (for
+// example when an explicit binary path is used).
+//
+// Callers must hold r.mu.
+func (r *viaManagedRunner) runtimeVersionLocked() string {
+	if v := r.resolution.resolvedVersion(); v != "" {
+		return v
+	}
+	if r.cfg != nil && r.cfg.Via.Version != "" {
+		return r.cfg.Via.Version
+	}
+	return "unreported"
+}
+
+// runtimeDeath returns the recorded death of the current runtime, if any.
+func (r *viaManagedRunner) runtimeDeath() *viaRuntimeDeath {
+	if r == nil {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.death
 }
 
 func (r *viaManagedRunner) Stop() {
@@ -137,11 +241,7 @@ func (r *viaManagedRunner) Stop() {
 	cancel := r.cancel
 	done := r.done
 	dynamicBackends := r.dynamicBackends
-	r.server = nil
-	r.cancel = nil
-	r.done = nil
-	r.activeBackends = nil
-	r.dynamicBackends = nil
+	r.clearRuntimeLocked()
 	r.mu.Unlock()
 
 	for _, dynamic := range dynamicBackends {
@@ -172,9 +272,16 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 	}
 	r.mu.Lock()
 	server := r.server
+	death := r.death
 	r.mu.Unlock()
 	if server == nil {
 		return "", fmt.Errorf("vialite is not running")
+	}
+	if death != nil {
+		// The runtime is gone: report that, not the runtime module's "server not
+		// started", which reads like a configuration mistake and sends operators
+		// looking at the wrong thing.
+		return "", death
 	}
 	return server.BackendDialAddress(name)
 }
@@ -185,9 +292,16 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 	}
 	r.mu.Lock()
 	server := r.server
+	death := r.death
 	if server == nil {
 		r.mu.Unlock()
 		return false, nil
+	}
+	if death != nil {
+		// The runtime died: adding a backend cannot work, and the runtime
+		// module's "server not started" would name the wrong cause.
+		r.mu.Unlock()
+		return false, death
 	}
 	name := strings.ToLower(info.Name())
 	if _, ok := r.activeBackends[name]; ok {
@@ -346,7 +460,7 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		Version:              r.cfg.Via.Version,
 		Mirror:               r.cfg.Via.Mirror,
 		Offline:              r.cfg.Via.Offline,
-		Logger:               viaLogger(),
+		Logger:               r.logger(),
 		AllowDynamicBackends: true,
 		Backends:             make([]vialite.Backend, 0, len(r.cfg.Servers)),
 	}
@@ -368,6 +482,120 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 func viaLogger() *slog.Logger {
 	return slog.Default().With("component", "vialite")
 }
+
+// logger is the runtime logger for this runner. It is the Gate logger above plus
+// a small handler that remembers the version the runtime reports, so a
+// runtime-death diagnostic can name the artifact that died instead of only the
+// configured pin (which is empty for the default "latest" setup).
+func (r *viaManagedRunner) logger() *slog.Logger {
+	if r == nil || r.resolution == nil {
+		return viaLogger()
+	}
+	return slog.New(viaResolutionHandler{Handler: slog.Default().Handler(), resolution: r.resolution}).
+		With("component", "vialite")
+}
+
+// viaResolvedRuntimeMessage is the message the runtime module logs once per start
+// naming the runtime artifact it resolved.
+const viaResolvedRuntimeMessage = "vialite: resolved runtime"
+
+// viaRuntimeResolution remembers the runtime version reported in the runtime
+// module's "vialite: resolved runtime" line.
+type viaRuntimeResolution struct {
+	version atomic.Value // string
+}
+
+func (r *viaRuntimeResolution) recordVersion(version string) {
+	if r != nil && version != "" {
+		r.version.Store(version)
+	}
+}
+
+func (r *viaRuntimeResolution) resolvedVersion() string {
+	if r == nil {
+		return ""
+	}
+	version, _ := r.version.Load().(string)
+	return version
+}
+
+// viaResolutionHandler passes every log record through unchanged and, for the
+// "vialite: resolved runtime" record, remembers its version attribute.
+type viaResolutionHandler struct {
+	slog.Handler
+	resolution *viaRuntimeResolution
+}
+
+func (h viaResolutionHandler) Handle(ctx context.Context, record slog.Record) error {
+	if record.Message == viaResolvedRuntimeMessage {
+		record.Attrs(func(attr slog.Attr) bool {
+			if attr.Key == "version" {
+				h.resolution.recordVersion(attr.Value.String())
+				return false
+			}
+			return true
+		})
+	}
+	return h.Handler.Handle(ctx, record)
+}
+
+func (h viaResolutionHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return viaResolutionHandler{Handler: h.Handler.WithAttrs(attrs), resolution: h.resolution}
+}
+
+func (h viaResolutionHandler) WithGroup(name string) slog.Handler {
+	return viaResolutionHandler{Handler: h.Handler.WithGroup(name), resolution: h.resolution}
+}
+
+// viaRuntimeExit records how the runtime's Start call ended.
+//
+// Everything that waits for a runtime to stop - the startup readiness check,
+// Gate's shutdown and the death watcher - observes the same result through it,
+// instead of racing on a single channel receive.
+type viaRuntimeExit struct {
+	mu  sync.Mutex
+	err error
+}
+
+func (e *viaRuntimeExit) set(err error) {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	e.err = err
+	e.mu.Unlock()
+}
+
+func (e *viaRuntimeExit) get() error {
+	if e == nil {
+		return nil
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.err
+}
+
+// viaRuntimeDeath describes a managed runtime that exited after Gate had started
+// serving with it. It implements error so it can travel the normal join-failure
+// path: the player's connection is closed with a reason that names the runtime
+// death rather than the runtime module's "server not started".
+type viaRuntimeDeath struct {
+	version  string
+	backends []string
+	cause    error
+	at       time.Time
+}
+
+func (d *viaRuntimeDeath) Error() string {
+	if d.cause != nil {
+		return fmt.Sprintf("vialite: the managed runtime (version %s) exited after startup (%v), "+
+			"so protocol translation is down; restart Gate to recover", d.version, d.cause)
+	}
+	return fmt.Sprintf("vialite: the managed runtime (version %s) exited after startup, "+
+		"so protocol translation is down; restart Gate to recover", d.version)
+}
+
+func (d *viaRuntimeDeath) Unwrap() error { return d.cause }
 
 func viaMode(mode, goos, libraryPath string) vialite.Mode {
 	if mode == "" {

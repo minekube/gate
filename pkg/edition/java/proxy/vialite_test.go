@@ -3,10 +3,15 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -833,14 +838,43 @@ type fakeVialiteServer struct {
 	removed  map[string]bool
 	viaAddr  string
 	addErr   error
+
+	// Runtime-death simulation: when die is set, Start blocks until die is closed
+	// (or the context ends) and then returns startErr - exactly what the runtime
+	// module does when the native process exits. Dead backends then report
+	// vialite.ErrNotStarted, like the module does once its server is no longer
+	// started.
+	die      chan struct{}
+	startErr error
+	dead     atomic.Bool
+	started  atomic.Bool
 }
 
-func (f *fakeVialiteServer) Start(context.Context) error     { return nil }
+func (f *fakeVialiteServer) Start(ctx context.Context) error {
+	if f.die == nil {
+		return nil
+	}
+	f.started.Store(true)
+	select {
+	case <-f.die:
+	case <-ctx.Done():
+	}
+	f.dead.Store(true)
+	f.started.Store(false)
+	if f.startErr != nil {
+		return f.startErr
+	}
+	return ctx.Err()
+}
+
 func (f *fakeVialiteServer) WaitReady(context.Context) error { return nil }
 func (f *fakeVialiteServer) Stop(context.Context) error      { return nil }
-func (f *fakeVialiteServer) Healthy() bool                   { return true }
+func (f *fakeVialiteServer) Healthy() bool                   { return !f.dead.Load() }
 
 func (f *fakeVialiteServer) BackendDialAddress(name string) (string, error) {
+	if f.dead.Load() {
+		return "", vialite.ErrNotStarted
+	}
 	addr, ok := f.backends[name]
 	if !ok {
 		return "", errors.New("backend not found")
@@ -918,4 +952,206 @@ func (f *fakeDynamicDialer) Dial(ctx context.Context, player Player) (net.Conn, 
 		_ = server.Close()
 		return nil, ctx.Err()
 	}
+}
+
+// The managed runtime used to be invisible after startup: nothing watched it, so
+// a runtime that exited left Gate serving with every join failing as
+// "vialite: server not started" while the backend was never contacted.
+func TestViaManagedRunnerReportsDeadRuntime(t *testing.T) {
+	logs := captureDefaultLogs(t)
+
+	cfg := &config.Config{
+		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
+		Via:     config.Via{Enabled: true},
+	}
+	fake := &fakeVialiteServer{
+		backends: map[string]string{"lobby": "127.0.0.1:25590"},
+		die:      make(chan struct{}),
+		startErr: errors.New("exit status 1"),
+	}
+	runner := newViaManagedRunner(cfg)
+	runner.newServer = func(vialite.Options) (vialiteServer, error) { return fake, nil }
+	// The runtime reports its version on its startup line; Gate remembers it.
+	runner.resolution.recordVersion("v0.3.7")
+
+	if err := runner.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if _, err := runner.BackendDialAddress("lobby"); err != nil {
+		t.Fatalf("BackendDialAddress before the runtime died: %v", err)
+	}
+
+	close(fake.die)
+
+	var err error
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, err = runner.BackendDialAddress("lobby"); err != nil {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if err == nil {
+		t.Fatal("BackendDialAddress after the runtime died = no error, want an actionable one")
+	}
+	if errors.Is(err, vialite.ErrNotStarted) {
+		t.Errorf("join error must not be the runtime module's %q: %v", vialite.ErrNotStarted, err)
+	}
+	for _, want := range []string{"exited after startup", "v0.3.7", "exit status 1", "restart Gate"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("join error %q missing %q", err, want)
+		}
+	}
+
+	// Dynamic backends cannot be registered either.
+	if _, err := runner.AddBackend(context.Background(), NewServerInfo("dyn", mustParseAddr("127.0.0.1:25599"))); err == nil {
+		t.Error("AddBackend after the runtime died = nil error, want an actionable one")
+	}
+
+	// One error line, naming the component, the runtime version and the backends
+	// it owned.
+	line := logs.waitFor(t, "exited while Gate was serving", 5*time.Second)
+	for _, want := range []string{"level=ERROR", "component=vialite", "version=v0.3.7", "backends=lobby", `cause="exit status 1"`} {
+		if !strings.Contains(line, want) {
+			t.Errorf("death diagnostic missing %q:\n%s", want, line)
+		}
+	}
+	time.Sleep(50 * time.Millisecond)
+	if got := logs.countContaining("exited while Gate was serving"); got != 1 {
+		t.Errorf("runtime death logged %d times, want exactly 1:\n%s", got, strings.Join(logs.snapshot(), "\n"))
+	}
+}
+
+// A runtime that Gate stops itself is not a death and must not be reported.
+func TestViaManagedRunnerStopDoesNotReportRuntimeDeath(t *testing.T) {
+	logs := captureDefaultLogs(t)
+
+	cfg := &config.Config{
+		Servers: map[string]string{"lobby": "127.0.0.1:25566"},
+		Via:     config.Via{Enabled: true},
+	}
+	fake := &fakeVialiteServer{
+		backends: map[string]string{"lobby": "127.0.0.1:25590"},
+		die:      make(chan struct{}),
+		startErr: errors.New("exit status 1"),
+	}
+	runner := newViaManagedRunner(cfg)
+	runner.newServer = func(vialite.Options) (vialiteServer, error) { return fake, nil }
+
+	if err := runner.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	runner.Stop()
+	time.Sleep(100 * time.Millisecond)
+
+	if got := logs.countContaining("exited while Gate was serving"); got != 0 {
+		t.Errorf("deliberate stop reported as a runtime death %d times:\n%s", got, strings.Join(logs.snapshot(), "\n"))
+	}
+	if err := runner.runtimeDeath(); err != nil {
+		t.Fatalf("runtimeDeath after Stop = %v, want nil", err)
+	}
+	if _, err := runner.BackendDialAddress("lobby"); err == nil || !strings.Contains(err.Error(), "not running") {
+		t.Fatalf("BackendDialAddress after Stop = %v, want a not-running error", err)
+	}
+}
+
+// Gate must name the runtime artifact the runtime module reported, not only the
+// configured pin (which is empty for the default "latest" setup).
+func TestViaRuntimeResolutionCapturesResolvedVersion(t *testing.T) {
+	resolution := &viaRuntimeResolution{}
+	var out bytes.Buffer
+	logger := slog.New(viaResolutionHandler{
+		Handler:    slog.NewTextHandler(&out, nil),
+		resolution: resolution,
+	}).With("component", "vialite")
+
+	logger.Info(viaResolvedRuntimeMessage, "kind", "binary", "source", "download", "version", "v0.3.7", "path", "/tmp/vialite-linux-amd64")
+	if got := resolution.resolvedVersion(); got != "v0.3.7" {
+		t.Fatalf("resolvedVersion = %q, want v0.3.7", got)
+	}
+	if !strings.Contains(out.String(), "resolved runtime") {
+		t.Errorf("runtime log line must pass through unchanged, got %q", out.String())
+	}
+
+	// Unrelated records must not be mistaken for a resolution.
+	logger.Info("some other line", "version", "v9.9.9")
+	if got := resolution.resolvedVersion(); got != "v0.3.7" {
+		t.Fatalf("resolvedVersion = %q, want it to stay v0.3.7", got)
+	}
+}
+
+func TestViaManagedRunnerRuntimeVersionFallsBackToConfiguredPin(t *testing.T) {
+	tests := []struct {
+		name string
+		via  config.Via
+		want string
+	}{
+		{name: "configured pin", via: config.Via{Enabled: true, Version: "v0.3.1"}, want: "v0.3.1"},
+		{name: "nothing reported", via: config.Via{Enabled: true}, want: "unreported"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := newViaManagedRunner(&config.Config{Via: tt.via}).runtimeVersionLocked(); got != tt.want {
+				t.Fatalf("runtimeVersionLocked = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// defaultLogCapture collects the lines Gate's own slog logger emits.
+type defaultLogCapture struct {
+	mu    sync.Mutex
+	lines []string
+}
+
+func (c *defaultLogCapture) snapshot() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]string(nil), c.lines...)
+}
+
+func (c *defaultLogCapture) countContaining(want string) int {
+	n := 0
+	for _, line := range c.snapshot() {
+		if strings.Contains(line, want) {
+			n++
+		}
+	}
+	return n
+}
+
+func (c *defaultLogCapture) waitFor(t *testing.T, want string, timeout time.Duration) string {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		for _, line := range c.snapshot() {
+			if strings.Contains(line, want) {
+				return line
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("no log line containing %q within %s; got:\n%s", want, timeout, strings.Join(c.snapshot(), "\n"))
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// captureDefaultLogs routes Gate's slog output into a collector for the duration
+// of the test.
+func captureDefaultLogs(t *testing.T) *defaultLogCapture {
+	t.Helper()
+	capture := &defaultLogCapture{}
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&captureWriter{capture}, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+	return capture
+}
+
+type captureWriter struct{ capture *defaultLogCapture }
+
+func (w *captureWriter) Write(p []byte) (int, error) {
+	w.capture.mu.Lock()
+	w.capture.lines = append(w.capture.lines, strings.TrimSpace(string(p)))
+	w.capture.mu.Unlock()
+	return len(p), nil
 }

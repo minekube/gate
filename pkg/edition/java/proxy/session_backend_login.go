@@ -3,6 +3,7 @@ package proxy
 import (
 	"errors"
 	"reflect"
+	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/internal/velocity"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -30,6 +31,7 @@ type backendLoginSessionHandler struct {
 	serverConn    *serverConnection
 	requestCtx    *connRequestCxt
 	listenDoneCtx chan struct{}
+	stallDoneCtx  chan struct{}
 	log           logr.Logger
 
 	informationForwarded atomic.Bool
@@ -52,6 +54,11 @@ func newBackendLoginSessionHandler(
 
 func (b *backendLoginSessionHandler) Activated() {
 	b.listenDoneCtx = make(chan struct{})
+	b.stallDoneCtx = make(chan struct{})
+	// While the login is waiting, a backend that never sends a packet is
+	// invisible: the connection layer's read deadline is far longer than the
+	// configured readTimeout, so the join just sits there.
+	go b.reportSilentBackendAfterReadTimeout()
 	go func() {
 		select {
 		case <-b.listenDoneCtx:
@@ -70,9 +77,30 @@ func (b *backendLoginSessionHandler) Activated() {
 	}()
 }
 
+// reportSilentBackendAfterReadTimeout logs once when the backend has not sent a
+// single packet within the configured read timeout, while Gate is still waiting
+// for it. It logs only; it does not close, kick or shorten anything.
+func (b *backendLoginSessionHandler) reportSilentBackendAfterReadTimeout() {
+	readTimeout := time.Duration(b.config().ReadTimeout)
+	if readTimeout <= 0 {
+		return
+	}
+	timer := time.NewTimer(readTimeout)
+	defer timer.Stop()
+	select {
+	case <-b.stallDoneCtx:
+		return
+	case <-timer.C:
+	}
+	b.serverConn.reportSilentBackend(b.log)
+}
+
 func (b *backendLoginSessionHandler) Deactivated() {
 	if b.listenDoneCtx != nil {
 		close(b.listenDoneCtx)
+	}
+	if b.stallDoneCtx != nil {
+		close(b.stallDoneCtx)
 	}
 }
 
@@ -280,9 +308,11 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 	}
 
 	if serverMc.Protocol().Lower(version.Minecraft_1_20_2) {
+		b.serverConn.setBackendStage(backendStagePlay)
 		serverMc.SetActiveSessionHandler(state.Play,
 			newBackendTransitionSessionHandler(b.serverConn, b.requestCtx, b.proxy))
 	} else {
+		b.serverConn.setBackendStage(backendStageConfiguration)
 		fail := func(err error) {
 			b.log.V(1).Error(err, "error transitioning to backend config state")
 			b.requestCtx.result(nil, err)
@@ -326,6 +356,9 @@ func (b *backendLoginSessionHandler) handleServerLoginSuccess() {
 }
 
 func (b *backendLoginSessionHandler) Disconnected() {
+	// A backend that accepted the connection and never answered otherwise ends
+	// here as a generic, silent disconnect; name it instead.
+	b.serverConn.reportStalledBackend(b.log)
 	if b.config().Forwarding.Mode == config.LegacyForwardingMode || b.config().Forwarding.Mode == config.BungeeGuardForwardingMode {
 		b.requestCtx.result(nil, errs.NewSilentErr(`The connection to the remote server was unexpectedly closed.
 This is usually because the remote server does not have BungeeCord IP forwarding correctly enabled.`))
