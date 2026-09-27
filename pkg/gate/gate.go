@@ -419,7 +419,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 			select {
 			case <-ctx.Done():
 			case s := <-interrupt.Notify(ctx):
-				log.Info("Received os signal", "signal", s)
+				logTerminationSignal(log, s)
 			}
 		}()
 	}
@@ -435,6 +435,20 @@ func Start(ctx context.Context, opts ...StartOption) error {
 
 	// Start everything
 	return gate.Start(ctx)
+}
+
+// logTerminationSignal logs the termination signal Gate is shutting down for.
+//
+// The hint is the whole point: Go's runtime prints every goroutine stack on
+// SIGQUIT, but Gate treats SIGQUIT as a termination signal, so an operator who
+// asks for a dump with `kill -QUIT` gets a graceful shutdown and no stacks. Say
+// so on the line that tells them the signal arrived (see signal_log_test.go).
+func logTerminationSignal(log logr.Logger, s os.Signal) {
+	if hint := interrupt.GoroutineDumpHint(s); hint != "" {
+		log.Info("Received os signal", "signal", s, "hint", hint)
+		return
+	}
+	log.Info("Received os signal", "signal", s)
 }
 
 // setupAutoConfigReload sets up auto config reload if enabled.
