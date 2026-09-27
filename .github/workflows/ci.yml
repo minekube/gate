@@ -1,4 +1,48 @@
 name: ci
+
+# The red `ci` run on every release PR is GitHub's documented approval gate, not
+# a broken job and not this workflow's trigger.
+#
+# Every release PR produces a `ci` run that executes nothing: `event=pull_request`,
+# `actor=github-actions[bot]`, branch `release-please--branches--master--components--gate`,
+# **zero jobs**, and GitHub records it as `failure` once the PR is merged (0.74.24
+# run 36327161176; 0.73.9 run 34519830891 still shows the raw `action_required`).
+# All 61 runs that branch has ever had are exactly this shape and it has no `push`
+# runs at all — release-please pushes with `GITHUB_TOKEN`, and a `GITHUB_TOKEN`
+# push creates no workflow runs. The cause is documented:
+#
+#   "When a pull request is created or updated by a workflow using GITHUB_TOKEN,
+#    pull_request events with the opened, synchronize, or reopened activity types
+#    create workflow runs that require approval. A user with write access to the
+#    repository can approve these runs from the pull request page."
+#   — GitHub docs, "Events that trigger workflows" -> pull_request
+#
+# Nobody approves them, so they expire. There is no `paths:` filter here, so every
+# PR — including release-please's — matches this trigger on purpose, and `opened`
+# is the activity type release-please hits. Do not try to silence the run with a
+# `paths:`/`branches:` filter: the approval requirement comes from the
+# `GITHUB_TOKEN` activity, not the trigger, a filter cannot make the run green (a
+# non-matching filter produces no run at all — web.yml is the control for that),
+# and the gated run publishes no check-run, so filtering it out would remove
+# nothing branch protection could ever match.
+#
+# THE RULE: `ci` (`ci / …`) and every job context this workflow reports
+# must never be added to master's required status checks. A release PR cannot
+# satisfy any of them: the gated run has zero jobs, so nothing here ever reports
+# success on the release branch. Requiring one makes every release PR
+# permanently unsatisfied — the auto-merge step in release-please.yml
+# (`gh pr merge --merge`, deliberately without `--admin`) fails, `trigger-release`
+# and `dispatch-moxy-bump` are skipped and the release silently never publishes.
+# That is the stall shape of the v0.74.21 payload bug. master carries no required
+# status checks at all today (branch protection reads 404), so the trap is
+# latent, not live.
+#
+# The only real fix — a release PR whose `ci` check is genuinely green-or-red and
+# therefore requirable — is for release-please to open its PR with a GitHub
+# App/PAT token instead of `GITHUB_TOKEN` (docs, "Triggering a workflow from a
+# workflow"). That is a credential change needing approval, so it is deliberately
+# not done here. release_check_contract_test.go pins the mechanism, the release PR
+# file set, the control workflow and the never-require rule above.
 on:
   push:
   workflow_dispatch:
