@@ -431,7 +431,7 @@ jobs:
           path: release-images
 
       - name: Set up ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
 
       - name: Login to Container registry
         uses: docker/login-action@v4
