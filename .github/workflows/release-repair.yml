@@ -138,7 +138,7 @@ jobs:
       # to do with the release. A repair reproduces a tag; it does not
       # re-litigate its lint surface.
       - name: Setup Go from the tag's own go.mod
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           cache: true
           go-version-file: go.mod
