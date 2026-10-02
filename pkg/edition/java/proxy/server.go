@@ -507,8 +507,8 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	)
 	serverMc, readLoop := netmc.NewMinecraftConn(
 		logCtx, conn, proto.ClientBound,
-		time.Duration(s.config().ReadTimeout)*time.Millisecond,
-		time.Duration(s.config().ConnectionTimeout)*time.Millisecond,
+		time.Duration(s.config().ReadTimeout),
+		time.Duration(s.config().ConnectionTimeout),
 		s.config().Compression.Level,
 		nil, // backend connections are trusted; no serverbound rate limit
 	)
