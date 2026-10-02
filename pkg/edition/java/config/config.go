@@ -139,9 +139,10 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	// player arriving through Connect with the offline UUID of the requested name), so
 	// the reservation also applies on an online-mode proxy for names claimed without
 	// Mojang authentication.
-	OfflineModeUsernameBlacklist       []string                          `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
-	OfflineModeUsernameBlacklistScope  OfflineModeUsernameBlacklistScope `yaml:"offlineModeUsernameBlacklistScope,omitempty" json:"offlineModeUsernameBlacklistScope,omitempty"`
-	OfflineModeUsernameBlacklistReason *configutil.TextComponent         `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
+	OfflineModeUsernameBlacklist              []string                          `yaml:"offlineModeUsernameBlacklist,omitempty" json:"offlineModeUsernameBlacklist,omitempty"`
+	OfflineModeUsernameBlacklistScope         OfflineModeUsernameBlacklistScope `yaml:"offlineModeUsernameBlacklistScope,omitempty" json:"offlineModeUsernameBlacklistScope,omitempty"`
+	OfflineModeUsernameBlacklistReason        *configutil.TextComponent         `yaml:"offlineModeUsernameBlacklistReason,omitempty" json:"offlineModeUsernameBlacklistReason,omitempty"`
+	OfflineModeUsernameBlacklistOnlinePlayers bool                              `yaml:"offlineModeUsernameBlacklistOnlinePlayers,omitempty" json:"offlineModeUsernameBlacklistOnlinePlayers,omitempty"`
 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
