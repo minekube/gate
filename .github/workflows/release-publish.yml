@@ -31,7 +31,7 @@ jobs:
           ref: ${{ inputs.release_tag }}
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -57,7 +57,7 @@ jobs:
           ref: ${{ inputs.release_tag }}
 
       - name: Setup Go with cache
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           cache: true
           go-version-file: go.mod
@@ -289,7 +289,7 @@ jobs:
           echo "tag_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
