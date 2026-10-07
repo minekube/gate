@@ -233,7 +233,7 @@ jobs:
           ls -la upload/
 
       - name: Upload staged release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-repair-assets
           path: |
@@ -251,7 +251,7 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
       - name: Download staged release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-repair-assets
 
