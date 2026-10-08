@@ -309,7 +309,7 @@ func TestDefaultConnectBedrockWatchToTunnel(t *testing.T) {
 			errs <- err
 			return
 		}
-		defer socket.CloseNow()
+		defer func() { _ = socket.CloseNow() }()
 		payload, err := proto.Marshal(&connect.WatchResponse{Session: s})
 		if err == nil {
 			err = socket.Write(r.Context(), websocket.MessageBinary, payload)
