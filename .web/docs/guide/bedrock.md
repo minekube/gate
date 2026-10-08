@@ -7,6 +7,12 @@ description: "Enable Minecraft Bedrock Edition support with Gate proxy. Connect 
 
 Enable cross-play between Java and Bedrock players on your Minecraft servers with **zero backend plugins required**.
 
+::: tip Joining through Minekube Connect
+For `<endpoint>.play.minekube.net` or a Connect custom domain, use the normal
+[Connect integration](/guide/connect#bedrock-players-through-connect). Connect handles translation and Gate
+automatically verifies the managed identity. The `bedrock: true` setup below enables a direct local listener.
+:::
+
 ## Quick Start (30 Seconds)
 
 Get Bedrock support running instantly with managed mode:
