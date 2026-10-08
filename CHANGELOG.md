@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.29](https://github.com/minekube/gate/compare/v0.74.28...v0.74.29) (2026-10-08)
+
+
+### Bug Fixes
+
+* **connect:** enable zero-config managed Bedrock identity handover ([#1231](https://github.com/minekube/gate/issues/1231)) ([653c83e](https://github.com/minekube/gate/commit/653c83e9799b24c6862958d14a55ccf397c05f53))
+
 ## [0.74.28](https://github.com/minekube/gate/compare/v0.74.27...v0.74.28) (2026-09-27)
 
 
