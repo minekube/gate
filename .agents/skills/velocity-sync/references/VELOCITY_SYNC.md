@@ -168,6 +168,24 @@ log:
       not enforce as documented either). Gate's log for this path was netmc's bare "read timeout";
       the new diagnostics add the backend name, address and stage plus the never-answered shape. No
       upstream behavior was ported, so the verified sync point is unchanged.
+  - date: 2026-10-06
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate 26.3 command argument type fix (the brigadier registry resolved
+      protocol 777 ids with the 1.21.6 table, so an operator's Commands packet carrying
+      minecraft:dialog, now 58, or one of the five types 26.3 inserted failed to decode and the
+      player was disconnected). PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the review entries above. Velocity's default branch is now
+      dev/4.0.0, where 26.3 support landed in dff94da2b3d79bff1874ecdf7320e178a8480625
+      (PaperMC/Velocity#1867). Its ArgumentPropertyRegistry maps the same 26.3 ids as this change
+      (context_float_provider 55, context_int_provider 56, slot_source 57, dialog 58, feature 59,
+      swing_animation 60, uuid 61), and both agree with the vanilla 26.3 server data generator
+      report (registries.json, minecraft:command_argument_type), which Gate's table was taken from.
+      Only that commit was compared; the rest of dev/4.0.0 was not assessed here. No upstream code
+      was ported, so the verified sync point is unchanged.
 
 ```
 
