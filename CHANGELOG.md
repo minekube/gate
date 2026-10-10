@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.34](https://github.com/minekube/gate/compare/v0.74.33...v0.74.34) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/otelconnect to v0.12.0 ([#1241](https://github.com/minekube/gate/issues/1241)) ([785eab2](https://github.com/minekube/gate/commit/785eab22c4e17a9a3603fd214524bbcd42911962))
+
 ## [0.74.33](https://github.com/minekube/gate/compare/v0.74.32...v0.74.33) (2026-10-10)
 
 
