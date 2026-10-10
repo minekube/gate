@@ -81,6 +81,10 @@ var minecraft263ArgumentTypes = []string{
 }
 
 func TestMinecraft263ArgumentTypeIDs(t *testing.T) {
+	// 62 entries, ids 0-61. Without this a removed tail entry would just
+	// drop its subtest and the table would still pass.
+	require.Len(t, minecraft263ArgumentTypes, 62)
+
 	protocol := version.Minecraft_26_3.Protocol
 	for id, name := range minecraft263ArgumentTypes {
 		t.Run(name, func(t *testing.T) {
