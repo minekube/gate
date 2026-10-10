@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.33](https://github.com/minekube/gate/compare/v0.74.32...v0.74.33) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.84.2.1.20241118150055.50fffb007499 ([#1239](https://github.com/minekube/gate/issues/1239)) ([88dd132](https://github.com/minekube/gate/commit/88dd13274aaeea369b3665b790f555f10038ee4a))
+
 ## [0.74.32](https://github.com/minekube/gate/compare/v0.74.31...v0.74.32) (2026-10-09)
 
 
