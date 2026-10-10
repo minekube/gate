@@ -158,8 +158,12 @@ func (l *initialLoginSessionHandler) handleServerLogin(login *packet.ServerLogin
 		_ = l.inbound.disconnect(e.Reason())
 		return
 	}
+
+	existing := l.proxy.playerByName(l.login.Username)
+	authenticatedNameInUse := existing != nil && existing.OnlineMode()
+
 	if offlineModeUsernameBlocked(l.config(), e.Result(),
-		connectTunnelIngress(l.conn), l.login.Username, sessionIdentity(l.conn)) {
+		connectTunnelIngress(l.conn), l.login.Username, sessionIdentity(l.conn), authenticatedNameInUse) {
 		reason := l.config().OfflineModeUsernameBlacklistReason
 		if reason == nil {
 			reason = config.DefaultConfig.OfflineModeUsernameBlacklistReason
@@ -258,6 +262,7 @@ func offlineModeUsernameBlocked(
 	connectIngress bool,
 	username string,
 	identity *profile.GameProfile,
+	authenticatedNameInUse bool,
 ) bool {
 	offline := result == ForceOfflineModePreLogin ||
 		(result != ForceOnlineModePreLogin && !cfg.OnlineMode) ||
@@ -267,6 +272,9 @@ func offlineModeUsernameBlocked(
 	}
 	if cfg.OfflineModeUsernameBlacklistScope == config.OfflineModeUsernameBlacklistScopeConnect && !connectIngress {
 		return false
+	}
+	if cfg.OfflineModeUsernameBlacklistOnlinePlayers && authenticatedNameInUse {
+		return true
 	}
 	for _, blocked := range cfg.OfflineModeUsernameBlacklist {
 		if strings.EqualFold(blocked, username) {
