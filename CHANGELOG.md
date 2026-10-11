@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.38](https://github.com/minekube/gate/compare/v0.74.37...v0.74.38) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/sync to v0.24.0 ([#1250](https://github.com/minekube/gate/issues/1250)) ([e3ecafa](https://github.com/minekube/gate/commit/e3ecafa28ce08eadea271b19d86ddbaf5d715211))
+
 ## [0.74.37](https://github.com/minekube/gate/compare/v0.74.36...v0.74.37) (2026-10-11)
 
 
