@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.39](https://github.com/minekube/gate/compare/v0.74.38...v0.74.39) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/text to v0.43.0 ([#1252](https://github.com/minekube/gate/issues/1252)) ([ee0c404](https://github.com/minekube/gate/commit/ee0c4044d5f41c148be9f88429ded3454338e00f))
+
 ## [0.74.38](https://github.com/minekube/gate/compare/v0.74.37...v0.74.38) (2026-10-11)
 
 
