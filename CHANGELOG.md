@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.40](https://github.com/minekube/gate/compare/v0.74.39...v0.74.40) (2026-10-13)
+
+
+### Bug Fixes
+
+* **brigadier:** map Minecraft 26.3 command argument types ([#1229](https://github.com/minekube/gate/issues/1229)) ([785e704](https://github.com/minekube/gate/commit/785e7043c78f10e6a891d9cfcda270de4be89da7))
+
 ## [0.74.39](https://github.com/minekube/gate/compare/v0.74.38...v0.74.39) (2026-10-11)
 
 
