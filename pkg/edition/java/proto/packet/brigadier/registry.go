@@ -230,14 +230,21 @@ func init() {
 	empty(id("minecraft:template_mirror", mapSet(Minecraft_1_21_6, 49), mapSet(Minecraft_1_21_5, 48), mapSet(Minecraft_1_20_5, 47), mapSet(Minecraft_1_20_3, 46), mapSet(Minecraft_1_19, 45)))
 	empty(id("minecraft:template_rotation", mapSet(Minecraft_1_21_6, 50), mapSet(Minecraft_1_21_5, 49), mapSet(Minecraft_1_20_5, 48), mapSet(Minecraft_1_20_3, 47), mapSet(Minecraft_1_19, 46)))
 	empty(id("minecraft:heightmap", mapSet(Minecraft_1_21_6, 51), mapSet(Minecraft_1_21_5, 50), mapSet(Minecraft_1_20_5, 49), mapSet(Minecraft_1_20_3, 49), mapSet(Minecraft_1_19_4, 47)))
-	empty(id("minecraft:uuid", mapSet(Minecraft_1_21_6, 56), mapSet(Minecraft_1_21_5, 54), mapSet(Minecraft_1_20_5, 53), mapSet(Minecraft_1_20_3, 48), mapSet(Minecraft_1_19_4, 48), mapSet(Minecraft_1_19, 47)))
+	empty(id("minecraft:uuid", mapSet(Minecraft_26_3, 61), mapSet(Minecraft_1_21_6, 56), mapSet(Minecraft_1_21_5, 54), mapSet(Minecraft_1_20_5, 53), mapSet(Minecraft_1_20_3, 48), mapSet(Minecraft_1_19_4, 48), mapSet(Minecraft_1_19, 47)))
 
 	empty(id("minecraft:loot_table", mapSet(Minecraft_1_21_6, 52), mapSet(Minecraft_1_21_5, 51), mapSet(Minecraft_1_20_5, 50)))
 	empty(id("minecraft:loot_predicate", mapSet(Minecraft_1_21_6, 53), mapSet(Minecraft_1_21_5, 52), mapSet(Minecraft_1_20_5, 51)))
 	empty(id("minecraft:loot_modifier", mapSet(Minecraft_1_21_6, 54), mapSet(Minecraft_1_21_5, 53), mapSet(Minecraft_1_20_5, 52)))
 
-	empty(id("minecraft:dialog", mapSet(Minecraft_1_21_6, 55)))   // added in 1.21.6
-	empty(id("minecraft:team_color", mapSet(Minecraft_26_2, 16))) // renamed from color in 26.2
+	empty(id("minecraft:dialog", mapSet(Minecraft_26_3, 58), mapSet(Minecraft_1_21_6, 55))) // added in 1.21.6
+	empty(id("minecraft:team_color", mapSet(Minecraft_26_2, 16)))                           // renamed from color in 26.2
+
+	// Added in 26.3; they shift dialog and uuid up.
+	empty(id("minecraft:context_float_provider", mapSet(Minecraft_26_3, 55)))
+	empty(id("minecraft:context_int_provider", mapSet(Minecraft_26_3, 56)))
+	empty(id("minecraft:slot_source", mapSet(Minecraft_26_3, 57)))
+	empty(id("minecraft:feature", mapSet(Minecraft_26_3, 59)))
+	empty(id("minecraft:swing_animation", mapSet(Minecraft_26_3, 60)))
 
 	// Crossstitch support
 	register(id("crossstitch:mod_argument", mapSet(Minecraft_1_19, -256)), &ModArgumentProperty{}, ModArgumentPropertyCodec)
