@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"regexp"
 	"slices"
 	"strconv"
@@ -35,10 +36,11 @@ type (
 		Fallback      *Status                          `json:"fallback,omitempty" yaml:"fallback,omitempty"`         // nil = disabled
 		ProxyProtocol bool                             `json:"proxyProtocol,omitempty" yaml:"proxyProtocol,omitempty"`
 		// Deprecated: use TCPShieldRealIP instead.
-		RealIP            bool     `json:"realIP,omitempty" yaml:"realIP,omitempty"`
-		TCPShieldRealIP   bool     `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
-		ModifyVirtualHost bool     `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
-		Strategy          Strategy `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+		RealIP            bool       `json:"realIP,omitempty" yaml:"realIP,omitempty"`
+		TCPShieldRealIP   bool       `json:"tcpShieldRealIP,omitempty" yaml:"tcpShieldRealIP,omitempty"`
+		ModifyVirtualHost bool       `json:"modifyVirtualHost,omitempty" yaml:"modifyVirtualHost,omitempty"`
+		Strategy          Strategy   `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+		VoiceChat         *VoiceChat `json:"voiceChat,omitempty" yaml:"voiceChat,omitempty"` // nil = disabled
 	}
 	Status struct {
 		MOTD    *configutil.Component `yaml:"motd,omitempty" json:"motd,omitempty"`
@@ -48,6 +50,44 @@ type (
 		ModInfo modinfo.ModInfo       `yaml:"modInfo,omitempty" json:"modInfo,omitempty"`
 	}
 )
+
+// DefaultVoiceChatPort is the default UDP port of the Simple Voice Chat mod.
+const DefaultVoiceChatPort = 24454
+
+// VoiceChat enables relaying Simple Voice Chat UDP traffic for a route.
+type VoiceChat struct {
+	// Listen is the public UDP address Gate binds. Default ":24454".
+	Listen string `json:"listen,omitempty" yaml:"listen,omitempty"`
+	// BackendPort is the UDP voice port of the backends. Default 24454.
+	BackendPort int `json:"backendPort,omitempty" yaml:"backendPort,omitempty"`
+}
+
+// ListenAddr returns the configured or default UDP listen address.
+func (v *VoiceChat) ListenAddr() string {
+	if v == nil || v.Listen == "" {
+		return ":" + strconv.Itoa(DefaultVoiceChatPort)
+	}
+	return v.Listen
+}
+
+// BackendUDPPort returns the configured or default backend UDP port.
+func (v *VoiceChat) BackendUDPPort() int {
+	if v == nil || v.BackendPort == 0 {
+		return DefaultVoiceChatPort
+	}
+	return v.BackendPort
+}
+
+func validPort(p int) bool { return p >= 1 && p <= 65535 }
+
+func validListen(addr string) bool {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	p, err := strconv.Atoi(port)
+	return err == nil && validPort(p)
+}
 
 // Response returns the configured status response.
 func (s *Status) Response(proto.Protocol) (*ping.ServerPing, error) {
@@ -112,6 +152,7 @@ func (c Config) Validate() (warns []error, errs []error) {
 		return
 	}
 
+	voiceListens := map[string]int{} // listen address -> backend UDP port
 	for i, ep := range c.Routes {
 		if len(ep.Host) == 0 {
 			e("Route %d: no host configured", i)
@@ -156,6 +197,20 @@ func (c Config) Validate() (warns []error, errs []error) {
 						e("Route %d: backend %d: failed to parse address: %w", i, backendIdx, err)
 					}
 				}
+			}
+		}
+
+		if v := ep.VoiceChat; v != nil {
+			if v.Listen != "" && !validListen(v.Listen) {
+				e("Route %d: invalid voiceChat.listen '%s', expected host:port with port 1-65535", i, v.Listen)
+			} else if v.BackendPort != 0 && !validPort(v.BackendPort) {
+				e("Route %d: invalid voiceChat.backendPort %d, expected 1-65535", i, v.BackendPort)
+			} else {
+				listen, bp := v.ListenAddr(), v.BackendUDPPort()
+				if prev, ok := voiceListens[listen]; ok && prev != bp {
+					e("Route %d: routes that share listen '%s' must use the same voiceChat.backendPort", i, listen)
+				}
+				voiceListens[listen] = bp
 			}
 		}
 	}
