@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/netip"
 	"slices"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,9 +22,7 @@ const (
 	defaultIdleTimeout = 30 * time.Second
 	defaultMaxFlows    = 1024
 	defaultMaxPerIP    = 32
-
-	resolveTTL     = 30 * time.Second
-	resolveTimeout = 2 * time.Second
+	defaultEvictGrace  = 2 * time.Second
 )
 
 // RelayOptions tunes a Relay. Zero values select the defaults.
@@ -34,6 +31,9 @@ type RelayOptions struct {
 	MaxFlows    int
 	// MaxFlowsPerIP caps concurrent flows (source ports) of one client IP.
 	MaxFlowsPerIP int
+	// EvictGrace is how old an unanswered (never pinned) flow must be before
+	// cap pressure may evict it for a new flow. Pinned flows are never evicted.
+	EvictGrace time.Duration
 }
 
 func (o RelayOptions) withDefaults() RelayOptions {
@@ -45,6 +45,9 @@ func (o RelayOptions) withDefaults() RelayOptions {
 	}
 	if o.MaxFlowsPerIP <= 0 {
 		o.MaxFlowsPerIP = defaultMaxPerIP
+	}
+	if o.EvictGrace <= 0 {
+		o.EvictGrace = defaultEvictGrace
 	}
 	return o
 }
@@ -59,16 +62,6 @@ type Relay struct {
 
 	mu    sync.Mutex
 	flows map[netip.AddrPort]*flow
-
-	// resolver is replaceable in tests; it must honor ctx.
-	resolver func(ctx context.Context, host string) ([]netip.Addr, error)
-	cacheMu  sync.Mutex
-	cache    map[string]cacheEntry
-}
-
-type cacheEntry struct {
-	addr    *net.UDPAddr
-	expires time.Time
 }
 
 // NewRelay creates a relay that serves datagrams arriving on conn.
@@ -79,10 +72,6 @@ func NewRelay(conn net.PacketConn, sessions *Sessions, opts RelayOptions, log lo
 		opts:     opts.withDefaults(),
 		log:      log,
 		flows:    map[netip.AddrPort]*flow{},
-		cache:    map[string]cacheEntry{},
-		resolver: func(ctx context.Context, host string) ([]netip.Addr, error) {
-			return net.DefaultResolver.LookupNetIP(ctx, "ip", host)
-		},
 	}
 }
 
@@ -122,18 +111,50 @@ func (r *Relay) handleClient(from net.Addr, pkt []byte) {
 	}
 }
 
-// admit reports whether a new flow for client fits the caps. r.mu must be held.
+// admit reports whether a new flow for client fits the caps, evicting unanswered
+// flows past the grace period when a cap would otherwise refuse it. Pinned flows
+// are never evicted. r.mu must be held.
 func (r *Relay) admit(client netip.AddrPort) bool {
-	if len(r.flows) >= r.opts.MaxFlows {
-		return false
-	}
+	now := time.Now()
 	perIP := 0
 	for c := range r.flows {
 		if c.Addr() == client.Addr() {
 			perIP++
 		}
 	}
-	return perIP < r.opts.MaxFlowsPerIP
+	if perIP >= r.opts.MaxFlowsPerIP {
+		if !r.evictOldest(now, func(c netip.AddrPort) bool { return c.Addr() == client.Addr() }) {
+			return false
+		}
+	}
+	if len(r.flows) >= r.opts.MaxFlows {
+		return r.evictOldest(now, func(netip.AddrPort) bool { return true })
+	}
+	return true
+}
+
+// evictOldest closes the oldest unpinned flow matching match whose age exceeds
+// the grace period. It reports whether one was evicted. r.mu must be held.
+func (r *Relay) evictOldest(now time.Time, match func(netip.AddrPort) bool) bool {
+	var (
+		victim    netip.AddrPort
+		victimFlw *flow
+	)
+	for c, f := range r.flows {
+		if !match(c) || now.Sub(f.created) <= r.opts.EvictGrace || f.isPinned() {
+			continue
+		}
+		if victimFlw == nil || f.created.Before(victimFlw.created) {
+			victim, victimFlw = c, f
+		}
+	}
+	if victimFlw == nil {
+		return false
+	}
+	victimFlw.close()
+	delete(r.flows, victim)
+	r.log.V(1).Info("voice flow evicted under cap pressure", "client", victim.String())
+	return true
 }
 
 func (r *Relay) flowFor(client netip.AddrPort) *flow {
@@ -142,16 +163,19 @@ func (r *Relay) flowFor(client netip.AddrPort) *flow {
 		r.mu.Unlock()
 		return f
 	}
+	r.mu.Unlock()
+	// Cheap check first so floods from unregistered IPs never pay for admit.
+	backends := r.sessions.Backends(client.Addr())
+	if len(backends) == 0 {
+		return nil // no TCP session for this IP: never an open relay
+	}
+	r.mu.Lock()
 	ok := r.admit(client)
 	r.mu.Unlock()
 	if !ok {
 		return nil
 	}
-	backends := r.sessions.Backends(client.Addr())
-	if len(backends) == 0 {
-		return nil // no TCP session for this IP: never an open relay
-	}
-	// Resolve and dial without holding r.mu.
+	// Dial without holding r.mu.
 	f := newFlow(r, client, backends)
 	if f == nil {
 		return nil
@@ -169,44 +193,6 @@ func (r *Relay) flowFor(client netip.AddrPort) *flow {
 	r.flows[client] = f
 	r.log.V(1).Info("voice flow opened", "client", client.String(), "candidates", len(backends))
 	return f
-}
-
-// resolveBackend turns a backend host:port into a UDP address. IP literals skip
-// DNS; names go through a short-lived cache and a bounded lookup.
-func (r *Relay) resolveBackend(backend string) (*net.UDPAddr, error) {
-	host, portStr, err := net.SplitHostPort(backend)
-	if err != nil {
-		return nil, err
-	}
-	port, err := strconv.ParseUint(portStr, 10, 16)
-	if err != nil {
-		return nil, err
-	}
-	if ip, err := netip.ParseAddr(host); err == nil {
-		return net.UDPAddrFromAddrPort(netip.AddrPortFrom(ip, uint16(port))), nil
-	}
-	now := time.Now()
-	r.cacheMu.Lock()
-	if e, ok := r.cache[backend]; ok && now.Before(e.expires) {
-		r.cacheMu.Unlock()
-		return e.addr, nil
-	}
-	r.cacheMu.Unlock()
-
-	ctx, cancel := context.WithTimeout(context.Background(), resolveTimeout)
-	defer cancel()
-	ips, err := r.resolver(ctx, host)
-	if err != nil {
-		return nil, err
-	}
-	if len(ips) == 0 {
-		return nil, errors.New("no addresses for " + host)
-	}
-	addr := net.UDPAddrFromAddrPort(netip.AddrPortFrom(ips[0], uint16(port)))
-	r.cacheMu.Lock()
-	r.cache[backend] = cacheEntry{addr: addr, expires: now.Add(resolveTTL)}
-	r.cacheMu.Unlock()
-	return addr, nil
 }
 
 func (r *Relay) flowCount() int {
@@ -274,12 +260,13 @@ func newFlow(r *Relay, client netip.AddrPort, backends []string) *flow {
 	f := &flow{relay: r, client: client, created: time.Now(), candidates: backends}
 	f.last.Store(time.Now().UnixNano())
 	for _, b := range backends {
-		raddr, err := r.resolveBackend(b)
+		// Backends are IP literals registered from the address TCP dialed.
+		ap, err := netip.ParseAddrPort(b)
 		if err != nil {
-			r.log.V(1).Info("voice backend not resolvable", "backend", b, "error", err)
+			r.log.V(1).Info("voice backend is not an ip:port, skipping", "backend", b, "error", err)
 			continue
 		}
-		c, err := net.DialUDP("udp", nil, raddr)
+		c, err := net.DialUDP("udp", nil, net.UDPAddrFromAddrPort(ap))
 		if err != nil {
 			r.log.V(1).Info("voice backend dial failed", "backend", b, "error", err)
 			continue
@@ -293,6 +280,12 @@ func newFlow(r *Relay, client netip.AddrPort, backends []string) *flow {
 		go f.readUpstream(u)
 	}
 	return f
+}
+
+func (f *flow) isPinned() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.pinned != nil
 }
 
 func (f *flow) toBackends(pkt []byte) {

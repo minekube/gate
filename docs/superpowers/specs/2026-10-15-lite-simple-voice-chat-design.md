@@ -64,9 +64,14 @@ route field, so it is not part of `warnLiteIgnoredSettings`.
    (ip:port) it keeps a flow with an upstream UDP socket to the selected
    backend, copying both directions. Idle timeout (default 30s, refreshed by
    traffic in either direction), cap on concurrent flows (global, plus a
-   per-client-IP limit, default 32), clean shutdown. Backend hostnames are
-   resolved through a small per-relay cache (30s TTL, 2s lookup timeout, IP
-   literals skip DNS) outside the flow table lock.
+   per-client-IP limit, default 32), clean shutdown. Sessions are registered
+   with the IP TCP actually dialed (`dst.RemoteAddr()`), so the relay does no
+   DNS: registered backends are IP literals and anything unparseable is
+   skipped. When a cap would refuse a new flow, the oldest unpinned
+   (never answered) flow older than a 2s grace period is evicted instead
+   (global cap: across all flows; per-IP cap: among that IP's flows); pinned
+   flows are never evicted by cap pressure, and if nothing is evictable the
+   new flow is refused.
 3. **Backend selection for a new flow**:
    - IP has no registered session: drop silently (not an open relay).
    - One candidate backend: use it.

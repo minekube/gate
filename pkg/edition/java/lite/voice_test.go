@@ -3,6 +3,7 @@ package lite
 import (
 	"context"
 	"net"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -27,17 +28,21 @@ func TestVoiceListens(t *testing.T) {
 
 func TestRegisterVoiceNoopCases(t *testing.T) {
 	client := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 5000}
-	require.NotNil(t, registerVoice(nil, &config.Route{VoiceChat: &config.VoiceChat{}}, "b:25565", client))
+	require.NotNil(t, registerVoice(nil, &config.Route{VoiceChat: &config.VoiceChat{}}, tcpAddr("127.0.0.1", 25565), client))
 	m := voicechat.NewManager()
-	require.NotNil(t, registerVoice(m, &config.Route{}, "b:25565", client), "route without voiceChat")
-	require.NotNil(t, registerVoice(m, &config.Route{VoiceChat: &config.VoiceChat{}}, "b:25565", &net.UnixAddr{Name: "x"}), "non-IP client")
+	require.NotNil(t, registerVoice(m, &config.Route{}, tcpAddr("127.0.0.1", 25565), client), "route without voiceChat")
+	require.NotNil(t, registerVoice(m, &config.Route{VoiceChat: &config.VoiceChat{}}, tcpAddr("127.0.0.1", 25565), &net.UnixAddr{Name: "x"}), "non-IP client")
+}
+
+func tcpAddr(ip string, port int) *net.TCPAddr {
+	return &net.TCPAddr{IP: net.ParseIP(ip), Port: port}
 }
 
 func TestVoiceBackendAddr(t *testing.T) {
-	require.Equal(t, "10.0.0.1:24500", voiceBackendAddr("10.0.0.1:25565", 24500))
-	require.Equal(t, "10.0.0.1:24500", voiceBackendAddr("10.0.0.1", 24500))
-	require.Equal(t, "[2001:db8::1]:24500", voiceBackendAddr("[2001:db8::1]:25565", 24500))
-	require.Equal(t, "mc.example.com:24500", voiceBackendAddr("mc.example.com:25565", 24500))
+	require.Equal(t, "10.0.0.1:24500", voiceBackendAddr(netip.MustParseAddr("10.0.0.1"), 24500))
+	require.Equal(t, "10.0.0.1:24500", voiceBackendAddr(netip.MustParseAddr("::ffff:10.0.0.1"), 24500), "4in6 unmapped")
+	require.Equal(t, "[2001:db8::1]:24500", voiceBackendAddr(netip.MustParseAddr("2001:db8::1"), 24500))
+	require.Equal(t, "[fe80::1]:24500", voiceBackendAddr(netip.MustParseAddr("fe80::1%eth0"), 24500), "zone stripped")
 }
 
 func TestClientIP(t *testing.T) {
@@ -68,7 +73,7 @@ func TestRegisterVoiceRelaysAndReleases(t *testing.T) {
 
 	route := &config.Route{VoiceChat: &config.VoiceChat{Listen: listen, BackendPort: backendPort}}
 	client := &net.TCPAddr{IP: net.ParseIP("::ffff:127.0.0.1"), Port: 40000}
-	release := registerVoice(m, route, "127.0.0.1:25565", client)
+	release := registerVoice(m, route, tcpAddr("127.0.0.1", 25565), client)
 
 	pkt := make([]byte, 20)
 	pkt[0] = 0xFF

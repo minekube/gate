@@ -23,8 +23,10 @@ func VoiceListens(routes []config.Route) []string {
 }
 
 // registerVoice records the player's TCP session so the voice relay may forward
-// that client IP's UDP traffic to the selected backend. It never returns nil.
-func registerVoice(voice *voicechat.Manager, route *config.Route, backendAddr string, client net.Addr) func() {
+// that client IP's UDP traffic to the backend the TCP connection actually
+// dialed (dialed is the connected peer address, never a re-resolved hostname).
+// It never returns nil.
+func registerVoice(voice *voicechat.Manager, route *config.Route, dialed, client net.Addr) func() {
 	noop := func() {}
 	if voice == nil || route == nil || route.VoiceChat == nil {
 		return noop
@@ -33,16 +35,16 @@ func registerVoice(voice *voicechat.Manager, route *config.Route, backendAddr st
 	if !ok {
 		return noop
 	}
-	return voice.Register(ip, route.VoiceChat.ListenAddr(), voiceBackendAddr(backendAddr, route.VoiceChat.BackendUDPPort()))
+	backendIP, ok := clientIP(dialed)
+	if !ok {
+		return noop
+	}
+	return voice.Register(ip, route.VoiceChat.ListenAddr(), voiceBackendAddr(backendIP, route.VoiceChat.BackendUDPPort()))
 }
 
-// voiceBackendAddr swaps the TCP port of a backend address for the voice UDP port.
-func voiceBackendAddr(backendAddr string, port int) string {
-	host, _, err := net.SplitHostPort(backendAddr)
-	if err != nil {
-		host = backendAddr // no port given
-	}
-	return net.JoinHostPort(host, strconv.Itoa(port))
+// voiceBackendAddr is the voice UDP address of the dialed backend ip.
+func voiceBackendAddr(ip netip.Addr, port int) string {
+	return net.JoinHostPort(ip.Unmap().WithZone("").String(), strconv.Itoa(port))
 }
 
 func clientIP(addr net.Addr) (netip.Addr, bool) {

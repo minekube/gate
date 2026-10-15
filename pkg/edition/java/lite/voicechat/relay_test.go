@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/netip"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -314,38 +313,6 @@ func newBareRelay(opts RelayOptions) *Relay {
 	return NewRelay(pc, NewSessions(), opts, logr.Discard())
 }
 
-func TestRelayResolveSkipsDNSForIPLiteral(t *testing.T) {
-	r := newBareRelay(RelayOptions{})
-	defer r.conn.Close()
-	r.resolver = func(context.Context, string) ([]netip.Addr, error) {
-		t.Fatal("resolver must not be called for IP literals")
-		return nil, nil
-	}
-	a, err := r.resolveBackend("127.0.0.1:24454")
-	require.NoError(t, err)
-	require.Equal(t, "127.0.0.1:24454", a.String())
-	a, err = r.resolveBackend("[::1]:24454")
-	require.NoError(t, err)
-	require.Equal(t, "[::1]:24454", a.String())
-}
-
-func TestRelayResolveCachesHostnames(t *testing.T) {
-	r := newBareRelay(RelayOptions{})
-	defer r.conn.Close()
-	var calls atomic.Int32
-	r.resolver = func(_ context.Context, host string) ([]netip.Addr, error) {
-		calls.Add(1)
-		require.Equal(t, "voice.example", host)
-		return []netip.Addr{netip.MustParseAddr("192.0.2.5")}, nil
-	}
-	for i := 0; i < 3; i++ {
-		a, err := r.resolveBackend("voice.example:24454")
-		require.NoError(t, err)
-		require.Equal(t, "192.0.2.5:24454", a.String())
-	}
-	require.EqualValues(t, 1, calls.Load())
-}
-
 func TestRelayCapsFlowsPerIP(t *testing.T) {
 	r := newBareRelay(RelayOptions{MaxFlowsPerIP: 2})
 	defer r.conn.Close()
@@ -361,4 +328,117 @@ func TestRelayCapsFlowsPerIP(t *testing.T) {
 	require.NotNil(t, r.flowFor(netip.AddrPortFrom(loopback, 1001)), "existing flow still served")
 	require.NotNil(t, r.flowFor(netip.AddrPortFrom(other, 1001)), "other IP unaffected")
 	require.Equal(t, 3, r.flowCount())
+}
+
+func pinFlow(t *testing.T, f *flow) {
+	t.Helper()
+	require.NotNil(t, f)
+	f.mu.Lock()
+	u := f.upstreams[0]
+	f.mu.Unlock()
+	require.True(t, f.accept(u))
+}
+
+func TestRelayGlobalCapEvictsOldUnpinnedKeepsPinned(t *testing.T) {
+	r := newBareRelay(RelayOptions{MaxFlows: 3, MaxFlowsPerIP: 10, EvictGrace: 50 * time.Millisecond})
+	defer r.conn.Close()
+	defer r.closeAll()
+	be := newFakeBackend(t, 7)
+	ips := []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("127.0.0.2"), netip.MustParseAddr("127.0.0.3"), netip.MustParseAddr("127.0.0.4")}
+	for _, ip := range ips {
+		r.sessions.Register(ip, be.addr())
+	}
+	pinned := r.flowFor(netip.AddrPortFrom(ips[0], 1))
+	pinFlow(t, pinned)
+	r.flowFor(netip.AddrPortFrom(ips[1], 1))
+	r.flowFor(netip.AddrPortFrom(ips[2], 1))
+	require.Equal(t, 3, r.flowCount())
+
+	// Younger than grace: nothing evictable, the new flow is refused.
+	require.Nil(t, r.flowFor(netip.AddrPortFrom(ips[3], 1)))
+	require.Equal(t, 3, r.flowCount())
+
+	time.Sleep(80 * time.Millisecond)
+	require.NotNil(t, r.flowFor(netip.AddrPortFrom(ips[3], 1)), "stale unpinned flow is evicted for a new one")
+	require.Equal(t, 3, r.flowCount())
+	require.Same(t, pinned, r.flowOf(netip.AddrPortFrom(ips[0], 1)), "pinned flow survives cap pressure")
+	require.Nil(t, r.flowOf(netip.AddrPortFrom(ips[1], 1)), "oldest unpinned flow was the victim")
+}
+
+func TestRelayAllPinnedRefusesNewFlow(t *testing.T) {
+	r := newBareRelay(RelayOptions{MaxFlows: 2, MaxFlowsPerIP: 10, EvictGrace: time.Millisecond})
+	defer r.conn.Close()
+	defer r.closeAll()
+	be := newFakeBackend(t, 7)
+	for _, ip := range []string{"127.0.0.1", "127.0.0.2", "127.0.0.3"} {
+		r.sessions.Register(netip.MustParseAddr(ip), be.addr())
+	}
+	pinFlow(t, r.flowFor(netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), 1)))
+	pinFlow(t, r.flowFor(netip.AddrPortFrom(netip.MustParseAddr("127.0.0.2"), 1)))
+	time.Sleep(20 * time.Millisecond)
+	require.Nil(t, r.flowFor(netip.AddrPortFrom(netip.MustParseAddr("127.0.0.3"), 1)))
+	require.Equal(t, 2, r.flowCount())
+}
+
+func TestRelayPerIPCapEvictsOnlyThatIPsUnpinnedFlows(t *testing.T) {
+	r := newBareRelay(RelayOptions{MaxFlowsPerIP: 2, EvictGrace: 50 * time.Millisecond})
+	defer r.conn.Close()
+	defer r.closeAll()
+	be := newFakeBackend(t, 7)
+	other := netip.MustParseAddr("127.0.0.2")
+	r.sessions.Register(loopback, be.addr())
+	r.sessions.Register(other, be.addr())
+
+	pinned := r.flowFor(netip.AddrPortFrom(loopback, 1001))
+	pinFlow(t, pinned)
+	r.flowFor(netip.AddrPortFrom(loopback, 1002))
+	otherFlow := r.flowFor(netip.AddrPortFrom(other, 1001))
+	require.NotNil(t, otherFlow)
+
+	require.Nil(t, r.flowFor(netip.AddrPortFrom(loopback, 1003)), "within grace: refused")
+	time.Sleep(80 * time.Millisecond)
+	require.NotNil(t, r.flowFor(netip.AddrPortFrom(loopback, 1003)))
+	require.Same(t, pinned, r.flowOf(netip.AddrPortFrom(loopback, 1001)))
+	require.Nil(t, r.flowOf(netip.AddrPortFrom(loopback, 1002)), "stale unpinned flow of the same IP evicted")
+	require.Same(t, otherFlow, r.flowOf(netip.AddrPortFrom(other, 1001)), "other IP untouched")
+}
+
+func TestRelayPerIPCapAllPinnedRefuses(t *testing.T) {
+	r := newBareRelay(RelayOptions{MaxFlowsPerIP: 1, EvictGrace: time.Millisecond})
+	defer r.conn.Close()
+	defer r.closeAll()
+	be := newFakeBackend(t, 7)
+	r.sessions.Register(loopback, be.addr())
+	pinFlow(t, r.flowFor(netip.AddrPortFrom(loopback, 1)))
+	time.Sleep(20 * time.Millisecond)
+	require.Nil(t, r.flowFor(netip.AddrPortFrom(loopback, 2)))
+}
+
+// Hostnames are never resolved by the relay: a non-IP candidate is skipped.
+func TestRelaySkipsNonIPBackend(t *testing.T) {
+	r := newBareRelay(RelayOptions{})
+	defer r.conn.Close()
+	r.sessions.Register(loopback, "voice.example:24454")
+	require.Nil(t, r.flowFor(netip.AddrPortFrom(loopback, 1)))
+	be := newFakeBackend(t, 7)
+	r.sessions.Register(loopback, be.addr())
+	f := r.flowFor(netip.AddrPortFrom(loopback, 2))
+	require.NotNil(t, f)
+	defer r.closeAll()
+	require.Len(t, f.upstreams, 1)
+}
+
+// A pinned flow whose IP released its last session is closed by sweep.
+func TestRelaySweepClosesPinnedFlowWithoutSessions(t *testing.T) {
+	env := startRelay(t, RelayOptions{IdleTimeout: time.Hour})
+	be := newFakeBackend(t, 7)
+	rel := env.sessions.Register(loopback, be.addr())
+	c := env.client(t)
+	_, _ = c.Write(voicePacket(7))
+	readReply(t, c)
+	require.True(t, env.relay.flowOf(clientAddrPort(c)).isPinned())
+
+	rel()
+	env.relay.sweep(time.Now())
+	require.Zero(t, env.relay.flowCount())
 }
