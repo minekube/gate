@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.minekube.com/gate/pkg/edition/java/lite/voicechat"
 	"io"
 	"net"
 	"strings"
@@ -45,6 +46,7 @@ func Forward(
 	handshake *packet.Handshake,
 	pc *proto.PacketContext,
 	strategyManager *StrategyManager,
+	voice *voicechat.Manager,
 ) {
 	defer func() { _ = client.Close() }()
 	observation, observed := connectiontelemetry.FromContext(client.Context())
@@ -88,6 +90,7 @@ func Forward(
 	// Track connection for all strategies (used by status API and least-connections strategy)
 	decrementConnection := strategyManager.TrackConnection(routeHost, backendAddr)
 	defer decrementConnection()
+	defer registerVoice(voice, route, backendAddr, src.RemoteAddr())()
 
 	log.Info("forwarding connection", "backendAddr", backendAddr)
 	if observed {

@@ -130,7 +130,7 @@ func (h *handshakeSessionHandler) handleHandshake(handshake *packet.Handshake, p
 		dialTimeout := time.Duration(cfg.ConnectionTimeout)
 		if nextState == state.Login {
 			// Lite mode enabled, pipe the connection.
-			lite.Forward(dialTimeout, cfg.Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager())
+			lite.Forward(dialTimeout, cfg.Lite.Routes, h.log, h.conn, handshake, pc, h.proxy.Lite().StrategyManager(), h.proxy.Lite().Voice())
 			return
 		}
 		// Resolve ping response for lite mode.

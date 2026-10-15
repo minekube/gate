@@ -258,6 +258,12 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 	logInfo()
 
+	if cfg := p.config(); cfg.Lite.Enabled {
+		if err := p.lite.Voice().Start(ctx, p.log.WithName("lite").WithName("voicechat"), lite.VoiceListens(cfg.Lite.Routes)); err != nil {
+			return err
+		}
+	}
+
 	defer func() {
 		p.Shutdown(p.config().ShutdownReason.T()) // disconnects players
 	}()
@@ -327,6 +333,10 @@ func (p *Proxy) ApplyLiveConfig(candidate *config.Config) error {
 	}
 	routes, err := cloneLiteRoutes(candidate.Lite.Routes)
 	if err != nil {
+		return errors.New("invalid live configuration")
+	}
+	if err := p.lite.Voice().Reconcile(lite.VoiceListens(routes)); err != nil {
+		p.log.Error(err, "rejected live config: voice chat listener")
 		return errors.New("invalid live configuration")
 	}
 	published := *current
