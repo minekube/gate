@@ -2,6 +2,7 @@ package voicechat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net"
@@ -36,6 +37,10 @@ func NewManager() *Manager {
 // Start binds the given listen addresses. Relays stop when ctx is done.
 func (m *Manager) Start(ctx context.Context, log logr.Logger, listens []string) error {
 	m.mu.Lock()
+	if m.ctx != nil {
+		m.mu.Unlock()
+		return errors.New("voice chat manager already started")
+	}
 	m.ctx, m.log = ctx, log
 	m.mu.Unlock()
 	return m.Reconcile(listens)
@@ -48,6 +53,9 @@ func (m *Manager) Reconcile(listens []string) error {
 	defer m.mu.Unlock()
 	if m.ctx == nil {
 		return nil
+	}
+	if m.ctx.Err() != nil {
+		return nil // shut down: do not bind sockets nobody will serve
 	}
 	want := map[string]bool{}
 	for _, l := range listens {
@@ -73,6 +81,8 @@ func (m *Manager) Reconcile(listens []string) error {
 	for l, mr := range m.relays {
 		if !want[l] {
 			mr.cancel()
+			// Serve returns promptly after cancel; the wait is deliberate so the
+			// port is free when Reconcile returns.
 			<-mr.done
 			delete(m.relays, l)
 			m.log.Info("voice chat relay stopped", "listen", l)
@@ -83,11 +93,29 @@ func (m *Manager) Reconcile(listens []string) error {
 		r := NewRelay(pc, s, RelayOptions{}, m.log.WithValues("listen", l))
 		ctx, cancel := context.WithCancel(m.ctx)
 		mr := &managedRelay{relay: r, sessions: s, cancel: cancel, done: make(chan struct{})}
-		go func() { defer close(mr.done); _ = r.Serve(ctx) }()
+		go m.run(l, mr, ctx)
 		m.relays[l] = mr
 		m.log.Info("voice chat relay listening", "listen", l)
 	}
 	return nil
+}
+
+// run serves mr and, if it died while still wanted (socket error), drops it
+// from the manager so a later Reconcile can rebind the address. done is closed
+// before taking m.mu so Reconcile (holding m.mu, waiting on done) cannot deadlock.
+func (m *Manager) run(l string, mr *managedRelay, ctx context.Context) {
+	err := mr.relay.Serve(ctx)
+	close(mr.done)
+	if ctx.Err() != nil {
+		return // intentional removal or shutdown
+	}
+	mr.cancel()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.log.Error(err, "voice chat relay stopped unexpectedly", "listen", l)
+	if m.relays[l] == mr {
+		delete(m.relays, l)
+	}
 }
 
 // Register records a TCP session of ip for the relay bound to listen.

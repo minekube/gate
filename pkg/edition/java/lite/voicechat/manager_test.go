@@ -99,3 +99,38 @@ func TestManagerRegisterRoutesToRelaySessions(t *testing.T) {
 	// unknown listen: harmless no-op
 	m.Register(netip.MustParseAddr("192.0.2.1"), "127.0.0.1:1", "x:1")()
 }
+
+func TestManagerStartTwiceFails(t *testing.T) {
+	m := NewManager()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	require.NoError(t, m.Start(ctx, logr.Discard(), nil))
+	require.Error(t, m.Start(ctx, logr.Discard(), nil))
+}
+
+func TestManagerReconcileAfterCancelIsNoop(t *testing.T) {
+	m := NewManager()
+	ctx, cancel := context.WithCancel(context.Background())
+	require.NoError(t, m.Start(ctx, logr.Discard(), nil))
+	cancel()
+	require.NoError(t, m.Reconcile([]string{freeUDPAddr(t)}))
+	require.Empty(t, m.Listening())
+}
+
+func TestManagerDropsDeadRelayAndRebinds(t *testing.T) {
+	m := NewManager()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	a := freeUDPAddr(t)
+	require.NoError(t, m.Start(ctx, logr.Discard(), []string{a}))
+
+	m.mu.Lock()
+	conn := m.relays[a].relay.conn
+	m.mu.Unlock()
+	require.NoError(t, conn.Close()) // socket dies while ctx is live
+
+	require.Eventually(t, func() bool { return len(m.Listening()) == 0 },
+		2*time.Second, 10*time.Millisecond, "dead relay must be dropped")
+	require.NoError(t, m.Reconcile([]string{a}))
+	require.Equal(t, []string{a}, m.Listening())
+}
