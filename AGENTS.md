@@ -15,6 +15,8 @@
 - HTTP config writes share the versioned reload boundary (`GetConfig`/`ApplyConfig` in `pkg/gate/gate.go`): see `pkg/gate/CLAUDE.md`.
 - Scanner findings against Gate's SHA-1/MD5 use and against its 1024-bit login RSA key are accepted, not defects: the sites, each site's protocol/spec justification, the cost of changing it and the per-site code-scanning dismissal reason live in `docs/accepted-crypto-primitives.md` (Mojang `hasJoined` serverId, vanilla offline UUIDv3, the Gate/Connect Bedrock XUID v5 mapping shared with moxy's `connect/bedrockauth/xuid.go`, `JsonHash`'s in-process config fingerprint, and `DefaultPrivateKeyBits` - vanilla's login key size, which `auth.privateKeyBits` lets an operator raise). Never "fix" one by swapping the digest or by quietly changing the key size - dismiss the alert with the recorded reason and link that record; guarded by the root `accepted_crypto_doc_test.go`.
 
+- Lite's Simple Voice Chat UDP relay (`pkg/edition/java/lite/voicechat`) is a trust boundary like PROXY protocol: it forwards only datagrams from client IPs holding a live Lite TCP session (`Sessions`), otherwise Gate is an open UDP relay into the backends. Never log payloads or UUIDs; routing is by client IP with probe-and-pin for IPs shared across backends. Regression coverage: `pkg/edition/java/lite/voicechat/relay_test.go`.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

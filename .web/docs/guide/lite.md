@@ -316,6 +316,45 @@ config:
 Lite will modify the player's handshake packet's virtual host field from `localhost` -> `play.example.com`
 before forwarding the connection to the backend.
 
+## Simple Voice Chat
+
+Gate Lite can relay the UDP traffic of the [Simple Voice Chat](https://github.com/henkelmax/simple-voice-chat) mod.
+Enable it per route:
+
+```yaml
+lite:
+  enabled: true
+  routes:
+    - host: play.example.com
+      backend: [10.0.0.1:25565, 10.0.0.2:25565]
+      strategy: round-robin
+      voiceChat:
+        listen: ":24454"     # public UDP address Gate binds (default ":24454")
+        backendPort: 24454   # UDP voice port of the backends (default 24454)
+```
+
+How it works: a client's UDP packets are forwarded to the backend its TCP connection is connected to, matched by
+client IP. Packets from IPs without an active connection are dropped. If several players share one IP and are on
+different backends, Gate probes the candidates and pins each voice connection to the backend that answers.
+
+Setup checklist:
+
+- Open the `listen` UDP port on Gate.
+- On every backend set `voice_host` in `voicechat-server.properties` to Gate's public address (for example
+  `play.example.com:24454`), otherwise clients connect to the backend directly.
+- Gate must reach the backends on UDP `backendPort`.
+- Routes may share a `listen` address if they use the same `backendPort`.
+
+Limits and caveats:
+
+- The relay matches UDP to TCP sessions by the client IP Gate sees. Behind a frontend that does not send PROXY protocol
+  to Gate (for example a TCPShield-style edge) Gate sees the edge's IP, so voice will not work. Configure a trusted
+  PROXY protocol header or let players connect directly.
+- `listen` is matched by its exact text: `":24454"` and `"0.0.0.0:24454"` are different binds. Changing the spelling
+  of a running listener is rejected on reload because the old socket still holds the port. The old listener keeps
+  running; fix the config or restart Gate.
+- Per listener Gate keeps at most 1024 voice flows, at most 32 per client IP. Idle flows are dropped after 30 seconds.
+
 ## Complete Lite config
 
 The Lite configuration is located in the same Gate `config.yml` file under `lite`.
