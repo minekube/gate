@@ -63,14 +63,19 @@ route field, so it is not part of `warnLiteIgnoredSettings`.
 2. **Relay**: one UDP listener per distinct `listen`. For each client address
    (ip:port) it keeps a flow with an upstream UDP socket to the selected
    backend, copying both directions. Idle timeout (default 30s, refreshed by
-   traffic in either direction), cap on concurrent flows, clean shutdown.
+   traffic in either direction), cap on concurrent flows (global, plus a
+   per-client-IP limit, default 32), clean shutdown. Backend hostnames are
+   resolved through a small per-relay cache (30s TTL, 2s lookup timeout, IP
+   literals skip DNS) outside the flow table lock.
 3. **Backend selection for a new flow**:
    - IP has no registered session: drop silently (not an open relay).
    - One candidate backend: use it.
    - Several candidates (players behind one NAT on different backends): send
      the first datagram to every candidate; pin the flow to the first backend
      that replies, close the other upstream sockets. Unanswered flows expire
-     with the idle timeout. This relies on backends ignoring packets of unknown
+     with the idle timeout measured from creation (client traffic does not
+     keep them alive) or as soon as the IP's backend set changes; the next
+     datagram opens a fresh probing flow. This relies on backends ignoring packets of unknown
      UUIDs (see protocol facts).
 4. **Lifecycle**: listeners are owned by the Lite instance and reconciled on
    config reload (start new, stop removed, restart on changed `listen`),
