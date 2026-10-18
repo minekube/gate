@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.44](https://github.com/minekube/gate/compare/v0.74.43...v0.74.44) (2026-10-18)
+
+
+### Bug Fixes
+
+* **nbt:** encode NBT strings as Java modified UTF-8 (emoji MOTD kills the join) ([#1264](https://github.com/minekube/gate/issues/1264)) ([fbcda2b](https://github.com/minekube/gate/commit/fbcda2b345fda90b8c28ba0d128e5ff7ce9f6f92))
+
 ## [0.74.43](https://github.com/minekube/gate/compare/v0.74.42...v0.74.43) (2026-10-17)
 
 
