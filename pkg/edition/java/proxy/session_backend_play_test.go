@@ -86,6 +86,7 @@ type testMinecraftConn struct {
 	connType       phase.ConnectionType
 	activeHandler  netmc.SessionHandler
 	writer         netmc.Writer
+	protocol       proto.Protocol // zero value falls back to 1.20.3
 }
 
 func (t *testMinecraftConn) Context() context.Context {
@@ -94,11 +95,16 @@ func (t *testMinecraftConn) Context() context.Context {
 	}
 	return context.Background()
 }
-func (t *testMinecraftConn) Close() error             { return nil }
-func (t *testMinecraftConn) State() *state.Registry   { return state.Play }
-func (t *testMinecraftConn) Protocol() proto.Protocol { return version.Minecraft_1_20_3.Protocol }
-func (t *testMinecraftConn) RemoteAddr() net.Addr     { return &net.TCPAddr{} }
-func (t *testMinecraftConn) LocalAddr() net.Addr      { return &net.TCPAddr{} }
+func (t *testMinecraftConn) Close() error           { return nil }
+func (t *testMinecraftConn) State() *state.Registry { return state.Play }
+func (t *testMinecraftConn) Protocol() proto.Protocol {
+	if t.protocol != 0 {
+		return t.protocol
+	}
+	return version.Minecraft_1_20_3.Protocol
+}
+func (t *testMinecraftConn) RemoteAddr() net.Addr { return &net.TCPAddr{} }
+func (t *testMinecraftConn) LocalAddr() net.Addr  { return &net.TCPAddr{} }
 func (t *testMinecraftConn) Type() phase.ConnectionType {
 	if t.connType != nil {
 		return t.connType

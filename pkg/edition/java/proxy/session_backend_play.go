@@ -254,7 +254,12 @@ func (b *backendPlaySessionHandler) handleServerData(p *packet.ServerData) {
 			return
 		}
 		_ = b.serverConn.player.WritePacket(&packet.ServerData{
-			Description:        &chat.ComponentHolder{Component: e.Ping().Description},
+			// The MOTD is rebuilt from the endpoint ping (a Go component), not
+			// forwarded, so the holder needs the player's protocol: a zero
+			// Protocol encodes with the pre-1.16 codec and loses the styling
+			// (hover/click/shadow_color) for 1.21.5+ clients, which only read
+			// the snake_case keys.
+			Description:        chat.FromComponentProtocol(e.Ping().Description, b.serverConn.player.Protocol()),
 			Favicon:            e.Ping().Favicon,
 			SecureChatEnforced: p.SecureChatEnforced,
 		})
