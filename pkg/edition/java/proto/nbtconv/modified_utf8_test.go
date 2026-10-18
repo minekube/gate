@@ -77,8 +77,7 @@ func walkNBTStrings(t *testing.T, b []byte) []string {
 	t.Helper()
 	var got []string
 	off := 0
-	var readString func() string
-	readString = func() string {
+	readString := func() string {
 		if off+2 > len(b) {
 			t.Fatalf("truncated string length at %d", off)
 		}
@@ -166,14 +165,14 @@ func TestJsonToBinaryTagWritesJavaReadableStrings(t *testing.T) {
 		json string
 		want string
 	}{
-		"plain":            {`{"text":"hello"}`, "hello"},
-		"bmp accents":      {`{"text":"Ünïcödé ⚔"}`, "Ünïcödé ⚔"},
-		"emoji":            {`{"text":"§cRed 😀"}`, "§cRed 😀"},
-		"astral in child":  {`{"text":"","extra":[{"text":"🎮 play"}]}`, "🎮 play"},
-		"astral in hover":  {`{"text":"q","hover_event":{"action":"show_text","contents":{"text":"✨"}}}`, "✨"},
+		"plain":              {`{"text":"hello"}`, "hello"},
+		"bmp accents":        {`{"text":"Ünïcödé ⚔"}`, "Ünïcödé ⚔"},
+		"emoji":              {`{"text":"§cRed 😀"}`, "§cRed 😀"},
+		"astral in child":    {`{"text":"","extra":[{"text":"🎮 play"}]}`, "🎮 play"},
+		"astral in hover":    {`{"text":"q","hover_event":{"action":"show_text","contents":{"text":"✨"}}}`, "✨"},
 		"astral in grapheme": {`{"text":"family 👨‍👩‍👧‍👦"}`, "family 👨‍👩‍👧‍👦"},
-		"astral U+20000":   {`{"text":"\ud840\udc00"}`, "\U00020000"},
-		"astral U+1D11E":   {`{"text":"\ud834\udd1e"}`, "\U0001D11E"},
+		"astral U+20000":     {`{"text":"\ud840\udc00"}`, "\U00020000"},
+		"astral U+1D11E":     {`{"text":"\ud834\udd1e"}`, "\U0001D11E"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
