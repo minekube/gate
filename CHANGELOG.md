@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.74.46](https://github.com/minekube/gate/compare/v0.74.45...v0.74.46) (2026-10-18)
+
+
+### Bug Fixes
+
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([814cc02](https://github.com/minekube/gate/commit/814cc02e795f753a5f198633cd8a5e3f6e7a2b92))
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([67dbc52](https://github.com/minekube/gate/commit/67dbc5283aee6e81494f66246e22fdab386142e0))
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([#1268](https://github.com/minekube/gate/issues/1268)) ([814cc02](https://github.com/minekube/gate/commit/814cc02e795f753a5f198633cd8a5e3f6e7a2b92))
+
 ## [0.74.45](https://github.com/minekube/gate/compare/v0.74.44...v0.74.45) (2026-10-18)
 
 
