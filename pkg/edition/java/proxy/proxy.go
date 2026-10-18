@@ -17,6 +17,7 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/lite"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -895,7 +896,64 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	p.muP.RLock()
 	defer p.muP.RUnlock()
-	return p.playerNames[lowerName] == nil && p.playerIDs[player.ID()] == nil
+	for _, existing := range p.collidingRegistrations(lowerName, player.ID()) {
+		if existing != player && !supersedableRegistration(existing) {
+			return false
+		}
+	}
+	return true
+}
+
+// collidingRegistrations returns the registered players that occupy the given
+// name or id. Callers must hold p.muP.
+func (p *Proxy) collidingRegistrations(lowerName string, id uuid.UUID) []*connectedPlayer {
+	var colliding []*connectedPlayer
+	if existing := p.playerNames[lowerName]; existing != nil {
+		colliding = append(colliding, existing)
+	}
+	if existing := p.playerIDs[id]; existing != nil && existing != p.playerNames[lowerName] {
+		colliding = append(colliding, existing)
+	}
+	return colliding
+}
+
+// supersedableRegistration reports whether an existing registration may be
+// replaced by a newer connection of the same identity instead of refusing the
+// newer connection with "You are already connected to this server!".
+//
+// The duplicate check exists to keep one *live player session* per identity, so
+// it only has to hold for sessions that can still be playing. Two kinds of
+// registrations are not live sessions and are superseded by the connection the
+// client is making right now:
+//
+//   - the registration's connection is already closed, but its teardown has not
+//     unregistered it yet (the connection and the new login race each other);
+//   - the session never reached play: it is still logging in or connecting to
+//     its first backend, which is what an abandoned login attempt looks like
+//     after a client timeout, a kick before play, or a network drop with a
+//     half-open connection that is not reaped yet.
+//
+// A session that has been placed on a backend (playing, or switching servers
+// through the configuration state) is never superseded.
+func supersedableRegistration(existing *connectedPlayer) bool {
+	if existing == nil {
+		return true
+	}
+	if existing.MinecraftConn == nil {
+		// A registration without a connection is not a live session; refuse
+		// rather than guess, since this only happens for hand-built players.
+		return false
+	}
+	if !existing.Active() {
+		return true
+	}
+	if existing.CurrentServer() != nil {
+		return false
+	}
+	if registry := existing.State(); registry != nil && registry.State == states.PlayState {
+		return false
+	}
+	return true
 }
 
 // Attempts to register the connection with the proxy.
@@ -903,53 +961,106 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	c := p.config()
 
-retry:
-	p.muP.Lock()
-	if c.OnlineModeKickExistingPlayers {
-		existing, ok := p.playerIDs[player.ID()]
-		if ok {
-			// Make sure we disconnect existing duplicate
-			// player connection before we register the new one.
-			//
-			// Disconnecting the existing connection will call p.unregisterConnection in the
-			// teardown needing the p.muP.Lock() so we unlock.
-			p.muP.Unlock()
-			existing.disconnectDueToDuplicateConnection.Store(true)
-			existing.Disconnect(&component.Translation{
-				Key: "multiplayer.disconnect.duplicate_login",
-			})
-			// Now we can retry in case another duplicate connection
-			// occurred before we could acquire the lock at `retry`.
-			//
-			// Meaning we keep disconnecting incoming duplicates until
-			// we can register our connection, but this shall be uncommon anyway. :)
-			goto retry
+	for attempt := 0; attempt < maxRegisterConnectionAttempts; attempt++ {
+		p.muP.Lock()
+		if c.OnlineModeKickExistingPlayers {
+			existing := p.playerIDs[player.ID()]
+			if existing != nil && existing != player {
+				// Make sure we disconnect existing duplicate
+				// player connection before we register the new one.
+				//
+				// Disconnecting the existing connection will call p.unregisterConnection in the
+				// teardown needing the p.muP.Lock() so we unlock.
+				p.muP.Unlock()
+				existing.disconnectDueToDuplicateConnection.Store(true)
+				existing.Disconnect(&component.Translation{
+					Key: "multiplayer.disconnect.duplicate_login",
+				})
+				// Now we can retry in case another duplicate connection
+				// occurred before we could acquire the lock again.
+				//
+				// Meaning we keep disconnecting incoming duplicates until
+				// we can register our connection, but this shall be uncommon anyway. :)
+				continue
+			}
+		} else {
+			colliding := p.collidingRegistrations(lowerName, player.ID())
+			var superseded []*connectedPlayer
+			for _, existing := range colliding {
+				if existing == player {
+					continue
+				}
+				if !supersedableRegistration(existing) {
+					p.muP.Unlock()
+					return false
+				}
+				superseded = append(superseded, existing)
+			}
+			if len(superseded) > 0 {
+				// Release the slots before closing the superseded connections:
+				// their teardown must not be able to unregister this newer
+				// connection (unregisterConnection is value-scoped), and the
+				// newer connection owns the registration from now on.
+				for _, existing := range superseded {
+					p.removePlayerRegistration(existing)
+				}
+				p.muP.Unlock()
+				for _, existing := range superseded {
+					stateName := "unknown"
+					if registry := existing.State(); registry != nil {
+						stateName = registry.State.String()
+					}
+					p.log.Info("superseding abandoned registration of player",
+						"player", existing.Username(),
+						"id", existing.ID(),
+						"state", stateName,
+						"newConnection", player.Username())
+					existing.disconnectDueToDuplicateConnection.Store(true)
+					existing.Disconnect(&component.Translation{
+						Key: "multiplayer.disconnect.duplicate_login",
+					})
+				}
+				continue
+			}
 		}
-	} else {
-		_, exists := p.playerNames[lowerName]
-		if exists {
-			p.muP.Unlock()
-			return false
-		}
-		_, exists = p.playerIDs[player.ID()]
-		if exists {
-			p.muP.Unlock()
-			return false
-		}
-	}
 
-	p.playerIDs[player.ID()] = player
-	p.playerNames[lowerName] = player
-	p.muP.Unlock()
-	return true
+		p.playerIDs[player.ID()] = player
+		p.playerNames[lowerName] = player
+		p.muP.Unlock()
+		return true
+	}
+	return false
+}
+
+// maxRegisterConnectionAttempts bounds the duplicate resolution loop; one pass
+// evicts the superseded registrations and the next one registers.
+const maxRegisterConnectionAttempts = 5
+
+// removePlayerRegistration deletes the player's own registry entries and
+// reports whether the player was registered. Entries that have meanwhile been
+// taken over by a newer connection are left alone.
+//
+// Callers must hold p.muP.
+func (p *Proxy) removePlayerRegistration(player *connectedPlayer) (found bool) {
+	if current, ok := p.playerIDs[player.ID()]; ok && current == player {
+		delete(p.playerIDs, player.ID())
+		found = true
+	}
+	lowerName := strings.ToLower(player.Username())
+	if current, ok := p.playerNames[lowerName]; ok && current == player {
+		delete(p.playerNames, lowerName)
+	}
+	return found
 }
 
 // unregisters a connected player
 func (p *Proxy) unregisterConnection(player *connectedPlayer) (found bool) {
 	p.muP.Lock()
-	_, found = p.playerIDs[player.ID()]
-	delete(p.playerNames, strings.ToLower(player.Username()))
-	delete(p.playerIDs, player.ID())
+	// Value-scoped removal, like Velocity's
+	// connectionsByName.remove(name, connection): a connection that lost the
+	// registration race (e.g. a refused duplicate whose teardown runs after the
+	// winner registered) must not evict the player that owns the slot now.
+	found = p.removePlayerRegistration(player)
 	empty := len(p.playerIDs) == 0
 	p.muP.Unlock()
 	if empty {
