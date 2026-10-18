@@ -261,8 +261,13 @@ func nbtByteBool(v any) (bool, bool) {
 // JsonToSNBT converts a JSON to stringified NBT.
 // Example: {"a":1,"b":"hello","c":"world","d":true} -> {a:1,b:"hello",c:"world",d:1}
 func JsonToSNBT(j json.RawMessage) (string, error) {
+	// UseNumber: JSON numbers must keep the literal from the document. Decoding
+	// into float64 turns a packed ARGB shadow_color (2130706432) into
+	// 2.130706432e+09, which the SNBT parser rejects.
+	dec := json.NewDecoder(bytes.NewReader(j))
+	dec.UseNumber()
 	var m map[string]any
-	if err := json.Unmarshal(j, &m); err != nil {
+	if err := dec.Decode(&m); err != nil {
 		return "", fmt.Errorf("error unmarshalling json to map: %w", err)
 	}
 	var b strings.Builder
@@ -285,6 +290,11 @@ func ConvertToSNBT(v any, b *strings.Builder) error {
 		} else {
 			b.WriteString("0")
 		}
+	case json.Number:
+		// Write the literal as it appeared in the JSON document: SNBT has no
+		// exponent form, so a float64 round trip can render an integer
+		// unparseably (2.130706432e+09).
+		b.WriteString(string(v))
 	default:
 		b.WriteString(fmt.Sprintf("%v", v))
 	}
