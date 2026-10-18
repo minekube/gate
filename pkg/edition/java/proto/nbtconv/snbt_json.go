@@ -415,5 +415,12 @@ func JsonToBinaryTag(j json.RawMessage) (nbt.RawMessage, error) {
 	if err != nil {
 		return nbt.RawMessage{}, err
 	}
-	return SnbtToBinaryTag(snbt)
+	bt, err := SnbtToBinaryTag(snbt)
+	if err != nil {
+		return nbt.RawMessage{}, err
+	}
+	// The tag is about to be written to a Java client: re-encode its strings the
+	// way java.io.DataInputStream.readUTF requires, or a component containing a
+	// character outside the BMP (an emoji MOTD, say) is undecodable on the wire.
+	return WithModifiedUTF8Strings(bt)
 }
