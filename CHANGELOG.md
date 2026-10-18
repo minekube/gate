@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.45](https://github.com/minekube/gate/compare/v0.74.44...v0.74.45) (2026-10-18)
+
+
+### Bug Fixes
+
+* **serverdata:** encode the ping MOTD for the player's protocol ([#1266](https://github.com/minekube/gate/issues/1266)) ([f680a2a](https://github.com/minekube/gate/commit/f680a2ab4dc8b4904daccfb1ba87954657819474))
+
 ## [0.74.44](https://github.com/minekube/gate/compare/v0.74.43...v0.74.44) (2026-10-18)
 
 
