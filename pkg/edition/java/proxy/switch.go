@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/robinbraemer/event"
 	. "go.minekube.com/common/minecraft/color"
@@ -283,7 +282,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *DisconnectPlayerKickResult:
 		p.Disconnect(result.Reason)
 	case *RedirectPlayerKickResult:
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
+		ctx, cancel := withConnectionTimeout(context.Background(), p.config())
 		defer cancel()
 		redirect, err := p.createConnectionRequestWith(result.Server, previousConnection).connect(ctx)
 		if err != nil {

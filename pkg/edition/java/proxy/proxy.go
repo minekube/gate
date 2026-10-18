@@ -820,8 +820,8 @@ func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
 	limiter := packetlimiter.New(pl.PacketsPerSecond, pl.BytesPerSecond, time.Duration(pl.Interval))
 	conn, readLoop := netmc.NewMinecraftConn(
 		ctx, raw, proto.ServerBound,
-		time.Duration(p.config().ReadTimeout)*time.Millisecond,
-		time.Duration(p.config().ConnectionTimeout)*time.Millisecond,
+		time.Duration(p.config().ReadTimeout),
+		time.Duration(p.config().ConnectionTimeout),
 		p.config().Compression.Level,
 		limiter,
 	)
@@ -1020,8 +1020,13 @@ func BroadcastMessage(sinks []MessageSink, msg component.Component) {
 //
 //
 
+// withConnectionTimeout bounds connecting a player to a backend server with the
+// configured connection timeout, which is what the config documents ("The time
+// Gate waits to connect to a server before timing out"). Use it for every join
+// deadline instead of re-deriving one, so a second conversion of the configured
+// duration cannot creep back in.
 func withConnectionTimeout(parent context.Context, cfg *config.Config) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout)*time.Millisecond)
+	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout))
 }
 
 type (
