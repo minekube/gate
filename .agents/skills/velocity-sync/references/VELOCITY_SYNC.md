@@ -186,6 +186,27 @@ log:
       report (registries.json, minecraft:command_argument_type), which Gate's table was taken from.
       Only that commit was compared; the rest of dev/4.0.0 was not assessed here. No upstream code
       was ported, so the verified sync point is unchanged.
+  - date: 2026-10-18
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Connect-edge duplicate-login fix (a player reconnecting after a kick,
+      client timeout or half-open drop was refused with "You are already connected to this server!"
+      because the previous registration was still in the map; on the edge this hit nine players on
+      seven machines plus our own k8s join prober in six hours). PaperMC/Velocity@dev/3.0.0 still
+      resolves to 843a47e2 - the same head and the same 11 commits as the review entries above - and
+      dev/4.0.0 (5e641c6533db6b75a236b5ae79f76e27ad3169a8, 2026-10-07) carries the same registry code.
+      Comparison: upstream unregisterConnection uses Map.remove(key, connection), i.e. value-scoped
+      removal, and registerConnection uses putIfAbsent, so a connection that lost the registration
+      race can never evict the winner; Gate had drifted to an unconditional delete(name)/delete(id),
+      which let a refused duplicate's teardown remove the live player's registration (and mis-report
+      its DisconnectEvent status). This change ports that value-scoping, and additionally supersedes -
+      instead of refusing - a colliding registration whose connection is already closed or that never
+      reached play, which upstream does not do: upstream has no abandoned-login case and would still
+      refuse the reconnect. Nothing was taken from an upstream commit, so the verified sync point is
+      unchanged.
 
 ```
 
