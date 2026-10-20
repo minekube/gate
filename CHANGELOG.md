@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.48](https://github.com/minekube/gate/compare/v0.74.47...v0.74.48) (2026-10-20)
+
+
+### Bug Fixes
+
+* **vialite:** allocate the per-join bridge from one non-ephemeral loopback allocator ([#1272](https://github.com/minekube/gate/issues/1272)) ([57051b9](https://github.com/minekube/gate/commit/57051b9c68ea2dce4d41d07b898eb1a5ca9e5814))
+
 ## [0.74.47](https://github.com/minekube/gate/compare/v0.74.46...v0.74.47) (2026-10-20)
 
 
