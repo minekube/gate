@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.47](https://github.com/minekube/gate/compare/v0.74.46...v0.74.47) (2026-10-20)
+
+
+### Bug Fixes
+
+* **proxy:** keep and replay the client's config KnownPacks reply ([#1270](https://github.com/minekube/gate/issues/1270)) ([0a4ef61](https://github.com/minekube/gate/commit/0a4ef6104ee655180deb31fa6fa38294e5d3afa6))
+
 ## [0.74.46](https://github.com/minekube/gate/compare/v0.74.45...v0.74.46) (2026-10-18)
 
 
