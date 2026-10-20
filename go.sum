@@ -263,8 +263,8 @@ go.minekube.com/connect v0.6.3-0.20260803141147-8001cda93b1d h1:2AKO41vrWFDahh0R
 go.minekube.com/connect v0.6.3-0.20260803141147-8001cda93b1d/go.mod h1:Qulqhn32nR3bGEKv+reiw4mlmpVyqlyDpv4EdjMCjQs=
 go.minekube.com/geyserlite v0.6.2 h1:aZeK8ru+s09L4aH4Hs6gITy4PrM7Ikl7xo4/KH3asUk=
 go.minekube.com/geyserlite v0.6.2/go.mod h1:Y2jd9w+SLyi5R4+UeewGvqeP9SSGcr7k3vCkamLWjrw=
-go.minekube.com/vialite v0.3.8 h1:Afu1tq8OY72G2ootYph/ZluEviXIGLbETAeXme/gt68=
-go.minekube.com/vialite v0.3.8/go.mod h1:XGcIWvMiC8C70X3FCUEjaeXRNU5BjLdWYnYl1YZYvjg=
+go.minekube.com/vialite v0.3.9 h1:Fn6cCa7NUD+B31hnp10wdrifqxx2/srJkhe5eOiftfw=
+go.minekube.com/vialite v0.3.9/go.mod h1:XGcIWvMiC8C70X3FCUEjaeXRNU5BjLdWYnYl1YZYvjg=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=

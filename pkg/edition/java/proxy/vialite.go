@@ -45,7 +45,12 @@ type viaManagedRunner struct {
 	death           *viaRuntimeDeath
 	activeBackends  map[string]struct{}
 	dynamicBackends map[string]*viaDynamicBackend
-	mu              sync.Mutex
+	// runtimeLoopbackAddresses holds the loopback addresses Gate's allocator
+	// reserved for the running runtime's dynamic backends
+	// (vialite.Options.ReserveLoopbackAddress) and that the runtime has not
+	// released yet.
+	runtimeLoopbackAddresses map[string]struct{}
+	mu                       sync.Mutex
 }
 
 type viaDynamicBackend struct {
@@ -308,7 +313,10 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 // vialite supervisor had reserved for a different backend.
 //
 // Only runtime-published (dynamic) backends are checked: a static backend's
-// address is the operator's configuration, not an address Gate allocated.
+// address is the operator's configuration, not an address Gate allocated. A
+// dynamic backend address that Gate's allocator reserved for this runtime
+// (Options.ReserveLoopbackAddress) is accepted: it is that backend's own
+// listener, and the runtime refuses to publish one it does not own.
 func (r *viaManagedRunner) checkPublishedBackendAddress(name, addr string) error {
 	if addr == "" {
 		return nil
@@ -344,6 +352,15 @@ func (r *viaManagedRunner) checkPublishedBackendAddress(name, addr string) error
 	if owner, taken := owners[addr]; taken {
 		return publishedBackendAddressError(name, addr,
 			fmt.Sprintf("that address is the translation bridge of dynamic backend %q, not of %q", owner, name))
+	}
+	// An address Gate's allocator reserved for the running runtime is the
+	// runtime's own dynamic backend listener, not a bridge: it comes out of the
+	// same reserved range as Gate's bridges, so range membership alone can no
+	// longer tell them apart. The runtime proves it owns the listener before
+	// publishing (vialite.ErrAddressNotOwned), and the reservation is released
+	// exactly when the runtime stops using the address.
+	if r.runtimeLoopbackAddressReserved(addr) {
+		return nil
 	}
 	if alloc, err := loopback.Default(); err == nil {
 		if alloc.HandedOut(addr) {
@@ -587,7 +604,13 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		Offline:              r.cfg.Via.Offline,
 		Logger:               r.logger(),
 		AllowDynamicBackends: true,
-		Backends:             make([]vialite.Backend, 0, len(r.cfg.Servers)),
+		// One allocator for every dynamically allocated loopback listener in
+		// this process: the runtime reserves each dynamic backend's address here
+		// instead of allocating from a second range, so Gate's per-join bridges
+		// and the runtime's backends can never name the same port and neither
+		// ever draws from the kernel's ephemeral range (kanban t_6199659e).
+		ReserveLoopbackAddress: r.reserveRuntimeLoopbackAddress,
+		Backends:               make([]vialite.Backend, 0, len(r.cfg.Servers)),
 	}
 	for name, addr := range r.cfg.Servers {
 		opts.Backends = append(opts.Backends, vialite.Backend{
@@ -597,6 +620,69 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		})
 	}
 	return opts, nil
+}
+
+// reserveRuntimeLoopbackAddress is the vialite.Options.ReserveLoopbackAddress
+// hook: the runtime asks Gate's allocator for the loopback address a dynamic
+// subprocess backend is told to bind, so every dynamically allocated listener in
+// this process - Gate's per-join translation bridges and the runtime's dynamic
+// backends - comes from one reserved, non-ephemeral range and no address is ever
+// handed out twice (kanban t_6199659e).
+//
+// host is the host the runtime would otherwise bind, derived from the configured
+// runtime bind. The reserved address always uses the allocator's loopback host: a
+// dynamically allocated per-join listener must never be reachable from outside
+// this host, whatever the runtime bind names.
+//
+// The returned release runs exactly once (the runtime guarantees that; the once
+// wrapper keeps a double call harmless) and only then does the allocator hand the
+// port out again.
+func (r *viaManagedRunner) reserveRuntimeLoopbackAddress(host string) (string, func(), error) {
+	alloc, err := loopback.Default()
+	if err != nil {
+		return "", nil, fmt.Errorf("vialite: the runtime cannot allocate a dynamic backend address: %w", err)
+	}
+	addr, release, err := alloc.Reserve()
+	if err != nil {
+		return "", nil, fmt.Errorf("vialite: reserve a dynamic backend address: %w", err)
+	}
+	if host != "" && host != alloc.Host() {
+		// Not a configuration change, a narrowing: the address the runtime binds
+		// is always the allocator's loopback host.
+		r.logger().Debug("vialite: dynamic backend address uses the loopback allocator host",
+			"bind_host", host, "allocated_host", alloc.Host())
+	}
+	r.mu.Lock()
+	if r.runtimeLoopbackAddresses == nil {
+		r.runtimeLoopbackAddresses = make(map[string]struct{})
+	}
+	r.runtimeLoopbackAddresses[addr] = struct{}{}
+	r.mu.Unlock()
+
+	var once sync.Once
+	return addr, func() {
+		once.Do(func() {
+			r.mu.Lock()
+			delete(r.runtimeLoopbackAddresses, addr)
+			r.mu.Unlock()
+			if release != nil {
+				release()
+			}
+		})
+	}, nil
+}
+
+// runtimeLoopbackAddressReserved reports whether addr is an address Gate's
+// allocator reserved for the running runtime's dynamic backend and that the
+// runtime has not released.
+func (r *viaManagedRunner) runtimeLoopbackAddressReserved(addr string) bool {
+	if r == nil {
+		return false
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_, ok := r.runtimeLoopbackAddresses[addr]
+	return ok
 }
 
 // viaLogger is the logger handed to the ViaLite runtime. The runtime logs one
