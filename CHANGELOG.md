@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.49](https://github.com/minekube/gate/compare/v0.74.48...v0.74.49) (2026-10-20)
+
+
+### Bug Fixes
+
+* **vialite:** hand the runtime Gate's loopback allocator for dynamic backend addresses ([#1274](https://github.com/minekube/gate/issues/1274)) ([86c25df](https://github.com/minekube/gate/commit/86c25df2c11da1551d3e69211cab63280d744cb7))
+
 ## [0.74.48](https://github.com/minekube/gate/compare/v0.74.47...v0.74.48) (2026-10-20)
 
 
