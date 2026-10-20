@@ -20,6 +20,7 @@ import (
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/util/loopback"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -285,7 +286,85 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 		// looking at the wrong thing.
 		return "", death
 	}
-	return server.BackendDialAddress(name)
+	addr, err := server.BackendDialAddress(name)
+	if err != nil {
+		return "", err
+	}
+	if err := r.checkPublishedBackendAddress(name, addr); err != nil {
+		return "", err
+	}
+	return addr, nil
+}
+
+// checkPublishedBackendAddress refuses a dynamic backend address that the runtime
+// which should serve it cannot own.
+//
+// Readiness for a dynamic backend is decided by dialling its address, and any
+// listener satisfies a dial. When the listener that answers belongs to Gate - or
+// to another backend's translation bridge - the runtime never bound the address,
+// and dialling it routes the join into another session's tunnel, where it stalls
+// silently in configuration state. That is the measured shape of the 2026-10-20
+// stall (kanban t_40da126d): Gate's per-join bridge listener took the port the
+// vialite supervisor had reserved for a different backend.
+//
+// Only runtime-published (dynamic) backends are checked: a static backend's
+// address is the operator's configuration, not an address Gate allocated.
+func (r *viaManagedRunner) checkPublishedBackendAddress(name, addr string) error {
+	if addr == "" {
+		return nil
+	}
+	key := strings.ToLower(name)
+
+	r.mu.Lock()
+	dynamic := r.dynamicBackends[key]
+	if dynamic == nil {
+		r.mu.Unlock()
+		// A static backend: nothing here was allocated by Gate.
+		return nil
+	}
+	own := ""
+	if dynamic.bridge != nil {
+		own = dynamic.bridge.Addr().String()
+	}
+	owners := make(map[string]string, len(r.dynamicBackends))
+	for backend, other := range r.dynamicBackends {
+		if other == nil || other.bridge == nil {
+			continue
+		}
+		owners[other.bridge.Addr().String()] = backend
+	}
+	r.mu.Unlock()
+
+	// Gate publishes its own bridge as the address of a bridged backend: that is
+	// the address the runtime is expected to report back, and the bridge is what
+	// dials the real backend behind it.
+	if own != "" && own == addr {
+		return nil
+	}
+	if owner, taken := owners[addr]; taken {
+		return publishedBackendAddressError(name, addr,
+			fmt.Sprintf("that address is the translation bridge of dynamic backend %q, not of %q", owner, name))
+	}
+	if alloc, err := loopback.Default(); err == nil {
+		if alloc.HandedOut(addr) {
+			return publishedBackendAddressError(name, addr,
+				"a live per-join translation bridge of this Gate process holds that address")
+		}
+		if alloc.Range().ContainsAddress(addr) {
+			return publishedBackendAddressError(name, addr,
+				fmt.Sprintf("that address is inside the port range Gate reserves for its per-join "+
+					"translation bridges (%s)", alloc.Range()))
+		}
+	}
+	return nil
+}
+
+// publishedBackendAddressError names the address, the backend it was published
+// for, and why dialling it would not reach that backend's runtime.
+func publishedBackendAddressError(backend, address, reason string) error {
+	return fmt.Errorf("vialite: refusing to dial %s for dynamic backend %q: %s; the runtime that should "+
+		"serve that backend does not own the address, so the join would be routed into another "+
+		"session's tunnel and stall silently in configuration state", address, backend, reason)
 }
 
 func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (bool, error) {
@@ -797,9 +876,19 @@ type viaBackendBridge struct {
 }
 
 func newViaBackendBridge(dialer ServerDialer, name string, dialTimeout time.Duration) (*viaBackendBridge, error) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	// The bridge listener lives for the whole join, so its port must come from
+	// Gate's reserved bridge range and never from the kernel's ephemeral range:
+	// the vialite supervisor reserves a dynamic backend's port with a
+	// listen-then-close, and a listener allocated from the same range can take
+	// that port before the runtime binds it (kanban t_40da126d).
+	alloc, err := loopback.Default()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("vialite: the per-join translation bridge cannot allocate a loopback "+
+			"listener for backend %q: %w", name, err)
+	}
+	ln, err := alloc.Listen()
+	if err != nil {
+		return nil, fmt.Errorf("vialite: allocate the per-join translation bridge listener for backend %q: %w", name, err)
 	}
 	b := &viaBackendBridge{
 		ln:          ln,
