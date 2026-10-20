@@ -207,6 +207,27 @@ log:
       reached play, which upstream does not do: upstream has no abandoned-login case and would still
       refuse the reconnect. Nothing was taken from an upstream commit, so the verified sync point is
       unchanged.
+  - date: 2026-10-20
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate config-state KnownPacks reply queue (the client's
+      ServerboundKnownPacks reply is the packet that releases the backend's registry data; Gate dropped
+      it when the backend config connection was not attached or not writable yet, which stalls the
+      backend's CONFIGURATION stream silently and indefinitely - no error, no retry, no timeout).
+      PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and the same 11 commits as
+      the review entries above - so there was no new upstream work to assess. The comparison this
+      change needed: upstream ClientConfigSessionHandler.handle(KnownPacksPacket) writes once through
+      player.getConnectionInFlightOrConnectedServer().ensureConnected() and only when that connection
+      is non-null, with no queue and no replay; it defers the write onto
+      callConfigurationEvent().thenRun instead, so a reply arriving before the target server exists is
+      lost inside the future as well - upstream narrows the window but has no durable path either.
+      Gate's handler is invoked directly from the client config session handler, and this change keeps
+      the reply and replays it in the same buffered flush that already carries queued config plugin
+      messages (flushQueuedPluginMessagesTo) - a Gate-side addition, not a port. No upstream behavior
+      was ported, so the verified sync point is unchanged.
 
 ```
 
