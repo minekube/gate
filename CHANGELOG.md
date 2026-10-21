@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.74.50](https://github.com/minekube/gate/compare/v0.74.49...v0.74.50) (2026-10-21)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.10 ([#1276](https://github.com/minekube/gate/issues/1276)) ([f51557a](https://github.com/minekube/gate/commit/f51557a7275a5d4a747be3a5fec872cffd42ae7e))
+
 ## [0.74.49](https://github.com/minekube/gate/compare/v0.74.48...v0.74.49) (2026-10-20)
 
 
