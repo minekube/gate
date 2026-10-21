@@ -732,11 +732,19 @@ The system also handles edge cases like players switching between devices, platf
    bedrock:
      geyserListenAddr: 'localhost:25567'
 
-   # Geyser config - remote.port must match
-   remote:
+   # Geyser config - java.port must match
+   java:
      address: localhost
      port: 25567
    ```
+
+   Geyser 2.x reads the Java target from `java.address` / `java.port`. A Geyser
+   that still uses the pre-2.0 layout spells the same settings
+   `remote.address` / `remote.port`, and its own config migration renames
+   `remote:` to `java:` when it upgrades the file. Adding `remote:` to a config
+   already at `config-version: 5` or newer does nothing: Geyser ignores the
+   section without a warning and dials its default `127.0.0.1:25565`, so Gate's
+   listener sees no connection at all.
 
 3. **Check firewall/networking**:
    ```bash
@@ -809,9 +817,15 @@ The system also handles edge cases like players switching between devices, platf
 
    ```yaml
    # Both must use floodgate
-   remote:
+   java:
      auth-type: floodgate
    ```
+
+   Geyser 2.x reads the auth mode from `java.auth-type`. The pre-2.0 layout puts
+   it at `remote.auth-type` instead, and Geyser's config migration moves it to
+   `java.auth-type` while the file is below `config-version: 5`. On a config
+   already at the current version the `remote:` key is ignored without a
+   warning, so Geyser keeps the auth mode `java.auth-type` already holds.
 
 3. **Ensure passthrough settings are correct**:
    ```yaml
