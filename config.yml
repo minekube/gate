@@ -468,7 +468,9 @@ config:
     # 1. Set managed.enabled: false (or omit the managed section)
     # 2. Download and run Geyser Standalone manually
     # 3. Configure Geyser to connect to Gate's geyserListenAddr (default: 25567)
-    # 4. Set auth-type: floodgate and use-proxy-protocol: true in Geyser config
+    # 4. Set auth-type: floodgate in Geyser's "java" section and
+    #    advanced.java.use-haproxy-protocol: true (Geyser 2.x paths; a pre-2.0
+    #    Geyser used remote.use-proxy-protocol, which Geyser migrates itself)
     # 5. Share the same floodgateKeyPath between Gate and your backend servers
     #
     # See https://gate.minekube.com/guide/bedrock#manual-setup for detailed instructions.
