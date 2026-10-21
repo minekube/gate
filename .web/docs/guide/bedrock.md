@@ -352,30 +352,48 @@ bedrock:
 ```
 
 ```yaml [Geyser config.yml]
-# Geyser Standalone configuration
+# Geyser Standalone configuration (Geyser 2.x, config-version 5 or newer)
 bedrock:
   # UDP port for Bedrock players
   port: 19132
   address: 0.0.0.0
 
-remote:
+java:
   # Connect to Gate's Bedrock listener
   address: localhost
   port: 25567
   auth-type: floodgate
-  use-proxy-protocol: true
 
-# Point to shared Floodgate key
-floodgate-key-file: /path/to/key.pem
+advanced:
+  java:
+    # Gate's Geyser listener needs the HAProxy/PROXY header to know the real
+    # Bedrock player address; without it the player shows up as Geyser's host
+    use-haproxy-protocol: true
+  # Point to shared Floodgate key
+  floodgate-key-file: /path/to/key.pem
 
 # Enable passthrough for better integration
-passthrough-motd: true
-passthrough-player-counts: true
+motd:
+  passthrough-motd: true
+  passthrough-player-counts: true
+  max-players: 100
 
-# Performance settings
-max-players: 100
 debug-mode: false
 ```
+
+::: tip Geyser 2.x moved these keys
+Geyser 2.0 sectioned its config, so the snippet above uses the current paths:
+the Java connection under `java:`, the HAProxy toggle at
+`advanced.java.use-haproxy-protocol`, the Floodgate key at
+`advanced.floodgate-key-file`, and the MOTD settings under `motd:`. A Geyser
+that still uses the pre-2.0 layout (`remote:`, root `floodgate-key-file:`,
+`remote.use-proxy-protocol`) keeps working because Geyser's own config
+migration rewrites those keys when it upgrades the file. Do not add the legacy
+`remote.use-proxy-protocol` to a config that already has
+`config-version: 5` or newer: Geyser ignores it without a warning, Gate then
+receives no PROXY header, and every Bedrock player is seen with the Geyser
+host's address.
+:::
 
 ::::
 
@@ -776,10 +794,16 @@ The system also handles edge cases like players switching between devices, platf
 1. **Verify proxy protocol settings**:
 
    ```yaml
-   # Geyser MUST use proxy protocol with Gate
-   remote:
-     use-proxy-protocol: true
+   # Geyser 2.x MUST send the HAProxy/PROXY header to Gate
+   advanced:
+     java:
+       use-haproxy-protocol: true
    ```
+
+   On a Geyser that still uses the pre-2.0 layout the same switch is
+   `remote.use-proxy-protocol: true`, which Geyser migrates on its own when it
+   upgrades the file. Adding that legacy key to an already-migrated config
+   (`config-version: 5` or newer) is silently ignored.
 
 2. **Check authentication mode alignment**:
 
