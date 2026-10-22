@@ -6,7 +6,7 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0 || ^7.0.0"
   },
   "dependencies": { "@buf/minekube_gate.connectrpc_es": "^1.6.1-20241118150055-50fffb007499.1", "@bufbuild/buf": "^1.47.2", "@bufbuild/protobuf": "^1.0.0", "@connectrpc/connect": "^1.0.0", "@connectrpc/connect-node": "^1.6.1" }
 }
