@@ -181,6 +181,15 @@ func (h *handshakeSessionHandler) handleLogin(p *packet.Handshake, inbound *init
 		if observation, ok := connectiontelemetry.FromContext(h.conn.Context()); ok {
 			observation.Observe(h.conn.Context(), connectiontelemetry.Closed, connectiontelemetry.RateLimited)
 		}
+		// Same clientbound-registry trap as the unsupported-version exit above:
+		// Gate's connection is still in the handshake state, whose registry has no
+		// Disconnect packet, so encoding the reason there fails and the player is
+		// dropped with a bare TCP close instead of "logging in too fast".
+		h.conn.SetActiveSessionHandler(state.Login, nopSessionHandler{})
+		// The connection limiter and the packet limiter both log the address they
+		// rejected; the login limiter used to drop the session silently, leaving a
+		// kicked player and an empty log. Keep the three exits consistent.
+		h.log.Info("login exceeded rate limit, closed", "remoteAddr", inbound.RemoteAddr())
 		_ = netmc.CloseWith(h.conn, packet.NewDisconnect(&component.Text{
 			Content: "You are logging in too fast, please calm down and retry.",
 			S:       component.Style{Color: color.Red},
