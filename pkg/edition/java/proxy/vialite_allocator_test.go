@@ -91,7 +91,12 @@ func TestViaManagedRunnerStartPassesAllocatorToRuntime(t *testing.T) {
 		Via:     config.Via{Enabled: true},
 	}
 	runner := newViaManagedRunner(cfg)
-	fake := &fakeVialiteServer{backends: map[string]string{"lobby": "127.0.0.1:25590"}}
+	// A live runtime blocks in Start until it stops. Returning immediately
+	// races the runner's early-exit check and makes this wiring test flaky.
+	fake := &fakeVialiteServer{
+		backends: map[string]string{"lobby": "127.0.0.1:25590"},
+		die:      make(chan struct{}),
+	}
 	var got vialite.Options
 	runner.newServer = func(opts vialite.Options) (vialiteServer, error) {
 		got = opts

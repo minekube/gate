@@ -93,7 +93,7 @@ bedrock: true
 ```yaml [With Customization]
 bedrock:
   # Custom username format to avoid conflicts
-  usernameFormat: '.%s' # .Steve instead of Steve
+  usernameFormat: '_%s' # _Steve instead of Steve
 
   # Custom listen address for Geyser connections (localhost for security)
   geyserListenAddr: 'localhost:25567'
@@ -120,6 +120,7 @@ bedrock:
 | Option             | Description                                                 | Default              |
 | ------------------ | ----------------------------------------------------------- | -------------------- |
 | `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `"_%s"`              |
+| `preserveDotPrefix` | Keep a leading `.` when the backend accepts it (e.g. Paper) | `false` |
 | `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
 | `backendFloodgate` | Optional allowlist for backend Floodgate plugin compatibility | disabled             |
@@ -131,6 +132,20 @@ characters, before login. The delivered username can therefore differ from the f
 as `_`, and so is every space or non-ASCII character in the gamertag. The normalization is deliberate rather than a
 constraint of Java itself: the backend server validates the login name, Paper's own check also accepts `.`, but
 vanilla's check is only the narrower `[A-Za-z0-9_]` alphabet, and Gate cannot know which implementation a backend runs.
+
+For a Paper backend that accepts a leading dot, opt in explicitly:
+
+```yaml
+bedrock:
+  managed: true
+  usernameFormat: '.%s'
+  preserveDotPrefix: true
+```
+
+This delivers `.Steve` rather than `_Steve`. It preserves only the first dot: spaces, non-ASCII characters and
+interior dots still become underscores, and the 16-character limit and empty-name fallback remain unchanged.
+Leave this disabled for vanilla backends. The option also applies when a linked identity supplies the name;
+it does not change which identity sources are trusted.
 
 :::
 

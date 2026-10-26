@@ -305,6 +305,11 @@ config:
     # Default: "_%s"
     #usernameFormat: "_%s"
 
+    # Keep a leading dot when usernameFormat is ".%s". Paper accepts this;
+    # vanilla backends reject it. Other invalid characters still become underscores.
+    # Default: false
+    #preserveDotPrefix: false
+
     # Path to the Floodgate encryption key file (shared between Geyser and Gate).
     # Gate can auto-generate this key in managed mode.
     # Default: "floodgate.pem"
