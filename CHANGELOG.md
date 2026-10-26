@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.1](https://github.com/minekube/gate/compare/v0.75.0...v0.75.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **docs:** defer browser-only initialization until mount ([5439dd5](https://github.com/minekube/gate/commit/5439dd52fb6cc9a194abeb62f8c65b5e37f4df23))
+
 ## [0.75.0](https://github.com/minekube/gate/compare/v0.74.52...v0.75.0) (2026-10-26)
 
 
