@@ -262,7 +262,7 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 	cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(-v))
 
 	cfg.Encoding = "console"
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.EncodeLevel = levelEncoder()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	zl, err := cfg.Build()
@@ -271,4 +271,29 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 	}
 
 	return zapr.NewLogger(zl), nil
+}
+
+// levelEncoder returns the zap level encoder for Gate's console output.
+//
+// Gate's log is its only diagnostic surface, and the usual way of keeping it
+// past a restart is to redirect it into a file (`gate >> gate.log 2>&1`, a
+// systemd unit, a container log driver). That is a pipe, not a terminal, so the
+// default colour encoder writes ANSI escapes into the file and every line looks
+// like "[32mINFO[0m ..." in an editor or a log pipeline. NO_COLOR
+// (https://no-color.org) and GATE_NO_COLOR switch it off; an empty value or "0"
+// keeps colour, so NO_COLOR=0 does not accidentally disable it.
+func levelEncoder() zapcore.LevelEncoder {
+	if envDisablesColor() {
+		return zapcore.CapitalLevelEncoder
+	}
+	return zapcore.CapitalColorLevelEncoder
+}
+
+func envDisablesColor() bool {
+	for _, name := range []string{"NO_COLOR", "GATE_NO_COLOR"} {
+		if v, ok := os.LookupEnv(name); ok && v != "" && v != "0" {
+			return true
+		}
+	}
+	return false
 }

@@ -10,6 +10,42 @@ running but not behaving - a join that never completes, a connection that stops
 moving. Start with the console output; if the proxy looks stuck, a goroutine dump
 shows exactly where every goroutine is waiting.
 
+## Keeping logs across restarts
+
+Gate writes its log to **stderr** and has no log-file setting of its own, so what survives a restart is
+whatever recorded the stream. Redirect it into a file, or let the platform keep it:
+
+```sh
+# Bare binary: append, and still watch the console
+./gate 2>&1 | tee -a gate.log
+
+# Or redirect only, e.g. from a start script
+./gate >> gate.log 2>&1
+```
+
+- **systemd**: keep it in the journal (`journalctl -u gate`) or in a file with
+  `StandardOutput=append:/var/log/gate/gate.log` and `StandardError=append:/var/log/gate/gate.log` in the unit.
+- **Docker**: use a log driver that writes files (`--log-driver local`, or `json-file` with
+  `--log-opt max-size=...`), then read it with `docker logs`. A container's log dies with the container
+  unless the driver stores it.
+- **Kubernetes**: `kubectl logs` only returns the **current** container instance, and `--previous` only the
+  one before it. Ship the stream to your logging stack (OTel Collector, Promtail, your cloud's agent) or
+  mount a volume and redirect the process output into it.
+
+### Colour codes in a redirected log
+
+By default Gate colours the log level, and a redirected file is not a terminal, so the file fills up with
+ANSI escapes (`\x1b[32mINFO\x1b[0m ...`) that every editor and log pipeline has to strip. Set `NO_COLOR`
+([no-color.org](https://no-color.org)) or `GATE_NO_COLOR` to plain text:
+
+```sh
+NO_COLOR=1 ./gate >> gate.log 2>&1
+```
+
+An empty value or `0` keeps colour, so `NO_COLOR=0` does not disable it.
+
+Gate does not rotate files itself - use `logrotate`, journald, or the container log driver for that.
+
 ## Getting a goroutine dump from a hung Gate
 
 Gate is a Go program, so a running Gate can print the stack of every goroutine it
