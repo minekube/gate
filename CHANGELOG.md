@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.75.0](https://github.com/minekube/gate/compare/v0.74.52...v0.75.0) (2026-10-26)
+
+
+### Features
+
+* **bedrock:** allow an opt-in leading dot in usernames ([6b8ab54](https://github.com/minekube/gate/commit/6b8ab5422943d704a0fc15ece784fd8109d8d671))
+* **bedrock:** allow an opt-in leading dot in usernames ([2e99394](https://github.com/minekube/gate/commit/2e9939440c61c5c88c988d6d4b55bae47d4badef))
+
 ## [0.74.52](https://github.com/minekube/gate/compare/v0.74.51...v0.74.52) (2026-10-23)
 
 
