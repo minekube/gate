@@ -56,12 +56,15 @@ After installing the binary, you can run the Gate Minecraft proxy using the `gat
 
 ```sh console
 $ gate
-INFO	gate/root.go:93	logging verbosity	{"verbosity": 0}
-INFO	gate/root.go:94	using config file	{"config": ""}
+INFO	gate/root.go:173	logging verbosity	{"verbosity": 0}
+INFO	gate/root.go:180	using config file	{"config": ""}
+INFO	gate/root.go:182	no config file found, using built-in defaults	{"hint": "run `gate config --write` to generate one, or start Gate with --init-config"}
 INFO	config	gate/gate.go:205	config validation warn	{"warn": "java: No backend servers configured."}
 INFO	java	proxy/proxy.go:299	Using favicon from data uri	{"length": 3086}
 INFO	java	proxy/proxy.go:472	listening for connections	{"addr": "0.0.0.0:25565"}
 ```
+
+Gate runs on its built-in defaults until you give it a config file. Without one it logs the hint above and writes nothing - see [Configuration](/guide/config/) for `--init-config`, which generates a `config.yml` on start.
 
 ::: tip Key Features
 
@@ -81,6 +84,14 @@ You can generate a simple configuration file using:
 ```sh console
 $ gate config -t simple -w
 ```
+
+Or have Gate write a minimal one on start, which is handy the first time you run a fresh install:
+
+```sh console
+$ gate --init-config
+```
+
+That writes `config.yml` only when Gate found no config file, and leaves an existing one untouched. The file it writes states only defaults - edit it or regenerate it with a template above.
 
 Then edit the `config.yml` file to configure your backend servers:
 

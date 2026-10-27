@@ -1,7 +1,9 @@
 package gate
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/urfave/cli/v2"
@@ -17,6 +19,8 @@ You can redirect to a file or use the --write flag:
 
 	gate config > config.yml
 	gate config --write              # Writes to config.yml
+
+An existing config.yml is never overwritten: use --force to replace it on purpose.
 
 Available config types:
   - full (default): Full configuration with all options
@@ -35,6 +39,10 @@ Available config types:
 				Name:    "write",
 				Aliases: []string{"w"},
 				Usage:   "Write config to config.yml instead of stdout",
+			},
+			&cli.BoolFlag{
+				Name:  "force",
+				Usage: "Overwrite an existing config.yml (without it, an existing file is left untouched)",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -58,8 +66,13 @@ Available config types:
 
 			if c.Bool("write") {
 				outputFile := "config.yml"
-				err := os.WriteFile(outputFile, configBytes, 0644)
-				if err != nil {
+				err := writeConfigFile(outputFile, configBytes, c.Bool("force"))
+				switch {
+				case err == nil:
+				case errors.Is(err, fs.ErrExist):
+					return cli.Exit(fmt.Sprintf(
+						"%s already exists, refusing to overwrite it (pass --force to replace it)", outputFile), 1)
+				default:
 					return cli.Exit(fmt.Errorf("error writing config to %q: %w", outputFile, err), 1)
 				}
 				fmt.Printf("Configuration written to %s\n", outputFile)
