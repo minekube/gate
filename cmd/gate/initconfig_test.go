@@ -136,23 +136,10 @@ func TestFirstStartConfigWarnsWhenWorkingDirectoryIsReadOnly(t *testing.T) {
 }
 
 // A request Gate cannot place is a clear error, not a silent no-op: there is no
-// working directory to write ./config.yml into (deleted underneath the
-// process).
-func TestFirstStartConfigErrorsWhenThereIsNoTargetPath(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("a process cannot remove its own working directory on Windows")
-	}
-	parent := t.TempDir()
-	dir := filepath.Join(parent, "gone")
-	require.NoError(t, os.Mkdir(dir, 0o700))
-	t.Chdir(dir)
-	require.NoError(t, os.Remove(dir))
-
-	res, err := firstStartConfig("", true)
-	require.Error(t, err, "no determinable target path must be an error")
-	require.Contains(t, err.Error(), "working directory")
-	require.Empty(t, res.Written)
-}
+// working directory to write ./config.yml into. Only Linux leaves a process in
+// a directory it can no longer resolve - Darwin's getcwd still names the
+// removed directory, and Windows cannot remove a live working directory - so
+// this half of the contract is pinned in initconfig_linux_test.go.
 
 // Property (c): the generated file is behaviour-neutral. It is compared against
 // the config-less boot rather than config.DefaultConfig, because that is the
