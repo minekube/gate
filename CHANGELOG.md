@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.5](https://github.com/minekube/gate/compare/v0.75.4...v0.75.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **proxy:** forward uncased config packets to the in-flight backend ([#1305](https://github.com/minekube/gate/issues/1305)) ([eee3cfc](https://github.com/minekube/gate/commit/eee3cfc7485f9fb3477b86859f0c1da2258ea591))
+
 ## [0.75.4](https://github.com/minekube/gate/compare/v0.75.3...v0.75.4) (2026-10-27)
 
 
