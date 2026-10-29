@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.10](https://github.com/minekube/gate/compare/v0.75.9...v0.75.10) (2026-10-29)
+
+
+### Bug Fixes
+
+* **bedrock:** drain managed Geyser connection notifications ([#1318](https://github.com/minekube/gate/issues/1318)) ([2867088](https://github.com/minekube/gate/commit/2867088a9b2763360a13b4e31ddeb4741798e619))
+
 ## [0.75.9](https://github.com/minekube/gate/compare/v0.75.8...v0.75.9) (2026-10-29)
 
 
