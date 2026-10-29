@@ -62,8 +62,10 @@ func (c *logCapture) countContaining(want string) int {
 
 // TestSilentBackendStallIsReported reproduces the measured plain-path stall (via
 // disabled): a backend that accepts the TCP connection and never sends a single
-// packet. The join used to sit there with nothing at all in Gate's log naming
-// the backend, its address or the stage the connection had reached.
+// packet. The configured read timeout reaps the join (see
+// TestSilentBackendJoinIsBoundedByReadTimeout for the end-to-end bound), and the
+// stall is then named with the backend, its address, the stage and the read
+// timeout instead of ending as a generic, silent disconnect.
 func TestSilentBackendStallIsReported(t *testing.T) {
 	backendListener, backendContacted := startSilentBackend(t)
 
@@ -72,7 +74,7 @@ func TestSilentBackendStallIsReported(t *testing.T) {
 	cfg.OnlineMode = false
 	cfg.Forwarding.Mode = config.NoneForwardingMode
 	cfg.Compression.Threshold = -1
-	// The stall diagnostic is armed with the configured read timeout.
+	// The stall is reaped, and reported, at the configured read timeout.
 	cfg.ReadTimeout = configutil.Duration(300 * time.Millisecond)
 	cfg.Servers = map[string]string{"lobby": backendListener.Addr().String()}
 	cfg.Try = []string{"lobby"}
@@ -124,7 +126,7 @@ func TestSilentBackendStallIsReported(t *testing.T) {
 		t.Fatal("backend was never contacted by the proxy")
 	}
 
-	line := logs.waitFor(t, "has not sent a single packet", 10*time.Second)
+	line := logs.waitFor(t, "never answered", 10*time.Second)
 	for _, want := range []string{
 		`"backend"="lobby"`,
 		`"address"="` + backendListener.Addr().String() + `"`,
@@ -138,7 +140,12 @@ func TestSilentBackendStallIsReported(t *testing.T) {
 			t.Errorf("stall diagnostic missing %q:\n%s", want, line)
 		}
 	}
-	if got := logs.countContaining("has not sent a single packet"); got != 1 {
+	// The stall that ended the join is the read timeout the operator configured,
+	// so the diagnostic carries it instead of an unexplained disconnect.
+	if strings.Contains(line, `"error"=null`) {
+		t.Errorf("stall diagnostic carries no read error, so the read timeout that ended the join is not visible:\n%s", line)
+	}
+	if got := logs.countContaining("never answered"); got != 1 {
 		t.Errorf("stall diagnostic logged %d times, want exactly 1:\n%s", got, strings.Join(logs.snapshot(), "\n"))
 	}
 }
@@ -236,10 +243,9 @@ func TestBackendStallIsNotReportedWhenBackendSpoke(t *testing.T) {
 	}
 	s.backendConnectedAt = time.Now() // the backend just spoke
 
-	// Neither the teardown report nor the while-stalled report may fire: the
-	// backend answered, so its connection ending is not a stall.
+	// The teardown report must not fire: the backend answered, so its connection
+	// ending is not a stall.
 	s.reportStalledBackend(log)
-	s.reportSilentBackend(log)
 	if got := logs.countContaining("backend server"); got != 0 {
 		t.Errorf("answered backend must not be reported, got %d lines:\n%s", got, strings.Join(logs.snapshot(), "\n"))
 	}
