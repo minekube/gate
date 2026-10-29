@@ -91,6 +91,21 @@ config:
   onlineModeKickExistingPlayers: false
   # Enabled extra debug logging (only for debugging purposes).
   debug: false
+  # Write the log to a file in addition to the console.
+  # The console log is always on; this adds a file so logs survive a restart.
+  # The file is appended to on every start and contains no colour codes.
+  log:
+    # Directory that receives gate.log, created if missing.
+    # A relative path is resolved against the working directory, so "logs"
+    # keeps the file next to a proxy started from its own folder.
+    # Default: "" (no log file)
+    directory: ""
+    # Rotate the file once it grows past this size in megabytes.
+    # Default: 50; 0 disables rotation and leaves one growing file.
+    maxSizeMB: 50
+    # How many rotated files to keep, oldest deleted first.
+    # Default: 5; 0 keeps all of them.
+    maxBackups: 5
   # This allows you to customize how player information such as IPs and UUIDs are forwarded to your server.
   # See the documentation for more information.
   forwarding:

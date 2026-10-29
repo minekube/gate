@@ -41,6 +41,12 @@ var DefaultConfig = Config{
 		Port:        25577,
 		ShowPlugins: false,
 	},
+	Log: Log{
+		// Off by default: stderr is what containers and service managers collect.
+		Directory:  "",
+		MaxSizeMB:  50,
+		MaxBackups: 5,
+	},
 	AnnounceForge:                        false,
 	Servers:                              map[string]string{},
 	Try:                                  []string{},
@@ -145,7 +151,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
-	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
+	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`
+	Log        Log        `yaml:"log,omitempty" json:"log,omitempty"` // Optional log file output.           // Query settings.
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
@@ -207,6 +214,22 @@ type (
 		Enabled     bool `yaml:"enabled"`
 		Port        int  `yaml:"port"`
 		ShowPlugins bool `yaml:"showPlugins"`
+	}
+	// Log writes the proxy log to a file in addition to the console. The console
+	// log is always on; this exists because a restarted proxy otherwise takes
+	// the previous run's log with it.
+	Log struct {
+		// Directory receives the log file, created if missing. Empty disables
+		// file output. A relative path is resolved against the working
+		// directory, so "logs" puts the file next to the proxy when Gate is
+		// started from its own folder.
+		Directory string `yaml:"directory,omitempty" json:"directory,omitempty"`
+		// MaxSizeMB rotates the file once it grows past this size. 0 disables
+		// rotation, leaving one growing file.
+		MaxSizeMB int `yaml:"maxSizeMB,omitempty" json:"maxSizeMB,omitempty"`
+		// MaxBackups is how many rotated files to keep, oldest deleted first.
+		// 0 keeps all of them.
+		MaxBackups int `yaml:"maxBackups,omitempty" json:"maxBackups,omitempty"`
 	}
 	Forwarding struct {
 		Mode              ForwardingMode `yaml:"mode"`
@@ -335,6 +358,13 @@ func (c *Config) Validate() (warns []error, errs []error) {
 				e("Invalid quota max entries %d, use a number >= 1", quota.Burst)
 			}
 		}
+	}
+
+	if c.Log.MaxSizeMB < 0 {
+		e("Invalid log maxSizeMB %d, use a number >= 0", c.Log.MaxSizeMB)
+	}
+	if c.Log.MaxBackups < 0 {
+		e("Invalid log maxBackups %d, use a number >= 0", c.Log.MaxBackups)
 	}
 
 	if pl := c.PacketLimiter; (pl.PacketsPerSecond > 0 || pl.BytesPerSecond > 0) && pl.Interval <= 0 {
