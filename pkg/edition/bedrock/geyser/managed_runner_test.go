@@ -317,6 +317,7 @@ type fakeGeyserliteServer struct {
 	healthy atomic.Bool
 	started chan struct{}
 	crash   chan error
+	opened  <-chan geyserlite.ConnectionOpen
 }
 
 func (f *fakeGeyserliteServer) Start(ctx context.Context) error {
@@ -336,6 +337,10 @@ func (f *fakeGeyserliteServer) Start(ctx context.Context) error {
 func (f *fakeGeyserliteServer) Stop(context.Context) error { return nil }
 
 func (f *fakeGeyserliteServer) Healthy() bool { return f.healthy.Load() }
+
+func (f *fakeGeyserliteServer) ConnectionOpened() <-chan geyserlite.ConnectionOpen {
+	return f.opened
+}
 
 type fakeManagedRunner struct {
 	done chan struct{}

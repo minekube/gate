@@ -45,6 +45,7 @@ type geyserliteServer interface {
 	Start(context.Context) error
 	Stop(context.Context) error
 	Healthy() bool
+	ConnectionOpened() <-chan geyserlite.ConnectionOpen
 }
 
 const (
@@ -104,7 +105,29 @@ func (r *liteManagedRunner) Start(ctx context.Context) error {
 	r.mu.Unlock()
 
 	go func() {
+		// This runner uses Floodgate rather than verified-ingress assignments.
+		// Native transport notifications still arrive: leaving them unread fills
+		// GeyserLite's bounded queue over the lifetime of the server and stops it.
+		// Reading a notification grants no identity trust and creates no assignment.
+		drainCtx, cancelDrain := context.WithCancel(runCtx)
+		drainDone := make(chan struct{})
+		go func() {
+			defer close(drainDone)
+			opened := server.ConnectionOpened()
+			for {
+				select {
+				case <-drainCtx.Done():
+					return
+				case _, ok := <-opened:
+					if !ok {
+						return
+					}
+				}
+			}
+		}()
 		err := server.Start(runCtx)
+		cancelDrain()
+		<-drainDone
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			err = nil
 		}
