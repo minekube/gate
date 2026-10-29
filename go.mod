@@ -18,7 +18,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
 	github.com/google/uuid v1.6.0
-	github.com/gookit/color v1.6.1
+	github.com/gookit/color v1.6.3
 	github.com/honeycombio/otel-config-go v1.17.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
