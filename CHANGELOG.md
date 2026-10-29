@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.7](https://github.com/minekube/gate/compare/v0.75.6...v0.75.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gammazero/deque to v1.2.2 ([#1309](https://github.com/minekube/gate/issues/1309)) ([b7e3621](https://github.com/minekube/gate/commit/b7e3621c21d4fb7b4a3edd212c7852d363b3fa41))
+
 ## [0.75.6](https://github.com/minekube/gate/compare/v0.75.5...v0.75.6) (2026-10-29)
 
 
