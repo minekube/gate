@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.8](https://github.com/minekube/gate/compare/v0.75.7...v0.75.8) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gookit/color to v1.6.3 ([#1311](https://github.com/minekube/gate/issues/1311)) ([fc5bc22](https://github.com/minekube/gate/commit/fc5bc228798750240e2df5deddfc72b954d96077))
+
 ## [0.75.7](https://github.com/minekube/gate/compare/v0.75.6...v0.75.7) (2026-10-29)
 
 
