@@ -26,6 +26,24 @@ will be simply disconnected, and the default settings should
 never affect legitimate players and only rate limit aggressive
 behaviours.
 
+## What gets logged
+
+Every rejection is written at info level and names the address that was rejected, so an operator can
+tell a rate-limited player from a broken client:
+
+| Limiter | Log message |
+|---------|-------------|
+| connection limiter | `connection exceeded rate limit, closed` with `remoteAddr` |
+| login limiter | `login exceeded rate limit, closed` with `remoteAddr` |
+| packet limiter | `serverbound packet rate limit exceeded, closing connection` with `remoteAddr` |
+
+A rate-limited login is also told why before the connection closes - the client shows
+`You are logging in too fast, please calm down and retry.`
+
+If you collect [connection telemetry](/guide/otel/), rejections are counted as
+`gate_connection_events_total` with `stage="closed"` and `outcome="rate_limited"`, which is the
+cheapest way to alert on sustained blocking.
+
 
 ::: tip
 
