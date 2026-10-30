@@ -19,7 +19,7 @@ importers:
         version: 7.0.8
       posthog-js:
         specifier: ^1.93.3
-        version: 1.442.1
+        version: 1.444.0
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.15
@@ -868,11 +868,11 @@ packages:
   '@posthog/browser-common@0.10.2':
     resolution: {integrity: sha512-ieHSMmY4xG+HfkMTrT9yZoG0NMBWyA4aXMFPCuOOV+xRe706+zoPuwqmNHXv7LGXfi6CvOv4qksEoPNWfP359Q==}
 
-  '@posthog/core@1.61.2':
-    resolution: {integrity: sha512-l3b6Dc2NmItwmyu6ot7K2jtStQOAQjZw/PB/gpZwk2W6SBCbvPg6YJzReSBSQLuok19ridbfVNk70a5hgoGX2Q==}
+  '@posthog/core@1.62.0':
+    resolution: {integrity: sha512-KjNwGC7s0141wnWWHubNMdg1lOhZjqKRw2OTNstuzdVvNDfvv2RbFJQSSvvABmbCmTXwlMpdnbb/M/aAigDnNQ==}
 
-  '@posthog/types@1.418.0':
-    resolution: {integrity: sha512-WqDXUWH1R8OilBp2PfDpQIRZSCs3QyOnw7H3YK7lvZLCMIsOqSZAKJrrqYWt4f7FvnVCACRuNGCC0HKh3J/HWw==}
+  '@posthog/types@1.419.0':
+    resolution: {integrity: sha512-XX7zRYt/vK8AzaD6V+oDquAzacZf5exJv971dja9En8Qf6g84Qvc3rpT0w6hDYYLWrjaSSkdjFfvvoXI0ouJDg==}
 
   '@rollup/rollup-android-arm-eabi@4.63.4':
     resolution: {integrity: sha512-I+BSHzTAhKN2n7ZwGZsegGcZjDpLqFOMAtJz/u6uFGe0pUFbq56dEHjqJV/ZUdRJtNXNxA+hREUatZBvMR3Oiw==}
@@ -1571,8 +1571,8 @@ packages:
     resolution: {integrity: sha512-LJlKCCAUFKOuZxipUdYw1NzIITEsPcgyOG9LkvRJvuKj/bRzbuRY0ARXvL0pWGpsZvn8jku+LMep2eU0seHp8g==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-js@1.442.1:
-    resolution: {integrity: sha512-tk75+K4Ti13cli/oMWRd69gjdU6zxD/pgGj956rX2Ke69pt6NrGuGMKhSozgQtVYUA4em6e0h8Q0ZxYhAvAvIA==}
+  posthog-js@1.444.0:
+    resolution: {integrity: sha512-4m+QsAFi1h5Zt8eFq6ciJGD8bcLMt1P/O1cLlo26RrX5F4oMOIKZsNIlf1SIMZWlRNNCFemSpzn6HhwtkZMrnA==}
     peerDependencies:
       '@types/react': '>=16.8.0'
       react: '>=16.8.0'
@@ -2506,17 +2506,17 @@ snapshots:
 
   '@posthog/browser-common@0.10.2':
     dependencies:
-      '@posthog/core': 1.61.2
-      '@posthog/types': 1.418.0
+      '@posthog/core': 1.62.0
+      '@posthog/types': 1.419.0
       preact: 10.29.8
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@posthog/core@1.61.2':
+  '@posthog/core@1.62.0':
     dependencies:
-      '@posthog/types': 1.418.0
+      '@posthog/types': 1.419.0
 
-  '@posthog/types@1.418.0': {}
+  '@posthog/types@1.419.0': {}
 
   '@rollup/rollup-android-arm-eabi@4.63.4':
     optional: true
@@ -3190,11 +3190,11 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  posthog-js@1.442.1:
+  posthog-js@1.444.0:
     dependencies:
       '@posthog/browser-common': 0.10.2
-      '@posthog/core': 1.61.2
-      '@posthog/types': 1.418.0
+      '@posthog/core': 1.62.0
+      '@posthog/types': 1.419.0
       core-js: 3.51.0
       dompurify: 3.4.17
       fflate: 0.4.9
