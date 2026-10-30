@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.12](https://github.com/minekube/gate/compare/v0.75.11...v0.75.12) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.85.1 ([#1323](https://github.com/minekube/gate/issues/1323)) ([23f12b7](https://github.com/minekube/gate/commit/23f12b7f2a39dfe847acfb335c3778f998d55ab5))
+
 ## [0.75.11](https://github.com/minekube/gate/compare/v0.75.10...v0.75.11) (2026-10-30)
 
 
