@@ -1,6 +1,6 @@
 module go.minekube.com/gate
 
-go 1.26.0
+go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.1
@@ -22,7 +22,7 @@ require (
 	github.com/honeycombio/otel-config-go v1.17.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pires/go-proxyproto v0.15.0
+	github.com/pires/go-proxyproto v0.16.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
 	github.com/robinbraemer/event v0.1.1
@@ -109,8 +109,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/image v0.46.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 )
