@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.5 ([#1338](https://github.com/minekube/gate/issues/1338)) ([37800e9](https://github.com/minekube/gate/commit/37800e96b8f0bdd1e3061de5f6823a7c63827c5b))
+
 ## [0.75.16](https://github.com/minekube/gate/compare/v0.75.15...v0.75.16) (2026-10-31)
 
 
