@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -167,6 +169,8 @@ func NewMinecraftConn(
 		c:             base,
 		ctx:           ctx,
 		cancelCtx:     cancel,
+		readTimeout:   readTimeout,
+		writeTimeout:  writeTimeout,
 		rd:            NewReaderWithContext(ctx, base, in, readTimeout, log),
 		wr:            NewWriter(base, out, writeTimeout, compressionLevel, log),
 		state:         state.Handshake,
@@ -186,6 +190,15 @@ type minecraftConn struct {
 	c         net.Conn    // underlying connection
 	log       logr.Logger // connections own logger
 	direction proto.Direction
+
+	// readTimeout and writeTimeout are the configured budgets this connection
+	// installed on its socket. They are kept so a close on one of them can be
+	// named (DeadlineClose) and logged with the budget it exceeded.
+	readTimeout  time.Duration
+	writeTimeout time.Duration
+	// deadlineClose records the configured deadline that closed this
+	// connection, if Gate closed it on one.
+	deadlineClose atomic.Pointer[deadlineClose]
 
 	rd Reader
 	wr Writer
@@ -243,6 +256,9 @@ func (c *minecraftConn) startReadLoop() {
 				// Sleep briefly and try again
 				time.Sleep(time.Millisecond * 5)
 				return true
+			}
+			if isDeadlineExceeded(err) {
+				c.recordDeadlineClose(DeadlineRead, c.readTimeout)
 			}
 			return false
 		}
@@ -392,6 +408,13 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	if err == nil {
 		return
 	}
+	// Record the cause before closing: Close runs the session handler's
+	// Disconnected, which reports the reason to the player through
+	// DeadlineClose.
+	writeDeadline := c.writeTimeout > 0 && isDeadlineExceeded(err)
+	if writeDeadline {
+		c.recordDeadlineClose(DeadlineWrite, c.writeTimeout)
+	}
 	_ = c.Close()
 	if errors.Is(err, ErrClosedConn) {
 		return // Don't log this error
@@ -400,11 +423,40 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	if errors.As(err, &opErr) && errs.IsConnClosedErr(opErr.Err) {
 		return // Don't log this error
 	}
+	// A write-deadline close is how a backend or client that stops reading is
+	// reaped, so it is logged at production verbosity with the budget that
+	// fired. It is countable there and nowhere else: the socket is closed right
+	// after, and the peer is never named by anyone else.
+	if writeDeadline {
+		attrs := []any{"closeKind", string(DeadlineWrite), "writeTimeout", c.writeTimeout}
+		if c.c.RemoteAddr() != nil {
+			attrs = append(attrs, "peer", c.c.RemoteAddr().String())
+		}
+		c.log.Error(err, "write deadline exceeded, closing connection", append(attrs, logKeysAndValues...)...)
+		return
+	}
 	log := c.log.V(1)
 	if !log.Enabled() {
 		return
 	}
 	log.Info("error writing packet, closing connection", append(logKeysAndValues, "error", err)...)
+}
+
+// isDeadlineExceeded reports whether err is a deadline Gate installed on the
+// socket expiring, as opposed to any other network failure.
+func isDeadlineExceeded(err error) bool {
+	if errors.Is(err, os.ErrDeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	// ETIMEDOUT is the kernel giving up on retransmissions or keepalives, not a
+	// deadline Gate installed, and net.Error.Timeout() reports it as one - so it
+	// is excluded before that fallback, or a stalled network path would be
+	// reported as our budget firing.
+	if errors.Is(err, syscall.ETIMEDOUT) {
+		return false
+	}
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }
 
 func (c *minecraftConn) Close() error {

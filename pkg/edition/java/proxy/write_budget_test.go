@@ -16,8 +16,8 @@ import (
 	"go.minekube.com/common/minecraft/component/codec/legacy"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
-	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
+	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
@@ -530,8 +530,8 @@ func TestBackendWriteDeadlineCloseShowsItsOwnMessage(t *testing.T) {
 	reason := disconnectReasonText(t, disconnect)
 	require.NotContains(t, reason, "Internal server connection error",
 		"a write-deadline close must not be reported as an internal proxy error")
-	require.Contains(t, reason, "stopped responding",
-		"a write-deadline close must tell the player the server stopped responding")
+	require.Contains(t, reason, "stopped accepting data",
+		"a write-deadline close must tell the player the backend stopped draining what Gate sends")
 }
 
 // disconnectReasonText renders the reason of a Disconnect packet as the plain
@@ -543,4 +543,57 @@ func disconnectReasonText(t *testing.T, d *packet.Disconnect) string {
 	b := new(strings.Builder)
 	require.NoError(t, (&legacy.Legacy{}).Marshal(b, d.Reason.Component))
 	return b.String()
+}
+
+// TestBackendReadDeadlineCloseShowsItsOwnMessage is the silence half of the
+// same rule: a backend that stops sending for readTimeout is closed by Gate's
+// read deadline, and the player is told the server stopped responding rather
+// than being shown an internal proxy error.
+func TestBackendReadDeadlineCloseShowsItsOwnMessage(t *testing.T) {
+	const readTimeout = 80 * time.Millisecond
+
+	peer, proxySide := net.Pipe() // the peer never sends a byte
+	defer peer.Close()
+	defer proxySide.Close()
+
+	backendConn, readLoop := netmc.NewMinecraftConn(
+		context.Background(), proxySide, proto.ClientBound,
+		readTimeout, 30*time.Second, -1, nil,
+	)
+	backendConn.SetActiveSessionHandler(state.Play, nopSessionHandler{})
+	go readLoop()
+
+	deadline := time.Now().Add(2 * time.Second)
+	for !netmc.Closed(backendConn) && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	require.True(t, netmc.Closed(backendConn), "the read deadline did not close the connection")
+
+	playerConn := &testMinecraftConn{}
+	proxy := &Proxy{cfg: &config.Config{}}
+	player := &connectedPlayer{
+		MinecraftConn: playerConn,
+		log:           logr.Discard(),
+		profile:       &profile.GameProfile{ID: uuid.New(), Name: "SilenceTester"},
+	}
+	player.sessionHandlerDeps = &sessionHandlerDeps{proxy: proxy}
+	server := newRegisteredServer(NewServerInfo("lobby", mustParseAddr("127.0.0.1:25566")))
+	serverConn := &serverConnection{
+		server:     server,
+		player:     player,
+		log:        logr.Discard(),
+		connection: backendConn,
+	}
+	handler := &backendPlaySessionHandler{serverConn: serverConn, log: logr.Discard()}
+
+	handler.Disconnected()
+
+	require.Len(t, playerConn.writtenPackets, 1, "the player must be told why the session ended")
+	disconnect, ok := playerConn.writtenPackets[0].(*packet.Disconnect)
+	require.Truef(t, ok, "expected a Disconnect packet, got %T", playerConn.writtenPackets[0])
+	reason := disconnectReasonText(t, disconnect)
+	require.NotContains(t, reason, "Internal server connection error",
+		"a read-deadline close must not be reported as an internal proxy error")
+	require.Contains(t, reason, "stopped responding",
+		"a read-deadline close must tell the player the server stopped responding")
 }
