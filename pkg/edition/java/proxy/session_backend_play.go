@@ -356,7 +356,19 @@ func handleResourcePacketRequest_(
 					"with a ResourcePack already applied, the applying of the resource pack will be skipped.")
 			}
 		} else {
-			err = serverConn.player.resourcePackHandler.QueueResourcePack(&toSend)
+			handler := serverConn.player.resourcePackHandler
+			// A queued legacy response may outlive a server switch, and an automatic decline has no client packet to forward.
+			if legacy, ok := handler.(interface {
+				QueueResourcePackFromBackend(*resourcepack.Info, proto.PacketWriter) error
+			}); ok {
+				backend, connected := serverConn.ensureConnected()
+				if !connected {
+					return netmc.ErrClosedConn
+				}
+				err = legacy.QueueResourcePackFromBackend(&toSend, backend)
+			} else {
+				err = handler.QueueResourcePack(&toSend)
+			}
 			if err != nil {
 				return fmt.Errorf("error queuing resource pack: %w", err)
 			}

@@ -3,6 +3,7 @@ package resourcepack
 import (
 	"github.com/robinbraemer/event"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -52,6 +53,10 @@ func (h *legacy117Handler) Remove(id uuid.UUID) bool {
 
 func (h *legacy117Handler) QueueResourcePack(info *Info) error {
 	return h.l.QueueResourcePack(info)
+}
+
+func (h *legacy117Handler) QueueResourcePackFromBackend(info *Info, backend proto.PacketWriter) error {
+	return h.l.QueueResourcePackFromBackend(info, backend)
 }
 
 func (h *legacy117Handler) QueueResourcePackRequest(request *packet.ResourcePackRequest) error {
