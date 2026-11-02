@@ -229,6 +229,25 @@ log:
       messages (flushQueuedPluginMessagesTo) - a Gate-side addition, not a port. No upstream behavior
       was ported, so the verified sync point is unchanged.
 
+  - date: 2026-11-03
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate legacy resource pack handler deadlock fix (the handler re-acquired
+      its own mutex when queueing a backend pack request, so the request was never written to the
+      client and a 1.20.1 login to a pack-serving backend stalled until the client read timeout).
+      PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and the same 11 commits as
+      the review entries above - so there was no new upstream work to assess. The comparison this
+      change needed is upstream's LegacyResourcePackHandler at that head: it keeps the previous
+      response as a nullable Boolean (no response yet is distinct from a decline) and runs its queue
+      without re-entering a lock, so it has no counterpart to Gate's deadlock. Gate's fix adopts the
+      tri-state previous response and restructures its own queue so event firing and packet writes
+      happen outside the handler lock - a Gate-side repair informed by the upstream state machine,
+      not a port of an upstream commit. No upstream behavior was ported, so the verified sync point
+      is unchanged.
+
 ```
 
 ## The log
