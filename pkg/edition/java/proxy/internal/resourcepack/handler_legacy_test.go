@@ -23,7 +23,10 @@ type legacyTestPlayer struct {
 	write    func(proto.Packet) error
 }
 
+// Protocol returns the protocol configured for the fake player.
 func (p *legacyTestPlayer) Protocol() proto.Protocol { return p.protocol }
+
+// WritePacket records player packets or invokes the configured write hook.
 func (p *legacyTestPlayer) WritePacket(packet proto.Packet) error {
 	if p.write != nil {
 		return p.write(packet)
@@ -37,6 +40,7 @@ type legacyTestBackend struct {
 	write  func(proto.Packet) error
 }
 
+// WritePacket records backend packets or invokes the configured write hook.
 func (b *legacyTestBackend) WritePacket(packet proto.Packet) error {
 	if b.write != nil {
 		return b.write(packet)
@@ -45,6 +49,7 @@ func (b *legacyTestBackend) WritePacket(packet proto.Packet) error {
 	return nil
 }
 
+// legacyCall runs a handler operation with a timeout to detect deadlocks.
 func legacyCall[T any](t *testing.T, fn func() T) T {
 	t.Helper()
 	done := make(chan T, 1)
@@ -59,6 +64,7 @@ func legacyCall[T any](t *testing.T, fn func() T) T {
 	}
 }
 
+// legacyPacket waits for a packet or fails the test on timeout.
 func legacyPacket(t *testing.T, packets <-chan proto.Packet) proto.Packet {
 	t.Helper()
 	select {
@@ -70,6 +76,7 @@ func legacyPacket(t *testing.T, packets <-chan proto.Packet) proto.Packet {
 	}
 }
 
+// legacyResponse delivers a status with a timeout and checks for errors.
 func legacyResponse(t *testing.T, h Handler, status packet.ResponseStatus) bool {
 	t.Helper()
 	type result struct {
@@ -86,6 +93,7 @@ func legacyResponse(t *testing.T, h Handler, status packet.ResponseStatus) bool 
 	return got.handled
 }
 
+// assertLegacyRequest checks the next request's URL and required flag.
 func assertLegacyRequest(t *testing.T, packets <-chan proto.Packet, url string, required bool) {
 	t.Helper()
 	p := legacyPacket(t, packets)
@@ -95,6 +103,7 @@ func assertLegacyRequest(t *testing.T, packets <-chan proto.Packet, url string, 
 	}
 }
 
+// assertLegacyStatus checks the status of the next resource pack response.
 func assertLegacyStatus(t *testing.T, packets <-chan proto.Packet, status packet.ResponseStatus) {
 	t.Helper()
 	p := legacyPacket(t, packets)
@@ -104,6 +113,7 @@ func assertLegacyStatus(t *testing.T, packets <-chan proto.Packet, status packet
 	}
 }
 
+// assertNoLegacyPacket fails if a packet is immediately available.
 func assertNoLegacyPacket(t *testing.T, packets <-chan proto.Packet) {
 	t.Helper()
 	select {
@@ -113,6 +123,8 @@ func assertNoLegacyPacket(t *testing.T, packets <-chan proto.Packet) {
 	}
 }
 
+// TestLegacyFirstResourcePackRequest ensures an unanswered first pack is sent
+// whether optional or required, without being marked pending before acceptance.
 func TestLegacyFirstResourcePackRequest(t *testing.T) {
 	for _, required := range []bool{false, true} {
 		t.Run(fmt.Sprintf("required=%v", required), func(t *testing.T) {
@@ -130,6 +142,8 @@ func TestLegacyFirstResourcePackRequest(t *testing.T) {
 	}
 }
 
+// TestLegacyResourcePackResponsesAndFIFO checks response forwarding and pack state
+// while ensuring the next request waits for the preceding terminal response.
 func TestLegacyResourcePackResponsesAndFIFO(t *testing.T) {
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, 3)}
 	backend := &legacyTestBackend{writes: make(chan proto.Packet, 4)}
@@ -162,6 +176,8 @@ func TestLegacyResourcePackResponsesAndFIFO(t *testing.T) {
 	}
 }
 
+// TestLegacyUntrackedAndDuplicateResponses ensures stale, mismatched, and duplicate
+// responses cannot change pack state or be forwarded to a backend.
 func TestLegacyUntrackedAndDuplicateResponses(t *testing.T) {
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, 1)}
 	backend := &legacyTestBackend{writes: make(chan proto.Packet, 3)}
@@ -196,6 +212,8 @@ func TestLegacyUntrackedAndDuplicateResponses(t *testing.T) {
 	}
 }
 
+// TestLegacyDeclinedPackFlushesOptionalQueue checks that a decline rejects queued
+// optional packs, while a required prompt can be sent and acceptance restores prompting.
 func TestLegacyDeclinedPackFlushesOptionalQueue(t *testing.T) {
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, 3)}
 	firstBackend := &legacyTestBackend{writes: make(chan proto.Packet, 2)}
@@ -230,6 +248,8 @@ func TestLegacyDeclinedPackFlushesOptionalQueue(t *testing.T) {
 	assertLegacyRequest(t, player.writes, last.URL, false)
 }
 
+// TestLegacyQueueWaitsForResponseWrite prevents later requests from overtaking a
+// blocked terminal response, even when another pack is queued during the write.
 func TestLegacyQueueWaitsForResponseWrite(t *testing.T) {
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, 3)}
 	backend := &legacyTestBackend{writes: make(chan proto.Packet, 1)}
@@ -272,6 +292,8 @@ func TestLegacyQueueWaitsForResponseWrite(t *testing.T) {
 	assertLegacyRequest(t, player.writes, third.URL, false)
 }
 
+// TestLegacyQueueDoesNotAdvanceWhileRequestWriteIsRunning ensures a response during
+// a blocked request write cannot start a competing runner or duplicate the next send.
 func TestLegacyQueueDoesNotAdvanceWhileRequestWriteIsRunning(t *testing.T) {
 	writes := make(chan proto.Packet, 2)
 	release := make(chan struct{})
@@ -303,6 +325,8 @@ func TestLegacyQueueDoesNotAdvanceWhileRequestWriteIsRunning(t *testing.T) {
 	assertNoLegacyPacket(t, writes)
 }
 
+// TestLegacyConcurrentQueuesSendOnce ensures concurrent enqueues send each pack
+// once and wait for a terminal response before sending the next one.
 func TestLegacyConcurrentQueuesSendOnce(t *testing.T) {
 	const count = 32
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, count)}
@@ -339,6 +363,8 @@ func TestLegacyConcurrentQueuesSendOnce(t *testing.T) {
 	assertNoLegacyPacket(t, player.writes)
 }
 
+// TestLegacyFailedWriteDoesNotBlockQueue checks that failed sends report the
+// appropriate error or backend decline and do not strand later packs.
 func TestLegacyFailedWriteDoesNotBlockQueue(t *testing.T) {
 	writes := make(chan proto.Packet, 3)
 	writeErr := errors.New("write failed")
@@ -383,6 +409,8 @@ func TestLegacyFailedWriteDoesNotBlockQueue(t *testing.T) {
 	assertLegacyRequest(t, writes, last.URL, false)
 }
 
+// TestLegacyResponseDuringFailedWrite checks that a response racing a failed send
+// clears pending state without reporting a second failure after completion.
 func TestLegacyResponseDuringFailedWrite(t *testing.T) {
 	for _, status := range []packet.ResponseStatus{AcceptedResponseStatus, SuccessfulResponseStatus} {
 		t.Run(fmt.Sprint(status), func(t *testing.T) {
@@ -420,10 +448,13 @@ type legacyReentrantEvents struct {
 	onStatus func(*PlayerResourcePackStatusEvent)
 }
 
+// FireParallel invokes the configured status callback synchronously for reentrancy tests.
 func (e *legacyReentrantEvents) FireParallel(value event.Event, _ ...event.HandlerFunc) {
 	e.onStatus(value.(*PlayerResourcePackStatusEvent))
 }
 
+// TestLegacyResponseCallbacksCanReenter ensures callbacks see updated pack state
+// and can enqueue another pack without deadlocking or sending it twice.
 func TestLegacyResponseCallbacksCanReenter(t *testing.T) {
 	player := &legacyTestPlayer{protocol: version.Minecraft_1_20.Protocol, writes: make(chan proto.Packet, 2)}
 	events := &legacyReentrantEvents{Manager: event.Nop}

@@ -18,11 +18,13 @@ type resourcePackFlowConn struct {
 	rawWrites int
 }
 
+// Write counts raw packet writes for the fake connection.
 func (c *resourcePackFlowConn) Write([]byte) error {
 	c.rawWrites++
 	return nil
 }
 
+// runResourcePackFlow runs a session handler operation with a timeout to detect deadlocks.
 func runResourcePackFlow(t *testing.T, fn func()) {
 	t.Helper()
 	done := make(chan struct{})
@@ -37,6 +39,8 @@ func runResourcePackFlow(t *testing.T, fn func()) {
 	}
 }
 
+// TestLegacyResourcePackPlayFlow ensures responses reach the originating backend
+// after a server switch and late duplicates are not forwarded to either backend.
 func TestLegacyResourcePackPlayFlow(t *testing.T) {
 	for _, required := range []bool{false, true} {
 		t.Run(map[bool]string{false: "optional", true: "required"}[required], func(t *testing.T) {

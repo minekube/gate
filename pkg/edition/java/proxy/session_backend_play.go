@@ -297,6 +297,10 @@ func handleResourcePacketRequest(
 		}
 	}
 }
+
+// handleResourcePacketRequest_ applies plugin decisions and queues backend packs.
+// Legacy requests retain their originating connection so delayed responses are routed
+// to the right backend after a server switch.
 func handleResourcePacketRequest_(
 	p *packet.ResourcePackRequest,
 	serverConn *serverConnection,

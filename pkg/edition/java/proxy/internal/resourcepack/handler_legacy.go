@@ -42,6 +42,8 @@ type legacyHandler struct {
 	appliedPack          *Info
 }
 
+// newLegacyHandler starts with an unknown response so the first pack is prompted;
+// later acceptance permits prompts, while a decline automatically rejects optional packs.
 func newLegacyHandler(player Player, eventMgr event.Manager) *legacyHandler {
 	return &legacyHandler{
 		player:               player,
@@ -53,18 +55,21 @@ func newLegacyHandler(player Player, eventMgr event.Manager) *legacyHandler {
 
 var _ Handler = (*legacyHandler)(nil)
 
+// FirstAppliedPack returns the currently applied legacy pack, if any.
 func (h *legacyHandler) FirstAppliedPack() *Info {
 	h.RLock()
 	defer h.RUnlock()
 	return h.appliedPack
 }
 
+// FirstPendingPack returns the accepted pack awaiting a terminal response, if any.
 func (h *legacyHandler) FirstPendingPack() *Info {
 	h.RLock()
 	defer h.RUnlock()
 	return h.pendingPack
 }
 
+// AppliedResourcePacks returns the applied pack as a single-element slice, if any.
 func (h *legacyHandler) AppliedResourcePacks() []*Info {
 	h.RLock()
 	defer h.RUnlock()
@@ -74,6 +79,7 @@ func (h *legacyHandler) AppliedResourcePacks() []*Info {
 	return []*Info{h.appliedPack}
 }
 
+// PendingResourcePacks returns the pending pack as a single-element slice, if any.
 func (h *legacyHandler) PendingResourcePacks() []*Info {
 	h.RLock()
 	defer h.RUnlock()
@@ -83,6 +89,7 @@ func (h *legacyHandler) PendingResourcePacks() []*Info {
 	return []*Info{h.pendingPack}
 }
 
+// ClearAppliedResourcePacks clears the recorded applied pack.
 func (h *legacyHandler) ClearAppliedResourcePacks() {
 	h.Lock()
 	defer h.Unlock()
@@ -90,10 +97,12 @@ func (h *legacyHandler) ClearAppliedResourcePacks() {
 	h.appliedPack = nil
 }
 
+// Remove panics because legacy clients cannot remove individual resource packs.
 func (h *legacyHandler) Remove(id uuid.UUID) bool {
 	panic("Cannot remove a ResourcePack from a legacy client")
 }
 
+// QueueResourcePack queues a pack without a retained backend connection.
 func (h *legacyHandler) QueueResourcePack(info *Info) error {
 	return h.queueResourcePack(info, nil)
 }
@@ -104,6 +113,8 @@ func (h *legacyHandler) QueueResourcePackFromBackend(info *Info, backend proto.P
 	return h.queueResourcePack(info, backend)
 }
 
+// queueResourcePack enqueues a pack and starts one runner when the queue is idle.
+// It releases the lock before running the queue so callbacks and writes can reenter.
 func (h *legacyHandler) queueResourcePack(info *Info, backend proto.PacketWriter) error {
 	if info == nil {
 		return errors.New("resource pack info is nil")
@@ -128,8 +139,10 @@ func (h *legacyHandler) startQueueLocked() bool {
 	return true
 }
 
-// owner is the request whose caller is still waiting for a queue result. Errors
-// for other requests must not make that caller decline the wrong request.
+// tickResourcePackQueue advances the FIFO with one runner to prevent duplicate
+// sends, releasing the lock for callbacks and writes. A non-nil owner identifies
+// the waiting caller's request; errors for other requests must not make that caller
+// decline the wrong pack.
 func (h *legacyHandler) tickResourcePackQueue(owner *legacyQueuedPack) error {
 	var result error
 	for {
@@ -198,10 +211,14 @@ func (h *legacyHandler) tickResourcePackQueue(owner *legacyQueuedPack) error {
 	}
 }
 
+// OnResourcePackResponse handles a client response with the legacy force-pack policy.
 func (h *legacyHandler) OnResourcePackResponse(bundle *ResponseBundle) (bool, error) {
 	return h.onResourcePackResponse(bundle, h.shouldDisconnectForForcePack)
 }
 
+// onResourcePackResponse updates the active pack and dispatches its response.
+// Terminal responses hold the queue until dispatch finishes, preserving response order
+// while callbacks and writes run without the lock and may reenter the handler.
 func (h *legacyHandler) onResourcePackResponse(
 	bundle *ResponseBundle,
 	shouldDisconnectForForcePack func(e *PlayerResourcePackStatusEvent) bool,
@@ -257,6 +274,8 @@ func (h *legacyHandler) onResourcePackResponse(
 	return handled, err
 }
 
+// dispatchResponse fires the status event and routes or handles the response.
+// It must run without the handler lock because callbacks and writes may reenter.
 func (h *legacyHandler) dispatchResponse(
 	queued *legacyQueuedPack,
 	bundle *ResponseBundle,
@@ -277,6 +296,7 @@ func (h *legacyHandler) dispatchResponse(
 	return h.HandleResponseResult(queued.info, bundle)
 }
 
+// HasPackAppliedByHash reports whether a non-nil hash matches the applied pack.
 func (h *legacyHandler) HasPackAppliedByHash(hash []byte) bool {
 	h.RLock()
 	defer h.RUnlock()
@@ -286,23 +306,28 @@ func (h *legacyHandler) HasPackAppliedByHash(hash []byte) bool {
 	return h.appliedPack != nil && bytes.Equal(h.appliedPack.Hash, hash)
 }
 
+// shouldDisconnectForForcePack reports whether a required pack was declined.
 func (h *legacyHandler) shouldDisconnectForForcePack(e *PlayerResourcePackStatusEvent) bool {
 	return e.Status() == DeclinedResponseStatus &&
 		e.PackInfo().ShouldForce
 }
 
+// QueueResourcePackRequest validates and queues a resource pack request.
 func (h *legacyHandler) QueueResourcePackRequest(request *packet.ResourcePackRequest) error {
 	return queueResourcePackRequest(request, h)
 }
 
+// SendResourcePackRequestPacket writes the pack request to the player.
 func (h *legacyHandler) SendResourcePackRequestPacket(pack *Info) error {
 	return sendResourcePackRequestPacket(pack, h.player)
 }
 
+// HandleResponseResult handles plugin packs locally and otherwise forwards to the backend in flight.
 func (h *legacyHandler) HandleResponseResult(queued *Info, bundle *ResponseBundle) (handled bool, err error) {
 	return handleResponseResult(queued, bundle, h.player)
 }
 
+// CheckAlreadyAppliedPack rejects a hash that matches the applied pack.
 func (h *legacyHandler) CheckAlreadyAppliedPack(hash []byte) error {
 	return checkAlreadyAppliedPack(hash, h)
 }
