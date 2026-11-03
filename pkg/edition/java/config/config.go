@@ -501,6 +501,11 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 		w("Lite mode ignores auth.privateKeyBits: Lite forwards the login to the backend, so " +
 			"Gate never generates a login key. Configure the key size on the backend instead.")
 	}
+
+	if !c.Permissions.Empty() {
+		w("Lite mode ignores permissions: Lite pipes the connection through unchanged, so " +
+			"Gate never applies config.permissions. Configure permissions on the backend or disable lite.enabled.")
+	}
 }
 
 // validateProxyProtocol validates the trusted upstreams allowed to send a PROXY

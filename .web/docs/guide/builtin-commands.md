@@ -67,8 +67,9 @@ Semantics:
   that is not granted `gate.command.server` cannot use `/server` even when `default` grants it.
 - `deny` always wins, over `default` and over `players`.
 - Entries are permission nodes (`gate.command.server`), a trailing wildcard prefix (`gate.command.*`) or `*`.
-- Keys are player UUIDs; usernames are accepted case-insensitively as a convenience only, because an offline-mode name
-  is not an identity. Prefer UUIDs.
+- Keys are player UUIDs; usernames are accepted case-insensitively as a convenience only. For direct offline logins,
+  Gate derives the UUID from the claimed username, so neither value proves identity. Prefer UUIDs when Gate receives an
+  identity from Mojang authentication or a trusted upstream.
 - An invalid key or pattern fails config validation at startup instead of silently not matching, and an empty
   `permissions` block changes nothing.
 - The block is read when the proxy starts; a config reload does not re-register the provider yet.

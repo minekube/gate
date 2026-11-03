@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/util/permission"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
@@ -212,4 +213,30 @@ func TestPermissionsConfigValidationAcceptsValidBlock(t *testing.T) {
 
 	_, errs := cfg.Validate()
 	require.Empty(t, errs)
+}
+
+// TestPermissionsLiteModeWarns pins that a Lite config which sets permissions is
+// told the setting is inert: Lite pipes the connection through unchanged, so Gate
+// never takes part in login and never applies permissions.
+func TestPermissionsLiteModeWarns(t *testing.T) {
+	cfg := DefaultConfig
+	cfg.Lite = liteconfig.DefaultConfig
+	cfg.Lite.Enabled = true
+	cfg.Permissions = Permissions{Default: []string{"gate.command.server"}}
+
+	warns, _ := cfg.Validate()
+	var found bool
+	for _, warn := range warns {
+		if strings.Contains(warn.Error(), "Lite mode ignores permissions") {
+			found = true
+		}
+	}
+	require.True(t, found, "want a warning that Lite mode ignores permissions, got %v", warns)
+
+	cfg.Permissions = Permissions{}
+	warns, _ = cfg.Validate()
+	for _, warn := range warns {
+		require.NotContains(t, warn.Error(), "Lite mode ignores permissions",
+			"an empty permissions block must not warn")
+	}
 }
