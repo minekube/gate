@@ -264,6 +264,14 @@ func (c *chatHandler) handleSessionCommand(packet *chat.SessionPlayerCommand, un
 }
 
 func executeCommand(cmd string, player *connectedPlayer, cmdMgr *command.Manager) (hasRun bool, err error) {
+	// A builtin command the player may not use is not an unknown command: the
+	// backend would only answer "Unknown command", so refuse it here and say why
+	// instead of forwarding it. This is what makes config.permissions denials
+	// visible to the player (minekube/gate#1293).
+	if node := deniedBuiltinCommandNode(player.config(), player, cmd); node != "" {
+		return true, player.SendMessage(builtinCmdRefusedMessage(node))
+	}
+
 	// Make invoke context
 	ctx, cancel := context.WithCancel(player.Context())
 	defer cancel()
