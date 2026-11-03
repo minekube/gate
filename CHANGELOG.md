@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
+
+
+### Features
+
+* **config:** add config.permissions to grant builtin commands per player ([#1345](https://github.com/minekube/gate/issues/1345)) ([8817fe5](https://github.com/minekube/gate/commit/8817fe526aba7ce0e67f99840f140fdb3648c0b1))
+
 ## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
 
 
