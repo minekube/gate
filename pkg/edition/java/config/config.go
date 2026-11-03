@@ -181,6 +181,11 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	AnnounceProxyCommands            bool `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`                       // Whether to announce proxy commands to players
 	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"`                     // Added in 1.19
 
+	// Permissions configures Gate's built-in, file-backed permission provider:
+	// it answers a player's PermissionsSetupEvent at login, so builtin commands
+	// can be granted per player without a Go extension (see Permissions).
+	Permissions Permissions `yaml:"permissions,omitempty" json:"permissions,omitempty"`
+
 	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
 
@@ -345,6 +350,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	validateBackendFloodgate(c, e)
 	validateOfflineModeUsernameBlacklist(c, e)
+	// Always validated, also in Lite mode: a typo must fail startup rather than
+	// silently not match once the proxy is running in full mode.
+	validatePermissions(c, e)
 	if c.Lite.Enabled {
 		warnLiteIgnoredSettings(c, w)
 		warns2, errs2 := c.Lite.Validate()

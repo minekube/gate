@@ -59,6 +59,26 @@ config:
   # Declares the proxy commands to 1.13+ clients.
   # Default: true
   announceProxyCommands: true
+  # Builtin command permissions per player, without a Go extension.
+  # Only used if `requireBuiltinCommandPermissions` is true.
+  #   default: granted to every player with no entry under players
+  #   players: a listed player REPLACES default
+  #   deny:    explicit denials win over every grant
+  # Keys are player UUIDs (usernames are accepted case-insensitively as a
+  # convenience only). Values are permission nodes like gate.command.server,
+  # a trailing wildcard prefix like gate.command.*, or *.
+  # An invalid key or pattern fails startup validation.
+  # Example:
+  # permissions:
+  #   default:
+  #     - gate.command.server
+  #   players:
+  #     "<player-uuid>":
+  #       - gate.command.server
+  #       - gate.command.glist
+  #   deny:
+  #     "<player-uuid>":
+  #       - gate.command.send
   # Should the proxy enforce the new public key
   # security standard added in Minecraft 1.19?
   # Default: true
