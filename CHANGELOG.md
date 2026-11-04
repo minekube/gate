@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.1](https://github.com/minekube/gate/compare/v0.76.0...v0.76.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.12 ([#1348](https://github.com/minekube/gate/issues/1348)) ([0916ae6](https://github.com/minekube/gate/commit/0916ae662c26b1b1137f429f9c12ad08541ef51e))
+
 ## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
 
 
