@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/pires/go-proxyproto"
 	"github.com/robinbraemer/event"
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/bedrock/config"
@@ -328,9 +327,12 @@ func FromContext(ctx context.Context) (*GeyserConnection, bool) {
 }
 
 func (i *Integration) handleConnection(conn net.Conn) {
-	// Wrap connection with proxy protocol support
+	// Parse an optional PROXY protocol header under the Java listener's
+	// trusted-upstream policy. See wrapAcceptedConn: a bare proxyproto.NewConn
+	// here requires the header, so any Geyser that did not send one lost every
+	// join to "proxy protocol signature not present".
 	geyserConn := &GeyserConnection{
-		Conn: proxyproto.NewConn(conn),
+		Conn: i.wrapAcceptedConn(conn),
 		closeCb: func() {
 			_ = conn.Close()
 		},
