@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"go.minekube.com/brigodier"
 	. "go.minekube.com/common/minecraft/color"
@@ -49,8 +48,7 @@ func connectPlayersToServer(c *command.Context, proxy *Proxy, serverName string,
 	}
 
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(),
-			time.Millisecond*time.Duration(proxy.config().ConnectionTimeout))
+		ctx, cancel := withConnectionTimeout(context.Background(), proxy.config())
 		defer cancel()
 
 		wg := new(sync.WaitGroup)
