@@ -10,6 +10,58 @@ running but not behaving - a join that never completes, a connection that stops
 moving. Start with the console output; if the proxy looks stuck, a goroutine dump
 shows exactly where every goroutine is waiting.
 
+## Keeping logs across restarts
+
+Gate logs to **stderr** by default, so on its own nothing survives a restart. There are two ways to keep
+the log; pick one.
+
+### Option 1: let Gate write the file
+
+```yaml
+config:
+  log:
+    # Directory that receives gate.log, created if missing. A relative path is
+    # resolved against the working directory, so "logs" keeps the file next to a
+    # proxy started from its own folder. Empty (the default) disables the file.
+    directory: logs
+    # Rotate the file once it grows past this size in megabytes; 0 disables rotation.
+    maxSizeMB: 50
+    # How many rotated files to keep, oldest deleted first; 0 keeps all of them.
+    maxBackups: 5
+```
+
+The console log is unchanged: the file is written **in addition** to stderr, is appended to on every
+start, and never contains colour codes. Rotated files are named `gate.<timestamp>.log` beside the active
+`gate.log`. Rejecting an unreadable directory is a startup error rather than a silently missing log, and
+changing these settings takes effect on restart.
+
+### Option 2: let the platform record the stream
+
+- **systemd**: keep it in the journal (`journalctl -u gate`) or in a file with
+  `StandardOutput=append:/var/log/gate/gate.log` and `StandardError=append:/var/log/gate/gate.log` in the unit.
+- **Docker**: use a log driver that writes files (`--log-driver local`, or `json-file` with
+  `--log-opt max-size=...`), then read it with `docker logs`. A container's log dies with the container
+  unless the driver stores it.
+- **Kubernetes**: `kubectl logs` only returns the **current** container instance, and `--previous` only the
+  one before it. Ship the stream to your logging stack (OTel Collector, Promtail, your cloud's agent) or
+  mount a volume and redirect the process output into it.
+
+Shell redirection (`./gate >> gate.log 2>&1`) still works for a quick local run, but the options above are
+what keep the log across restarts without a wrapper script.
+
+### Colour codes in a redirected log
+
+Gate colours the log level on the console. A file - whether written by Gate or by shell redirection - is
+not a terminal, so the redirected output keeps ANSI escapes (`\x1b[32mINFO\x1b[0m ...`) that editors and
+log pipelines have to strip. Set `NO_COLOR` ([no-color.org](https://no-color.org)) or `GATE_NO_COLOR` for
+plain text; an empty value or `0` keeps colour, so `NO_COLOR=0` does not disable it.
+
+```sh
+NO_COLOR=1 ./gate >> gate.log 2>&1
+```
+
+`config.log.directory` needs no such flag: its file is always plain text.
+
 ## Getting a goroutine dump from a hung Gate
 
 Gate is a Go program, so a running Gate can print the stack of every goroutine it

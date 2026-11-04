@@ -13,7 +13,9 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/gate"
+	"go.minekube.com/gate/pkg/util/logfile"
 	"go.minekube.com/gate/pkg/version"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -139,7 +141,7 @@ Visit the website https://gate.minekube.com/ for more information.`
 
 		var log logr.Logger
 		if log, err = logr.FromContext(c.Context); err != nil {
-			log, err = newLogger(debug, verbosity)
+			log, err = newLogger(debug, verbosity, cfg.Config.Log)
 
 			if err != nil {
 				return cli.Exit(fmt.Errorf("error creating zap logger: %w", err), 1)
@@ -252,7 +254,7 @@ func findDefaultConfigFile() string {
 
 // newLogger returns a new zap logger with a modified production
 // or development default config to ensure human readability.
-func newLogger(debug bool, v int) (l logr.Logger, err error) {
+func newLogger(debug bool, v int, logCfg config.Log) (l logr.Logger, err error) {
 	var cfg zap.Config
 	if debug {
 		cfg = zap.NewDevelopmentConfig()
@@ -262,7 +264,7 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 	cfg.Level = zap.NewAtomicLevelAt(zapcore.Level(-v))
 
 	cfg.Encoding = "console"
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.EncodeLevel = levelEncoder()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	zl, err := cfg.Build()
@@ -270,5 +272,51 @@ func newLogger(debug bool, v int) (l logr.Logger, err error) {
 		return logr.Discard(), err
 	}
 
+	// Optional file sink: the console log stays exactly as it was, and the file
+	// gets the same lines without colour codes.
+	if logCfg.Directory != "" {
+		w, err := logfile.Open(logCfg.Directory, logCfg.MaxSizeMB, logCfg.MaxBackups)
+		if err != nil {
+			// Fail closed: the operator asked for a log file and silently getting
+			// none is worse than refusing to start.
+			return logr.Discard(), fmt.Errorf("error opening log directory: %w", err)
+		}
+		fileEncCfg := cfg.EncoderConfig
+		fileEncCfg.EncodeLevel = zapcore.CapitalLevelEncoder
+		fileCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(fileEncCfg),
+			zapcore.AddSync(w),
+			cfg.Level,
+		)
+		zl = zl.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+			return zapcore.NewTee(core, fileCore)
+		}))
+	}
+
 	return zapr.NewLogger(zl), nil
+}
+
+// levelEncoder returns the zap level encoder for Gate's console output.
+//
+// Gate's log is its only diagnostic surface, and the usual way of keeping it
+// past a restart is to redirect it into a file (`gate >> gate.log 2>&1`, a
+// systemd unit, a container log driver). That is a pipe, not a terminal, so the
+// default colour encoder writes ANSI escapes into the file and every line looks
+// like "[32mINFO[0m ..." in an editor or a log pipeline. NO_COLOR
+// (https://no-color.org) and GATE_NO_COLOR switch it off; an empty value or "0"
+// keeps colour, so NO_COLOR=0 does not accidentally disable it.
+func levelEncoder() zapcore.LevelEncoder {
+	if envDisablesColor() {
+		return zapcore.CapitalLevelEncoder
+	}
+	return zapcore.CapitalColorLevelEncoder
+}
+
+func envDisablesColor() bool {
+	for _, name := range []string{"NO_COLOR", "GATE_NO_COLOR"} {
+		if v, ok := os.LookupEnv(name); ok && v != "" && v != "0" {
+			return true
+		}
+	}
+	return false
 }
