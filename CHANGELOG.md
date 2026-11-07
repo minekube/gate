@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([cb6c9c1](https://github.com/minekube/gate/commit/cb6c9c1857ab0211c1522ff9851fab21ed118412))
+
 ## [0.76.2](https://github.com/minekube/gate/compare/v0.76.1...v0.76.2) (2026-11-04)
 
 
