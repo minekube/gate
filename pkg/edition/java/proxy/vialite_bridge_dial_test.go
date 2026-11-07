@@ -132,7 +132,12 @@ func TestDynamicBackendBridgeDialFailureIsNotReportedWhenTheBackendAnswers(t *te
 	cfg.OnlineMode = false
 	cfg.Forwarding.Mode = config.NoneForwardingMode
 	cfg.Compression.Threshold = -1
-	cfg.ConnectionTimeout = configutil.Duration(300 * time.Millisecond)
+	// The join budget is above the read budget, as it is in the shipped config
+	// (30s silence inside a 60s join): the backend going silent is what has to
+	// end this join, so the read deadline names it. With both budgets equal the
+	// join deadline wins the race and the join reports its generic
+	// "context deadline exceeded while logging into backend server" instead.
+	cfg.ConnectionTimeout = configutil.Duration(5 * time.Second)
 	cfg.ReadTimeout = configutil.Duration(300 * time.Millisecond)
 	cfg.Servers = map[string]string{"lobby": staticBackend.Addr().String()}
 	cfg.Try = []string{"dyn"}
@@ -141,7 +146,10 @@ func TestDynamicBackendBridgeDialFailureIsNotReportedWhenTheBackendAnswers(t *te
 	fake := &fakeVialiteServer{useBackendAddress: true}
 	_, logs, _, _ := startJoinWithDynamicBackend(t, &cfg, fake, dynamic)
 
-	line := logs.waitFor(t, "has not sent a single packet", 10*time.Second)
+	// The configured read timeout reaps the silent backend and the teardown
+	// diagnostic names it (the log-only watchdog it used to hit is gone: with a
+	// real read deadline the two only raced each other).
+	line := logs.waitFor(t, "never answered", 10*time.Second)
 	if !strings.Contains(line, `"backend"="dyn"`) {
 		t.Errorf("silent backend diagnostic must name the dynamic backend:\n%s", line)
 	}

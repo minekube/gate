@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
@@ -134,12 +135,32 @@ func (b *backendPlaySessionHandler) Disconnected() {
 	if b.serverConn.gracefulDisconnect.Load() || b.exceptionTriggered.Load() {
 		return
 	}
-	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
-		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server,
-			internalServerConnectionError, true)
-	} else {
-		b.serverConn.player.Disconnect(internalServerConnectionError)
+	// If Gate itself ended this connection on a configured budget, say so
+	// instead of reporting an internal error: it is the difference between "the
+	// server stopped responding" and "the proxy broke".
+	var reason component.Component = internalServerConnectionError
+	if kind, budget, ok := netmc.DeadlineClose(b.serverConn.connection); ok {
+		reason = backendDeadlineReason(kind)
+		b.log.Info("backend connection closed on a configured deadline",
+			"closeKind", string(kind), "budget", budget,
+			"backend", b.serverConn.server.ServerInfo().Name())
 	}
+	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
+		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server, reason, true)
+	} else {
+		b.serverConn.player.Disconnect(reason)
+	}
+}
+
+// backendDeadlineReason is the reason a player is shown when Gate closed the
+// backend connection on one of its configured deadlines.
+func backendDeadlineReason(kind netmc.DeadlineKind) component.Component {
+	if kind == netmc.DeadlineWrite {
+		// The backend stopped draining what we send it.
+		return backendStoppedAcceptingData
+	}
+	// The backend stopped sending anything at all.
+	return backendStoppedResponding
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *proto.PacketContext) {
