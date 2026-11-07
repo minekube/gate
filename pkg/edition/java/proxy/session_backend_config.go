@@ -82,17 +82,24 @@ func (b *backendConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *plugin.Message:
 		b.handlePluginMessage(pc, p)
 	case *packet.Disconnect:
-		b.serverConn.disconnect()
-		// If the player receives a DisconnectPacket without a connection to a server in progress,
-		// it means that the backend server has kicked the player during reconfiguration
+		// Resolve the in-flight connection request with the backend's own reason
+		// BEFORE closing the connection. disconnect() tears the session handler
+		// down synchronously, and Disconnected() resolves the request with the
+		// generic "unexpectedly disconnected from remote server" cause - losing
+		// the reason the backend actually kicked the player with. The other
+		// backend handlers (login, transition) already resolve first for exactly
+		// this reason.
 		if b.serverConn.player.connectionInFlight() != nil {
 			result := disconnectResultForPacket(b.log.V(1), p,
 				b.serverConn.player.Protocol(), b.serverConn.server, true,
 			)
 			b.requestCtx.result(result, nil)
 		} else {
+			// If the player receives a DisconnectPacket without a connection to a server in progress,
+			// it means that the backend server has kicked the player during reconfiguration
 			b.serverConn.player.handleDisconnect(b.serverConn.server, p, true)
 		}
+		b.serverConn.disconnect()
 	case *packet.Transfer:
 		b.handleTransfer(p)
 	case *cookie.CookieStore:
