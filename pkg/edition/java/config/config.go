@@ -207,6 +207,11 @@ type (
 		Motd            *configutil.Component `yaml:"motd"`
 		Favicon         favicon.Favicon       `yaml:"favicon"`
 		LogPingRequests bool                  `yaml:"logPingRequests"`
+		// VersionName overrides the version string a client shows for this
+		// server in its server list. Empty uses "Gate <min>-<max>" built from
+		// the supported protocol versions. It changes only the display text,
+		// not which client versions Gate accepts.
+		VersionName string `yaml:"versionName,omitempty" json:"versionName,omitempty"`
 	}
 	Query struct {
 		Enabled     bool `yaml:"enabled"`
