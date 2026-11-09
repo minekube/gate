@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
+
+
+### Features
+
+* **config:** allow overriding the advertised version name ([de49230](https://github.com/minekube/gate/commit/de49230080ddf2905f24613a6d367379e190fb5a))
+* **config:** allow overriding the advertised version name ([4509cc0](https://github.com/minekube/gate/commit/4509cc07dff2f5ebd3dbcff1396fcf0253a9e2d3))
+
 ## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
 
 
