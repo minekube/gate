@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"go.minekube.com/common/minecraft/color"
+	"go.minekube.com/common/minecraft/component"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -77,6 +79,7 @@ var DefaultConfig = Config{
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
 	RequireBuiltinCommandPermissions:    false,
+	BuiltinCommandRefusedMessage:        defaultBuiltinCommandRefusedMessage(),
 	AnnounceProxyCommands:               true,
 	Debug:                               false,
 	ShutdownReason:                      defaultShutdownReason(),
@@ -90,6 +93,17 @@ func defaultMotd() *configutil.Component {
 }
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
+}
+
+// defaultBuiltinCommandRefusedMessage is the refusal a player gets when a
+// builtin command's permission requirement fails. It is the component Gate
+// always answered with - plain content, red - with the {node} token where the
+// required permission node is substituted, quoted, at render time.
+func defaultBuiltinCommandRefusedMessage() *configutil.TextComponent {
+	return &configutil.TextComponent{
+		Content: `You don't have permission to use this command (requires "{node}").`,
+		S:       component.Style{Color: color.Red},
+	}
 }
 
 // ResolveProxyProtocolTrustedProxies returns the configured trusted upstreams,
@@ -178,8 +192,12 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled,omitempty" json:"bungeePluginChannelEnabled,omitempty"`             // Whether to enable BungeeCord plugin messaging
 	BuiltinCommands                  bool `yaml:"builtinCommands,omitempty" json:"builtinCommands,omitempty"`                                   // Whether to enable builtin commands
 	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions,omitempty" json:"requireBuiltinCommandPermissions,omitempty"` // Whether builtin commands require player permissions
-	AnnounceProxyCommands            bool `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`                       // Whether to announce proxy commands to players
-	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"`                     // Added in 1.19
+	// BuiltinCommandRefusedMessage is sent to a player who may not run a builtin
+	// command. The token {node} is replaced with the permission node the command
+	// requires. Empty/nil means the built-in default is used.
+	BuiltinCommandRefusedMessage *configutil.TextComponent `yaml:"builtinCommandRefusedMessage,omitempty" json:"builtinCommandRefusedMessage,omitempty"`
+	AnnounceProxyCommands        bool                      `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`   // Whether to announce proxy commands to players
+	ForceKeyAuthentication       bool                      `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"` // Added in 1.19
 
 	// Permissions configures Gate's built-in, file-backed permission provider:
 	// it answers a player's PermissionsSetupEvent at login, so builtin commands

@@ -66,8 +66,46 @@ func deniedBuiltinCommandNode(cfg *config.Config, source permission.Subject, com
 	return node
 }
 
-// builtinCmdRefusedMessage is sent to a player who may not run a builtin command.
-func builtinCmdRefusedMessage(node string) *component.Text {
+// builtinCmdRefusedMessageNodeToken is replaced with the permission node the
+// refused command requires.
+const builtinCmdRefusedMessageNodeToken = "{node}"
+
+// builtinCmdRefusedMessage is sent to a player who may not run a builtin
+// command. The message is configurable (config.builtinCommandRefusedMessage);
+// without one, the built-in default is used.
+func builtinCmdRefusedMessage(cfg *config.Config, node string) *component.Text {
+	if cfg == nil || cfg.BuiltinCommandRefusedMessage == nil {
+		return defaultBuiltinCmdRefusedMessage(node)
+	}
+	// The live config keeps its template: the placeholder is substituted into a
+	// copy, per player.
+	return substituteRefusedMessageNode(cfg.BuiltinCommandRefusedMessage.T(), node)
+}
+
+// substituteRefusedMessageNode returns a copy of t with every {node} token
+// replaced. The token is substituted in each text node, not only the root: a
+// configured value in legacy '§' format is decoded into a root Text whose
+// visible text sits in Extra, so a root-only replacement would leave the
+// placeholder on screen.
+func substituteRefusedMessageNode(t *component.Text, node string) *component.Text {
+	out := *t
+	out.Content = strings.ReplaceAll(t.Content, builtinCmdRefusedMessageNodeToken, node)
+	if len(t.Extra) != 0 {
+		out.Extra = make([]component.Component, len(t.Extra))
+		for i, child := range t.Extra {
+			if childText, ok := child.(*component.Text); ok {
+				out.Extra[i] = substituteRefusedMessageNode(childText, node)
+				continue
+			}
+			out.Extra[i] = child
+		}
+	}
+	return &out
+}
+
+// defaultBuiltinCmdRefusedMessage is the refusal Gate sends when no message is
+// configured: the exact text it always answered with.
+func defaultBuiltinCmdRefusedMessage(node string) *component.Text {
 	return &component.Text{
 		Content: fmt.Sprintf("You don't have permission to use this command (requires %q).", node),
 		S:       component.Style{Color: color.Red},

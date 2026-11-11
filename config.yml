@@ -59,6 +59,14 @@ config:
   # (This should be set to true in production environments.)
   # Default: false
   requireBuiltinCommandPermissions: false
+  # The message sent to a player who may not execute a builtin proxy command
+  # because a permission node is missing (only used if
+  # `requireBuiltinCommandPermissions` is true).
+  # The token {node} is replaced with the permission node the command requires,
+  # e.g. "gate.command.server". A message without the token is sent as-is.
+  # Either in simple legacy '§' format or modern text component '{"text":"...", ...}' json.
+  # Default: §cYou don't have permission to use this command (requires "{node}").
+  builtinCommandRefusedMessage: "§cYou don't have permission to use this command (requires \"{node}\")."
   # Declares the proxy commands to 1.13+ clients.
   # Default: true
   announceProxyCommands: true
