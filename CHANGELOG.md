@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ping:** keep unmodeled status members (forgeData/neoforgeData) when re-encoding a ping ([9f7aef8](https://github.com/minekube/gate/commit/9f7aef8f25fa8db0091d4c175ccc23d1759d959c))
+* **ping:** keep unmodeled status members when re-encoding a ping ([bf8d7fb](https://github.com/minekube/gate/commit/bf8d7fbbaeb53d61cda1639051a958371cd06199))
+
 ## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
 
 
