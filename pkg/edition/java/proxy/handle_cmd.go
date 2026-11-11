@@ -269,7 +269,7 @@ func executeCommand(cmd string, player *connectedPlayer, cmdMgr *command.Manager
 	// instead of forwarding it. This is what makes config.permissions denials
 	// visible to the player (minekube/gate#1293).
 	if node := deniedBuiltinCommandNode(player.config(), player, cmd); node != "" {
-		return true, player.SendMessage(builtinCmdRefusedMessage(node))
+		return true, player.SendMessage(builtinCmdRefusedMessage(player.config(), node))
 	}
 
 	// Make invoke context
