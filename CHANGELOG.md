@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
+
+
+### Features
+
+* **config:** make the builtin-command permission refusal message configurable ([#1358](https://github.com/minekube/gate/issues/1358)) ([1e0cc32](https://github.com/minekube/gate/commit/1e0cc32db70cbeda41ad5f717f9be7811140235f))
+
 ## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
 
 
