@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -108,5 +109,34 @@ func TestModdedBackendStatusAndCommandTreeDocumented(t *testing.T) {
 		"`Internal server connection error`",
 		"proxy commands are not injected",
 		"`PlayerAvailableCommandsEvent` is not fired for it",
+	})
+}
+
+// TestGeyserLiteBedrockCurrencyDocumented keeps the GeyserLite page honest about
+// the Bedrock client line Gate's managed runtime actually carries.
+//
+// The claim is currency, not a fixed string: the version quoted on the page has
+// to be the version Gate's go.mod pins. A GeyserLite bump (the Geyser/Bedrock
+// currency leg of the release cascade) therefore fails here until the page
+// names the new line, which is the drift that left the page at "no version at
+// all" while Gate moved from GeyserLite v0.5.x to v0.7.6.
+func TestGeyserLiteBedrockCurrencyDocumented(t *testing.T) {
+	goMod := readRepoFile(t, "go.mod")
+	m := regexp.MustCompile(`(?m)^\s*go\.minekube\.com/geyserlite v(\d+\.\d+\.\d+)`).FindStringSubmatch(goMod)
+	if m == nil {
+		t.Fatal("go.mod no longer pins go.minekube.com/geyserlite; update this guard with the new dependency path")
+	}
+	pinned := m[1]
+
+	requireDocContains(t, ".web/docs/geyserlite/index.md", []string{
+		"## Bedrock Transport and Client Currency",
+		"Gate v0.76.2 pins GeyserLite v" + pinned,
+		"native NetherNet ingress",
+		"26.60",
+		// The transport-notification defect is the one support case this page
+		// has to pre-empt: a Bedrock listener that dies at open #257.
+		"257th",
+		"verified ingress queue overflow",
+		"v0.75.10",
 	})
 }
