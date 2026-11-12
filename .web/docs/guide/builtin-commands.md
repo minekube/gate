@@ -76,6 +76,26 @@ Semantics:
 - Only players are affected: the console and other non-player command sources are untouched, and a node the block does
   not mention stays undecided, so other providers still decide it.
 
+### Customize the refusal message
+
+A player who lacks a node is not left guessing: Gate tells them the command exists and names the node it
+wanted. That message is configurable since v0.78.0, next to `requireBuiltinCommandPermissions`:
+
+```yaml
+config:
+  requireBuiltinCommandPermissions: true
+  builtinCommandRefusedMessage: "§eAsk an admin in #help (needs {node})."
+```
+
+- `{node}` is replaced with the permission node the command requires, e.g. `gate.command.send` - every
+  occurrence, and a message without the token is sent as it is.
+- It takes the same value shape as `shutdownReason` and `motd`: legacy `§` colours or a modern JSON text
+  component. A legacy `§` message is substituted wherever its text lives, so the token does not survive on
+  screen.
+- The default is unchanged and needs no config: `§cYou don't have permission to use this command (requires "{node}").`
+- It only applies together with `requireBuiltinCommandPermissions: true`; with permissions not required
+  no player is refused, so nothing is sent.
+
 ### Grant permissions with an extension
 
 For anything beyond a static file - groups, a database, LuckPerms-style inheritance - register a
