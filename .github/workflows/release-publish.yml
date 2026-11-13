@@ -507,8 +507,122 @@ jobs:
           TAGS="${IMAGE_TAG},latest,${RELEASE_TAG}"
           IMAGE="${REGISTRY}/${GITHUB_REPOSITORY}"
           IMAGE_JRE="${IMAGE}/jre"
-          oras cp --from-oci-layout "release-images/gate-image.tar@${GATE_DIGEST}" "${IMAGE}:${TAGS}"
-          oras cp --from-oci-layout "release-images/gate-jre-image.tar@${GATE_JRE_DIGEST}" "${IMAGE_JRE}:${TAGS}"
+
+          # After pushing a manifest, oras re-reads that same manifest from the
+          # destination to print the status line for its successors (oras
+          # 1.3.0 cmd/oras/internal/display/status: TextCopyHandler.PostCopy ->
+          # graph.FilteredSuccessors(dst)). When the registry has not yet made a
+          # manifest it just acknowledged readable, the copy dies with
+          #
+          #   Error response from registry: sha256:<digest just pushed>: not found
+          #
+          # which is what left v0.79.0 and v0.80.1 with a partial push and no
+          # image at all (the copy aborts before the top-level index is pushed).
+          # The copy is idempotent - same layout, same digests, and every node
+          # that did land is reported "Exists" on the next attempt - so this one
+          # class is retried a bounded number of times, and everything else
+          # (auth, digest mismatch, unreadable staged archive) fails closed on
+          # the first attempt. The budget and delay are env-tunable only so the
+          # contract test can exercise the bound without sleeping.
+          publish_attempts="${PUBLISH_ATTEMPTS:-5}"
+          publish_delay="${PUBLISH_RETRY_DELAY:-2}"
+
+          is_read_after_write_race() {
+            # A bare digest or a repository-qualified reference. A source-side
+            # miss carries the media type (`sha256:...: application/vnd...: not
+            # found`) and must never be retried.
+            grep -qE '^Error response from registry: (sha256:[0-9a-f]{64}|[^[:space:]]+:[^[:space:]]+): not found$' "$1"
+          }
+
+          publish_staged_image() { # layout digest image label
+            local layout="$1" digest="$2" image="$3" label="$4"
+            local attempt=1 delay="$publish_delay" status log
+            log="$(mktemp)"
+            while :; do
+              set +e
+              oras cp --from-oci-layout "${layout}@${digest}" "${image}:${TAGS}" 2>&1 | tee "$log"
+              status=${PIPESTATUS[0]}
+              set -e
+              if [ "$status" -eq 0 ]; then
+                echo "Published ${label} (${image}) on attempt ${attempt}."
+                return 0
+              fi
+              if ! is_read_after_write_race "$log"; then
+                echo "::error::Publishing ${label} to ${image} failed with a non-transient error; not retrying."
+                return 1
+              fi
+              if [ "$attempt" -ge "$publish_attempts" ]; then
+                echo "::error::Publishing ${label} to ${image} still hit the registry read-after-write race after ${attempt} attempts."
+                return 1
+              fi
+              echo "::warning::${label}: attempt ${attempt}/${publish_attempts} lost the registry read-after-write race on a manifest this run had just pushed; retrying in ${delay}s (the copy is idempotent)."
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          # Both images are attempted even when the first one fails: they are
+          # independent renders, a re-run only has to repair the missing one,
+          # and a failure of either is still fatal below.
+          failed=0
+          publish_staged_image release-images/gate-image.tar "$GATE_DIGEST" "$IMAGE" gate || failed=1
+          publish_staged_image release-images/gate-jre-image.tar "$GATE_JRE_DIGEST" "$IMAGE_JRE" gate-jre || failed=1
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Published container images are incomplete; re-run this job - the copy is idempotent, so an image that did land is skipped."
+            exit 1
+          fi
+
+      - name: Verify published container images
+        env:
+          GATE_DIGEST: ${{ needs.image-build.outputs.gate_digest }}
+          GATE_JRE_DIGEST: ${{ needs.image-build.outputs.gate_jre_digest }}
+          IMAGE_TAG: ${{ needs.image-build.outputs.image_tag }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          IMAGE="${REGISTRY}/${GITHUB_REPOSITORY}"
+
+          # Do not trust the copy's exit code for "the release has images": every
+          # tag a consumer can pull must resolve to the digest staged by
+          # image-build, and both platform manifests must be readable. This is
+          # the check that would have caught v0.79.0/v0.80.1 - a release whose
+          # GitHub release existed with no (or a half-pushed) container image.
+          verify_published_image() { # image expected label
+            local image="$1" expected="$2" label="$3"
+            local tag platform got failed=0
+
+            for tag in "$IMAGE_TAG" latest "$RELEASE_TAG"; do
+              if ! got="$(oras resolve "${image}:${tag}" 2>&1)"; then
+                echo "::error::${label} tag ${tag} does not resolve: ${got}"
+                failed=1
+                continue
+              fi
+              if [ "$got" != "$expected" ]; then
+                echo "::error::${label} tag ${tag} resolves to ${got}, expected the staged digest ${expected}."
+                failed=1
+              fi
+            done
+
+            for platform in linux/amd64 linux/arm64; do
+              if ! oras manifest fetch --platform "$platform" "${image}:${IMAGE_TAG}" >/dev/null 2>&1; then
+                echo "::error::${label} publishes no readable ${platform} manifest for ${IMAGE_TAG}."
+                failed=1
+              fi
+            done
+
+            [ "$failed" -eq 0 ]
+          }
+
+          failed=0
+          verify_published_image "$IMAGE" "$GATE_DIGEST" gate || failed=1
+          verify_published_image "${IMAGE}/jre" "$GATE_JRE_DIGEST" gate-jre || failed=1
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Published container images are incomplete; this release must not be consumed."
+            exit 1
+          fi
+          echo "Verified gate and gate/jre: ${IMAGE_TAG}, latest and ${RELEASE_TAG} resolve to the staged digests and both platform manifests are readable."
 
   publish-release:
     needs:
