@@ -107,6 +107,9 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 // be decoded: keeping that silent is what stops an untrusted peer from turning
 // the log into a flood primitive (see TestReaderKeepsClientPacketDecodeFailureSilent).
 func (r *reader) logCloseErr(err error) {
+	class, observed, limit := classifyTerminalReadError(err)
+	observeMinecraftTerminalIO(r.c, terminalIODirectionRead, class, observed, limit)
+
 	if r.direction == proto.ClientBound {
 		var frameErr *codec.FrameTooLargeError
 		if errors.As(err, &frameErr) {
