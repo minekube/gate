@@ -118,6 +118,8 @@ enforce-secure-profile=false
 
 ::: tip Authentication Flow
 When `allowOfflineModePlayers: true` is set, Connect handles the connection injection, allowing offline mode players to join even when Gate has `onlineMode: true`. This provides the best of both worlds - premium players can still authenticate when joining Gate directly while offline players can still join through Connect in offline mode.
+
+This works because the injected connection already carries the player's profile. It does not apply to `passthrough` sessions: when the edge hands Gate a raw login with no profile, Gate has no offline identity for the player, so with `onlineMode: true` it starts an ordinary online-mode login, a cracked client cannot answer the encryption request, and the login never completes. Do not use passthrough sessions for endpoints that must admit offline mode players.
 :::
 
 ## Troubleshooting
@@ -179,6 +181,7 @@ enforce-secure-profile=false
 1. **Wait** - Allow 2-3 minutes for Connect network to update
 2. **Restart Gate** - Force re-registration with new settings
 3. **Change endpoint name** - Force fresh registration if caching persists
+4. **Check passthrough** - If your endpoint uses `passthrough` sessions, Gate receives no player profile and cannot admit offline mode players while `onlineMode: true`; see the Authentication Flow note above
 
 :::
 
