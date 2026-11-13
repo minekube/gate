@@ -91,7 +91,7 @@ Or have Gate write a minimal one on start, which is handy the first time you run
 $ gate --init-config
 ```
 
-That writes `config.yml` only when Gate found no config file, and leaves an existing one untouched. The file it writes states only defaults - edit it or regenerate it with a template above.
+That writes `config.yml` only when Gate found no config file, and leaves an existing one untouched. The file it writes states only defaults - edit it, or regenerate it with one of the templates above and add `--force` (`gate config -t simple -w --force`), because `--write` refuses to replace an existing file without it.
 
 Then edit the `config.yml` file to configure your backend servers:
 

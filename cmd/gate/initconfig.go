@@ -1,11 +1,15 @@
 package gate
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"go.minekube.com/gate/pkg/configs"
 )
@@ -63,13 +67,41 @@ func firstStartConfig(explicitConfig string, generate bool) (firstStartResult, e
 		target = filepath.Join(wd, firstStartConfigFileName)
 	}
 
-	if err := writeConfigFile(target, configs.MinimalConfigBytes, false); err != nil {
+	content, err := minimalConfigContent(target)
+	if err != nil {
+		return firstStartResult{Warn: err}, nil
+	}
+	if err := writeConfigFile(target, content, false); err != nil {
 		if errors.Is(err, fs.ErrExist) {
 			return firstStartResult{Skipped: true}, nil
 		}
 		return firstStartResult{Warn: err}, nil
 	}
 	return firstStartResult{Written: target}, nil
+}
+
+// minimalConfigContent returns the minimal template in the format the target
+// path is loaded with. Gate selects its decoder from the file extension, so a
+// .json target must not receive the YAML template: the file would be created
+// and then fail to load on the very next start.
+func minimalConfigContent(path string) ([]byte, error) {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".yml", ".yaml", "":
+		return configs.MinimalConfigBytes, nil
+	case ".json":
+		var doc any
+		if err := yaml.Unmarshal(configs.MinimalConfigBytes, &doc); err != nil {
+			return nil, fmt.Errorf("cannot convert the minimal config to JSON: %w", err)
+		}
+		content, err := json.MarshalIndent(doc, "", "  ")
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert the minimal config to JSON: %w", err)
+		}
+		return append(content, '\n'), nil
+	default:
+		return nil, fmt.Errorf("cannot generate %s: unsupported config file extension %q (use .yml, .yaml or .json)",
+			filepath.Base(path), filepath.Ext(path))
+	}
 }
 
 // writeConfigFile writes content to path. Without overwrite it refuses to
@@ -94,5 +126,13 @@ func writeConfigFile(path string, content []byte, overwrite bool) error {
 		}
 		return err
 	}
-	return f.Close()
+	if err := f.Close(); err != nil {
+		// Same rule as a failed write: a file this call created must not stay
+		// behind, or the next start would load an incomplete config.
+		if !overwrite {
+			_ = os.Remove(path)
+		}
+		return err
+	}
+	return nil
 }

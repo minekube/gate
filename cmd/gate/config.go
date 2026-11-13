@@ -20,7 +20,9 @@ You can redirect to a file or use the --write flag:
 	gate config > config.yml
 	gate config --write              # Writes to config.yml
 
-An existing config.yml is never overwritten: use --force to replace it on purpose.
+An existing config.yml is never overwritten by --write: add --force to replace it
+on purpose. Shell redirection is not protected by that check - "gate config >
+config.yml" overwrites the file, so redirect to a new path or move the old one.
 
 Available config types:
   - full (default): Full configuration with all options

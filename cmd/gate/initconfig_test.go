@@ -2,7 +2,9 @@ package gate
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -206,4 +208,47 @@ func explicitConfigContext(t *testing.T, path string) *cli.Context {
 	set.String("config", "", "")
 	require.NoError(t, set.Set("config", path))
 	return cli.NewContext(App(), set, nil)
+}
+
+// Gate picks its config decoder from the file extension, so a generated file
+// must be in the format its own path is loaded with. A YAML template written
+// to an explicit `-c custom.json` would be created and then fail to load on the
+// very next start - the flag would leave the operator worse off than no file.
+func TestFirstStartConfigWritesJSONForJSONTarget(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "custom.json")
+
+	res, err := firstStartConfig(target, true)
+	require.NoError(t, err)
+	require.NoError(t, res.Warn)
+	require.False(t, res.Skipped)
+	require.Equal(t, target, res.Written)
+
+	generated, err := os.ReadFile(target)
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, json.Unmarshal(generated, &doc), "a .json target must receive JSON, not YAML")
+	require.Contains(t, doc, "config")
+
+	resetGlobalViper(t)
+	v, err := initViper(explicitConfigContext(t, target), target)
+	require.NoError(t, err)
+	_, err = gate.LoadConfig(v)
+	require.NoError(t, err, "the file init-config wrote must be loadable by the path it was written for")
+}
+
+// A target Gate cannot load must be refused before anything is created, not
+// written in a format the next start cannot read.
+func TestFirstStartConfigRejectsUnsupportedExtension(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "custom.toml")
+
+	res, err := firstStartConfig(target, true)
+	require.NoError(t, err)
+	require.Error(t, res.Warn)
+	require.Empty(t, res.Written)
+
+	_, statErr := os.Stat(target)
+	require.True(t, errors.Is(statErr, fs.ErrNotExist),
+		"an unsupported target must not leave a config file behind")
 }
