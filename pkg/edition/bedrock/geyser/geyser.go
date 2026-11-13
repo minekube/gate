@@ -401,7 +401,7 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	if i.config.UsernameFormat != "" {
 		formattedName = fmt.Sprintf(i.config.UsernameFormat, bedrockData.Username)
 	}
-	formattedName = javaCompatibleUsername(formattedName)
+	formattedName = javaCompatibleUsername(formattedName, i.config.PreserveDotPrefix)
 
 	// Opt-in linked Java identity, gated on the backendFloodgate trust switch
 	// (default off). Two sources, in priority order:
@@ -427,11 +427,11 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 		if link := floodgate.ParseLinkedPlayer(bedrockData.LinkedPlayer); link != nil &&
 			link.BedrockUUID == bedrockData.FloodgateJavaUuid() {
 			uid = link.JavaUUID
-			formattedName = javaCompatibleUsername(link.JavaUsername)
+			formattedName = javaCompatibleUsername(link.JavaUsername, i.config.PreserveDotPrefix)
 		} else if linked, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid); err == nil &&
 			linked != nil && linked.JavaID != uuid.Nil {
 			uid = linked.JavaID
-			formattedName = javaCompatibleUsername(linked.JavaName)
+			formattedName = javaCompatibleUsername(linked.JavaName, i.config.PreserveDotPrefix)
 		}
 	}
 
@@ -457,8 +457,8 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 // javaCompatibleUsername makes a Bedrock gamertag safe for the Java profile
 // boundary. Bedrock names may contain spaces and other characters that modern
 // Java servers reject, while Java profile names are limited to 16 ASCII
-// letters, digits, and underscores.
-func javaCompatibleUsername(name string) string {
+// letters, digits, and underscores. A backend-compatible leading dot is opt-in.
+func javaCompatibleUsername(name string, preserveDotPrefix bool) string {
 	const maxJavaUsernameLen = 16
 
 	var normalized strings.Builder
@@ -468,6 +468,8 @@ func javaCompatibleUsername(name string) string {
 			break
 		}
 		switch {
+		case preserveDotPrefix && normalized.Len() == 0 && r == '.':
+			normalized.WriteByte('.')
 		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '_':
 			normalized.WriteByte(byte(r))
 		default:
@@ -475,7 +477,7 @@ func javaCompatibleUsername(name string) string {
 		}
 	}
 
-	if normalized.Len() == 0 {
+	if normalized.Len() == 0 || normalized.String() == "." {
 		return "_"
 	}
 	return normalized.String()

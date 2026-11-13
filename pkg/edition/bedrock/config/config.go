@@ -60,6 +60,9 @@ type Config struct {
 
 	// Bedrock player settings
 	UsernameFormat string `yaml:"usernameFormat,omitempty" json:"usernameFormat,omitempty"` // Format for Bedrock player usernames to avoid conflicts with Java players (e.g., "_%s")
+	// PreserveDotPrefix retains a leading dot for backends that accept it (e.g. Paper).
+	// Other characters and the 16-character limit still follow Java username rules.
+	PreserveDotPrefix bool `yaml:"preserveDotPrefix,omitempty" json:"preserveDotPrefix,omitempty"`
 
 	// Floodgate authentication (enables offline Bedrock players)
 	FloodgateKeyPath string `yaml:"floodgateKeyPath,omitempty" json:"floodgateKeyPath,omitempty"` // Path to Floodgate AES encryption key shared with backend servers
@@ -153,7 +156,8 @@ type BedrockConfig struct {
 	GeyserListenAddr string `yaml:"geyserListenAddr,omitempty" json:"geyserListenAddr,omitempty"`
 
 	// Bedrock player settings
-	UsernameFormat string `yaml:"usernameFormat,omitempty" json:"usernameFormat,omitempty"`
+	UsernameFormat    string `yaml:"usernameFormat,omitempty" json:"usernameFormat,omitempty"`
+	PreserveDotPrefix bool   `yaml:"preserveDotPrefix,omitempty" json:"preserveDotPrefix,omitempty"`
 
 	// Floodgate authentication (enables offline Bedrock players)
 	FloodgateKeyPath string `yaml:"floodgateKeyPath,omitempty" json:"floodgateKeyPath,omitempty"`
@@ -179,10 +183,11 @@ var (
 // ToConfig converts the flattened BedrockConfig to the original Config structure
 func (bc *BedrockConfig) ToConfig() Config {
 	cfg := Config{
-		GeyserListenAddr: bc.GeyserListenAddr,
-		UsernameFormat:   bc.UsernameFormat,
-		FloodgateKeyPath: bc.FloodgateKeyPath,
-		BackendFloodgate: bc.BackendFloodgate,
+		GeyserListenAddr:  bc.GeyserListenAddr,
+		UsernameFormat:    bc.UsernameFormat,
+		PreserveDotPrefix: bc.PreserveDotPrefix,
+		FloodgateKeyPath:  bc.FloodgateKeyPath,
+		BackendFloodgate:  bc.BackendFloodgate,
 	}
 
 	// Apply defaults if empty

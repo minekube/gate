@@ -215,7 +215,7 @@ export default {
       isCachedData: false, // Flag to indicate if we're showing cached data
     };
   },
-  created() {
+  mounted() {
     this.fetchData(); // Fetch data for both categories on initial load
     this.updateTitle(); // Set the initial title based on default searchMode
   },
