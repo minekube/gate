@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.79.0](https://github.com/minekube/gate/compare/v0.78.0...v0.79.0) (2026-11-13)
+
+
+### Features
+
+* **gate:** generate a config file on first start behind --init-config ([#1339](https://github.com/minekube/gate/issues/1339)) ([ab04761](https://github.com/minekube/gate/commit/ab04761e8a06049b96cc30f7a375486081d217f8))
+
 ## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
 
 
