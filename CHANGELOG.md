@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.1](https://github.com/minekube/gate/compare/v0.80.0...v0.80.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **proxy:** deliver a CONFIG-phase backend disconnect and release the player ([#1337](https://github.com/minekube/gate/issues/1337)) ([baceab6](https://github.com/minekube/gate/commit/baceab6f66b51226cfd8e57017a50b4e38d6dd13))
+
 ## [0.80.0](https://github.com/minekube/gate/compare/v0.79.1...v0.80.0) (2026-11-13)
 
 
