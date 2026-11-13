@@ -81,6 +81,11 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 				observation.Observe(r.ctx, connectiontelemetry.Closed, connectiontelemetry.Timeout)
 			}
 		}
+		// The terminal-I/O observer sees every terminal read error, including a
+		// deadline close: "Gate's own read budget fired" is exactly the class a
+		// tunnel teardown needs to name. Only the log line is suppressed for it.
+		class, observed, limit := classifyTerminalReadError(err)
+		observeMinecraftTerminalIO(r.c, terminalIODirectionRead, class, observed, limit)
 		if !isDeadlineExceeded(err) {
 			// A deadline close was already logged with the budget that fired;
 			// a second, debug-only line for the same event only adds noise.

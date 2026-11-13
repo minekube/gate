@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.80.1](https://github.com/minekube/gate/compare/v0.80.0...v0.80.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **proxy:** deliver a CONFIG-phase backend disconnect and release the player ([#1337](https://github.com/minekube/gate/issues/1337)) ([baceab6](https://github.com/minekube/gate/commit/baceab6f66b51226cfd8e57017a50b4e38d6dd13))
+
+## [0.80.0](https://github.com/minekube/gate/compare/v0.79.1...v0.80.0) (2026-11-13)
+
+
+### Features
+
+* **netmc:** expose bounded terminal I/O diagnostics ([#1156](https://github.com/minekube/gate/issues/1156)) ([1878ee8](https://github.com/minekube/gate/commit/1878ee895b59111be05c7542f29f3f12192a8d3a))
+
 ## [0.79.1](https://github.com/minekube/gate/compare/v0.79.0...v0.79.1) (2026-11-13)
 
 
