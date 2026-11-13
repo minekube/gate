@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.79.0](https://github.com/minekube/gate/compare/v0.78.0...v0.79.0) (2026-11-13)
+
+
+### Features
+
+* **gate:** generate a config file on first start behind --init-config ([#1339](https://github.com/minekube/gate/issues/1339)) ([ab04761](https://github.com/minekube/gate/commit/ab04761e8a06049b96cc30f7a375486081d217f8))
+
+## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
+
+
+### Features
+
+* **config:** make the builtin-command permission refusal message configurable ([#1358](https://github.com/minekube/gate/issues/1358)) ([1e0cc32](https://github.com/minekube/gate/commit/1e0cc32db70cbeda41ad5f717f9be7811140235f))
+
+## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ping:** keep unmodeled status members (forgeData/neoforgeData) when re-encoding a ping ([9f7aef8](https://github.com/minekube/gate/commit/9f7aef8f25fa8db0091d4c175ccc23d1759d959c))
+* **ping:** keep unmodeled status members when re-encoding a ping ([bf8d7fb](https://github.com/minekube/gate/commit/bf8d7fbbaeb53d61cda1639051a958371cd06199))
+
+## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
+
+
+### Features
+
+* **config:** allow overriding the advertised version name ([de49230](https://github.com/minekube/gate/commit/de49230080ddf2905f24613a6d367379e190fb5a))
+* **config:** allow overriding the advertised version name ([4509cc0](https://github.com/minekube/gate/commit/4509cc07dff2f5ebd3dbcff1396fcf0253a9e2d3))
+
+## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([cb6c9c1](https://github.com/minekube/gate/commit/cb6c9c1857ab0211c1522ff9851fab21ed118412))
+
+## [0.76.2](https://github.com/minekube/gate/compare/v0.76.1...v0.76.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.6 ([#1350](https://github.com/minekube/gate/issues/1350)) ([da65eb5](https://github.com/minekube/gate/commit/da65eb5510ee89146a255f12fffe2ca164cce6d3))
+
+## [0.76.1](https://github.com/minekube/gate/compare/v0.76.0...v0.76.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.12 ([#1348](https://github.com/minekube/gate/issues/1348)) ([0916ae6](https://github.com/minekube/gate/commit/0916ae662c26b1b1137f429f9c12ad08541ef51e))
+
+## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
+
+
+### Features
+
+* **config:** add config.permissions to grant builtin commands per player ([#1345](https://github.com/minekube/gate/issues/1345)) ([8817fe5](https://github.com/minekube/gate/commit/8817fe526aba7ce0e67f99840f140fdb3648c0b1))
+
 ## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
 
 

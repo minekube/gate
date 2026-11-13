@@ -18,6 +18,27 @@ $ gate -c /path/to/config.yml
 
 Gate supports YAML (`.yml`, `.yaml`), JSON (`.json`), and environment variables with `GATE_` prefix. You can mix formats - use a config file and override values with environment variables.
 
+## Running Without a Config File
+
+Gate starts on its built-in defaults when it finds no config file, and logs a hint saying so:
+
+```
+no config file found, using built-in defaults	{"hint": "run `gate config --write` to generate one, or start Gate with --init-config"}
+```
+
+If you want the file to exist without writing it by hand, let Gate create it on start:
+
+```sh console
+$ gate --init-config
+```
+
+With `--init-config` (or `GATE_INIT_CONFIG=true` in a container), Gate writes `config.yml` when it found no config file, and then reads it - so this start already uses the file, and the auto config reload watches it from here on. Two rules hold:
+
+- An existing config file is never overwritten. If Gate finds one - `./config.yml` or the path given with `--config` - it runs on that file and writes nothing.
+- The generated file states only default values, so generating it changes nothing about how Gate behaves. Add your `servers` and `try` list to it, or generate an annotated template instead (see below).
+
+If the working directory is not writable, Gate logs the failure and keeps running on the built-in defaults.
+
 ## Configuration Templates
 
 Generate configuration files using the `gate config` command, or create them manually:
@@ -31,6 +52,8 @@ $ gate config --type <type> --write
 $ gate config > my-config.yml
 $ gate config --type <type> > my-config.yml
 ```
+
+`--write` never overwrites an existing `config.yml`: it fails with a message naming the file, and `--force` is the explicit way to replace it. Pipe redirection is a plain shell redirect and always replaces the target file.
 
 You can also create the `config.yml` file manually using any of the templates below as a starting point.
 
@@ -59,3 +82,35 @@ You can also create the `config.yml` file manually using any of the templates be
 :::
 
 For most users, the full configuration is recommended. You can generate it and then edit the `servers` section to point to your backend Minecraft servers.
+
+## Server List Appearance
+
+In full proxy mode Gate answers the server list ping itself, so the entry players see in their client
+comes from the `status` block - not from a backend. The keys, all of them optional:
+
+```yaml
+status:
+  # Legacy '§' format or a modern JSON text component.
+  motd: |-
+    §bA Gate Proxy
+  # Displayed player count; this is not a player limit.
+  showMaxPlayers: 1000
+  # The version name shown in the client's server list.
+  # Empty (the default) advertises Gate's supported version range.
+  versionName: "Minekube Network"
+  # A 64x64 image: a file path or a base64 data URI.
+  favicon: favicon.png
+  logPingRequests: false
+```
+
+- **`versionName`** (v0.77.0 and newer) replaces the version text only. Left empty, Gate advertises its
+  supported range, e.g. `Gate 1.7.2-1.7.5-26.3`. The advertised `protocol` and the set of client versions
+  Gate accepts are untouched by it, so a custom name never changes who can join.
+- **`showMaxPlayers`** is display text as well: it does not limit how many players Gate accepts. Use
+  `quota`/`packetLimiter` for admission control instead.
+- **`motd`** accepts legacy `§` colours or a JSON text component, the same shape as `shutdownReason`.
+- **`favicon`** is a path to a 64x64 PNG or a base64 data URI.
+
+In [Lite mode](/guide/lite) the ping is proxied from the backend, so this block is inert and players see
+the backend's MOTD and player count - see [modded servers](/guide/modded-servers) for the chained case.
+

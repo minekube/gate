@@ -405,6 +405,10 @@ func (p *Proxy) init() (err error) {
 	// No need to check, nil default to mojang's session server
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
 
+	// Register the config.permissions provider before the plugin init hooks run,
+	// so an extension answering PermissionsSetupEvent can still override it.
+	p.setupConfigPermissions()
+
 	if !c.Lite.Enabled {
 		// Sync servers: register new/updated servers and unregister removed servers
 		if len(c.Servers) != 0 {

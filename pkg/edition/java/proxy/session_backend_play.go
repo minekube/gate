@@ -78,7 +78,7 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *plugin.Message:
 		b.handlePluginMessage(p, pc)
 	case *packet.AvailableCommands:
-		b.handleAvailableCommands(p)
+		b.handleAvailableCommands(p, pc)
 	case *packet.TabCompleteResponse:
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *legacytablist.PlayerListItem:
@@ -468,7 +468,21 @@ func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove,
 	b.forwardToPlayer(pc, nil)
 }
 
-func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
+func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands, pc *proto.PacketContext) {
+	if p.Raw != nil {
+		// The backend sent a command tree this proxy cannot parse (a modded
+		// argument-type identifier outside the vanilla table, or a tree that
+		// desyncs our codecs). The proxy does not need to understand a tree to
+		// forward it, so the client gets the backend's bytes untouched: no proxy
+		// command injection and no PlayerAvailableCommandsEvent, but the session
+		// survives. Closing the backend connection here is what kicked players
+		// from modded servers ~1 s after placement.
+		b.log.Info("backend command tree could not be decoded, forwarding it verbatim",
+			"player", b.serverConn.player.Username(), "error", p.DecodeErr)
+		b.forwardToPlayer(pc, p)
+		return
+	}
+
 	rootNode := p.RootNode
 	if b.proxy().config().AnnounceProxyCommands {
 		// Inject commands from the proxy.
