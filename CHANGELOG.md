@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.79.1](https://github.com/minekube/gate/compare/v0.79.0...v0.79.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **geyser:** honor an optional PROXY protocol header on the Geyser listener ([#1278](https://github.com/minekube/gate/issues/1278)) ([3249670](https://github.com/minekube/gate/commit/3249670a519369d3c787dd7c5c95a8a4bc3f410f))
+* **proxy:** log rate-limited logins and send the kick reason ([#1295](https://github.com/minekube/gate/issues/1295)) ([1443571](https://github.com/minekube/gate/commit/14435718b92531f205a237e6f73cbc12e400617b))
+
 ## [0.79.0](https://github.com/minekube/gate/compare/v0.78.0...v0.79.0) (2026-11-13)
 
 
