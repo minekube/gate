@@ -82,3 +82,35 @@ You can also create the `config.yml` file manually using any of the templates be
 :::
 
 For most users, the full configuration is recommended. You can generate it and then edit the `servers` section to point to your backend Minecraft servers.
+
+## Server List Appearance
+
+In full proxy mode Gate answers the server list ping itself, so the entry players see in their client
+comes from the `status` block - not from a backend. The keys, all of them optional:
+
+```yaml
+status:
+  # Legacy '§' format or a modern JSON text component.
+  motd: |-
+    §bA Gate Proxy
+  # Displayed player count; this is not a player limit.
+  showMaxPlayers: 1000
+  # The version name shown in the client's server list.
+  # Empty (the default) advertises Gate's supported version range.
+  versionName: "Minekube Network"
+  # A 64x64 image: a file path or a base64 data URI.
+  favicon: favicon.png
+  logPingRequests: false
+```
+
+- **`versionName`** (v0.77.0 and newer) replaces the version text only. Left empty, Gate advertises its
+  supported range, e.g. `Gate 1.7.2-1.7.5-26.3`. The advertised `protocol` and the set of client versions
+  Gate accepts are untouched by it, so a custom name never changes who can join.
+- **`showMaxPlayers`** is display text as well: it does not limit how many players Gate accepts. Use
+  `quota`/`packetLimiter` for admission control instead.
+- **`motd`** accepts legacy `§` colours or a JSON text component, the same shape as `shutdownReason`.
+- **`favicon`** is a path to a 64x64 PNG or a base64 data URI.
+
+In [Lite mode](/guide/lite) the ping is proxied from the backend, so this block is inert and players see
+the backend's MOTD and player count - see [modded servers](/guide/modded-servers) for the chained case.
+

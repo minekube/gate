@@ -1,5 +1,149 @@
 # Changelog
 
+## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
+
+
+### Features
+
+* **config:** make the builtin-command permission refusal message configurable ([#1358](https://github.com/minekube/gate/issues/1358)) ([1e0cc32](https://github.com/minekube/gate/commit/1e0cc32db70cbeda41ad5f717f9be7811140235f))
+
+## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ping:** keep unmodeled status members (forgeData/neoforgeData) when re-encoding a ping ([9f7aef8](https://github.com/minekube/gate/commit/9f7aef8f25fa8db0091d4c175ccc23d1759d959c))
+* **ping:** keep unmodeled status members when re-encoding a ping ([bf8d7fb](https://github.com/minekube/gate/commit/bf8d7fbbaeb53d61cda1639051a958371cd06199))
+
+## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
+
+
+### Features
+
+* **config:** allow overriding the advertised version name ([de49230](https://github.com/minekube/gate/commit/de49230080ddf2905f24613a6d367379e190fb5a))
+* **config:** allow overriding the advertised version name ([4509cc0](https://github.com/minekube/gate/commit/4509cc07dff2f5ebd3dbcff1396fcf0253a9e2d3))
+
+## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([cb6c9c1](https://github.com/minekube/gate/commit/cb6c9c1857ab0211c1522ff9851fab21ed118412))
+
+## [0.76.2](https://github.com/minekube/gate/compare/v0.76.1...v0.76.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.6 ([#1350](https://github.com/minekube/gate/issues/1350)) ([da65eb5](https://github.com/minekube/gate/commit/da65eb5510ee89146a255f12fffe2ca164cce6d3))
+
+## [0.76.1](https://github.com/minekube/gate/compare/v0.76.0...v0.76.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.12 ([#1348](https://github.com/minekube/gate/issues/1348)) ([0916ae6](https://github.com/minekube/gate/commit/0916ae662c26b1b1137f429f9c12ad08541ef51e))
+
+## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
+
+
+### Features
+
+* **config:** add config.permissions to grant builtin commands per player ([#1345](https://github.com/minekube/gate/issues/1345)) ([8817fe5](https://github.com/minekube/gate/commit/8817fe526aba7ce0e67f99840f140fdb3648c0b1))
+
+## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.5 ([#1338](https://github.com/minekube/gate/issues/1338)) ([37800e9](https://github.com/minekube/gate/commit/37800e96b8f0bdd1e3061de5f6823a7c63827c5b))
+
+## [0.75.16](https://github.com/minekube/gate/compare/v0.75.15...v0.75.16) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.3 ([#1334](https://github.com/minekube/gate/issues/1334)) ([c70afbd](https://github.com/minekube/gate/commit/c70afbd4b13fe4f52ccd839364c5175160027fe7))
+
+## [0.75.15](https://github.com/minekube/gate/compare/v0.75.14...v0.75.15) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** update module google.golang.org/grpc to v1.85.0 ([#1331](https://github.com/minekube/gate/issues/1331)) ([c58ad63](https://github.com/minekube/gate/commit/c58ad635635e65d6650e66e330c60c070f42c42d))
+
+## [0.75.14](https://github.com/minekube/gate/compare/v0.75.13...v0.75.14) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/pires/go-proxyproto to v0.16.0 ([#1329](https://github.com/minekube/gate/issues/1329)) ([f5c4768](https://github.com/minekube/gate/commit/f5c4768a74cc5cf940e68993e2b1d1804bed5f95))
+
+## [0.75.13](https://github.com/minekube/gate/compare/v0.75.12...v0.75.13) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.2 ([#1327](https://github.com/minekube/gate/issues/1327)) ([41ec0fb](https://github.com/minekube/gate/commit/41ec0fbddbdaded66c8e894feccdbdd064a5284e))
+
+## [0.75.12](https://github.com/minekube/gate/compare/v0.75.11...v0.75.12) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.85.1 ([#1323](https://github.com/minekube/gate/issues/1323)) ([23f12b7](https://github.com/minekube/gate/commit/23f12b7f2a39dfe847acfb335c3778f998d55ab5))
+
+## [0.75.11](https://github.com/minekube/gate/compare/v0.75.10...v0.75.11) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.85.1.1.20241118150055.50fffb007499 ([#1321](https://github.com/minekube/gate/issues/1321)) ([b3f9fd8](https://github.com/minekube/gate/commit/b3f9fd856fe687d2813018b12d2ca1869ad0067a))
+
+## [0.75.10](https://github.com/minekube/gate/compare/v0.75.9...v0.75.10) (2026-10-29)
+
+
+### Bug Fixes
+
+* **bedrock:** drain managed Geyser connection notifications ([#1318](https://github.com/minekube/gate/issues/1318)) ([2867088](https://github.com/minekube/gate/commit/2867088a9b2763360a13b4e31ddeb4741798e619))
+
+## [0.75.9](https://github.com/minekube/gate/compare/v0.75.8...v0.75.9) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.11 ([#1313](https://github.com/minekube/gate/issues/1313)) ([3ff38a5](https://github.com/minekube/gate/commit/3ff38a5089373e4e1606454e7c9be33d42891ca2))
+
+## [0.75.8](https://github.com/minekube/gate/compare/v0.75.7...v0.75.8) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gookit/color to v1.6.3 ([#1311](https://github.com/minekube/gate/issues/1311)) ([fc5bc22](https://github.com/minekube/gate/commit/fc5bc228798750240e2df5deddfc72b954d96077))
+
+## [0.75.7](https://github.com/minekube/gate/compare/v0.75.6...v0.75.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gammazero/deque to v1.2.2 ([#1309](https://github.com/minekube/gate/issues/1309)) ([b7e3621](https://github.com/minekube/gate/commit/b7e3621c21d4fb7b4a3edd212c7852d363b3fa41))
+
+## [0.75.6](https://github.com/minekube/gate/compare/v0.75.5...v0.75.6) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/connect to v1.21.1 ([#1308](https://github.com/minekube/gate/issues/1308)) ([ee58aea](https://github.com/minekube/gate/commit/ee58aeacb3660fa5dd592284db4dac92f9a1cb5b))
+
+## [0.75.5](https://github.com/minekube/gate/compare/v0.75.4...v0.75.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **proxy:** forward uncased config packets to the in-flight backend ([#1305](https://github.com/minekube/gate/issues/1305)) ([eee3cfc](https://github.com/minekube/gate/commit/eee3cfc7485f9fb3477b86859f0c1da2258ea591))
+
 ## [0.75.4](https://github.com/minekube/gate/compare/v0.75.3...v0.75.4) (2026-10-27)
 
 

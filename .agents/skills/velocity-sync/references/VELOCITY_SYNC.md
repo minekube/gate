@@ -229,6 +229,26 @@ log:
       messages (flushQueuedPluginMessagesTo) - a Gate-side addition, not a port. No upstream behavior
       was ported, so the verified sync point is unchanged.
 
+  - date: 2026-11-07
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate AvailableCommands fail-open change (an undecodable backend command
+      tree closed the backend connection, kicking a modded Forge 1.20.1 player ~1 s after placement on
+      the Connect edge). PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and the
+      same 11 commits as the review entries above - so there was no new upstream work to assess. The
+      comparison this change needed: upstream AvailableCommandsPacket.decode builds the node list with
+      ArgumentPropertyRegistry.readIdentifier, which throws IllegalArgumentException("Argument type
+      identifier " + id + " unknown.") for any id outside its fixed vanilla table, and its node cycling
+      failure throws IllegalStateException. Upstream is therefore fail-closed in exactly the same way
+      and has no raw-frame fallback to port; Gate's change (AvailableCommands keeps the undecoded body
+      in Raw, Encode writes it verbatim, and the play session handler forwards it untouched instead of
+      closing) is a Gate-side addition for a topology upstream does not run: Gate is an extra proxy hop
+      in front of a server it did not author, so a command tree it cannot parse must not be a
+      session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
+
 ```
 
 ## The log
