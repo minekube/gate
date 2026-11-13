@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.2](https://github.com/minekube/gate/compare/v0.80.1...v0.80.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* **gate:** un-scale the connection deadlines, split writeTimeout, and name deadline closes ([#1342](https://github.com/minekube/gate/issues/1342)) ([c4314b3](https://github.com/minekube/gate/commit/c4314b3ca4015fb713f448f3d0b655ffb83c94a2))
+
 ## [0.80.1](https://github.com/minekube/gate/compare/v0.80.0...v0.80.1) (2026-11-13)
 
 
