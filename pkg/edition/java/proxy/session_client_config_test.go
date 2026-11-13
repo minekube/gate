@@ -7,10 +7,14 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/edition/java/proxy/internal/resourcepack"
 	"go.minekube.com/gate/pkg/edition/java/proxy/message"
+	"go.minekube.com/gate/pkg/gate/proto"
 	connectiontelemetry "go.minekube.com/gate/pkg/telemetry/connection"
 )
 
@@ -100,6 +104,65 @@ func TestClientConfigForwardsPluginMessagesAfterBackendReady(t *testing.T) {
 	if got.Channel != "minecraft:register" || string(got.Data) != "purpur:ready" {
 		t.Fatalf("direct packet = %q %q, want minecraft:register purpur:ready", got.Channel, string(got.Data))
 	}
+}
+
+func TestClientConfigForwardsCodeOfConductAcceptToInFlightBackend(t *testing.T) {
+	handler, player, serverConn, backendConn := newTestConfigHandler(t)
+
+	// Initial join: the backend is still in flight and no server is connected yet.
+	player.mu.Lock()
+	player.connInFlight = serverConn
+	player.mu.Unlock()
+
+	// The code of conduct accept is registered in the Config state but has no
+	// explicit case in HandlePacket, so it takes the generic config forward path.
+	// Dropping it parks the backend's configuration task chain forever.
+	handler.HandlePacket(&proto.PacketContext{
+		Direction: proto.ServerBound,
+		Protocol:  version.Minecraft_26_3.Protocol,
+		PacketID:  0x09,
+		Packet:    &config.CodeOfConductAcceptPacket{},
+		Payload:   []byte{0x09},
+	})
+
+	if got := len(backendConn.writtenPackets); got != 1 {
+		t.Fatalf("config packets forwarded to in-flight backend = %d, want 1 (code of conduct accept was dropped)", got)
+	}
+	if _, ok := backendConn.writtenPackets[0].(*config.CodeOfConductAcceptPacket); !ok {
+		t.Fatalf("forwarded packet type = %T, want *config.CodeOfConductAcceptPacket", backendConn.writtenPackets[0])
+	}
+}
+
+func TestClientConfigForwardsUnhandledResourcePackResponseToInFlightBackend(t *testing.T) {
+	handler, player, serverConn, backendConn := newTestConfigHandler(t)
+
+	player.mu.Lock()
+	player.connInFlight = serverConn
+	player.mu.Unlock()
+	player.resourcePackHandler = &stubPackHandler{}
+
+	handler.HandlePacket(&proto.PacketContext{
+		Direction: proto.ServerBound,
+		Protocol:  version.Minecraft_26_3.Protocol,
+		PacketID:  0x06,
+		Packet:    &packet.ResourcePackResponse{},
+		Payload:   []byte{0x06},
+	})
+
+	if got := len(backendConn.writtenPackets); got != 1 {
+		t.Fatalf("packet forwarded to in-flight backend = %d, want 1 (unhandled config resource pack response was dropped)", got)
+	}
+}
+
+// stubPackHandler delegates every method to the nil embedded Handler except the
+// response callback, which reports "not handled by the proxy" so the packet has
+// to be forwarded to the backend.
+type stubPackHandler struct {
+	resourcepack.Handler
+}
+
+func (s *stubPackHandler) OnResourcePackResponse(*resourcepack.ResponseBundle) (bool, error) {
+	return false, nil
 }
 
 func TestClientConfigBackendFinishReplaysClientBrandAndSwitchesOnlyOutboundState(t *testing.T) {

@@ -26,6 +26,17 @@ type ServerPing struct {
 	Description component.Component `json:"description" yaml:"description"`
 	Favicon     favicon.Favicon     `json:"favicon,omitempty" yaml:"favicon,omitempty"`
 	ModInfo     *modinfo.ModInfo    `json:"modinfo,omitempty" yaml:"modinfo,omitempty"`
+	// Extra keeps the status members this struct does not model, verbatim, so a
+	// backend's own advertisement survives Gate re-encoding the response.
+	//
+	// Modded servers keep their mod metadata there: Forge 1.13+ (FML2/FML3)
+	// sends "forgeData" (mod list, channels, fmlNetworkVersion) and NeoForge
+	// sends "neoforgeData". Neither is modeled above, so a client reading the
+	// status through Gate saw a provider with no mod block at all - no mod
+	// count, no channels, no FML network version. Carrying unmodeled members
+	// through untouched keeps the proxy's status faithful to the backend it
+	// stands for. Gate never interprets these values, it only re-emits them.
+	Extra map[string]json.RawMessage `json:"-" yaml:"-"`
 }
 
 // Make sure ServerPing implements the interfaces at compile time.
@@ -45,13 +56,29 @@ func (p *ServerPing) MarshalJSON() ([]byte, error) {
 	}
 
 	type Alias ServerPing
-	return json.Marshal(&struct {
+	known, err := json.Marshal(&struct {
 		Description json.RawMessage `json:"description"`
 		*Alias
 	}{
 		Description: b.Bytes(),
 		Alias:       (*Alias)(p),
 	})
+	if err != nil || len(p.Extra) == 0 {
+		return known, err
+	}
+
+	// Merge the members Gate did not model back into the response. Modeled
+	// fields win, so a stale key in Extra can never shadow the real value.
+	merged := make(map[string]json.RawMessage, len(p.Extra)+5)
+	if err = json.Unmarshal(known, &merged); err != nil {
+		return nil, fmt.Errorf("error decoding marshaled ping: %w", err)
+	}
+	for k, v := range p.Extra {
+		if _, modeled := merged[k]; !modeled && len(v) != 0 {
+			merged[k] = v
+		}
+	}
+	return json.Marshal(merged)
 }
 func (p *ServerPing) UnmarshalJSON(data []byte) error {
 	type Alias ServerPing
@@ -74,8 +101,42 @@ func (p *ServerPing) UnmarshalJSON(data []byte) error {
 		}
 	}
 
+	out.Alias.Extra = unmodeledMembers(data)
+
 	*p = ServerPing(out.Alias)
 	return nil
+}
+
+// modeledStatusMembers are the top-level status members ServerPing knows about.
+// Everything else is kept in ServerPing.Extra so it survives a re-encode.
+var modeledStatusMembers = map[string]struct{}{
+	"version":     {},
+	"players":     {},
+	"description": {},
+	"favicon":     {},
+	"modinfo":     {},
+}
+
+// unmodeledMembers returns the top-level members of a status JSON object that
+// ServerPing does not model, or nil if there are none.
+func unmodeledMembers(data []byte) map[string]json.RawMessage {
+	var all map[string]json.RawMessage
+	if err := json.Unmarshal(data, &all); err != nil {
+		return nil
+	}
+	var extra map[string]json.RawMessage
+	for k, v := range all {
+		// encoding/json matches struct fields case-insensitively, so compare
+		// lowercased to keep a differently-cased modeled key out of Extra.
+		if _, modeled := modeledStatusMembers[strings.ToLower(k)]; modeled {
+			continue
+		}
+		if extra == nil {
+			extra = make(map[string]json.RawMessage)
+		}
+		extra[k] = v
+	}
+	return extra
 }
 
 func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
@@ -91,6 +152,9 @@ func (p *ServerPing) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	var err error
+	// YAML status config cannot express the raw passthrough members, so a
+	// decoded config must not inherit stale ones from a reused value.
+	out.Alias.Extra = nil
 	p.Description, err = componentutil.ParseComponent(out.Version.Protocol, out.Description)
 	if err != nil {
 		return fmt.Errorf("error decoding description: %w", err)

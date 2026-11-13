@@ -1,6 +1,6 @@
 ---
 title: "Gate Troubleshooting & Diagnostics"
-description: "Diagnose a hung or stalled Gate proxy: how to capture a goroutine dump that actually prints stacks, why kill -QUIT only shuts the proxy down, and what to send to support."
+description: "Diagnose a hung or stalled Gate proxy: how to capture a goroutine dump that actually prints stacks, why kill -QUIT only shuts the proxy down, what to send to support, and how to relay the console to a Discord webhook."
 ---
 
 # Troubleshooting & Diagnostics
@@ -66,4 +66,34 @@ line itself, next to the signal (source file and line vary by release):
 
 ```text
 INFO Received os signal {"signal": "quit", "hint": "SIGQUIT is a graceful shutdown and prints no goroutine dump; for a goroutine dump use kill -ABRT <pid> (it ends the Gate run, so capture the console first)"}
+```
+
+## Forwarding the console to Discord
+
+Gate has no webhook output of its own, so the console only reaches Discord if something relays it:
+
+```sh
+./gate 2>&1 | python3 discord-log-forward.py https://discord.com/api/webhooks/<id>/<token>
+```
+
+`discord-log-forward.py` ships with these docs at `/examples/discord-log-forward.py` (source:
+`.web/docs/public/examples/` in the repository). It exists because a naive `curl` per line is rejected
+within seconds: Discord allows **5 webhook requests per 2 seconds** per webhook and **2000 characters**
+per message. So it:
+
+- batches lines into code-blocked messages and spaces requests just under that limit;
+- retries a `429` using the `retry_after` the response carries, and retries once on a 5xx;
+- sends `allowed_mentions: {parse: []}`, so an `@everyone` inside a kicked player's name stays text;
+- drops the oldest buffered lines, marked with `[N earlier lines dropped]`, instead of growing without
+  bound while the webhook is unreachable, and never exits Gate's pipeline on a failed post;
+- forwards only lines containing `DISCORD_LOG_LEVEL` when that is set, for example `ERROR`.
+
+Two things it is not: Discord is not a log store - history is bounded and search is poor, so keep the file
+or the platform stream as well - and it is not low latency, because messages arrive in bursts.
+
+Run it under the same supervisor as Gate, not on your workstation, or it dies with your shell:
+
+```sh
+# systemd, alongside the gate service
+ExecStart=/bin/sh -c 'exec /opt/gate/gate 2>&1 | python3 /opt/gate/discord-log-forward.py "$DISCORD_WEBHOOK_URL"'
 ```
