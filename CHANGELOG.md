@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.3](https://github.com/minekube/gate/compare/v0.80.2...v0.80.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **release:** retry only the registry read-after-write race when publishing images, and verify the tags ([#1369](https://github.com/minekube/gate/issues/1369)) ([c4ef299](https://github.com/minekube/gate/commit/c4ef2990922fd80f8b403da241453af83cde62c6))
+
 ## [0.80.2](https://github.com/minekube/gate/compare/v0.80.1...v0.80.2) (2026-11-13)
 
 
