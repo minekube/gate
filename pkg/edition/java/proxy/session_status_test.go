@@ -15,9 +15,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/funcr"
 	"github.com/robinbraemer/event"
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/gate/proto"
 )
 
@@ -204,5 +206,31 @@ func newInactiveStatusHandler(t *testing.T, log logr.Logger) *statusSessionHandl
 		resolvePingResponse: func(log logr.Logger, _ *proto.PacketContext) (logr.Logger, *packet.StatusResponse, error) {
 			return log, &packet.StatusResponse{Status: "{}"}, nil
 		},
+	}
+}
+
+func TestNewInitialPingAdvertisedVersionName(t *testing.T) {
+	wantDefault := fmt.Sprintf("Gate %s", version.SupportedVersionsString)
+	tests := map[string]struct {
+		configured string
+		want       string
+	}{
+		"unset advertises the supported version range": {"", wantDefault},
+		"configured name is advertised verbatim":       {"Minekube Network", "Minekube Network"},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			cfg := config.DefaultConfig
+			cfg.Status.VersionName = tt.configured
+			p := &Proxy{cfg: &cfg}
+
+			ping := newInitialPing(p, version.MaximumVersion.Protocol)
+			if ping.Version.Name != tt.want {
+				t.Fatalf("advertised version name = %q, want %q", ping.Version.Name, tt.want)
+			}
+			if ping.Version.Protocol != version.MaximumVersion.Protocol {
+				t.Fatalf("advertised protocol = %d, want %d", ping.Version.Protocol, version.MaximumVersion.Protocol)
+			}
+		})
 	}
 }

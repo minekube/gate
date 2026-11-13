@@ -75,7 +75,7 @@ func observeConfigDisconnect(ctx context.Context) {
 
 func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket() {
-		forwardToServer(pc, h.player)
+		h.forwardConfigPacketToBackend(pc)
 		return
 	}
 	switch p := pc.Packet.(type) {
@@ -85,7 +85,7 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		h.player.setClientSettings(p)
 	case *packet.ResourcePackResponse:
 		if !handleResourcePackResponse(p, h.player.resourcePackHandler, h.log) {
-			forwardToServer(pc, h.player)
+			h.forwardConfigPacketToBackend(pc)
 		}
 	case *config.FinishedUpdate:
 		h.player.SetActiveSessionHandler(state.Play, newClientPlaySessionHandler(h.player))
@@ -104,7 +104,35 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *cookie.CookieResponse:
 		h.handleCookieResponse(p)
 	default:
-		forwardToServer(pc, h.player)
+		h.forwardConfigPacketToBackend(pc)
+	}
+}
+
+// forwardConfigPacketToBackend writes a configuration-phase packet the proxy does
+// not handle itself to the backend connection the player is configuring.
+//
+// It must target the in-flight connection: during the initial join no server is
+// connected yet, so forwardToServer - which requires a completed play connection -
+// silently drops the packet. That parks the backend's configuration task chain
+// indefinitely (observed with the client's Accept Code Of Conduct never reaching
+// Paper, whose ServerCodeOfConductConfigurationTask then never completes).
+func (h *clientConfigSessionHandler) forwardConfigPacketToBackend(pc *proto.PacketContext) {
+	serverConn := h.player.connectionInFlightOrConnectedServer()
+	if serverConn == nil {
+		return
+	}
+	smc, ok := serverConn.ensureConnected()
+	if !ok {
+		return
+	}
+	if pc.KnownPacket() {
+		if err := smc.WritePacket(pc.Packet); err != nil {
+			h.log.V(1).Error(err, "error forwarding config packet to backend server")
+		}
+		return
+	}
+	if err := smc.Write(pc.Payload); err != nil {
+		h.log.V(1).Error(err, "error forwarding unknown config packet to backend server")
 	}
 }
 
