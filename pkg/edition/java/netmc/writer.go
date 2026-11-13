@@ -47,15 +47,43 @@ type writer struct {
 	*codec.Encoder
 }
 
+// armWriteDeadline starts the write budget for the next socket write. A
+// non-positive write timeout disables it: arming a deadline of "now" would fail
+// every write instead of lifting the limit.
+func (w *writer) armWriteDeadline() error {
+	if w.writeTimeout <= 0 {
+		return nil
+	}
+	return w.c.SetWriteDeadline(time.Now().Add(w.writeTimeout))
+}
+
 func (w *writer) Flush() (err error) {
 	// Handle err in case the connection is
 	// already closed and can't write to.
-	if err = w.c.SetWriteDeadline(time.Now().Add(w.writeTimeout)); err != nil {
+	if err = w.armWriteDeadline(); err != nil {
 		return err
 	}
 	// Must flush in sync with encoder, or we may get an
 	// io.ErrShortWrite when flushing while encoder is already writing.
 	return w.Encoder.Sync(w.writeBuf.Flush)
+}
+
+// Write and WritePacket arm the write budget themselves, not only Flush: a
+// payload that does not fit the write buffer is encoded straight to the socket,
+// so without this the budget armed by the last flush (possibly long ago) would
+// already be in the past and a healthy peer would be closed on it.
+func (w *writer) Write(payload []byte) (n int, err error) {
+	if err = w.armWriteDeadline(); err != nil {
+		return 0, err
+	}
+	return w.Encoder.Write(payload)
+}
+
+func (w *writer) WritePacket(packet proto.Packet) (n int, err error) {
+	if err = w.armWriteDeadline(); err != nil {
+		return 0, err
+	}
+	return w.Encoder.WritePacket(packet)
 }
 
 func (w *writer) SetCompressionThreshold(threshold int) error {

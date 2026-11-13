@@ -50,6 +50,7 @@ var DefaultConfig = Config{
 	FailoverOnUnexpectedServerDisconnect: true,
 	ConnectionTimeout:                    configutil.Duration(5000 * time.Millisecond),
 	ReadTimeout:                          configutil.Duration(30000 * time.Millisecond),
+	WriteTimeout:                         configutil.Duration(10000 * time.Millisecond),
 	Quota: Quota{
 		Connections: QuotaSettings{
 			Enabled:    true,
@@ -169,8 +170,19 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts,omitempty" json:"forcedHosts,omitempty"`
 	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect,omitempty" json:"failoverOnUnexpectedServerDisconnect,omitempty"`
 
-	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"` // Write timeout
-	ReadTimeout       configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`             // Read timeout
+	// ConnectionTimeout bounds joining a backend server: the dial, the backend
+	// login and a server switch all run under it. It is a join budget, not a
+	// write budget - see WriteTimeout.
+	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"`
+	// ReadTimeout is how long a connection may be silent before Gate closes it.
+	ReadTimeout configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
+	// WriteTimeout is how long a single flush may fail to drain before the
+	// connection is closed. It applies to every connection Gate writes to
+	// (backend and client) and is deliberately separate from
+	// ConnectionTimeout: a backend that is slow to accept a join is not the
+	// same failure as a backend that stopped reading what we send it.
+	// Zero or negative disables the per-flush deadline.
+	WriteTimeout configutil.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
 
 	Quota                Quota         `yaml:"quota,omitempty" json:"quota,omitempty"`                 // Rate limiting settings
 	PacketLimiter        PacketLimiter `yaml:"packetLimiter,omitempty" json:"packetLimiter,omitempty"` // Per-connection serverbound packet rate limiting

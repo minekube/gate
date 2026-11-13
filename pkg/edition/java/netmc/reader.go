@@ -81,7 +81,16 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 				observation.Observe(r.ctx, connectiontelemetry.Closed, connectiontelemetry.Timeout)
 			}
 		}
-		r.logCloseErr(err)
+		// The terminal-I/O observer sees every terminal read error, including a
+		// deadline close: "Gate's own read budget fired" is exactly the class a
+		// tunnel teardown needs to name. Only the log line is suppressed for it.
+		class, observed, limit := classifyTerminalReadError(err)
+		observeMinecraftTerminalIO(r.c, terminalIODirectionRead, class, observed, limit)
+		if !isDeadlineExceeded(err) {
+			// A deadline close was already logged with the budget that fired;
+			// a second, debug-only line for the same event only adds noise.
+			r.logCloseErr(err)
+		}
 		return nil, err
 	}
 	return packetCtx, nil
@@ -107,9 +116,6 @@ func (r *reader) ReadPacket() (*proto.PacketContext, error) {
 // be decoded: keeping that silent is what stops an untrusted peer from turning
 // the log into a flood primitive (see TestReaderKeepsClientPacketDecodeFailureSilent).
 func (r *reader) logCloseErr(err error) {
-	class, observed, limit := classifyTerminalReadError(err)
-	observeMinecraftTerminalIO(r.c, terminalIODirectionRead, class, observed, limit)
-
 	if r.direction == proto.ClientBound {
 		var frameErr *codec.FrameTooLargeError
 		if errors.As(err, &frameErr) {
@@ -134,6 +140,19 @@ func (r *reader) logCloseErr(err error) {
 
 // handles error when read the next packet
 func (r *reader) handleReadErr(err error) (recoverable bool) {
+	var netErr *net.OpError
+	isNetErr := errors.As(err, &netErr)
+	// Gate's own read budget expiring is decided first, and before the
+	// silent-error branch: the decoder wraps its read errors as silent so an
+	// untrusted peer cannot flood the log, which would also swallow the one
+	// line that makes a silence close countable. Go also reports an expired
+	// deadline as Temporary(), so it must be checked before the temporary-retry
+	// branch as well - retrying our own budget is what let a silent peer end on
+	// an unrelated decode error instead of on the read timeout.
+	if isNetErr && isDeadlineExceeded(err) {
+		r.log.Error(err, "read deadline exceeded, closing connection", r.deadlineAttrs()...)
+		return false
+	}
 	var silentErr *errs.SilentError
 	if errors.As(err, &silentErr) {
 		return false
@@ -142,15 +161,10 @@ func (r *reader) handleReadErr(err error) (recoverable bool) {
 	if errors.Is(err, syscall.EAGAIN) {
 		return true
 	}
-	var netErr *net.OpError
-	if errors.As(err, &netErr) {
+	if isNetErr {
 		if netErr.Temporary() {
 			// Immediately retry for temporary network errors
 			return true
-		} else if netErr.Timeout() {
-			// Read timeout, disconnect
-			r.log.Error(err, "read timeout")
-			return false
 		} else if errs.IsConnClosedErr(netErr.Err) {
 			// Connection is already closed
 			return false
@@ -165,6 +179,16 @@ func (r *reader) handleReadErr(err error) (recoverable bool) {
 	}
 	r.log.Error(err, "error reading next packet, unrecoverable and closing connection")
 	return false
+}
+
+// deadlineAttrs names the budget that ended this connection, for the line that
+// makes a silence close countable in production.
+func (r *reader) deadlineAttrs() []any {
+	attrs := []any{"closeKind", string(DeadlineRead), "readTimeout", r.readTimeout}
+	if addr := r.c.RemoteAddr(); addr != nil {
+		attrs = append(attrs, "peer", addr.String())
+	}
+	return attrs
 }
 
 func (r *reader) EnableEncryption(secret []byte) error {
