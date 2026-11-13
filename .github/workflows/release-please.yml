@@ -26,6 +26,28 @@ permissions:
   pull-requests: write
   actions: write
 
+# One Release Please run at a time, per repository.
+#
+# On 2026-11-13 two runs were dispatched in the same second (runs 43448561385
+# and 43448561447, both `repository_dispatch` on 7a65faad at 15:02:34Z) and
+# both created a GitHub release for v0.79.1: 444366819 with the 12 real assets
+# and 444366820 with none. GitHub resolves `/releases/tags/v0.79.1` to the
+# first, but `/releases` and `/releases/latest` order by id, so the empty
+# object was "the newest release" and offered no binary to anything that
+# resolves the newest gate download. Serialising the runs makes the second one
+# observe the release PR already merged and the release already created instead
+# of racing the first.
+#
+# `cancel-in-progress: false` is deliberate: cancelling a run between
+# `gh pr merge` and its rerun dispatch — or between release-please creating the
+# tag and `trigger-release` publishing it — leaves the chain half-done, which is
+# worse than waiting for the queued run. The publish path also refuses to
+# finish on a tag that carries more than one release object
+# (release-publish.yml, "Verify published release assets").
+concurrency:
+  group: release-please-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
