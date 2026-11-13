@@ -58,5 +58,5 @@ const loadTallyScript = () => {
 };
 
 // Load all embeds on the page
-loadTallyScript();
+onMounted(loadTallyScript);
 </script>

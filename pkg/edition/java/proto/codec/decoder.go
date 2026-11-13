@@ -42,6 +42,35 @@ type Decoder struct {
 
 var _ proto.PacketDecoder = (*Decoder)(nil)
 
+// PacketDecodeError reports that a frame carried a packet this protocol's
+// registry knows, but whose payload could not be decoded into it. Unlike a frame
+// that is not a packet at all, the failing packet is identified here, which is
+// what lets a caller name it (reader.logCloseErr does, for backend connections).
+//
+// The decoder still returns it wrapped in an errs.SilentError: the default log
+// must stay quiet for untrusted peers, and naming the packet is the caller's
+// decision, not the decoder's. Unwrap keeps the underlying cause (and the
+// io.EOF/io.ErrUnexpectedEOF classification) reachable with errors.Is/errors.As.
+type PacketDecodeError struct {
+	// Packet is the zero-valued packet instance the decoder tried to fill.
+	Packet    proto.Packet
+	PacketID  proto.PacketID
+	Protocol  proto.Protocol
+	Direction proto.Direction
+	// Read and Unread are the payload byte counts the decoder consumed and left
+	// unread, mirroring the message below.
+	Read   int
+	Unread int
+	Err    error
+}
+
+func (e *PacketDecodeError) Error() string {
+	return fmt.Sprintf("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s, read: %d, unread: %d): %v",
+		e.Packet, e.PacketID, e.Protocol, e.Direction, e.Read, e.Unread, e.Err)
+}
+
+func (e *PacketDecodeError) Unwrap() error { return e.Err }
+
 func NewDecoder(r io.Reader, direction proto.Direction, log logr.Logger) *Decoder {
 	d := &Decoder{
 		rd:        &fullReader{r}, // using the fullReader is essential here!
@@ -277,8 +306,15 @@ func (d *Decoder) decodePayload(p []byte) (ctx *proto.PacketContext, err error) 
 			// payload was too short or packet decoder has a bug
 			err = errors.Join(err, io.ErrUnexpectedEOF)
 		}
-		return ctx, errs.NewSilentErr("error decoding packet (type: %T, id: %s, protocol: %s, direction: %s, read: %d, unread: %d): %w",
-			ctx.Packet, ctx.PacketID, ctx.Protocol, ctx.Direction, len(ctx.Payload)-payload.Len(), payload.Len(), err)
+		return ctx, errs.WrapSilent(&PacketDecodeError{
+			Packet:    ctx.Packet,
+			PacketID:  ctx.PacketID,
+			Protocol:  ctx.Protocol,
+			Direction: ctx.Direction,
+			Read:      len(ctx.Payload) - payload.Len(),
+			Unread:    payload.Len(),
+			Err:       err,
+		})
 	}
 
 	// Payload buffer should now be empty.

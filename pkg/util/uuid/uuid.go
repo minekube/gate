@@ -60,6 +60,14 @@ func FromBytes(b []byte) (UUID, error) {
 	return UUID(uuid), err
 }
 
+// OfflinePlayerUUID returns the offline-mode UUID of a username.
+//
+// This is the vanilla offline-mode UUIDv3 algorithm (MD5 over
+// "OfflinePlayer:"+username with the version/variant bits set), so the MD5
+// digest is part of the identity contract: whitelists, ops/ban lists, world
+// player data and plugin stores are all keyed by the resulting UUIDs, and any
+// other digest would rename every offline player.
+// Accepted scanner finding: see docs/accepted-crypto-primitives.md.
 func OfflinePlayerUUID(username string) UUID {
 	const version = 3 // UUID v3
 	uuid := md5.Sum([]byte("OfflinePlayer:" + username))

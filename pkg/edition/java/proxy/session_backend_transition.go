@@ -313,5 +313,8 @@ func (b *backendTransitionSessionHandler) handleJoinGame(pc *proto.PacketContext
 }
 
 func (b *backendTransitionSessionHandler) Disconnected() {
+	// A backend that stopped answering before the first play packet is
+	// otherwise only visible as a generic disconnect.
+	b.serverConn.reportStalledBackend(b.log)
 	b.requestCtx.result(nil, errors.New("unexpectedly disconnected from remote server"))
 }

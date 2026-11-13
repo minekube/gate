@@ -38,6 +38,12 @@ type clientConfigSessionHandler struct {
 		brandChannel             string
 		brandForwardedServer     *serverConnection
 		readyServer              *serverConnection
+		// knownPacks holds the client's ServerboundKnownPacks reply when it
+		// arrives before the backend config connection can take it. Dropping
+		// that packet stalls the backend's CONFIGURATION stream forever (no
+		// retry, no timeout), so it is queued like config plugin messages and
+		// replayed by flushQueuedPluginMessagesTo.
+		knownPacks *config.KnownPacks
 	}
 
 	nopSessionHandler
@@ -69,7 +75,7 @@ func observeConfigDisconnect(ctx context.Context) {
 
 func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	if !pc.KnownPacket() {
-		forwardToServer(pc, h.player)
+		h.forwardConfigPacketToBackend(pc)
 		return
 	}
 	switch p := pc.Packet.(type) {
@@ -79,7 +85,7 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 		h.player.setClientSettings(p)
 	case *packet.ResourcePackResponse:
 		if !handleResourcePackResponse(p, h.player.resourcePackHandler, h.log) {
-			forwardToServer(pc, h.player)
+			h.forwardConfigPacketToBackend(pc)
 		}
 	case *config.FinishedUpdate:
 		h.player.SetActiveSessionHandler(state.Play, newClientPlaySessionHandler(h.player))
@@ -98,7 +104,35 @@ func (h *clientConfigSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *cookie.CookieResponse:
 		h.handleCookieResponse(p)
 	default:
-		forwardToServer(pc, h.player)
+		h.forwardConfigPacketToBackend(pc)
+	}
+}
+
+// forwardConfigPacketToBackend writes a configuration-phase packet the proxy does
+// not handle itself to the backend connection the player is configuring.
+//
+// It must target the in-flight connection: during the initial join no server is
+// connected yet, so forwardToServer - which requires a completed play connection -
+// silently drops the packet. That parks the backend's configuration task chain
+// indefinitely (observed with the client's Accept Code Of Conduct never reaching
+// Paper, whose ServerCodeOfConductConfigurationTask then never completes).
+func (h *clientConfigSessionHandler) forwardConfigPacketToBackend(pc *proto.PacketContext) {
+	serverConn := h.player.connectionInFlightOrConnectedServer()
+	if serverConn == nil {
+		return
+	}
+	smc, ok := serverConn.ensureConnected()
+	if !ok {
+		return
+	}
+	if pc.KnownPacket() {
+		if err := smc.WritePacket(pc.Packet); err != nil {
+			h.log.V(1).Error(err, "error forwarding config packet to backend server")
+		}
+		return
+	}
+	if err := smc.Write(pc.Payload); err != nil {
+		h.log.V(1).Error(err, "error forwarding unknown config packet to backend server")
 	}
 }
 
@@ -293,6 +327,16 @@ func (h *clientConfigSessionHandler) flushQueuedPluginMessagesTo(serverConn *ser
 			return fmt.Errorf("error buffering queued config plugin message %q: %w", pm.Channel, err)
 		}
 	}
+	// Replay the client's KnownPacks reply that arrived before the backend was
+	// ready. Without it the backend never sends its registry data and the
+	// CONFIGURATION phase stalls silently until the client times out.
+	if kp := h.mu.knownPacks; kp != nil {
+		h.mu.knownPacks = nil
+		if err := smc.BufferPacket(kp); err != nil {
+			return fmt.Errorf("error buffering queued config KnownPacks reply: %w", err)
+		}
+		n++
+	}
 	if n != 0 {
 		if err := smc.Flush(); err != nil {
 			return err
@@ -305,12 +349,28 @@ func (h *clientConfigSessionHandler) flushQueuedPluginMessagesTo(serverConn *ser
 func (h *clientConfigSessionHandler) handleKnownPacks(p *config.KnownPacks, pc *proto.PacketContext) {
 	serverConn := h.player.connectionInFlightOrConnectedServer()
 	if serverConn == nil {
+		h.queueKnownPacks(p)
 		return
 	}
 	smc, ok := serverConn.ensureConnected()
+	wrote := false
 	if ok {
-		_ = smc.WritePacket(p)
+		wrote = smc.WritePacket(p) == nil
 	}
+	if !wrote {
+		// The backend config connection exists but is not usable yet. Keep the
+		// reply: it is the packet that releases the backend's registry data,
+		// and losing it stalls CONFIGURATION silently and indefinitely.
+		h.queueKnownPacks(p)
+	}
+}
+
+// queueKnownPacks remembers the client's KnownPacks reply until the backend
+// config connection can take it.
+func (h *clientConfigSessionHandler) queueKnownPacks(p *config.KnownPacks) {
+	h.mu.Lock()
+	h.mu.knownPacks = p
+	h.mu.Unlock()
 }
 
 func (h *clientConfigSessionHandler) event() event.Manager {

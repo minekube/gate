@@ -88,6 +88,167 @@ log:
       with no later commits or 26.3 protocol work in that branch. The prior review explains the
       per-commit decisions. PR #1139 obtained protocol 777 and packet mappings from Mojang's 26.3
       client artifact, so this check required no further port.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate handshake-port fix (port decoded as signed int16, so a declared port
+      >= 32768 reached routing as a negative port). dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the 2026-09-19 review - so there was no new upstream work to
+      assess. The comparison for this change: upstream HandshakePacket.decode reads the field with
+      buf.readUnsignedShort() and encode writes it with writeShort(), i.e. unsigned 16-bit semantics
+      with Netty's silent truncation on an out-of-range write. Gate now reads/writes the field with
+      util.ReadUint16/WriteUint16 (same wire bytes for 0-32767) and additionally rejects an
+      out-of-range port in Encode rather than truncating it. Upstream cannot show the routing symptom
+      because its virtual host is the cleaned host alone (cleanVhost(handshake.getServerAddress())),
+      while Gate deliberately keeps the client-declared host:port in the virtual host, so Gate depends
+      on the unsigned decode. No upstream behavior was ported, so the verified sync point is unchanged.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate login RSA key size fix (auth.Options.PrivateKeyBits was inert and
+      the login key size was not reachable from Gate's config; auth.privateKeyBits now sets it, and
+      the login encryption packet bounds were raised so a bigger key can complete a login at all).
+      dev/3.0.0 still resolves to 843a47e2 - the same head and the same 11 commits as the review entry
+      above - so there was no new upstream work to assess. The comparison this change needed is the
+      login encryption packet decoding: upstream EncryptionRequestPacket.decode reads the public key
+      with readByteArray(buf, 256) and EncryptionResponsePacket.decode reads the shared secret with
+      readByteArray(buf, 128) and the verify token with 128/256, i.e. exactly one 1024 bit RSA block.
+      Upstream therefore cannot complete a login with a larger server key either - Gate inherited the
+      same caps and has now lifted them to maxLoginEncryptionBytes (1024 bytes, one 8192 bit RSA
+      ciphertext) so the configurable key size is usable. No upstream behavior was ported, so the
+      verified sync point is unchanged.
+
+  - date: 2026-09-21
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate netutil port-range fix (splitHostPort narrowed an unbounded
+      strconv.Atoi result into a uint16, so "host:70000" wrapped to port 4464, "host:-1" to 65535
+      and "host:99999999999999999999" to 65535). dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the two review entries above - so there was no new upstream
+      work to assess. Gate's pkg/util/netutil accessors (HostStr/Port/PortStr/HostPort/Parse) have
+      no upstream counterpart to diff against: Velocity keeps addresses as java.net.InetSocketAddress
+      and com.velocitypowered.proxy.util.AddressUtil parses them from a java.net.URI into a Java int
+      port, so no uint16 narrowing exists there. The comparison this change did need: upstream hands
+      that int to new InetSocketAddress(address, port), which for 70000 and 65536 throws
+      IllegalArgumentException("port out of range:70000"), i.e. upstream fails closed rather than
+      reporting a different port (a literal "-1" is read by URI as "no port", so upstream falls back
+      to 25565). Gate used to wrap the value and report a port that was never in the address; it now
+      rejects an out-of-range port, matching upstream's fail-closed outcome. No upstream behavior was
+      ported, so the verified sync point is unchanged.
+  - date: 2026-09-27
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for Gate's stalled-backend diagnostics: a backend that accepts the TCP connection
+      and never sends a packet, or stops sending for longer than readTimeout, is now reported with the
+      backend name, its address and the stage the connection reached, instead of only ending in a
+      generic disconnect. PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and
+      the same 11 commits as the review entries above - so there is no new upstream work to assess.
+      The comparison this change needed is upstream's own stalled-backend reporting:
+      MinecraftConnection.exceptionCaught logs "{}: read timed out" at ERROR, but only for a
+      connection that registered an association, and a backend connection's association renders as
+      "[server connection] <player> -> <serverName>" (VelocityServerConnection.toString), while
+      unassociated frontline connections stay quiet. Upstream therefore names the player and the
+      backend server when the channel read timeout fires, but has no counterpart for the backend
+      address or the connection stage, and no way to distinguish a backend that never sent a single
+      byte (its stall just waits for the channel read timeout, which Gate's own connection layer does
+      not enforce as documented either). Gate's log for this path was netmc's bare "read timeout";
+      the new diagnostics add the backend name, address and stage plus the never-answered shape. No
+      upstream behavior was ported, so the verified sync point is unchanged.
+  - date: 2026-10-06
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate 26.3 command argument type fix (the brigadier registry resolved
+      protocol 777 ids with the 1.21.6 table, so an operator's Commands packet carrying
+      minecraft:dialog, now 58, or one of the five types 26.3 inserted failed to decode and the
+      player was disconnected). PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same
+      head and the same 11 commits as the review entries above. Velocity's default branch is now
+      dev/4.0.0, where 26.3 support landed in dff94da2b3d79bff1874ecdf7320e178a8480625
+      (PaperMC/Velocity#1867). Its ArgumentPropertyRegistry maps the same 26.3 ids as this change
+      (context_float_provider 55, context_int_provider 56, slot_source 57, dialog 58, feature 59,
+      swing_animation 60, uuid 61), and both agree with the vanilla 26.3 server data generator
+      report (registries.json, minecraft:command_argument_type), which Gate's table was taken from.
+      Only that commit was compared; the rest of dev/4.0.0 was not assessed here. No upstream code
+      was ported, so the verified sync point is unchanged.
+  - date: 2026-10-18
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Connect-edge duplicate-login fix (a player reconnecting after a kick,
+      client timeout or half-open drop was refused with "You are already connected to this server!"
+      because the previous registration was still in the map; on the edge this hit nine players on
+      seven machines plus our own k8s join prober in six hours). PaperMC/Velocity@dev/3.0.0 still
+      resolves to 843a47e2 - the same head and the same 11 commits as the review entries above - and
+      dev/4.0.0 (5e641c6533db6b75a236b5ae79f76e27ad3169a8, 2026-10-07) carries the same registry code.
+      Comparison: upstream unregisterConnection uses Map.remove(key, connection), i.e. value-scoped
+      removal, and registerConnection uses putIfAbsent, so a connection that lost the registration
+      race can never evict the winner; Gate had drifted to an unconditional delete(name)/delete(id),
+      which let a refused duplicate's teardown remove the live player's registration (and mis-report
+      its DisconnectEvent status). This change ports that value-scoping, and additionally supersedes -
+      instead of refusing - a colliding registration whose connection is already closed or that never
+      reached play, which upstream does not do: upstream has no abandoned-login case and would still
+      refuse the reconnect. Nothing was taken from an upstream commit, so the verified sync point is
+      unchanged.
+  - date: 2026-10-20
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate config-state KnownPacks reply queue (the client's
+      ServerboundKnownPacks reply is the packet that releases the backend's registry data; Gate dropped
+      it when the backend config connection was not attached or not writable yet, which stalls the
+      backend's CONFIGURATION stream silently and indefinitely - no error, no retry, no timeout).
+      PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and the same 11 commits as
+      the review entries above - so there was no new upstream work to assess. The comparison this
+      change needed: upstream ClientConfigSessionHandler.handle(KnownPacksPacket) writes once through
+      player.getConnectionInFlightOrConnectedServer().ensureConnected() and only when that connection
+      is non-null, with no queue and no replay; it defers the write onto
+      callConfigurationEvent().thenRun instead, so a reply arriving before the target server exists is
+      lost inside the future as well - upstream narrows the window but has no durable path either.
+      Gate's handler is invoked directly from the client config session handler, and this change keeps
+      the reply and replays it in the same buffered flush that already carries queued config plugin
+      messages (flushQueuedPluginMessagesTo) - a Gate-side addition, not a port. No upstream behavior
+      was ported, so the verified sync point is unchanged.
+
+  - date: 2026-11-07
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate AvailableCommands fail-open change (an undecodable backend command
+      tree closed the backend connection, kicking a modded Forge 1.20.1 player ~1 s after placement on
+      the Connect edge). PaperMC/Velocity@dev/3.0.0 still resolves to 843a47e2 - the same head and the
+      same 11 commits as the review entries above - so there was no new upstream work to assess. The
+      comparison this change needed: upstream AvailableCommandsPacket.decode builds the node list with
+      ArgumentPropertyRegistry.readIdentifier, which throws IllegalArgumentException("Argument type
+      identifier " + id + " unknown.") for any id outside its fixed vanilla table, and its node cycling
+      failure throws IllegalStateException. Upstream is therefore fail-closed in exactly the same way
+      and has no raw-frame fallback to port; Gate's change (AvailableCommands keeps the undecoded body
+      in Raw, Encode writes it verbatim, and the play session handler forwards it untouched instead of
+      closing) is a Gate-side addition for a topology upstream does not run: Gate is an extra proxy hop
+      in front of a server it did not author, so a command tree it cannot parse must not be a
+      session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
+
 ```
 
 ## The log

@@ -239,6 +239,18 @@ type serverConnection struct {
 	mu         sync.RWMutex        // Protects following fields
 	connection netmc.MinecraftConn // the backend server connection
 	connPhase  phase.BackendConnectionPhase
+	// backendRead observes the backend socket so that a backend which never
+	// answers can be reported with its name, address and the stage the
+	// connection reached; backendStage names that stage and
+	// backendConnectedAt is when the backend socket was established.
+	backendRead        *backendReadMonitor
+	backendStage       string
+	backendConnectedAt time.Time
+	// bridgeDialFailure reads the dial failure of the translation bridge this
+	// backend was reached through, if it was reached through one. It lets the
+	// login teardown name a dynamic backend the bridge could not reach instead
+	// of reporting a generic closed connection.
+	bridgeDialFailure func() error
 }
 
 const pendingKeepAliveCapacity = 64
@@ -320,6 +332,14 @@ type (
 
 func (c *connRequestCxt) result(result *connectionResult, err error) {
 	c.once.Do(func() { c.response <- &connResponse{connectionResult: result, error: err} })
+}
+
+// bridgeDialFailureProvider is implemented by a backend connection that was
+// dialled through the translation bridge (vialite.go, excluded from musl
+// builds): it reports why the bridge could not reach the dynamic backend behind
+// the connection, if it could not.
+type bridgeDialFailureProvider interface {
+	BridgeDialFailure() error
 }
 
 // ServerDialer provides the server connection for a joining player.
@@ -447,10 +467,28 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	// Connect proxy -> server
 	debug := s.log.V(1)
 	debug.Info("dialing backend server...")
+	s.setBackendStage(backendStageHandshake)
 	conn, err := s.dial(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to backend server %q: %w", s.server.ServerInfo().Name(), err)
 	}
+	// A dynamic backend is dialled through the translation bridge. Keep the
+	// bridge's failure reader with this connection, so the login teardown can
+	// name the backend the bridge could not reach.
+	var bridgeDialFailure func() error
+	if pf, ok := conn.(bridgeDialFailureProvider); ok {
+		bridgeDialFailure = pf.BridgeDialFailure
+	}
+	// Observe the backend socket so a backend that accepts the connection and
+	// never speaks can be named (with address and stage) instead of ending in a
+	// silent, generic disconnect.
+	monitor := &backendReadMonitor{Conn: conn}
+	conn = monitor
+	s.mu.Lock()
+	s.backendRead = monitor
+	s.backendConnectedAt = time.Now()
+	s.bridgeDialFailure = bridgeDialFailure
+	s.mu.Unlock()
 
 	if s.config().ProxyProtocolBackend {
 		header := protoutil.ProxyHeader(s.player.RemoteAddr(), conn.RemoteAddr())
@@ -562,6 +600,7 @@ func (s *serverConnection) startHandshake(
 	if err := serverMc.WritePacket(serverLogin); err != nil {
 		return nil, fmt.Errorf("error writing ServerLogin packet to server connection: %w", err)
 	}
+	s.setBackendStage(backendStageLogin)
 	go readLoop()
 
 	// Block until we get a result

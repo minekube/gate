@@ -26,7 +26,7 @@ func TestJavaCompatibleUsername(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := javaCompatibleUsername(tt.in)
+			got := javaCompatibleUsername(tt.in, false)
 			if got != tt.want {
 				t.Fatalf("javaCompatibleUsername(%q) = %q, want %q", tt.in, got, tt.want)
 			}

@@ -44,10 +44,30 @@ jobs:
         if: ${{ steps.rp.outputs.pr }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The release PR payload is GitHub's JSON for the generated PR, and its
+          # body repeats the merged commit subjects verbatim. It must reach the
+          # shell as DATA. While it was interpolated into the script text instead
+          # (`echo '${{ steps.rp.outputs.pr }}'`), any apostrophe in a merged
+          # subject closed the quoted literal and the rest of the payload ran as
+          # shell code: on 2026-09-27 the v0.74.21 chain died in this step with
+          # "syntax error near unexpected token `('" (run 36320821502), skipping
+          # trigger-release and dispatch-moxy-bump, and release PR #1202 had to be
+          # merged by hand. Passed through the environment, the payload is never
+          # parsed by the shell. Pinned by
+          # TestReleasePleaseMergeStepNeverInterpolatesPayloadIntoShell and the
+          # apostrophe harness in release_please_payload_test.go.
+          RP_PR: ${{ steps.rp.outputs.pr }}
         run: |
-          PR_NUMBER=$(echo '${{ steps.rp.outputs.pr }}' | jq -r '.number')
+          # Parsed from the environment, never from script text.
+          PR_NUMBER=$(printf '%s' "$RP_PR" | jq -r '.number')
+
+          # `--merge`, not `--auto`: the rerun dispatch below must land after
+          # GitHub has merged the release PR, otherwise release-please re-reads
+          # master before its own release commit is there. The release branch
+          # carries no required checks to wait for, and the published artifacts
+          # are verified by release-publish.yml instead.
           gh pr merge "$PR_NUMBER" \
-            --repo "${{ github.repository }}" \
+            --repo "$GITHUB_REPOSITORY" \
             --merge
 
           # Merges done with GITHUB_TOKEN do not trigger a new push workflow.
@@ -55,7 +75,7 @@ jobs:
           # merged release PR and creates the tag/GitHub release.
           gh api \
             --method POST \
-            "/repos/${{ github.repository }}/dispatches" \
+            "/repos/$GITHUB_REPOSITORY/dispatches" \
             -f event_type=release-please-rerun
 
   trigger-release:

@@ -91,7 +91,20 @@ func buildHasJoinedURL(baseURL *url.URL, serverID, username, userIP string) stri
 type HasJoinedURLFn func(serverID, username, userIP string) string
 
 // DefaultPrivateKeyBits is the default bit size of a generated private key.
+//
+// It matches what vanilla Minecraft servers and other proxies (BungeeCord,
+// Velocity) use for the login handshake, so it stays the default for
+// compatibility. Operators can raise it with Options.PrivateKeyBits.
 const DefaultPrivateKeyBits = 1024
+
+// privateKeyBits resolves the requested bit size for a generated private key,
+// falling back to DefaultPrivateKeyBits for unset (<= 0) values.
+func privateKeyBits(options Options) int {
+	if options.PrivateKeyBits > 0 {
+		return options.PrivateKeyBits
+	}
+	return DefaultPrivateKeyBits
+}
 
 // Options to create a new Authenticator.
 type Options struct {
@@ -106,7 +119,8 @@ type Options struct {
 	PrivateKey *rsa.PrivateKey
 	// PrivateKey is not set,
 	// the bit size of a generated private key.
-	// The default is DefaultPrivateKeyBits.
+	// If unset or <= 0, DefaultPrivateKeyBits is used.
+	// Note that rsa.GenerateKey rejects sizes below 1024 bits.
 	PrivateKeyBits int
 	// The http client to query the Mojang API.
 	// If none is set, a new one is created.
@@ -118,7 +132,10 @@ func New(options Options) (Authenticator, error) {
 	var err error
 	private := options.PrivateKey
 	if private == nil {
-		private, err = rsa.GenerateKey(rand.Reader, DefaultPrivateKeyBits)
+		// The key size here resolves to DefaultPrivateKeyBits (vanilla's 1024
+		// bits) unless the operator raised auth.privateKeyBits.
+		// Accepted scanner finding (weak key): see docs/accepted-crypto-primitives.md.
+		private, err = rsa.GenerateKey(rand.Reader, privateKeyBits(options))
 		if err != nil {
 			return nil, fmt.Errorf("error generate private key: %v", err)
 		}
@@ -241,6 +258,14 @@ func (a *authenticator) AuthenticateJoin(ctx context.Context, serverID, username
 	}, nil
 }
 
+// GenerateServerID returns the Mojang `hasJoined` serverId.
+//
+// SHA-1 over (decrypted shared secret ‖ server public key) is required by the
+// session protocol: the client hashes the same inputs to the same digest and
+// sends it to Mojang, and the two's-complement/negative rendering below is how
+// vanilla renders that digest. Both are protocol constants - changing the
+// digest or the rendering breaks online-mode login.
+// Accepted scanner finding: see docs/accepted-crypto-primitives.md.
 func (a *authenticator) GenerateServerID(decryptedSharedSecret []byte) (string, error) {
 	hash, err := func() (hash []byte, err error) {
 		h := sha1.New()

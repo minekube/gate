@@ -1,0 +1,80 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+
+  // Biome lints the JavaScript/TypeScript surface of `.web`:
+  //
+  //   - the deployed Cloudflare Worker (`worker.mjs`, `worker-response.mjs`,
+  //     `functions/**`) that serves gate.minekube.com, so findings here are
+  //     runtime-reachable rather than "docs only";
+  //   - the build/deploy tooling (`scripts/**`) that the docs CI already
+  //     exercises;
+  //   - the VitePress site source (`docs/.vitepress/**`, `docs/_data/**`,
+  //     `docs/shared/**`) that is compiled into the deployed assets.
+  //
+  // This is a lint-only configuration: the `lint` script runs
+  // `biome lint --error-on-warnings`, so every rule in the preset below fails
+  // the docs job rather than only the ones Biome classifies as errors - the
+  // formatter and the assist actions stay untouched and the checked-in
+  // formatting of the docs tree does not churn.
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+
+      // `Graph`, `Layout` and `Survey` are the names these three theme
+      // components are authored, imported and referenced under: `Layout.vue` is
+      // the theme's `Layout` host (see `theme/index.ts`) and `<Graph />` /
+      // `<Survey />` are used from the docs markdown itself
+      // (`docs/guide/feedback.md`, `HomeHeroImage.vue`). Renaming them to
+      // satisfy a name-shape style rule would change the docs authoring surface
+      // for no behavioural gain, so the three names are allow-listed here
+      // instead of suppressing the rule.
+      "style": {
+        "useVueMultiWordComponentNames": {
+          "level": "info",
+          "options": {
+            "ignores": ["Graph", "Layout", "Survey"]
+          }
+        }
+      }
+    }
+  },
+
+  // Required for Vue single-file components: with this option off, Biome parses
+  // the `<script setup>` block but does not resolve bindings used from the
+  // template, so `correctness/noUnusedVariables` reported every template-only
+  // binding (component props, `v-for` sources, `v-if` flags) as unused. That
+  // produced false positives on the theme components; the option makes template
+  // usage count as a reference.
+  "html": {
+    "experimentalFullSupportEnabled": true
+  },
+
+  // Honour `.gitignore`, so build output (`docs/.vitepress/dist`,
+  // `docs/.vitepress/cache`, `.worker-dist`, `.wrangler`, `node_modules`) is
+  // never analysed. The explicit negations below document the remaining
+  // exclusions that no ignore file covers.
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+
+  "files": {
+    "includes": [
+      "**",
+      // Generated diagram assets (mermaid/plantuml exports). Biome analyses the
+      // CSS embedded in them, which is Codacy-class noise on rendered output
+      // nobody edits by hand: fix the diagram source, not the export.
+      "!**/*.svg",
+      // Static assets served verbatim by the Worker's `ASSETS` binding
+      // (`install.ps1`, `_headers`, images) are not application source.
+      "!docs/public",
+      // Standalone example projects shipped as documentation content
+      // (`developers/api/{go,java,kotlin,rust,python,typescript}`). They carry
+      // their own toolchains and are illustrations, not code this repo builds
+      // or deploys, so they must not be linted as application source.
+      "!docs/developers"
+    ]
+  }
+}

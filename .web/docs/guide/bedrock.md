@@ -7,6 +7,12 @@ description: "Enable Minecraft Bedrock Edition support with Gate proxy. Connect 
 
 Enable cross-play between Java and Bedrock players on your Minecraft servers with **zero backend plugins required**.
 
+::: tip Joining through Minekube Connect
+For `<endpoint>.play.minekube.net` or a Connect custom domain, use the normal
+[Connect integration](/guide/connect#bedrock-players-through-connect). Connect handles translation and Gate
+automatically verifies the managed identity. The `bedrock: true` setup below enables a direct local listener.
+:::
+
 ## Quick Start (30 Seconds)
 
 Get Bedrock support running instantly with managed mode:
@@ -87,7 +93,7 @@ bedrock: true
 ```yaml [With Customization]
 bedrock:
   # Custom username format to avoid conflicts
-  usernameFormat: '.%s' # .Steve instead of Steve
+  usernameFormat: '_%s' # _Steve instead of Steve
 
   # Custom listen address for Geyser connections (localhost for security)
   geyserListenAddr: 'localhost:25567'
@@ -114,6 +120,7 @@ bedrock:
 | Option             | Description                                                 | Default              |
 | ------------------ | ----------------------------------------------------------- | -------------------- |
 | `usernameFormat`   | Format string for Bedrock usernames (use `%s` for username) | `"_%s"`              |
+| `preserveDotPrefix` | Keep a leading `.` when the backend accepts it (e.g. Paper) | `false` |
 | `geyserListenAddr` | Address where Gate listens for Geyser connections           | `localhost:25567`    |
 | `floodgateKeyPath` | Path to Floodgate encryption key                            | `floodgate.pem`      |
 | `backendFloodgate` | Optional allowlist for backend Floodgate plugin compatibility | disabled             |
@@ -125,6 +132,20 @@ characters, before login. The delivered username can therefore differ from the f
 as `_`, and so is every space or non-ASCII character in the gamertag. The normalization is deliberate rather than a
 constraint of Java itself: the backend server validates the login name, Paper's own check also accepts `.`, but
 vanilla's check is only the narrower `[A-Za-z0-9_]` alphabet, and Gate cannot know which implementation a backend runs.
+
+For a Paper backend that accepts a leading dot, opt in explicitly:
+
+```yaml
+bedrock:
+  managed: true
+  usernameFormat: '.%s'
+  preserveDotPrefix: true
+```
+
+This delivers `.Steve` rather than `_Steve`. It preserves only the first dot: spaces, non-ASCII characters and
+interior dots still become underscores, and the 16-character limit and empty-name fallback remain unchanged.
+Leave this disabled for vanilla backends. The option also applies when a linked identity supplies the name;
+it does not change which identity sources are trusted.
 
 :::
 
@@ -346,30 +367,48 @@ bedrock:
 ```
 
 ```yaml [Geyser config.yml]
-# Geyser Standalone configuration
+# Geyser Standalone configuration (Geyser 2.x, config-version 5 or newer)
 bedrock:
   # UDP port for Bedrock players
   port: 19132
   address: 0.0.0.0
 
-remote:
+java:
   # Connect to Gate's Bedrock listener
   address: localhost
   port: 25567
   auth-type: floodgate
-  use-proxy-protocol: true
 
-# Point to shared Floodgate key
-floodgate-key-file: /path/to/key.pem
+advanced:
+  java:
+    # Gate's Geyser listener needs the HAProxy/PROXY header to know the real
+    # Bedrock player address; without it the player shows up as Geyser's host
+    use-haproxy-protocol: true
+  # Point to shared Floodgate key
+  floodgate-key-file: /path/to/key.pem
 
 # Enable passthrough for better integration
-passthrough-motd: true
-passthrough-player-counts: true
+motd:
+  passthrough-motd: true
+  passthrough-player-counts: true
+  max-players: 100
 
-# Performance settings
-max-players: 100
 debug-mode: false
 ```
+
+::: tip Geyser 2.x moved these keys
+Geyser 2.0 sectioned its config, so the snippet above uses the current paths:
+the Java connection under `java:`, the HAProxy toggle at
+`advanced.java.use-haproxy-protocol`, the Floodgate key at
+`advanced.floodgate-key-file`, and the MOTD settings under `motd:`. A Geyser
+that still uses the pre-2.0 layout (`remote:`, root `floodgate-key-file:`,
+`remote.use-proxy-protocol`) keeps working because Geyser's own config
+migration rewrites those keys when it upgrades the file. Do not add the legacy
+`remote.use-proxy-protocol` to a config that already has
+`config-version: 5` or newer: Geyser ignores it without a warning, Gate then
+receives no PROXY header, and every Bedrock player is seen with the Geyser
+host's address.
+:::
 
 ::::
 
@@ -708,11 +747,19 @@ The system also handles edge cases like players switching between devices, platf
    bedrock:
      geyserListenAddr: 'localhost:25567'
 
-   # Geyser config - remote.port must match
-   remote:
+   # Geyser config - java.port must match
+   java:
      address: localhost
      port: 25567
    ```
+
+   Geyser 2.x reads the Java target from `java.address` / `java.port`. A Geyser
+   that still uses the pre-2.0 layout spells the same settings
+   `remote.address` / `remote.port`, and its own config migration renames
+   `remote:` to `java:` when it upgrades the file. Adding `remote:` to a config
+   already at `config-version: 5` or newer does nothing: Geyser ignores the
+   section without a warning and dials its default `127.0.0.1:25565`, so Gate's
+   listener sees no connection at all.
 
 3. **Check firewall/networking**:
    ```bash
@@ -770,18 +817,30 @@ The system also handles edge cases like players switching between devices, platf
 1. **Verify proxy protocol settings**:
 
    ```yaml
-   # Geyser MUST use proxy protocol with Gate
-   remote:
-     use-proxy-protocol: true
+   # Geyser 2.x MUST send the HAProxy/PROXY header to Gate
+   advanced:
+     java:
+       use-haproxy-protocol: true
    ```
+
+   On a Geyser that still uses the pre-2.0 layout the same switch is
+   `remote.use-proxy-protocol: true`, which Geyser migrates on its own when it
+   upgrades the file. Adding that legacy key to an already-migrated config
+   (`config-version: 5` or newer) is silently ignored.
 
 2. **Check authentication mode alignment**:
 
    ```yaml
    # Both must use floodgate
-   remote:
+   java:
      auth-type: floodgate
    ```
+
+   Geyser 2.x reads the auth mode from `java.auth-type`. The pre-2.0 layout puts
+   it at `remote.auth-type` instead, and Geyser's config migration moves it to
+   `java.auth-type` while the file is below `config-version: 5`. On a config
+   already at the current version the `remote:` key is ignored without a
+   warning, so Geyser keeps the auth mode `java.auth-type` already holds.
 
 3. **Ensure passthrough settings are correct**:
    ```yaml

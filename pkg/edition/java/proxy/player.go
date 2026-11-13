@@ -572,7 +572,12 @@ func (p *connectedPlayer) teardown() {
 			status = SuccessfulLoginStatus
 		}
 	} else {
-		if netmc.KnownDisconnect(p) {
+		if p.disconnectDueToDuplicateConnection.Load() {
+			// The registration was already released by the newer connection that
+			// superseded this one; the disconnect is still a conflict, not a user
+			// cancelation, so status reporting stays truthful.
+			status = ConflictingLoginStatus
+		} else if netmc.KnownDisconnect(p) {
 			status = CanceledByProxyLoginStatus
 		} else {
 			status = CanceledByUserLoginStatus

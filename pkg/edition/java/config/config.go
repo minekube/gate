@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"go.minekube.com/common/minecraft/color"
+	"go.minekube.com/common/minecraft/component"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
@@ -77,6 +79,7 @@ var DefaultConfig = Config{
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
 	RequireBuiltinCommandPermissions:    false,
+	BuiltinCommandRefusedMessage:        defaultBuiltinCommandRefusedMessage(),
 	AnnounceProxyCommands:               true,
 	Debug:                               false,
 	ShutdownReason:                      defaultShutdownReason(),
@@ -90,6 +93,17 @@ func defaultMotd() *configutil.Component {
 }
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
+}
+
+// defaultBuiltinCommandRefusedMessage is the refusal a player gets when a
+// builtin command's permission requirement fails. It is the component Gate
+// always answered with - plain content, red - with the {node} token where the
+// required permission node is substituted, quoted, at render time.
+func defaultBuiltinCommandRefusedMessage() *configutil.TextComponent {
+	return &configutil.TextComponent{
+		Content: `You don't have permission to use this command (requires "{node}").`,
+		S:       component.Style{Color: color.Red},
+	}
 }
 
 // ResolveProxyProtocolTrustedProxies returns the configured trusted upstreams,
@@ -178,8 +192,17 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled,omitempty" json:"bungeePluginChannelEnabled,omitempty"`             // Whether to enable BungeeCord plugin messaging
 	BuiltinCommands                  bool `yaml:"builtinCommands,omitempty" json:"builtinCommands,omitempty"`                                   // Whether to enable builtin commands
 	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions,omitempty" json:"requireBuiltinCommandPermissions,omitempty"` // Whether builtin commands require player permissions
-	AnnounceProxyCommands            bool `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`                       // Whether to announce proxy commands to players
-	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"`                     // Added in 1.19
+	// BuiltinCommandRefusedMessage is sent to a player who may not run a builtin
+	// command. The token {node} is replaced with the permission node the command
+	// requires. Empty/nil means the built-in default is used.
+	BuiltinCommandRefusedMessage *configutil.TextComponent `yaml:"builtinCommandRefusedMessage,omitempty" json:"builtinCommandRefusedMessage,omitempty"`
+	AnnounceProxyCommands        bool                      `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`   // Whether to announce proxy commands to players
+	ForceKeyAuthentication       bool                      `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"` // Added in 1.19
+
+	// Permissions configures Gate's built-in, file-backed permission provider:
+	// it answers a player's PermissionsSetupEvent at login, so builtin commands
+	// can be granted per player without a Go extension (see Permissions).
+	Permissions Permissions `yaml:"permissions,omitempty" json:"permissions,omitempty"`
 
 	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
@@ -202,6 +225,11 @@ type (
 		Motd            *configutil.Component `yaml:"motd"`
 		Favicon         favicon.Favicon       `yaml:"favicon"`
 		LogPingRequests bool                  `yaml:"logPingRequests"`
+		// VersionName overrides the version string a client shows for this
+		// server in its server list. Empty uses "Gate <min>-<max>" built from
+		// the supported protocol versions. It changes only the display text,
+		// not which client versions Gate accepts.
+		VersionName string `yaml:"versionName,omitempty" json:"versionName,omitempty"`
 	}
 	Query struct {
 		Enabled     bool `yaml:"enabled"`
@@ -213,15 +241,37 @@ type (
 		VelocitySecret    string         `yaml:"velocitySecret"`    // Used with "velocity" mode
 		BungeeGuardSecret string         `yaml:"bungeeGuardSecret"` // Used with "bungeeguard" mode
 	}
+	// Via configures managed ViaLite support: Via-powered Java protocol
+	// translation for backend connections, Gate classic only. Gate accepts the
+	// player and picks a backend; ViaLite translates the backend-facing protocol
+	// when client and backend versions differ.
 	Via struct {
-		Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty"`
-		Mode        string `yaml:"mode,omitempty" json:"mode,omitempty"`
-		Bind        string `yaml:"bind,omitempty" json:"bind,omitempty"`
+		// Enabled starts the managed ViaLite runtime for backend connections.
+		Enabled bool `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+		// Mode is "subprocess" (portable default) or "embedded" (in-process
+		// shared library). Empty means subprocess.
+		Mode string `yaml:"mode,omitempty" json:"mode,omitempty"`
+		// Bind is the runtime's internal loopback bind address. Empty picks a
+		// free port on 127.0.0.1.
+		Bind string `yaml:"bind,omitempty" json:"bind,omitempty"`
+		// LibraryPath uses that shared library instead of resolving one.
 		LibraryPath string `yaml:"libraryPath,omitempty" json:"libraryPath,omitempty"`
-		BinaryPath  string `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`
-		Version     string `yaml:"version,omitempty" json:"version,omitempty"`
-		Mirror      string `yaml:"mirror,omitempty" json:"mirror,omitempty"`
-		Offline     bool   `yaml:"offline,omitempty" json:"offline,omitempty"`
+		// BinaryPath uses that vialite binary for subprocess mode.
+		BinaryPath string `yaml:"binaryPath,omitempty" json:"binaryPath,omitempty"`
+		// Version selects the runtime release. Empty, "auto" and "latest" all
+		// mean the newest stable ViaLite release, resolved once at startup, so a
+		// newly published runtime applies on the next Gate restart (there is no
+		// hot swap). This is independent of the Go module version Gate links.
+		// With Mirror set, the mirror's own latest release is used; a mirror that
+		// cannot report one falls back to a compiled-in release and logs a
+		// warning. Set an exact tag such as "v0.3.1" to pin a rollout.
+		Version string `yaml:"version,omitempty" json:"version,omitempty"`
+		// Mirror overrides the release download base (GitHub release URL layout,
+		// optionally serving <mirror>/latest for version resolution).
+		Mirror string `yaml:"mirror,omitempty" json:"mirror,omitempty"`
+		// Offline disables runtime downloads entirely: BinaryPath/LibraryPath, an
+		// embedded artifact, or one on $PATH must be present.
+		Offline bool `yaml:"offline,omitempty" json:"offline,omitempty"`
 	}
 	Compression struct {
 		Threshold int `yaml:"threshold"`
@@ -252,6 +302,12 @@ type (
 		// SessionServerURL is the base URL for the Mojang session server to authenticate online mode players.
 		// Defaults to https://sessionserver.mojang.com/session/minecraft/hasJoined
 		SessionServerURL *configutil.URL `yaml:"sessionServerUrl"` // TODO support multiple urls configutil.SingleOrMulti[URL]
+		// PrivateKeyBits is the bit size of the RSA key Gate generates at startup to
+		// encrypt the login handshake of online mode players.
+		// Defaults to 1024 bits, the size vanilla Minecraft servers use.
+		// Raise it to 2048 or 3072 if your clients and tools accept a larger key;
+		// note the key is generated once at startup, so changing this requires a restart.
+		PrivateKeyBits int `yaml:"privateKeyBits" json:"privateKeyBits,omitempty"`
 	}
 )
 
@@ -317,6 +373,9 @@ func (c *Config) Validate() (warns []error, errs []error) {
 
 	validateBackendFloodgate(c, e)
 	validateOfflineModeUsernameBlacklist(c, e)
+	// Always validated, also in Lite mode: a typo must fail startup rather than
+	// silently not match once the proxy is running in full mode.
+	validatePermissions(c, e)
 	if c.Lite.Enabled {
 		warnLiteIgnoredSettings(c, w)
 		warns2, errs2 := c.Lite.Validate()
@@ -326,6 +385,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	}
 
 	validateVia(c, e)
+	validateAuthPrivateKeyBits(c, e)
 
 	if !c.OnlineMode {
 		w("Proxy is running in offline mode!")
@@ -459,6 +519,16 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if len(c.OfflineModeUsernameBlacklist) != 0 {
 		w("Lite mode ignores offlineModeUsernameBlacklist: Lite forwards login unchanged, so configure username protection on the backend or disable lite.enabled.")
 	}
+
+	if c.Auth.PrivateKeyBits != 0 {
+		w("Lite mode ignores auth.privateKeyBits: Lite forwards the login to the backend, so " +
+			"Gate never generates a login key. Configure the key size on the backend instead.")
+	}
+
+	if !c.Permissions.Empty() {
+		w("Lite mode ignores permissions: Lite pipes the connection through unchanged, so " +
+			"Gate never applies config.permissions. Configure permissions on the backend or disable lite.enabled.")
+	}
 }
 
 // validateProxyProtocol validates the trusted upstreams allowed to send a PROXY
@@ -550,6 +620,30 @@ func validateVia(c *Config, e func(string, ...any)) {
 		if err := validation.ValidHostPort(c.Via.Bind); err != nil {
 			e("Invalid via bind %q: %v", c.Via.Bind, err)
 		}
+	}
+}
+
+// Bounds for the operator-configurable login RSA key size. The lower bound is
+// crypto/rsa's own minimum (rsa.GenerateKey rejects anything smaller); the
+// upper bound keeps a typo from stalling startup with an enormous key
+// generation. auth.DefaultPrivateKeyBits stays the default.
+const (
+	MinPrivateKeyBits = 1024
+	MaxPrivateKeyBits = 8192
+)
+
+// validateAuthPrivateKeyBits rejects auth.privateKeyBits values that cannot
+// produce a usable login key, so a misconfiguration fails at config load
+// instead of at key generation (or silently, as before the setting existed).
+// Unset (0) is valid and means the built-in default.
+func validateAuthPrivateKeyBits(c *Config, e func(string, ...any)) {
+	bits := c.Auth.PrivateKeyBits
+	if bits == 0 {
+		return
+	}
+	if bits < MinPrivateKeyBits || bits > MaxPrivateKeyBits {
+		e("Invalid auth.privateKeyBits %d, must be between %d and %d (or unset for the default)",
+			bits, MinPrivateKeyBits, MaxPrivateKeyBits)
 	}
 }
 

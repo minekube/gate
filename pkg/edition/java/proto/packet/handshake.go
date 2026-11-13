@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"io"
+	"math"
 
 	"go.minekube.com/gate/pkg/edition/java/proto/util"
 	"go.minekube.com/gate/pkg/gate/proto"
@@ -22,8 +23,12 @@ const (
 type Handshake struct {
 	ProtocolVersion int
 	ServerAddress   string
-	Port            int
-	NextStatus      int
+	// Port is the client-declared server port. It is an UNSIGNED 16-bit field on
+	// the wire (0-65535) and is always kept in that range, so ports >= 32768 do
+	// not come back negative (65535 used to decode as -1) and the value is safe
+	// to format into the virtual host used for routing.
+	Port       int
+	NextStatus int
 }
 
 func (h *Handshake) Intent() HandshakeIntent {
@@ -40,6 +45,12 @@ func (h *Handshake) Intent() HandshakeIntent {
 }
 
 func (h *Handshake) Encode(_ *proto.PacketContext, wr io.Writer) error {
+	// The port is written as an unsigned 16-bit value, so anything outside that
+	// range is rejected explicitly instead of being silently narrowed into a
+	// different port on the wire.
+	if h.Port < 0 || h.Port > math.MaxUint16 {
+		return fmt.Errorf("handshake port %d out of range (0-%d)", h.Port, math.MaxUint16)
+	}
 	err := util.WriteVarInt(wr, h.ProtocolVersion)
 	if err != nil {
 		return err
@@ -48,7 +59,7 @@ func (h *Handshake) Encode(_ *proto.PacketContext, wr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = util.WriteInt16(wr, int16(h.Port))
+	err = util.WriteUint16(wr, uint16(h.Port))
 	if err != nil {
 		return err
 	}
@@ -64,7 +75,7 @@ func (h *Handshake) Decode(_ *proto.PacketContext, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-	port, err := util.ReadInt16(rd)
+	port, err := util.ReadUint16(rd)
 	if err != nil {
 		return err
 	}

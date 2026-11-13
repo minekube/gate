@@ -97,6 +97,9 @@ func TestReleasePleaseMergeToReleasePolicy(t *testing.T) {
 	if mergeStep.If != "${{ steps.rp.outputs.pr }}" {
 		t.Fatalf("release PR merge gate = %q, want only the release-please PR output", mergeStep.If)
 	}
+	// How that payload reaches the shell is pinned in
+	// release_please_payload_test.go (env pass-through, no interpolation into
+	// `run`), together with the apostrophe harness for it.
 	for _, command := range []string{`gh pr merge "$PR_NUMBER"`, "--merge", `-f event_type=release-please-rerun`} {
 		if !strings.Contains(mergeStep.Run, command) {
 			t.Fatalf("release PR merge step must contain %q", command)

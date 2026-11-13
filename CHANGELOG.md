@@ -1,5 +1,523 @@
 # Changelog
 
+## [0.79.0](https://github.com/minekube/gate/compare/v0.78.0...v0.79.0) (2026-11-13)
+
+
+### Features
+
+* **gate:** generate a config file on first start behind --init-config ([#1339](https://github.com/minekube/gate/issues/1339)) ([ab04761](https://github.com/minekube/gate/commit/ab04761e8a06049b96cc30f7a375486081d217f8))
+
+## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
+
+
+### Features
+
+* **config:** make the builtin-command permission refusal message configurable ([#1358](https://github.com/minekube/gate/issues/1358)) ([1e0cc32](https://github.com/minekube/gate/commit/1e0cc32db70cbeda41ad5f717f9be7811140235f))
+
+## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ping:** keep unmodeled status members (forgeData/neoforgeData) when re-encoding a ping ([9f7aef8](https://github.com/minekube/gate/commit/9f7aef8f25fa8db0091d4c175ccc23d1759d959c))
+* **ping:** keep unmodeled status members when re-encoding a ping ([bf8d7fb](https://github.com/minekube/gate/commit/bf8d7fbbaeb53d61cda1639051a958371cd06199))
+
+## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
+
+
+### Features
+
+* **config:** allow overriding the advertised version name ([de49230](https://github.com/minekube/gate/commit/de49230080ddf2905f24613a6d367379e190fb5a))
+* **config:** allow overriding the advertised version name ([4509cc0](https://github.com/minekube/gate/commit/4509cc07dff2f5ebd3dbcff1396fcf0253a9e2d3))
+
+## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([cb6c9c1](https://github.com/minekube/gate/commit/cb6c9c1857ab0211c1522ff9851fab21ed118412))
+
+## [0.76.2](https://github.com/minekube/gate/compare/v0.76.1...v0.76.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.6 ([#1350](https://github.com/minekube/gate/issues/1350)) ([da65eb5](https://github.com/minekube/gate/commit/da65eb5510ee89146a255f12fffe2ca164cce6d3))
+
+## [0.76.1](https://github.com/minekube/gate/compare/v0.76.0...v0.76.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.12 ([#1348](https://github.com/minekube/gate/issues/1348)) ([0916ae6](https://github.com/minekube/gate/commit/0916ae662c26b1b1137f429f9c12ad08541ef51e))
+
+## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
+
+
+### Features
+
+* **config:** add config.permissions to grant builtin commands per player ([#1345](https://github.com/minekube/gate/issues/1345)) ([8817fe5](https://github.com/minekube/gate/commit/8817fe526aba7ce0e67f99840f140fdb3648c0b1))
+
+## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.5 ([#1338](https://github.com/minekube/gate/issues/1338)) ([37800e9](https://github.com/minekube/gate/commit/37800e96b8f0bdd1e3061de5f6823a7c63827c5b))
+
+## [0.75.16](https://github.com/minekube/gate/compare/v0.75.15...v0.75.16) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.3 ([#1334](https://github.com/minekube/gate/issues/1334)) ([c70afbd](https://github.com/minekube/gate/commit/c70afbd4b13fe4f52ccd839364c5175160027fe7))
+
+## [0.75.15](https://github.com/minekube/gate/compare/v0.75.14...v0.75.15) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** update module google.golang.org/grpc to v1.85.0 ([#1331](https://github.com/minekube/gate/issues/1331)) ([c58ad63](https://github.com/minekube/gate/commit/c58ad635635e65d6650e66e330c60c070f42c42d))
+
+## [0.75.14](https://github.com/minekube/gate/compare/v0.75.13...v0.75.14) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/pires/go-proxyproto to v0.16.0 ([#1329](https://github.com/minekube/gate/issues/1329)) ([f5c4768](https://github.com/minekube/gate/commit/f5c4768a74cc5cf940e68993e2b1d1804bed5f95))
+
+## [0.75.13](https://github.com/minekube/gate/compare/v0.75.12...v0.75.13) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.2 ([#1327](https://github.com/minekube/gate/issues/1327)) ([41ec0fb](https://github.com/minekube/gate/commit/41ec0fbddbdaded66c8e894feccdbdd064a5284e))
+
+## [0.75.12](https://github.com/minekube/gate/compare/v0.75.11...v0.75.12) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.85.1 ([#1323](https://github.com/minekube/gate/issues/1323)) ([23f12b7](https://github.com/minekube/gate/commit/23f12b7f2a39dfe847acfb335c3778f998d55ab5))
+
+## [0.75.11](https://github.com/minekube/gate/compare/v0.75.10...v0.75.11) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.85.1.1.20241118150055.50fffb007499 ([#1321](https://github.com/minekube/gate/issues/1321)) ([b3f9fd8](https://github.com/minekube/gate/commit/b3f9fd856fe687d2813018b12d2ca1869ad0067a))
+
+## [0.75.10](https://github.com/minekube/gate/compare/v0.75.9...v0.75.10) (2026-10-29)
+
+
+### Bug Fixes
+
+* **bedrock:** drain managed Geyser connection notifications ([#1318](https://github.com/minekube/gate/issues/1318)) ([2867088](https://github.com/minekube/gate/commit/2867088a9b2763360a13b4e31ddeb4741798e619))
+
+## [0.75.9](https://github.com/minekube/gate/compare/v0.75.8...v0.75.9) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.11 ([#1313](https://github.com/minekube/gate/issues/1313)) ([3ff38a5](https://github.com/minekube/gate/commit/3ff38a5089373e4e1606454e7c9be33d42891ca2))
+
+## [0.75.8](https://github.com/minekube/gate/compare/v0.75.7...v0.75.8) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gookit/color to v1.6.3 ([#1311](https://github.com/minekube/gate/issues/1311)) ([fc5bc22](https://github.com/minekube/gate/commit/fc5bc228798750240e2df5deddfc72b954d96077))
+
+## [0.75.7](https://github.com/minekube/gate/compare/v0.75.6...v0.75.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/gammazero/deque to v1.2.2 ([#1309](https://github.com/minekube/gate/issues/1309)) ([b7e3621](https://github.com/minekube/gate/commit/b7e3621c21d4fb7b4a3edd212c7852d363b3fa41))
+
+## [0.75.6](https://github.com/minekube/gate/compare/v0.75.5...v0.75.6) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/connect to v1.21.1 ([#1308](https://github.com/minekube/gate/issues/1308)) ([ee58aea](https://github.com/minekube/gate/commit/ee58aeacb3660fa5dd592284db4dac92f9a1cb5b))
+
+## [0.75.5](https://github.com/minekube/gate/compare/v0.75.4...v0.75.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **proxy:** forward uncased config packets to the in-flight backend ([#1305](https://github.com/minekube/gate/issues/1305)) ([eee3cfc](https://github.com/minekube/gate/commit/eee3cfc7485f9fb3477b86859f0c1da2258ea591))
+
+## [0.75.4](https://github.com/minekube/gate/compare/v0.75.3...v0.75.4) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.1 ([#1299](https://github.com/minekube/gate/issues/1299)) ([bc29a51](https://github.com/minekube/gate/commit/bc29a510225ea60bbc5ffe1fa03bcd1ad3ff2bfb))
+
+## [0.75.3](https://github.com/minekube/gate/compare/v0.75.2...v0.75.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.0 ([#1291](https://github.com/minekube/gate/issues/1291)) ([2e53d23](https://github.com/minekube/gate/commit/2e53d23d438a6e1217040df1b0dc7ef5cd65410e))
+
+## [0.75.2](https://github.com/minekube/gate/compare/v0.75.1...v0.75.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.7 ([#1289](https://github.com/minekube/gate/issues/1289)) ([79fdef3](https://github.com/minekube/gate/commit/79fdef3089cdae964be1f8b5dcb2a15e0e7f6e17))
+
+## [0.75.1](https://github.com/minekube/gate/compare/v0.75.0...v0.75.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **docs:** defer browser-only initialization until mount ([5439dd5](https://github.com/minekube/gate/commit/5439dd52fb6cc9a194abeb62f8c65b5e37f4df23))
+
+## [0.75.0](https://github.com/minekube/gate/compare/v0.74.52...v0.75.0) (2026-10-26)
+
+
+### Features
+
+* **bedrock:** allow an opt-in leading dot in usernames ([6b8ab54](https://github.com/minekube/gate/commit/6b8ab5422943d704a0fc15ece784fd8109d8d671))
+* **bedrock:** allow an opt-in leading dot in usernames ([2e99394](https://github.com/minekube/gate/commit/2e9939440c61c5c88c988d6d4b55bae47d4badef))
+
+## [0.74.52](https://github.com/minekube/gate/compare/v0.74.51...v0.74.52) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.6 ([#1283](https://github.com/minekube/gate/issues/1283)) ([6926cf9](https://github.com/minekube/gate/commit/6926cf9b8ee68739b3f69d530ef116b105134e22))
+
+## [0.74.51](https://github.com/minekube/gate/compare/v0.74.50...v0.74.51) (2026-10-21)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.4 ([#1263](https://github.com/minekube/gate/issues/1263)) ([ab6bca8](https://github.com/minekube/gate/commit/ab6bca89f083d2d6191893e6c7322b1b6d6c9781))
+
+## [0.74.50](https://github.com/minekube/gate/compare/v0.74.49...v0.74.50) (2026-10-21)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.10 ([#1276](https://github.com/minekube/gate/issues/1276)) ([f51557a](https://github.com/minekube/gate/commit/f51557a7275a5d4a747be3a5fec872cffd42ae7e))
+
+## [0.74.49](https://github.com/minekube/gate/compare/v0.74.48...v0.74.49) (2026-10-20)
+
+
+### Bug Fixes
+
+* **vialite:** hand the runtime Gate's loopback allocator for dynamic backend addresses ([#1274](https://github.com/minekube/gate/issues/1274)) ([86c25df](https://github.com/minekube/gate/commit/86c25df2c11da1551d3e69211cab63280d744cb7))
+
+## [0.74.48](https://github.com/minekube/gate/compare/v0.74.47...v0.74.48) (2026-10-20)
+
+
+### Bug Fixes
+
+* **vialite:** allocate the per-join bridge from one non-ephemeral loopback allocator ([#1272](https://github.com/minekube/gate/issues/1272)) ([57051b9](https://github.com/minekube/gate/commit/57051b9c68ea2dce4d41d07b898eb1a5ca9e5814))
+
+## [0.74.47](https://github.com/minekube/gate/compare/v0.74.46...v0.74.47) (2026-10-20)
+
+
+### Bug Fixes
+
+* **proxy:** keep and replay the client's config KnownPacks reply ([#1270](https://github.com/minekube/gate/issues/1270)) ([0a4ef61](https://github.com/minekube/gate/commit/0a4ef6104ee655180deb31fa6fa38294e5d3afa6))
+
+## [0.74.46](https://github.com/minekube/gate/compare/v0.74.45...v0.74.46) (2026-10-18)
+
+
+### Bug Fixes
+
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([814cc02](https://github.com/minekube/gate/commit/814cc02e795f753a5f198633cd8a5e3f6e7a2b92))
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([67dbc52](https://github.com/minekube/gate/commit/67dbc5283aee6e81494f66246e22fdab386142e0))
+* **proxy:** do not refuse a reconnect while the previous login is unreaped ([#1268](https://github.com/minekube/gate/issues/1268)) ([814cc02](https://github.com/minekube/gate/commit/814cc02e795f753a5f198633cd8a5e3f6e7a2b92))
+
+## [0.74.45](https://github.com/minekube/gate/compare/v0.74.44...v0.74.45) (2026-10-18)
+
+
+### Bug Fixes
+
+* **serverdata:** encode the ping MOTD for the player's protocol ([#1266](https://github.com/minekube/gate/issues/1266)) ([f680a2a](https://github.com/minekube/gate/commit/f680a2ab4dc8b4904daccfb1ba87954657819474))
+
+## [0.74.44](https://github.com/minekube/gate/compare/v0.74.43...v0.74.44) (2026-10-18)
+
+
+### Bug Fixes
+
+* **nbt:** encode NBT strings as Java modified UTF-8 (emoji MOTD kills the join) ([#1264](https://github.com/minekube/gate/issues/1264)) ([fbcda2b](https://github.com/minekube/gate/commit/fbcda2b345fda90b8c28ba0d128e5ff7ce9f6f92))
+
+## [0.74.43](https://github.com/minekube/gate/compare/v0.74.42...v0.74.43) (2026-10-17)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.2 ([#1261](https://github.com/minekube/gate/issues/1261)) ([d07ade8](https://github.com/minekube/gate/commit/d07ade8b0a21e2ac900ecdbc8d43a57b9c3335e0))
+
+## [0.74.42](https://github.com/minekube/gate/compare/v0.74.41...v0.74.42) (2026-10-17)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.1 ([#1259](https://github.com/minekube/gate/issues/1259)) ([a96fa41](https://github.com/minekube/gate/commit/a96fa41deef054c4aa71fb602b40a95a20a0db6c))
+
+## [0.74.41](https://github.com/minekube/gate/compare/v0.74.40...v0.74.41) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.6.0 ([#1256](https://github.com/minekube/gate/issues/1256)) ([0946b7b](https://github.com/minekube/gate/commit/0946b7b6a1ff6b38576ab6ca6ab5391d4f5b997e))
+
+## [0.74.40](https://github.com/minekube/gate/compare/v0.74.39...v0.74.40) (2026-10-13)
+
+
+### Bug Fixes
+
+* **brigadier:** map Minecraft 26.3 command argument types ([#1229](https://github.com/minekube/gate/issues/1229)) ([785e704](https://github.com/minekube/gate/commit/785e7043c78f10e6a891d9cfcda270de4be89da7))
+
+## [0.74.39](https://github.com/minekube/gate/compare/v0.74.38...v0.74.39) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/text to v0.43.0 ([#1252](https://github.com/minekube/gate/issues/1252)) ([ee0c404](https://github.com/minekube/gate/commit/ee0c4044d5f41c148be9f88429ded3454338e00f))
+
+## [0.74.38](https://github.com/minekube/gate/compare/v0.74.37...v0.74.38) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/sync to v0.24.0 ([#1250](https://github.com/minekube/gate/issues/1250)) ([e3ecafa](https://github.com/minekube/gate/commit/e3ecafa28ce08eadea271b19d86ddbaf5d715211))
+
+## [0.74.37](https://github.com/minekube/gate/compare/v0.74.36...v0.74.37) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp to v0.72.0 ([#1248](https://github.com/minekube/gate/issues/1248)) ([e82d284](https://github.com/minekube/gate/commit/e82d28485eeb4b8f223259dd4968e108b80422ae))
+
+## [0.74.36](https://github.com/minekube/gate/compare/v0.74.35...v0.74.36) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_golang to v1.25.0 ([#1245](https://github.com/minekube/gate/issues/1245)) ([bbc0953](https://github.com/minekube/gate/commit/bbc095358994c5f34bd3cb24d29884bd439586c2))
+
+## [0.74.35](https://github.com/minekube/gate/compare/v0.74.34...v0.74.35) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.5.32 ([#1244](https://github.com/minekube/gate/issues/1244)) ([33c0f0c](https://github.com/minekube/gate/commit/33c0f0cc0a949baabb818d55559f6b883e2ec636))
+
+## [0.74.34](https://github.com/minekube/gate/compare/v0.74.33...v0.74.34) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/otelconnect to v0.12.0 ([#1241](https://github.com/minekube/gate/issues/1241)) ([785eab2](https://github.com/minekube/gate/commit/785eab22c4e17a9a3603fd214524bbcd42911962))
+
+## [0.74.33](https://github.com/minekube/gate/compare/v0.74.32...v0.74.33) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.84.2.1.20241118150055.50fffb007499 ([#1239](https://github.com/minekube/gate/issues/1239)) ([88dd132](https://github.com/minekube/gate/commit/88dd13274aaeea369b3665b790f555f10038ee4a))
+
+## [0.74.32](https://github.com/minekube/gate/compare/v0.74.31...v0.74.32) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** update grpc-java monorepo to v1.84.2 ([#1236](https://github.com/minekube/gate/issues/1236)) ([34c418c](https://github.com/minekube/gate/commit/34c418c8d94d0d0548e97271bb1d89c62e68bd18))
+
+## [0.74.31](https://github.com/minekube/gate/compare/v0.74.30...v0.74.31) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** update dependency build.buf.gen:minekube_gate_grpc_java to v1.84.1.1.20241118150055.50fffb007499 ([#1234](https://github.com/minekube/gate/issues/1234)) ([dd5d74a](https://github.com/minekube/gate/commit/dd5d74a67e066c2e19190b173ed2a875179d55cd))
+
+## [0.74.30](https://github.com/minekube/gate/compare/v0.74.29...v0.74.30) (2026-10-08)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.8 ([#1228](https://github.com/minekube/gate/issues/1228)) ([ffb5c85](https://github.com/minekube/gate/commit/ffb5c85e0376773c73ed6ebb7ae0c4dae577dec9))
+
+## [0.74.29](https://github.com/minekube/gate/compare/v0.74.28...v0.74.29) (2026-10-08)
+
+
+### Bug Fixes
+
+* **connect:** enable zero-config managed Bedrock identity handover ([#1231](https://github.com/minekube/gate/issues/1231)) ([653c83e](https://github.com/minekube/gate/commit/653c83e9799b24c6862958d14a55ccf397c05f53))
+
+## [0.74.28](https://github.com/minekube/gate/compare/v0.74.27...v0.74.28) (2026-09-27)
+
+
+### Bug Fixes
+
+* **netmc:** name the packet that closes a backend connection ([#1221](https://github.com/minekube/gate/issues/1221)) ([0a3f8e7](https://github.com/minekube/gate/commit/0a3f8e7ab87d4a1adb8246f5b3919b94f4498689))
+
+## [0.74.27](https://github.com/minekube/gate/compare/v0.74.26...v0.74.27) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** read the discovered config file with delete sharing too ([#1218](https://github.com/minekube/gate/issues/1218)) ([0322ec1](https://github.com/minekube/gate/commit/0322ec107698cdd763a564692e2a645df985b090))
+
+## [0.74.26](https://github.com/minekube/gate/compare/v0.74.25...v0.74.26) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** read config content with delete sharing so a Windows editor's save is not refused ([#1215](https://github.com/minekube/gate/issues/1215)) ([25a1c6f](https://github.com/minekube/gate/commit/25a1c6febb663a221d6383abbf1dc38cf1b4f48c))
+
+## [0.74.25](https://github.com/minekube/gate/compare/v0.74.24...v0.74.25) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** print the goroutine dump command on the SIGQUIT shutdown line ([#1210](https://github.com/minekube/gate/issues/1210)) ([eafaa5d](https://github.com/minekube/gate/commit/eafaa5dcccc5c5d28af13c51d24794d1846d6d2c))
+
+## [0.74.24](https://github.com/minekube/gate/compare/v0.74.23...v0.74.24) (2026-09-27)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.5.31 ([#1206](https://github.com/minekube/gate/issues/1206)) ([54ea897](https://github.com/minekube/gate/commit/54ea897aafbf2c411cdc93d7d8b85ec3101aa499))
+
+## [0.74.23](https://github.com/minekube/gate/compare/v0.74.22...v0.74.23) (2026-09-27)
+
+
+### Bug Fixes
+
+* **vialite:** bound and name a dynamic backend the translation bridge cannot reach ([#1205](https://github.com/minekube/gate/issues/1205)) ([8518bd6](https://github.com/minekube/gate/commit/8518bd6b9814dc7f9f7c2e6a632ea68a97c652a7))
+
+## [0.74.22](https://github.com/minekube/gate/compare/v0.74.21...v0.74.22) (2026-09-27)
+
+
+### Bug Fixes
+
+* **release:** don't let a merged commit's apostrophe stall the release-please auto-merge step ([#1203](https://github.com/minekube/gate/issues/1203)) ([6ed064e](https://github.com/minekube/gate/commit/6ed064e7b596def82d7e875a67ba42ce9e82422b))
+
+## [0.74.21](https://github.com/minekube/gate/compare/v0.74.20...v0.74.21) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** run Gate's event manager on a race-free wrapper ([#1201](https://github.com/minekube/gate/issues/1201)) ([ea61218](https://github.com/minekube/gate/commit/ea6121888ab872780d8445ba46a5441e6a262579))
+
+## [0.74.20](https://github.com/minekube/gate/compare/v0.74.19...v0.74.20) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** do not start a Connect runtime after Gate was asked to stop ([#1199](https://github.com/minekube/gate/issues/1199)) ([fb95a13](https://github.com/minekube/gate/commit/fb95a137d6879abd8164469fc32988d52180b651))
+
+## [0.74.19](https://github.com/minekube/gate/compare/v0.74.18...v0.74.19) (2026-09-27)
+
+
+### Bug Fixes
+
+* **gate:** stop and join the Connect runtime on shutdown and reload ([#1196](https://github.com/minekube/gate/issues/1196)) ([985ed44](https://github.com/minekube/gate/commit/985ed447dcede63e26ebca6bdef9c7040f4a134a))
+
+## [0.74.18](https://github.com/minekube/gate/compare/v0.74.17...v0.74.18) (2026-09-27)
+
+
+### Bug Fixes
+
+* name a dead ViaLite runtime and a backend that never answers ([#1194](https://github.com/minekube/gate/issues/1194)) ([1f07cf8](https://github.com/minekube/gate/commit/1f07cf848c010d93a3b1272508aa09c3a054a24a))
+
+## [0.74.17](https://github.com/minekube/gate/compare/v0.74.16...v0.74.17) (2026-09-27)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.7 ([#1192](https://github.com/minekube/gate/issues/1192)) ([4151a9b](https://github.com/minekube/gate/commit/4151a9b3bee2f7a5ac7c7ac15119a61dc88c8cbc))
+
+## [0.74.16](https://github.com/minekube/gate/compare/v0.74.15...v0.74.16) (2026-09-26)
+
+
+### Bug Fixes
+
+* **bedrock:** fail fast when the managed Bedrock UDP port is already in use ([#1190](https://github.com/minekube/gate/issues/1190)) ([189bf79](https://github.com/minekube/gate/commit/189bf7901156ab230cffacfae1b78cc77a8e2d50))
+
+## [0.74.15](https://github.com/minekube/gate/compare/v0.74.14...v0.74.15) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** update module connectrpc.com/otelconnect to v0.10.0 ([#1187](https://github.com/minekube/gate/issues/1187)) ([23cc482](https://github.com/minekube/gate/commit/23cc4820a23786a02470f88d7a8d69019213e811))
+
+## [0.74.14](https://github.com/minekube/gate/compare/v0.74.13...v0.74.14) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** update module go.minekube.com/vialite to v0.3.6 ([#1184](https://github.com/minekube/gate/issues/1184)) ([ac3a551](https://github.com/minekube/gate/commit/ac3a551152db477573aa4e2ac031796d10306fde))
+
+## [0.74.13](https://github.com/minekube/gate/compare/v0.74.12...v0.74.13) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** Update geyserlite to v0.5.30 ([#1181](https://github.com/minekube/gate/issues/1181)) ([667f351](https://github.com/minekube/gate/commit/667f3515193624d08c99df367ce9e42992679b6a))
+
+## [0.74.12](https://github.com/minekube/gate/compare/v0.74.11...v0.74.12) (2026-09-25)
+
+
+### Bug Fixes
+
+* **via:** document runtime resolution + log the resolved ViaLite runtime ([#1179](https://github.com/minekube/gate/issues/1179)) ([04466a4](https://github.com/minekube/gate/commit/04466a48c362ee43f6c73dc84ba34f9e98c028a1))
+
+## [0.74.11](https://github.com/minekube/gate/compare/v0.74.10...v0.74.11) (2026-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.5.29 ([#1176](https://github.com/minekube/gate/issues/1176)) ([fe5b4e3](https://github.com/minekube/gate/commit/fe5b4e3bd84c13d9ac4366793aaf9e814c09b985))
+
+## [0.74.10](https://github.com/minekube/gate/compare/v0.74.9...v0.74.10) (2026-09-21)
+
+
+### Bug Fixes
+
+* **bungeecord:** write the ServerIP port as the unsigned 16-bit value it is ([#1172](https://github.com/minekube/gate/issues/1172)) ([2464457](https://github.com/minekube/gate/commit/24644571eb4d1460175b2ae6bbb5d2933a99c9a7))
+
+## [0.74.9](https://github.com/minekube/gate/compare/v0.74.8...v0.74.9) (2026-09-21)
+
+
+### Bug Fixes
+
+* **netutil:** reject an out-of-range port instead of wrapping it into a uint16 ([#1168](https://github.com/minekube/gate/issues/1168)) ([63608cd](https://github.com/minekube/gate/commit/63608cd85e08630b06fd2f044869f30ca8f522ed))
+
+## [0.74.8](https://github.com/minekube/gate/compare/v0.74.7...v0.74.8) (2026-09-21)
+
+
+### Bug Fixes
+
+* **java:** make the login RSA key size configurable (auth.privateKeyBits) and lift the packet bounds that pinned it to 1024 bits ([#1162](https://github.com/minekube/gate/issues/1162)) ([439925e](https://github.com/minekube/gate/commit/439925eecf3195c095ed66e4f2682f495063dc0f))
+
+## [0.74.7](https://github.com/minekube/gate/compare/v0.74.6...v0.74.7) (2026-09-21)
+
+
+### Bug Fixes
+
+* **java:** read the handshake port as an unsigned 16-bit value ([#1160](https://github.com/minekube/gate/issues/1160)) ([e6cdb95](https://github.com/minekube/gate/commit/e6cdb95fef1253bf16661d536127ffa0f81d863d))
+
+## [0.74.6](https://github.com/minekube/gate/compare/v0.74.5...v0.74.6) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** update module go.uber.org/atomic to v1.12.0 ([#1138](https://github.com/minekube/gate/issues/1138)) ([c20bc6d](https://github.com/minekube/gate/commit/c20bc6d5b7bbb472c77bc1655e4cde02fb70a47c))
+
 ## [0.74.5](https://github.com/minekube/gate/compare/v0.74.4...v0.74.5) (2026-09-19)
 
 

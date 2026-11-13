@@ -43,6 +43,26 @@ GeyserLite is responsible for the managed Geyser runtime shape:
 Gate decides which runtime mode to use for the current platform and
 configuration. The Bedrock guide covers the Gate config surface.
 
+## Bedrock Transport and Client Currency
+
+Gate's managed Bedrock runtime follows GeyserLite releases rather than a pinned
+upstream Geyser build, so the Bedrock client line Gate accepts moves with the
+GeyserLite version Gate pins:
+
+- **Gate v0.76.2 pins GeyserLite v0.7.6** (`go.minekube.com/geyserlite` in
+  Gate's `go.mod`).
+- GeyserLite v0.7.x carries upstream Geyser stable **26.60** - the Bedrock
+  **26.60** client line - and enables **native NetherNet ingress** on both Linux
+  architectures. NetherNet adds a signalling transport next to the RakNet UDP
+  port. A host that runs GeyserLite itself (standalone or subprocess) configures
+  that address on the GeyserLite side (`GEYSER_SIGNALING_ADDRESS`, or
+  `geyserSignalingAddress` for a subprocess host); it is not a Gate config key,
+  and Gate's own managed runtime owns its listener.
+- A managed Bedrock listener that stops answering at the **257th** open session,
+  or logs `verified ingress queue overflow`, is older than **v0.75.10**, which
+  drains the managed Geyser connection notifications instead of letting the
+  queue accumulate.
+
 ## Version Policy
 
 GeyserLite tracks upstream Geyser through a pinned source ref and a managed

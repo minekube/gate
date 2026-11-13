@@ -134,5 +134,9 @@
  * -------------------------------------------------------------------------- */
 
 .DocSearch {
+  /* biome-ignore lint/complexity/noImportantStyles: DocSearch 3 sets
+     --docsearch-primary-color on its own .DocSearch element, so the branding
+     override has to win the cascade; dropping !important reverts the search
+     UI to the default Algolia blue. */
   --docsearch-primary-color: var(--vp-c-brand-1) !important;
 }

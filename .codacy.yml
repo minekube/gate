@@ -1,0 +1,31 @@
+---
+# Codacy analyses the code this repository owns and ships. Everything excluded
+# below is generated or vendored material nobody edits by hand - the bulk of
+# what a generic JS/CSS analyser reports on the docs tree:
+#
+#   * the mermaid diagram exports under `.web/docs/**` (aria-roledescription
+#     "flowchart-v2"; the mermaid sources live in the `.md` files beside them).
+#     Analysers parse the CSS mermaid inlines - fix the diagram source, not the
+#     export;
+#   * `.web/docs/developers/**`: standalone example projects shipped as
+#     documentation content (go, java, kotlin, rust, python, typescript), each
+#     with its own toolchain, build files and lockfiles (Cargo.lock, uv.lock,
+#     go.sum, bun.lockb);
+#   * `.web/docs/public/**`: static assets served verbatim by the Worker's
+#     `ASSETS` binding (install.ps1, `_headers`, images);
+#   * `.web/pnpm-lock.yaml`: dependency lockfile, not source.
+#
+# This file only scopes what gets analysed. It does not disable any engine
+# (Codacy does not allow enabling/disabling tools from this file) and it must
+# never be used to hide a finding in first-party source: the same exclusions are
+# expressed for the in-repo linter in `.web/biome.jsonc`, which the `web`
+# workflow enforces on every `.web/**` change.
+#
+# Note for whoever maintains the Codacy project: repository-level "Ignored
+# files" settings must be mirrored here, because this file takes precedence
+# over them for the default branch.
+exclude_paths:
+  - "**/*.svg"
+  - ".web/pnpm-lock.yaml"
+  - ".web/docs/public/**"
+  - ".web/docs/developers/**"

@@ -22,6 +22,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/proxy"
 	"go.minekube.com/gate/pkg/runtime/process"
 	"go.minekube.com/gate/pkg/util/connectutil"
+	"go.minekube.com/gate/pkg/util/connectutil/config/internal/bedrockidentity"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -33,6 +34,10 @@ const mdOfflineMode = connect.MDEndpoint + "-offline-mode"
 //
 // Watch reconnects on disconnect.
 func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) {
+	return connectClientWithIdentity(c, connHandler, newIdentityVerifier(c))
+}
+
+func connectClientWithIdentity(c Config, connHandler ConnHandler, identity *identityVerifier) (process.Runnable, error) {
 	if c.WatchServiceAddr == "" {
 		return nil, errors.New("missing watch service address for listening to session proposals")
 	}
@@ -47,12 +52,17 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 		if c.Name == "" {
 			c.Name = randomEndpointName(ctx)
 		}
+		if identity != nil {
+			// The authenticated Watch service canonicalizes endpoint names.
+			identity.endpoint = strings.ToLower(c.Name)
+		}
 
 		ph := proposalHandler{
 			localAddr:          nil,
 			connHandler:        connHandler.HandleConn,
 			enforcePassthrough: c.EnforcePassthrough,
 			principal:          principal,
+			identity:           identity,
 		}
 		ctx = logr.NewContext(ctx, logr.FromContextOrDiscard(ctx).WithName("proposal"))
 
@@ -70,9 +80,13 @@ func connectClient(c Config, connHandler ConnHandler) (process.Runnable, error) 
 			if c.AllowOfflineModePlayers {
 				dialCtx = metadata.AppendToOutgoingContext(dialCtx, mdOfflineMode, "true")
 			}
-			// Re-evaluated on every (re)connect: a not-ready verifier
-			// downgrades to no capability advertisement.
-			if caps := principal.capabilities(); len(caps) != 0 {
+			// v2 readiness is re-evaluated on every reconnect. The managed
+			// v1 consumer loads its keys lazily and fails closed per proposal.
+			caps := principal.capabilities()
+			if identity != nil {
+				caps = append(caps, bedrockidentity.Capability)
+			}
+			if len(caps) != 0 {
 				dialCtx = metadata.AppendToOutgoingContext(dialCtx,
 					connect.MDPrefix+"capabilities", strings.Join(caps, ","))
 			}
@@ -130,6 +144,7 @@ type proposalHandler struct {
 	connHandler        func(net.Conn) // Called in parallel when a new tunnel connection is successfully established.
 	enforcePassthrough bool
 	principal          *principalVerifier
+	identity           *identityVerifier
 }
 
 func (h *proposalHandler) handle(ctx context.Context, proposal connect.SessionProposal) {
@@ -181,6 +196,11 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 
 	var principal bedrockprincipal.VerifiedBedrockPrincipal
 	if wire.HasEnvelope() {
+		for _, p := range proposal.Session().GetPlayer().GetProfile().GetProperties() {
+			if p.GetName() == bedrockidentity.PropertyName || p.GetName() == bedrockidentity.ScopePropertyName {
+				return status.Error(codes.Unauthenticated, errIdentityInvalid.Error())
+			}
+		}
 		// Verify exactly once; a failure rejects the proposal with only the
 		// bounded category and never falls back to the proposed profile.
 		principal, err = t.principal.verify(ctx, proposal.Session().GetId(), wire)
@@ -206,10 +226,22 @@ func (t *tunnelCreator) handle(ctx context.Context, proposal connect.SessionProp
 		verified := principal.EffectiveGameProfile()
 		gp = &profile.GameProfile{ID: uuid.UUID(verified.UUID), Name: verified.Name}
 	case !proposal.Session().GetAuth().GetPassthrough():
-		gp, err = convertProposedGameProfile(proposal.Session().GetPlayer().GetProfile())
+		gp, err = t.identity.gameProfile(ctx, proposal.Session(), wire)
+		if err != nil {
+			return status.Error(codes.Unauthenticated, err.Error())
+		}
+		if gp == nil {
+			gp, err = convertProposedGameProfile(proposal.Session().GetPlayer().GetProfile())
+		}
 		if err != nil {
 			return status.Errorf(codes.InvalidArgument,
 				"session proposal provided an invalid player game profile: %v", err)
+		}
+	default:
+		// Reserved Bedrock identity metadata must never turn a pass-through
+		// or Java proposal into an authenticated Bedrock profile.
+		if _, err := t.identity.gameProfile(ctx, proposal.Session(), wire); err != nil {
+			return status.Error(codes.Unauthenticated, err.Error())
 		}
 	}
 	log.Info("creating tunnel", "tunnelServiceAddr", tunnelSvcAddr)

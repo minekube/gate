@@ -134,6 +134,16 @@ type EncryptionResponse struct {
 	Salt         *int64 // 1.19+
 }
 
+// maxLoginEncryptionBytes bounds the byte arrays of the login handshake
+// encryption packets. The server's DER encoded public key and the RSA
+// ciphertexts of the shared secret and the verify token all grow with the login
+// key size, so the bound has to cover the largest key Gate can be configured to
+// generate (config.MaxPrivateKeyBits, 8192 bits -> 1024 byte RSA ciphertext).
+// It used to be 128/256 bytes, i.e. exactly one 1024 bit RSA block, which
+// silently pinned the login key to 1024 bits and made a larger
+// auth.privateKeyBits unusable. login_key_size_test.go asserts the coverage.
+const maxLoginEncryptionBytes = 1024
+
 func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
 		err := util.WriteBytes(wr, e.SharedSecret)
@@ -164,7 +174,7 @@ func (e *EncryptionResponse) Encode(c *proto.PacketContext, wr io.Writer) error 
 
 func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err error) {
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		e.SharedSecret, err = util.ReadBytesLen(rd, 128)
+		e.SharedSecret, err = util.ReadBytesLen(rd, maxLoginEncryptionBytes)
 		if err != nil {
 			return
 		}
@@ -184,11 +194,7 @@ func (e *EncryptionResponse) Decode(c *proto.PacketContext, rd io.Reader) (err e
 			}
 		}
 
-		limit := 256
-		if c.Protocol.Lower(version.Minecraft_1_19) {
-			limit = 128
-		}
-		e.VerifyToken, err = util.ReadBytesLen(rd, limit)
+		e.VerifyToken, err = util.ReadBytesLen(rd, maxLoginEncryptionBytes)
 		if err != nil {
 			return
 		}
@@ -278,7 +284,7 @@ func (e *EncryptionRequest) Decode(c *proto.PacketContext, rd io.Reader) (err er
 		return err
 	}
 	if c.Protocol.GreaterEqual(version.Minecraft_1_8) {
-		e.PublicKey, err = util.ReadBytesLen(rd, 256)
+		e.PublicKey, err = util.ReadBytesLen(rd, maxLoginEncryptionBytes)
 		if err != nil {
 			return err
 		}

@@ -7,14 +7,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/go-logr/logr"
 
 	"go.minekube.com/gate/pkg/edition/java/config"
 	javaversion "go.minekube.com/gate/pkg/edition/java/proto/version"
+	"go.minekube.com/gate/pkg/util/loopback"
 	vialite "go.minekube.com/vialite"
 )
 
@@ -33,10 +39,18 @@ type viaManagedRunner struct {
 	newServer       func(vialite.Options) (vialiteServer, error)
 	server          vialiteServer
 	cancel          context.CancelFunc
-	done            chan error
+	done            chan struct{}
+	exit            *viaRuntimeExit
+	resolution      *viaRuntimeResolution
+	death           *viaRuntimeDeath
 	activeBackends  map[string]struct{}
 	dynamicBackends map[string]*viaDynamicBackend
-	mu              sync.Mutex
+	// runtimeLoopbackAddresses holds the loopback addresses Gate's allocator
+	// reserved for the running runtime's dynamic backends
+	// (vialite.Options.ReserveLoopbackAddress) and that the runtime has not
+	// released yet.
+	runtimeLoopbackAddresses map[string]struct{}
+	mu                       sync.Mutex
 }
 
 type viaDynamicBackend struct {
@@ -45,7 +59,8 @@ type viaDynamicBackend struct {
 
 func newViaManagedRunner(cfg *config.Config) *viaManagedRunner {
 	return &viaManagedRunner{
-		cfg: cfg,
+		cfg:        cfg,
+		resolution: &viaRuntimeResolution{},
 		newServer: func(opts vialite.Options) (vialiteServer, error) {
 			return vialite.New(opts)
 		},
@@ -88,21 +103,24 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		activeBackends[strings.ToLower(backend.Name)] = struct{}{}
 	}
 	runCtx, cancel := context.WithCancel(ctx)
-	done := make(chan error, 1)
+	done := make(chan struct{})
+	exit := &viaRuntimeExit{}
 	r.server = server
 	r.cancel = cancel
 	r.done = done
-	go func() { done <- server.Start(runCtx) }()
+	r.exit = exit
+	r.death = nil
+	go func() {
+		exit.set(server.Start(runCtx))
+		close(done)
+	}()
 
 	readyCtx, cancelReady := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancelReady()
 	select {
-	case err := <-done:
-		r.server = nil
-		r.cancel = nil
-		r.done = nil
-		r.activeBackends = nil
-		r.dynamicBackends = nil
+	case <-done:
+		err := exit.get()
+		r.clearRuntimeLocked()
 		if err != nil {
 			return err
 		}
@@ -118,16 +136,111 @@ func (r *viaManagedRunner) Start(ctx context.Context) error {
 		case <-done:
 		case <-time.After(30 * time.Second):
 		}
-		r.server = nil
-		r.cancel = nil
-		r.done = nil
-		r.activeBackends = nil
-		r.dynamicBackends = nil
+		r.clearRuntimeLocked()
 		return err
 	}
 	r.activeBackends = activeBackends
 	r.dynamicBackends = make(map[string]*viaDynamicBackend)
+	// Startup succeeded. A runtime that dies afterwards used to be invisible:
+	// Gate kept serving, and every join failed with the runtime's "server not
+	// started" error while the backend was never contacted.
+	go r.watchRuntimeDeath(server, runCtx, done, exit)
 	return nil
+}
+
+// clearRuntimeLocked forgets the current runtime. Callers must hold r.mu.
+func (r *viaManagedRunner) clearRuntimeLocked() {
+	r.server = nil
+	r.cancel = nil
+	r.done = nil
+	r.exit = nil
+	r.death = nil
+	r.activeBackends = nil
+	r.dynamicBackends = nil
+}
+
+// watchRuntimeDeath reports a runtime that exited while Gate kept serving.
+//
+// It returns without reporting when Gate itself stopped the runtime (shutdown)
+// or replaced it, and it reports at most once per runtime: the exit is recorded
+// so that later joins fail with an actionable error instead of the runtime
+// module's "server not started", which reads like a configuration mistake.
+func (r *viaManagedRunner) watchRuntimeDeath(
+	server vialiteServer,
+	runCtx context.Context,
+	done <-chan struct{},
+	exit *viaRuntimeExit,
+) {
+	select {
+	case <-done:
+	case <-runCtx.Done():
+		return // Gate is stopping the runtime; the shutdown path owns this.
+	}
+	if runCtx.Err() != nil {
+		return // A deliberate stop raced with the runtime exiting.
+	}
+	cause := exit.get()
+	if errors.Is(cause, context.Canceled) {
+		cause = nil
+	}
+	r.mu.Lock()
+	if r.server != server {
+		r.mu.Unlock()
+		return // A new runtime took over in the meantime.
+	}
+	backends := make([]string, 0, len(r.activeBackends))
+	for name := range r.activeBackends {
+		backends = append(backends, name)
+	}
+	sort.Strings(backends)
+	death := &viaRuntimeDeath{
+		version:  r.runtimeVersionLocked(),
+		backends: backends,
+		cause:    cause,
+		at:       time.Now(),
+	}
+	r.death = death
+	version := death.version
+	r.mu.Unlock()
+
+	attrs := []any{
+		"version", version,
+		"backends", strings.Join(backends, ","),
+		"hint", "restart Gate to start a runtime again",
+	}
+	if cause != nil {
+		attrs = append(attrs, "cause", cause.Error())
+	}
+	viaLogger().Error(
+		"vialite: the managed runtime exited while Gate was serving; translated joins to its backends will fail",
+		attrs...,
+	)
+}
+
+// runtimeVersionLocked names the runtime artifact Gate is (or was) running: the
+// version the runtime module reported on its "vialite: resolved runtime" line,
+// falling back to the configured pin when the runtime never reported one (for
+// example when an explicit binary path is used).
+//
+// Callers must hold r.mu.
+func (r *viaManagedRunner) runtimeVersionLocked() string {
+	if v := r.resolution.resolvedVersion(); v != "" {
+		return v
+	}
+	if r.cfg != nil && r.cfg.Via.Version != "" {
+		return r.cfg.Via.Version
+	}
+	return "unreported"
+}
+
+// runtimeDeath returns the recorded death of the current runtime, if any.
+func (r *viaManagedRunner) runtimeDeath() *viaRuntimeDeath {
+	if r == nil {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.death
 }
 
 func (r *viaManagedRunner) Stop() {
@@ -136,11 +249,7 @@ func (r *viaManagedRunner) Stop() {
 	cancel := r.cancel
 	done := r.done
 	dynamicBackends := r.dynamicBackends
-	r.server = nil
-	r.cancel = nil
-	r.done = nil
-	r.activeBackends = nil
-	r.dynamicBackends = nil
+	r.clearRuntimeLocked()
 	r.mu.Unlock()
 
 	for _, dynamic := range dynamicBackends {
@@ -171,11 +280,108 @@ func (r *viaManagedRunner) BackendDialAddress(name string) (string, error) {
 	}
 	r.mu.Lock()
 	server := r.server
+	death := r.death
 	r.mu.Unlock()
 	if server == nil {
 		return "", fmt.Errorf("vialite is not running")
 	}
-	return server.BackendDialAddress(name)
+	if death != nil {
+		// The runtime is gone: report that, not the runtime module's "server not
+		// started", which reads like a configuration mistake and sends operators
+		// looking at the wrong thing.
+		return "", death
+	}
+	addr, err := server.BackendDialAddress(name)
+	if err != nil {
+		return "", err
+	}
+	if err := r.checkPublishedBackendAddress(name, addr); err != nil {
+		return "", err
+	}
+	return addr, nil
+}
+
+// checkPublishedBackendAddress refuses a dynamic backend address that the runtime
+// which should serve it cannot own.
+//
+// Readiness for a dynamic backend is decided by dialling its address, and any
+// listener satisfies a dial. When the listener that answers belongs to Gate - or
+// to another backend's translation bridge - the runtime never bound the address,
+// and dialling it routes the join into another session's tunnel, where it stalls
+// silently in configuration state. That is the measured shape of the 2026-10-20
+// stall (kanban t_40da126d): Gate's per-join bridge listener took the port the
+// vialite supervisor had reserved for a different backend.
+//
+// Only runtime-published (dynamic) backends are checked: a static backend's
+// address is the operator's configuration, not an address Gate allocated. A
+// dynamic backend address that Gate's allocator reserved for this runtime
+// (Options.ReserveLoopbackAddress) is accepted: it is that backend's own
+// listener, and the runtime refuses to publish one it does not own.
+func (r *viaManagedRunner) checkPublishedBackendAddress(name, addr string) error {
+	if addr == "" {
+		return nil
+	}
+	key := strings.ToLower(name)
+
+	r.mu.Lock()
+	dynamic := r.dynamicBackends[key]
+	if dynamic == nil {
+		r.mu.Unlock()
+		// A static backend: nothing here was allocated by Gate.
+		return nil
+	}
+	own := ""
+	if dynamic.bridge != nil {
+		own = dynamic.bridge.Addr().String()
+	}
+	owners := make(map[string]string, len(r.dynamicBackends))
+	for backend, other := range r.dynamicBackends {
+		if other == nil || other.bridge == nil {
+			continue
+		}
+		owners[other.bridge.Addr().String()] = backend
+	}
+	r.mu.Unlock()
+
+	// Gate publishes its own bridge as the address of a bridged backend: that is
+	// the address the runtime is expected to report back, and the bridge is what
+	// dials the real backend behind it.
+	if own != "" && own == addr {
+		return nil
+	}
+	if owner, taken := owners[addr]; taken {
+		return publishedBackendAddressError(name, addr,
+			fmt.Sprintf("that address is the translation bridge of dynamic backend %q, not of %q", owner, name))
+	}
+	// An address Gate's allocator reserved for the running runtime is the
+	// runtime's own dynamic backend listener, not a bridge: it comes out of the
+	// same reserved range as Gate's bridges, so range membership alone can no
+	// longer tell them apart. The runtime proves it owns the listener before
+	// publishing (vialite.ErrAddressNotOwned), and the reservation is released
+	// exactly when the runtime stops using the address.
+	if r.runtimeLoopbackAddressReserved(addr) {
+		return nil
+	}
+	if alloc, err := loopback.Default(); err == nil {
+		if alloc.HandedOut(addr) {
+			return publishedBackendAddressError(name, addr,
+				"a live per-join translation bridge of this Gate process holds that address")
+		}
+		if alloc.Range().ContainsAddress(addr) {
+			return publishedBackendAddressError(name, addr,
+				fmt.Sprintf("that address is inside the port range Gate reserves for its per-join "+
+					"translation bridges (%s)", alloc.Range()))
+		}
+	}
+	return nil
+}
+
+// publishedBackendAddressError names the address, the backend it was published
+// for, and why dialling it would not reach that backend's runtime.
+func publishedBackendAddressError(backend, address, reason string) error {
+	return fmt.Errorf("vialite: refusing to dial %s for dynamic backend %q: %s; the runtime that should "+
+		"serve that backend does not own the address, so the join would be routed into another "+
+		"session's tunnel and stall silently in configuration state", address, backend, reason)
 }
 
 func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (bool, error) {
@@ -184,9 +390,16 @@ func (r *viaManagedRunner) AddBackend(ctx context.Context, info ServerInfo) (boo
 	}
 	r.mu.Lock()
 	server := r.server
+	death := r.death
 	if server == nil {
 		r.mu.Unlock()
 		return false, nil
+	}
+	if death != nil {
+		// The runtime died: adding a backend cannot work, and the runtime
+		// module's "server not started" would name the wrong cause.
+		r.mu.Unlock()
+		return false, death
 	}
 	name := strings.ToLower(info.Name())
 	if _, ok := r.activeBackends[name]; ok {
@@ -275,7 +488,7 @@ func (r *viaManagedRunner) dynamicBackend(info ServerInfo) (vialite.Backend, int
 	}
 	var cleanup interface{ Close() error }
 	if dialer, ok := info.(ServerDialer); ok {
-		bridge, err := newViaBackendBridge(dialer)
+		bridge, err := newViaBackendBridge(dialer, info.Name(), r.bridgeDialTimeout())
 		if err != nil {
 			return vialite.Backend{}, nil, err
 		}
@@ -323,17 +536,61 @@ func (r *viaManagedRunner) RemoveBackend(ctx context.Context, name string) error
 	return nil
 }
 
-func (r *viaManagedRunner) prepareBackendDial(ctx context.Context, name string, player Player) (func(), error) {
+func (r *viaManagedRunner) prepareBackendDial(ctx context.Context, name string, player Player) (*viaBridgeDial, error) {
 	if r == nil {
-		return func() {}, nil
+		return &viaBridgeDial{}, nil
 	}
 	r.mu.Lock()
 	dynamic := r.dynamicBackends[strings.ToLower(name)]
 	r.mu.Unlock()
 	if dynamic == nil || dynamic.bridge == nil {
-		return func() {}, nil
+		return &viaBridgeDial{}, nil
 	}
-	return dynamic.bridge.Prepare(ctx, player)
+	release, failure, err := dynamic.bridge.Prepare(ctx, player)
+	if err != nil {
+		return nil, err
+	}
+	return &viaBridgeDial{cancel: release, failure: failure}, nil
+}
+
+// viaBridgeDial is the per-join state of a translation bridge request: releasing
+// an unclaimed request, and reading the failure the bridge recorded for it.
+type viaBridgeDial struct {
+	cancel  func()
+	failure func() error
+}
+
+func (d *viaBridgeDial) Cancel() {
+	if d != nil && d.cancel != nil {
+		d.cancel()
+	}
+}
+
+func (d *viaBridgeDial) Failure() error {
+	if d == nil || d.failure == nil {
+		return nil
+	}
+	return d.failure()
+}
+
+// bridgeDialTimeout is the budget for the bridge's dial of a dynamic backend,
+// in the units `connectionTimeout` is documented in.
+//
+// The bridge cannot inherit that budget from the join: a bridge request context
+// is deliberately detached from the join (context.WithoutCancel in Prepare, so a
+// claimed bridge is not cancelled when the connection request context ends),
+// and that detachment drops the join's deadline with it. Left unbounded, a
+// dynamic backend that never answers keeps the bridge - and therefore the join -
+// waiting with nothing naming the backend, the bridge address or the stage.
+// Zero (unset or explicitly disabled) keeps the historical unbounded behaviour.
+func (r *viaManagedRunner) bridgeDialTimeout() time.Duration {
+	if r == nil || r.cfg == nil {
+		return 0
+	}
+	if d := time.Duration(r.cfg.ConnectionTimeout); d > 0 {
+		return d
+	}
+	return 0
 }
 
 func (r *viaManagedRunner) options() (vialite.Options, error) {
@@ -345,8 +602,15 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 		Version:              r.cfg.Via.Version,
 		Mirror:               r.cfg.Via.Mirror,
 		Offline:              r.cfg.Via.Offline,
+		Logger:               r.logger(),
 		AllowDynamicBackends: true,
-		Backends:             make([]vialite.Backend, 0, len(r.cfg.Servers)),
+		// One allocator for every dynamically allocated loopback listener in
+		// this process: the runtime reserves each dynamic backend's address here
+		// instead of allocating from a second range, so Gate's per-join bridges
+		// and the runtime's backends can never name the same port and neither
+		// ever draws from the kernel's ephemeral range (kanban t_6199659e).
+		ReserveLoopbackAddress: r.reserveRuntimeLoopbackAddress,
+		Backends:               make([]vialite.Backend, 0, len(r.cfg.Servers)),
 	}
 	for name, addr := range r.cfg.Servers {
 		opts.Backends = append(opts.Backends, vialite.Backend{
@@ -357,6 +621,192 @@ func (r *viaManagedRunner) options() (vialite.Options, error) {
 	}
 	return opts, nil
 }
+
+// reserveRuntimeLoopbackAddress is the vialite.Options.ReserveLoopbackAddress
+// hook: the runtime asks Gate's allocator for the loopback address a dynamic
+// subprocess backend is told to bind, so every dynamically allocated listener in
+// this process - Gate's per-join translation bridges and the runtime's dynamic
+// backends - comes from one reserved, non-ephemeral range and no address is ever
+// handed out twice (kanban t_6199659e).
+//
+// host is the host the runtime would otherwise bind, derived from the configured
+// runtime bind. The reserved address always uses the allocator's loopback host: a
+// dynamically allocated per-join listener must never be reachable from outside
+// this host, whatever the runtime bind names.
+//
+// The returned release runs exactly once (the runtime guarantees that; the once
+// wrapper keeps a double call harmless) and only then does the allocator hand the
+// port out again.
+func (r *viaManagedRunner) reserveRuntimeLoopbackAddress(host string) (string, func(), error) {
+	alloc, err := loopback.Default()
+	if err != nil {
+		return "", nil, fmt.Errorf("vialite: the runtime cannot allocate a dynamic backend address: %w", err)
+	}
+	addr, release, err := alloc.Reserve()
+	if err != nil {
+		return "", nil, fmt.Errorf("vialite: reserve a dynamic backend address: %w", err)
+	}
+	if host != "" && host != alloc.Host() {
+		// Not a configuration change, a narrowing: the address the runtime binds
+		// is always the allocator's loopback host.
+		r.logger().Debug("vialite: dynamic backend address uses the loopback allocator host",
+			"bind_host", host, "allocated_host", alloc.Host())
+	}
+	r.mu.Lock()
+	if r.runtimeLoopbackAddresses == nil {
+		r.runtimeLoopbackAddresses = make(map[string]struct{})
+	}
+	r.runtimeLoopbackAddresses[addr] = struct{}{}
+	r.mu.Unlock()
+
+	var once sync.Once
+	return addr, func() {
+		once.Do(func() {
+			r.mu.Lock()
+			delete(r.runtimeLoopbackAddresses, addr)
+			r.mu.Unlock()
+			if release != nil {
+				release()
+			}
+		})
+	}, nil
+}
+
+// runtimeLoopbackAddressReserved reports whether addr is an address Gate's
+// allocator reserved for the running runtime's dynamic backend and that the
+// runtime has not released.
+func (r *viaManagedRunner) runtimeLoopbackAddressReserved(addr string) bool {
+	if r == nil {
+		return false
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_, ok := r.runtimeLoopbackAddresses[addr]
+	return ok
+}
+
+// viaLogger is the logger handed to the ViaLite runtime. The runtime logs one
+// "resolved runtime" line per start naming the artifact version and where it
+// came from (download, cache, embedded, local path), which is how an operator
+// or supporter tells which runtime - and therefore which ViaVersion protocol
+// ceiling - the proxy is actually running.
+func viaLogger() *slog.Logger {
+	return slog.Default().With("component", "vialite")
+}
+
+// logger is the runtime logger for this runner. It is the Gate logger above plus
+// a small handler that remembers the version the runtime reports, so a
+// runtime-death diagnostic can name the artifact that died instead of only the
+// configured pin (which is empty for the default "latest" setup).
+func (r *viaManagedRunner) logger() *slog.Logger {
+	if r == nil || r.resolution == nil {
+		return viaLogger()
+	}
+	return slog.New(viaResolutionHandler{Handler: slog.Default().Handler(), resolution: r.resolution}).
+		With("component", "vialite")
+}
+
+// viaResolvedRuntimeMessage is the message the runtime module logs once per start
+// naming the runtime artifact it resolved.
+const viaResolvedRuntimeMessage = "vialite: resolved runtime"
+
+// viaRuntimeResolution remembers the runtime version reported in the runtime
+// module's "vialite: resolved runtime" line.
+type viaRuntimeResolution struct {
+	version atomic.Value // string
+}
+
+func (r *viaRuntimeResolution) recordVersion(version string) {
+	if r != nil && version != "" {
+		r.version.Store(version)
+	}
+}
+
+func (r *viaRuntimeResolution) resolvedVersion() string {
+	if r == nil {
+		return ""
+	}
+	version, _ := r.version.Load().(string)
+	return version
+}
+
+// viaResolutionHandler passes every log record through unchanged and, for the
+// "vialite: resolved runtime" record, remembers its version attribute.
+type viaResolutionHandler struct {
+	slog.Handler
+	resolution *viaRuntimeResolution
+}
+
+func (h viaResolutionHandler) Handle(ctx context.Context, record slog.Record) error {
+	if record.Message == viaResolvedRuntimeMessage {
+		record.Attrs(func(attr slog.Attr) bool {
+			if attr.Key == "version" {
+				h.resolution.recordVersion(attr.Value.String())
+				return false
+			}
+			return true
+		})
+	}
+	return h.Handler.Handle(ctx, record)
+}
+
+func (h viaResolutionHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return viaResolutionHandler{Handler: h.Handler.WithAttrs(attrs), resolution: h.resolution}
+}
+
+func (h viaResolutionHandler) WithGroup(name string) slog.Handler {
+	return viaResolutionHandler{Handler: h.Handler.WithGroup(name), resolution: h.resolution}
+}
+
+// viaRuntimeExit records how the runtime's Start call ended.
+//
+// Everything that waits for a runtime to stop - the startup readiness check,
+// Gate's shutdown and the death watcher - observes the same result through it,
+// instead of racing on a single channel receive.
+type viaRuntimeExit struct {
+	mu  sync.Mutex
+	err error
+}
+
+func (e *viaRuntimeExit) set(err error) {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	e.err = err
+	e.mu.Unlock()
+}
+
+func (e *viaRuntimeExit) get() error {
+	if e == nil {
+		return nil
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.err
+}
+
+// viaRuntimeDeath describes a managed runtime that exited after Gate had started
+// serving with it. It implements error so it can travel the normal join-failure
+// path: the player's connection is closed with a reason that names the runtime
+// death rather than the runtime module's "server not started".
+type viaRuntimeDeath struct {
+	version  string
+	backends []string
+	cause    error
+	at       time.Time
+}
+
+func (d *viaRuntimeDeath) Error() string {
+	if d.cause != nil {
+		return fmt.Sprintf("vialite: the managed runtime (version %s) exited after startup (%v), "+
+			"so protocol translation is down; restart Gate to recover", d.version, d.cause)
+	}
+	return fmt.Sprintf("vialite: the managed runtime (version %s) exited after startup, "+
+		"so protocol translation is down; restart Gate to recover", d.version)
+}
+
+func (d *viaRuntimeDeath) Unwrap() error { return d.cause }
 
 func viaMode(mode, goos, libraryPath string) vialite.Mode {
 	if mode == "" {
@@ -394,22 +844,22 @@ func newViaServerInfo(info ServerInfo, via *viaManagedRunner) ServerInfo {
 }
 
 func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, error) {
-	cancelBridge, err := i.via.prepareBackendDial(ctx, i.Name(), player)
+	dial, err := i.via.prepareBackendDial(ctx, i.Name(), player)
 	if err != nil {
 		return nil, err
 	}
 	addr, err := i.via.BackendDialAddress(i.Name())
 	if err != nil {
-		cancelBridge()
+		dial.Cancel()
 		return nil, err
 	}
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", addr)
 	if err != nil {
-		cancelBridge()
+		dial.Cancel()
 		return nil, err
 	}
-	return &viaBridgeDialConn{Conn: conn, cancelBridge: cancelBridge}, nil
+	return &viaBridgeDialConn{Conn: conn, cancelBridge: dial.Cancel, bridgeFailure: dial.Failure}, nil
 }
 
 // viaBridgeDialConn cancels an unclaimed bridge request when the corresponding
@@ -417,12 +867,24 @@ func (i *viaServerInfo) Dial(ctx context.Context, player Player) (net.Conn, erro
 // connection-request contexts can end after a backend bridge is claimed.
 type viaBridgeDialConn struct {
 	net.Conn
-	cancelBridge context.CancelFunc
+	cancelBridge  context.CancelFunc
+	bridgeFailure func() error
 }
 
 func (c *viaBridgeDialConn) Close() error {
 	c.cancelBridge()
 	return c.Conn.Close()
+}
+
+// BridgeDialFailure reports why the translation bridge could not reach the
+// dynamic backend behind this connection, if it could not. The join that was
+// waiting on the bridge turns this into its own failure message instead of the
+// generic closed-connection one.
+func (c *viaBridgeDialConn) BridgeDialFailure() error {
+	if c.bridgeFailure == nil {
+		return nil
+	}
+	return c.bridgeFailure()
 }
 
 type viaBridgeRequest struct {
@@ -432,6 +894,43 @@ type viaBridgeRequest struct {
 
 	mu      sync.Mutex
 	claimed bool
+
+	// failure is the bridge's dial failure for this request, if any. It travels
+	// with the request so the join waiting on it reports the cause the bridge
+	// saw instead of a generic closed connection.
+	failure atomic.Pointer[viaBridgeRequestFailure]
+}
+
+type viaBridgeRequestFailure struct {
+	err error
+}
+
+func (r *viaBridgeRequest) fail(err error) {
+	if err != nil {
+		r.failure.Store(&viaBridgeRequestFailure{err: err})
+	}
+}
+
+func (r *viaBridgeRequest) err() error {
+	if f := r.failure.Load(); f != nil {
+		return f.err
+	}
+	return nil
+}
+
+// viaBridgeDialStage names the phase a dynamic backend's bridge dial belongs to,
+// so a failed or stalled dial is reported as a stage of the join rather than as
+// an unexplained closed connection.
+const viaBridgeDialStage = "bridge-dial"
+
+// bridgeDialFailureError is the failure a join gets when the translation bridge
+// could not reach its dynamic backend. It names the backend, the bridge address
+// the hop dials and the stage, which is what separates it from a backend that
+// spoke and stopped (reported by its own stall diagnostic) and from a runtime
+// that is not running at all.
+func bridgeDialFailureError(name, address string, cause error) error {
+	return fmt.Errorf("vialite: the translation bridge could not reach dynamic backend %q "+
+		"(bridge address %s, stage: %s): %w", name, address, viaBridgeDialStage, cause)
 }
 
 func (r *viaBridgeRequest) cancelIfUnclaimed() {
@@ -453,23 +952,37 @@ func (r *viaBridgeRequest) claim() bool {
 }
 
 type viaBackendBridge struct {
-	ln       net.Listener
-	dialer   ServerDialer
-	requests chan *viaBridgeRequest
-	done     chan struct{}
-	close    sync.Once
+	ln          net.Listener
+	dialer      ServerDialer
+	name        string
+	dialTimeout time.Duration
+	requests    chan *viaBridgeRequest
+	done        chan struct{}
+	close       sync.Once
 }
 
-func newViaBackendBridge(dialer ServerDialer) (*viaBackendBridge, error) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+func newViaBackendBridge(dialer ServerDialer, name string, dialTimeout time.Duration) (*viaBackendBridge, error) {
+	// The bridge listener lives for the whole join, so its port must come from
+	// Gate's reserved bridge range and never from the kernel's ephemeral range:
+	// the vialite supervisor reserves a dynamic backend's port with a
+	// listen-then-close, and a listener allocated from the same range can take
+	// that port before the runtime binds it (kanban t_40da126d).
+	alloc, err := loopback.Default()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("vialite: the per-join translation bridge cannot allocate a loopback "+
+			"listener for backend %q: %w", name, err)
+	}
+	ln, err := alloc.Listen()
+	if err != nil {
+		return nil, fmt.Errorf("vialite: allocate the per-join translation bridge listener for backend %q: %w", name, err)
 	}
 	b := &viaBackendBridge{
-		ln:       ln,
-		dialer:   dialer,
-		requests: make(chan *viaBridgeRequest, 1024),
-		done:     make(chan struct{}),
+		ln:          ln,
+		dialer:      dialer,
+		name:        name,
+		dialTimeout: dialTimeout,
+		requests:    make(chan *viaBridgeRequest, 1024),
+		done:        make(chan struct{}),
 	}
 	go b.accept()
 	return b, nil
@@ -479,18 +992,20 @@ func (b *viaBackendBridge) Addr() net.Addr {
 	return b.ln.Addr()
 }
 
-func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), error) {
+// Prepare queues one join's bridge request and returns the release function for
+// an unclaimed request plus the reader of the bridge's dial failure for it.
+func (b *viaBackendBridge) Prepare(ctx context.Context, player Player) (func(), func() error, error) {
 	streamCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	req := &viaBridgeRequest{ctx: streamCtx, player: player, cancel: cancel}
 	select {
 	case b.requests <- req:
-		return req.cancelIfUnclaimed, nil
+		return req.cancelIfUnclaimed, req.err, nil
 	case <-b.done:
 		cancel()
-		return nil, net.ErrClosed
+		return nil, nil, net.ErrClosed
 	case <-ctx.Done():
 		cancel()
-		return nil, ctx.Err()
+		return nil, nil, ctx.Err()
 	}
 }
 
@@ -526,8 +1041,9 @@ func (b *viaBackendBridge) handle(conn net.Conn) {
 			break
 		}
 	}
-	backend, err := b.dialer.Dial(req.ctx, req.player)
+	backend, err := b.dialBackend(req)
 	if err != nil {
+		b.reportDialFailure(req, err)
 		return
 	}
 	defer backend.Close()
@@ -546,4 +1062,41 @@ func (b *viaBackendBridge) handle(conn net.Conn) {
 	case <-req.ctx.Done():
 	case <-b.done:
 	}
+}
+
+// dialBackend dials the dynamic backend behind this bridge. The stream context
+// stays detached from the join (see Prepare); only the dial is bounded, and it
+// is bounded by the configured connection timeout in the units the operator
+// wrote it in.
+func (b *viaBackendBridge) dialBackend(req *viaBridgeRequest) (net.Conn, error) {
+	ctx := req.ctx
+	if b.dialTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, b.dialTimeout)
+		defer cancel()
+	}
+	return b.dialer.Dial(ctx, req.player)
+}
+
+// reportDialFailure names a dynamic backend the bridge could not reach, both on
+// the join that was waiting for it and in the log. Without it the bridge
+// discarded the error: the join ended as a closed connection and nothing named
+// the backend, the bridge address or the stage.
+func (b *viaBackendBridge) reportDialFailure(req *viaBridgeRequest, err error) {
+	address := ""
+	if b.ln != nil && b.ln.Addr() != nil {
+		address = b.ln.Addr().String()
+	}
+	named := bridgeDialFailureError(b.name, address, err)
+	req.fail(named)
+
+	log := logr.Discard()
+	if req.player != nil {
+		log = logr.FromContextOrDiscard(req.player.Context())
+	}
+	log.Error(named, "dynamic backend dial behind the vialite bridge failed",
+		"backend", b.name,
+		"address", address,
+		"stage", viaBridgeDialStage,
+	)
 }

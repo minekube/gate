@@ -79,7 +79,7 @@ test('the Worker toolchain is reproducible and permits only required install scr
   assert.equal(packageJson.devDependencies.wrangler, '4.135.0');
   assert.equal(
     packageJson.devDependencies['@cloudflare/workers-types'],
-    '5.20260918.1'
+    '5.20260919.1'
   );
   assert.deepEqual(packageJson.pnpm?.onlyBuiltDependencies, [
     'core-js',

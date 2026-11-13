@@ -125,6 +125,9 @@ func (b *backendConfigSessionHandler) Activated() {
 
 // Disconnected is called when the session handler is disconnected.
 func (b *backendConfigSessionHandler) Disconnected() {
+	// A backend that stopped answering mid-configuration is otherwise only
+	// visible as a generic disconnect.
+	b.serverConn.reportStalledBackend(b.log)
 	b.requestCtx.result(nil, errors.New("unexpectedly disconnected from remote server"))
 }
 

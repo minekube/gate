@@ -54,6 +54,25 @@ connect:
 
 Then you need to set the `CONNECT_TOKEN` environment variable or create the `connect.json` file next to your config.
 
+## Bedrock Players through Connect
+
+Bedrock players use the same Connect hostname, with port `19132`. Keep the normal Connect setup above;
+Gate automatically advertises support for Connect's signed Bedrock identity and fetches Minekube's public
+verification keys. You do not need identity URLs, public keys, capability settings, or a local Geyser installation.
+
+Connect authenticates Microsoft/Xbox accounts and translates Bedrock traffic before it reaches Gate.
+Gate verifies the signed identity, endpoint and session binding, expiry, and replay protection before opening
+the tunnel. Players without a linked Java account receive their stable Bedrock identity; linked players keep
+their verified Java profile. This does not require allowing offline-mode Java players.
+
+The local `bedrock: true` setting is for players connecting directly to your Gate instance.
+See [Bedrock Support](/guide/bedrock) for that separate listener and
+[Connect Bedrock Support](https://connect.minekube.com/guide/bedrock) for managed Connect joins.
+
+If Connect reports `capability_unavailable`, check that your Gate build includes automatic Connect Bedrock
+identity support. Gate v0.74.28 and earlier do not include it. Adding identity keys or enabling a local
+Bedrock listener does not update an older connector's handover protocol.
+
 ## Offline Mode Support
 
 Gate's Connect integration supports offline mode (cracked) players! This allows players without premium Minecraft accounts to join your server through the Connect network.
@@ -99,6 +118,8 @@ enforce-secure-profile=false
 
 ::: tip Authentication Flow
 When `allowOfflineModePlayers: true` is set, Connect handles the connection injection, allowing offline mode players to join even when Gate has `onlineMode: true`. This provides the best of both worlds - premium players can still authenticate when joining Gate directly while offline players can still join through Connect in offline mode.
+
+This works because the injected connection already carries the player's profile. It does not apply to `passthrough` sessions: when the edge hands Gate a raw login with no profile, Gate has no offline identity for the player, so with `onlineMode: true` it starts an ordinary online-mode login, a cracked client cannot answer the encryption request, and the login never completes. Do not use passthrough sessions for endpoints that must admit offline mode players.
 :::
 
 ## Troubleshooting
@@ -160,6 +181,7 @@ enforce-secure-profile=false
 1. **Wait** - Allow 2-3 minutes for Connect network to update
 2. **Restart Gate** - Force re-registration with new settings
 3. **Change endpoint name** - Force fresh registration if caching persists
+4. **Check passthrough** - If your endpoint uses `passthrough` sessions, Gate receives no player profile and cannot admit offline mode players while `onlineMode: true`; see the Authentication Flow note above
 
 :::
 

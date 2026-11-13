@@ -380,3 +380,44 @@ func TestSnbtToJSON_ComponentStyleByteBooleans(t *testing.T) {
 		}]
 	}`, string(got))
 }
+
+func TestJsonToSNBTKeepsJSONIntegerLiterals(t *testing.T) {
+	// The 1.21.5+ component codec emits shadow_color as a packed ARGB integer.
+	// json.Unmarshal without UseNumber turns that into a float64, and "%v"
+	// renders it in exponent notation (2.130706432e+09), which the SNBT parser
+	// rejects - so the whole component (here: the server_data MOTD) fails to
+	// encode and the packet is never written.
+	const packed = 2130706432
+	tests := []struct {
+		name string
+		json string
+		want string // expected SNBT value literal
+	}{
+		{"packed argb int", `{"shadow_color":2130706432}`, "2130706432"},
+		{"negative int", `{"x":-2147483648}`, "-2147483648"},
+		{"zero", `{"x":0}`, "0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			snbt, err := JsonToSNBT(json.RawMessage(tt.json))
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.NotContains(t, snbt, "e+", "integer must not be rendered in exponent notation: %s", snbt)
+			assert.Contains(t, snbt, tt.want, "integer literal must be preserved: %s", snbt)
+
+			if _, err := JsonToBinaryTag(json.RawMessage(tt.json)); !assert.NoError(t, err) {
+				return
+			}
+		})
+	}
+
+	// A fractional number is not an integer and must stay a readable literal.
+	snbt, err := JsonToSNBT(json.RawMessage(`{"x":0.5}`))
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, `{x:0.5}`, snbt)
+	_ = packed
+}

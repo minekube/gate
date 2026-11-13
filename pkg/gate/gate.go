@@ -33,6 +33,7 @@ import (
 	"go.minekube.com/gate/pkg/runtime/process"
 	connectcfg "go.minekube.com/gate/pkg/util/connectutil/config"
 	errorsutil "go.minekube.com/gate/pkg/util/errs"
+	"go.minekube.com/gate/pkg/util/eventmgr"
 	"go.minekube.com/gate/pkg/util/interrupt"
 )
 
@@ -63,10 +64,14 @@ func New(options Options) (gate *Gate, err error) {
 			"(errors: %d, warns: %d)", len(errs), len(warns))
 	}
 
-	eventMgr := options.EventMgr
-	if eventMgr == nil {
-		eventMgr = event.Nop
-	}
+	// Wrap the manager: Gate's own subscribers unsubscribe when their runnable
+	// returns, so a config update delivered at that moment overlaps an
+	// unsubscribe of a sibling subscriber of the same event type. The event
+	// manager Gate depends on is not safe against that (it rewrites the
+	// subscriber slice of a multi-subscriber list in place and drops the rest
+	// of the delivery), so Gate runs on pkg/util/eventmgr.
+	// A nil manager stays "no events" (event.Nop).
+	eventMgr := eventmgr.Safe(options.EventMgr)
 	reload.Map(eventMgr, func(c *config.Config) *jconfig.Config {
 		return &c.Config
 	})
@@ -305,7 +310,24 @@ func (g *Gate) Start(ctx context.Context) error {
 }
 
 // Viper is the default viper instance used by Start to load in a config.Config.
-var Viper = viper.New()
+// It is a NewViper, i.e. it reads config files with delete sharing.
+var Viper = NewViper()
+
+// NewViper returns a viper for loading a Gate config: a default viper whose file
+// system reads files the way Gate's config reads do (reload.ConfigFileSystem), so
+// that a read Gate does not control - viper's own discovery read, which happens
+// when the file is not where viper's search expects it - cannot refuse an editor's
+// atomic replacement of the config on Windows for as long as it is in flight.
+// Everything else about it is viper's default, so which file discovery picks,
+// what a read returns and what a write produces are unchanged.
+//
+// Load config with a Viper from here: a plain viper.New() reads through
+// os.ReadFile, whose handle does not share delete.
+func NewViper() *viper.Viper {
+	v := viper.New()
+	v.SetFs(reload.ConfigFileSystem())
+	return v
+}
 
 // StartOption is an option for Start.
 type StartOption func(o *startOptions)
@@ -392,7 +414,10 @@ func Start(ctx context.Context, opts ...StartOption) error {
 	defer otelShutdown()
 
 	// Setup new Gate instance with loaded config.
-	eventMgr := event.New(event.WithLogger(log.WithName("event")))
+	// The manager is safe against an unsubscribe concurrent with a delivery of
+	// the same event type (see New and pkg/util/eventmgr), and reports
+	// recovered subscriber panics to the "event" logger.
+	eventMgr := eventmgr.New(eventmgr.WithLogger(log.WithName("event")))
 	gate, err := New(Options{
 		Config:         c.conf,
 		EventMgr:       eventMgr,
@@ -411,7 +436,7 @@ func Start(ctx context.Context, opts ...StartOption) error {
 			select {
 			case <-ctx.Done():
 			case s := <-interrupt.Notify(ctx):
-				log.Info("Received os signal", "signal", s)
+				logTerminationSignal(log, s)
 			}
 		}()
 	}
@@ -427,6 +452,20 @@ func Start(ctx context.Context, opts ...StartOption) error {
 
 	// Start everything
 	return gate.Start(ctx)
+}
+
+// logTerminationSignal logs the termination signal Gate is shutting down for.
+//
+// The hint is the whole point: Go's runtime prints every goroutine stack on
+// SIGQUIT, but Gate treats SIGQUIT as a termination signal, so an operator who
+// asks for a dump with `kill -QUIT` gets a graceful shutdown and no stacks. Say
+// so on the line that tells them the signal arrived (see signal_log_test.go).
+func logTerminationSignal(log logr.Logger, s os.Signal) {
+	if hint := interrupt.GoroutineDumpHint(s); hint != "" {
+		log.Info("Received os signal", "signal", s, "hint", hint)
+		return
+	}
+	log.Info("Received os signal", "signal", s)
 }
 
 // setupAutoConfigReload sets up auto config reload if enabled.
@@ -465,7 +504,7 @@ func setupAutoConfigReload(
 // Viper applies defaults or environment overrides. Errors never leave this
 // function so reload diagnostics cannot disclose config contents.
 func validateConfigFileSyntax(configPath string) error {
-	b, err := os.ReadFile(configPath)
+	b, err := reload.ReadConfigFile(configPath)
 	if err != nil {
 		return err
 	}
@@ -544,7 +583,7 @@ func LoadConfig(v *viper.Viper) (*config.Config, error) {
 // loadLiveConfigCandidate reads and strictly parses one complete file image.
 // The candidate is built independently from the current runtime configuration.
 func loadLiveConfigCandidate(v *viper.Viper, configPath string) (*config.Config, error) {
-	b, err := os.ReadFile(configPath)
+	b, err := reload.ReadConfigFile(configPath)
 	if err != nil {
 		return nil, reload.Reject("read_failed")
 	}
@@ -654,7 +693,7 @@ func fixedReadInConfig(v *viper.Viper, defaultConfig *config.Config) error {
 	default:
 		return fmt.Errorf("unsupported config file format %q", configFile)
 	}
-	b, err := os.ReadFile(configFile)
+	b, err := reload.ReadConfigFile(configFile)
 	if err != nil {
 		return fmt.Errorf("error reading config file %q: %w", configFile, err)
 	}

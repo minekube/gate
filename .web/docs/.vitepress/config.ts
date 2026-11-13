@@ -1,4 +1,4 @@
-import { defineConfig, HeadConfig } from 'vitepress';
+import { defineConfig } from 'vitepress';
 
 import {
   additionalTitle,
@@ -187,6 +187,15 @@ const guideSidebar = [
       {
         text: 'DDoS Protection',
         link: '/guide/security/ddos',
+      },
+    ],
+  },
+  {
+    text: 'Troubleshooting',
+    items: [
+      {
+        text: 'Diagnostics',
+        link: '/guide/troubleshooting',
       },
     ],
   },

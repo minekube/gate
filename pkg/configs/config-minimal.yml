@@ -1,3 +1,17 @@
 # Minimal Gate configuration
-# All other settings will use their default values
+#
+# Every setting not written here keeps its default value, so this file on its own
+# does not change how Gate behaves. Gate writes it on first start when started
+# with --init-config (GATE_INIT_CONFIG=true).
+#
+# Register your backend Minecraft servers and the order Gate should try them:
+#
+#   config:
+#     servers:
+#       server1: localhost:25566
+#     try:
+#       - server1
+#
+# For the fully annotated template run `gate config --type full > config.yml`,
+# and see https://gate.minekube.com/guide/config/ for every option.
 config: {}
