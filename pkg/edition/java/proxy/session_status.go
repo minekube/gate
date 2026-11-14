@@ -93,7 +93,7 @@ func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 		versionName = defaultVersionName
 	}
 	var modInfo *modinfo.ModInfo
-	if p.config().AnnounceForge {
+	if p.config().AnnounceForgeEnabled() {
 		modInfo = modinfo.Default
 	}
 	return &ping.ServerPing{
@@ -126,6 +126,7 @@ func (h *statusSessionHandler) handleStatusRequest(pc *proto.PacketContext) {
 	log := h.log
 	if h.resolvePingResponse == nil {
 		e.ping = newInitialPing(h.proxy, pc.Protocol)
+		h.populateForgeStatus(e.ping)
 	} else {
 		var err error
 		var res *packet.StatusResponse
