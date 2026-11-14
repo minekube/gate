@@ -116,9 +116,14 @@ func TestClientPluginMessageKeptOutsideBackendFloodgateScope(t *testing.T) {
 	unlinked := xuidIdentity(t, data)
 
 	t.Run("backend Floodgate disabled", func(t *testing.T) {
+		// Disabling backendFloodgate does not make the backend Floodgate resolve
+		// the session: Gate sends no triplet, so the player is a plain Java
+		// session to the plugin and it kicks on its own channels all the same.
 		i := backendFloodgateIntegration(t, jconfig.VelocityForwardingMode, false, "lobby")
 		player := bedrockFilterPlayer(t, jconfig.VelocityForwardingMode, data, unlinked)
-		require.True(t, i.AllowClientPluginMessage(floodgate.SkinChannel, player, testBackendTarget("lobby")))
+		require.False(t, i.AllowClientPluginMessage(floodgate.SkinChannel, player, testBackendTarget("lobby")))
+		require.False(t, i.AllowClientPluginMessage(floodgate.SkinChannel, player, testBackendTarget("survival")),
+			"without backendFloodgate no backend can resolve the session, so no allowlist applies")
 	})
 
 	t.Run("target not allowlisted", func(t *testing.T) {
@@ -178,4 +183,25 @@ func TestBackendFloodgateRegistersClientPluginMessageFilter(t *testing.T) {
 func clientPluginMessageFilterRegistered(p *jproxy.Proxy) bool {
 	field := reflect.ValueOf(p).Elem().FieldByName("clientPluginMessageFilter")
 	return !field.IsNil()
+}
+
+// The filter must also be installed with backendFloodgate disabled: it is what
+// keeps a backend Floodgate from kicking a session Gate never promoted, and a
+// configuration that turns the promotion off must not silently lose it.
+func TestDisabledBackendFloodgateRegistersClientPluginMessageFilter(t *testing.T) {
+	cfg := &bedrockconfig.Config{
+		FloodgateKeyPath: writeTestFloodgateKey(t),
+		BackendFloodgate: bedrockconfig.BackendFloodgate{Enabled: false},
+	}
+	jp := filterTestProxy(t, jconfig.VelocityForwardingMode)
+	integration, err := NewIntegration(context.Background(), jp, cfg)
+	require.NoError(t, err)
+
+	require.True(t, clientPluginMessageFilterRegistered(jp),
+		"the client plugin message filter must be installed even without backendFloodgate")
+
+	integration.Stop()
+
+	require.False(t, clientPluginMessageFilterRegistered(jp),
+		"stopping the integration must clear the client plugin message filter")
 }

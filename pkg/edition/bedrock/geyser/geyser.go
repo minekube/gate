@@ -168,8 +168,11 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 	integration.floodgate = fg
 	if cfg.BackendFloodgate.Enabled {
 		integration.unregisterHook = p.SetBackendHandshakeAddresser(integration)
-		integration.unregisterMessageFilterHook = p.SetClientPluginMessageFilter(integration)
 	}
+	// The filter is registered even when backendFloodgate is disabled: a backend
+	// that runs the Floodgate plugin kicks a session it cannot resolve, and
+	// without the promotion there is no session it can resolve.
+	integration.unregisterMessageFilterHook = p.SetClientPluginMessageFilter(integration)
 
 	return integration, nil
 }
