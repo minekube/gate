@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.1](https://github.com/minekube/gate/compare/v0.81.0...v0.81.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **bedrock:** withhold Floodgate plugin messages without backendFloodgate ([#1379](https://github.com/minekube/gate/issues/1379)) ([d84488a](https://github.com/minekube/gate/commit/d84488a0e56da95f942b6e35cf661c3bfb5cb1f3))
+
 ## [0.81.0](https://github.com/minekube/gate/compare/v0.80.4...v0.81.0) (2026-11-14)
 
 
