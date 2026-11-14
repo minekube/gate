@@ -161,8 +161,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
 	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
-	// Whether the proxy should present itself as a
-	// Forge/FML-compatible server. By default, this is disabled.
+	// AnnounceForge is retained for existing Go integrations and root-level
+	// configurations. The shipped configuration uses Status.AnnounceForge.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
 
 	Servers                              map[string]string `yaml:"servers,omitempty" json:"servers,omitempty"` // name:address
@@ -170,7 +170,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts,omitempty" json:"forcedHosts,omitempty"`
 	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect,omitempty" json:"failoverOnUnexpectedServerDisconnect,omitempty"`
 
-	// ConnectionTimeout bounds joining a backend server: the dial, the backend
+	// ConnectionTimeout also bounds backend status lookups for AnnounceForge.
+	// It bounds joining a backend server: the dial, the backend
 	// login and a server switch all run under it. It is a join budget, not a
 	// write budget - see WriteTimeout.
 	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"`
@@ -237,6 +238,8 @@ type (
 		Motd            *configutil.Component `yaml:"motd"`
 		Favicon         favicon.Favicon       `yaml:"favicon"`
 		LogPingRequests bool                  `yaml:"logPingRequests"`
+		// Advertise Forge support and query mod metadata from servers in Try.
+		AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
 		// VersionName overrides the version string a client shows for this
 		// server in its server list. Empty uses "Gate <min>-<max>" built from
 		// the supported protocol versions. It changes only the display text,
@@ -344,6 +347,11 @@ const (
 	// BungeeGuardForwardingMode is a forwarding mode used by versions lower than 1.13
 	BungeeGuardForwardingMode ForwardingMode = "bungeeguard"
 )
+
+// AnnounceForgeEnabled accepts the shipped status setting and the existing alias.
+func (c *Config) AnnounceForgeEnabled() bool {
+	return c.Status.AnnounceForge || c.AnnounceForge
+}
 
 // Validate validates Config.
 func (c *Config) Validate() (warns []error, errs []error) {
@@ -523,7 +531,7 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 			"the client and the backend negotiate compression between themselves.")
 	}
 
-	if c.AnnounceForge {
+	if c.AnnounceForgeEnabled() {
 		w("Lite mode ignores announceForge: status responses are proxied from the backend, " +
 			"which announces its own mods.")
 	}
