@@ -24,6 +24,12 @@ import (
 // skin - about a second after spawn, so an unlinked Bedrock player on a
 // backend-Floodgate server is disconnected right after joining.
 //
+// The same kick reaches a backend Floodgate that Gate sent no triplet to at all:
+// with backendFloodgate disabled the filter is still registered, because an
+// operator who runs the Floodgate plugin on the backend but leaves Gate's
+// promotion off gets a Bedrock player that is a plain Java session to the
+// backend - exactly the session Floodgate refuses to answer on its channels.
+//
 // Gate does not deliver messages a backend would answer that way. The skin is
 // not lost: Gate itself applies the Bedrock skin from the GeyserMC skin API
 // (Integration.onGameProfile), and a backend Floodgate that subscribed to the
@@ -32,13 +38,10 @@ import (
 // Linked players keep their Floodgate plugin messages: their forwarded UUID is
 // the linked Java UUID, which the backend Floodgate resolves.
 func (i *Integration) AllowClientPluginMessage(channel string, player proxy.Player, target proxy.RegisteredServer) bool {
-	if i == nil || i.config == nil || !i.config.BackendFloodgate.Enabled {
+	if i == nil || i.config == nil {
 		return true
 	}
 	if !floodgate.IsClientChannel(channel) {
-		return true
-	}
-	if !i.backendFloodgateAllowed(target) {
 		return true
 	}
 	geyserConn, ok := FromContext(player.Context())
@@ -54,5 +57,13 @@ func (i *Integration) AllowClientPluginMessage(channel string, player proxy.Play
 		// identity Gate picked.
 		return true
 	}
+	if i.config.BackendFloodgate.Enabled && !i.backendFloodgateAllowed(target) {
+		// Only allowlisted backends receive the triplet, so only they can ever
+		// resolve the session.
+		return true
+	}
+	// With backendFloodgate disabled Gate never promotes the profile, so the
+	// forwarded UUID is Gate's XUID-derived identity for every backend and no
+	// backend Floodgate can resolve it: the allowlist does not apply.
 	return geyserConn.BedrockData.ResolvesProfileUUID(player.GameProfile().ID)
 }
