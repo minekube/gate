@@ -56,7 +56,7 @@ func ResetPacket() *plugin.Message {
 }
 
 // ReadMods returns the mod list from the mod list packet and parses it.
-// May be empty.
+// May be empty. The original payload is preserved for forwarding to the backend.
 func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 	if message == nil {
 		return nil, errors.New("message must not be nil")
@@ -95,6 +95,5 @@ func ReadMods(message *plugin.Message) ([]modinfo.Mod, error) {
 		}
 		mods = append(mods, mod)
 	}
-	message.Data = buf.Bytes() // left data bytes
 	return mods, nil
 }
