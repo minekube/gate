@@ -92,9 +92,13 @@ type Integration struct {
 	mu             sync.RWMutex
 	unsubs         []func()
 	unregisterHook func()
-	manager        managedRunner
-	runtimeErr     chan error
-	runtimeErrOnce sync.Once
+	// unregisterMessageFilterHook clears the client plugin message filter that
+	// keeps Floodgate plugin messages away from a backend that cannot resolve
+	// the session (see AllowClientPluginMessage).
+	unregisterMessageFilterHook func()
+	manager                     managedRunner
+	runtimeErr                  chan error
+	runtimeErrOnce              sync.Once
 }
 
 // GeyserConnection represents a connection from Geyser.
@@ -164,6 +168,7 @@ func NewIntegration(ctx context.Context, p *proxy.Proxy, cfg *config.Config) (*I
 	integration.floodgate = fg
 	if cfg.BackendFloodgate.Enabled {
 		integration.unregisterHook = p.SetBackendHandshakeAddresser(integration)
+		integration.unregisterMessageFilterHook = p.SetClientPluginMessageFilter(integration)
 	}
 
 	return integration, nil
@@ -273,6 +278,10 @@ func (i *Integration) Stop() {
 	if i.unregisterHook != nil {
 		i.unregisterHook()
 		i.unregisterHook = nil
+	}
+	if i.unregisterMessageFilterHook != nil {
+		i.unregisterMessageFilterHook()
+		i.unregisterMessageFilterHook = nil
 	}
 }
 

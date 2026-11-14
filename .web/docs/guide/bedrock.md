@@ -232,6 +232,14 @@ If a join reports `reason=disabled` after you set the flag, the proxy is still r
 `bedrock.backendFloodgate` is read at startup and is **not** applied by the config file watcher
 (see [Auto Config Reload](/guide/config/reload#the-bedrock-block-requires-a-restart)). Restart Gate to apply it.
 
+#### Which players the backend Floodgate can resolve
+
+A backend Floodgate plugin identifies a session by the Java profile UUID it receives: an unlinked Bedrock player is stored under Floodgate's own `new UUID(0, xuid)`, a linked player additionally resolves through their linked Java UUID. Gate's default Bedrock identity is a XUID-derived UUIDv5 instead (the same value Connect uses for the same XUID), which Floodgate never derives.
+
+With `forwarding.mode: velocity` the backend trusts the proxy-set profile, so **only linked Bedrock players are visible to the backend Floodgate API**. An unlinked player is still registered from the handshake data — `isFloodgatePlayer` style checks over the player list see them — but every lookup by player UUID (`FloodgateApi#getPlayer(uuid)` and everything built on it) returns null. The plugin also answers a client message on its own plugin channels by kicking that player (`Only Floodgate players can send floodgate messages!`), and Geyser sends exactly one about a second after spawn (`floodgate:skin`, carrying the uploaded Bedrock skin). Gate therefore withholds client `floodgate:*` plugin messages from allowlisted backends for sessions the backend Floodgate cannot resolve, instead of letting the plugin disconnect the player; the session itself is unaffected and the skin still applies, because Gate applies the Bedrock skin from the GeyserMC skin API. Linked players keep their Floodgate plugin messages.
+
+With `forwarding.mode: none` the backend Floodgate assigns the player UUID itself, so it resolves every Bedrock player and Gate withholds nothing. If backend plugins must see **unlinked** Bedrock players through the Floodgate API, use `none`, or do not enable `backendFloodgate` and let those plugins treat every Bedrock player as a Java player.
+
 ::: warning Trust boundary
 Only allow backends that you operate and trust with the same Floodgate key. Do not enable this for third-party, shared, or untrusted backend servers. Enabling `backendFloodgate` means a linked Bedrock account is presented as its linked Java account (UUID and username) to the allowlisted backends; anyone who can produce a valid Floodgate handshake — that is, anyone holding the shared key — controls the linked identity Gate will apply. The GeyserMC link API fallback adds the same external trust as the skin API: HTTPS to a GeyserMC-operated service, no per-connection signature, and the XUID is sent to `api.geysermc.org`.
 :::

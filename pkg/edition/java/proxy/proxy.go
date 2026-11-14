@@ -78,6 +78,10 @@ type Proxy struct {
 	backendHandshakeAddresser   BackendHandshakeAddresser
 	backendHandshakeAddresserID uint64
 
+	clientPluginMessageFilterMu sync.RWMutex
+	clientPluginMessageFilter   ClientPluginMessageFilter
+	clientPluginMessageFilterID uint64
+
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
@@ -553,6 +557,31 @@ func (p *Proxy) backendHandshakeAddresserSnapshot() BackendHandshakeAddresser {
 	p.backendHandshakeAddresserMu.RLock()
 	defer p.backendHandshakeAddresserMu.RUnlock()
 	return p.backendHandshakeAddresser
+}
+
+// SetClientPluginMessageFilter sets a low-level hook consulted before a plugin
+// message a player sent is forwarded to the backend server it is connected to.
+// It returns an unregister function that only clears this registration.
+func (p *Proxy) SetClientPluginMessageFilter(f ClientPluginMessageFilter) func() {
+	p.clientPluginMessageFilterMu.Lock()
+	p.clientPluginMessageFilterID++
+	id := p.clientPluginMessageFilterID
+	p.clientPluginMessageFilter = f
+	p.clientPluginMessageFilterMu.Unlock()
+
+	return func() {
+		p.clientPluginMessageFilterMu.Lock()
+		defer p.clientPluginMessageFilterMu.Unlock()
+		if p.clientPluginMessageFilterID == id {
+			p.clientPluginMessageFilter = nil
+		}
+	}
+}
+
+func (p *Proxy) clientPluginMessageFilterSnapshot() ClientPluginMessageFilter {
+	p.clientPluginMessageFilterMu.RLock()
+	defer p.clientPluginMessageFilterMu.RUnlock()
+	return p.clientPluginMessageFilter
 }
 
 // Server gets a backend server registered with the proxy by name.

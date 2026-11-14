@@ -392,6 +392,15 @@ func (c *clientPlaySessionHandler) handlePluginMessage(packet *plugin.Message) {
 		})
 		_ = backendConn.WritePacket(plugin.RewriteMinecraftBrand(packet, c.player.Protocol()))
 	} else {
+		if filter := c.proxy().clientPluginMessageFilterSnapshot(); filter != nil &&
+			!filter.AllowClientPluginMessage(packet.Channel, c.player, serverConn.Server()) {
+			// Deliberately dropped without disconnecting the client: the backend
+			// must never see a message it would answer by kicking the session.
+			c.log.V(1).Info("dropped client plugin message",
+				"channel", packet.Channel, "server", serverConn.Server().ServerInfo().Name())
+			return
+		}
+
 		serverConnPhase := serverConn.phase()
 		if serverConnPhase == phase.InTransitionBackendPhase {
 			// We must bypass the currently-connected server when forwarding Forge packets.
