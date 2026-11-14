@@ -245,6 +245,14 @@ func (a *authSessionHandler) completeLoginProtocolPhaseAndInitialize(player *con
 			newInitialConnectSessionHandler(a.connectedPlayer))
 
 		a.eventMgr.Fire(&PostLoginEvent{player: player})
+		if player.Type() == phase.LegacyForge || player.Type() == phase.Undetermined17 {
+			// Legacy FML negotiation happens in PLAY before the backend sends
+			// JoinGame. Keep the client read loop free to forward its replies
+			// through initialConnectSessionHandler while the request waits.
+			// Forge 1.7 has no handshake token and starts as Undetermined17.
+			go a.connectToInitialServer(player)
+			return
+		}
 		a.connectToInitialServer(player)
 	}
 }
