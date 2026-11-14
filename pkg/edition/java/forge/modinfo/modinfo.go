@@ -3,7 +3,8 @@ package modinfo
 
 import "errors"
 
-var Default = &ModInfo{Type: "FML"}
+// Legacy Forge clients require modList to be a JSON array, even when empty.
+var Default = &ModInfo{Type: "FML", Mods: []Mod{}}
 
 // ModInfo represents a mod info.
 type ModInfo struct {

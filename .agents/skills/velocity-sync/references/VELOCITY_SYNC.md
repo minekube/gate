@@ -249,6 +249,28 @@ log:
       in front of a server it did not author, so a command tree it cannot parse must not be a
       session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
 
+  - date: 2026-11-14
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the legacy announceForge status fix. PaperMC/Velocity dev/3.0.0 still
+      resolves to 843a47e2, the same head and 11 commits reviewed on 2026-11-07, so there is no
+      new upstream work to assess. At that head, api/util/ModInfo.DEFAULT is constructed with
+      ImmutableList.of(), which serializes modList as [] rather than null. Gate's default
+      nil Mods slice emitted null; Forge 1.7.10 and 1.12.x FMLClientHandler.bindServerListData
+      require modList.getAsJsonArray() before displaying the modded-server status. Initializing
+      Gate's default Mods as an empty slice restores that wire shape without inventing mods,
+      changing the opt-in flag. The requested backend lookup was also compared with upstream
+      connection/util/ServerListPingHandler: its separate MODS passthrough mode queries backends
+      and copies the first available modinfo into the local ping before ProxyPingEvent. Gate
+      adopts that metadata-only merge for announceForge, querying only Try (as requested, unlike
+      upstream's forcedHosts-or-Try choice), using one ConnectionTimeout for sequential attempts
+      and retaining its local MOTD/players/version/favicon. Gate additionally preserves raw
+      forgeData/neoforgeData and falls back to the empty list on query failure. The existing
+      Lite resolver is unchanged. No new upstream commit was ported; the verified point is unchanged.
+
 ```
 
 ## The log
