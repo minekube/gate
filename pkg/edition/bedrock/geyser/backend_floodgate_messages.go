@@ -11,9 +11,9 @@ import (
 // A backend Floodgate plugin resolves a session by the Java profile UUID the
 // proxy forwarded it (see floodgate.BedrockData.ResolvesProfileUUID). Under
 // Velocity forwarding that UUID is the one Gate chose: the linked Java UUID for
-// a promoted player, Floodgate's own new UUID(0, xuid) for nobody, and Gate's
-// v5 XUID identity for an unlinked player - an identity Floodgate never derives
-// and therefore cannot map to a FloodgatePlayer.
+// a promoted player, or Gate's v5 XUID identity for an unlinked player - an
+// identity Floodgate never derives and therefore cannot map to a
+// FloodgatePlayer.
 //
 // Such a session is still registered by the backend Floodgate (Gate re-attaches
 // the handshake triplet for allowlisted servers), but every lookup by the
