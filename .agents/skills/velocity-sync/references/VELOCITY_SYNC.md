@@ -249,6 +249,22 @@ log:
       in front of a server it did not author, so a command tree it cannot parse must not be a
       session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
 
+  - date: 2026-11-14
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Legacy Forge mod-list payload preservation: dev/3.0.0 still resolves to the last
+      reviewed head and the same 11 previously reviewed commits; their prior decisions
+      remain unchanged, with no new upstream commits. At this head,
+      LegacyForgeUtil.readModList reads message.content().slice(), preserving the original
+      packet reader position and payload. Gate's ReadMods instead replaced message.Data
+      with the unread remainder, forwarding an empty FML|HS packet after a valid mod list.
+      Removing that assignment restores the existing upstream behavior; no new commit was
+      ported and the verified sync point is unchanged. Regression fixtures cover populated,
+      empty, trailing-byte and malformed mod lists without mutating the forwarded payload.
+
 ```
 
 ## The log
