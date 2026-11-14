@@ -249,6 +249,23 @@ log:
       in front of a server it did not author, so a command tree it cannot parse must not be a
       session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
 
+  - date: 2026-11-14
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for asynchronous Legacy Forge initial connection establishment. Official
+      PaperMC/Velocity dev/3.0.0 still resolves to 843a47e2, the same head and 11 commits already
+      reviewed on 2026-11-07, so there is no new upstream work to assess. At that head,
+      AuthSessionHandler.connectToInitialServer returns a CompletableFuture and calls
+      createConnectionRequest(...).fireAndForget() after the initial-server event; it does not
+      block the client event loop waiting for backend JoinGame. Gate's synchronous request did
+      block its client read loop, preventing FML|HS replies needed before JoinGame. Gate now
+      starts that request in a goroutine for LegacyForge and unmarked Forge 1.7 (Undetermined17),
+      after installing the initial PLAY handler and firing PostLoginEvent. This adapts Gate's
+      Go connection lifecycle; no upstream commit was ported and the verified point is unchanged.
+
 ```
 
 ## The log
