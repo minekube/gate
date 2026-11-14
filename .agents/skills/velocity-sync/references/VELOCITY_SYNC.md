@@ -266,6 +266,22 @@ log:
       after installing the initial PLAY handler and firing PostLoginEvent. This adapts Gate's
       Go connection lifecycle; no upstream commit was ported and the verified point is unchanged.
 
+  - date: 2026-11-14
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Follow-up for early cancellation of asynchronous Legacy Forge connections. Upstream
+      dev/3.0.0 remains at the same reviewed head and 11-commit range, with no new commits.
+      VelocityServerConnection.connect schedules its backend connection on the player's Netty
+      event loop; Gate instead coordinates the dial goroutine and teardown with s.mu.
+      Gate now checks gracefulDisconnect under that mutex before publishing the backend socket,
+      and closes a late socket outside the mutex to avoid synchronous Disconnected re-entry.
+      A deterministic dial/teardown regression verifies EOF without a backend handshake,
+      ErrClosedConn, no published connection, and released player registration. This is a
+      Gate lifecycle correction, not an upstream commit port; the verified point is unchanged.
+
 ```
 
 ## The log
