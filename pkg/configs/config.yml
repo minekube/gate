@@ -364,6 +364,9 @@ config:
     # Re-emits verified Bedrock identity data only to the listed Java backends.
     # Enable this only for backend servers you operate and trust with the same Floodgate key.
     # Incompatible with forwarding.mode: legacy and bungeeguard.
+    # With forwarding.mode: velocity only linked Bedrock players are resolvable by the
+    # backend Floodgate plugin; Gate withholds that plugin's client messages for
+    # unlinked players so it cannot kick them (see the Bedrock guide).
     # Default: disabled
     #backendFloodgate:
     #  enabled: false
