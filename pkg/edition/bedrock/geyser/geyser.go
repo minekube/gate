@@ -2,7 +2,10 @@ package geyser
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"os"
@@ -423,16 +426,14 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	// boundary, and linked identity from signed authoritative provenance (the
 	// verified Bedrock principal on the Connect proposal path) is applied
 	// separately and is untouched.
-	if i.config.BackendFloodgate.Enabled {
-		if link := floodgate.ParseLinkedPlayer(bedrockData.LinkedPlayer); link != nil &&
-			link.BedrockUUID == bedrockData.FloodgateJavaUuid() {
-			uid = link.JavaUUID
-			formattedName = javaCompatibleUsername(link.JavaUsername, i.config.PreserveDotPrefix)
-		} else if linked, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid); err == nil &&
-			linked != nil && linked.JavaID != uuid.Nil {
-			uid = linked.JavaID
-			formattedName = javaCompatibleUsername(linked.JavaName, i.config.PreserveDotPrefix)
-		}
+	//
+	// Every arm is otherwise indistinguishable in the logs (all of them end in
+	// the XUID-derived identity), so the decision is reported once per join.
+	backendLink := i.decideBackendFloodgate(bedrockData)
+	i.logBackendFloodgateDecision(backendLink)
+	if backendLink.applied() {
+		uid = backendLink.uid
+		formattedName = javaCompatibleUsername(backendLink.username, i.config.PreserveDotPrefix)
 	}
 
 	// Create base game profile
@@ -452,6 +453,94 @@ func (i *Integration) onGameProfile(e *proxy.GameProfileRequestEvent) {
 	}
 
 	e.SetGameProfile(gameProfile)
+}
+
+// backendFloodgateDecision is the outcome of the opt-in linked-identity
+// decision for one Bedrock join. It is a bounded record on purpose: the three
+// fields that may be logged are enums (source, reason, cause), while the
+// resolved identity is only ever applied to the profile, never printed.
+type backendFloodgateDecision struct {
+	uid      uuid.UUID // resolved linked Java UUID, zero when none
+	username string    // resolved linked Java name, empty when none
+	source   string    // handshake|api, empty when no linked identity was applied
+	reason   string    // disabled|triplet_mismatch|not_linked
+	cause    string    // status_NNN|timeout|request_failed|response_failed
+}
+
+func (d backendFloodgateDecision) applied() bool { return d.source != "" }
+
+// decideBackendFloodgate resolves the linked Java identity for this Bedrock
+// connection. Trust order and fail-closed behavior are unchanged from the
+// inline block it replaces; it only makes every arm observable.
+func (i *Integration) decideBackendFloodgate(bedrockData *floodgate.BedrockData) backendFloodgateDecision {
+	if !i.config.BackendFloodgate.Enabled {
+		return backendFloodgateDecision{reason: "disabled"}
+	}
+
+	decision := backendFloodgateDecision{reason: "not_linked"}
+	if link := floodgate.ParseLinkedPlayer(bedrockData.LinkedPlayer); link != nil {
+		if link.BedrockUUID == bedrockData.FloodgateJavaUuid() {
+			return backendFloodgateDecision{
+				uid:      link.JavaUUID,
+				username: link.JavaUsername,
+				source:   "handshake",
+			}
+		}
+		// The triplet belongs to another Bedrock connection: never promote it
+		// here, and remember why so the join is not mistaken for "unlinked".
+		decision.reason = "triplet_mismatch"
+	}
+
+	linked, err := i.profileManager.GetLinkedAccount(bedrockData.Xuid)
+	switch {
+	case err != nil:
+		return backendFloodgateDecision{cause: sanitizeLinkFailure(err)}
+	case linked != nil && linked.JavaID != uuid.Nil:
+		return backendFloodgateDecision{
+			uid:      linked.JavaID,
+			username: linked.JavaName,
+			source:   "api",
+		}
+	default:
+		return decision
+	}
+}
+
+// logBackendFloodgateDecision emits exactly one bounded line per Bedrock join,
+// at V(1) because this path is hot. This is the whole point of the diagnostic:
+// "flag off", "XUID not linked" and "api.geysermc.org unreachable" all keep the
+// XUID-derived identity and were previously indistinguishable to an operator.
+func (i *Integration) logBackendFloodgateDecision(d backendFloodgateDecision) {
+	switch {
+	case d.applied():
+		i.log.V(1).Info("backend floodgate: linked identity applied", "source", d.source)
+	case d.cause != "":
+		i.log.V(1).Info("backend floodgate: link lookup failed", "cause", d.cause)
+	default:
+		i.log.V(1).Info("backend floodgate: no linked identity", "reason", d.reason)
+	}
+}
+
+// sanitizeLinkFailure reduces a GeyserMC link API error to a bounded category,
+// exactly like reload.sanitizeRejectionCode: allow-list first, neutral fallback
+// otherwise. The error itself is never logged - Go's url.Error embeds the
+// request URL, which contains the XUID, and the API's own message is not ours.
+func sanitizeLinkFailure(err error) string {
+	var status *apiStatusError
+	if errors.As(err, &status) && status.Code >= 100 && status.Code <= 599 {
+		return "status_" + strconv.Itoa(status.Code)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "timeout"
+	}
+	var (
+		syntaxErr *json.SyntaxError
+		typeErr   *json.UnmarshalTypeError
+	)
+	if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return "response_failed"
+	}
+	return "request_failed"
 }
 
 // javaCompatibleUsername makes a Bedrock gamertag safe for the Java profile

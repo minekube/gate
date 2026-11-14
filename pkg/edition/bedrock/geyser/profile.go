@@ -76,6 +76,16 @@ func (pm *ProfileManager) GetSkin(xuid int64) (*SkinResult, error) {
 	return &result, nil
 }
 
+// apiStatusError is a GeyserMC API response with a non-200 status. It is typed
+// so callers can reduce a failure to a bounded log category instead of echoing
+// the error: the error text stays the same, but the request URL (which embeds
+// the XUID) is never part of it.
+type apiStatusError struct{ Code int }
+
+func (e *apiStatusError) Error() string {
+	return fmt.Sprintf("geyser api returned status code %d", e.Code)
+}
+
 // geyserApiGet performs a GET request to the GeyserMC API.
 func (pm *ProfileManager) geyserApiGet(endpoint string, result any) error {
 	req, err := http.NewRequest("GET", GEYSER_API_URL+endpoint, nil)
@@ -93,7 +103,7 @@ func (pm *ProfileManager) geyserApiGet(endpoint string, result any) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("geyser api returned status code %d", res.StatusCode)
+		return &apiStatusError{Code: res.StatusCode}
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(result); err != nil {

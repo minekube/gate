@@ -37,13 +37,19 @@ func (failingRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
 }
 
 func capturingLogger() (logr.Logger, func() string) {
+	return capturingLoggerAt(10)
+}
+
+// capturingLoggerAt returns a logger whose verbosity is fixed at v, so a test
+// can prove that a diagnostic is emitted at V(1) and never at Info.
+func capturingLoggerAt(v int) (logr.Logger, func() string) {
 	var mu sync.Mutex
 	var lines []string
 	log := funcr.New(func(prefix, args string) {
 		mu.Lock()
 		defer mu.Unlock()
 		lines = append(lines, prefix+" "+args)
-	}, funcr.Options{Verbosity: 10})
+	}, funcr.Options{Verbosity: v})
 	return log, func() string {
 		mu.Lock()
 		defer mu.Unlock()
@@ -95,4 +101,73 @@ func TestOnGameProfileLogsNoIdentityAndAppliesNoLinkHint(t *testing.T) {
 	logs := capture()
 	require.NotContains(t, logs, sentinelUsername)
 	require.NotContains(t, logs, "2535405290989773")
+}
+
+// TestOnGameProfileBackendFloodgateDecisionLineIsPrivacySafe extends the
+// privacy invariant to the three link-promotion arms the operator now sees:
+// the handshake triplet, the GeyserMC link API and an API failure. Each arm
+// emits its bounded decision line at V(1), and no XUID, gamertag, java_name
+// or UUID may reach the log buffer with it.
+func TestOnGameProfileBackendFloodgateDecisionLineIsPrivacySafe(t *testing.T) {
+	const (
+		gamertag     = "PrivacyGamertag"
+		xuid         = int64(2535405290989773)
+		javaName     = "PrivacyJavaName"
+		javaUUID     = "99999999-8888-7777-6666-555555555555"
+		bedrockUUID  = "00000000-0000-0000-0000-0009003c0009"
+		handshakeArm = "handshake"
+	)
+
+	link := javaName + ";" + javaUUID + ";" + (&floodgate.BedrockData{Xuid: xuid}).FloodgateJavaUuid().String()
+
+	tests := []struct {
+		name      string
+		link      string
+		rt        http.RoundTripper
+		wantField string
+	}{
+		{
+			name:      handshakeArm,
+			link:      link,
+			rt:        failingRoundTripper{},
+			wantField: `"source"="handshake"`,
+		},
+		{
+			name:      "api",
+			link:      "null",
+			rt:        apiLinkRoundTripper{javaID: javaUUID, javaName: javaName},
+			wantField: `"source"="api"`,
+		},
+		{
+			name:      "api failure",
+			link:      "null",
+			rt:        apiLinkRoundTripper{err: errors.New("network disabled in test")},
+			wantField: `"cause"="request_failed"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i, capture := newBackendFloodgateIntegration(t, true, tt.rt, 10)
+			geyserConn := &GeyserConnection{BedrockData: &floodgate.BedrockData{
+				Username: gamertag, Xuid: xuid, LinkedPlayer: tt.link,
+			}}
+			geyserConn.Context = withBedrockContext(context.Background(), geyserConn)
+			e := proxy.NewGameProfileRequestEvent(
+				&fakeInbound{ctx: geyserConn.Context},
+				profile.GameProfile{Name: gamertag},
+				false,
+			)
+			i.onGameProfile(e)
+
+			logs := capture()
+			lines := backendFloodgateDecisionLines(logs)
+			require.Len(t, lines, 1, "one decision line per join:\n%s", logs)
+			require.Contains(t, lines[0], tt.wantField)
+
+			for _, sentinel := range []string{gamertag, "2535405290989773", javaName, javaUUID, bedrockUUID} {
+				require.NotContains(t, logs, sentinel, "identity must never reach the log buffer")
+			}
+		})
+	}
 }

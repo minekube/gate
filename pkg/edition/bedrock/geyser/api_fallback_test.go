@@ -18,10 +18,14 @@ import (
 
 // apiLinkRoundTripper answers the GeyserMC link API (GET /v2/link/bedrock/<xuid>)
 // with a canned LinkedAccountResult, or fails the request when errOnCall is set.
+// statusCode and body override the canned 200/linked-account response so the
+// "unlinked" (200 with an empty object) and non-200 arms are reachable too.
 type apiLinkRoundTripper struct {
-	javaID   string
-	javaName string
-	err      error
+	javaID     string
+	javaName   string
+	err        error
+	statusCode int    // zero means 200
+	body       string // empty means the canned linked-account object
 }
 
 func (rt apiLinkRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -31,9 +35,16 @@ func (rt apiLinkRoundTripper) RoundTrip(r *http.Request) (*http.Response, error)
 	if !strings.Contains(r.URL.Path, "/v2/link/bedrock/") {
 		return nil, errRoundTripUnexpectedPath(r.URL.Path)
 	}
-	body := `{"bedrock_id":987654321,"java_id":"` + rt.javaID + `","java_name":"` + rt.javaName + `","last_name_update":0}`
+	status := rt.statusCode
+	if status == 0 {
+		status = http.StatusOK
+	}
+	body := rt.body
+	if body == "" {
+		body = `{"bedrock_id":987654321,"java_id":"` + rt.javaID + `","java_name":"` + rt.javaName + `","last_name_update":0}`
+	}
 	return &http.Response{
-		StatusCode: http.StatusOK,
+		StatusCode: status,
 		Body:       io.NopCloser(strings.NewReader(body)),
 		Header:     make(http.Header),
 	}, nil
