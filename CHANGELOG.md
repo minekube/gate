@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.0](https://github.com/minekube/gate/compare/v0.80.4...v0.81.0) (2026-11-14)
+
+
+### Features
+
+* **bedrock:** make the backendFloodgate link-promotion decision visible per join ([#1376](https://github.com/minekube/gate/issues/1376)) ([0bb23a6](https://github.com/minekube/gate/commit/0bb23a62a4b0ae9e2f834dd4ba7187e9b2f4fe81))
+
 ## [0.80.4](https://github.com/minekube/gate/compare/v0.80.3...v0.80.4) (2026-11-14)
 
 
