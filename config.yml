@@ -13,6 +13,10 @@ config:
   # Either simple legacy '§' text or a modern text component JSON object.
   offlineModeUsernameBlacklistReason: "§cThis username is reserved for its authenticated owner."
   # Registers servers with the proxy by giving the address of backend server a custom reference name.
+  # Also reserve the names of currently connected authenticated players
+  # against offline-mode logins.
+  offlineModeUsernameBlacklistOnlinePlayers: false
+
   servers:
     # Server name: server address
     server1: localhost:25566
