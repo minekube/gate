@@ -36,7 +36,7 @@ require (
 	github.com/zyedidia/generic v1.2.1
 	go.minekube.com/brigodier v0.0.2
 	go.minekube.com/common v0.4.0
-	go.minekube.com/connect v0.6.3-0.20260803141147-8001cda93b1d
+	go.minekube.com/connect v0.6.3-0.20261112082405-3cc8a7804482
 	go.minekube.com/geyserlite v0.7.6
 	go.minekube.com/vialite v0.3.12
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
