@@ -194,8 +194,8 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	// Extensions can override the result per session with a
 	// ServerBrandRewriteEvent handler.
 	BrandSuffix *string `yaml:"brandSuffix,omitempty" json:"brandSuffix,omitempty"`
-	// Whether the proxy should present itself as
-	// a Forge/FML-compatible server. By default, this is disabled.
+	// Whether the proxy should present itself as a
+	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
 
 	Servers                              map[string]string `yaml:"servers,omitempty" json:"servers,omitempty"` // name:address
