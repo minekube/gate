@@ -16,6 +16,8 @@ import (
 //     .web/docs/guide/config/index.md and `config.builtinCommandRefusedMessage`
 //     (v0.78.0) is taught in .web/docs/guide/builtin-commands.md, each with the
 //     behaviour an operator has to know (default unchanged, display-only).
+//     `config.brandSuffix` (v0.82.0) is taught in the same config guide, with
+//     the default it must keep and the empty-string opt-out.
 //   - The shipped templates still carry both keys, so a template edit that drops
 //     one fails here instead of leaving the guide pointing at a key that no
 //     longer exists. The templates are byte-identical copies (make sync-configs).
@@ -110,6 +112,33 @@ func TestModdedBackendStatusAndCommandTreeDocumented(t *testing.T) {
 		"proxy commands are not injected",
 		"`PlayerAvailableCommandsEvent` is not fired for it",
 	})
+}
+
+// TestBrandSuffixDocumented keeps the operator-facing contract for the debug
+// screen brand: the guide teaches the key, the default it must keep and the
+// empty-string opt-out, and both shipped templates carry the key so
+// `gate config -t full` shows what the guide talks about.
+func TestBrandSuffixDocumented(t *testing.T) {
+	requireDocContains(t, guideConfigDoc, []string{
+		"## Server Brand (Debug Screen)",
+		"brandSuffix: \" (My Network)\"",
+		`brandSuffix: ""`,
+		// The two facts an operator needs: leaving it unset keeps today's
+		// bytes, and an empty value really disables the rewrite.
+		"Left unset it keeps",
+		"` (Gate by Minekube)`",
+		"so an existing `config.yml` emits exactly the same bytes it always has",
+		"Setting it to `\"\"`",
+		"disables the rewrite",
+		// Scope: only the backend's brand is rewritten.
+		"Only the brand the *backend* reports is rewritten",
+		// Lite mode is inert, and the per-session extension hook exists.
+		"In [Lite mode](/guide/lite) Gate does not decode packets",
+		"`ServerBrandRewriteEvent`",
+	})
+
+	requireDocContains(t, rootConfigTemplate, []string{"brandSuffix:"})
+	requireDocContains(t, embeddedConfigTemplate, []string{"brandSuffix:"})
 }
 
 // TestGeyserLiteBedrockCurrencyDocumented keeps the GeyserLite page honest about

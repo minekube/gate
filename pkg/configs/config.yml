@@ -43,6 +43,11 @@ config:
     logPingRequests: false
     # Whether the proxy should present itself as Forge/FML-compatible server.
     announceForge: false
+  # Appended to the server brand a backend reports before the client sees it
+  # (the proxy label on the debug screen, F3). Set it to "" to send the
+  # backend's brand unchanged; extensions can also override it per session.
+  # Default: " (Gate by Minekube)"
+  brandSuffix: " (Gate by Minekube)"
   # Allows players transferred from other hosts via the
   # Transfer packet (Minecraft 1.20.5) to be received.
   # Default: false

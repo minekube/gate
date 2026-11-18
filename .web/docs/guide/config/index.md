@@ -114,3 +114,30 @@ status:
 In [Lite mode](/guide/lite) the ping is proxied from the backend, so this block is inert and players see
 the backend's MOTD and player count - see [modded servers](/guide/modded-servers) for the chained case.
 
+## Server Brand (Debug Screen)
+
+A backend server announces its brand (`vanilla`, `Paper`, ...) in a plugin message, and the client
+shows it on the debug screen (F3). In full proxy mode Gate forwards that brand with its own suffix
+appended, so players and support screenshots say which proxy is in the path:
+
+```yaml
+config:
+  # Appended to the backend's brand before the client sees it.
+  # Empty sends the backend's brand unchanged.
+  brandSuffix: " (My Network)"
+```
+
+- **`brandSuffix`** (v0.82.0 and newer) replaces the suffix Gate appends. Left unset it keeps
+  ` (Gate by Minekube)`, so an existing `config.yml` emits exactly the same bytes it always has.
+- Setting it to `""` (`brandSuffix: ""`) disables the rewrite: the backend's brand reaches the client
+  unchanged, and a backend that announces no brand adds nothing to the session.
+- Only the brand the *backend* reports is rewritten. The brand your backend servers see from a client
+  is separate and untouched.
+- In [Lite mode](/guide/lite) Gate does not decode packets, so the key is inert and Gate warns if you
+  set it.
+
+Go extensions that embed Gate can override the result for a single session with a
+`ServerBrandRewriteEvent` handler (`e.SetBrand(e.OriginalBrand())` removes the suffix for that player
+only, `e.SetBrand("MyServer")` brands the endpoint), which is how a proxy serving several endpoints
+applies a per-endpoint policy.
+

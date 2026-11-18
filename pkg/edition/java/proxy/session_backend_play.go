@@ -222,7 +222,7 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 			return
 		}
 		serverVersion := serverMc.Protocol()
-		rewritten := plugin.RewriteMinecraftBrand(packet, serverVersion)
+		rewritten := b.proxy().rewriteServerBrand(b.serverConn.player, packet, serverVersion)
 		b.forwardToPlayer(nil, rewritten)
 		return
 	}
