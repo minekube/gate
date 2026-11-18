@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"bytes"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -128,20 +127,42 @@ func joinChannels(channels []string) string {
 	return sb.String()
 }
 
+// DefaultBrandSuffix is the suffix Gate appends to the brand a backend server
+// reports, before the client shows it on its debug screen. It is what
+// config.brandSuffix defaults to, so an unconfigured Gate emits exactly the
+// brand bytes it always has.
+const DefaultBrandSuffix = " (Gate by Minekube)"
+
 // RewriteMinecraftBrand rewrites the brand message to indicate the presence of the proxy.
+//
+// It appends DefaultBrandSuffix, which is the behaviour Gate shipped before the
+// suffix became configurable. A caller that resolves a per-session brand (the
+// configured suffix plus any ServerBrandRewriteEvent override) uses
+// RewriteMinecraftBrandTo instead.
 func RewriteMinecraftBrand(message *Message, protocol proto.Protocol) *Message {
 	if message == nil || !McBrand(message) {
 		return message
 	}
+	return RewriteMinecraftBrandTo(message, protocol, ReadBrandMessage(message.Data)+DefaultBrandSuffix)
+}
 
-	currentBrand := ReadBrandMessage(message.Data)
-	rewrittenBrand := fmt.Sprintf("%s (Gate by Minekube)", currentBrand)
+// RewriteMinecraftBrandTo returns a copy of a brand message carrying the given
+// brand, framed for the client's protocol: a raw string before 1.8 and a
+// length-prefixed string from 1.8 on. Both framings are what the client parses,
+// so the branch must never be collapsed.
+//
+// A nil or non-brand message is returned as-is, like RewriteMinecraftBrand. The
+// input message is never mutated.
+func RewriteMinecraftBrandTo(message *Message, protocol proto.Protocol, brand string) *Message {
+	if message == nil || !McBrand(message) {
+		return message
+	}
 
 	rewrittenBuf := new(bytes.Buffer)
 	if protocol.GreaterEqual(version.Minecraft_1_8) {
-		_ = util.WriteString(rewrittenBuf, rewrittenBrand)
+		_ = util.WriteString(rewrittenBuf, brand)
 	} else {
-		rewrittenBuf.WriteString(rewrittenBrand)
+		rewrittenBuf.WriteString(brand)
 	}
 
 	return &Message{

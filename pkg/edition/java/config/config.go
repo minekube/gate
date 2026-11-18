@@ -11,6 +11,7 @@ import (
 	"go.minekube.com/common/minecraft/component"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
@@ -18,6 +19,11 @@ import (
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/validation"
 )
+
+// DefaultBrandSuffix is the suffix Gate appends to a backend's server brand when
+// no brandSuffix is configured. It is the wire-layer default
+// (plugin.DefaultBrandSuffix) so the two can never drift.
+const DefaultBrandSuffix = plugin.DefaultBrandSuffix
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
@@ -44,6 +50,7 @@ var DefaultConfig = Config{
 		ShowPlugins: false,
 	},
 	AnnounceForge:                        false,
+	BrandSuffix:                          brandSuffix(plugin.DefaultBrandSuffix),
 	Servers:                              map[string]string{},
 	Try:                                  []string{},
 	ForcedHosts:                          map[string][]string{},
@@ -92,6 +99,25 @@ var DefaultConfig = Config{
 func defaultMotd() *configutil.Component {
 	return componentText("§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
 }
+
+// brandSuffix returns a pointer to a copy of s, so DefaultConfig's brand suffix
+// cannot be mutated through a config a caller loaded from it.
+func brandSuffix(s string) *string {
+	return &s
+}
+
+// ResolveBrandSuffix returns the suffix Gate appends to a backend's server
+// brand, falling back to DefaultBrandSuffix when no suffix is configured.
+//
+// An empty configured suffix is a real value: it disables the rewrite and the
+// backend's brand reaches the client unchanged.
+func (c *Config) ResolveBrandSuffix() string {
+	if c == nil || c.BrandSuffix == nil {
+		return DefaultBrandSuffix
+	}
+	return *c.BrandSuffix
+}
+
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
 }
@@ -161,6 +187,13 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
 	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
+	// BrandSuffix is appended to the brand a backend server reports before the
+	// client sees it (the proxy label on the debug screen). An empty string
+	// sends the backend's brand unchanged; nil keeps DefaultBrandSuffix, so a
+	// config without the key emits exactly the bytes Gate always has.
+	// Extensions can override the result per session with a
+	// ServerBrandRewriteEvent handler.
+	BrandSuffix *string `yaml:"brandSuffix,omitempty" json:"brandSuffix,omitempty"`
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
@@ -540,6 +573,11 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 	if !c.Permissions.Empty() {
 		w("Lite mode ignores permissions: Lite pipes the connection through unchanged, so " +
 			"Gate never applies config.permissions. Configure permissions on the backend or disable lite.enabled.")
+	}
+
+	if c.ResolveBrandSuffix() != DefaultBrandSuffix {
+		w("Lite mode ignores config.brandSuffix: Lite pipes the connection through unchanged, " +
+			"so Gate never rewrites the backend's server brand. Configure the brand on the backend or disable lite.enabled.")
 	}
 }
 

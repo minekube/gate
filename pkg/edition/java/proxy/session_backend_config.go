@@ -220,8 +220,8 @@ func (b *backendConfigSessionHandler) handleTransfer(p *packet.Transfer) {
 
 func (b *backendConfigSessionHandler) handlePluginMessage(pc *proto.PacketContext, p *plugin.Message) {
 	if plugin.McBrand(p) {
-		_ = b.serverConn.player.WritePacket(plugin.RewriteMinecraftBrand(p,
-			b.serverConn.player.Protocol()))
+		_ = b.serverConn.player.WritePacket(b.proxy().rewriteServerBrand(
+			b.serverConn.player, p, b.serverConn.player.Protocol()))
 	} else {
 		bytes := pc.Payload
 		id, ok := b.proxy().ChannelRegistrar().FromID(p.Channel)
