@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.0](https://github.com/minekube/gate/compare/v0.81.1...v0.82.0) (2026-11-18)
+
+
+### Features
+
+* make the backend server brand suffix configurable and overridable per session ([#1381](https://github.com/minekube/gate/issues/1381)) ([e7fe3df](https://github.com/minekube/gate/commit/e7fe3df14f68469434d80df95000ca0f195b6e7c))
+
 ## [0.81.1](https://github.com/minekube/gate/compare/v0.81.0...v0.81.1) (2026-11-14)
 
 
