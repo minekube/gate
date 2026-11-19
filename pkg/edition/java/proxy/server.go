@@ -537,6 +537,13 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	// Set the connection phase, which may, for future forge (or whatever), be
 	// determined at this point already
 	s.mu.Lock()
+	if s.gracefulDisconnect.Load() {
+		s.mu.Unlock()
+		// Teardown may have completed before the dial returned. Close outside
+		// the lock because Disconnected() reads serverConnection state again.
+		_ = netmc.CloseUnknown(serverMc)
+		return nil, netmc.ErrClosedConn
+	}
 	s.connection = serverMc
 	s.connPhase = serverMc.Type().InitialBackendPhase()
 	s.mu.Unlock()
