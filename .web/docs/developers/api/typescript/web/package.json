@@ -10,6 +10,6 @@
     "@bufbuild/buf": "^1.47.2",
     "@bufbuild/protobuf": "^1.0.0",
     "@connectrpc/connect": "^1.0.0",
-    "@connectrpc/connect-web": "^1.6.1"
+    "@connectrpc/connect-web": "^2.0.0"
   }
 }
