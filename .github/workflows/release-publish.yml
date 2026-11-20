@@ -260,7 +260,7 @@ jobs:
           outputs: type=oci,dest=${{ runner.temp }}/gate-container-images/gate-jre-image.tar,oci-mediatypes=true
 
       - name: Upload staged container images
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gate-container-images
           path: ${{ runner.temp }}/gate-container-images
@@ -343,7 +343,7 @@ jobs:
           cp dist/checksums.txt upload/checksums.txt
 
       - name: Upload staged release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gate-release-assets
           path: |
@@ -435,7 +435,7 @@ jobs:
       packages: write
     steps:
       - name: Download staged container images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: gate-container-images
           path: release-images
@@ -634,7 +634,7 @@ jobs:
       contents: write
     steps:
       - name: Download staged release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: gate-release-assets
 
