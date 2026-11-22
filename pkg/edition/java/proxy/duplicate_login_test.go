@@ -2,7 +2,10 @@ package proxy
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -11,6 +14,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -214,4 +218,190 @@ func TestDuplicateLoginSupersedeKeepsSessionIDStable(t *testing.T) {
 	require.True(t, p.registerConnection(reconnect))
 	require.Equal(t, firstSessionID, p.sessionID(),
 		"superseding a session must not reset the proxy session id")
+}
+
+// stuckWriteConn is a client connection that stopped reading: the farewell
+// packet of a kick blocks in WritePacket until the test releases it, like a
+// write to a half-open client with no write deadline installed. Like a real
+// connection, Close runs the owning player's teardown (once), so the tests
+// exercise the real unregister and DisconnectEvent order.
+type stuckWriteConn struct {
+	*duplicateLoginTestConn
+	writes    atomic.Int32
+	entered   chan struct{}
+	release   chan struct{}
+	teardown  func()
+	closeOnce sync.Once
+}
+
+func newStuckWriteConn(registry *state.Registry) *stuckWriteConn {
+	return &stuckWriteConn{
+		duplicateLoginTestConn: newDuplicateLoginTestConn(registry),
+		entered:                make(chan struct{}, 4),
+		release:                make(chan struct{}),
+	}
+}
+
+func (c *stuckWriteConn) WritePacket(proto.Packet) error {
+	c.writes.Add(1)
+	c.entered <- struct{}{}
+	<-c.release
+	return nil
+}
+
+func (c *stuckWriteConn) Close() error {
+	_ = c.duplicateLoginTestConn.Close()
+	c.closeOnce.Do(func() {
+		if c.teardown != nil {
+			c.teardown()
+		}
+	})
+	return nil
+}
+
+// newStuckPlayer registers a playing session whose connection runs the player's
+// real teardown on Close.
+func newStuckPlayer(t *testing.T, p *Proxy, name string, id uuid.UUID) (*connectedPlayer, *stuckWriteConn) {
+	t.Helper()
+	conn := newStuckWriteConn(state.Play)
+	player := newDuplicateLoginTestPlayer(p, conn, name, id)
+	conn.teardown = player.teardown
+	require.True(t, p.registerConnection(player))
+	return player, conn
+}
+
+// startKick runs Disconnect on its own goroutine and waits until it is blocked
+// in the farewell write.
+func startKick(t *testing.T, player *connectedPlayer, conn *stuckWriteConn) (done <-chan struct{}) {
+	t.Helper()
+	kickDone := make(chan struct{})
+	go func() {
+		defer close(kickDone)
+		player.Disconnect(internalServerConnectionError)
+	}()
+	select {
+	case <-conn.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the kick never reached the farewell write")
+	}
+	return kickDone
+}
+
+func recordDisconnectStatuses(p *Proxy) <-chan LoginStatus {
+	statuses := make(chan LoginStatus, 4)
+	event.Subscribe(p.event, 0, func(e *DisconnectEvent) { statuses <- e.LoginStatus() })
+	return statuses
+}
+
+// Production evidence (Connect edge, 2026-11-21): a player was kicked from the
+// backend with "Internal server connection error" at 13:27:15 and from then on
+// every login for that name was refused with "You are already connected to this
+// server!" until the edge machine was replaced 21 hours later. The kick path
+// (Disconnect -> CloseWith) closes the connection, and so runs the teardown
+// that unregisters the player, only after the farewell write returns; that
+// write never returned, and the registration still looked like a playing
+// session.
+//
+// A session the proxy has already started to kick is on its way out. A
+// reconnect must take over its registration immediately instead of waiting for
+// the farewell write, and it must not queue a second disconnect behind the
+// stuck write on the login goroutine.
+func TestDuplicateLoginSupersedesSessionWhoseKickIsStuck(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	assertReconnectSupersedesStuckKick(t, p)
+}
+
+// With onlineModeKickExistingPlayers the duplicate is resolved by kicking the
+// existing session instead. A session whose kick is already in flight must not
+// be disconnected a second time there either: that call would queue behind the
+// stuck farewell write on the new login's goroutine.
+func TestDuplicateLoginKickExistingSupersedesSessionWhoseKickIsStuck(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	p.cfg = &config.Config{OnlineMode: true, OnlineModeKickExistingPlayers: true}
+	assertReconnectSupersedesStuckKick(t, p)
+}
+
+func assertReconnectSupersedesStuckKick(t *testing.T, p *Proxy) {
+	t.Helper()
+	id := uuid.New()
+	statuses := recordDisconnectStatuses(p)
+
+	stuck, stuckConn := newStuckPlayer(t, p, "Tepurrrrr", id)
+	kickDone := startKick(t, stuck, stuckConn)
+
+	reconnect := newDuplicateLoginTestPlayer(p, newDuplicateLoginTestConn(state.Login), "Tepurrrrr", id)
+	require.True(t, p.canRegisterConnection(reconnect),
+		"a reconnect must not be refused while the previous session's kick is in flight")
+
+	registered := make(chan bool, 1)
+	go func() { registered <- p.registerConnection(reconnect) }()
+	select {
+	case ok := <-registered:
+		require.True(t, ok)
+	case <-time.After(2 * time.Second):
+		t.Fatal("the reconnect blocked behind the stuck farewell write")
+	}
+
+	require.Equal(t, 1, p.PlayerCount())
+	require.Equal(t, Player(reconnect), p.PlayerByName("Tepurrrrr"))
+	require.Equal(t, Player(reconnect), p.Player(id))
+	require.EqualValues(t, 1, stuckConn.writes.Load(),
+		"the superseded session must not be disconnected a second time")
+
+	// The stuck write finally returns: the real close runs the old session's
+	// teardown, which must not evict the connection that took over the
+	// registration, and which reports the session as superseded.
+	close(stuckConn.release)
+	select {
+	case <-kickDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the kick did not finish after its write returned")
+	}
+	select {
+	case status := <-statuses:
+		require.Equal(t, ConflictingLoginStatus, status,
+			"a superseded session must report a conflict, like any other superseded session")
+	case <-time.After(5 * time.Second):
+		t.Fatal("the superseded session's teardown never fired DisconnectEvent")
+	}
+	require.Equal(t, 1, p.PlayerCount())
+	require.Equal(t, Player(reconnect), p.PlayerByName("Tepurrrrr"))
+	require.Equal(t, Player(reconnect), p.Player(id))
+}
+
+// Only a session the proxy is actually kicking is superseded: a connection that
+// is merely idle in play stays protected.
+func TestDuplicateLoginStillRefusedForPlayingSessionThatIsNotBeingKicked(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	id := uuid.New()
+
+	playing := newDuplicateLoginTestPlayer(p, newStuckWriteConn(state.Play), "Tepurrrrr", id)
+	require.True(t, p.registerConnection(playing))
+	require.False(t, playing.disconnecting.Load())
+
+	duplicate := newDuplicateLoginTestPlayer(p, newDuplicateLoginTestConn(state.Login), "Tepurrrrr", id)
+	require.False(t, p.canRegisterConnection(duplicate))
+	require.False(t, p.registerConnection(duplicate))
+	require.Equal(t, Player(playing), p.PlayerByName("Tepurrrrr"))
+}
+
+// onlineModeKickExistingPlayers still kicks a session that is not being
+// disconnected yet, exactly once, and the new login takes over.
+func TestDuplicateLoginKickExistingStillKicksPlayingSession(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	p.cfg = &config.Config{OnlineMode: true, OnlineModeKickExistingPlayers: true}
+	id := uuid.New()
+	statuses := recordDisconnectStatuses(p)
+
+	playing, playingConn := newStuckPlayer(t, p, "Tepurrrrr", id)
+	close(playingConn.release) // a healthy client: the farewell write returns
+
+	reconnect := newDuplicateLoginTestPlayer(p, newDuplicateLoginTestConn(state.Login), "Tepurrrrr", id)
+	require.True(t, p.registerConnection(reconnect))
+
+	require.EqualValues(t, 1, playingConn.writes.Load())
+	require.True(t, playing.disconnecting.Load())
+	require.Equal(t, ConflictingLoginStatus, <-statuses)
+	require.Equal(t, 1, p.PlayerCount())
+	require.Equal(t, Player(reconnect), p.Player(id))
 }
