@@ -258,7 +258,7 @@ func (c *minecraftConn) startReadLoop() {
 				return true
 			}
 			if isDeadlineExceeded(err) {
-				c.recordDeadlineClose(DeadlineRead, c.readTimeout)
+				c.RecordDeadlineClose(DeadlineRead, c.readTimeout)
 			}
 			return false
 		}
@@ -418,7 +418,7 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	// DeadlineClose.
 	writeDeadline := c.writeTimeout > 0 && isDeadlineExceeded(err)
 	if writeDeadline {
-		c.recordDeadlineClose(DeadlineWrite, c.writeTimeout)
+		c.RecordDeadlineClose(DeadlineWrite, c.writeTimeout)
 	}
 	observeMinecraftTerminalIO(c.c, terminalIODirectionWrite, classifyTerminalWriteError(err), 0, 0)
 	_ = c.Close()
@@ -511,6 +511,14 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 // setters because the libp2p stream underneath has no deadline support. The
 // fallback close below enforces the budget from Gate's side, so the teardown
 // (and the release of the name) no longer depends on the peer reading.
+//
+// Because the budget of the parameterless form comes from the connection
+// (writeBudget -> WriteTimeout), a wrapper must forward WriteTimeout for that
+// form to have a bound at all: a wrapper that forwards nothing is unbounded
+// here, which is why the duplicate-login supersede passes an explicit budget
+// (CloseWithBudget) instead of relying on the connection. Gate's own wrapper,
+// connectedPlayer, forwards it and the budget close it performs stays
+// reportable through it (see DeadlineCloseRecorder).
 func CloseWith(c MinecraftConn, packet proto.Packet) (err error) {
 	return CloseWithBudget(c, packet, 0)
 }
@@ -554,13 +562,19 @@ func CloseWithBudget(c MinecraftConn, packet proto.Packet, budget time.Duration)
 	return
 }
 
-// enforceWriteBudgetOnClose closes c when its configured write budget expires
-// while the caller is still blocked in a farewell write, and returns a func
-// that cancels the fallback once the write returned on its own.
+// enforceWriteBudgetOnClose closes c when its write budget expires while the
+// caller is still blocked in a farewell write, and returns a func that cancels
+// the fallback once the write returned on its own.
 //
 // A connection that honors SetWriteDeadline normally returns first and stops
 // the timer; one that ignores deadlines can otherwise never be closed from this
 // path at all.
+//
+// The cause is recorded through DeadlineCloseRecorder, not on the concrete
+// connection type: c is usually a wrapper (connectedPlayer on the player path),
+// and the caller reads the cause back off that same wrapper with DeadlineClose.
+// A wrapper that does not forward the recorder still gets the bound when the
+// caller passed a budget; it just cannot report why it was closed.
 func enforceWriteBudgetOnClose(c MinecraftConn, budget time.Duration) (stop func()) {
 	if budget <= 0 {
 		budget = writeBudget(c)
@@ -569,17 +583,23 @@ func enforceWriteBudgetOnClose(c MinecraftConn, budget time.Duration) (stop func
 		return func() {}
 	}
 	timer := time.AfterFunc(budget, func() {
-		if mc, ok := c.(*minecraftConn); ok {
-			// Record it as one of Gate's own configured deadlines so the
-			// session handler reports "closed on a budget" and the budget that
-			// fired, rather than an unexplained close.
-			mc.recordDeadlineClose(DeadlineWrite, budget)
-			mc.log.Info("farewell write exceeded the write budget, closing connection",
-				"writeTimeout", budget)
+		if rec, ok := c.(interface{ FarewellBudgetExceeded(time.Duration) }); ok {
+			rec.FarewellBudgetExceeded(budget)
 		}
 		_ = c.Close()
 	})
 	return func() { timer.Stop() }
+}
+
+// FarewellBudgetExceeded records and logs that this connection's farewell write
+// spent its budget, which is what closed it.
+func (c *minecraftConn) FarewellBudgetExceeded(budget time.Duration) {
+	// Record it as one of Gate's own configured deadlines so the session
+	// handler reports "closed on a budget" and the budget that fired, rather
+	// than an unexplained close.
+	c.RecordDeadlineClose(DeadlineWrite, budget)
+	c.log.Info("farewell write exceeded the write budget, closing connection",
+		"writeTimeout", budget)
 }
 
 // writeBudget returns the connection's configured per-flush write budget, or 0

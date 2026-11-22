@@ -669,6 +669,38 @@ func (p *connectedPlayer) WriteTimeout() time.Duration {
 	return 0
 }
 
+// The deadline-close cause has to be forwarded explicitly: connectedPlayer
+// embeds the netmc.MinecraftConn *interface*, and an embedded interface
+// promotes none of netmc's extra methods. Without these three, a close Gate
+// performed on its write budget (the fallback close in netmc.CloseWithBudget,
+// which receives this player as the connection) would be recorded on the
+// wrapped connection but unreadable through the wrapper - and the player's
+// "player has been disconnected" line would name no cause, making our own
+// release of the registration look like the client simply going away.
+var _ netmc.DeadlineCloseRecorder = (*connectedPlayer)(nil)
+
+// RecordDeadlineClose records the first configured deadline that closed this
+// player's connection.
+func (p *connectedPlayer) RecordDeadlineClose(kind netmc.DeadlineKind, budget time.Duration) {
+	if rec, ok := p.MinecraftConn.(netmc.DeadlineCloseRecorder); ok {
+		rec.RecordDeadlineClose(kind, budget)
+	}
+}
+
+// DeadlineCloseCause reports the configured deadline that closed this player's
+// connection, if Gate closed it on one.
+func (p *connectedPlayer) DeadlineCloseCause() (netmc.DeadlineKind, time.Duration, bool) {
+	return netmc.DeadlineClose(p.MinecraftConn)
+}
+
+// FarewellBudgetExceeded forwards the budget close of the farewell write, so it
+// is recorded and logged once for this player.
+func (p *connectedPlayer) FarewellBudgetExceeded(budget time.Duration) {
+	if rec, ok := p.MinecraftConn.(interface{ FarewellBudgetExceeded(time.Duration) }); ok {
+		rec.FarewellBudgetExceeded(budget)
+	}
+}
+
 func (p *connectedPlayer) String() string { return p.profile.Name }
 
 func (p *connectedPlayer) SendLegacyForgeHandshakeResetPacket() {
