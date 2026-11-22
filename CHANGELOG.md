@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.1](https://github.com/minekube/gate/compare/v0.82.0...v0.82.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **proxy:** supersede a session that is already being kicked instead of refusing the reconnect ([#1383](https://github.com/minekube/gate/issues/1383)) ([a048d09](https://github.com/minekube/gate/commit/a048d09fc2d7d675525a7eddd96cc14de34fd67b))
+
 ## [0.82.0](https://github.com/minekube/gate/compare/v0.81.1...v0.82.0) (2026-11-18)
 
 
