@@ -258,7 +258,7 @@ func (c *minecraftConn) startReadLoop() {
 				return true
 			}
 			if isDeadlineExceeded(err) {
-				c.recordDeadlineClose(DeadlineRead, c.readTimeout)
+				c.RecordDeadlineClose(DeadlineRead, c.readTimeout)
 			}
 			return false
 		}
@@ -318,6 +318,11 @@ func (c *minecraftConn) startReadLoop() {
 
 func (c *minecraftConn) Reader() Reader { return c.rd }
 func (c *minecraftConn) Writer() Writer { return c.wr }
+
+// WriteTimeout returns the configured per-flush write budget of this
+// connection. netmc.CloseWith uses it to bound a farewell write even when the
+// underlying socket ignores SetWriteDeadline.
+func (c *minecraftConn) WriteTimeout() time.Duration { return c.writeTimeout }
 
 func (c *minecraftConn) SetAutoReading(enabled bool) {
 	c.log.V(1).Info("update auto reading", "enabled", enabled)
@@ -413,7 +418,7 @@ func (c *minecraftConn) closeOnWriteErr(err error, logKeysAndValues ...any) {
 	// DeadlineClose.
 	writeDeadline := c.writeTimeout > 0 && isDeadlineExceeded(err)
 	if writeDeadline {
-		c.recordDeadlineClose(DeadlineWrite, c.writeTimeout)
+		c.RecordDeadlineClose(DeadlineWrite, c.writeTimeout)
 	}
 	observeMinecraftTerminalIO(c.c, terminalIODirectionWrite, classifyTerminalWriteError(err), 0, 0)
 	_ = c.Close()
@@ -495,10 +500,39 @@ func (c *minecraftConn) closeKnown(markKnown bool) (err error) {
 }
 
 // CloseWith closes the connection after writing the packet.
+//
+// The farewell write must never be able to hold the close: the close is what
+// runs the session handler's Disconnected, and for a player connection that
+// teardown is what releases the registration (unregisterConnection). A peer
+// that stopped reading blocks the write, and the connection's own write budget
+// cannot always end it - a wrapper whose SetWriteDeadline reports success
+// without arming anything blocks forever. The Connect edge hands Gate exactly
+// such a connection: moxy's tunnel streamConn returns nil from the deadline
+// setters because the libp2p stream underneath has no deadline support. The
+// fallback close below enforces the budget from Gate's side, so the teardown
+// (and the release of the name) no longer depends on the peer reading.
+//
+// Because the budget of the parameterless form comes from the connection
+// (writeBudget -> WriteTimeout), a wrapper must forward WriteTimeout for that
+// form to have a bound at all: a wrapper that forwards nothing is unbounded
+// here, which is why the duplicate-login supersede passes an explicit budget
+// (CloseWithBudget) instead of relying on the connection. Gate's own wrapper,
+// connectedPlayer, forwards it and the budget close it performs stays
+// reportable through it (see DeadlineCloseRecorder).
 func CloseWith(c MinecraftConn, packet proto.Packet) (err error) {
+	return CloseWithBudget(c, packet, 0)
+}
+
+// CloseWithBudget is CloseWith with an explicit bound on the farewell write.
+// A budget of 0 uses the connection's own write budget (see CloseWith); a
+// caller that must not wait for a client that stopped reading - the duplicate
+// login supersede, where a login is waiting on this close - passes a short one.
+func CloseWithBudget(c MinecraftConn, packet proto.Packet, budget time.Duration) (err error) {
 	if Closed(c) {
 		return ErrClosedConn
 	}
+	stopFarewellBudget := enforceWriteBudgetOnClose(c, budget)
+	defer stopFarewellBudget()
 	defer func() {
 		err = c.Close()
 	}()
@@ -526,6 +560,55 @@ func CloseWith(c MinecraftConn, packet proto.Packet) (err error) {
 	//}()
 	//}
 	return
+}
+
+// enforceWriteBudgetOnClose closes c when its write budget expires while the
+// caller is still blocked in a farewell write, and returns a func that cancels
+// the fallback once the write returned on its own.
+//
+// A connection that honors SetWriteDeadline normally returns first and stops
+// the timer; one that ignores deadlines can otherwise never be closed from this
+// path at all.
+//
+// The cause is recorded through DeadlineCloseRecorder, not on the concrete
+// connection type: c is usually a wrapper (connectedPlayer on the player path),
+// and the caller reads the cause back off that same wrapper with DeadlineClose.
+// A wrapper that does not forward the recorder still gets the bound when the
+// caller passed a budget; it just cannot report why it was closed.
+func enforceWriteBudgetOnClose(c MinecraftConn, budget time.Duration) (stop func()) {
+	if budget <= 0 {
+		budget = writeBudget(c)
+	}
+	if budget <= 0 {
+		return func() {}
+	}
+	timer := time.AfterFunc(budget, func() {
+		if rec, ok := c.(interface{ FarewellBudgetExceeded(time.Duration) }); ok {
+			rec.FarewellBudgetExceeded(budget)
+		}
+		_ = c.Close()
+	})
+	return func() { timer.Stop() }
+}
+
+// FarewellBudgetExceeded records and logs that this connection's farewell write
+// spent its budget, which is what closed it.
+func (c *minecraftConn) FarewellBudgetExceeded(budget time.Duration) {
+	// Record it as one of Gate's own configured deadlines so the session
+	// handler reports "closed on a budget" and the budget that fired, rather
+	// than an unexplained close.
+	c.RecordDeadlineClose(DeadlineWrite, budget)
+	c.log.Info("farewell write exceeded the write budget, closing connection",
+		"writeTimeout", budget)
+}
+
+// writeBudget returns the connection's configured per-flush write budget, or 0
+// when the connection cannot name one.
+func writeBudget(c MinecraftConn) time.Duration {
+	if b, ok := c.(interface{ WriteTimeout() time.Duration }); ok {
+		return b.WriteTimeout()
+	}
+	return 0
 }
 
 // KnownDisconnect returns true if the connection was or will be expectedly closed by the server.

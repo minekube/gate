@@ -164,6 +164,7 @@ type connectedPlayer struct {
 	mu                   sync.RWMutex // Protects following fields
 	connectedServer_     *serverConnection
 	connInFlight         *serverConnection
+	connInFlightStart    time.Time // when connInFlight was set; zero if none
 	settings             player.Settings
 	clientSettingsPacket *packet.ClientSettings
 	modInfo              *modinfo.ModInfo
@@ -617,6 +618,14 @@ func (p *connectedPlayer) Username() string { return p.profile.Name }
 func (p *connectedPlayer) ID() uuid.UUID { return p.profile.ID }
 
 func (p *connectedPlayer) Disconnect(reason component.Component) {
+	p.disconnectWithBudget(reason, 0)
+}
+
+// disconnectWithBudget disconnects the player, bounding the farewell write by
+// budget (0 = the connection's own write budget). A caller that cannot afford
+// to wait for a client that stopped reading - a duplicate login superseding
+// this session - passes a short budget.
+func (p *connectedPlayer) disconnectWithBudget(reason component.Component, budget time.Duration) {
 	if !p.Active() {
 		return
 	}
@@ -633,8 +642,62 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		r = b.String()
 	}
 
-	if netmc.CloseWith(p, packet.NewDisconnect(reason, p.Protocol(), p.State().State)) == nil {
+	if netmc.CloseWithBudget(p, packet.NewDisconnect(reason, p.Protocol(), p.State().State), budget) == nil {
 		p.log.Info("player has been disconnected", "reason", r)
+		return
+	}
+	// The close may still have completed: netmc bounds the farewell write with
+	// the connection's write budget, so a client that stopped reading no longer
+	// keeps the registration alive. Report that episode the same way, naming the
+	// budget that ended it instead of leaving the disconnect unlogged.
+	if !p.Active() {
+		attrs := []any{"reason", r}
+		if kind, budget, ok := netmc.DeadlineClose(p.MinecraftConn); ok {
+			attrs = append(attrs, "closeKind", string(kind), "budget", budget)
+		}
+		p.log.Info("player has been disconnected", attrs...)
+	}
+}
+
+// WriteTimeout reports the client connection's per-flush write budget, so
+// netmc.CloseWith can bound a farewell write even when the underlying socket
+// ignores SetWriteDeadline (a wrapped tunnel stream on the Connect edge).
+func (p *connectedPlayer) WriteTimeout() time.Duration {
+	if b, ok := p.MinecraftConn.(interface{ WriteTimeout() time.Duration }); ok {
+		return b.WriteTimeout()
+	}
+	return 0
+}
+
+// The deadline-close cause has to be forwarded explicitly: connectedPlayer
+// embeds the netmc.MinecraftConn *interface*, and an embedded interface
+// promotes none of netmc's extra methods. Without these three, a close Gate
+// performed on its write budget (the fallback close in netmc.CloseWithBudget,
+// which receives this player as the connection) would be recorded on the
+// wrapped connection but unreadable through the wrapper - and the player's
+// "player has been disconnected" line would name no cause, making our own
+// release of the registration look like the client simply going away.
+var _ netmc.DeadlineCloseRecorder = (*connectedPlayer)(nil)
+
+// RecordDeadlineClose records the first configured deadline that closed this
+// player's connection.
+func (p *connectedPlayer) RecordDeadlineClose(kind netmc.DeadlineKind, budget time.Duration) {
+	if rec, ok := p.MinecraftConn.(netmc.DeadlineCloseRecorder); ok {
+		rec.RecordDeadlineClose(kind, budget)
+	}
+}
+
+// DeadlineCloseCause reports the configured deadline that closed this player's
+// connection, if Gate closed it on one.
+func (p *connectedPlayer) DeadlineCloseCause() (netmc.DeadlineKind, time.Duration, bool) {
+	return netmc.DeadlineClose(p.MinecraftConn)
+}
+
+// FarewellBudgetExceeded forwards the budget close of the farewell write, so it
+// is recorded and logged once for this player.
+func (p *connectedPlayer) FarewellBudgetExceeded(budget time.Duration) {
+	if rec, ok := p.MinecraftConn.(interface{ FarewellBudgetExceeded(time.Duration) }); ok {
+		rec.FarewellBudgetExceeded(budget)
 	}
 }
 
@@ -676,6 +739,7 @@ func (p *connectedPlayer) setConnectedServer(conn *serverConnection) {
 	p.tryIndex = 0 // reset since we got connected to a server
 	if conn == p.connInFlight {
 		p.connInFlight = nil
+		p.connInFlightStart = time.Time{}
 	}
 	p.mu.Unlock()
 }
