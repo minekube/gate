@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.3](https://github.com/minekube/gate/compare/v0.82.2...v0.82.3) (2026-11-22)
+
+
+### Bug Fixes
+
+* **bedrock:** warn when a dot usernameFormat will be rewritten to an underscore ([#1384](https://github.com/minekube/gate/issues/1384)) ([73351d0](https://github.com/minekube/gate/commit/73351d02ba0b7e986a3f60b69d2eaf429fc7f5c5))
+
 ## [0.82.2](https://github.com/minekube/gate/compare/v0.82.1...v0.82.2) (2026-11-22)
 
 
