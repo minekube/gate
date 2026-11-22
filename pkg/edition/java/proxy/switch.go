@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/robinbraemer/event"
 	. "go.minekube.com/common/minecraft/color"
@@ -373,12 +374,18 @@ func (p *connectedPlayer) resetInFlightConnection() {
 // without locking
 func (p *connectedPlayer) resetInFlightConnection0() {
 	p.connInFlight = nil
+	p.connInFlightStart = time.Time{}
 }
 
 func (p *connectedPlayer) setInFlightConnection(s *serverConnection) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.connInFlight = s
+	if s == nil {
+		p.connInFlightStart = time.Time{}
+		return
+	}
+	p.connInFlightStart = time.Now()
 }
 
 func (c *connectionRequest) Server() RegisteredServer {
