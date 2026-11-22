@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.82.2](https://github.com/minekube/gate/compare/v0.82.1...v0.82.2) (2026-11-22)
+
+
+### Bug Fixes
+
+* **netmc:** bound the farewell write so a stuck client cannot hold the close ([5798ed8](https://github.com/minekube/gate/commit/5798ed85d3c5b87c03ff14e1bd2081561d28db0a))
+* **proxy:** release a registration whose move outlived its budget ([b4aee30](https://github.com/minekube/gate/commit/b4aee308bd30922b8896583e80f3207134f08f1a))
+* **proxy:** release registrations a stuck farewell write or a parked move keeps alive ([4ed1db1](https://github.com/minekube/gate/commit/4ed1db107942bf9f51a4583353bae93b286d720c))
+* **proxy:** report the budget close through the player connection ([6304c61](https://github.com/minekube/gate/commit/6304c6172f731fe2fbc78fe30e8e6ae4fbad5a2c))
+
 ## [0.82.1](https://github.com/minekube/gate/compare/v0.82.0...v0.82.1) (2026-11-22)
 
 
