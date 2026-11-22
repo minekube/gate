@@ -147,8 +147,12 @@ type connectedPlayer struct {
 	// This field is true if this connection is being disconnected
 	// due to another connection logging in with the same GameProfile.
 	disconnectDueToDuplicateConnection atomic.Bool
-	clientsideChannels                 *sets.CappedSet[string]
-	pendingConfigurationSwitch         bool
+	// disconnecting is set as soon as the proxy starts kicking this player
+	// (Disconnect). From then on the registration no longer describes a live
+	// session, even while the farewell write is still in flight or stuck.
+	disconnecting              atomic.Bool
+	clientsideChannels         *sets.CappedSet[string]
+	pendingConfigurationSwitch bool
 
 	tabList        internaltablist.InternalTabList // Player's tab list
 	bossBarManager *bossBarManager                 // Boss bar manager for 1.20.2+
@@ -613,6 +617,11 @@ func (p *connectedPlayer) Disconnect(reason component.Component) {
 		return
 	}
 	reason = normalizeDisconnectReason(reason)
+	// Mark the kick before the farewell write: CloseWith only closes the
+	// connection (and so only runs the teardown that unregisters the player)
+	// after that write returns, and a client that stopped reading can hold it
+	// for the whole write budget, or forever on a build without one.
+	p.disconnecting.Store(true)
 
 	var r string
 	b := new(strings.Builder)

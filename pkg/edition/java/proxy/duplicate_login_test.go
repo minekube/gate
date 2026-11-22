@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robinbraemer/event"
@@ -11,6 +13,7 @@ import (
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/profile"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
+	"go.minekube.com/gate/pkg/gate/proto"
 	"go.minekube.com/gate/pkg/util/uuid"
 )
 
@@ -214,4 +217,109 @@ func TestDuplicateLoginSupersedeKeepsSessionIDStable(t *testing.T) {
 	require.True(t, p.registerConnection(reconnect))
 	require.Equal(t, firstSessionID, p.sessionID(),
 		"superseding a session must not reset the proxy session id")
+}
+
+// stuckWriteConn is a client connection that stopped reading: the farewell
+// packet of a kick blocks in WritePacket until the test releases it, like a
+// write to a half-open client with no write deadline installed.
+type stuckWriteConn struct {
+	*duplicateLoginTestConn
+	writes  atomic.Int32
+	entered chan struct{}
+	release chan struct{}
+}
+
+func newStuckWriteConn(registry *state.Registry) *stuckWriteConn {
+	return &stuckWriteConn{
+		duplicateLoginTestConn: newDuplicateLoginTestConn(registry),
+		entered:                make(chan struct{}, 4),
+		release:                make(chan struct{}),
+	}
+}
+
+func (c *stuckWriteConn) WritePacket(proto.Packet) error {
+	c.writes.Add(1)
+	c.entered <- struct{}{}
+	<-c.release
+	return nil
+}
+
+// Production evidence (Connect edge, 2026-11-21): a player was kicked from the
+// backend with "Internal server connection error" at 13:27:15 and from then on
+// every login for that name was refused with "You are already connected to this
+// server!" until the edge machine was replaced 21 hours later. The kick path
+// (Disconnect -> CloseWith) closes the connection, and so runs the teardown
+// that unregisters the player, only after the farewell write returns; that
+// write never returned, and the registration still looked like a playing
+// session.
+//
+// A session the proxy has already started to kick is on its way out. A
+// reconnect must take over its registration immediately instead of waiting for
+// the farewell write, and it must not queue a second disconnect behind the
+// stuck write on the login goroutine.
+func TestDuplicateLoginSupersedesSessionWhoseKickIsStuck(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	id := uuid.New()
+
+	stuckConn := newStuckWriteConn(state.Play)
+	stuck := newDuplicateLoginTestPlayer(p, stuckConn, "Tepurrrrr", id)
+	require.True(t, p.registerConnection(stuck))
+
+	kickDone := make(chan struct{})
+	go func() {
+		defer close(kickDone)
+		stuck.Disconnect(internalServerConnectionError)
+	}()
+	select {
+	case <-stuckConn.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the kick never reached the farewell write")
+	}
+
+	reconnect := newDuplicateLoginTestPlayer(p, newDuplicateLoginTestConn(state.Login), "Tepurrrrr", id)
+	require.True(t, p.canRegisterConnection(reconnect),
+		"a reconnect must not be refused while the previous session's kick is in flight")
+
+	registered := make(chan bool, 1)
+	go func() { registered <- p.registerConnection(reconnect) }()
+	select {
+	case ok := <-registered:
+		require.True(t, ok)
+	case <-time.After(2 * time.Second):
+		t.Fatal("the reconnect blocked behind the stuck farewell write")
+	}
+
+	require.Equal(t, 1, p.PlayerCount())
+	require.Equal(t, Player(reconnect), p.PlayerByName("Tepurrrrr"))
+	require.Equal(t, Player(reconnect), p.Player(id))
+	require.EqualValues(t, 1, stuckConn.writes.Load(),
+		"the superseded session must not be disconnected a second time")
+
+	// The stuck write finally returns: the old session closes and its teardown
+	// must not evict the connection that took over the registration.
+	close(stuckConn.release)
+	select {
+	case <-kickDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the kick did not finish after its write returned")
+	}
+	p.unregisterConnection(stuck)
+	require.Equal(t, 1, p.PlayerCount())
+	require.Equal(t, Player(reconnect), p.PlayerByName("Tepurrrrr"))
+}
+
+// Only a session the proxy is actually kicking is superseded: a connection that
+// is merely idle in play stays protected.
+func TestDuplicateLoginStillRefusedForPlayingSessionThatIsNotBeingKicked(t *testing.T) {
+	p := newDuplicateLoginTestProxy()
+	id := uuid.New()
+
+	playing := newDuplicateLoginTestPlayer(p, newStuckWriteConn(state.Play), "Tepurrrrr", id)
+	require.True(t, p.registerConnection(playing))
+	require.False(t, playing.disconnecting.Load())
+
+	duplicate := newDuplicateLoginTestPlayer(p, newDuplicateLoginTestConn(state.Login), "Tepurrrrr", id)
+	require.False(t, p.canRegisterConnection(duplicate))
+	require.False(t, p.registerConnection(duplicate))
+	require.Equal(t, Player(playing), p.PlayerByName("Tepurrrrr"))
 }
