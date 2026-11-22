@@ -417,6 +417,7 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	validateProxyProtocol(c, e, w)
 
 	validateBackendFloodgate(c, e)
+	warnBedrockDotPrefixRewrite(c, w)
 	validateOfflineModeUsernameBlacklist(c, e)
 	// Always validated, also in Lite mode: a typo must fail startup rather than
 	// silently not match once the proxy is running in full mode.
@@ -600,6 +601,23 @@ func validateProxyProtocol(c *Config, e, w func(string, ...any)) {
 				"List only the proxies in front of Gate.", prefix, c.Bind)
 		}
 	}
+}
+
+// warnBedrockDotPrefixRewrite reports a usernameFormat that starts with a dot while
+// bedrock.preserveDotPrefix is off. Gate normalizes Bedrock names to Java's
+// [A-Za-z0-9_] alphabet at login, so ".%s" silently becomes "_%s" and the operator
+// sees the configured prefix "overridden" with no hint why.
+func warnBedrockDotPrefixRewrite(c *Config, w func(string, ...any)) {
+	if !c.Bedrock.Enabled || c.Bedrock.PreserveDotPrefix {
+		return
+	}
+	if !strings.HasPrefix(c.Bedrock.UsernameFormat, ".") {
+		return
+	}
+	w("bedrock.usernameFormat %q starts with a dot, but Gate rewrites it to an underscore "+
+		"(\"_\") unless bedrock.preserveDotPrefix is true. Set bedrock.preserveDotPrefix: true "+
+		"if your backends accept a leading dot (Paper does, vanilla does not) and restart Gate; "+
+		"bedrock settings are not applied by a live config reload.", c.Bedrock.UsernameFormat)
 }
 
 func validateBackendFloodgate(c *Config, e func(string, ...any)) {
