@@ -1005,13 +1005,27 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 		if c.OnlineModeKickExistingPlayers {
 			existing := p.playerIDs[player.ID()]
 			if existing != nil && existing != player {
+				existing.disconnectDueToDuplicateConnection.Store(true)
+				if existing.disconnecting.Load() {
+					// Its kick is already in flight. Disconnecting again would
+					// queue behind the same farewell write, which may be stuck on
+					// a client that stopped reading, and stall this login on its
+					// goroutine. Release the slot instead; the old session's
+					// teardown is value-scoped and cannot evict the new one.
+					p.removePlayerRegistration(existing)
+					p.muP.Unlock()
+					p.log.Info("superseding registration of player that is already being disconnected",
+						"player", existing.Username(),
+						"id", existing.ID(),
+						"newConnection", player.Username())
+					continue
+				}
 				// Make sure we disconnect existing duplicate
 				// player connection before we register the new one.
 				//
 				// Disconnecting the existing connection will call p.unregisterConnection in the
 				// teardown needing the p.muP.Lock() so we unlock.
 				p.muP.Unlock()
-				existing.disconnectDueToDuplicateConnection.Store(true)
 				existing.Disconnect(&component.Translation{
 					Key: "multiplayer.disconnect.duplicate_login",
 				})
@@ -1049,6 +1063,9 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 					if registry := existing.State(); registry != nil {
 						stateName = registry.State.String()
 					}
+					// Whether the old session is kicked now or already was, its
+					// teardown reports a conflict, like any superseded session.
+					existing.disconnectDueToDuplicateConnection.Store(true)
 					alreadyDisconnecting := existing.disconnecting.Load()
 					p.log.Info("superseding abandoned registration of player",
 						"player", existing.Username(),
@@ -1062,7 +1079,6 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 						// stall the newer login, which is what this path avoids.
 						continue
 					}
-					existing.disconnectDueToDuplicateConnection.Store(true)
 					existing.Disconnect(&component.Translation{
 						Key: "multiplayer.disconnect.duplicate_login",
 					})

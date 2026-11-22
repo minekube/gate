@@ -248,6 +248,34 @@ log:
       closing) is a Gate-side addition for a topology upstream does not run: Gate is an extra proxy hop
       in front of a server it did not author, so a command tree it cannot parse must not be a
       session-fatal event. No upstream behavior was ported, so the verified sync point is unchanged.
+  - date: 2026-11-22
+    kind: review
+    upstream_range: a7581821fb72a3eb5011f725d8876c91aa7843e1..843a47e2a38325309cd66133149fc9a984f76bb8
+    upstream_commit_count: 11
+    ported: none
+    summary: >-
+      Upstream check for the Gate duplicate-login change that supersedes a registration whose session
+      the proxy is already kicking (a player kicked with "Internal server connection error" stayed
+      refused with "You are already connected to this server!" for 21 hours on one Connect edge
+      machine, because Gate's kick writes the farewell packet before closing and the close is what
+      unregisters the player, and that write never returned). PaperMC/Velocity@dev/3.0.0 still
+      resolves to 843a47e2 - the same head and the same 11 commits as the review entries above - so
+      there was no new upstream work to assess. The comparison this change needed, read at 843a47e2:
+      VelocityServer.registerConnection with onlineModeKickExistingPlayers=false uses putIfAbsent and
+      refuses a colliding name or uuid with no notion of a session being disconnected, so upstream
+      would refuse this reconnect too. Upstream is not immune to a kick whose write does not finish:
+      MinecraftConnection.closeWith does writeAndFlush(msg).addListener(CLOSE), so the channel
+      closes, and channelInactive unregisters the player, only after that write completes or
+      something else closes the channel (not verified here which upstream timeout does that). What
+      differs is that ConnectedPlayer.disconnect only schedules disconnect0 on the connection's event
+      loop, so the caller, which in Gate is the new login's goroutine, is never blocked behind the
+      write. With onlineModeKickExistingPlayers=true upstream calls
+      existing.disconnect(duplicate_login) (also asynchronous) and then overwrites connectionsByName
+      and connectionsByUuid without waiting for the old session to unregister; Gate's kick-existing
+      branch now matches that outcome for a session that is already being kicked by releasing the
+      slot instead of issuing a second synchronous Disconnect. The supersede rule itself is a
+      Gate-side addition for Gate's synchronous CloseWith, not a port of an upstream commit, so the
+      verified sync point is unchanged.
 
 ```
 

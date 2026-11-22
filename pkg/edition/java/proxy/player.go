@@ -150,6 +150,10 @@ type connectedPlayer struct {
 	// disconnecting is set as soon as the proxy starts kicking this player
 	// (Disconnect). From then on the registration no longer describes a live
 	// session, even while the farewell write is still in flight or stuck.
+	// netmc.KnownDisconnect is not a substitute: it only recognizes netmc's own
+	// connection type, so it reports false for a connectedPlayer (which wraps
+	// the connection) and for any substituted MinecraftConn, and it also turns
+	// true for every known Close, not only a kick.
 	disconnecting              atomic.Bool
 	clientsideChannels         *sets.CappedSet[string]
 	pendingConfigurationSwitch bool
