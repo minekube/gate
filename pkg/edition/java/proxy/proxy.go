@@ -1055,6 +1055,11 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 				// connection (unregisterConnection is value-scoped), and the
 				// newer connection owns the registration from now on.
 				for _, existing := range superseded {
+					// Set the conflict flag before releasing the registration: the
+					// teardown takes muP before it reads the flag, so it cannot
+					// report a plain cancellation if a farewell write completes
+					// between the release and the Disconnect below.
+					existing.disconnectDueToDuplicateConnection.Store(true)
 					p.removePlayerRegistration(existing)
 				}
 				p.muP.Unlock()
@@ -1063,9 +1068,6 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 					if registry := existing.State(); registry != nil {
 						stateName = registry.State.String()
 					}
-					// Whether the old session is kicked now or already was, its
-					// teardown reports a conflict, like any superseded session.
-					existing.disconnectDueToDuplicateConnection.Store(true)
 					alreadyDisconnecting := existing.disconnecting.Load()
 					p.log.Info("superseding abandoned registration of player",
 						"player", existing.Username(),
