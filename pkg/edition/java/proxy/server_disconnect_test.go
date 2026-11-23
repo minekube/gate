@@ -2,14 +2,84 @@ package proxy
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net"
 	"testing"
 	"time"
 
+	"go.minekube.com/gate/pkg/edition/java/config"
 	"go.minekube.com/gate/pkg/edition/java/netmc"
 	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"go.minekube.com/gate/pkg/gate/proto"
+	"go.minekube.com/gate/pkg/util/uuid"
 )
+
+// A dial can succeed after player teardown has already tried to close the
+// in-flight connection. That late socket must be closed, never published or
+// sent a handshake. Force the ordering in the dialer instead of racing sleeps.
+func TestServerConnectionClosesDialResultAfterTeardown(t *testing.T) {
+	proxySide, backendSide := net.Pipe()
+	t.Cleanup(func() { _ = proxySide.Close(); _ = backendSide.Close() })
+	if err := backendSide.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+
+	p := newDuplicateLoginTestProxy()
+	cfg := config.DefaultConfig
+	cfg.Forwarding.Mode = config.NoneForwardingMode
+	p.cfg = &cfg
+	clientConn := newDuplicateLoginTestConn(state.Play)
+	t.Cleanup(func() { _ = clientConn.Close() })
+	player := newDuplicateLoginTestPlayer(p, clientConn, "ForgeCancel", uuid.New())
+	player.virtualHost = &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 25565}
+	if !p.registerConnection(player) {
+		t.Fatal("could not register player")
+	}
+	s := newServerConnection(newRegisteredServer(&dynamicDialServer{
+		name: "forge",
+		addr: &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 25565},
+		dial: func(context.Context, Player) (net.Conn, error) {
+			player.teardown()
+			return proxySide, nil
+		},
+	}), nil, player)
+	player.setInFlightConnection(s)
+
+	done := make(chan struct{})
+	var connectErr error
+	go func() {
+		_, connectErr = s.connect(context.Background())
+		close(done)
+	}()
+	t.Cleanup(func() {
+		_ = backendSide.Close()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Error("connect did not return after closing the backend")
+		}
+	})
+
+	var buf [1]byte
+	if n, err := backendSide.Read(buf[:]); n != 0 || !errors.Is(err, io.EOF) {
+		t.Fatalf("backend received (%d bytes, %v), want EOF without a handshake after teardown", n, err)
+	}
+	select {
+	case <-done:
+		if !errors.Is(connectErr, netmc.ErrClosedConn) {
+			t.Fatalf("connect error = %v, want ErrClosedConn", connectErr)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("connect did not return; socket close may be holding the server lock")
+	}
+	if _, connected := s.ensureConnected(); connected {
+		t.Error("late backend socket was published after teardown")
+	}
+	if p.PlayerCount() != 0 {
+		t.Error("player registration survived teardown")
+	}
+}
 
 // serverStateReadingHandler mimics what every backend session handler does in
 // Disconnected(): it reads serverConnection state while netmc is still inside
