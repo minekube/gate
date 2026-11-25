@@ -9,7 +9,7 @@
     "@buf/minekube_gate.connectrpc_es": "^1.6.1-20241118150055-50fffb007499.1",
     "@bufbuild/buf": "^1.47.2",
     "@bufbuild/protobuf": "^1.0.0",
-    "@connectrpc/connect": "^1.0.0",
+    "@connectrpc/connect": "^2.0.0",
     "@connectrpc/connect-web": "^1.6.1"
   }
 }
