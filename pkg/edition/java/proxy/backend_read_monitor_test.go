@@ -124,7 +124,7 @@ func TestSilentBackendStallIsReported(t *testing.T) {
 		t.Fatal("backend was never contacted by the proxy")
 	}
 
-	line := logs.waitFor(t, "has not sent a single packet", 10*time.Second)
+	line := logs.waitFor(t, "never answered", 10*time.Second)
 	for _, want := range []string{
 		`"backend"="lobby"`,
 		`"address"="` + backendListener.Addr().String() + `"`,
@@ -138,7 +138,7 @@ func TestSilentBackendStallIsReported(t *testing.T) {
 			t.Errorf("stall diagnostic missing %q:\n%s", want, line)
 		}
 	}
-	if got := logs.countContaining("has not sent a single packet"); got != 1 {
+	if got := logs.countContaining("never answered"); got != 1 {
 		t.Errorf("stall diagnostic logged %d times, want exactly 1:\n%s", got, strings.Join(logs.snapshot(), "\n"))
 	}
 }
@@ -236,10 +236,9 @@ func TestBackendStallIsNotReportedWhenBackendSpoke(t *testing.T) {
 	}
 	s.backendConnectedAt = time.Now() // the backend just spoke
 
-	// Neither the teardown report nor the while-stalled report may fire: the
-	// backend answered, so its connection ending is not a stall.
+	// The teardown report must not fire: the backend answered, so its
+	// connection ending is not a stall.
 	s.reportStalledBackend(log)
-	s.reportSilentBackend(log)
 	if got := logs.countContaining("backend server"); got != 0 {
 		t.Errorf("answered backend must not be reported, got %d lines:\n%s", got, strings.Join(logs.snapshot(), "\n"))
 	}

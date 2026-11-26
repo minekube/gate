@@ -41,6 +41,27 @@ MOTD and player count. In full proxy mode Gate answers the ping itself with `sta
 config to get the MOTD you want.
 :::
 
+::: tip The backend's own mod data survives Gate's server-list answer
+A Forge or NeoForge backend advertises itself inside its status response: `forgeData` for FML2/FML3,
+`neoforgeData` for NeoForge, plus any other provider-specific member. Gate models only `version`,
+`players`, `description`, `favicon` and `modinfo`, and it used to drop everything else when it re-encoded a
+status it had resolved from the backend - a real Forge 1.20.1 backend's 376-byte status came back as a
+136-byte vanilla one, so modded clients lost the mod and channel list Gate never modelled. Since v0.77.1 Gate
+keeps the members it does not model and merges them back verbatim; modelled members still win, so a
+stale value cannot shadow `version`, `players` or `description`, and nothing is synthesized for a vanilla
+backend. In Lite mode the ping is proxied unchanged and was never affected.
+:::
+
+::: tip A command tree Gate cannot decode no longer ends the session
+Gate parses `minecraft:commands` only to inject its own `/server`, `/glist` and `/send`, so a modded
+backend naming a Brigadier argument type outside the vanilla table makes that tree undecodable. Before v0.76.3
+the decode error propagated out of the packet decoder and closed the backend connection about a
+second after placement - the player saw `Internal server connection error` and the backend logged nothing
+(measured with Forge 1.20.1, protocol 763, Forge 47.4.10). Gate now keeps the raw body and forwards it
+byte-for-byte, so the session survives. Two consequences worth knowing: proxy commands are not injected
+into such a tree, and `PlayerAvailableCommandsEvent` is not fired for it.
+:::
+
 ## Fabric Server Setup
 
 Gate works with Fabric out of the box, but you should add support for player info forwarding using a mod like [FabricProxy-Lite](https://modrinth.com/mod/fabricproxy-lite) (which supports Velocity modern forwarding).

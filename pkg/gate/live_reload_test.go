@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+	bedrockconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
+	jconfig "go.minekube.com/gate/pkg/edition/java/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/util/configutil"
@@ -213,4 +215,73 @@ func liveReloadConfig() *config.Config {
 		CachePingTTL: configutil.Duration(30 * time.Second),
 	}}
 	return &c
+}
+
+// TestGateApplyLiveConfigRejectsBedrockChangesAsRestartRequired pins the
+// documented truth in .web/docs/guide/config/reload.md: the config file watcher
+// applies only Lite routes in an already-enabled Lite config, so a bedrock
+// change - notably the backendFloodgate trust switch a support case hinged on -
+// is rejected as restart-required and the running proxy keeps the old value.
+func TestGateApplyLiveConfigRejectsBedrockChangesAsRestartRequired(t *testing.T) {
+	initial := liveReloadConfig()
+	initial.Config.Bedrock.Enabled = true
+	initial.Config.Bedrock.GeyserListenAddr = "127.0.0.1:25566"
+	initial.Config.Bedrock.UsernameFormat = ".%s"
+	initial.Config.Bedrock.FloodgateKeyPath = filepath.Join(t.TempDir(), "floodgate.pem")
+	require.NoError(t, os.WriteFile(initial.Config.Bedrock.FloodgateKeyPath, []byte("key"), 0o600))
+	initial.Config.Servers = map[string]string{"lobby": "backend.example.test:25565"}
+	initial.Config.Forwarding.Mode = jconfig.VelocityForwardingMode
+	initial.Config.Bedrock.BackendFloodgate = bedrockconfig.BackendFloodgate{
+		Enabled:        true,
+		AllowedServers: []string{"lobby"},
+	}
+	_, errs := initial.Validate()
+	require.Empty(t, errs, "the fixture must be a valid config, or the rejection would be 'invalid'")
+
+	g, err := New(Options{Config: initial})
+	require.NoError(t, err)
+
+	// floodgateKeyPath must stay a readable file, otherwise the candidate is
+	// rejected as "invalid" before the live-safe check is even reached.
+	otherKeyPath := filepath.Join(t.TempDir(), "other.pem")
+	require.NoError(t, os.WriteFile(otherKeyPath, []byte("key"), 0o600))
+
+	tests := map[string]func(*config.Config){
+		"backendFloodgate.enabled": func(c *config.Config) {
+			c.Config.Bedrock.BackendFloodgate = bedrockconfig.BackendFloodgate{
+				Enabled:        false,
+				AllowedServers: []string{"lobby"},
+			}
+		},
+		"backendFloodgate.allowedServers": func(c *config.Config) {
+			c.Config.Bedrock.BackendFloodgate.AllowedServers = []string{"lobby", "survival"}
+			c.Config.Servers["survival"] = "backend.example.test:25566"
+		},
+		"floodgateKeyPath": func(c *config.Config) {
+			c.Config.Bedrock.FloodgateKeyPath = otherKeyPath
+		},
+		"geyserListenAddr": func(c *config.Config) {
+			c.Config.Bedrock.GeyserListenAddr = "127.0.0.1:25567"
+		},
+		"usernameFormat": func(c *config.Config) {
+			c.Config.Bedrock.UsernameFormat = "_%s"
+		},
+		"enabled": func(c *config.Config) {
+			c.Config.Bedrock.Enabled = false
+			c.Config.Bedrock.BackendFloodgate.Enabled = false
+		},
+	}
+	for name, mutate := range tests {
+		t.Run(name, func(t *testing.T) {
+			candidate := *initial
+			mutate(&candidate)
+
+			result := g.ApplyLiveConfig(&candidate)
+			require.False(t, result.Applied, "a bedrock change must not be applied live")
+			require.Equal(t, "unsupported", result.Code,
+				"the watcher reports code %q, which its log line surfaces as reason=unsupported", result.Code)
+			require.Equal(t, initial.Config.Bedrock, g.Java().Config().Bedrock,
+				"the running bedrock config must stay at the last applied value")
+		})
+	}
 }

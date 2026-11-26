@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -33,11 +34,36 @@ var placeholderRequirement = brigodier.RequireFn(func(context.Context) bool { re
 
 type AvailableCommands struct {
 	RootNode *brigodier.RootCommandNode
+
+	// Raw is the command tree body exactly as the backend sent it. It is only set
+	// when the tree could not be decoded (see DecodeErr), and the packet is then
+	// forwarded to the client verbatim instead of being re-encoded.
+	//
+	// A proxy hop does not need to understand a command tree to forward it: Gate
+	// only parses it to inject proxy commands (announceProxyCommands) and to fire
+	// PlayerAvailableCommandsEvent. A modded backend may name argument types that
+	// are not in the vanilla table (Forge and CrossStitch-style mods register
+	// their own), and a tree Gate cannot parse can also be one whose layout
+	// desyncs our codecs. Neither is a reason to tear the player's session down,
+	// which is what closing the backend connection does.
+	Raw []byte
+	// DecodeErr reports why the tree stayed undecoded. It is nil when RootNode is
+	// set.
+	DecodeErr error
 }
 
 var _ proto.Packet = (*AvailableCommands)(nil)
 
 func (a *AvailableCommands) Encode(c *proto.PacketContext, wr io.Writer) (err error) {
+	if a.Raw != nil {
+		// Undecoded tree: hand the client the bytes the backend produced.
+		_, err = wr.Write(a.Raw)
+		return err
+	}
+	if a.RootNode == nil {
+		return errors.New("available commands packet has neither a decoded root node nor raw bytes")
+	}
+
 	// Assign all the children an index.
 	var childrenQueue deque.Deque[brigodier.CommandNode]
 	childrenQueue.PushFront(a.RootNode)
@@ -150,7 +176,27 @@ func encodeNode(wr io.Writer, protocol proto.Protocol, node brigodier.CommandNod
 	return nil
 }
 
+// Decode decodes the backend's command tree. A tree this proxy cannot parse is
+// not fatal: the raw bytes are kept in Raw so the packet can be forwarded to the
+// client untouched (Encode writes them verbatim), and DecodeErr records why the
+// tree stayed undecoded.
 func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
+	// The frame payload is already buffered in memory by the decoder, so buffering
+	// it here costs one bounded copy and lets an undecodable tree be forwarded
+	// without losing the bytes a partial decode would have consumed.
+	body, err := io.ReadAll(rd)
+	if err != nil {
+		return err
+	}
+	if err = a.decodeTree(c.Protocol, bytes.NewReader(body)); err != nil {
+		a.RootNode = nil
+		a.Raw = body
+		a.DecodeErr = err
+	}
+	return nil
+}
+
+func (a *AvailableCommands) decodeTree(protocol proto.Protocol, rd io.Reader) error {
 	commands, err := util.ReadVarInt(rd)
 	if err != nil {
 		return err
@@ -158,7 +204,7 @@ func (a *AvailableCommands) Decode(c *proto.PacketContext, rd io.Reader) error {
 	wireNodes := make([]*WireNode, 0, min(commands, util.MaxPreAllocSize))
 	for i := 0; i < commands; i++ {
 		wn := &WireNode{IDx: i}
-		if err = wn.decode(rd, c.Protocol); err != nil {
+		if err = wn.decode(rd, protocol); err != nil {
 			return err
 		}
 		wireNodes = append(wireNodes, wn)

@@ -1223,6 +1223,52 @@ func (e *PlayerClientBrandEvent) Brand() string {
 	return e.brand
 }
 
+// ServerBrandRewriteEvent is fired before Gate rewrites the brand a backend
+// server reports to the client, i.e. the "minecraft:brand" value the client
+// shows on its debug screen (F3) as the proxy label.
+//
+// Gate sends the backend's brand with config.brandSuffix appended, so a config
+// without the key emits exactly the bytes Gate always has. A handler can
+// replace that value per session with SetBrand - e.g. SetBrand(e.OriginalBrand())
+// to pass the backend's brand through untouched, which is how an embedding
+// proxy expresses a per-endpoint "hide the branding" policy on a Gate process
+// that serves many endpoints.
+//
+// The event is fired for every brand message a backend sends, in both the
+// config and the play phase, and the proxy waits for all handlers before it
+// writes the brand to the client.
+type ServerBrandRewriteEvent struct {
+	player        Player
+	originalBrand string
+	brand         string
+}
+
+// Player returns the player the brand is rewritten for.
+func (e *ServerBrandRewriteEvent) Player() Player {
+	return e.player
+}
+
+// OriginalBrand returns the brand the backend server sent, as decoded from the
+// packet (empty when the backend sent no usable brand). SetBrand never changes
+// it, so a handler can always observe what the backend actually reported.
+func (e *ServerBrandRewriteEvent) OriginalBrand() string {
+	return e.originalBrand
+}
+
+// Brand returns the brand Gate will send to the client.
+func (e *ServerBrandRewriteEvent) Brand() string {
+	return e.brand
+}
+
+// SetBrand replaces the brand Gate sends to the client, overriding
+// config.brandSuffix for this session.
+//
+// Setting it to OriginalBrand forwards the backend's brand unchanged instead of
+// rewriting it; an empty value sends an empty brand.
+func (e *ServerBrandRewriteEvent) SetBrand(brand string) {
+	e.brand = brand
+}
+
 //
 //
 //

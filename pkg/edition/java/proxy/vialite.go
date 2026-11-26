@@ -574,7 +574,7 @@ func (d *viaBridgeDial) Failure() error {
 }
 
 // bridgeDialTimeout is the budget for the bridge's dial of a dynamic backend,
-// in the units `connectionTimeout` is documented in.
+// derived from the same `connectionTimeout` the join uses.
 //
 // The bridge cannot inherit that budget from the join: a bridge request context
 // is deliberately detached from the join (context.WithoutCancel in Prepare, so a
@@ -583,14 +583,31 @@ func (d *viaBridgeDial) Failure() error {
 // dynamic backend that never answers keeps the bridge - and therefore the join -
 // waiting with nothing naming the backend, the bridge address or the stage.
 // Zero (unset or explicitly disabled) keeps the historical unbounded behaviour.
+//
+// It is deliberately shorter than the join budget: the join starts its own
+// deadline of the same value before this dial begins, so an equal budget lets
+// the join win the race and end on its generic "context deadline exceeded while
+// logging into backend server" - throwing away the named cause (backend, bridge
+// address, stage) this budget exists to produce.
 func (r *viaManagedRunner) bridgeDialTimeout() time.Duration {
 	if r == nil || r.cfg == nil {
 		return 0
 	}
-	if d := time.Duration(r.cfg.ConnectionTimeout); d > 0 {
+	d := time.Duration(r.cfg.ConnectionTimeout)
+	if d <= 0 {
+		return 0
+	}
+	margin := d / 10
+	if margin > 2*time.Second {
+		margin = 2 * time.Second
+	}
+	if margin < 100*time.Millisecond {
+		margin = d / 2 // a budget this small is split evenly
+	}
+	if d <= margin {
 		return d
 	}
-	return 0
+	return d - margin
 }
 
 func (r *viaManagedRunner) options() (vialite.Options, error) {

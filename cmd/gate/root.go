@@ -67,6 +67,7 @@ Visit the website https://gate.minekube.com/ for more information.`
 		verbosity    int
 		showVersion  bool
 		noAutoReload bool
+		initConfig   bool
 	)
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
@@ -102,6 +103,13 @@ Visit the website https://gate.minekube.com/ for more information.`
 			Destination: &noAutoReload,
 			EnvVars:     []string{"GATE_NO_AUTO_RELOAD"},
 		},
+		&cli.BoolFlag{
+			Name: "init-config",
+			Usage: "Generate ./config.yml from the minimal (all-default) template on start " +
+				"when no config file was found; an existing config file is never touched",
+			Destination: &initConfig,
+			EnvVars:     []string{"GATE_INIT_CONFIG"},
+		},
 	}
 
 	app.Action = func(c *cli.Context) error {
@@ -116,6 +124,18 @@ Visit the website https://gate.minekube.com/ for more information.`
 		if err != nil {
 			return cli.Exit(err, 1)
 		}
+
+		// Opt-in first-start config generation (--init-config/GATE_INIT_CONFIG).
+		// It runs before the load so this boot already reads the file it wrote,
+		// and the file is what the auto reload watches from here on.
+		initRes, err := firstStartConfig(configFile, initConfig)
+		if err != nil {
+			return cli.Exit(err, 2)
+		}
+		if initRes.Written != "" {
+			v.SetConfigFile(initRes.Written)
+		}
+
 		// Load config
 		cfg, err := gate.LoadConfig(v)
 		if err != nil {
@@ -151,7 +171,17 @@ Visit the website https://gate.minekube.com/ for more information.`
 		// Log startup information
 		log.Info("starting Gate proxy", "version", version.String())
 		log.Info("logging verbosity", "verbosity", verbosity)
+		switch {
+		case initRes.Written != "":
+			log.Info("no config file found, generated one", "config", initRes.Written)
+		case initRes.Warn != nil:
+			log.Info("could not generate a config file, starting on the built-in defaults", "warn", initRes.Warn)
+		}
 		log.Info("using config file", "config", v.ConfigFileUsed())
+		if v.ConfigFileUsed() == "" {
+			log.Info("no config file found, using built-in defaults",
+				"hint", "run `gate config --write` to generate one, or start Gate with --init-config")
+		}
 
 		// Check if auto reload is disabled (via flag, env var, or config)
 		disableAutoReload := noAutoReload || cfg.NoAutoReload

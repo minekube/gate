@@ -74,3 +74,20 @@ func (p *proxyProtocol) wrapConnTimeout(conn net.Conn, readHeaderTimeout time.Du
 		proxyproto.SetReadHeaderTimeout(readHeaderTimeout),
 	)
 }
+
+// WrapProxyProtocolConn wraps a connection accepted on the Bedrock-to-Java
+// boundary (the Geyser listener) with the same PROXY protocol policy the Java
+// client listener applies: a header is honored only when the peer is a trusted
+// upstream, and a peer that sends none is passed through untouched.
+//
+// The Geyser listener used to call proxyproto.NewConn bare, which is the
+// library's REQUIRE default: a Geyser that sent no header had every join
+// closed on its first read with "proxyproto: proxy protocol signature not
+// present". Managed GeyserLite hit exactly that whenever its rendered config
+// put the HAProxy toggle at a key Geyser 2.x drops. Requiring the header buys
+// nothing here - an untrusted peer can already be refused by REJECT - while it
+// turns one render bug into a total Bedrock outage, so the policy is "honor a
+// trusted header, tolerate its absence" as on the Java listener.
+func (p *Proxy) WrapProxyProtocolConn(conn net.Conn) net.Conn {
+	return p.proxyProtocol.Load().wrapConn(conn)
+}

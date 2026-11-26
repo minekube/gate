@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/config"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/cookie"
@@ -77,7 +78,7 @@ func (b *backendPlaySessionHandler) HandlePacket(pc *proto.PacketContext) {
 	case *plugin.Message:
 		b.handlePluginMessage(p, pc)
 	case *packet.AvailableCommands:
-		b.handleAvailableCommands(p)
+		b.handleAvailableCommands(p, pc)
 	case *packet.TabCompleteResponse:
 		b.playerSessionHandler.handleTabCompleteResponse(p)
 	case *legacytablist.PlayerListItem:
@@ -134,12 +135,32 @@ func (b *backendPlaySessionHandler) Disconnected() {
 	if b.serverConn.gracefulDisconnect.Load() || b.exceptionTriggered.Load() {
 		return
 	}
-	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
-		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server,
-			internalServerConnectionError, true)
-	} else {
-		b.serverConn.player.Disconnect(internalServerConnectionError)
+	// If Gate itself ended this connection on a configured budget, say so
+	// instead of reporting an internal error: it is the difference between "the
+	// server stopped responding" and "the proxy broke".
+	var reason component.Component = internalServerConnectionError
+	if kind, budget, ok := netmc.DeadlineClose(b.serverConn.connection); ok {
+		reason = backendDeadlineReason(kind)
+		b.log.Info("backend connection closed on a configured deadline",
+			"closeKind", string(kind), "budget", budget,
+			"backend", b.serverConn.server.ServerInfo().Name())
 	}
+	if b.proxy().Config().FailoverOnUnexpectedServerDisconnect {
+		b.serverConn.player.handleDisconnectWithReason(b.serverConn.server, reason, true)
+	} else {
+		b.serverConn.player.Disconnect(reason)
+	}
+}
+
+// backendDeadlineReason is the reason a player is shown when Gate closed the
+// backend connection on one of its configured deadlines.
+func backendDeadlineReason(kind netmc.DeadlineKind) component.Component {
+	if kind == netmc.DeadlineWrite {
+		// The backend stopped draining what we send it.
+		return backendStoppedAcceptingData
+	}
+	// The backend stopped sending anything at all.
+	return backendStoppedResponding
 }
 
 func (b *backendPlaySessionHandler) handleKeepAlive(p *packet.KeepAlive, pc *proto.PacketContext) {
@@ -201,7 +222,7 @@ func (b *backendPlaySessionHandler) handlePluginMessage(packet *plugin.Message, 
 			return
 		}
 		serverVersion := serverMc.Protocol()
-		rewritten := plugin.RewriteMinecraftBrand(packet, serverVersion)
+		rewritten := b.proxy().rewriteServerBrand(b.serverConn.player, packet, serverVersion)
 		b.forwardToPlayer(nil, rewritten)
 		return
 	}
@@ -463,7 +484,21 @@ func (b *backendPlaySessionHandler) handleRemovePlayerInfo(p *playerinfo.Remove,
 	b.forwardToPlayer(pc, nil)
 }
 
-func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands) {
+func (b *backendPlaySessionHandler) handleAvailableCommands(p *packet.AvailableCommands, pc *proto.PacketContext) {
+	if p.Raw != nil {
+		// The backend sent a command tree this proxy cannot parse (a modded
+		// argument-type identifier outside the vanilla table, or a tree that
+		// desyncs our codecs). The proxy does not need to understand a tree to
+		// forward it, so the client gets the backend's bytes untouched: no proxy
+		// command injection and no PlayerAvailableCommandsEvent, but the session
+		// survives. Closing the backend connection here is what kicked players
+		// from modded servers ~1 s after placement.
+		b.log.Info("backend command tree could not be decoded, forwarding it verbatim",
+			"player", b.serverConn.player.Username(), "error", p.DecodeErr)
+		b.forwardToPlayer(pc, p)
+		return
+	}
+
 	rootNode := p.RootNode
 	if b.proxy().config().AnnounceProxyCommands {
 		// Inject commands from the proxy.

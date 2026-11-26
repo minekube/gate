@@ -73,8 +73,22 @@ jobs:
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 
+      # Not a bare `golangci-lint run`: the linter intermittently never loads
+      # the package graph on these runners and reports no finding at all
+      # ("buildir: failed to load package : could not load export data: no
+      # export data for golang.org/x/image/math/f32", run 43448862215 job
+      # 131965443742 — exit 3, or 51 bogus "(typecheck)" diagnostics in 44s on
+      # release gate run 43448561385). The wrapper warms the build cache,
+      # starts from a clean linter cache, retries only that loader class and
+      # fails closed on everything else, so a finding is still a red step
+      # while a flake cannot red a PR or skip a release publish. Its own
+      # hermetic regression suite runs first; the wiring is pinned by
+      # lint_and_release_flake_test.go.
+      - name: Self-test the linter wrapper
+        run: .github/scripts/run-golangci-lint.sh --self-test
+
       - name: golangci-lint
-        run: golangci-lint run --timeout 3m0s
+        run: .github/scripts/run-golangci-lint.sh
 
       # gohawk@v0.3.2 requires go >= 1.27.0, while this repo declares `go 1.26.0`
       # and every job pins its toolchain to go.mod's version. The runner sets

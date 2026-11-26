@@ -78,6 +78,10 @@ type Proxy struct {
 	backendHandshakeAddresser   BackendHandshakeAddresser
 	backendHandshakeAddresserID uint64
 
+	clientPluginMessageFilterMu sync.RWMutex
+	clientPluginMessageFilter   ClientPluginMessageFilter
+	clientPluginMessageFilterID uint64
+
 	connectionsQuota *addrquota.Quota
 	loginsQuota      *addrquota.Quota
 
@@ -405,6 +409,10 @@ func (p *Proxy) init() (err error) {
 	// No need to check, nil default to mojang's session server
 	p.authenticator.SetHasJoinedURLFn(auth.CustomHasJoinedURL(c.Auth.SessionServerURL.T()))
 
+	// Register the config.permissions provider before the plugin init hooks run,
+	// so an extension answering PermissionsSetupEvent can still override it.
+	p.setupConfigPermissions()
+
 	if !c.Lite.Enabled {
 		// Sync servers: register new/updated servers and unregister removed servers
 		if len(c.Servers) != 0 {
@@ -549,6 +557,31 @@ func (p *Proxy) backendHandshakeAddresserSnapshot() BackendHandshakeAddresser {
 	p.backendHandshakeAddresserMu.RLock()
 	defer p.backendHandshakeAddresserMu.RUnlock()
 	return p.backendHandshakeAddresser
+}
+
+// SetClientPluginMessageFilter sets a low-level hook consulted before a plugin
+// message a player sent is forwarded to the backend server it is connected to.
+// It returns an unregister function that only clears this registration.
+func (p *Proxy) SetClientPluginMessageFilter(f ClientPluginMessageFilter) func() {
+	p.clientPluginMessageFilterMu.Lock()
+	p.clientPluginMessageFilterID++
+	id := p.clientPluginMessageFilterID
+	p.clientPluginMessageFilter = f
+	p.clientPluginMessageFilterMu.Unlock()
+
+	return func() {
+		p.clientPluginMessageFilterMu.Lock()
+		defer p.clientPluginMessageFilterMu.Unlock()
+		if p.clientPluginMessageFilterID == id {
+			p.clientPluginMessageFilter = nil
+		}
+	}
+}
+
+func (p *Proxy) clientPluginMessageFilterSnapshot() ClientPluginMessageFilter {
+	p.clientPluginMessageFilterMu.RLock()
+	defer p.clientPluginMessageFilterMu.RUnlock()
+	return p.clientPluginMessageFilter
 }
 
 // Server gets a backend server registered with the proxy by name.
@@ -821,8 +854,8 @@ func (p *Proxy) handleConn(ctx context.Context, raw net.Conn) {
 	limiter := packetlimiter.New(pl.PacketsPerSecond, pl.BytesPerSecond, time.Duration(pl.Interval))
 	conn, readLoop := netmc.NewMinecraftConn(
 		ctx, raw, proto.ServerBound,
-		time.Duration(p.config().ReadTimeout)*time.Millisecond,
-		time.Duration(p.config().ConnectionTimeout)*time.Millisecond,
+		time.Duration(p.config().ReadTimeout),
+		time.Duration(p.config().WriteTimeout),
 		p.config().Compression.Level,
 		limiter,
 	)
@@ -896,8 +929,9 @@ func (p *Proxy) canRegisterConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	p.muP.RLock()
 	defer p.muP.RUnlock()
+	stallBudget := p.serverConnectStallBudget()
 	for _, existing := range p.collidingRegistrations(lowerName, player.ID()) {
-		if existing != player && !supersedableRegistration(existing) {
+		if existing != player && !supersedableRegistration(existing, stallBudget) {
 			return false
 		}
 	}
@@ -917,6 +951,12 @@ func (p *Proxy) collidingRegistrations(lowerName string, id uuid.UUID) []*connec
 	return colliding
 }
 
+// supersedeFarewellBudget bounds the farewell write of a session that a newer
+// login is superseding. The old client is either gone or a duplicate, so it
+// gets a short chance to receive the kick instead of making the new login wait
+// out a write that may never drain.
+const supersedeFarewellBudget = 250 * time.Millisecond
+
 // supersedableRegistration reports whether an existing registration may be
 // replaced by a newer connection of the same identity instead of refusing the
 // newer connection with "You are already connected to this server!".
@@ -928,6 +968,12 @@ func (p *Proxy) collidingRegistrations(lowerName string, id uuid.UUID) []*connec
 //
 //   - the registration's connection is already closed, but its teardown has not
 //     unregistered it yet (the connection and the new login race each other);
+//   - the proxy already started kicking the session (Disconnect), so it is on
+//     its way out even though the farewell write may not have returned: a
+//     reconnect right after a kick must not wait for that write, which on a
+//     client that stopped reading blocks the close, the teardown and with it
+//     the registration (production: a player stayed "already connected" on one
+//     edge machine for 21 hours after an internal-error kick);
 //   - the session never reached play: it is still logging in or connecting to
 //     its first backend, which is what an abandoned login attempt looks like
 //     after a client timeout, a kick before play, or a network drop with a
@@ -935,7 +981,7 @@ func (p *Proxy) collidingRegistrations(lowerName string, id uuid.UUID) []*connec
 //
 // A session that has been placed on a backend (playing, or switching servers
 // through the configuration state) is never superseded.
-func supersedableRegistration(existing *connectedPlayer) bool {
+func supersedableRegistration(existing *connectedPlayer, stallBudget time.Duration) bool {
 	if existing == nil {
 		return true
 	}
@@ -944,11 +990,17 @@ func supersedableRegistration(existing *connectedPlayer) bool {
 		// rather than guess, since this only happens for hand-built players.
 		return false
 	}
-	if !existing.Active() {
+	if !existing.Active() || existing.disconnecting.Load() {
 		return true
 	}
 	if existing.CurrentServer() != nil {
 		return false
+	}
+	if stalledInFlightConnect(existing, stallBudget) {
+		// The session has no server and its move has outlived the budget that
+		// bounds every move: it is not playing and cannot arrive, so it holds
+		// the identity for nothing.
+		return true
 	}
 	if registry := existing.State(); registry != nil && registry.State == states.PlayState {
 		return false
@@ -956,23 +1008,70 @@ func supersedableRegistration(existing *connectedPlayer) bool {
 	return true
 }
 
+// serverConnectStallBudget bounds how long a registration may sit with a server
+// connect in flight and no current server before a duplicate login treats it as
+// stale. Every server connect is bounded by the connection timeout, so twice
+// that budget means the bound did not act - the connect is wedged rather than
+// slow. Returns 0 (rule disabled) when no connection timeout is configured.
+func (p *Proxy) serverConnectStallBudget() time.Duration {
+	connect := time.Duration(p.config().ConnectionTimeout)
+	if connect <= 0 {
+		return 0
+	}
+	return 2 * connect
+}
+
+// stalledInFlightConnect reports whether a registration has a server connect in
+// flight that has outlived the stall budget. Production shape (2026-11-22): a
+// player kicked from an endpoint into a browser-hub redirect whose hand-over
+// never completed kept the identity for 10+ minutes, and every reconnect was
+// refused with "You are already connected to this server!" - the connect
+// attempt was parked, so nothing ever reached the kick that would have
+// unregistered it.
+func stalledInFlightConnect(existing *connectedPlayer, stallBudget time.Duration) bool {
+	if stallBudget <= 0 {
+		return false
+	}
+	existing.mu.RLock()
+	defer existing.mu.RUnlock()
+	if existing.connInFlight == nil || existing.connInFlightStart.IsZero() {
+		return false
+	}
+	return time.Since(existing.connInFlightStart) > stallBudget
+}
+
 // Attempts to register the connection with the proxy.
 func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 	lowerName := strings.ToLower(player.Username())
 	c := p.config()
+	stallBudget := p.serverConnectStallBudget()
 
 	for attempt := 0; attempt < maxRegisterConnectionAttempts; attempt++ {
 		p.muP.Lock()
 		if c.OnlineModeKickExistingPlayers {
 			existing := p.playerIDs[player.ID()]
 			if existing != nil && existing != player {
+				existing.disconnectDueToDuplicateConnection.Store(true)
+				if existing.disconnecting.Load() {
+					// Its kick is already in flight. Disconnecting again would
+					// queue behind the same farewell write, which may be stuck on
+					// a client that stopped reading, and stall this login on its
+					// goroutine. Release the slot instead; the old session's
+					// teardown is value-scoped and cannot evict the new one.
+					p.removePlayerRegistration(existing)
+					p.muP.Unlock()
+					p.log.Info("superseding registration of player that is already being disconnected",
+						"player", existing.Username(),
+						"id", existing.ID(),
+						"newConnection", player.Username())
+					continue
+				}
 				// Make sure we disconnect existing duplicate
 				// player connection before we register the new one.
 				//
 				// Disconnecting the existing connection will call p.unregisterConnection in the
 				// teardown needing the p.muP.Lock() so we unlock.
 				p.muP.Unlock()
-				existing.disconnectDueToDuplicateConnection.Store(true)
 				existing.Disconnect(&component.Translation{
 					Key: "multiplayer.disconnect.duplicate_login",
 				})
@@ -990,7 +1089,7 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 				if existing == player {
 					continue
 				}
-				if !supersedableRegistration(existing) {
+				if !supersedableRegistration(existing, stallBudget) {
 					p.muP.Unlock()
 					return false
 				}
@@ -1002,6 +1101,11 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 				// connection (unregisterConnection is value-scoped), and the
 				// newer connection owns the registration from now on.
 				for _, existing := range superseded {
+					// Set the conflict flag before releasing the registration: the
+					// teardown takes muP before it reads the flag, so it cannot
+					// report a plain cancellation if a farewell write completes
+					// between the release and the Disconnect below.
+					existing.disconnectDueToDuplicateConnection.Store(true)
 					p.removePlayerRegistration(existing)
 				}
 				p.muP.Unlock()
@@ -1010,15 +1114,25 @@ func (p *Proxy) registerConnection(player *connectedPlayer) bool {
 					if registry := existing.State(); registry != nil {
 						stateName = registry.State.String()
 					}
+					alreadyDisconnecting := existing.disconnecting.Load()
 					p.log.Info("superseding abandoned registration of player",
 						"player", existing.Username(),
 						"id", existing.ID(),
 						"state", stateName,
+						"alreadyDisconnecting", alreadyDisconnecting,
 						"newConnection", player.Username())
-					existing.disconnectDueToDuplicateConnection.Store(true)
-					existing.Disconnect(&component.Translation{
+					if alreadyDisconnecting {
+						// Its kick is already in flight. Disconnecting again would
+						// queue behind the same stuck write on this goroutine and
+						// stall the newer login, which is what this path avoids.
+						continue
+					}
+					// Bound its farewell write: the slot is already released
+					// and its teardown is value-scoped, so this login must not
+					// queue behind a client that stopped reading.
+					existing.disconnectWithBudget(&component.Translation{
 						Key: "multiplayer.disconnect.duplicate_login",
-					})
+					}, supersedeFarewellBudget)
 				}
 				continue
 			}
@@ -1131,8 +1245,14 @@ func BroadcastMessage(sinks []MessageSink, msg component.Component) {
 //
 //
 
+// withConnectionTimeout bounds connecting a player to a backend server with the
+// configured connection timeout, which is what the config documents ("The time
+// Gate waits to connect to a server before timing out"). Use it for every join
+// deadline instead of re-deriving one, so a second conversion of the configured
+// duration cannot creep back in - and so the join budget stays independent of
+// the per-flush write budget (writeTimeout).
 func withConnectionTimeout(parent context.Context, cfg *config.Config) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout)*time.Millisecond)
+	return context.WithTimeout(parent, time.Duration(cfg.ConnectionTimeout))
 }
 
 type (

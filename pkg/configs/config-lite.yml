@@ -83,10 +83,17 @@ config:
   # The follow settings from standard Gate also apply to Lite mode.
   #
   # The time Gate waits to connect to a server before timing out.
+  # Lite mode pipes the client connection to the backend, so this bounds the
+  # dial of that backend but not the piped stream that follows it.
   connectionTimeout: 5s
   # The time Gate waits to receive data from a server before timing out.
   # If you use Forge, you may need to increase this setting.
+  # Lite mode does not apply a read deadline to the piped connection.
   readTimeout: 30s
+  # How long a single flush to a backend server or client may fail to drain
+  # before the connection is closed.
+  # Lite mode does not apply a write deadline to the piped connection.
+  writeTimeout: 10s
   # Enabled extra debug logging (only for debugging purposes).
   debug: false
   # Proxy protocol (HA-Proxy) determines whether Gate should support proxy protocol for players.

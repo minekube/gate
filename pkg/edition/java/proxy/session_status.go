@@ -80,11 +80,17 @@ func (h *statusSessionHandler) HandlePacket(pc *proto.PacketContext) {
 	}
 }
 
-var versionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
+// defaultVersionName is the server list version string when
+// status.versionName is not configured.
+var defaultVersionName = fmt.Sprintf("Gate %s", version.SupportedVersionsString)
 
 func newInitialPing(p *Proxy, protocol proto.Protocol) *ping.ServerPing {
 	if !version.Protocol(protocol).Supported() {
 		protocol = version.MaximumVersion.Protocol
+	}
+	versionName := p.config().Status.VersionName
+	if versionName == "" {
+		versionName = defaultVersionName
 	}
 	var modInfo *modinfo.ModInfo
 	if p.config().AnnounceForge {

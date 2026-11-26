@@ -789,3 +789,17 @@ func errsContaining(errs []error, substr string) []error {
 	}
 	return found
 }
+
+func TestStatusVersionNameParses(t *testing.T) {
+	var cfg Config
+	require.NoError(t, yaml.Unmarshal([]byte(`
+status:
+  versionName: Minekube Network
+`), &cfg))
+
+	require.Equal(t, "Minekube Network", cfg.Status.VersionName)
+}
+
+func TestStatusVersionNameDefaultsToEmpty(t *testing.T) {
+	require.Empty(t, DefaultConfig.Status.VersionName)
+}

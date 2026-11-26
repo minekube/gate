@@ -7,8 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"go.minekube.com/common/minecraft/color"
+	"go.minekube.com/common/minecraft/component"
 	bconfig "go.minekube.com/gate/pkg/edition/bedrock/config"
 	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
+	"go.minekube.com/gate/pkg/edition/java/proto/packet/plugin"
 	"go.minekube.com/gate/pkg/edition/java/proto/version"
 	"go.minekube.com/gate/pkg/util/componentutil"
 	"go.minekube.com/gate/pkg/util/configutil"
@@ -16,6 +19,11 @@ import (
 	"go.minekube.com/gate/pkg/util/netutil"
 	"go.minekube.com/gate/pkg/util/validation"
 )
+
+// DefaultBrandSuffix is the suffix Gate appends to a backend's server brand when
+// no brandSuffix is configured. It is the wire-layer default
+// (plugin.DefaultBrandSuffix) so the two can never drift.
+const DefaultBrandSuffix = plugin.DefaultBrandSuffix
 
 // DefaultConfig is a default Config.
 var DefaultConfig = Config{
@@ -42,12 +50,14 @@ var DefaultConfig = Config{
 		ShowPlugins: false,
 	},
 	AnnounceForge:                        false,
+	BrandSuffix:                          brandSuffix(plugin.DefaultBrandSuffix),
 	Servers:                              map[string]string{},
 	Try:                                  []string{},
 	ForcedHosts:                          map[string][]string{},
 	FailoverOnUnexpectedServerDisconnect: true,
 	ConnectionTimeout:                    configutil.Duration(5000 * time.Millisecond),
 	ReadTimeout:                          configutil.Duration(30000 * time.Millisecond),
+	WriteTimeout:                         configutil.Duration(10000 * time.Millisecond),
 	Quota: Quota{
 		Connections: QuotaSettings{
 			Enabled:    true,
@@ -77,6 +87,7 @@ var DefaultConfig = Config{
 	BungeePluginChannelEnabled:          true,
 	BuiltinCommands:                     true,
 	RequireBuiltinCommandPermissions:    false,
+	BuiltinCommandRefusedMessage:        defaultBuiltinCommandRefusedMessage(),
 	AnnounceProxyCommands:               true,
 	Debug:                               false,
 	ShutdownReason:                      defaultShutdownReason(),
@@ -88,8 +99,38 @@ var DefaultConfig = Config{
 func defaultMotd() *configutil.Component {
 	return componentText("§bA Gate Proxy\n§bVisit ➞ §fgithub.com/minekube/gate")
 }
+
+// brandSuffix returns a pointer to a copy of s, so DefaultConfig's brand suffix
+// cannot be mutated through a config a caller loaded from it.
+func brandSuffix(s string) *string {
+	return &s
+}
+
+// ResolveBrandSuffix returns the suffix Gate appends to a backend's server
+// brand, falling back to DefaultBrandSuffix when no suffix is configured.
+//
+// An empty configured suffix is a real value: it disables the rewrite and the
+// backend's brand reaches the client unchanged.
+func (c *Config) ResolveBrandSuffix() string {
+	if c == nil || c.BrandSuffix == nil {
+		return DefaultBrandSuffix
+	}
+	return *c.BrandSuffix
+}
+
 func defaultShutdownReason() *configutil.TextComponent {
 	return text("§cGate proxy is shutting down...\nPlease reconnect in a moment!")
+}
+
+// defaultBuiltinCommandRefusedMessage is the refusal a player gets when a
+// builtin command's permission requirement fails. It is the component Gate
+// always answered with - plain content, red - with the {node} token where the
+// required permission node is substituted, quoted, at render time.
+func defaultBuiltinCommandRefusedMessage() *configutil.TextComponent {
+	return &configutil.TextComponent{
+		Content: `You don't have permission to use this command (requires "{node}").`,
+		S:       component.Style{Color: color.Red},
+	}
 }
 
 // ResolveProxyProtocolTrustedProxies returns the configured trusted upstreams,
@@ -146,6 +187,13 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	Forwarding Forwarding `yaml:"forwarding,omitempty" json:"forwarding,omitempty"` // Player info forwarding settings.
 	Status     Status     `yaml:"status,omitempty" json:"status,omitempty"`         // Status response settings.
 	Query      Query      `yaml:"query,omitempty" json:"query,omitempty"`           // Query settings.
+	// BrandSuffix is appended to the brand a backend server reports before the
+	// client sees it (the proxy label on the debug screen). An empty string
+	// sends the backend's brand unchanged; nil keeps DefaultBrandSuffix, so a
+	// config without the key emits exactly the bytes Gate always has.
+	// Extensions can override the result per session with a
+	// ServerBrandRewriteEvent handler.
+	BrandSuffix *string `yaml:"brandSuffix,omitempty" json:"brandSuffix,omitempty"`
 	// Whether the proxy should present itself as a
 	// Forge/FML-compatible server. By default, this is disabled.
 	AnnounceForge bool `yaml:"announceForge,omitempty" json:"announceForge,omitempty"`
@@ -155,8 +203,19 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	ForcedHosts                          ForcedHosts       `yaml:"forcedHosts,omitempty" json:"forcedHosts,omitempty"`
 	FailoverOnUnexpectedServerDisconnect bool              `yaml:"failoverOnUnexpectedServerDisconnect,omitempty" json:"failoverOnUnexpectedServerDisconnect,omitempty"`
 
-	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"` // Write timeout
-	ReadTimeout       configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`             // Read timeout
+	// ConnectionTimeout bounds joining a backend server: the dial, the backend
+	// login and a server switch all run under it. It is a join budget, not a
+	// write budget - see WriteTimeout.
+	ConnectionTimeout configutil.Duration `yaml:"connectionTimeout,omitempty" json:"connectionTimeout,omitempty"`
+	// ReadTimeout is how long a connection may be silent before Gate closes it.
+	ReadTimeout configutil.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
+	// WriteTimeout is how long a single flush may fail to drain before the
+	// connection is closed. It applies to every connection Gate writes to
+	// (backend and client) and is deliberately separate from
+	// ConnectionTimeout: a backend that is slow to accept a join is not the
+	// same failure as a backend that stopped reading what we send it.
+	// Zero or negative disables the per-flush deadline.
+	WriteTimeout configutil.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
 
 	Quota                Quota         `yaml:"quota,omitempty" json:"quota,omitempty"`                 // Rate limiting settings
 	PacketLimiter        PacketLimiter `yaml:"packetLimiter,omitempty" json:"packetLimiter,omitempty"` // Per-connection serverbound packet rate limiting
@@ -178,8 +237,17 @@ type Config struct { // TODO use https://github.com/projectdiscovery/yamldoc-go 
 	BungeePluginChannelEnabled       bool `yaml:"bungeePluginChannelEnabled,omitempty" json:"bungeePluginChannelEnabled,omitempty"`             // Whether to enable BungeeCord plugin messaging
 	BuiltinCommands                  bool `yaml:"builtinCommands,omitempty" json:"builtinCommands,omitempty"`                                   // Whether to enable builtin commands
 	RequireBuiltinCommandPermissions bool `yaml:"requireBuiltinCommandPermissions,omitempty" json:"requireBuiltinCommandPermissions,omitempty"` // Whether builtin commands require player permissions
-	AnnounceProxyCommands            bool `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`                       // Whether to announce proxy commands to players
-	ForceKeyAuthentication           bool `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"`                     // Added in 1.19
+	// BuiltinCommandRefusedMessage is sent to a player who may not run a builtin
+	// command. The token {node} is replaced with the permission node the command
+	// requires. Empty/nil means the built-in default is used.
+	BuiltinCommandRefusedMessage *configutil.TextComponent `yaml:"builtinCommandRefusedMessage,omitempty" json:"builtinCommandRefusedMessage,omitempty"`
+	AnnounceProxyCommands        bool                      `yaml:"announceProxyCommands,omitempty" json:"announceProxyCommands,omitempty"`   // Whether to announce proxy commands to players
+	ForceKeyAuthentication       bool                      `yaml:"forceKeyAuthentication,omitempty" json:"forceKeyAuthentication,omitempty"` // Added in 1.19
+
+	// Permissions configures Gate's built-in, file-backed permission provider:
+	// it answers a player's PermissionsSetupEvent at login, so builtin commands
+	// can be granted per player without a Go extension (see Permissions).
+	Permissions Permissions `yaml:"permissions,omitempty" json:"permissions,omitempty"`
 
 	Debug          bool                      `yaml:"debug,omitempty" json:"debug,omitempty"` // Enable debug mode
 	ShutdownReason *configutil.TextComponent `yaml:"shutdownReason,omitempty" json:"shutdownReason,omitempty"`
@@ -202,6 +270,11 @@ type (
 		Motd            *configutil.Component `yaml:"motd"`
 		Favicon         favicon.Favicon       `yaml:"favicon"`
 		LogPingRequests bool                  `yaml:"logPingRequests"`
+		// VersionName overrides the version string a client shows for this
+		// server in its server list. Empty uses "Gate <min>-<max>" built from
+		// the supported protocol versions. It changes only the display text,
+		// not which client versions Gate accepts.
+		VersionName string `yaml:"versionName,omitempty" json:"versionName,omitempty"`
 	}
 	Query struct {
 		Enabled     bool `yaml:"enabled"`
@@ -344,7 +417,11 @@ func (c *Config) Validate() (warns []error, errs []error) {
 	validateProxyProtocol(c, e, w)
 
 	validateBackendFloodgate(c, e)
+	warnBedrockDotPrefixRewrite(c, w)
 	validateOfflineModeUsernameBlacklist(c, e)
+	// Always validated, also in Lite mode: a typo must fail startup rather than
+	// silently not match once the proxy is running in full mode.
+	validatePermissions(c, e)
 	if c.Lite.Enabled {
 		warnLiteIgnoredSettings(c, w)
 		warns2, errs2 := c.Lite.Validate()
@@ -493,6 +570,16 @@ func warnLiteIgnoredSettings(c *Config, w func(string, ...any)) {
 		w("Lite mode ignores auth.privateKeyBits: Lite forwards the login to the backend, so " +
 			"Gate never generates a login key. Configure the key size on the backend instead.")
 	}
+
+	if !c.Permissions.Empty() {
+		w("Lite mode ignores permissions: Lite pipes the connection through unchanged, so " +
+			"Gate never applies config.permissions. Configure permissions on the backend or disable lite.enabled.")
+	}
+
+	if c.ResolveBrandSuffix() != DefaultBrandSuffix {
+		w("Lite mode ignores config.brandSuffix: Lite pipes the connection through unchanged, " +
+			"so Gate never rewrites the backend's server brand. Configure the brand on the backend or disable lite.enabled.")
+	}
 }
 
 // validateProxyProtocol validates the trusted upstreams allowed to send a PROXY
@@ -514,6 +601,23 @@ func validateProxyProtocol(c *Config, e, w func(string, ...any)) {
 				"List only the proxies in front of Gate.", prefix, c.Bind)
 		}
 	}
+}
+
+// warnBedrockDotPrefixRewrite reports a usernameFormat that starts with a dot while
+// bedrock.preserveDotPrefix is off. Gate normalizes Bedrock names to Java's
+// [A-Za-z0-9_] alphabet at login, so ".%s" silently becomes "_%s" and the operator
+// sees the configured prefix "overridden" with no hint why.
+func warnBedrockDotPrefixRewrite(c *Config, w func(string, ...any)) {
+	if !c.Bedrock.Enabled || c.Bedrock.PreserveDotPrefix {
+		return
+	}
+	if !strings.HasPrefix(c.Bedrock.UsernameFormat, ".") {
+		return
+	}
+	w("bedrock.usernameFormat %q starts with a dot, but Gate rewrites it to an underscore "+
+		"(\"_\") unless bedrock.preserveDotPrefix is true. Set bedrock.preserveDotPrefix: true "+
+		"if your backends accept a leading dot (Paper does, vanilla does not) and restart Gate; "+
+		"bedrock settings are not applied by a live config reload.", c.Bedrock.UsernameFormat)
 }
 
 func validateBackendFloodgate(c *Config, e func(string, ...any)) {

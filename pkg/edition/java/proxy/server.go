@@ -507,8 +507,8 @@ func (s *serverConnection) connect(ctx context.Context) (result *connectionResul
 	)
 	serverMc, readLoop := netmc.NewMinecraftConn(
 		logCtx, conn, proto.ClientBound,
-		time.Duration(s.config().ReadTimeout)*time.Millisecond,
-		time.Duration(s.config().ConnectionTimeout)*time.Millisecond,
+		time.Duration(s.config().ReadTimeout),
+		time.Duration(s.config().WriteTimeout),
 		s.config().Compression.Level,
 		nil, // backend connections are trusted; no serverbound rate limit
 	)
@@ -701,17 +701,23 @@ func (s *serverConnection) active() bool {
 // disconnects from the server
 func (s *serverConnection) disconnect() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.disconnect0()
-}
-func (s *serverConnection) disconnect0() {
-	if s.connection != nil {
-		s.gracefulDisconnect.Store(true)
-		if !netmc.Closed(s.connection) { // only close if not already closing to prevent deadlock
-			_ = netmc.CloseUnknown(s.connection)
-		}
-		s.connection = nil // nil means not connected
+	conn := s.connection
+	s.gracefulDisconnect.Store(true)
+	s.connection = nil // nil means not connected
+	s.mu.Unlock()
+	if conn == nil || netmc.Closed(conn) {
+		// Only close if not already closing (closeOnce would deadlock otherwise).
+		return
 	}
+	// Close outside the lock: netmc invokes the active session handler's
+	// Disconnected() synchronously from Close(), and every backend handler's
+	// teardown reads serverConnection state again (reportStalledBackend ->
+	// backendStallSnapshot, ensureConnected, ...). Go mutexes are not reentrant,
+	// so closing under s.mu deadlocked the whole teardown: a backend that ended
+	// the CONFIGURATION phase left the join parked forever (no disconnect reason
+	// reached the client, the player stayed registered and the next attempt was
+	// refused with "You are already connected to this server!").
+	_ = netmc.CloseUnknown(conn)
 }
 
 // Indicates that we have completed the plugin process.

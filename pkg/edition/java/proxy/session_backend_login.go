@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"reflect"
-	"time"
 
 	"go.minekube.com/gate/pkg/edition/java/internal/velocity"
 	"go.minekube.com/gate/pkg/edition/java/proto/packet/chat"
@@ -31,7 +30,6 @@ type backendLoginSessionHandler struct {
 	serverConn    *serverConnection
 	requestCtx    *connRequestCxt
 	listenDoneCtx chan struct{}
-	stallDoneCtx  chan struct{}
 	log           logr.Logger
 
 	informationForwarded atomic.Bool
@@ -54,11 +52,6 @@ func newBackendLoginSessionHandler(
 
 func (b *backendLoginSessionHandler) Activated() {
 	b.listenDoneCtx = make(chan struct{})
-	b.stallDoneCtx = make(chan struct{})
-	// While the login is waiting, a backend that never sends a packet is
-	// invisible: the connection layer's read deadline is far longer than the
-	// configured readTimeout, so the join just sits there.
-	go b.reportSilentBackendAfterReadTimeout()
 	go func() {
 		select {
 		case <-b.listenDoneCtx:
@@ -77,30 +70,9 @@ func (b *backendLoginSessionHandler) Activated() {
 	}()
 }
 
-// reportSilentBackendAfterReadTimeout logs once when the backend has not sent a
-// single packet within the configured read timeout, while Gate is still waiting
-// for it. It logs only; it does not close, kick or shorten anything.
-func (b *backendLoginSessionHandler) reportSilentBackendAfterReadTimeout() {
-	readTimeout := time.Duration(b.config().ReadTimeout)
-	if readTimeout <= 0 {
-		return
-	}
-	timer := time.NewTimer(readTimeout)
-	defer timer.Stop()
-	select {
-	case <-b.stallDoneCtx:
-		return
-	case <-timer.C:
-	}
-	b.serverConn.reportSilentBackend(b.log)
-}
-
 func (b *backendLoginSessionHandler) Deactivated() {
 	if b.listenDoneCtx != nil {
 		close(b.listenDoneCtx)
-	}
-	if b.stallDoneCtx != nil {
-		close(b.stallDoneCtx)
 	}
 }
 

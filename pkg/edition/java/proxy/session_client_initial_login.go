@@ -437,6 +437,18 @@ var (
 	internalServerConnectionError = &component.Text{
 		Content: "Internal server connection error",
 	}
+	// backendStoppedResponding and backendStoppedAcceptingData are the reasons
+	// shown when Gate itself closed the backend connection on one of its
+	// configured deadlines: the backend went silent for readTimeout, or stopped
+	// reading what Gate sends for writeTimeout. They replace the shared
+	// internalServerConnectionError for those two closes, which used to read as
+	// a proxy bug rather than as the server failure it is.
+	backendStoppedResponding = &component.Text{
+		Content: "The server stopped responding.",
+	}
+	backendStoppedAcceptingData = &component.Text{
+		Content: "The server stopped accepting data from the proxy.",
+	}
 	// unexpectedDisconnect = &component.Text{
 	//	Content: "Unexpectedly disconnected from remote server - crash?",
 	// }

@@ -283,7 +283,7 @@ func (p *connectedPlayer) handleKickEvent(e *KickedFromServerEvent, friendlyReas
 	case *DisconnectPlayerKickResult:
 		p.Disconnect(result.Reason)
 	case *RedirectPlayerKickResult:
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(p.config().ConnectionTimeout)*time.Millisecond)
+		ctx, cancel := withConnectionTimeout(context.Background(), p.config())
 		defer cancel()
 		redirect, err := p.createConnectionRequestWith(result.Server, previousConnection).connect(ctx)
 		if err != nil {
@@ -374,12 +374,18 @@ func (p *connectedPlayer) resetInFlightConnection() {
 // without locking
 func (p *connectedPlayer) resetInFlightConnection0() {
 	p.connInFlight = nil
+	p.connInFlightStart = time.Time{}
 }
 
 func (p *connectedPlayer) setInFlightConnection(s *serverConnection) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.connInFlight = s
+	if s == nil {
+		p.connInFlightStart = time.Time{}
+		return
+	}
+	p.connInFlightStart = time.Now()
 }
 
 func (c *connectionRequest) Server() RegisteredServer {

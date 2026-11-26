@@ -1,5 +1,153 @@
 # Changelog
 
+## [0.82.3](https://github.com/minekube/gate/compare/v0.82.2...v0.82.3) (2026-11-22)
+
+
+### Bug Fixes
+
+* **bedrock:** warn when a dot usernameFormat will be rewritten to an underscore ([#1384](https://github.com/minekube/gate/issues/1384)) ([73351d0](https://github.com/minekube/gate/commit/73351d02ba0b7e986a3f60b69d2eaf429fc7f5c5))
+
+## [0.82.2](https://github.com/minekube/gate/compare/v0.82.1...v0.82.2) (2026-11-22)
+
+
+### Bug Fixes
+
+* **netmc:** bound the farewell write so a stuck client cannot hold the close ([5798ed8](https://github.com/minekube/gate/commit/5798ed85d3c5b87c03ff14e1bd2081561d28db0a))
+* **proxy:** release a registration whose move outlived its budget ([b4aee30](https://github.com/minekube/gate/commit/b4aee308bd30922b8896583e80f3207134f08f1a))
+* **proxy:** release registrations a stuck farewell write or a parked move keeps alive ([4ed1db1](https://github.com/minekube/gate/commit/4ed1db107942bf9f51a4583353bae93b286d720c))
+* **proxy:** report the budget close through the player connection ([6304c61](https://github.com/minekube/gate/commit/6304c6172f731fe2fbc78fe30e8e6ae4fbad5a2c))
+
+## [0.82.1](https://github.com/minekube/gate/compare/v0.82.0...v0.82.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **proxy:** supersede a session that is already being kicked instead of refusing the reconnect ([#1383](https://github.com/minekube/gate/issues/1383)) ([a048d09](https://github.com/minekube/gate/commit/a048d09fc2d7d675525a7eddd96cc14de34fd67b))
+
+## [0.82.0](https://github.com/minekube/gate/compare/v0.81.1...v0.82.0) (2026-11-18)
+
+
+### Features
+
+* make the backend server brand suffix configurable and overridable per session ([#1381](https://github.com/minekube/gate/issues/1381)) ([e7fe3df](https://github.com/minekube/gate/commit/e7fe3df14f68469434d80df95000ca0f195b6e7c))
+
+## [0.81.1](https://github.com/minekube/gate/compare/v0.81.0...v0.81.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **bedrock:** withhold Floodgate plugin messages without backendFloodgate ([#1379](https://github.com/minekube/gate/issues/1379)) ([d84488a](https://github.com/minekube/gate/commit/d84488a0e56da95f942b6e35cf661c3bfb5cb1f3))
+
+## [0.81.0](https://github.com/minekube/gate/compare/v0.80.4...v0.81.0) (2026-11-14)
+
+
+### Features
+
+* **bedrock:** make the backendFloodgate link-promotion decision visible per join ([#1376](https://github.com/minekube/gate/issues/1376)) ([0bb23a6](https://github.com/minekube/gate/commit/0bb23a62a4b0ae9e2f834dd4ba7187e9b2f4fe81))
+
+## [0.80.4](https://github.com/minekube/gate/compare/v0.80.3...v0.80.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* **bedrock:** withhold Floodgate plugin messages a backend Floodgate would kick on ([f6159f4](https://github.com/minekube/gate/commit/f6159f4947f02b5627a2e84b9c85def5eb96e097))
+
+## [0.80.3](https://github.com/minekube/gate/compare/v0.80.2...v0.80.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **release:** retry only the registry read-after-write race when publishing images, and verify the tags ([#1369](https://github.com/minekube/gate/issues/1369)) ([c4ef299](https://github.com/minekube/gate/commit/c4ef2990922fd80f8b403da241453af83cde62c6))
+
+## [0.80.2](https://github.com/minekube/gate/compare/v0.80.1...v0.80.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* **gate:** un-scale the connection deadlines, split writeTimeout, and name deadline closes ([#1342](https://github.com/minekube/gate/issues/1342)) ([c4314b3](https://github.com/minekube/gate/commit/c4314b3ca4015fb713f448f3d0b655ffb83c94a2))
+
+## [0.80.1](https://github.com/minekube/gate/compare/v0.80.0...v0.80.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **proxy:** deliver a CONFIG-phase backend disconnect and release the player ([#1337](https://github.com/minekube/gate/issues/1337)) ([baceab6](https://github.com/minekube/gate/commit/baceab6f66b51226cfd8e57017a50b4e38d6dd13))
+
+## [0.80.0](https://github.com/minekube/gate/compare/v0.79.1...v0.80.0) (2026-11-13)
+
+
+### Features
+
+* **netmc:** expose bounded terminal I/O diagnostics ([#1156](https://github.com/minekube/gate/issues/1156)) ([1878ee8](https://github.com/minekube/gate/commit/1878ee895b59111be05c7542f29f3f12192a8d3a))
+
+## [0.79.1](https://github.com/minekube/gate/compare/v0.79.0...v0.79.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **geyser:** honor an optional PROXY protocol header on the Geyser listener ([#1278](https://github.com/minekube/gate/issues/1278)) ([3249670](https://github.com/minekube/gate/commit/3249670a519369d3c787dd7c5c95a8a4bc3f410f))
+* **proxy:** log rate-limited logins and send the kick reason ([#1295](https://github.com/minekube/gate/issues/1295)) ([1443571](https://github.com/minekube/gate/commit/14435718b92531f205a237e6f73cbc12e400617b))
+
+## [0.79.0](https://github.com/minekube/gate/compare/v0.78.0...v0.79.0) (2026-11-13)
+
+
+### Features
+
+* **gate:** generate a config file on first start behind --init-config ([#1339](https://github.com/minekube/gate/issues/1339)) ([ab04761](https://github.com/minekube/gate/commit/ab04761e8a06049b96cc30f7a375486081d217f8))
+
+## [0.78.0](https://github.com/minekube/gate/compare/v0.77.1...v0.78.0) (2026-11-11)
+
+
+### Features
+
+* **config:** make the builtin-command permission refusal message configurable ([#1358](https://github.com/minekube/gate/issues/1358)) ([1e0cc32](https://github.com/minekube/gate/commit/1e0cc32db70cbeda41ad5f717f9be7811140235f))
+
+## [0.77.1](https://github.com/minekube/gate/compare/v0.77.0...v0.77.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ping:** keep unmodeled status members (forgeData/neoforgeData) when re-encoding a ping ([9f7aef8](https://github.com/minekube/gate/commit/9f7aef8f25fa8db0091d4c175ccc23d1759d959c))
+* **ping:** keep unmodeled status members when re-encoding a ping ([bf8d7fb](https://github.com/minekube/gate/commit/bf8d7fbbaeb53d61cda1639051a958371cd06199))
+
+## [0.77.0](https://github.com/minekube/gate/compare/v0.76.3...v0.77.0) (2026-11-09)
+
+
+### Features
+
+* **config:** allow overriding the advertised version name ([de49230](https://github.com/minekube/gate/commit/de49230080ddf2905f24613a6d367379e190fb5a))
+* **config:** allow overriding the advertised version name ([4509cc0](https://github.com/minekube/gate/commit/4509cc07dff2f5ebd3dbcff1396fcf0253a9e2d3))
+
+## [0.76.3](https://github.com/minekube/gate/compare/v0.76.2...v0.76.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([354190f](https://github.com/minekube/gate/commit/354190f780aaa33ed404454a8890e4d62ababdb5))
+* **network:** forward an undecodable backend command tree instead of closing the session ([cb6c9c1](https://github.com/minekube/gate/commit/cb6c9c1857ab0211c1522ff9851fab21ed118412))
+
+## [0.76.2](https://github.com/minekube/gate/compare/v0.76.1...v0.76.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update geyserlite to v0.7.6 ([#1350](https://github.com/minekube/gate/issues/1350)) ([da65eb5](https://github.com/minekube/gate/commit/da65eb5510ee89146a255f12fffe2ca164cce6d3))
+
+## [0.76.1](https://github.com/minekube/gate/compare/v0.76.0...v0.76.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update vialite to v0.3.12 ([#1348](https://github.com/minekube/gate/issues/1348)) ([0916ae6](https://github.com/minekube/gate/commit/0916ae662c26b1b1137f429f9c12ad08541ef51e))
+
+## [0.76.0](https://github.com/minekube/gate/compare/v0.75.17...v0.76.0) (2026-11-03)
+
+
+### Features
+
+* **config:** add config.permissions to grant builtin commands per player ([#1345](https://github.com/minekube/gate/issues/1345)) ([8817fe5](https://github.com/minekube/gate/commit/8817fe526aba7ce0e67f99840f140fdb3648c0b1))
+
 ## [0.75.17](https://github.com/minekube/gate/compare/v0.75.16...v0.75.17) (2026-11-01)
 
 
